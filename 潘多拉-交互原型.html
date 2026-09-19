@@ -26,11 +26,13 @@
     --shadow:0 10px 30px rgba(15,23,42,.14);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0}
+  html,body{margin:0;padding:0;height:100%}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
     background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;
     -webkit-font-smoothing:antialiased;
+    /* 预览栏 + 手机框整体占满视口，手机框在剩余空间内自适应，导航始终可见 */
+    display:flex;flex-direction:column;overflow:hidden;
   }
   button{font:inherit;color:inherit}
   :focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
@@ -39,7 +41,7 @@
   /* ---------- preview layer (not part of the product UI) ---------- */
   .preview-bar{
     display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;
-    max-width:900px;margin:14px auto 10px;padding:10px 14px;
+    flex:0 0 auto;align-self:center;width:min(900px,calc(100% - 28px));margin:14px 0 10px;padding:10px 14px;
     background:#111827;color:#e5e7eb;border-radius:14px;
   }
   .preview-tag{font-size:11px;font-weight:700;letter-spacing:.06em;color:#93c5fd;text-transform:uppercase}
@@ -54,9 +56,12 @@
   .role-switch button[aria-pressed="true"]:hover{background:#1d4ed8;border-color:#1d4ed8}
 
   /* ---------- phone stage ---------- */
-  .stage{display:flex;justify-content:center;padding:0 12px 28px}
+  .stage{
+    flex:1 1 auto;min-height:0;display:flex;justify-content:center;align-items:flex-start;
+    padding:0 12px 18px;overflow:hidden;
+  }
   .phone{
-    width:390px;height:844px;background:var(--card);border-radius:32px;
+    width:390px;height:100%;max-height:844px;min-height:0;background:var(--card);border-radius:32px;
     border:1px solid #d5dae4;box-shadow:var(--shadow);
     overflow:hidden;display:flex;flex-direction:column;position:relative;
   }
@@ -279,8 +284,11 @@
   }
   @media (max-width:480px){
     body{background:#fff}
+    .preview-bar{align-self:stretch;width:auto;margin:8px 8px 6px;padding:8px 10px;border-radius:12px;gap:6px 10px}
+    .preview-note{flex:1 1 150px;font-size:11px}
+    .role-switch button{padding:5px 12px;font-size:12.5px}
     .stage{padding:0}
-    .phone{width:100%;height:100dvh;min-height:100vh;border-radius:0;border:0;box-shadow:none}
+    .phone{width:100%;max-height:none;border-radius:0;border:0;box-shadow:none}
   }
 </style>
 </head>
@@ -641,8 +649,13 @@ function assignablePeople(a){
   return [a];
 }
 /* 可见的上级任务候选（仅普通任务，且在当前身份可见范围内） */
-function parentCandidates(a){
-  return sortTasks(visibleTasks(a).filter(function(t){ return t.type === "normal"; }));
+/* 可选上级任务：范围内任务均可作为上级，抽象任务也可作为普通子任务的上级。
+   排除自身与其直接子任务，避免自引用和一层父子结构下的环。 */
+function parentCandidates(a, forTask){
+  return sortTasks(visibleTasks(a).filter(function(t){
+    if (forTask && (t.id === forTask.id || t.parentId === forTask.id)) return false;
+    return true;
+  }));
 }
 
 /* 编辑 / 进度 / 审核规则 */
@@ -1240,10 +1253,16 @@ function taskDetailView(id){
   if (visibleTasks(a).indexOf(t) === -1) return null;   /* 范围外记录不展示详情 */
 
   const kind = taskKind(t, a);
-  const parent = t.parentId ? taskById(t.parentId) : null;
-  const kids = childrenOf(t.id);
-  const siblings = parent ? childrenOf(parent.id).filter(function(x){ return x.id !== t.id; }) : [];
-  const abs = t.type === "abstract" ? abstractStats(t) : null;
+  const allowed = visibleTasks(a);
+  /* 关联任务同样受角色可见范围约束：不可见的上级/子任务/同级任务不得泄露标识信息 */
+  const rawParent = t.parentId ? taskById(t.parentId) : null;
+  const parent = rawParent && allowed.indexOf(rawParent) !== -1 ? rawParent : null;
+  const hiddenParent = !!rawParent && !parent;
+  const kids = childrenOf(t.id).filter(function(k){ return allowed.indexOf(k) !== -1; });
+  /* 同级任务按真实上级关系推导，但只列出当前身份可见的同级任务 */
+  const siblings = rawParent
+    ? childrenOf(rawParent.id).filter(function(x){ return x.id !== t.id && allowed.indexOf(x) !== -1; })
+    : [];
   const reviewer = t.status === "pending-create" ? createReviewer(t)
     : t.status === "pending-complete" ? completionReviewer(t) : null;
 
@@ -1276,6 +1295,10 @@ function taskDetailView(id){
       '<button type="button" class="child-task" data-task="' + parent.id + '">' +
         '<span class="t-title"><span>' + esc(parent.title) + "</span>" + typeBadge(parent) + "</span>" +
         '<span class="task-meta">' + statusBadge(parent) + urgencyBadge(parent.urgency) + "<span>" + esc(fmtDue(parent.due)) + "</span></span></button>";
+  } else if (hiddenParent){
+    /* 只说明存在上下级关系，不暴露范围外任务的名称、状态或时间 */
+    body += '<div class="divider"></div><div class="card-head"><h2>上级任务</h2></div>' +
+      '<div class="callout info">该任务属于一个上级任务，但上级任务超出当前身份的可见范围。</div>';
   }
   if (kids.length){
     const kidDone = kids.filter(function(k){ return effectiveStatus(k) === "done"; }).length;
@@ -1381,7 +1404,9 @@ function taskFormView(mode, id){
   if (mode === "edit" && (!t || !canEditTask(a, t))) return null;
   const isAbstract = t ? t.type === "abstract" : false;
   const people = assignablePeople(a);
-  const parents = parentCandidates(a).filter(function(p){ return !t || (p.id !== t.id && p.id !== t.parentId); });
+  const parents = parentCandidates(a, t);
+  const currentParentId = t && t.parentId ? t.parentId : null;
+  const currentParentVisible = !!currentParentId && parents.some(function(p){ return p.id === currentParentId; });
   const due = t ? t.due : at(3, 18, 0);
   const assigneeIds = t ? t.assigneeIds : (a.role === "lower" ? [a.id] : []);
   const urgency = t ? t.urgency : "中";
@@ -1401,8 +1426,13 @@ function taskFormView(mode, id){
 
   body += '<div class="field"><label for="tf-parent">上级任务（可选）</label><select id="tf-parent"><option value="">无</option>' +
     parents.map(function(p){
-      return '<option value="' + p.id + '"' + (t && t.parentId === p.id ? " selected" : "") + ">" + esc(p.title) + "</option>";
-    }).join("") + "</select></div>";
+      return '<option value="' + p.id + '"' + (currentParentId === p.id ? " selected" : "") + ">" + esc(p.title) +
+        (p.type === "abstract" ? "（抽象任务）" : "") + "</option>";
+    }).join("") +
+    (currentParentId && !currentParentVisible
+      ? '<option value="' + currentParentId + '" selected>保留现有上级任务（超出可见范围）</option>'
+      : "") +
+    "</select></div>";
 
   body += '<div class="row"><div class="field" style="flex:1"><label for="tf-due-date">截止日期</label>' +
     '<input id="tf-due-date" type="date" value="' + toDateInput(due) + '" /></div>' +
@@ -1604,11 +1634,24 @@ function saveTask(mode, id){
   if (assigneeIds.some(function(x){ return allowed.indexOf(x) === -1; })){
     return showError("tf-error", "存在超出当前身份范围的负责人。");
   }
-  if (parentId && (!taskById(parentId) || visibleTasks(a).indexOf(taskById(parentId)) === -1)){
+  if (parentId && !taskById(parentId)){
+    return showError("tf-error", "上级任务不存在。");
+  }
+  /* 只有当前已建立且不可见的上级关系可以被保留；重新指定必须落在可见范围内 */
+  const isKeptExistingParent = !!(existing && existing.parentId === parentId);
+  if (parentId && !isKeptExistingParent && visibleTasks(a).indexOf(taskById(parentId)) === -1){
     return showError("tf-error", "上级任务不在当前可见范围内。");
+  }
+  if (parentId && existing && parentId === existing.id){
+    return showError("tf-error", "任务不能以自己作为上级任务。");
+  }
+  if (parentId && existing && taskById(parentId).parentId === existing.id){
+    return showError("tf-error", "任务不能以自己的一级子任务作为上级任务。");
   }
 
   if (mode === "edit"){
+    /* 提交处理同样复用编辑权限规则，而不只是隐藏入口 */
+    if (!canEditTask(a, existing)) return showError("tf-error", "只有任务创建者可以修改任务信息。");
     existing.title = title;
     existing.desc = desc;
     existing.due = due;
