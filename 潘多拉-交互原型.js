@@ -703,21 +703,23 @@ function dateOccurrences(list, date){
   return { shown: hits.slice(0, MONTH_OVERFLOW_KEEP), overflow: hits.slice(MONTH_OVERFLOW_KEEP) };
 }
 
-/* 一行七列里的展示条目：同一任务在相邻日期上合并为一段，被挤出/中断处自然分段 */
+/* 一行七列里的展示条目：同一任务在相邻日期上合并为一段，被挤出/中断处自然分段。
+   每段同时记录它在“起始列”当日的展示次序（跨度长→短、更紧急、截止更近，+N 最后），
+   使泳道分配既能全局按起始列进行，又能保持规范要求的纵向排列。 */
 function weekSegments(week, list){
   const byKey = {}, keyOrder = [];
   for (let i = 0; i < 7; i++){
     const date = addDays(week.start, i);
     const sel = dateOccurrences(list, date);
-    sel.shown.forEach(function(t){
+    sel.shown.forEach(function(t, rank){
       if (!byKey[t.id]){ byKey[t.id] = { type: "task", task: t, cols: [] }; keyOrder.push(t.id); }
-      byKey[t.id].cols.push(i);
+      byKey[t.id].cols.push({ col: i, rank: rank });
     });
     if (sel.overflow.length){
       const iso = isoDate(date);
       const key = "ov:" + iso;
       const gid = registerOverflow(fmtDate(date) + " 其余 " + sel.overflow.length + " 项", sel.overflow, iso);
-      byKey[key] = { type: "overflow", gid: gid, count: sel.overflow.length, cols: [i] };
+      byKey[key] = { type: "overflow", gid: gid, count: sel.overflow.length, cols: [{ col: i, rank: sel.shown.length }] };
       keyOrder.push(key);
     }
   }
@@ -726,24 +728,48 @@ function weekSegments(week, list){
     const g = byKey[key];
     g.cols.forEach(function(c){
       const last = segs.length ? segs[segs.length - 1] : null;
-      if (last && last.key === key && last.end === c - 1){ last.end = c; return; }
-      segs.push({ key: key, type: g.type, task: g.task, gid: g.gid, count: g.count, start: c, end: c, lane: 0 });
+      if (last && last.key === key && last.end === c.col - 1){ last.end = c.col; return; }
+      segs.push({ key: key, type: g.type, task: g.task, gid: g.gid, count: g.count,
+        start: c.col, end: c.col, order: c.rank, lane: 0 });
     });
   });
   return assignLanes(segs);
 }
 
-/* 贪心首适应分配泳道：每日最多 5 个条目，故至多用到 5 条泳道 */
+/* 逐列分配泳道，与分段的产出顺序无关：
+   先按起始列（同列按展示次序）整理，再自左向右逐列分配——延续到本列的段保留原泳道，
+   本列新起的段取当列最小空闲泳道。dateOccurrences 保证每个日期至多 MONTH_LANES 个
+   条目（四项任务 + 一个 +N），因此当列被占用的泳道必少于 MONTH_LANES，空闲泳道必然存在。
+   这里没有任何“强行塞进最后一条泳道”的兜底：万一容量模型被破坏，宁可跳过该段并报错，
+   也不让两个同日期的条目落在同一泳道。 */
 function assignLanes(segs){
-  const laneEnds = [];
-  segs.forEach(function(s){
-    let lane = 0;
-    while (lane < MONTH_LANES && laneEnds[lane] !== undefined && laneEnds[lane] >= s.start) lane++;
-    if (lane >= MONTH_LANES) lane = MONTH_LANES - 1;
-    laneEnds[lane] = s.end;
-    s.lane = lane;
+  const ordered = segs.slice().sort(function(x, y){
+    if (x.start !== y.start) return x.start - y.start;
+    const ox = typeof x.order === "number" ? x.order : 0;
+    const oy = typeof y.order === "number" ? y.order : 0;
+    if (ox !== oy) return ox - oy;
+    return x.key < y.key ? -1 : x.key > y.key ? 1 : 0;
   });
-  return segs;
+  for (let col = 0; col < 7; col++){
+    const used = {};
+    /* 早于本列开始、且仍覆盖本列的段已占用其泳道 */
+    ordered.forEach(function(s){
+      if (s.start < col && s.end >= col) used[s.lane] = true;
+    });
+    ordered.forEach(function(s){
+      if (s.start !== col) return;
+      let lane = 0;
+      while (used[lane]) lane++;
+      if (lane >= MONTH_LANES){
+        console.error("月视图泳道容量被突破，已跳过该段：", s.key, s.start, s.end);
+        s.lane = -1;   /* 不参与渲染，避免与同日期条目重叠 */
+        return;
+      }
+      used[lane] = true;
+      s.lane = lane;
+    });
+  }
+  return ordered;
 }
 
 /* 相邻月份日期用可见的月份文字与类名区分，不只依赖颜色或透明度弱化 */
