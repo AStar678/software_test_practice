@@ -86,8 +86,11 @@
   }
 
   .app-main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:12px 12px 16px;background:#fafbfd}
-  .page{display:none;flex-direction:column;gap:12px}
+  /* 导图激活时整页不滚动，滚动责任下放到各象限内容区 */
+  .app-main.is-map{display:flex;flex-direction:column;overflow:hidden}
+  .page{display:none;flex-direction:column;gap:12px;min-width:0}
   .page.is-active{display:flex}
+  .app-main.is-map .page.is-active{flex:1;min-height:0}
 
   /* ---------- tab bar ---------- */
   .tabbar{
@@ -147,59 +150,86 @@
   .kind{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:6px}
   .kind.own{background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe}
   .kind.assigned{background:#f0fdf4;color:#166534;border:1px dashed #86efac}
-  .task-item{border:1px solid var(--line);border-radius:10px;padding:8px 9px;background:#fff;display:flex;flex-direction:column;gap:5px;cursor:pointer;text-align:left;width:100%;min-width:0;overflow:hidden}
+  .task-item{border:1px solid var(--line);border-radius:10px;padding:8px 9px;background:#fff;display:flex;flex-direction:column;gap:5px;cursor:pointer;text-align:left;width:100%;min-width:0;flex:0 0 auto}
   .task-item:hover{border-color:#c9d3e5;background:#fcfdff}
   .task-item.is-own{border-left:4px solid #4338ca}
   .task-item.is-assigned{border-left:4px dashed #16a34a}
   .task-item .t-title{font-size:12.5px;font-weight:600;line-height:1.35;display:flex;gap:6px;align-items:flex-start}
   .task-item .t-title span{flex:1;min-width:0}
   .task-meta{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:11px;color:var(--muted)}
-  .task-item .t-note{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .task-item .t-note{font-size:11px;color:var(--muted);overflow-wrap:anywhere;white-space:normal}
   .is-overdue{color:var(--urgent);font-weight:600}
 
   /* ---------- 导图 2x2 ---------- */
   .map-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px}
+  .app-main.is-map .map-grid{flex:1;min-height:0;grid-template-rows:minmax(0,1fr) minmax(0,1fr)}
   .quad{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:9px;display:flex;flex-direction:column;min-height:0;min-width:0}
-  .quad .card-head{margin-bottom:6px}
-  .quad .card-head h2{font-size:12px;line-height:1.3}
-  .quad .card-head{flex-wrap:wrap;gap:4px}
-  .quad .card-head .hint{font-size:10.5px}
-  .quad .q-body{overflow-y:auto;max-height:250px;display:flex;flex-direction:column;gap:6px}
-  .item-line{border:1px solid var(--line-2);background:#fcfdff;border-radius:9px;padding:6px 8px;font-size:12px;display:flex;gap:6px;align-items:flex-start}
-  .item-line .idx{font-weight:700;color:var(--brand);font-size:11px;min-width:14px}
+  .quad .card-head{margin-bottom:6px;gap:4px 6px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}
+  .quad .card-head h2{font-size:12px;line-height:1.3;grid-column:1;min-width:0}
+  .quad .card-head .hint{font-size:10.5px;grid-column:2;text-align:right}
+  /* 有维护按钮的象限：标题独占一行，计数与按钮另起一行，避免标题被挤成一字一行 */
+  .quad .card-head.has-actions h2{grid-column:1 / -1}
+  .quad .card-head.has-actions .hint{grid-column:1;text-align:left}
+  .quad .card-head.has-actions .btn{grid-column:2;justify-self:end}
+  .quad .q-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:6px}
+  .quad .q-body > *{flex:0 0 auto}
+  .item-line{border:1px solid var(--line-2);background:#fcfdff;border-radius:9px;padding:6px 8px;font-size:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+  .item-main{display:flex;gap:6px;align-items:flex-start;min-width:0}
+  .item-line .idx{font-weight:700;color:var(--brand);font-size:11px;min-width:14px;flex:0 0 auto}
   .item-line .txt{flex:1;min-width:0;overflow-wrap:anywhere}
+  .item-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
   .log-line{border-left:3px solid var(--line);padding:2px 0 2px 8px;font-size:12px;cursor:pointer;text-align:left;background:none;border-top:0;border-right:0;border-bottom:0;width:100%}
   .log-line:hover{border-left-color:var(--brand);background:#fcfdff}
   .log-line .lt{font-size:10.5px;color:var(--muted);display:block}
   .log-line .lc{display:block;word-break:break-word}
 
-  /* ---------- 视图 ---------- */
-  .segmented{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:var(--grey-soft);border-radius:10px;padding:3px}
-  .segmented button{border:0;background:none;padding:6px 0;border-radius:8px;cursor:pointer;font-size:12.5px;color:var(--ink-2)}
-  .segmented button[aria-pressed="true"]{background:#fff;font-weight:700;color:var(--brand);box-shadow:0 1px 3px rgba(15,23,42,.12)}
+  /* ---------- 视图：响应式类甘特（无横向滚动） ---------- */
   .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--muted);align-items:center}
-  .tl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
-  .tl-monthwrap{min-width:734px}
-  .tl-month{display:grid;grid-template-columns:repeat(7,104px);gap:1px;background:var(--line-2)}
-  .tl-cell{background:#fff;min-height:74px;padding:4px;display:flex;flex-direction:column;gap:3px}
-  .tl-cell.head{min-height:auto;background:#f7f9fc}
-  .tl-cell .dnum{font-size:11px;font-weight:700;color:var(--ink-2);display:flex;gap:4px;align-items:center}
-  .tl-cell.is-today{background:#f5f8ff}
-  .tl-cell.is-today .dnum{color:var(--brand)}
-  .tl-cell.is-out{background:#fbfbfd;color:#c3c8d2}
-  .tl-week{display:grid;grid-auto-flow:column;grid-auto-columns:104px;min-width:100%}
-  .tl-col{border-right:1px solid var(--line-2);padding:5px;display:flex;flex-direction:column;gap:4px}
-  .tl-col:last-child{border-right:0}
-  .tl-col .chead{font-size:11px;font-weight:700;color:var(--ink-2);background:#fff;padding-bottom:3px;border-bottom:1px solid var(--line-2)}
-  .tl-slot{border-top:1px dashed var(--line);padding-top:3px;display:flex;flex-direction:column;gap:3px}
-  .tl-slot .stime{font-size:10px;color:var(--muted)}
-  .chip{border:1px solid var(--line);border-radius:7px;padding:3px 5px;font-size:11px;background:#fff;display:flex;flex-direction:column;gap:2px;cursor:pointer;text-align:left;width:100%}
-  .chip:hover{background:#f7f9ff;border-color:#c9d3e5}
-  .chip.is-own{border-left:3px solid #4338ca}
-  .chip.is-assigned{border-left:3px dashed #16a34a}
-  .chip .ct{font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-  .chip .cm{font-size:10px;color:var(--muted);display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-  .plusn{border:1px dashed var(--brand);background:var(--brand-soft);color:var(--brand);border-radius:7px;padding:2px 6px;font-size:11px;font-weight:700;cursor:pointer}
+  .view-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .gantt{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden;min-width:0;max-width:100%}
+  .g-head{display:flex;align-items:stretch;background:#f7f9fc;border-bottom:1px solid var(--line-2)}
+  .g-gutter{width:44px;flex:0 0 44px;border-right:1px solid var(--line-2);font-size:10px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+  .g-axis{flex:1;min-width:0;display:grid;grid-template-columns:repeat(var(--cols,7),minmax(0,1fr))}
+  .g-axis > span{font-size:10.5px;font-weight:700;color:var(--ink-2);text-align:center;padding:5px 1px;border-right:1px solid var(--line-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .g-axis > span:last-child{border-right:0}
+  .g-axis > span.is-today{color:var(--brand);background:#eef4ff}
+  /* 周视图：星期与日期分两行，避免窄屏被省略 */
+  .g-axis > span.stack{display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.2;padding:4px 1px;white-space:normal;overflow:visible}
+  .g-axis > span.stack i{font-style:normal;font-size:9.5px;font-weight:400;color:var(--muted)}
+  .g-axis > span.stack.is-today i{color:var(--brand)}
+  .g-weeks{display:flex;flex-direction:column}
+  .g-week{display:flex;align-items:stretch;border-bottom:1px solid var(--line-2)}
+  .g-week:last-child{border-bottom:0}
+  .g-weeklabel{width:44px;flex:0 0 44px;border-right:1px solid var(--line-2);padding:5px 2px;font-size:9.5px;line-height:1.3;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;gap:1px}
+  .g-row,.g-body{position:relative;flex:1;min-width:0;padding:4px 0;min-height:32px}
+  .g-grid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(var(--cols,7),minmax(0,1fr));pointer-events:none}
+  .g-grid > i{border-right:1px solid var(--line-2)}
+  .g-grid > i:last-child{border-right:0}
+  .g-grid > i.is-today{background:#f5f8ff}
+  .g-drill{position:absolute;inset:0;z-index:0;display:grid;grid-template-columns:repeat(var(--cols,7),minmax(0,1fr))}
+  .g-drill > button{border:0;background:transparent;padding:0;cursor:pointer;min-width:0}
+  .g-drill > button:hover{background:#f5f8ff}
+  .g-drill-one{position:absolute;inset:0;z-index:0;border:0;background:transparent;padding:0;cursor:pointer;width:100%}
+  .g-drill-one:hover{background:#f8faff}
+  .g-lanes{position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;padding:0 3px;pointer-events:none;min-height:24px}
+  .g-lane{position:relative;height:24px}
+  .g-lane.is-expand{height:auto;min-height:22px;display:flex}
+  .bar{position:absolute;top:0;bottom:0;display:block;min-width:0;border:0;background:transparent;padding:0;margin:0;text-align:left;cursor:pointer;pointer-events:auto;overflow:hidden;border-radius:5px}
+  .bar:hover{background:#f6f8ff}
+  .bar-dur{position:absolute;top:2px;bottom:2px;min-width:3px;border-radius:4px;background:rgba(107,114,128,.16);border-top:3px solid #9ca3af}
+  .bar.is-own .bar-dur{background:rgba(67,56,202,.15);border-top:3px solid #4338ca}
+  .bar.is-assigned .bar-dur{background:rgba(22,163,74,.16);border-top:3px dashed #16a34a}
+  .bar-dur.is-clip-start{border-left:3px dotted var(--ink-2)}
+  .bar-dur.is-clip-end{border-right:3px dotted var(--ink-2)}
+  .bar-text{position:absolute;top:0;bottom:0;display:flex;align-items:center;gap:4px;padding:0 4px;min-width:0;pointer-events:none}
+  .bar-t{font-size:10.5px;font-weight:700;line-height:1.25;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
+  .bar-d{font-size:9.5px;line-height:1.25;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 0;min-width:0}
+  .bar .kind{font-size:9.5px;padding:0 4px;flex:0 0 auto}
+  .plusn{border:1px dashed var(--brand);background:var(--brand-soft);color:var(--brand);border-radius:7px;padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer;pointer-events:auto;align-self:flex-start}
+  .picker{margin-top:8px;border:1px solid var(--line);border-radius:10px;padding:8px;background:#fcfdff}
+  .picker-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
+  .picker-grid button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 0;font-size:12px;cursor:pointer}
+  .picker-grid button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
 
   /* ---------- log page ---------- */
   .log-card{border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff;display:flex;flex-direction:column;gap:6px}
@@ -207,6 +237,12 @@
   .log-card .who{font-weight:700;color:var(--ink-2);font-size:12px}
   .log-card p{margin:0;font-size:12.5px;word-break:break-word}
   .log-link{align-self:flex-start}
+  .filter-group{display:flex;flex-wrap:wrap;gap:6px}
+  .filter-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;font-size:12px;cursor:pointer;color:var(--ink-2);min-width:0}
+  .filter-chip:hover{background:var(--line-2)}
+  .filter-chip[aria-checked="true"]{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
+  .filter-chip .cnt{font-size:10.5px;background:var(--grey-soft);color:var(--muted);border-radius:999px;padding:0 6px;font-weight:700}
+  .filter-chip[aria-checked="true"] .cnt{background:rgba(255,255,255,.28);color:#fff}
 
   .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .action-grid .btn{width:100%;min-width:0;display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 8px;font-size:12.5px;white-space:normal;text-align:center}
@@ -245,6 +281,16 @@
   .sheet-foot .btn{flex:1;min-width:0;padding:10px;text-align:center;justify-content:center;white-space:normal}
   .icon-close{border:1px solid var(--line);background:#fff;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;cursor:pointer;flex:0 0 auto;line-height:1}
   .icon-close:hover{background:var(--line-2)}
+
+  /* ---------- 回到日志顶部 ---------- */
+  .to-top{
+    position:absolute;right:14px;bottom:78px;width:42px;height:42px;border-radius:50%;
+    border:1px solid var(--line);background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.2);
+    display:grid;place-items:center;cursor:pointer;z-index:30;
+  }
+  .to-top[hidden]{display:none}
+  .to-top:hover{background:var(--line-2)}
+  .to-top svg{width:20px;height:20px;stroke:var(--ink-2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
   .field{display:flex;flex-direction:column;gap:4px}
   .field > label{font-size:11.5px;font-weight:600;color:var(--ink-2)}
@@ -323,6 +369,10 @@
         <section class="page" id="page-ai" aria-labelledby="pageTitle"></section>
         <section class="page" id="page-me" aria-labelledby="pageTitle"></section>
       </main>
+
+      <button class="to-top" id="toTopBtn" type="button" aria-label="回到日志顶部" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      </button>
 
       <nav class="tabbar" id="tabbar" role="tablist" aria-label="主导航">
         <button type="button" role="tab" data-page="map" aria-selected="true" aria-controls="page-map">
@@ -598,7 +648,9 @@ const state = {
   actorId: ROLE_ACCOUNT.upper,
   page: "map",
   viewMode: "month",      // month | week | day
-  viewAnchor: startOfDay(BASE_DAY)
+  viewAnchor: startOfDay(BASE_DAY),
+  pickerOpen: false,      // 月视图年月选择面板
+  logFilter: "logs"       // 日志页单选内容筛选
 };
 
 /* =====================================================================
@@ -805,12 +857,19 @@ function renderMap(){
     .sort(function(x, y){ return y.time.getTime() - x.time.getTime(); });
   const personalEdited = ensurePersonal(a.id).edited;
   const canEditCompany = a.role === "upper";
+  const companyAtLimit = COMPANY_ITEMS.length >= 10;
+  const personalAtLimit = personal.length >= 10;
 
   function companyBody(){
     if (!COMPANY_ITEMS.length) return '<div class="empty">暂无公司信息</div>';
     return COMPANY_ITEMS.map(function(it, i){
-      return '<div class="item-line"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span>" +
-        (canEditCompany ? '<button type="button" class="btn ghost tiny-btn" data-edit-company="' + it.id + '" aria-label="编辑公司信息第' + (i + 1) + '条">编辑</button>' : "") +
+      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span></div>" +
+        (canEditCompany
+          ? '<div class="item-actions">' +
+              '<button type="button" class="btn ghost tiny-btn" data-edit-company="' + it.id + '" aria-label="编辑公司信息第' + (i + 1) + '条">编辑</button>' +
+              '<button type="button" class="btn ghost tiny-btn" data-delete-company="' + it.id + '" aria-label="删除公司信息第' + (i + 1) + '条">删除</button>' +
+            "</div>"
+          : "") +
         "</div>";
     }).join("");
   }
@@ -821,9 +880,11 @@ function renderMap(){
   function personalBody(){
     if (!personal.length) return '<div class="empty">暂无个人信息，可手动添加</div>';
     return personal.map(function(it, i){
-      return '<div class="item-line"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span>" +
-        '<button type="button" class="btn ghost tiny-btn" data-edit-personal="' + it.id + '" aria-label="编辑个人信息第' + (i + 1) + '条">编辑</button>' +
-        "</div>";
+      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span></div>" +
+        '<div class="item-actions">' +
+          '<button type="button" class="btn ghost tiny-btn" data-edit-personal="' + it.id + '" aria-label="编辑个人信息第' + (i + 1) + '条">编辑</button>' +
+          '<button type="button" class="btn ghost tiny-btn" data-delete-personal="' + it.id + '" aria-label="删除个人信息第' + (i + 1) + '条">删除</button>' +
+        "</div></div>";
     }).join("");
   }
   function logsBody(){
@@ -840,7 +901,10 @@ function renderMap(){
   el.innerHTML =
     '<div class="map-grid">' +
       '<section class="quad" aria-labelledby="q1">' +
-        '<div class="card-head"><h2 id="q1">公司统一信息</h2><span class="hint">上限 10 条</span></div>' +
+        '<div class="card-head' + (canEditCompany ? " has-actions" : "") + '"><h2 id="q1">公司统一信息</h2><span class="hint">' + COMPANY_ITEMS.length + "/10" +
+          (canEditCompany && companyAtLimit ? " · 已达上限" : "") + "</span>" +
+          (canEditCompany ? '<button type="button" class="btn tiny-btn" data-action="new-company"' + (companyAtLimit ? " disabled" : "") + ' aria-label="新增公司信息">新增</button>' : "") +
+        "</div>" +
         '<div class="q-body">' + companyBody() + "</div>" +
       "</section>" +
       '<section class="quad" aria-labelledby="q2">' +
@@ -848,162 +912,283 @@ function renderMap(){
         '<div class="q-body">' + assignedBody() + "</div>" +
       "</section>" +
       '<section class="quad" aria-labelledby="q3">' +
-        '<div class="card-head"><h2 id="q3">个人信息</h2><span class="hint">' + (personalEdited ? "已编辑" : "来自日志") + "</span></div>" +
+        '<div class="card-head has-actions"><h2 id="q3">个人信息</h2><span class="hint">' + personal.length + "/10 · " +
+          (personalEdited ? "已编辑" : "来自日志") + (personalAtLimit ? " · 已达上限" : "") + "</span>" +
+          '<button type="button" class="btn tiny-btn" data-action="new-personal"' + (personalAtLimit ? " disabled" : "") + ' aria-label="新增个人信息">新增</button>' +
+        "</div>" +
         '<div class="q-body">' + personalBody() + "</div>" +
       "</section>" +
       '<section class="quad" aria-labelledby="q4">' +
         '<div class="card-head"><h2 id="q4">今天与昨天日志</h2><span class="hint">时间倒序</span></div>' +
         '<div class="q-body">' + logsBody() + "</div>" +
       "</section>" +
-    "</div>" +
-    '<div class="card"><div class="card-head"><h2>说明</h2></div>' +
-      '<p class="tiny muted" style="margin:0">左上是公司统一信息（上层维护）；右上是被派发给本人且尚未完成的任务；左下是可由本人编辑的个人信息，默认由本人日志生成；右下是原始日志，按时间倒序展示，不与个人信息互相改写。</p>' +
     "</div>";
 }
 
-/* ============================== 页面：视图 ============================== */
+/* ============================== 页面：视图（响应式类甘特） ============================== */
 const WEEK_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 const overflowGroups = {};
+/* 视口高度策略：同一展示位置（周行 / 泳道列）最多显示的泳道数，其余聚合为 +N */
+const LANE_CAPACITY = { month: 3, week: 4, day: 6 };
 
 function registerOverflow(title, tasks){
   const id = "ov" + (Object.keys(overflowGroups).length + 1) + "-" + Math.random().toString(36).slice(2, 6);
   overflowGroups[id] = { title: title, ids: tasks.map(function(t){ return t.id; }) };
   return id;
 }
-function chipHTML(t, a){
+
+/* ---- 视图专用时间范围、截断、几何与排序逻辑 ---- */
+function fx(n){ return Math.round(n * 1000) / 1000; }
+function isoDate(d){ return toDateInput(d); }
+function parseISO(s){
+  const p = String(s).split("-").map(Number);
+  return new Date(p[0], p[1] - 1, p[2], 0, 0, 0, 0);
+}
+function addDays(d, n){ return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 0, 0, 0, 0); }
+function spanOf(t){ return t.due.getTime() - t.start.getTime(); }
+
+/* 排序：时间跨度降序 → 紧急程度降序 → 截止日期升序 → id 稳定 */
+function viewSortTasks(list){
+  return list.slice().sort(function(x, y){
+    const sx = spanOf(x), sy = spanOf(y);
+    if (sx !== sy) return sy - sx;
+    const ux = URGENCY_ORDER[x.urgency], uy = URGENCY_ORDER[y.urgency];
+    if (ux !== uy) return ux - uy;
+    const dx = x.due.getTime(), dy = y.due.getTime();
+    if (dx !== dy) return dx - dy;
+    return x.id < y.id ? -1 : x.id > y.id ? 1 : 0;
+  });
+}
+/* 视图范围：月 = 自然月，周 = 周一到下周一，日 = 当日 00:00 到次日 00:00 */
+function viewRange(mode, anchor){
+  if (mode === "month"){
+    const y = anchor.getFullYear(), m = anchor.getMonth();
+    return { start: new Date(y, m, 1, 0, 0, 0, 0), end: new Date(y, m + 1, 1, 0, 0, 0, 0) };
+  }
+  if (mode === "week"){
+    const off = (anchor.getDay() + 6) % 7;
+    const start = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() - off, 0, 0, 0, 0);
+    return { start: start, end: addDays(start, 7) };
+  }
+  const d = startOfDay(anchor);
+  return { start: d, end: addDays(d, 1) };
+}
+/* 仅保留与范围有真实交集（> 边界）的任务 */
+function tasksInRange(list, range){
+  return list.filter(function(t){
+    return t.due.getTime() > range.start.getTime() && t.start.getTime() < range.end.getTime();
+  });
+}
+/* 截断到范围并换算为 0-100 的百分比几何 */
+function pctGeometry(t, range){
+  const rs = range.start.getTime(), re = range.end.getTime();
+  const s = Math.max(t.start.getTime(), rs), e = Math.min(t.due.getTime(), re);
+  const span = re - rs;
+  return { left: (s - rs) / span * 100, width: Math.max(0, (e - s) / span * 100) };
+}
+/* 条形按钮的可点击盒、时长色带与文本起点：色带严格等于时间跨度 */
+function barGeom(left, width){
+  const s = Math.max(0, Math.min(100, left));
+  const e = Math.max(s, Math.min(100, left + width));
+  let box, dur, text;
+  if (s <= 50){
+    const span = 100 - s;
+    box = "left:" + fx(s) + "%;right:0;";
+    dur = "left:0;width:" + fx(span > 0 ? (e - s) / span * 100 : 0) + "%;";
+    text = "left:" + fx(s) + "%;right:2px;justify-content:flex-start;";
+  } else {
+    const span = e;
+    box = "left:0;width:" + fx(e) + "%;";
+    dur = "left:" + fx(span > 0 ? s / span * 100 : 0) + "%;width:" + fx(span > 0 ? (e - s) / span * 100 : 0) + "%;";
+    /* 右半段的条：文本靠右对齐到条尾，保持“文本 → 条”的阅读方向 */
+    text = "left:0;right:" + fx(100 - e) + "%;justify-content:flex-end;";
+  }
+  return { box: box, dur: dur, text: text };
+}
+function taskAriaLabel(t, a){
+  return t.title + "，" + KIND_LABEL[taskKind(t, a)] + "，" + STATUS_LABEL[effectiveStatus(t)] +
+    "，紧急程度" + t.urgency + "，起 " + fmtDateTime(t.start) + " 止 " + fmtDateTime(t.due) +
+    "，进度 " + effectiveProgress(t) + "%" + (t.desc ? "，说明：" + t.desc : "");
+}
+function barHTML(t, a, range){
   const k = taskKind(t, a);
   const cls = k === "own" ? "is-own" : k === "assigned" ? "is-assigned" : "";
-  return '<button type="button" class="chip ' + cls + '" data-task="' + t.id + '">' +
-      '<span class="ct">' + esc(t.title) + "</span>" +
-      '<span class="cm">' + kindTag(t, a) + urgencyBadge(t.urgency) +
-        '<span>' + esc(fmtTime(t.due)) + "</span></span>" +
-    "</button>";
+  const geo = pctGeometry(t, range);
+  const box = barGeom(geo.left, geo.width);
+  const clip = (t.start.getTime() < range.start.getTime() ? " is-clip-start" : "") +
+    (t.due.getTime() > range.end.getTime() ? " is-clip-end" : "");
+  return '<div class="g-lane">' +
+      '<button type="button" class="bar ' + cls + '" style="' + box.box + '" data-task="' + t.id + '" ' +
+        'aria-label="' + esc(taskAriaLabel(t, a)) + '">' +
+        '<i class="bar-dur' + clip + '" aria-hidden="true" style="' + box.dur + '"></i>' +
+        '<span class="bar-text" style="' + box.text + '">' + kindTag(t, a) +
+          '<span class="bar-t">' + esc(t.title) + "</span>" +
+          (t.desc ? '<span class="bar-d">' + esc(t.desc) + "</span>" : "") +
+        "</span>" +
+      "</button></div>";
 }
-const CELL_CAPACITY = 2;
-function cellHTML(tasks, a, label, title){
-  const shown = tasks.slice(0, CELL_CAPACITY);
-  const hidden = tasks.slice(CELL_CAPACITY);
-  let html = shown.map(function(t){ return chipHTML(t, a); }).join("");
-  if (hidden.length){
-    const gid = registerOverflow(title + " 其余 " + hidden.length + " 项", hidden);
-    html += '<button type="button" class="plusn" data-overflow="' + gid + '" aria-label="' +
-      esc(title + "还有 " + hidden.length + " 项，点击查看") + '">+' + hidden.length + "</button>";
+function lanesHTML(tasks, a, range, title){
+  const cap = LANE_CAPACITY[state.viewMode];
+  const shown = tasks.slice(0, cap), rest = tasks.slice(cap);
+  let html = shown.map(function(t){ return barHTML(t, a, range); }).join("");
+  if (rest.length){
+    const gid = registerOverflow(title + " 其余 " + rest.length + " 项", rest);
+    html += '<div class="g-lane is-expand"><button type="button" class="plusn" data-overflow="' + gid +
+      '" aria-label="' + esc(title + "还有 " + rest.length + " 项任务，点击查看") + '">+' + rest.length + "</button></div>";
   }
-  if (!tasks.length) html = '<span class="tiny muted">' + esc(label) + "</span>";
+  if (!tasks.length) html = '<div class="g-lane is-expand"><span class="tiny muted">无任务</span></div>';
   return html;
 }
-function viewTasks(a){
-  return sortTasks(visibleTasks(a).filter(function(t){ return t.status !== "rejected"; }));
+function monthWeeks(range){
+  const y = range.start.getFullYear(), m = range.start.getMonth();
+  const off = (new Date(y, m, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const firstMonday = new Date(y, m, 1 - off);
+  const weeks = [];
+  const count = Math.ceil((off + daysInMonth) / 7);
+  for (let i = 0; i < count; i++){
+    const s = addDays(firstMonday, i * 7);
+    weeks.push({ start: s, end: addDays(s, 7) });
+  }
+  return weeks;
 }
-function tasksOnDay(list, d){
-  return list.filter(function(t){ return sameDay(t.due, d); });
+
+/* ---- 月视图：按自然周分行，全宽七天横轴，点击周行空白进入周视图 ---- */
+function monthGanttHTML(list, a){
+  const range = viewRange("month", state.viewAnchor);
+  const scoped = tasksInRange(list, range);
+  let rows = "";
+  monthWeeks(range).forEach(function(w){
+    const rowTasks = viewSortTasks(tasksInRange(scoped, w));
+    let grid = "";
+    for (let i = 0; i < 7; i++){
+      const d = addDays(w.start, i);
+      grid += '<i class="' + (sameDay(d, BASE_DAY) ? "is-today" : "") + '"></i>';
+    }
+    const wEnd = addDays(w.start, 6);
+    rows += '<div class="g-week">' +
+      '<div class="g-weeklabel"><span>' + (w.start.getMonth() + 1) + "/" + w.start.getDate() + "</span><span>– " +
+        (wEnd.getMonth() + 1) + "/" + wEnd.getDate() + "</span></div>" +
+      '<div class="g-row" style="--cols:7">' +
+        '<div class="g-grid">' + grid + "</div>" +
+        '<button type="button" class="g-drill-one" data-drill-week="' + isoDate(w.start) +
+          '" aria-label="' + esc("进入 " + fmtDate(w.start) + " - " + fmtDate(wEnd) + " 的周视图") + '"></button>' +
+        '<div class="g-lanes">' + lanesHTML(rowTasks, a, w, fmtDate(w.start) + " 当周") + "</div>" +
+      "</div></div>";
+  });
+  const head = '<div class="g-head"><span class="g-gutter">周</span>' +
+    '<div class="g-axis" style="--cols:7">' +
+      WEEK_NAMES.map(function(n){ return "<span>" + n + "</span>"; }).join("") + "</div></div>";
+  return '<div class="gantt">' + head + '<div class="g-weeks">' + rows + "</div></div>";
+}
+
+/* ---- 周视图：七天横轴，精确到时刻，点击日期空白进入日视图 ---- */
+function weekGanttHTML(list, a){
+  const range = viewRange("week", state.viewAnchor);
+  const tasks = viewSortTasks(tasksInRange(list, range));
+  let axis = "", grid = "", drills = "";
+  for (let i = 0; i < 7; i++){
+    const d = addDays(range.start, i);
+    const today = sameDay(d, BASE_DAY);
+    axis += '<span class="stack' + (today ? " is-today" : "") + '"><b>' + WEEK_NAMES[i] + "</b><i>" +
+      (d.getMonth() + 1) + "/" + d.getDate() + "</i></span>";
+    grid += '<i class="' + (today ? "is-today" : "") + '"></i>';
+    drills += '<button type="button" data-drill-day="' + isoDate(d) + '" aria-label="' +
+      esc("进入 " + fmtDate(d) + " 的日视图") + '"></button>';
+  }
+  return '<div class="gantt">' +
+    '<div class="g-head"><div class="g-axis" style="--cols:7">' + axis + "</div></div>" +
+    '<div class="g-body" style="--cols:7">' +
+      '<div class="g-grid">' + grid + "</div>" +
+      '<div class="g-drill">' + drills + "</div>" +
+      '<div class="g-lanes">' + lanesHTML(tasks, a, range, fmtDate(range.start) + " 当周") + "</div>" +
+    "</div></div>";
+}
+
+/* ---- 日视图：24 小时横轴，主刻度每 3 小时 ---- */
+function dayGanttHTML(list, a){
+  const range = viewRange("day", state.viewAnchor);
+  const tasks = viewSortTasks(tasksInRange(list, range));
+  let axis = "", grid = "";
+  for (let i = 0; i < 8; i++){
+    axis += "<span>" + pad2(i * 3) + ":00</span>";
+    grid += "<i></i>";
+  }
+  return '<div class="gantt">' +
+    '<div class="g-head"><div class="g-axis" style="--cols:8">' + axis + "</div></div>" +
+    '<div class="g-body" style="--cols:8">' +
+      '<div class="g-grid">' + grid + "</div>" +
+      '<div class="g-lanes">' + lanesHTML(tasks, a, range, fmtDate(range.start) + " 全天") + "</div>" +
+    "</div></div>";
+}
+
+/* ---- 年月选择面板（月视图）与前后 / 返回操作（周、日视图） ---- */
+function pickerHTML(){
+  const y = state.viewAnchor.getFullYear(), m = state.viewAnchor.getMonth();
+  let grid = "";
+  for (let i = 0; i < 12; i++){
+    grid += '<button type="button" data-action="pick-month" data-month="' + i +
+      '" aria-pressed="' + (i === m) + '" aria-label="' + (y + "年" + (i + 1) + "月") + '">' + (i + 1) + "月</button>";
+  }
+  return '<div class="picker"><div class="row">' +
+      '<button type="button" class="btn tiny-btn" data-action="pick-year" data-delta="-1" aria-label="上一年">‹ 上一年</button>' +
+      '<strong class="small" style="flex:1;text-align:center">' + y + " 年</strong>" +
+      '<button type="button" class="btn tiny-btn" data-action="pick-year" data-delta="1" aria-label="下一年">下一年 ›</button>' +
+    '</div><div class="picker-grid">' + grid + "</div></div>";
+}
+function viewToolbarHTML(){
+  if (state.viewMode === "month"){
+    const y = state.viewAnchor.getFullYear(), m = state.viewAnchor.getMonth();
+    return '<div class="view-toolbar">' +
+      '<button type="button" class="btn tiny-btn" data-action="toggle-month-picker" aria-expanded="' +
+        String(state.pickerOpen) + '">选择年月（' + y + "年" + (m + 1) + "月）</button></div>" +
+      (state.pickerOpen ? pickerHTML() : "");
+  }
+  if (state.viewMode === "week"){
+    return '<div class="view-toolbar">' +
+      '<button type="button" class="btn tiny-btn" data-action="view-prev">上一周</button>' +
+      '<button type="button" class="btn tiny-btn" data-action="view-next">下一周</button>' +
+      '<button type="button" class="btn tiny-btn" data-action="view-up">返回月视图</button></div>';
+  }
+  return '<div class="view-toolbar">' +
+    '<button type="button" class="btn tiny-btn" data-action="view-prev">前一天</button>' +
+    '<button type="button" class="btn tiny-btn" data-action="view-next">后一天</button>' +
+    '<button type="button" class="btn tiny-btn" data-action="view-up">返回周视图</button></div>';
+}
+
+function viewTasks(a){
+  return visibleTasks(a).filter(function(t){ return t.status !== "rejected"; });
 }
 function renderView(){
   const a = actor();
   const el = document.getElementById("page-view");
   const list = viewTasks(a);
-  const anchor = state.viewAnchor;
-  let body = "";
-  let rangeLabel = "";
-
-  if (state.viewMode === "month"){
-    const y = anchor.getFullYear(), m = anchor.getMonth();
-    const first = new Date(y, m, 1);
-    const offset = (first.getDay() + 6) % 7;
-    const daysInMonth = new Date(y, m + 1, 0).getDate();
-    const start = new Date(y, m, 1 - offset);
-    const total = Math.ceil((offset + daysInMonth) / 7) * 7;
-    rangeLabel = y + "年" + (m + 1) + "月（精确到天）";
-    let cells = "";
-    for (let i = 0; i < total; i++){
-      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-      const dayTasks = tasksOnDay(list, d);
-      const isOut = d.getMonth() !== m;
-      cells += '<div class="tl-cell' + (sameDay(d, BASE_DAY) ? " is-today" : "") + (isOut ? " is-out" : "") + '">' +
-        '<div class="dnum">' + d.getDate() + (sameDay(d, BASE_DAY) ? '<span class="tiny">今天</span>' : "") +
-          (dayTasks.length ? '<span class="tiny muted">' + dayTasks.length + "项</span>" : "") + "</div>" +
-        cellHTML(dayTasks, a, "无任务", fmtDate(d)) +
-      "</div>";
-    }
-    body = '<div class="tl"><div class="tl-monthwrap">' +
-      '<div class="tl-month">' +
-        WEEK_NAMES.map(function(w){ return '<div class="tl-cell head"><div class="dnum">' + w + "</div></div>"; }).join("") +
-      "</div>" +
-      '<div class="tl-month">' + cells + "</div></div></div>";
-  } else if (state.viewMode === "week"){
-    const offset = (anchor.getDay() + 6) % 7;
-    const monday = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() - offset);
-    rangeLabel = fmtDate(monday) + " - " + fmtDate(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)) + "（精确到时刻）";
-    let cols = "";
-    for (let i = 0; i < 7; i++){
-      const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
-      const dayTasks = tasksOnDay(list, d);
-      const hours = [];
-      dayTasks.forEach(function(t){ if (hours.indexOf(t.due.getHours()) === -1) hours.push(t.due.getHours()); });
-      hours.sort(function(x, y){ return x - y; });
-      const slots = hours.map(function(h){
-        const inHour = dayTasks.filter(function(t){ return t.due.getHours() === h; });
-        return '<div class="tl-slot"><span class="stime">' + pad2(h) + ":00</span>" +
-          cellHTML(inHour, a, "—", fmtDate(d) + " " + pad2(h) + ":00") + "</div>";
-      }).join("");
-      cols += '<div class="tl-col"><div class="chead">' + WEEK_NAMES[i] + " " + (d.getMonth() + 1) + "/" + d.getDate() +
-        (sameDay(d, BASE_DAY) ? " · 今天" : "") + '<span class="tiny muted"> ' + dayTasks.length + "项</span></div>" +
-        (dayTasks.length ? slots : '<span class="tiny muted">无任务</span>') + "</div>";
-    }
-    body = '<div class="tl"><div class="tl-week">' + cols + "</div></div>";
+  const mode = state.viewMode;
+  const range = viewRange(mode, state.viewAnchor);
+  let body, rangeLabel;
+  if (mode === "month"){
+    body = monthGanttHTML(list, a);
+    rangeLabel = state.viewAnchor.getFullYear() + "年" + (state.viewAnchor.getMonth() + 1) + "月（精确到日期）";
+  } else if (mode === "week"){
+    body = weekGanttHTML(list, a);
+    rangeLabel = fmtDate(range.start) + " - " + fmtDate(addDays(range.end, -1)) + "（精确到时刻）";
   } else {
-    const d = anchor;
-    rangeLabel = fmtDate(d) + " " + WEEK_NAMES[(d.getDay() + 6) % 7] + "（精确到时刻）";
-    const dayTasks = tasksOnDay(list, d);
-    const hours = [];
-    for (let h = 8; h <= 21; h++) hours.push(h);
-    dayTasks.forEach(function(t){ if (hours.indexOf(t.due.getHours()) === -1) hours.push(t.due.getHours()); });
-    hours.sort(function(x, y){ return x - y; });
-    let cols = "";
-    hours.forEach(function(h){
-      const inHour = dayTasks.filter(function(t){ return t.due.getHours() === h; });
-      cols += '<div class="tl-col"><div class="chead">' + pad2(h) + ":00</div>" +
-        (inHour.length ? cellHTML(inHour, a, "—", fmtDate(d) + " " + pad2(h) + ":00") : '<span class="tiny muted">—</span>') +
-      "</div>";
-    });
-    body = '<div class="tl"><div class="tl-week">' + cols + "</div></div>";
+    body = dayGanttHTML(list, a);
+    rangeLabel = fmtDate(range.start) + " " + WEEK_NAMES[(range.start.getDay() + 6) % 7] + "（精确到时刻）";
   }
-
   const ownCount = list.filter(function(t){ return taskKind(t, a) === "own"; }).length;
   const assignedCount = list.filter(function(t){ return taskKind(t, a) === "assigned"; }).length;
 
   el.innerHTML =
-    '<div class="segmented" role="group" aria-label="视图粒度">' +
-      ["month", "week", "day"].map(function(m){
-        const label = m === "month" ? "月" : m === "week" ? "周" : "日";
-        return '<button type="button" data-view="' + m + '" aria-pressed="' + (state.viewMode === m) + '">' + label + "</button>";
-      }).join("") +
-    "</div>" +
-    '<div class="card"><div class="row wrap"><strong class="small">' + esc(rangeLabel) + "</strong>" +
+    '<section class="card"><div class="row wrap"><strong class="small">' + esc(rangeLabel) + "</strong>" +
       '<span class="spacer"></span><span class="tiny muted">' + ownCount + " 项我负责 · " + assignedCount + " 项我派发</span></div>" +
       '<div class="legend" style="margin-top:6px">' +
-        '<span><span class="kind own">我负责</span> 左侧实线</span>' +
-        '<span><span class="kind assigned">我派发</span> 左侧虚线</span>' +
-        '<span>排列：紧急优先，其次截止更近</span>' +
+        '<span><span class="kind own">我负责</span> 实线</span>' +
+        '<span><span class="kind assigned">我派发</span> 虚线</span>' +
+        "<span>排列：跨度长→短，其次更紧急，最后截止更近</span>" +
       "</div>" +
-    "</div>" + body +
-    '<div class="card"><div class="card-head"><h2>本范围内任务</h2><span class="hint">' + list.length + " 项</span></div>" +
-      '<div class="stack">' + (list.length ? list.map(function(t){ return taskItemHTML(t, a); }).join("") : '<div class="empty">暂无任务</div>') + "</div>" +
-    "</div>";
-
-  /* 时间轴可横向滚动，默认滚到第一个有内容的时刻/今天，避免一屏空白 */
-  const tlEl = el.querySelector(".tl");
-  if (tlEl){
-    const anchorEl = state.viewMode === "month"
-      ? tlEl.querySelector(".tl-cell.is-today")
-      : Array.prototype.slice.call(tlEl.querySelectorAll(".tl-col"))
-          .filter(function(c){ return c.querySelector(".chip, .plusn"); })[0];
-    if (anchorEl){
-      const tlRect = tlEl.getBoundingClientRect();
-      const aRect = anchorEl.getBoundingClientRect();
-      tlEl.scrollLeft = Math.max(0, tlEl.scrollLeft + (aRect.left - tlRect.left) - 6);
-    }
-  }
+      viewToolbarHTML() +
+    "</section>" + body;
 }
 
 /* ============================== 页面：日志 ============================== */
@@ -1023,16 +1208,65 @@ function logCardHTML(l, a){
     (t ? '<button type="button" class="btn ghost tiny-btn log-link" data-task="' + t.id + '">关联任务：' + esc(t.title) + "</button>" : '<span class="tiny muted">未关联任务</span>') +
   "</article>";
 }
-function renderLog(){
-  const a = actor();
-  const el = document.getElementById("page-log");
-  const logs = visibleLogs(a).slice().sort(function(x, y){ return y.time.getTime() - x.time.getTime(); });
-  const created = pendingCreateFor(a);
-  const completed = pendingCompleteFor(a);
-  const inbox = a.role === "upper" ? inboxConsultations(a).filter(function(c){ return c.status === "pending"; }) : [];
-  const scopeText = a.role === "upper" ? "全公司日志" : a.role === "middle" ? "本部门（" + a.dept + "）日志" : "本人日志";
 
-  const reviewItems = created.map(function(t){
+/* 日志页内容筛选：单选，按身份派生可用项 */
+const LOG_FILTER_LABEL = {
+  "logs": "日志",
+  "reviews": "待我审核",
+  "self": "我提交的自建任务",
+  "consults": "我的请示",
+  "pending-consults": "待处理请示"
+};
+function canReviewAnyone(a){
+  return PEOPLE.some(function(p){
+    const s = directSuperiorOf(p.id);
+    return !!s && s.id === a.id;
+  });
+}
+function mySelfCreated(a){
+  return sortTasks(visibleTasks(a).filter(function(t){
+    return t.selfCreated && t.creatorId === a.id && (t.status === "pending-create" || t.status === "rejected");
+  }));
+}
+function pendingInboxFor(a){
+  return inboxConsultations(a).filter(function(c){ return c.status === "pending"; });
+}
+function availableLogFilters(a){
+  const ids = ["logs"];
+  if (canReviewAnyone(a)) ids.push("reviews");
+  ids.push("self");
+  if (a.role === "middle") ids.push("consults");
+  if (a.role === "upper") ids.push("pending-consults");
+  return ids;
+}
+function logFilterCount(fid, a){
+  if (fid === "logs") return visibleLogs(a).length;
+  if (fid === "reviews") return pendingReviewCount(a);
+  if (fid === "self") return mySelfCreated(a).length;
+  if (fid === "consults") return sentConsultations(a).length;
+  if (fid === "pending-consults") return pendingInboxFor(a).length;
+  return 0;
+}
+function logFilterHint(fid, a){
+  if (fid === "logs"){
+    const scope = a.role === "upper" ? "全公司日志" : a.role === "middle" ? "本部门（" + a.dept + "）日志" : "本人日志";
+    return scope + " · " + visibleLogs(a).length + " 条";
+  }
+  if (fid === "reviews") return logFilterCount(fid, a) + " 项";
+  if (fid === "self") return logFilterCount(fid, a) + " 项";
+  if (fid === "consults") return "直属上层：" + (directSuperiorOf(a.id) ? directSuperiorOf(a.id).name : "无");
+  return logFilterCount(fid, a) + " 条";
+}
+/* 各筛选对应的唯一内容块 */
+function logsListHTML(a){
+  const logs = visibleLogs(a).slice().sort(function(x, y){ return y.time.getTime() - x.time.getTime(); });
+  return logs.length
+    ? '<div class="stack log-list">' + logs.map(function(l){ return logCardHTML(l, a); }).join("") + "</div>"
+    : '<div class="empty">暂无可见日志</div>';
+}
+function reviewItemsHTML(a){
+  const created = pendingCreateFor(a), completed = pendingCompleteFor(a);
+  const items = created.map(function(t){
     return '<div class="log-card"><header><span class="who">' + esc(creatorOf(t).name) + "</span><span>自建任务 · 待创建审核</span></header>" +
       "<p>" + esc(t.title) + "</p>" +
       '<div class="row wrap"><span class="badge b-pending">待创建审核</span>' + urgencyBadge(t.urgency) +
@@ -1049,60 +1283,75 @@ function renderLog(){
         '<button type="button" class="btn tiny-btn danger" data-action="reject-complete" data-id="' + t.id + '">退回</button>' +
         '<button type="button" class="btn tiny-btn" data-task="' + t.id + '">查看详情</button></div></div>';
   }));
-
-  const myOwn = sortTasks(visibleTasks(a).filter(function(t){
-    return t.selfCreated && t.creatorId === a.id && (t.status === "pending-create" || t.status === "rejected");
-  }));
-  const myOwnBlock = myOwn.length
-    ? '<section class="card"><div class="card-head"><h2>我提交的自建任务</h2><span class="hint">' + myOwn.length + " 项</span></div>" +
-      '<div class="stack">' + myOwn.map(function(t){
+  return items.length ? '<div class="stack">' + items.join("") + "</div>" : '<div class="empty">当前没有待你审核的事项</div>';
+}
+function selfItemsHTML(a){
+  const mine = mySelfCreated(a);
+  return mine.length
+    ? '<div class="stack">' + mine.map(function(t){
         return '<div class="log-card"><header><span class="tname">' + esc(t.title) + "</span>" +
           '<span class="badge ' + STATUS_CLASS[t.status] + '">' + STATUS_LABEL[t.status] + "</span></header>" +
           '<div class="row wrap"><span class="tiny muted">提交于 ' + esc(fmtDateTime(t.start)) + "</span>" +
             '<span class="spacer"></span><button type="button" class="btn tiny-btn" data-task="' + t.id + '">查看详情</button></div>' +
           (t.reviewNote ? '<p class="tiny muted" style="margin:0">审核意见：' + esc(t.reviewNote) + "</p>" : "") + "</div>";
-      }).join("") + "</div></section>"
-    : "";
-
-  const consultBlock = a.role === "middle"
-    ? '<section class="card"><div class="card-head"><h2>我的请示</h2><span class="hint">直属上层：' + esc(directSuperiorOf(a.id) ? directSuperiorOf(a.id).name : "无") + "</span></div>" +
-      '<div class="stack">' + (sentConsultations(a).length ? sentConsultations(a).map(function(c){
+      }).join("") + "</div>"
+    : '<div class="empty">暂无你提交的自建任务</div>';
+}
+function sentConsultsHTML(a){
+  const list = sentConsultations(a);
+  return list.length
+    ? '<div class="stack">' + list.map(function(c){
         return '<div class="log-card"><header><span>提交于 ' + esc(fmtDateTime(c.time)) + "</span>" +
           '<span class="badge ' + (c.status === "pending" ? "b-pending" : "b-ok") + '">' + (c.status === "pending" ? "待回复" : "已回复") + "</span></header>" +
           "<p>" + esc(c.content) + "</p>" +
           (c.reply ? '<p class="tiny muted" style="margin:0">回复：' + esc(c.reply) + "</p>" : "") + "</div>";
-      }).join("") : '<div class="empty">暂无请示记录</div>') + "</div></section>"
-    : "";
-  const inboxBlock = a.role === "upper" && inbox.length
-    ? '<section class="card"><div class="card-head"><h2>待处理请示</h2><span class="hint">' + inbox.length + " 条</span></div>" +
-      '<div class="stack">' + inbox.map(function(c){
+      }).join("") + "</div>"
+    : '<div class="empty">暂无请示记录</div>';
+}
+function inboxConsultsHTML(a){
+  const list = pendingInboxFor(a);
+  return list.length
+    ? '<div class="stack">' + list.map(function(c){
         return '<div class="log-card"><header><span class="who">' + esc(personById(c.fromId).name) + "</span><span>" + esc(fmtDateTime(c.time)) + "</span></header>" +
           "<p>" + esc(c.content) + "</p>" +
           '<div class="row"><button type="button" class="btn tiny-btn primary" data-action="reply-consult" data-id="' + c.id + '">回复</button></div></div>';
-      }).join("") + "</div></section>"
-    : "";
+      }).join("") + "</div>"
+    : '<div class="empty">暂无待处理请示</div>';
+}
+function logContentHTML(fid, a){
+  if (fid === "reviews") return reviewItemsHTML(a);
+  if (fid === "self") return selfItemsHTML(a);
+  if (fid === "consults") return sentConsultsHTML(a);
+  if (fid === "pending-consults") return inboxConsultsHTML(a);
+  return logsListHTML(a);
+}
+function renderLog(){
+  const a = actor();
+  const el = document.getElementById("page-log");
+  const filters = availableLogFilters(a);
+  if (filters.indexOf(state.logFilter) === -1) state.logFilter = "logs";
+  const active = state.logFilter;
 
   const actionButtons = [
     '<button type="button" class="btn primary" data-action="new-log">写日志</button>',
     '<button type="button" class="btn" data-action="new-task">' + (a.role === "lower" ? "创建任务" : "创建 / 派发任务") + "</button>"
   ];
   if (a.role === "middle") actionButtons.push('<button type="button" class="btn" data-action="new-consult">发起请示</button>');
-  if (a.role !== "lower" && (created.length + completed.length)){
-    actionButtons.push('<button type="button" class="btn" data-action="review-center">待我审核 <span class="count-pill">' + (created.length + completed.length) + "</span></button>");
-  }
-  if (a.role === "lower" && (created.length + completed.length)){
-    actionButtons.push('<button type="button" class="btn" data-action="review-center">处理完成申请 <span class="count-pill">' + (created.length + completed.length) + "</span></button>");
-  }
+
+  const filterHTML = filters.map(function(fid){
+    const on = fid === active;
+    return '<button type="button" role="radio" aria-checked="' + on + '" class="filter-chip" data-log-filter="' + fid + '">' +
+      "<span>" + esc(LOG_FILTER_LABEL[fid]) + '</span><span class="cnt">' + logFilterCount(fid, a) + "</span></button>";
+  }).join("");
 
   el.innerHTML =
-    '<section class="card"><div class="card-head"><h2>日志</h2><span class="hint">' + esc(scopeText) + "</span></div>" +
+    '<section class="card"><div class="card-head"><h2>快捷操作</h2><span class="hint">即时命令</span></div>' +
       '<div class="action-grid">' + actionButtons.join("") + "</div></section>" +
-    (reviewItems.length ? '<section class="card"><div class="card-head"><h2>待我审核</h2><span class="hint">' + reviewItems.length + " 项</span></div><div class=\"stack\">" + reviewItems.join("") + "</div></section>" : "") +
-    inboxBlock +
-    myOwnBlock +
-    consultBlock +
-    '<section class="card"><div class="card-head"><h2>日志列表</h2><span class="hint">' + logs.length + " 条</span></div>" +
-      '<div class="stack log-list">' + (logs.length ? logs.map(function(l){ return logCardHTML(l, a); }).join("") : '<div class="empty">暂无可见日志</div>') + "</div></section>";
+    '<section class="card"><div class="card-head"><h2>内容筛选</h2><span class="hint">单选</span></div>' +
+      '<div class="filter-group" role="radiogroup" aria-label="日志内容筛选">' + filterHTML + "</div></section>" +
+    '<section class="card"><div class="card-head"><h2>' + esc(LOG_FILTER_LABEL[active]) + "</h2>" +
+      '<span class="hint">' + esc(logFilterHint(active, a)) + "</span></div>" +
+      logContentHTML(active, a) + "</section>";
 }
 
 /* ============================== 页面：AI地图 ============================== */
@@ -1224,10 +1473,6 @@ function renderSheet(){
 function openSheet(view){
   if (!lastFocused) lastFocused = document.activeElement;
   sheetStack.push(view);
-  renderSheet();
-}
-function replaceSheet(view){
-  sheetStack[sheetStack.length - 1] = view;
   renderSheet();
 }
 function backSheet(){
@@ -1543,11 +1788,34 @@ function rejectFormView(kind, id){
 function companyItemFormView(id){
   const a = actor();
   if (a.role !== "upper") return null;
-  const it = COMPANY_ITEMS.find(function(x){ return x.id === id; });
-  if (!it) return null;
-  return { title: "编辑公司信息",
-    body: '<div class="field"><label for="ci-text">内容</label><input id="ci-text" type="text" value="' + esc(it.text) + '" data-autofocus /></div><div class="callout" id="ci-error" hidden></div>',
-    foot: withBack('<button type="button" class="btn primary" data-action="save-company" data-id="' + it.id + '">保存</button>', a) };
+  const it = id ? COMPANY_ITEMS.find(function(x){ return x.id === id; }) : null;
+  if (id && !it) return null;
+  return { title: it ? "编辑公司信息" : "添加公司信息",
+    body: '<div class="field"><label for="ci-text">内容</label><input id="ci-text" type="text" value="' + esc(it ? it.text : "") + '" data-autofocus /></div>' +
+      '<div class="tiny muted">公司统一信息对所有身份可见，最多 10 条。</div>' +
+      '<div class="callout" id="ci-error" hidden></div>',
+    foot: withBack('<button type="button" class="btn primary" data-action="save-company"' + (it ? ' data-id="' + it.id + '"' : "") + ">保存</button>", a) };
+}
+/* 删除确认：公司与个人信息共用 */
+function confirmDeleteView(kind, id){
+  const a = actor();
+  const isCompany = kind === "company";
+  let text = "";
+  if (isCompany){
+    if (a.role !== "upper") return null;
+    const it = COMPANY_ITEMS.find(function(x){ return x.id === id; });
+    if (!it) return null;
+    text = it.text;
+  } else {
+    const it = personalItemsFor(a.id).find(function(x){ return x.id === id; });
+    if (!it) return null;
+    text = it.text;
+  }
+  return { title: isCompany ? "删除公司信息" : "删除个人信息",
+    body: '<div class="callout reject">删除后无法恢复，请确认是否删除以下内容。</div>' +
+      '<p style="margin:0;font-size:13px;overflow-wrap:anywhere">' + esc(text) + "</p>",
+    foot: withBack('<button type="button" class="btn danger" data-action="confirm-delete" data-kind="' + kind +
+      '" data-id="' + id + '">确认删除</button>', a) };
 }
 function personalItemFormView(id){
   const a = actor();
@@ -1559,28 +1827,6 @@ function personalItemFormView(id){
       '<div class="tiny muted">个人信息由本人维护，默认取自本人日志摘录，编辑个人信息不会改写原始日志。</div>' +
       '<div class="callout" id="pi-error" hidden></div>',
     foot: withBack('<button type="button" class="btn primary" data-action="save-personal"' + (it ? ' data-id="' + it.id + '"' : "") + ">保存</button>", a) };
-}
-function reviewCenterView(){
-  const a = actor();
-  const created = pendingCreateFor(a);
-  const completed = pendingCompleteFor(a);
-  const blocks = created.map(function(t){
-    return '<div class="log-card"><header><span class="who">' + esc(creatorOf(t).name) + "</span><span>自建任务</span></header>" +
-      "<p>" + esc(t.title) + "</p>" +
-      '<div class="row"><button type="button" class="btn tiny-btn ok" data-action="approve-create" data-id="' + t.id + '">批准</button>' +
-        '<button type="button" class="btn tiny-btn danger" data-action="reject-create" data-id="' + t.id + '">拒绝</button>' +
-        '<button type="button" class="btn tiny-btn" data-task="' + t.id + '">查看详情</button></div></div>';
-  }).concat(completed.map(function(t){
-    return '<div class="log-card"><header><span class="who">' + esc(creatorOf(t).name) + "</span><span>完成申请</span></header>" +
-      "<p>" + esc(t.title) + "</p>" +
-      (t.progressNote ? '<p class="tiny muted" style="margin:0">进度备注：' + esc(t.progressNote) + "</p>" : "") +
-      '<div class="row"><button type="button" class="btn tiny-btn ok" data-action="approve-complete" data-id="' + t.id + '">批准完成</button>' +
-        '<button type="button" class="btn tiny-btn danger" data-action="reject-complete" data-id="' + t.id + '">退回</button>' +
-        '<button type="button" class="btn tiny-btn" data-task="' + t.id + '">查看详情</button></div></div>';
-  }));
-  return { title: "待我审核",
-    body: blocks.length ? '<div class="stack">' + blocks.join("") + "</div>" : '<div class="empty">当前没有待审核事项</div>',
-    foot: '<button type="button" class="btn" data-action="sheet-close">关闭</button>' };
 }
 
 /* ============================== 操作与状态变更 ============================== */
@@ -1754,16 +2000,10 @@ function approveComplete(id){
   t.reviewNote = "";
   afterReviewAction();
 }
-/* 审核后：若停留在“待我审核”弹层则刷新内容，否则关闭弹层 */
+/* 审核后：刷新日志页当前筛选的列表与计数，并关闭可能打开的任务详情弹层 */
 function afterReviewAction(){
-  const top = sheetStack[sheetStack.length - 1];
-  const inReview = top && top.title === "待我审核";
   renderAll();
-  if (inReview && (pendingCreateFor(actor()).length || pendingCompleteFor(actor()).length)){
-    replaceSheet(reviewCenterView());
-  } else {
-    closeSheet();
-  }
+  closeSheet();
 }
 
 function saveLog(id){
@@ -1809,11 +2049,35 @@ function saveReply(id){
 function saveCompanyItem(id){
   const a = actor();
   if (a.role !== "upper") return;
-  const it = COMPANY_ITEMS.find(function(x){ return x.id === id; });
-  if (!it) return;
-  const text = document.getElementById("ci-text").value.trim();
+  const textEl = document.getElementById("ci-text");
+  const text = textEl ? textEl.value.trim() : "";
   if (!text) return showError("ci-error", "内容不能为空。");
-  it.text = text;
+  if (id){
+    const it = COMPANY_ITEMS.find(function(x){ return x.id === id; });
+    if (!it) return;
+    it.text = text;
+  } else {
+    /* 保存处理同样执行上限校验，不只依赖界面禁用 */
+    if (COMPANY_ITEMS.length >= 10) return showError("ci-error", "公司统一信息最多 10 条，请先删除后再新增。");
+    COMPANY_ITEMS.push({ id: nextId("co"), text: text });
+  }
+  renderAll();
+  closeSheet();
+}
+/* 删除公司与个人信息：个人信息在首次变更前先物化日志摘录 */
+function deleteItem(kind, id){
+  const a = actor();
+  if (kind === "company"){
+    if (a.role !== "upper") return;
+    const i = COMPANY_ITEMS.findIndex(function(x){ return x.id === id; });
+    if (i === -1) return;
+    COMPANY_ITEMS.splice(i, 1);
+  } else {
+    const st = materializePersonal(a.id);
+    const i = st.items.findIndex(function(x){ return x.id === id; });
+    if (i === -1) return;
+    st.items.splice(i, 1);
+  }
   renderAll();
   closeSheet();
 }
@@ -1828,14 +2092,15 @@ function materializePersonal(pid){
 function savePersonalItem(id){
   const a = actor();
   const st = materializePersonal(a.id);
-  const text = document.getElementById("pi-text").value.trim();
+  const textEl = document.getElementById("pi-text");
+  const text = textEl ? textEl.value.trim() : "";
   if (!text) return showError("pi-error", "内容不能为空。");
   if (id){
     const it = st.items.find(function(x){ return x.id === id; });
     if (!it) return;
     it.text = text;
   } else {
-    if (st.items.length >= 10) return showError("pi-error", "个人信息最多 10 条。");
+    if (st.items.length >= 10) return showError("pi-error", "个人信息最多 10 条，请先删除后再新增。");
     st.items.push({ id: nextId("pi"), text: text, logId: null });
   }
   renderAll();
@@ -1861,6 +2126,12 @@ function openNotifications(){
 const PAGE_TITLE = { map: "导图", view: "视图", log: "日志", ai: "AI地图", me: "我的" };
 const RENDER = { map: renderMap, view: renderView, log: renderLog, ai: renderAI, me: renderMe };
 
+function updateToTop(){
+  const main = document.getElementById("appMain");
+  const btn = document.getElementById("toTopBtn");
+  if (!main || !btn) return;
+  btn.hidden = !(state.page === "log" && main.scrollTop > 40);
+}
 function renderAll(){
   const a = actor();
   document.getElementById("whoami").textContent = a.name.replace(/（.*$/, "") + " · " + ROLE_LABEL[a.role];
@@ -1871,6 +2142,8 @@ function renderAll(){
   document.querySelectorAll(".page").forEach(function(p){
     p.classList.toggle("is-active", p.id === "page-" + state.page);
   });
+  /* 导图页锁定主内容区滚动，其他页恢复滚动 */
+  document.getElementById("appMain").classList.toggle("is-map", state.page === "map");
   RENDER[state.page]();
   const n = unreadCount(a);
   const dot = document.getElementById("bellDot");
@@ -1880,16 +2153,21 @@ function renderAll(){
   document.querySelectorAll(".role-switch button").forEach(function(b){
     b.setAttribute("aria-pressed", String(ROLE_ACCOUNT[b.dataset.role] === a.id));
   });
+  updateToTop();
 }
 function setRole(role){
   state.actorId = ROLE_ACCOUNT[role];
+  state.logFilter = "logs";   /* 切换身份后日志筛选回到默认“日志” */
+  state.pickerOpen = false;
   closeSheet();
   renderAll();
 }
 function setPage(page){
   state.page = page;
+  if (page !== "view") state.pickerOpen = false;
   renderAll();
   document.getElementById("appMain").scrollTop = 0;
+  updateToTop();
 }
 
 /* 弹层内的临时选择状态 */
@@ -1931,7 +2209,6 @@ function runAction(el){
     case "save-consult": saveConsult(); return;
     case "reply-consult": openSheet(replyConsultView(id)); return;
     case "save-reply": saveReply(id); return;
-    case "review-center": openSheet(reviewCenterView()); return;
     case "open-notif":
       const n = NOTIFICATIONS.find(function(x){ return x.id === id; });
       if (n){
@@ -1944,6 +2221,38 @@ function runAction(el){
       return;
     case "save-company": saveCompanyItem(id); return;
     case "save-personal": savePersonalItem(id); return;
+    case "new-company": openSheet(companyItemFormView(null)); return;
+    case "new-personal": openSheet(personalItemFormView(null)); return;
+    case "delete-company": { const v = confirmDeleteView("company", id); if (v) openSheet(v); return; }
+    case "delete-personal": { const v = confirmDeleteView("personal", id); if (v) openSheet(v); return; }
+    case "confirm-delete": deleteItem(el.dataset.kind, id); return;
+    case "toggle-month-picker":
+      state.pickerOpen = !state.pickerOpen;
+      renderAll();
+      updateToTop();
+      return;
+    case "pick-year":
+      state.viewAnchor = new Date(state.viewAnchor.getFullYear() + Number(el.dataset.delta), state.viewAnchor.getMonth(), 1);
+      renderAll();
+      return;
+    case "pick-month":
+      state.viewAnchor = new Date(state.viewAnchor.getFullYear(), Number(el.dataset.month), 1);
+      state.pickerOpen = false;
+      renderAll();
+      return;
+    case "view-prev":
+      state.viewAnchor = addDays(state.viewAnchor, state.viewMode === "week" ? -7 : -1);
+      renderAll();
+      return;
+    case "view-next":
+      state.viewAnchor = addDays(state.viewAnchor, state.viewMode === "week" ? 7 : 1);
+      renderAll();
+      return;
+    case "view-up":
+      state.viewMode = state.viewMode === "day" ? "week" : "month";
+      state.pickerOpen = false;
+      renderAll();
+      return;
     default: return;
   }
 }
@@ -1953,8 +2262,17 @@ document.addEventListener("click", function(ev){
   if (roleEl){ setRole(roleEl.dataset.role); return; }
   const pageEl = ev.target.closest("[data-page]");
   if (pageEl){ setPage(pageEl.dataset.page); return; }
-  const viewEl = ev.target.closest("[data-view]");
-  if (viewEl){ state.viewMode = viewEl.dataset.view; renderAll(); return; }
+  const filterEl = ev.target.closest("[data-log-filter]");
+  if (filterEl){
+    const fid = filterEl.dataset.logFilter;
+    if (fid !== state.logFilter){
+      state.logFilter = fid;
+      renderAll();
+      document.getElementById("appMain").scrollTop = 0;   /* 切换筛选时复位滚动位置 */
+      updateToTop();
+    }
+    return;
+  }
   const ovEl = ev.target.closest("[data-overflow]");
   if (ovEl){
     const v = overflowView(ovEl.dataset.overflow);
@@ -1965,10 +2283,33 @@ document.addEventListener("click", function(ev){
   if (taskEl){ openTaskDetail(taskEl.dataset.task); return; }
   const logEl = ev.target.closest("[data-log]");
   if (logEl){ openLogDetail(logEl.dataset.log); return; }
+  /* 下钻只在非任务条、非 +N 的空白命中区生效 */
+  const weekEl = ev.target.closest("[data-drill-week]");
+  if (weekEl){
+    state.viewMode = "week";
+    state.viewAnchor = parseISO(weekEl.dataset.drillWeek);
+    state.pickerOpen = false;
+    renderAll();
+    document.getElementById("appMain").scrollTop = 0;
+    return;
+  }
+  const dayEl = ev.target.closest("[data-drill-day]");
+  if (dayEl){
+    state.viewMode = "day";
+    state.viewAnchor = parseISO(dayEl.dataset.drillDay);
+    state.pickerOpen = false;
+    renderAll();
+    document.getElementById("appMain").scrollTop = 0;
+    return;
+  }
   const compEl = ev.target.closest("[data-edit-company]");
   if (compEl){ const v = companyItemFormView(compEl.dataset.editCompany); if (v) openSheet(v); return; }
   const persEl = ev.target.closest("[data-edit-personal]");
   if (persEl){ const v = personalItemFormView(persEl.dataset.editPersonal); if (v) openSheet(v); return; }
+  const delCompEl = ev.target.closest("[data-delete-company]");
+  if (delCompEl){ const v = confirmDeleteView("company", delCompEl.dataset.deleteCompany); if (v) openSheet(v); return; }
+  const delPersEl = ev.target.closest("[data-delete-personal]");
+  if (delPersEl){ const v = confirmDeleteView("personal", delPersEl.dataset.deletePersonal); if (v) openSheet(v); return; }
   const typeEl = ev.target.closest("[data-type]");
   if (typeEl){
     formChoice.type = typeEl.dataset.type;
@@ -1992,6 +2333,13 @@ document.addEventListener("click", function(ev){
 
 document.getElementById("bellBtn").addEventListener("click", openNotifications);
 document.getElementById("sheetClose").addEventListener("click", closeSheet);
+
+/* 日志页回到顶部：仅在内容区离开顶部后出现 */
+document.getElementById("appMain").addEventListener("scroll", updateToTop);
+document.getElementById("toTopBtn").addEventListener("click", function(){
+  document.getElementById("appMain").scrollTop = 0;
+  updateToTop();
+});
 
 document.addEventListener("keydown", function(ev){
   if (overlayEl.hidden) return;
