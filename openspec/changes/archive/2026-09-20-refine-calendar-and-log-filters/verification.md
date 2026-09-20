@@ -2,12 +2,12 @@
 
 - Change: refine-calendar-and-log-filters
 - Schema: spec-driven
-- Verdict: FAIL
-- Verified revision: 40c472b (implementation worktree clean before this report; `verification.md` added by this run)
+- Verdict: PASS
+- Verified revision: 46bea6d45125fab488de72f016edc21ed9b8d9a8 (implementation worktree clean before this report update)
 
 ## Summary
 
-OpenSpec structure, static checks, direct `file://` loading, role-scoped log finding, compact task encoding, current fixture interactions, responsive geometry, and visual screenshots passed. Of 29 normative scenarios, 28 have sufficient passing evidence. The crowded-month scenario fails for a reproducible valid task arrangement: the interval allocator can place a task segment and that date's `+N` control in the same fifth lane, causing overlap. No repository-owned automated test suite exists, so the browser/CDP matrix and deterministic helper probes are the primary executable evidence.
+Independent re-verification passes all 29 normative scenarios. The repaired month interval allocator resolved V-001: the original hand fixture, 3,000 deterministic mixed layouts, and rendered 390px crowded/split fixtures all had zero same-lane or geometric overlaps, while preserving task continuity, overflow access, and a five-lane maximum. OpenSpec validation, syntax/static checks, direct `file://` loading, all-role interaction checks, accessibility checks, and fresh desktop/mobile screenshot inspection also pass. No repository-owned automated test suite exists, so the browser/CDP matrix and deterministic helper probes remain the primary executable evidence.
 
 ## Checks
 
@@ -20,15 +20,17 @@ OpenSpec structure, static checks, direct `file://` loading, role-scoped log fin
 | Headless Chrome/CDP, direct `file://`, 390x844 mobile viewport | PASS | CSS/JS loaded from adjacent files; media query active; no runtime, log, or resource-loading failures. |
 | Month/date helper boundary probe | PASS | 0 tasks -> 0/0; 5 tasks -> 5 direct/0 overflow; 6 tasks -> 4 direct/2 overflow. |
 | Month interaction and role/log matrix | PASS | Date/task/blank click separation, overflow detail, month picker, week/day drill-down, role reset, search intersection, unauthorized author query, command sheet, and return-to-top behaved as specified. |
-| 3,000 deterministic valid weekly interval layouts | FAIL | Iteration 126 assigned task `f126-1` and `ov:2026-09-16` to lane 4 over the same date. |
-| Mobile and desktop geometry/screenshots | PASS | Current seeded month/log views had no overlap or horizontal overflow; date band measured 1.5 task-row heights. |
-| Source inspection of implementation commit | PASS WITH FINDING | Confirms authorization-first log filtering and identifies the lane allocator defect documented as V-001. |
+| V-001 fixed fixture and 3,000 deterministic valid weekly interval layouts | PASS | Zero interval collisions; 320 split-task layouts exercised; maximum assigned lane was 4. |
+| Rendered crowded/split month fixtures at 390x844 | PASS | Four direct bars plus `+2` were separately visible and operable; split task rendered as two segments; no geometric overlap, horizontal overflow, or console error. |
+| Mobile and desktop geometry/screenshots | PASS | Fresh month and upper/middle log screenshots showed no overlap or horizontal overflow; date band measured 1.5 task-row heights. |
+| Baseline, compact encoding, month DOM/data, log, all-role sweep, and accessibility CDP scripts | PASS | All scripted assertions passed with no console/resource errors or external network requests. |
+| Source inspection of revision 46bea6d | PASS | Confirms authorization-first log filtering and the order-independent, column-wise lane allocator required to resolve V-001. |
 
 ## Requirement Coverage
 
 | Requirement / scenario | Evidence | Result |
 | ---------------------- | -------- | ------ |
-| Calendar task views (overall) | Source trace plus mobile/desktop CDP matrix; V-001 violates crowded layout behavior. | FAIL |
+| Calendar task views (overall) | Source trace, deterministic helper probes, and mobile/desktop CDP matrix, including repaired crowded and split-task fixtures. | PASS |
 | Open the default month view | Initial `viewMode` is month; CDP rendered 5 complete weeks/35 named date buttons with no horizontal overflow. | PASS |
 | Select a year and month | Picker selected January 2026, updated the range label, anchor month, and 35-date grid. | PASS |
 | Drill from month to week | First date header moved to week mode with anchor equal to its `data-drill-week`. | PASS |
@@ -44,7 +46,7 @@ OpenSpec structure, static checks, direct `file://` loading, role-scoped log fin
 | Show only task names in bars | Month/week/day bars contained only `.bar-kind` and `.bar-t`; descriptions remained in ARIA/detail content. | PASS |
 | Order visible task lanes | `dateOccurrences` calls the specified stable span/urgency/due sorter before selection; rendered overflow IDs matched that selection. | PASS |
 | Fill five monthly task rows | Boundary probe returned five direct tasks and zero overflow; every rendered week had exactly five lanes. | PASS |
-| Handle crowded time slots | Deterministic interval fixture placed a visible task and `+N` in the same fifth lane/date. | FAIL |
+| Handle crowded time slots | Fixed fixture and 3,000 mixed layouts had zero same-lane intersections; 390px rendering showed four direct tasks and an independently operable `+2` with no overlap. | PASS |
 | Open overflow tasks for one date | Seeded `+2` for 2026-09-15 opened exactly task IDs `t18` and `t3`; selecting one opened its detail. | PASS |
 | Log page single-content filtering and scroll return (overall) | Authorization-first source trace and upper/middle/lower CDP matrix. | PASS |
 | Enter the log page | Role changes reset to `logs`, false self toggle, and empty author query; upper/middle saw the finding card. | PASS |
@@ -68,11 +70,11 @@ OpenSpec structure, static checks, direct `file://` loading, role-scoped log fin
 - Category: implementation
 - Severity: medium
 - Requirement: `Calendar task views` / `Handle crowded time slots`
-- Evidence: `潘多拉-交互原型.js:724` emits segments grouped by task key, so their start positions are not globally ordered after a task is split by overflow. `assignLanes` at `潘多拉-交互原型.js:737` uses only each lane's last end as if segments were start-ordered, then line 742 forcibly falls back to lane 4 when all lanes appear occupied. In the deterministic 2026-09-14 fixture, task `f126-1` spans columns 2-4 in lane 4 while `ov:2026-09-16` also occupies column 2 in lane 4. The collision appeared at iteration 126 of a fixed-seed 3,000-layout probe.
+- Evidence: At revision 40c472b, `weekSegments` emitted segments in task-key order and the prior `assignLanes` forcibly reused lane 4, producing a task/overflow collision in the 2026-09-14 fixture and 91 of 3,000 fixed-seed layouts. At revision 46bea6d, `weekSegments` records per-date display rank and `assignLanes` sorts by start/rank/key before allocating each column's free lane; re-verification found zero collisions in the same hand fixture and all 3,000 layouts.
 - Expected: Each date has five non-overlapping rows; when crowded, the first four rows show tasks and the fifth row shows an independently operable `+N`.
-- Actual: A valid crowded arrangement can place both a task and `+N` in the same fifth row and date, visually obscuring one control and violating the fixed-row capacity model.
+- Actual: The repaired allocator keeps all intersecting segments in distinct lanes. The 390px crowded fixture displayed four task bars plus `+2` as five non-overlapping, independently operable controls; the split fixture retained two segments for the interrupted task without overlap.
 - Repair guidance: Make interval allocation independent of key-group emission order, and never silently force an unplaced segment into lane 4. Preserve stable task continuity while guaranteeing that no two segments sharing a date share a lane.
 - Acceptance checks: Re-run the fixed 2026-09-14 fixture documented above and assert zero same-lane interval intersections; run at least 3,000 fixed-seed mixed interval/overflow layouts; render the fixture at 390px and confirm all four direct tasks plus `+N` are separately visible and operable.
-- Repair status: addressed-awaiting-verification
+- Repair status: verified-resolved
 - Repair notes: Changed `潘多拉-交互原型.js` only. (1) `weekSegments` now records each date occurrence's on-screen rank and stamps it on the emitted segment as `order`, so a split segment carries the display rank of its own start column. (2) `assignLanes` rewritten to allocate independently of key-group emission order: segments are ordered by (start, order, key), then processed column by column left to right — a segment continuing into a column keeps its lane, a segment starting there takes the lowest lane free at that column. The `lane = MONTH_LANES - 1` forcing branch is gone; the impossible capacity breach now skips the segment (`lane = -1`, not rendered) and logs an error instead of overlapping. Task continuity is unchanged (segments are not split or merged differently). Added regression probe `.tmp-verify/check-v001-lanes.js` (repo-local CDP probe; the repository has no owned test suite and no build manifest, matching the static-prototype constraint). Commands and results: `node --check 潘多拉-交互原型.js` pass; `openspec validate refine-calendar-and-log-filters --strict` valid; probe before repair = 91/3000 fixed-seed layouts with same-lane intersections (320/3000 containing split segments); probe after repair = 0/3000 collisions, 320/3000 split cases still covered, max lane 4; hand fixture on the 2026-09-14 week (task T split into runs 0-0 | 3-4) = 0 same-lane intersections; 390px render of a crowded date = 4 direct bars + `+2` with pairwise non-overlapping rects and both controls operable, and the split fixture renders T as 2 segments with 12 items, no rect overlap, no horizontal overflow, no console errors; full prior suite re-run PASS (baseline smoke, sections 2, 3-data, 3-DOM, 4, 5.2 sweep, 5.4 a11y). No planning artifact or task checkbox was modified.
-- Reverification notes: First verification at revision 40c472b; reproducible failure remains.
+- Reverification notes: Rechecked at revision 46bea6d. `node .tmp-verify/check-v001-lanes.js` passed the original split hand fixture, 3,000 fixed-seed layouts (0 collisions, 320 split cases, maximum lane 4), the 390px crowded-date operability check, and the 390px split-segment geometry check. The full baseline, sections 2/3/4/5.2/5.4 browser suite also passed, so V-001 is verified resolved.
