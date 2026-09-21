@@ -235,6 +235,7 @@ const state = {
   page: "map",
   viewMode: "month",      // month | week | day
   viewAnchor: startOfDay(BASE_DAY),
+  viewExpanded: false,    // 月、周、日共用的会话展示偏好
   pickerOpen: false,      // 月视图年月选择面板
   logFilter: "logs",      // 日志页单选内容筛选
   logsMineOnly: false,    // 日志查找：只看自己
@@ -528,9 +529,9 @@ function registerOverflow(title, tasks, dateKey){
   overflowGroups[id] = { title: title, ids: tasks.map(function(t){ return t.id; }), date: dateKey || null };
   return id;
 }
-/* 视口高度策略：周、日视图同一展示位置最多显示的泳道数，其余聚合为 +N（月视图用逐日容量模型） */
+/* 紧凑模式的任务行上限；完全展开时不限制任务数量。 */
 const LANE_CAPACITY = { week: 4, day: 6 };
-/* 月视图固定五条任务行，逐日容量也是五（四项直显 + 一项 +N） */
+/* 月视图紧凑模式保留五条任务行（拥挤时四项直显 + 一项 +N）。 */
 const MONTH_LANES = 5;
 const MONTH_DIRECT_LIMIT = 5;
 const MONTH_OVERFLOW_KEEP = 4;
@@ -666,7 +667,7 @@ function barHTML(t, a, range){
       "</button></div>";
 }
 function lanesHTML(tasks, a, range, title){
-  const cap = LANE_CAPACITY[state.viewMode];
+  const cap = state.viewExpanded ? tasks.length : LANE_CAPACITY[state.viewMode];
   const shown = tasks.slice(0, cap), rest = tasks.slice(cap);
   let html = shown.map(function(t){ return barHTML(t, a, range); }).join("");
   if (rest.length){
@@ -694,12 +695,11 @@ function monthGrid(anchor){
   return { start: start, end: addDays(start, weekCount * 7), weeks: weeks };
 }
 
-/* 逐日选取：不超过五项时全部直显；超过五项时保留排序前四项，其余登记为该日期专属溢出。
-   +N 因此恒为 当日可见任务数 - 4。 */
+/* 完全展开时选取当天全部任务；紧凑模式下，超过五项才保留前四项并登记 +N。 */
 function dateOccurrences(list, date){
   const dayStart = startOfDay(date);
   const hits = viewSortTasks(tasksInRange(list, { start: dayStart, end: addDays(dayStart, 1) }));
-  if (hits.length <= MONTH_DIRECT_LIMIT) return { shown: hits, overflow: [] };
+  if (state.viewExpanded || hits.length <= MONTH_DIRECT_LIMIT) return { shown: hits, overflow: [] };
   return { shown: hits.slice(0, MONTH_OVERFLOW_KEEP), overflow: hits.slice(MONTH_OVERFLOW_KEEP) };
 }
 
@@ -733,16 +733,14 @@ function weekSegments(week, list){
         start: c.col, end: c.col, order: c.rank, lane: 0 });
     });
   });
-  return assignLanes(segs);
+  return assignLanes(segs, state.viewExpanded ? Infinity : MONTH_LANES);
 }
 
 /* 逐列分配泳道，与分段的产出顺序无关：
    先按起始列（同列按展示次序）整理，再自左向右逐列分配——延续到本列的段保留原泳道，
-   本列新起的段取当列最小空闲泳道。dateOccurrences 保证每个日期至多 MONTH_LANES 个
-   条目（四项任务 + 一个 +N），因此当列被占用的泳道必少于 MONTH_LANES，空闲泳道必然存在。
-   这里没有任何“强行塞进最后一条泳道”的兜底：万一容量模型被破坏，宁可跳过该段并报错，
-   也不让两个同日期的条目落在同一泳道。 */
-function assignLanes(segs){
+   本列新起的段取当列最小空闲泳道。紧凑模式按五行容量校验，完全展开可继续分配新行。
+   容量模型意外被破坏时不强行塞入最后一行，以免覆盖其他任务。 */
+function assignLanes(segs, capacity = MONTH_LANES){
   const ordered = segs.slice().sort(function(x, y){
     if (x.start !== y.start) return x.start - y.start;
     const ox = typeof x.order === "number" ? x.order : 0;
@@ -760,7 +758,7 @@ function assignLanes(segs){
       if (s.start !== col) return;
       let lane = 0;
       while (used[lane]) lane++;
-      if (lane >= MONTH_LANES){
+      if (lane >= capacity){
         console.error("月视图泳道容量被突破，已跳过该段：", s.key, s.start, s.end);
         s.lane = -1;   /* 不参与渲染，避免与同日期条目重叠 */
         return;
@@ -775,7 +773,7 @@ function assignLanes(segs){
 /* 相邻月份日期用可见的月份文字与类名区分，不只依赖颜色或透明度弱化 */
 function monthDateAria(d, monthIndex){
   const base = fmtDate(d) + "，" + WEEK_NAMES[(d.getDay() + 6) % 7];
-  return d.getMonth() === monthIndex ? base : base + "，相邻月份";
+  return base + (d.getMonth() === monthIndex ? "" : "，相邻月份") + "，进入日视图";
 }
 function monthSegHTML(s, a, weekStart){
   const geo = "left:" + fx(s.start / 7 * 100) + "%;width:" + fx((s.end - s.start + 1) / 7 * 100) + "%;";
@@ -796,7 +794,7 @@ function monthSegHTML(s, a, weekStart){
     "</button>";
 }
 
-/* 每周：日期带（七天各一个真实按钮）+ 五条固定等高任务行；无周侧栏、无重复星期头 */
+/* 每周：独立周入口、七个日期按钮，以及按展示模式分配的等高任务行。 */
 function monthGanttHTML(list, a){
   const grid = monthGrid(state.viewAnchor);
   const scoped = tasksInRange(list, grid);
@@ -809,7 +807,7 @@ function monthGanttHTML(list, a){
       const d = addDays(w.start, i);
       const outside = d.getMonth() !== monthIndex;
       band += '<button type="button" class="g-date' + (outside ? " is-outside" : "") +
-        (sameDay(d, BASE_DAY) ? " is-today" : "") + '" data-drill-week="' + isoDate(w.start) +
+        (sameDay(d, BASE_DAY) ? " is-today" : "") + '" data-drill-day="' + isoDate(d) +
         '" aria-label="' + esc(monthDateAria(d, monthIndex)) + '">' +
         '<span class="g-day-num" aria-hidden="true">' + d.getDate() + "</span>" +
         (outside ? '<span class="g-day-mon" aria-hidden="true">' + (d.getMonth() + 1) + "月</span>" : "") +
@@ -817,18 +815,25 @@ function monthGanttHTML(list, a){
       cells += '<i class="' + (sameDay(d, BASE_DAY) ? "is-today" : "") + '"></i>';
     }
     let lanes = "";
-    for (let l = 0; l < MONTH_LANES; l++){
+    const laneCount = state.viewExpanded
+      ? segs.reduce(function(count, s){ return Math.max(count, s.lane + 1); }, MONTH_LANES)
+      : MONTH_LANES;
+    for (let l = 0; l < laneCount; l++){
       lanes += '<div class="g-lane">' + segs.filter(function(s){ return s.lane === l; })
         .map(function(s){ return monthSegHTML(s, a, w.start); }).join("") + "</div>";
     }
+    const weekLabel = fmtDate(w.start) + " — " + fmtDate(addDays(w.start, 6));
     rows += '<div class="g-week">' +
+      '<button type="button" class="g-week-link" data-drill-week="' + isoDate(w.start) +
+        '" aria-label="查看' + esc(weekLabel) + '的周视图"><span class="g-week-range">' + esc(weekLabel) +
+        '</span><span class="g-week-action">查看本周 <span aria-hidden="true">›</span></span></button>' +
       '<div class="g-date-band" style="--cols:7">' + band + "</div>" +
       '<div class="g-weekbody" style="--cols:7">' +
         '<div class="g-grid">' + cells + "</div>" +
         '<div class="g-lanes">' + lanes + "</div>" +
       "</div></div>";
   });
-  return '<div class="gantt g-month"><div class="g-weeks">' + rows + "</div></div>";
+  return '<div id="view-calendar" class="gantt g-month"><div class="g-weeks">' + rows + "</div></div>";
 }
 
 /* ---- 周视图：七天横轴，精确到时刻，点击日期空白进入日视图 ---- */
@@ -845,7 +850,7 @@ function weekGanttHTML(list, a){
     drills += '<button type="button" data-drill-day="' + isoDate(d) + '" aria-label="' +
       esc("进入 " + fmtDate(d) + " 的日视图") + '"></button>';
   }
-  return '<div class="gantt">' +
+  return '<div id="view-calendar" class="gantt">' +
     '<div class="g-head"><div class="g-axis" style="--cols:7">' + axis + "</div></div>" +
     '<div class="g-body" style="--cols:7">' +
       '<div class="g-grid">' + grid + "</div>" +
@@ -863,7 +868,7 @@ function dayGanttHTML(list, a){
     axis += "<span>" + pad2(i * 3) + ":00</span>";
     grid += "<i></i>";
   }
-  return '<div class="gantt">' +
+  return '<div id="view-calendar" class="gantt">' +
     '<div class="g-head"><div class="g-axis" style="--cols:8">' + axis + "</div></div>" +
     '<div class="g-body" style="--cols:8">' +
       '<div class="g-grid">' + grid + "</div>" +
@@ -886,23 +891,25 @@ function pickerHTML(){
     '</div><div class="picker-grid">' + grid + "</div></div>";
 }
 function viewToolbarHTML(){
+  const expand = '<button type="button" class="btn tiny-btn view-expand-toggle" data-action="view-toggle-expand" aria-expanded="' +
+    String(state.viewExpanded) + '" aria-controls="view-calendar">' + (state.viewExpanded ? "收起" : "完全展开") + '</button>';
   if (state.viewMode === "month"){
     const y = state.viewAnchor.getFullYear(), m = state.viewAnchor.getMonth();
     return '<div class="view-toolbar">' +
       '<button type="button" class="btn tiny-btn" data-action="toggle-month-picker" aria-expanded="' +
-        String(state.pickerOpen) + '">选择年月（' + y + "年" + (m + 1) + "月）</button></div>" +
+        String(state.pickerOpen) + '">选择年月（' + y + "年" + (m + 1) + "月）</button>" + expand + "</div>" +
       (state.pickerOpen ? pickerHTML() : "");
   }
   if (state.viewMode === "week"){
     return '<div class="view-toolbar">' +
       '<button type="button" class="btn tiny-btn" data-action="view-prev">上一周</button>' +
       '<button type="button" class="btn tiny-btn" data-action="view-next">下一周</button>' +
-      '<button type="button" class="btn tiny-btn" data-action="view-up">返回月视图</button></div>';
+      '<button type="button" class="btn tiny-btn" data-action="view-up">返回月视图</button>' + expand + '</div>';
   }
   return '<div class="view-toolbar">' +
     '<button type="button" class="btn tiny-btn" data-action="view-prev">前一天</button>' +
     '<button type="button" class="btn tiny-btn" data-action="view-next">后一天</button>' +
-    '<button type="button" class="btn tiny-btn" data-action="view-up">返回周视图</button></div>';
+    '<button type="button" class="btn tiny-btn" data-action="view-up">返回周视图</button>' + expand + '</div>';
 }
 
 function viewTasks(a){
@@ -2060,6 +2067,12 @@ function runAction(el){
     case "delete-company": { const v = confirmDeleteView("company", id); if (v) openSheet(v); return; }
     case "delete-personal": { const v = confirmDeleteView("personal", id); if (v) openSheet(v); return; }
     case "confirm-delete": deleteItem(el.dataset.kind, id); return;
+    case "view-toggle-expand": {
+      state.viewExpanded = !state.viewExpanded;
+      renderView();
+      document.querySelector('[data-action="view-toggle-expand"]').focus({ preventScroll: true });
+      return;
+    }
     case "toggle-month-picker":
       state.pickerOpen = !state.pickerOpen;
       renderAll();
@@ -2125,7 +2138,7 @@ document.addEventListener("click", function(ev){
   if (taskEl){ openTaskDetail(taskEl.dataset.task); return; }
   const logEl = ev.target.closest("[data-log]");
   if (logEl){ openLogDetail(logEl.dataset.log); return; }
-  /* 下钻只在非任务条、非 +N 的空白命中区生效 */
+  /* 月视图的周入口与日期按钮分别下钻；任务条及 +N 已优先处理 */
   const weekEl = ev.target.closest("[data-drill-week]");
   if (weekEl){
     state.viewMode = "week";
