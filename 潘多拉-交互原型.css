@@ -331,15 +331,30 @@
   .progress-track > i{display:block;height:100%;background:var(--brand)}
   .child-task{border:1px solid var(--line);border-radius:9px;padding:7px 9px;display:flex;flex-direction:column;gap:4px;background:#fcfdff;cursor:pointer;text-align:left;width:100%}
   .child-task:hover{border-color:#c9d3e5}
-  .notif{display:flex;gap:9px;padding:9px 4px;border-bottom:1px solid var(--line-2);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-top:0;width:100%}
+  .notification-summary{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 12px;padding-bottom:10px;border-bottom:1px solid var(--line);font-size:12px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
+  .notification-summary strong{color:var(--brand);font-weight:600}
+  .notif{display:flex;align-items:flex-start;gap:9px;min-height:72px;padding:12px 4px;border-bottom:1px solid var(--line-2);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-top:0;width:100%;max-width:100%;flex:0 0 auto}
   .notif:last-child{border-bottom:0}
-  .notif:hover{background:#fcfdff}
-  .notif .nbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-  .notif .ntitle{font-size:12.5px;font-weight:600}
-  .notif .nmeta{font-size:11px;color:var(--muted)}
-  .notif .ndot{width:8px;height:8px;border-radius:50%;background:var(--brand);margin-top:6px;flex:0 0 auto}
+  .notif:hover,.notif:active{background:#f7f9ff}
+  .notif:focus-visible{outline-offset:-2px}
+  .notif .nbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+  .notif .ntitle{font-size:14px;line-height:1.5;font-weight:600;overflow-wrap:anywhere}
+  .notif .nsummary{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-size:12px;line-height:1.6;color:var(--ink-2);white-space:pre-line;overflow-wrap:anywhere}
+  .notif .nmeta{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:12px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
+  .notif .nmeta > *{min-width:0;max-width:100%}
+  .notif .nmeta .badge{font-size:12px;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
+  .notif .nmeta time{margin-left:auto}
+  .notif .ndot{width:8px;height:8px;border-radius:50%;background:var(--brand);margin-top:7px;flex:0 0 auto}
   .notif.is-read .ntitle{font-weight:500;color:var(--ink-2)}
   .notif.is-read .ndot{background:transparent}
+  .notification-details{display:flex;flex-direction:column;gap:12px;min-width:0;max-width:100%;font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+  .notification-details > .tiny,.notification-details > .badge{font-size:12px}
+  .notification-details > .badge{align-self:flex-start}
+  .notification-details .notification-object{margin:0;font-size:14px;font-weight:600;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+  .notification-details .notification-change-list{margin:0;padding:0 0 0 20px;min-width:0;font-size:13px;line-height:1.7}
+  .notification-details .notification-change-list li{padding-left:2px;white-space:pre-wrap;overflow-wrap:anywhere}
+  .notification-details .notification-change-list li + li{margin-top:8px}
+  .notification-details .notification-unavailable{font-size:12px;line-height:1.6;white-space:normal;overflow-wrap:anywhere}
 
   @media (max-width:900px){
     .preview-bar{margin:10px 10px 8px}
@@ -352,3 +367,5 @@
     .stage{padding:0}
     .phone{width:100%;max-height:none;border-radius:0;border:0;box-shadow:none}
   }
+
+  .notification-text{margin:0;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
