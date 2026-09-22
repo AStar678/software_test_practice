@@ -1,17 +1,4 @@
-# pandora-requirements-aligned-prototype Specification
-
-## Purpose
-
-本规格用于约束潘多拉移动端交互原型只呈现需求文档定义的任务协作、工作日志、分级权限与统计信息，并以可操作的示例流程验证关键业务规则。
-
-## Requirements
-
-### Requirement: Five-page navigation
-原型 SHALL 提供且仅提供“导图”“视图”“日志”“AI地图”“我的”五个业务页面，并允许用户通过固定导航在五页之间切换且保持当前演示身份。
-
-#### Scenario: Navigate across the prototype
-- **WHEN** 用户依次点击五个导航项
-- **THEN** 原型 SHALL 展示对应页面，并且导航中始终只有当前页面处于选中状态
+## MODIFIED Requirements
 
 ### Requirement: Four-quadrant dashboard
 导图页 SHALL 在应用头部与底部导航之间的可用高度内固定展示公司统一信息、本人被派发且尚未完成的前十项任务、最多十条个人信息以及本人今天和前一天的日志四个象限，导图页整体 SHALL NOT 纵向或横向滚动，每个象限的内容区 SHALL 独立纵向滚动，且页面 SHALL NOT 展示四象限之外的“说明”板块。被派发任务项 SHALL 完整展示其任务名称、状态、紧急程度、截止信息和已有文字进展备注，不得显示百分比进度或进度条，也不得裁切、遮挡或以单行省略隐藏这些信息。公司统一信息 SHALL 最多包含十条，并仅允许上层新增、编辑和删除；个人信息 SHALL 最多包含十条并允许本人新增、编辑和删除，在尚未发生人工修改时由本人的日志内容生成初始摘录；近期日志 SHALL 按时间倒序展示原始日志，从而与个人摘录形成明确差异。
@@ -128,17 +115,6 @@
 #### Scenario: Open overflow tasks for one date
 - **WHEN** 用户点击某日期第五行的 `+N`
 - **THEN** 原型 SHALL 展示该日期未直接显示且当前身份有权查看的任务列表，并允许从列表打开任务详情
-
-### Requirement: Role-scoped visibility
-原型 SHALL 按角色限制业务数据：上层可查看全公司任务与日志；中层可查看本部门任务与日志；下层仅可查看本人负责的任务和本人日志。管理员属于独立管理端角色，本次业务端原型 SHALL 不提供文档未定义的管理员操作。
-
-#### Scenario: Compare role visibility
-- **WHEN** 预览者通过原型外层身份控件分别选择上层、中层和下层示例身份
-- **THEN** 五个业务页面中的任务、日志和汇总数据 SHALL 随角色切换到对应可见范围
-
-#### Scenario: Prevent unauthorized detail access
-- **WHEN** 当前身份尝试打开超出其可见范围的任务或日志
-- **THEN** 原型 SHALL 不展示该记录的详情或修改入口
 
 ### Requirement: Role-scoped task creation and assignment
 上层 SHALL 能给自己创建任务，并能向中层或下层派发任务；中层 SHALL 能向本部门下层派发任务，也能给自己创建任务；下层 SHALL 只能给自己创建任务。具有多个可选负责人的用户 SHALL 从任务表单进入独立的负责人选择界面，该界面 SHALL 先选择当前身份有权派发的部门，再在所选部门内按姓名片段搜索并多选人员；切换部门 SHALL 保留已选人员，确认后才 SHALL 更新任务表单，取消 SHALL 放弃本次选择。中层和下层的自建任务 SHALL 先进入待直属上级审核状态，审核通过后才成为执行中的任务；上层自建任务因没有更高审批角色而直接生效。
@@ -278,80 +254,6 @@
 #### Scenario: Superior reads a subordinate log
 - **WHEN** 中层打开本部门下层的日志
 - **THEN** 原型 SHALL 展示日志内容，但不显示编辑操作
-
-### Requirement: Manager consultation
-中层 SHALL 能向直属上层发起请示并查看示例处理结果；下层 SHALL 不显示发起请示的入口。请示仅演示需求中明确的上下级沟通，不扩展为通用审批或任务字段变更系统。
-
-#### Scenario: Manager submits a consultation
-- **WHEN** 中层填写请示内容并提交给直属上层
-- **THEN** 原型 SHALL 显示该请示处于待回复状态，并向对应上层展示待处理记录
-
-#### Scenario: Employee cannot submit a consultation
-- **WHEN** 当前身份为下层
-- **THEN** 日志页及任务详情 SHALL 不显示发起请示入口
-
-### Requirement: Log page single-content filtering and scroll return
-日志页 SHALL 将写日志、创建或派发任务、发起请示等即时命令与内容筛选明确区分。页面 SHALL 提供当前身份可用的“日志”“待我审核”“我提交的自建任务”“我的请示”或“待处理请示”等内容筛选项，筛选状态 SHALL 为单选；首次进入日志页以及切换演示身份后 SHALL 默认选中“日志”，内容区 SHALL 只展示当前筛选对应的列表而不依次堆叠其他列表。日志页 SHALL 在内容区离开顶部后提供一键回到顶部的操作。
-
-当上层或中层选择“日志”内容时，页面 SHALL 在快捷操作、内容筛选和日志结果之外提供独立的“日志查找”板块，其中包含可重复点击以开启或关闭的“只看自己”按钮，以及按作者姓名进行不区分大小写、包含匹配的搜索输入。两个条件同时启用时 SHALL 取交集，空搜索 SHALL 不限制作者；筛选结果 SHALL 始终受当前身份的日志查看权限约束。日志查找条件 SHALL NOT 影响其他内容筛选的列表，并 SHALL 在切换演示身份时重置。下层因只能查看本人日志 SHALL NOT 显示该冗余板块。
-
-#### Scenario: Enter the log page
-- **WHEN** 用户首次进入日志页或切换演示身份后进入日志页
-- **THEN** “日志”筛选 SHALL 处于唯一选中状态，内容区 SHALL 只展示当前身份可见的日志列表，且上层和中层的日志查找条件均处于未启用状态
-
-#### Scenario: Select pending reviews
-- **WHEN** 具有审核权限的用户选择“待我审核”
-- **THEN** “待我审核” SHALL 成为唯一选中项，内容区 SHALL 只展示待该用户审核的项目或明确的空状态
-
-#### Scenario: Switch between role-specific content filters
-- **WHEN** 用户选择当前身份可用的另一个内容筛选项
-- **THEN** 原型 SHALL 取消先前筛选并仅展示新筛选对应的内容，不得同时堆叠两个筛选列表
-
-#### Scenario: Invoke a log-page command
-- **WHEN** 用户选择写日志、创建或派发任务、发起请示等即时命令
-- **THEN** 原型 SHALL 打开相应操作界面，且不得将该命令作为可与内容筛选叠加的选中状态
-
-#### Scenario: Toggle own logs
-- **WHEN** 上层或中层在“日志”内容中首次点击“只看自己”
-- **THEN** 按钮 SHALL 显示启用状态，日志结果 SHALL 仅保留当前用户作为作者且同时满足作者搜索的可见日志
-
-#### Scenario: Restore the visible log scope
-- **WHEN** 上层或中层再次点击已启用的“只看自己”
-- **THEN** 按钮 SHALL 恢复未启用状态，日志结果 SHALL 恢复为当前权限范围内满足作者搜索的日志
-
-#### Scenario: Search logs by author
-- **WHEN** 上层或中层在作者搜索中输入姓名片段
-- **THEN** 日志结果 SHALL 仅显示当前权限范围内作者姓名包含该片段且同时满足“只看自己”状态的日志
-
-#### Scenario: Show no matching authors
-- **WHEN** 启用的日志查找条件在当前权限范围内没有匹配日志
-- **THEN** 日志结果区 SHALL 展示清楚的无匹配状态且保留当前查找条件以供修改
-
-#### Scenario: Keep log finding separate and scoped
-- **WHEN** 上层或中层切换到“待我审核”或其他非日志内容筛选
-- **THEN** 日志查找控件 SHALL 不与该内容列表混排，其条件 SHALL NOT 改变该列表的项目或计数
-
-#### Scenario: Return to the top of log content
-- **WHEN** 用户在日志页向下滚动使内容区顶部离开视口并触发回到顶部操作
-- **THEN** 原型 SHALL 将当前日志页内容区恢复到顶部，同时保留当前选中的内容筛选和当前身份下的日志查找条件
-
-### Requirement: Role-scoped AI map
-AI地图页 SHALL 集成任务数据统计、关键词词云和 AI 建议。下层的任务统计和 AI 建议 SHALL 仅基于本人数据；中层的任务统计 SHALL 基于本部门数据且 AI 建议仅面向本人；上层的任务统计和 AI 建议 SHALL 基于全公司数据。词云范围 SHALL 为上层查看公司、中层查看部门、下层查看所在部门的聚合词云，且不得暴露无权查看的单条任务或日志。
-
-#### Scenario: View employee AI map
-- **WHEN** 下层进入 AI地图页
-- **THEN** 页面 SHALL 展示本人的任务统计与个人建议，以及不包含个人明细的部门聚合词云
-
-#### Scenario: View executive AI map
-- **WHEN** 上层进入 AI地图页
-- **THEN** 页面 SHALL 展示全公司的任务统计、公司词云和公司级建议
-
-### Requirement: Minimal profile page
-我的页面 SHALL 仅展示当前用户的常规个人身份信息，包括姓名、部门和角色。角色切换 SHALL 仅存在于包裹原型的预览控件中，不得伪装为正式产品设置。
-
-#### Scenario: View profile
-- **WHEN** 用户进入我的页面
-- **THEN** 页面 SHALL 展示姓名、部门和角色，且不显示资料编辑、通知偏好、账号管理、指南或数据重置功能
 
 ### Requirement: Strict prototype scope
 业务界面 SHALL 不提供需求文档未提出的全局搜索、任务草稿、个人重点或排序、日志转待办、任务取消、任务关键字段变更申请、排期冲突检查、工作空间切换或账号启停功能。日志作者查找 SHALL 仅存在于日志页并仅筛选当前身份有权查看的日志；任务名称搜索 SHALL 仅用于日志关联任务和上级任务选择，人员姓名搜索 SHALL 仅用于负责人选择，三者均不得扩展为跨业务对象的全局搜索。原型 SHALL 保持由一个 HTML 入口及其同目录 CSS、JavaScript 资源组成的静态示例、支持直接打开和适度可交互的验证用途，不要求构建步骤、第三方运行时、网络请求、真实后端持久化或通知触发引擎。

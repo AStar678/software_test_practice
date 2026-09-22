@@ -184,13 +184,20 @@
   .gantt{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden;min-width:0;max-width:100%}
   .g-head{display:flex;align-items:stretch;background:#f7f9fc;border-bottom:1px solid var(--line-2)}
   .g-axis{flex:1;min-width:0;display:grid;grid-template-columns:repeat(var(--cols,7),minmax(0,1fr))}
-  .g-axis > span{font-size:10.5px;font-weight:700;color:var(--ink-2);text-align:center;padding:5px 1px;border-right:1px solid var(--line-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-  .g-axis > span:last-child{border-right:0}
-  .g-axis > span.is-today{color:var(--brand);background:#eef4ff}
+  /* 周视图的轴标题是可操作的下钻按钮，日视图仍是纯文本刻度，二者共用同一套排版 */
+  .g-axis > span,.g-axis > button{
+    font:inherit;font-size:10.5px;font-weight:700;color:var(--ink-2);text-align:center;
+    padding:5px 1px;border:0;border-right:1px solid var(--line-2);background:transparent;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;
+  }
+  .g-axis > button{cursor:pointer;display:block;width:100%}
+  .g-axis > button:hover{background:#eef4ff}
+  .g-axis > span:last-child,.g-axis > button:last-child{border-right:0}
+  .g-axis > span.is-today,.g-axis > button.is-today{color:var(--brand);background:#eef4ff}
   /* 周视图：星期与日期分两行，避免窄屏被省略 */
-  .g-axis > span.stack{display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.2;padding:4px 1px;white-space:normal;overflow:visible}
-  .g-axis > span.stack i{font-style:normal;font-size:9.5px;font-weight:400;color:var(--muted)}
-  .g-axis > span.stack.is-today i{color:var(--brand)}
+  .g-axis > span.stack,.g-axis > button.stack{display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.2;padding:4px 1px;white-space:normal;overflow:visible}
+  .g-axis > span.stack i,.g-axis > button.stack i{font-style:normal;font-size:9.5px;font-weight:400;color:var(--muted)}
+  .g-axis > span.stack.is-today i,.g-axis > button.stack.is-today i{color:var(--brand)}
   .g-weeks{display:flex;flex-direction:column}
   .g-week{display:flex;align-items:stretch;border-bottom:1px solid var(--line-2)}
   .g-week:last-child{border-bottom:0}
@@ -199,9 +206,13 @@
   .g-grid > i{border-right:1px solid var(--line-2)}
   .g-grid > i:last-child{border-right:0}
   .g-grid > i.is-today{background:#f5f8ff}
-  .g-drill{position:absolute;inset:0;z-index:0;display:grid;grid-template-columns:repeat(var(--cols,7),minmax(0,1fr))}
-  .g-drill > button{border:0;background:transparent;padding:0;cursor:pointer;min-width:0}
-  .g-drill > button:hover{background:#f5f8ff}
+  /* 日视图：稳定高度的全天带，位于小时轴上方；全天任务不进入小时泳道 */
+  .g-allday{border-bottom:1px solid var(--line);background:#fbfcfe;padding:5px 0 6px}
+  .g-allday-head{display:flex;align-items:baseline;gap:6px;padding:0 6px 4px;font-size:10.5px;font-weight:700;color:var(--ink-2)}
+  /* 三条全天泳道的稳定高度：无任务时带高不变，超过三条时聚合为 +N */
+  .g-allday .g-lanes{min-height:76px;gap:2px}
+  .g-allday .g-lane{height:24px}
+  .g-allday .g-lane.is-expand{height:auto;min-height:22px}
   /* 月视图：每周先日期带（约 1.5 条任务行高），再五条等高任务行；下钻只挂在日期按钮上 */
   .g-month{--task-row-h:20px}
   .g-month .g-week{flex-direction:column}
@@ -236,11 +247,12 @@
   .picker-grid button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
 
   /* ---------- log page ---------- */
-  .log-card{border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff;display:flex;flex-direction:column;gap:6px}
-  .log-card header{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}
+  .log-card{border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff;display:flex;flex-direction:column;gap:6px;min-width:0}
+  .log-card header{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);flex-wrap:wrap;min-width:0}
   .log-card .who{font-weight:700;color:var(--ink-2);font-size:12px}
   .log-card p{margin:0;font-size:12.5px;word-break:break-word}
-  .log-link{align-self:flex-start}
+  /* 关联任务按钮承载任务名称，长名称必须换行而不是把日志卡片撑出横向滚动 */
+  .log-link{align-self:flex-start;max-width:100%;white-space:normal;text-align:left;overflow-wrap:anywhere}
   .filter-group{display:flex;flex-wrap:wrap;gap:6px}
   .filter-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;font-size:12px;cursor:pointer;color:var(--ink-2);min-width:0}
   .filter-chip:hover{background:var(--line-2)}
@@ -319,8 +331,36 @@
   .callout{background:var(--warn-soft);border:1px solid #efdfae;border-radius:9px;padding:8px 10px;font-size:12px;color:#7c4a03}
   .callout.info{background:var(--brand-soft);border-color:#c7d7fb;color:#1e3a8a}
   .callout.reject{background:var(--urgent-soft);border-color:#f3c9c9;color:#8f1d1d}
-  .progress-track{height:8px;border-radius:999px;background:var(--grey-soft);overflow:hidden;border:1px solid var(--line)}
-  .progress-track > i{display:block;height:100%;background:var(--brand)}
+  /* ---------- 二级选择界面：任务选择器与负责人选择器 ---------- */
+  .summary-line{border:1px solid var(--line);border-radius:9px;padding:7px 9px;font-size:12.5px;background:#fcfdff;overflow-wrap:anywhere;min-width:0}
+  .pick-item{
+    border:1px solid var(--line);border-radius:9px;padding:7px 9px;background:#fff;cursor:pointer;
+    text-align:left;width:100%;min-width:0;display:flex;flex-direction:column;gap:4px;
+  }
+  .pick-item:hover{border-color:#c9d3e5;background:#fcfdff}
+  .pick-item.is-selected{border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)}
+  .pick-item .pick-title{font-size:12.5px;font-weight:600;line-height:1.35;overflow-wrap:anywhere;word-break:break-word}
+  .pick-item .pick-meta{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:11px;color:var(--muted);min-width:0}
+  .pick-item .pick-meta > span{overflow-wrap:anywhere}
+  .pick-person{flex:1;min-width:0;overflow-wrap:anywhere}
+  /* 固定尺寸的人员候选项：复选框不随姓名长度变形 */
+  .checkline{min-height:36px}
+  .checkline input{flex:0 0 auto;margin:0}
+  .checkline .meta{flex:0 0 auto;max-width:52%;text-align:right;overflow-wrap:anywhere}
+  .chip-row{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+  .chip{
+    display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0;
+    border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:12px;background:#f7f9fc;
+  }
+  .chip .chip-meta{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip-x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;line-height:1;padding:2px 2px;border-radius:50%}
+  .chip-x:hover{background:var(--urgent-soft);color:var(--urgent)}
+  .chip-choice{
+    border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:12px;background:#fff;
+    cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .chip-choice:hover{background:var(--line-2)}
+  .chip-choice[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
   .child-task{border:1px solid var(--line);border-radius:9px;padding:7px 9px;display:flex;flex-direction:column;gap:4px;background:#fcfdff;cursor:pointer;text-align:left;width:100%}
   .child-task:hover{border-color:#c9d3e5}
   .notif{display:flex;gap:9px;padding:9px 4px;border-bottom:1px solid var(--line-2);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-top:0;width:100%}
@@ -343,4 +383,12 @@
     .role-switch button{padding:5px 12px;font-size:12.5px}
     .stage{padding:0}
     .phone{width:100%;max-height:none;border-radius:0;border:0;box-shadow:none}
+    /* 窄屏：选择器与摘要进一步让出空间，长名称换行而不与徽标重叠 */
+    .checkline{padding:7px 8px;gap:6px}
+    .checkline .meta{max-width:46%;font-size:10.5px}
+    .pick-item{padding:7px 8px}
+    .pick-item .pick-meta{gap:3px}
+    .chip{padding:3px 8px;font-size:11.5px}
+    .chip-choice{padding:4px 10px;font-size:11.5px}
+    .sheet-body{padding:10px 12px 12px}
   }
