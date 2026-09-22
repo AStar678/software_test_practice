@@ -20,10 +20,6 @@ function dayDiff(a, b){ return Math.round((startOfDay(a) - startOfDay(b)) / DAY)
 function fmtDate(d){ return (d.getMonth() + 1) + "月" + d.getDate() + "日"; }
 function fmtDateTime(d){ return fmtDate(d) + " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
 function fmtTime(d){ return pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
-function fmtTaskRange(t){
-  if (t.allDay) return fmtDate(t.start) + " → " + fmtDate(t.due) + "（全天）";
-  return fmtDateTime(t.start) + " → " + fmtDateTime(t.due);
-}
 function relativeDayLabel(d){
   const diff = dayDiff(d, BASE_DAY);
   if (diff === 0) return "今天";
@@ -39,7 +35,6 @@ function fmtDue(d){
   if (diff === -1) return "昨天 " + fmtTime(d) + " 截止";
   return fmtDate(d) + " " + fmtTime(d) + " 截止";
 }
-function fmtTaskDue(t){ return t.allDay ? fmtDate(t.due) + " 截止（全天）" : fmtDue(t.due); }
 function isOverdue(t){
   return t.type === "normal" && t.status !== "done" && t.status !== "rejected" && t.due.getTime() < LOAD_AT.getTime();
 }
@@ -66,7 +61,7 @@ const ROLE_ACCOUNT = { upper: "u1", middle: "m1", lower: "e1" };
 const URGENCY_ORDER = { "紧急": 0, "高": 1, "中": 2, "低": 3 };
 const STATUS_LABEL = {
   "pending-create": "待创建审核",
-  "todo": "未开始",
+  "todo": "待开始",
   "doing": "进行中",
   "pending-complete": "待完成审核",
   "done": "已完成",
@@ -85,14 +80,12 @@ function urgencyClass(u){
 }
 
 function mkTask(o){
-  const task = Object.assign({
+  return Object.assign({
     id: "", type: "normal", parentId: null, title: "", desc: "",
     creatorId: "", assigneeIds: [], selfCreated: false,
-    createdAt: null, start: at(-3, 9, 0), due: at(7, 18, 0), allDay: false, urgency: "中",
+    start: at(-3, 9, 0), due: at(7, 18, 0), urgency: "中",
     status: "todo", progress: 0, progressNote: "", reviewNote: ""
   }, o);
-  if (!task.createdAt) task.createdAt = new Date(task.start.getTime() - 60 * 60 * 1000);
-  return task;
 }
 
 const TASKS = [
@@ -206,24 +199,8 @@ const NOTIFICATIONS = [
   { id: "n8", type: "create", taskId: "t5", recipients: ["u1", "m1", "e2"], time: at(-8, 9, 5), read: ["u1", "m1", "e2"] },
   { id: "n9", type: "create", taskId: "t12", recipients: ["u1"], time: at(-2, 9, 5), read: [] }
 ];
-const NOTIF_LABEL = { create: "任务创建", due: "临近截止", emergency: "临时紧急",
-  "pending-create": "任务创建待审核", update: "任务信息更新", priority: "重要度调整", progress: "状态更新",
-  "submit-complete": "提交完成审核", complete: "任务已完成", "approve-complete": "完成审核通过", "approve-create": "创建审核通过",
-  "reject-create": "创建审核拒绝", "reject-complete": "完成审核退回",
-  "log-create": "日志创建", "log-update": "日志更新", consult: "新请示", reply: "请示回复",
-  "company-create": "公司信息新增", "company-update": "公司信息更新", "company-delete": "公司信息删除",
-  "personal-create": "个人信息新增", "personal-update": "个人信息更新", "personal-delete": "个人信息删除" };
-const NOTIF_CLASS = { create: "b-brand", due: "b-high", emergency: "b-urgent", priority: "b-high",
-  complete: "b-ok", "approve-complete": "b-ok", "approve-create": "b-ok", "pending-create": "b-pending", "submit-complete": "b-pending",
-  "reject-create": "b-reject", "reject-complete": "b-reject" };
-/* 示例通知也保存标题与摘要，后续任务改名不会改写历史记录。 */
-NOTIFICATIONS.forEach(function(n){
-  const t = taskById(n.taskId);
-  n.targetType = "task"; n.targetId = n.taskId; n.title = t ? t.title : "任务记录";
-  n.actorId = n.type === "create" && t ? t.creatorId : null;
-  n.actorName = n.type === "create" && t ? personById(t.creatorId).name : "系统提醒";
-  n.changes = [n.type === "due" ? "任务即将截止，请关注当前安排。" : n.type === "emergency" ? "任务存在临时紧急情况，请相关人员及时处理。" : "任务已创建并发送给相关人员。"];
-});
+const NOTIF_LABEL = { create: "任务创建", due: "临近截止", emergency: "临时紧急" };
+const NOTIF_CLASS = { create: "b-brand", due: "b-high", emergency: "b-urgent" };
 
 const CONSULTATIONS = [
   { id: "c1", fromId: "m1", toId: "u1", time: at(0, 9, 45), content: "老板，校徽项目的推进方式想请您确认下，是否按当前节奏继续？", status: "pending", reply: "" },
@@ -258,7 +235,6 @@ const state = {
   page: "map",
   viewMode: "month",      // month | week | day
   viewAnchor: startOfDay(BASE_DAY),
-  viewExpanded: false,    // 月、周、日共用的会话展示偏好
   pickerOpen: false,      // 月视图年月选择面板
   logFilter: "logs",      // 日志页单选内容筛选
   logsMineOnly: false,    // 日志查找：只看自己
@@ -322,12 +298,12 @@ function parentCandidates(a, forTask){
   }));
 }
 
-/* 编辑 / 状态 / 审核规则 */
+/* 编辑 / 进度 / 审核规则 */
 function canEditTask(a, t){ return !!t && t.creatorId === a.id && t.status !== "rejected"; }
 function canUpdateProgress(a, t){
   if (!t || t.type !== "normal") return false;
   if (t.assigneeIds.indexOf(a.id) === -1) return false;
-  /* 待审核任务尚未生效，不能更新状态或提交完成 */
+  /* 待审核任务尚未生效，不能更新进度或提交完成 */
   return t.status === "todo" || t.status === "doing";
 }
 /* 完成审核人：派发任务由创建者审核，自建任务由直属上级审核 */
@@ -398,8 +374,8 @@ const KIND_EMOJI = { own: "👤", assigned: "📤", other: "👁️" };
 
 /* 通知与请示 */
 function notificationsFor(a){
-  return NOTIFICATIONS.slice().reverse()
-    .filter(function(n){ return n.recipients.indexOf(a.id) !== -1; })
+  return NOTIFICATIONS
+    .filter(function(n){ return n.recipients.indexOf(a.id) !== -1 && taskById(n.taskId); })
     .sort(function(x, y){ return y.time.getTime() - x.time.getTime(); });
 }
 function unreadCount(a){
@@ -435,11 +411,13 @@ function taskItemHTML(t, a, opts){
   const k = taskKind(t, a);
   const cls = k === "own" ? "is-own" : k === "assigned" ? "is-assigned" : "";
   const overdue = isOverdue(t);
-  const note = t.progressNote ? '<div class="t-note">进展备注：' + esc(t.progressNote) + "</div>" : "";
+  const note = t.progressNote ? '<div class="t-note">进度备注：' + esc(t.progressNote) + "</div>" : "";
+  const pct = effectiveProgress(t);
   return '<button type="button" class="task-item ' + cls + '" data-task="' + t.id + '">' +
       '<span class="t-title"><span>' + esc(t.title) + "</span></span>" +
       '<span class="task-meta">' + kindTag(t, a) + typeBadge(t) + statusBadge(t) + urgencyBadge(t.urgency) +
-        '<span class="' + (overdue ? "is-overdue" : "") + '">' + esc(fmtTaskDue(t)) + (overdue ? " · 已逾期" : "") + "</span>" +
+        '<span class="' + (overdue ? "is-overdue" : "") + '">' + esc(fmtDue(t.due)) + (overdue ? " · 已逾期" : "") + "</span>" +
+        (opts.hideProgress ? "" : "<span>进度 " + pct + "%</span>") +
       "</span>" + note +
     "</button>";
 }
@@ -550,9 +528,9 @@ function registerOverflow(title, tasks, dateKey){
   overflowGroups[id] = { title: title, ids: tasks.map(function(t){ return t.id; }), date: dateKey || null };
   return id;
 }
-/* 紧凑模式的任务行上限；完全展开时不限制任务数量。 */
+/* 视口高度策略：周、日视图同一展示位置最多显示的泳道数，其余聚合为 +N（月视图用逐日容量模型） */
 const LANE_CAPACITY = { week: 4, day: 6 };
-/* 月视图紧凑模式保留五条任务行（拥挤时四项直显 + 一项 +N）。 */
+/* 月视图固定五条任务行，逐日容量也是五（四项直显 + 一项 +N） */
 const MONTH_LANES = 5;
 const MONTH_DIRECT_LIMIT = 5;
 const MONTH_OVERFLOW_KEEP = 4;
@@ -664,7 +642,8 @@ function barGeom(left, width){
 }
 function taskAriaLabel(t, a){
   return t.title + "，" + KIND_LABEL[taskKind(t, a)] + "，" + STATUS_LABEL[effectiveStatus(t)] +
-    "，紧急程度" + t.urgency + "，任务时间 " + fmtTaskRange(t) + (t.desc ? "，说明：" + t.desc : "");
+    "，紧急程度" + t.urgency + "，起 " + fmtDateTime(t.start) + " 止 " + fmtDateTime(t.due) +
+    "，进度 " + effectiveProgress(t) + "%" + (t.desc ? "，说明：" + t.desc : "");
 }
 /* 任务条可见文本：仅关系 emoji 前缀（对辅助技术隐藏，语义由按钮名与图例给出）与任务名称。
    描述、状态、截止日期等元数据只出现在任务详情与按钮无障碍名称中。 */
@@ -687,7 +666,7 @@ function barHTML(t, a, range){
       "</button></div>";
 }
 function lanesHTML(tasks, a, range, title){
-  const cap = state.viewExpanded ? tasks.length : LANE_CAPACITY[state.viewMode];
+  const cap = LANE_CAPACITY[state.viewMode];
   const shown = tasks.slice(0, cap), rest = tasks.slice(cap);
   let html = shown.map(function(t){ return barHTML(t, a, range); }).join("");
   if (rest.length){
@@ -715,11 +694,12 @@ function monthGrid(anchor){
   return { start: start, end: addDays(start, weekCount * 7), weeks: weeks };
 }
 
-/* 完全展开时选取当天全部任务；紧凑模式下，超过五项才保留前四项并登记 +N。 */
+/* 逐日选取：不超过五项时全部直显；超过五项时保留排序前四项，其余登记为该日期专属溢出。
+   +N 因此恒为 当日可见任务数 - 4。 */
 function dateOccurrences(list, date){
   const dayStart = startOfDay(date);
   const hits = viewSortTasks(tasksInRange(list, { start: dayStart, end: addDays(dayStart, 1) }));
-  if (state.viewExpanded || hits.length <= MONTH_DIRECT_LIMIT) return { shown: hits, overflow: [] };
+  if (hits.length <= MONTH_DIRECT_LIMIT) return { shown: hits, overflow: [] };
   return { shown: hits.slice(0, MONTH_OVERFLOW_KEEP), overflow: hits.slice(MONTH_OVERFLOW_KEEP) };
 }
 
@@ -753,14 +733,16 @@ function weekSegments(week, list){
         start: c.col, end: c.col, order: c.rank, lane: 0 });
     });
   });
-  return assignLanes(segs, state.viewExpanded ? Infinity : MONTH_LANES);
+  return assignLanes(segs);
 }
 
 /* 逐列分配泳道，与分段的产出顺序无关：
    先按起始列（同列按展示次序）整理，再自左向右逐列分配——延续到本列的段保留原泳道，
-   本列新起的段取当列最小空闲泳道。紧凑模式按五行容量校验，完全展开可继续分配新行。
-   容量模型意外被破坏时不强行塞入最后一行，以免覆盖其他任务。 */
-function assignLanes(segs, capacity = MONTH_LANES){
+   本列新起的段取当列最小空闲泳道。dateOccurrences 保证每个日期至多 MONTH_LANES 个
+   条目（四项任务 + 一个 +N），因此当列被占用的泳道必少于 MONTH_LANES，空闲泳道必然存在。
+   这里没有任何“强行塞进最后一条泳道”的兜底：万一容量模型被破坏，宁可跳过该段并报错，
+   也不让两个同日期的条目落在同一泳道。 */
+function assignLanes(segs){
   const ordered = segs.slice().sort(function(x, y){
     if (x.start !== y.start) return x.start - y.start;
     const ox = typeof x.order === "number" ? x.order : 0;
@@ -778,7 +760,7 @@ function assignLanes(segs, capacity = MONTH_LANES){
       if (s.start !== col) return;
       let lane = 0;
       while (used[lane]) lane++;
-      if (lane >= capacity){
+      if (lane >= MONTH_LANES){
         console.error("月视图泳道容量被突破，已跳过该段：", s.key, s.start, s.end);
         s.lane = -1;   /* 不参与渲染，避免与同日期条目重叠 */
         return;
@@ -793,7 +775,7 @@ function assignLanes(segs, capacity = MONTH_LANES){
 /* 相邻月份日期用可见的月份文字与类名区分，不只依赖颜色或透明度弱化 */
 function monthDateAria(d, monthIndex){
   const base = fmtDate(d) + "，" + WEEK_NAMES[(d.getDay() + 6) % 7];
-  return base + (d.getMonth() === monthIndex ? "" : "，相邻月份") + "，进入日视图";
+  return d.getMonth() === monthIndex ? base : base + "，相邻月份";
 }
 function monthSegHTML(s, a, weekStart){
   const geo = "left:" + fx(s.start / 7 * 100) + "%;width:" + fx((s.end - s.start + 1) / 7 * 100) + "%;";
@@ -814,7 +796,7 @@ function monthSegHTML(s, a, weekStart){
     "</button>";
 }
 
-/* 每周：独立周入口、七个日期按钮，以及按展示模式分配的等高任务行。 */
+/* 每周：日期带（七天各一个真实按钮）+ 五条固定等高任务行；无周侧栏、无重复星期头 */
 function monthGanttHTML(list, a){
   const grid = monthGrid(state.viewAnchor);
   const scoped = tasksInRange(list, grid);
@@ -827,7 +809,7 @@ function monthGanttHTML(list, a){
       const d = addDays(w.start, i);
       const outside = d.getMonth() !== monthIndex;
       band += '<button type="button" class="g-date' + (outside ? " is-outside" : "") +
-        (sameDay(d, BASE_DAY) ? " is-today" : "") + '" data-drill-day="' + isoDate(d) +
+        (sameDay(d, BASE_DAY) ? " is-today" : "") + '" data-drill-week="' + isoDate(w.start) +
         '" aria-label="' + esc(monthDateAria(d, monthIndex)) + '">' +
         '<span class="g-day-num" aria-hidden="true">' + d.getDate() + "</span>" +
         (outside ? '<span class="g-day-mon" aria-hidden="true">' + (d.getMonth() + 1) + "月</span>" : "") +
@@ -835,25 +817,18 @@ function monthGanttHTML(list, a){
       cells += '<i class="' + (sameDay(d, BASE_DAY) ? "is-today" : "") + '"></i>';
     }
     let lanes = "";
-    const laneCount = state.viewExpanded
-      ? segs.reduce(function(count, s){ return Math.max(count, s.lane + 1); }, MONTH_LANES)
-      : MONTH_LANES;
-    for (let l = 0; l < laneCount; l++){
+    for (let l = 0; l < MONTH_LANES; l++){
       lanes += '<div class="g-lane">' + segs.filter(function(s){ return s.lane === l; })
         .map(function(s){ return monthSegHTML(s, a, w.start); }).join("") + "</div>";
     }
-    const weekLabel = fmtDate(w.start) + " — " + fmtDate(addDays(w.start, 6));
     rows += '<div class="g-week">' +
-      '<button type="button" class="g-week-link" data-drill-week="' + isoDate(w.start) +
-        '" aria-label="查看' + esc(weekLabel) + '的周视图"><span class="g-week-range">' + esc(weekLabel) +
-        '</span><span class="g-week-action">查看本周 <span aria-hidden="true">›</span></span></button>' +
       '<div class="g-date-band" style="--cols:7">' + band + "</div>" +
       '<div class="g-weekbody" style="--cols:7">' +
         '<div class="g-grid">' + cells + "</div>" +
         '<div class="g-lanes">' + lanes + "</div>" +
       "</div></div>";
   });
-  return '<div id="view-calendar" class="gantt g-month"><div class="g-weeks">' + rows + "</div></div>";
+  return '<div class="gantt g-month"><div class="g-weeks">' + rows + "</div></div>";
 }
 
 /* ---- 周视图：七天横轴，精确到时刻，点击日期空白进入日视图 ---- */
@@ -870,7 +845,7 @@ function weekGanttHTML(list, a){
     drills += '<button type="button" data-drill-day="' + isoDate(d) + '" aria-label="' +
       esc("进入 " + fmtDate(d) + " 的日视图") + '"></button>';
   }
-  return '<div id="view-calendar" class="gantt">' +
+  return '<div class="gantt">' +
     '<div class="g-head"><div class="g-axis" style="--cols:7">' + axis + "</div></div>" +
     '<div class="g-body" style="--cols:7">' +
       '<div class="g-grid">' + grid + "</div>" +
@@ -888,7 +863,7 @@ function dayGanttHTML(list, a){
     axis += "<span>" + pad2(i * 3) + ":00</span>";
     grid += "<i></i>";
   }
-  return '<div id="view-calendar" class="gantt">' +
+  return '<div class="gantt">' +
     '<div class="g-head"><div class="g-axis" style="--cols:8">' + axis + "</div></div>" +
     '<div class="g-body" style="--cols:8">' +
       '<div class="g-grid">' + grid + "</div>" +
@@ -911,25 +886,23 @@ function pickerHTML(){
     '</div><div class="picker-grid">' + grid + "</div></div>";
 }
 function viewToolbarHTML(){
-  const expand = '<button type="button" class="btn tiny-btn view-expand-toggle" data-action="view-toggle-expand" aria-expanded="' +
-    String(state.viewExpanded) + '" aria-controls="view-calendar">' + (state.viewExpanded ? "收起" : "完全展开") + '</button>';
   if (state.viewMode === "month"){
     const y = state.viewAnchor.getFullYear(), m = state.viewAnchor.getMonth();
     return '<div class="view-toolbar">' +
       '<button type="button" class="btn tiny-btn" data-action="toggle-month-picker" aria-expanded="' +
-        String(state.pickerOpen) + '">选择年月（' + y + "年" + (m + 1) + "月）</button>" + expand + "</div>" +
+        String(state.pickerOpen) + '">选择年月（' + y + "年" + (m + 1) + "月）</button></div>" +
       (state.pickerOpen ? pickerHTML() : "");
   }
   if (state.viewMode === "week"){
     return '<div class="view-toolbar">' +
       '<button type="button" class="btn tiny-btn" data-action="view-prev">上一周</button>' +
       '<button type="button" class="btn tiny-btn" data-action="view-next">下一周</button>' +
-      '<button type="button" class="btn tiny-btn" data-action="view-up">返回月视图</button>' + expand + '</div>';
+      '<button type="button" class="btn tiny-btn" data-action="view-up">返回月视图</button></div>';
   }
   return '<div class="view-toolbar">' +
     '<button type="button" class="btn tiny-btn" data-action="view-prev">前一天</button>' +
     '<button type="button" class="btn tiny-btn" data-action="view-next">后一天</button>' +
-    '<button type="button" class="btn tiny-btn" data-action="view-up">返回周视图</button>' + expand + '</div>';
+    '<button type="button" class="btn tiny-btn" data-action="view-up">返回周视图</button></div>';
 }
 
 function viewTasks(a){
@@ -975,8 +948,7 @@ function renderView(){
 
 /* ============================== 页面：日志 ============================== */
 function logCardHTML(l, a){
-  const linkedTask = l.taskId ? taskById(l.taskId) : null;
-  const t = linkedTask && visibleTasks(a).indexOf(linkedTask) !== -1 ? linkedTask : null;
+  const t = l.taskId ? taskById(l.taskId) : null;
   const mine = l.authorId === a.id;
   return '<article class="log-card">' +
     "<header><span class=\"who\">" + esc(personById(l.authorId).name) + "</span>" +
@@ -1101,15 +1073,15 @@ function reviewItemsHTML(a){
     return '<div class="log-card"><header><span class="who">' + esc(creatorOf(t).name) + "</span><span>自建任务 · 待创建审核</span></header>" +
       "<p>" + esc(t.title) + "</p>" +
       '<div class="row wrap"><span class="badge b-pending">待创建审核</span>' + urgencyBadge(t.urgency) +
-        '<span class="tiny muted">' + esc(fmtTaskDue(t)) + "</span></div>" +
+        '<span class="tiny muted">' + esc(fmtDue(t.due)) + "</span></div>" +
       '<div class="row"><button type="button" class="btn tiny-btn ok" data-action="approve-create" data-id="' + t.id + '">批准</button>' +
         '<button type="button" class="btn tiny-btn danger" data-action="reject-create" data-id="' + t.id + '">拒绝</button>' +
         '<button type="button" class="btn tiny-btn" data-task="' + t.id + '">查看详情</button></div></div>';
   }).concat(completed.map(function(t){
     return '<div class="log-card"><header><span class="who">' + esc(creatorOf(t).name) + "</span><span>完成申请 · 待完成审核</span></header>" +
       "<p>" + esc(t.title) + "</p>" +
-      '<div class="row wrap"><span class="badge b-pending">待完成审核</span></div>' +
-      (t.progressNote ? '<p class="tiny muted" style="margin:0">进展备注：' + esc(t.progressNote) + "</p>" : "") +
+      '<div class="row wrap"><span class="badge b-pending">待完成审核</span><span class="tiny muted">进度 ' + effectiveProgress(t) + "%</span></div>" +
+      (t.progressNote ? '<p class="tiny muted" style="margin:0">进度备注：' + esc(t.progressNote) + "</p>" : "") +
       '<div class="row"><button type="button" class="btn tiny-btn ok" data-action="approve-complete" data-id="' + t.id + '">批准完成</button>' +
         '<button type="button" class="btn tiny-btn danger" data-action="reject-complete" data-id="' + t.id + '">退回</button>' +
         '<button type="button" class="btn tiny-btn" data-task="' + t.id + '">查看详情</button></div></div>';
@@ -1122,7 +1094,7 @@ function selfItemsHTML(a){
     ? '<div class="stack">' + mine.map(function(t){
         return '<div class="log-card"><header><span class="tname">' + esc(t.title) + "</span>" +
           '<span class="badge ' + STATUS_CLASS[t.status] + '">' + STATUS_LABEL[t.status] + "</span></header>" +
-          '<div class="row wrap"><span class="tiny muted">创建于 ' + esc(fmtDateTime(t.createdAt)) + "</span>" +
+          '<div class="row wrap"><span class="tiny muted">提交于 ' + esc(fmtDateTime(t.start)) + "</span>" +
             '<span class="spacer"></span><button type="button" class="btn tiny-btn" data-task="' + t.id + '">查看详情</button></div>' +
           (t.reviewNote ? '<p class="tiny muted" style="margin:0">审核意见：' + esc(t.reviewNote) + "</p>" : "") + "</div>";
       }).join("") + "</div>"
@@ -1261,7 +1233,7 @@ function renderAI(){
     } else {
       advice.push("目前没有待推进的紧要任务，可关注后续派发的任务。");
     }
-    advice.push("建议在日志中持续记录进展备注，便于" + (a.role === "middle" ? "你的直属上层" : "你的直属上级") + "了解进展。");
+    advice.push("建议在日志中持续记录进度备注，便于" + (a.role === "middle" ? "你的直属上层" : "你的直属上级") + "了解进展。");
   }
 
   el.innerHTML =
@@ -1314,7 +1286,7 @@ function renderSheet(){
   overlayEl.hidden = false;
   sheetBodyEl.scrollTop = 0;
   const target = sheetBodyEl.querySelector("[data-autofocus]") ||
-    sheetFootEl.querySelector("button:not(:disabled)") ||
+    sheetFootEl.querySelector("button") ||
     sheetBodyEl.querySelector("button, input, select, textarea");
   if (target) target.focus();
 }
@@ -1364,7 +1336,7 @@ function taskDetailView(id){
       "</span>" + KIND_LABEL[kind] + "</span></div>";
 
   if (t.type === "abstract"){
-    body += '<div class="callout">抽象任务不可直接执行，当前状态由普通子任务汇总得出，不提供直接更新状态与直接完成入口。</div>';
+    body += '<div class="callout">抽象任务不可直接执行，进展由普通子任务汇总得出，不提供进度录入与直接完成入口。</div>';
   }
 
   body += '<div class="kv">' +
@@ -1375,18 +1347,20 @@ function taskDetailView(id){
         (t.type === "abstract"
           ? (kids.length ? esc(kids.map(function(k){ return assigneesOf(k).map(function(p){ return p.name; }).join("、"); }).filter(Boolean).join("、") || "由子任务决定") : "由子任务决定")
           : esc(assigneesOf(t).map(function(p){ return p.name; }).join("、") || "未指定")) + "</span>" +
-      '<span class="k">创建时间</span><span class="v">' + esc(fmtDateTime(t.createdAt)) + "</span>" +
-      '<span class="k">任务时间</span><span class="v">' + esc(fmtTaskRange(t)) + (isOverdue(t) ? ' <span class="is-overdue">已逾期</span>' : "") + "</span>" +
-      '<span class="k">当前状态</span><span class="v">' + esc(STATUS_LABEL[effectiveStatus(t)]) + "</span>" +
-      '<span class="k">进展备注</span><span class="v">' + (t.progressNote ? esc(t.progressNote) : "暂无") + "</span>" +
+      '<span class="k">截止日期</span><span class="v">' + esc(fmtDue(t.due)) + (isOverdue(t) ? ' <span class="is-overdue">已逾期</span>' : "") + "</span>" +
+      '<span class="k">起止时间</span><span class="v">' + esc(fmtDateTime(t.start)) + " → " + esc(fmtDateTime(t.due)) + "</span>" +
+      '<span class="k">完成情况</span><span class="v">' + esc(STATUS_LABEL[effectiveStatus(t)]) + "（" + effectiveProgress(t) + "%）</span>" +
+      '<span class="k">进度备注</span><span class="v">' + (t.progressNote ? esc(t.progressNote) : "暂无") + "</span>" +
       (t.desc ? '<span class="k">说明</span><span class="v">' + esc(t.desc) + "</span>" : "") +
     "</div>";
+
+  body += '<div class="progress-track" role="img" aria-label="完成进度 ' + effectiveProgress(t) + '%"><i style="width:' + effectiveProgress(t) + '%"></i></div>';
 
   if (parent){
     body += '<div class="divider"></div><div class="card-head"><h2>上级任务</h2></div>' +
       '<button type="button" class="child-task" data-task="' + parent.id + '">' +
         '<span class="t-title"><span>' + esc(parent.title) + "</span>" + typeBadge(parent) + "</span>" +
-        '<span class="task-meta">' + statusBadge(parent) + urgencyBadge(parent.urgency) + "<span>" + esc(fmtTaskDue(parent)) + "</span></span></button>";
+        '<span class="task-meta">' + statusBadge(parent) + urgencyBadge(parent.urgency) + "<span>" + esc(fmtDue(parent.due)) + "</span></span></button>";
   } else if (hiddenParent){
     /* 只说明存在上下级关系，不暴露范围外任务的名称、状态或时间 */
     body += '<div class="divider"></div><div class="card-head"><h2>上级任务</h2></div>' +
@@ -1399,7 +1373,7 @@ function taskDetailView(id){
         return '<button type="button" class="child-task" data-task="' + k.id + '">' +
           '<span class="t-title"><span>' + esc(k.title) + "</span></span>" +
           '<span class="task-meta">' + kindTag(k, a) + statusBadge(k) + urgencyBadge(k.urgency) +
-            "<span>" + esc(fmtTaskDue(k)) + "</span></span></button>";
+            "<span>" + esc(fmtDue(k.due)) + "</span><span>进度 " + effectiveProgress(k) + "%</span></span></button>";
       }).join("") + "</div>";
   }
   if (siblings.length){
@@ -1407,7 +1381,7 @@ function taskDetailView(id){
       siblings.map(function(s){
         return '<button type="button" class="child-task" data-task="' + s.id + '">' +
           '<span class="t-title"><span>' + esc(s.title) + "</span></span>" +
-          '<span class="task-meta">' + statusBadge(s) + urgencyBadge(s.urgency) + "<span>" + esc(fmtTaskDue(s)) + "</span></span></button>";
+          '<span class="task-meta">' + statusBadge(s) + urgencyBadge(s.urgency) + "<span>" + esc(fmtDue(s.due)) + "</span></span></button>";
       }).join("") + "</div>";
   }
   if (t.reviewNote){
@@ -1422,7 +1396,7 @@ function taskDetailView(id){
 
   const foot = [];
   if (canEditTask(a, t)) foot.push('<button type="button" class="btn primary" data-action="edit-task" data-id="' + t.id + '">编辑任务</button>');
-  if (canUpdateProgress(a, t)) foot.push('<button type="button" class="btn" data-action="update-progress" data-id="' + t.id + '">更新状态</button>');
+  if (canUpdateProgress(a, t)) foot.push('<button type="button" class="btn" data-action="update-progress" data-id="' + t.id + '">更新进度</button>');
   if (canUpdateProgress(a, t)) foot.push('<button type="button" class="btn ok" data-action="submit-complete" data-id="' + t.id + '">提交完成</button>');
   if (t.status === "pending-create" && createReviewer(t) && createReviewer(t).id === a.id){
     foot.push('<button type="button" class="btn ok" data-action="approve-create" data-id="' + t.id + '">批准创建</button>');
@@ -1442,8 +1416,7 @@ function logDetailView(id){
   const a = actor();
   const l = logById(id);
   if (!l || visibleLogs(a).indexOf(l) === -1) return null;
-  const linkedTask = l.taskId ? taskById(l.taskId) : null;
-  const t = linkedTask && visibleTasks(a).indexOf(linkedTask) !== -1 ? linkedTask : null;
+  const t = l.taskId ? taskById(l.taskId) : null;
   const mine = l.authorId === a.id;
   const body = '<div class="kv">' +
       '<span class="k">作者</span><span class="v">' + esc(personById(l.authorId).name) + "</span>" +
@@ -1474,60 +1447,44 @@ function overflowView(gid){
 
 /* ---------- 通知列表 ---------- */
 function notificationsView(){
-  const a = actor(), items = notificationsFor(a), unread = unreadCount(a);
-  const body = '<div class="notification-summary">' + unread + ' 条未读 · 共 ' + items.length + ' 条通知</div>' + (items.length
+  const a = actor();
+  const items = notificationsFor(a);
+  const body = items.length
     ? items.map(function(n){
-        const p = notificationPayload(n, a), isRead = n.read.indexOf(a.id) !== -1;
+        const t = taskById(n.taskId);
+        const isRead = n.read.indexOf(a.id) !== -1;
         return '<button type="button" class="notif' + (isRead ? " is-read" : "") + '" data-action="open-notif" data-id="' + n.id + '">' +
-          '<span class="ndot" aria-hidden="true"></span><span class="nbody"><span class="ntitle">' + esc(p.title) + '</span>' +
-          '<span class="nsummary">' + esc(p.changes.join("；")) + '</span>' +
-          '<span class="nmeta"><span class="badge ' + (NOTIF_CLASS[n.type] || "b-brand") + '">' + esc(p.label || NOTIF_LABEL[n.type] || "信息更新") + '</span><span>' + esc(n.actorName || "系统提醒") + '</span><time>' + esc(fmtDateTime(n.time)) + '</time>' + (isRead ? '' : '<span>未读</span>') + '</span></span></button>';
-      }).join("") : '<div class="empty">暂无通知</div>');
-  return { title: "通知", body: body, foot: '<button type="button" class="btn" data-action="notification-read-all"' + (unread ? '' : ' disabled') + '>全部标为已读</button><button type="button" class="btn" data-action="sheet-close">关闭</button>' };
+          '<span class="ndot" aria-hidden="true"></span>' +
+          '<span class="nbody"><span class="ntitle">' + esc(t.title) + "</span>" +
+            '<span class="nmeta"><span class="badge ' + NOTIF_CLASS[n.type] + '">' + NOTIF_LABEL[n.type] + "</span> " +
+              esc(fmtDateTime(n.time)) + (isRead ? "" : " · 未读") + "</span></span></button>";
+      }).join("")
+    : '<div class="empty">暂无通知</div>';
+  return { title: "通知", body: body, foot: '<button type="button" class="btn" data-action="sheet-close">关闭</button>' };
 }
 
 /* ---------- 表单：创建 / 编辑任务 ---------- */
-function simpleTaskStatus(t){
-  if (!t) return "todo";
-  if (["todo", "doing", "done"].indexOf(t.status) !== -1) return t.status;
-  return t.requestedStatus || (t.status === "pending-complete" ? "done" : "todo");
-}
-function selectedAssigneeHTML(){
-  const selected = formChoice.assigneeIds.map(personById).filter(Boolean);
-  return selected.length
-    ? '<div class="selected-chips">' + selected.map(function(p){
-        return '<span class="person-chip">' + esc(p.name) + '<small>' + esc(p.dept) + '</small></span>';
-      }).join("") + "</div>"
-    : '<div class="empty compact">尚未选择负责人</div>';
-}
 function taskFormView(mode, id){
   const a = actor();
   const t = mode === "edit" ? taskById(id) : null;
   if (mode === "edit" && (!t || !canEditTask(a, t))) return null;
-  const draft = formChoice.taskDraft && formChoice.taskDraft.mode === mode && formChoice.taskDraft.id === (id || null)
-    ? formChoice.taskDraft : null;
-  const isAbstract = formChoice.type === "abstract";
+  const isAbstract = t ? t.type === "abstract" : false;
+  const people = assignablePeople(a);
   const parents = parentCandidates(a, t);
-  const currentParentId = draft ? draft.parentId : (t && t.parentId ? t.parentId : null);
+  const currentParentId = t && t.parentId ? t.parentId : null;
   const currentParentVisible = !!currentParentId && parents.some(function(p){ return p.id === currentParentId; });
-  const start = t ? t.start : at(0, 9, 0);
   const due = t ? t.due : at(3, 18, 0);
-  const allDay = draft ? draft.allDay : !!(t && t.allDay);
-  const title = draft ? draft.title : (t ? t.title : "");
-  const desc = draft ? draft.desc : (t ? t.desc : "");
-  const startDate = draft ? draft.startDate : toDateInput(start);
-  const startTime = draft ? draft.startTime : toTimeInput(start);
-  const dueDate = draft ? draft.dueDate : toDateInput(due);
-  const dueTime = draft ? draft.dueTime : toTimeInput(due);
+  const assigneeIds = t ? t.assigneeIds : (a.role === "lower" ? [a.id] : []);
+  const urgency = t ? t.urgency : "中";
 
   let body = '<div class="field"><label for="tf-title">任务名称</label>' +
-    '<input id="tf-title" type="text" value="' + esc(title) + '" data-autofocus /></div>';
-  body += '<div class="field"><label for="tf-desc">说明</label><textarea id="tf-desc">' + esc(desc) + "</textarea></div>";
+    '<input id="tf-title" type="text" value="' + esc(t ? t.title : "") + '" data-autofocus /></div>';
+  body += '<div class="field"><label for="tf-desc">说明</label><textarea id="tf-desc">' + esc(t ? t.desc : "") + "</textarea></div>";
 
   if (mode === "create"){
     body += '<div class="field"><label>任务类型</label><div class="choice-row" id="tf-type">' +
-      '<button type="button" class="choice" data-type="normal" aria-pressed="' + (formChoice.type === "normal") + '">普通任务</button>' +
-      '<button type="button" class="choice" data-type="abstract" aria-pressed="' + (formChoice.type === "abstract") + '">抽象任务</button>' +
+      '<button type="button" class="choice" data-type="normal" aria-pressed="true">普通任务</button>' +
+      '<button type="button" class="choice" data-type="abstract" aria-pressed="false">抽象任务</button>' +
       "</div></div>";
   } else {
     body += '<div class="field"><label>任务类型</label><div class="tiny muted">' + (isAbstract ? "抽象任务（由子任务汇总）" : "普通任务") + "</div></div>";
@@ -1543,33 +1500,28 @@ function taskFormView(mode, id){
       : "") +
     "</select></div>";
 
-  body += '<label class="checkline switchline"><input id="tf-all-day" type="checkbox"' + (allDay ? " checked" : "") + ' />' +
-    '<span><strong>全天</strong><small>开启后只需填写开始日期和截止日期</small></span></label>';
-  body += '<div class="row time-row"><div class="field"><label for="tf-start-date">开始日期</label>' +
-    '<input id="tf-start-date" type="date" value="' + startDate + '" /></div>' +
-    '<div class="field" id="tf-start-time-field"' + (allDay ? " hidden" : "") + '><label for="tf-start-time">开始时间</label>' +
-    '<input id="tf-start-time" type="time" value="' + startTime + '" /></div></div>';
-  body += '<div class="row time-row"><div class="field"><label for="tf-due-date">截止日期</label>' +
-    '<input id="tf-due-date" type="date" value="' + dueDate + '" /></div>' +
-    '<div class="field" id="tf-due-time-field"' + (allDay ? " hidden" : "") + '><label for="tf-due-time">截止时间</label>' +
-    '<input id="tf-due-time" type="time" value="' + dueTime + '" /></div></div>';
+  body += '<div class="row"><div class="field" style="flex:1"><label for="tf-due-date">截止日期</label>' +
+    '<input id="tf-due-date" type="date" value="' + toDateInput(due) + '" /></div>' +
+    '<div class="field" style="flex:1"><label for="tf-due-time">截止时刻</label>' +
+    '<input id="tf-due-time" type="time" value="' + toTimeInput(due) + '" /></div></div>';
 
   body += '<div class="field"><label>紧急程度</label><div class="choice-row" id="tf-urgency">' +
     ["紧急", "高", "中", "低"].map(function(u){
-      return '<button type="button" class="choice" data-urgency="' + u + '" aria-pressed="' + (formChoice.urgency === u) + '">' + u + "</button>";
+      return '<button type="button" class="choice" data-urgency="' + u + '" aria-pressed="' + (urgency === u) + '">' + u + "</button>";
     }).join("") + "</div></div>";
 
-  body += '<div class="field" id="tf-assignee-field"' + (isAbstract ? ' hidden' : "") + '><div class="field-heading"><label>负责人（可多选）</label>' +
-    '<button type="button" class="btn tiny-btn" data-action="open-assignee-picker" data-mode="' + mode + '"' + (id ? ' data-id="' + id + '"' : "") + '>选择负责人</button></div>' +
-    selectedAssigneeHTML() +
+  body += '<div class="field" id="tf-assignee-field"' + (isAbstract ? ' hidden' : "") + '><label>负责人（可多选）</label><div class="stack">' +
+    people.map(function(p){
+      return '<label class="checkline"><input type="checkbox" data-assignee="' + p.id + '"' +
+        (assigneeIds.indexOf(p.id) !== -1 ? " checked" : "") + " />" + esc(p.name) +
+        '<span class="meta">' + esc(ROLE_LABEL[p.role]) + " · " + esc(p.dept) + "</span></label>";
+    }).join("") + "</div>" +
     (a.role === "lower" ? '<div class="tiny muted">下层只能给自己创建任务，需直属上级审核后生效。</div>' : "") +
     (a.role === "middle" ? '<div class="tiny muted">中层只能派发给本部门下层或自己。</div>' : "") +
     "</div>";
 
-  body += '<div class="field" id="tf-status-field"' + (isAbstract ? ' hidden' : "") + '><label>当前状态</label>' +
-    '<div class="choice-row" id="tf-status">' + [["todo", "未开始"], ["doing", "进行中"], ["done", "已完成"]].map(function(item){
-      return '<button type="button" class="choice" data-status="' + item[0] + '" aria-pressed="' + (formChoice.status === item[0]) + '">' + item[1] + "</button>";
-    }).join("") + '</div><div class="tiny muted">完成情况只按状态记录，不使用百分比或进度条。</div></div>';
+  if (!isAbstract) body += '<div class="field" id="tf-progress-field"><label for="tf-progress">初始进度</label>' +
+    '<input id="tf-progress" type="number" min="0" max="100" value="' + (t ? t.progress : 0) + '" /></div>';
 
   body += '<div class="callout" id="tf-error" hidden></div>';
   if (a.role === "lower" || a.role === "middle"){
@@ -1581,87 +1533,17 @@ function taskFormView(mode, id){
   return { title: mode === "create" ? "创建任务" : "编辑任务", body: body, foot: foot };
 }
 
-function captureTaskFormDraft(mode, id){
-  const pressedStatus = document.querySelector('#tf-status [aria-pressed="true"]');
-  formChoice.status = pressedStatus ? pressedStatus.dataset.status : formChoice.status;
-  formChoice.taskDraft = {
-    mode: mode, id: id || null,
-    title: document.getElementById("tf-title").value,
-    desc: document.getElementById("tf-desc").value,
-    parentId: document.getElementById("tf-parent").value || null,
-    startDate: document.getElementById("tf-start-date").value,
-    startTime: document.getElementById("tf-start-time").value,
-    dueDate: document.getElementById("tf-due-date").value,
-    dueTime: document.getElementById("tf-due-time").value,
-    allDay: document.getElementById("tf-all-day").checked
-  };
-}
-function assigneeDepartments(){
-  return assignablePeople(actor()).reduce(function(list, p){
-    if (list.indexOf(p.dept) === -1) list.push(p.dept);
-    return list;
-  }, []);
-}
-function assigneeDepartmentView(){
-  const selected = formChoice.assigneeIds.length;
-  const body = '<div class="callout info">先选择部门，再搜索姓名并勾选负责人。已选 ' + selected + ' 人。</div>' +
-    '<div class="department-grid">' + assigneeDepartments().map(function(dept){
-      const people = assignablePeople(actor()).filter(function(p){ return p.dept === dept; });
-      const picked = people.filter(function(p){ return formChoice.assigneeIds.indexOf(p.id) !== -1; }).length;
-      return '<button type="button" class="department-option" data-action="select-assignee-dept" data-dept="' + esc(dept) + '">' +
-        '<strong>' + esc(dept) + '</strong><span>' + people.length + ' 人' + (picked ? ' · 已选 ' + picked + ' 人' : '') + '</span></button>';
-    }).join("") + "</div>";
-  return { title: "选择负责人 · 部门", body: body,
-    foot: '<button type="button" class="btn" data-action="return-task-form">返回任务</button>' };
-}
-function assigneeListHTML(){
-  const q = formChoice.assigneeQuery.trim().toLowerCase();
-  const people = assignablePeople(actor()).filter(function(p){
-    return p.dept === formChoice.assigneeDept && (!q || (p.name + " " + ROLE_LABEL[p.role]).toLowerCase().indexOf(q) !== -1);
-  });
-  return people.length ? people.map(function(p){
-    return '<label class="checkline person-option"><input type="checkbox" data-picker-assignee="' + p.id + '"' +
-      (formChoice.assigneeIds.indexOf(p.id) !== -1 ? " checked" : "") + ' /><span><strong>' + esc(p.name) +
-      '</strong><small>' + esc(ROLE_LABEL[p.role]) + ' · ' + esc(p.dept) + '</small></span></label>';
-  }).join("") : '<div class="empty compact">没有匹配的人员</div>';
-}
-function assigneePeopleView(){
-  const body = '<div class="field"><label for="assigneeSearchInput">搜索姓名</label>' +
-    '<input id="assigneeSearchInput" type="search" placeholder="输入姓名关键词" value="' + esc(formChoice.assigneeQuery) + '" data-autofocus /></div>' +
-    '<div class="tiny muted" id="assigneeSelectedCount">已选 ' + formChoice.assigneeIds.length + ' 人</div>' +
-    '<div class="stack person-picker" id="assigneeResults">' + assigneeListHTML() + "</div>";
-  return { title: "选择负责人 · " + formChoice.assigneeDept, body: body,
-    foot: '<button type="button" class="btn" data-action="assignee-departments">返回部门</button>' +
-      '<button type="button" class="btn primary" data-action="return-task-form">完成</button>' };
-}
-function returnToTaskForm(){
-  if (sheetStack.length > 1) sheetStack.pop();
-  const draft = formChoice.taskDraft;
-  sheetStack[sheetStack.length - 1] = taskFormView(draft.mode, draft.id);
-  renderSheet();
-}
-function refreshAssigneeResults(){
-  const results = document.getElementById("assigneeResults");
-  if (results) results.innerHTML = assigneeListHTML();
-  const count = document.getElementById("assigneeSelectedCount");
-  if (count) count.textContent = "已选 " + formChoice.assigneeIds.length + " 人";
-}
-
-/* ---------- 表单：更新状态 / 提交完成 / 日志 / 请示 / 信息条目 ---------- */
+/* ---------- 表单：更新进度 / 提交完成 / 日志 / 请示 / 信息条目 ---------- */
 function progressFormView(id){
   const a = actor();
   const t = taskById(id);
   if (!t || !canUpdateProgress(a, t)) return null;
-  const current = t.status === "doing" ? "doing" : "todo";
-  const body = '<div class="callout info">负责人只能更新当前状态与进展备注；选择“已完成”后会按原有规则提交完成审核。</div>' +
-    '<div class="field"><label>当前状态</label><div class="choice-row" id="pf-status">' +
-      [["todo", "未开始"], ["doing", "进行中"], ["done", "已完成"]].map(function(item){
-        return '<button type="button" class="choice" data-progress-status="' + item[0] + '" aria-pressed="' + (current === item[0]) + '">' + item[1] + "</button>";
-      }).join("") + '</div></div>' +
-    '<div class="field"><label for="pf-note">进展备注</label><textarea id="pf-note" data-autofocus>' + esc(t.progressNote) + "</textarea></div>" +
+  const body = '<div class="callout info">负责人只能更新进度与进度备注，不能修改名称、截止日期、紧急程度或负责人。</div>' +
+    '<div class="field"><label for="pf-progress">当前进度（%）</label><input id="pf-progress" type="number" min="0" max="100" value="' + t.progress + '" data-autofocus /></div>' +
+    '<div class="field"><label for="pf-note">进度备注</label><textarea id="pf-note">' + esc(t.progressNote) + "</textarea></div>" +
     '<div class="callout" id="pf-error" hidden></div>';
-  return { title: "更新状态", body: body,
-    foot: withBack('<button type="button" class="btn primary" data-action="save-progress" data-id="' + t.id + '">保存状态</button>', a) };
+  return { title: "更新进度", body: body,
+    foot: withBack('<button type="button" class="btn primary" data-action="save-progress" data-id="' + t.id + '">保存进度</button>', a) };
 }
 function submitCompleteView(id){
   const a = actor();
@@ -1778,129 +1660,13 @@ function showError(elId, msg){
 function unique(list){
   return list.filter(function(x, i){ return x && list.indexOf(x) === i; });
 }
-/* 通知记录保存事件发生时的文字快照；业务权限仍由当前对象的详情入口校验。 */
-function pushNotification(event){
-  const recipients = unique(event.recipients || []).filter(function(id){ return !!personById(id); });
-  if (!recipients.length) return;
-  NOTIFICATIONS.push(Object.assign({ id: nextId("n"), time: new Date(), actorId: actor().id,
-    actorName: actor().name, read: [], changes: [], overrides: {} }, event, { recipients: recipients }));
-}
-function taskParties(t){
-  if (!t) return [];
-  const creation = createReviewer(t), completion = completionReviewer(t);
-  return unique([t.creatorId].concat(t.assigneeIds || [], [creation && creation.id, completion && completion.id]));
-}
-function taskSnapshot(t){
-  return Object.assign({}, t, { assigneeIds: t.assigneeIds.slice(), createdAt: new Date(t.createdAt), start: new Date(t.start), due: new Date(t.due) });
-}
-function memberNames(ids){ return ids.map(function(id){ const p = personById(id); return p ? p.name : id; }).join("、") || "无"; }
-function taskChanges(before, t){
-  if (!before) return ["状态：" + STATUS_LABEL[t.status], "负责人：" + memberNames(t.assigneeIds),
-    "紧急程度：" + t.urgency, "任务时间：" + fmtTaskRange(t)];
-  const changes = [];
-  [["title", "任务名称"], ["desc", "任务说明"], ["urgency", "紧急程度"], ["progressNote", "进展备注"], ["reviewNote", "审核意见"]].forEach(function(pair){
-    if (before[pair[0]] !== t[pair[0]]) changes.push(pair[1] + "：" + (before[pair[0]] || "未填写") + " → " + (t[pair[0]] || "已清空"));
+/* 任务创建通知：面向创建者与全部负责人 */
+function notifyTaskCreated(t){
+  const recipients = unique([t.creatorId].concat(t.assigneeIds));
+  NOTIFICATIONS.push({
+    id: nextId("n"), type: "create", taskId: t.id, recipients: recipients,
+    time: new Date(), read: []
   });
-  if (+before.start !== +t.start || +before.due !== +t.due || before.allDay !== t.allDay){
-    changes.push("任务时间：" + fmtTaskRange(before) + " → " + fmtTaskRange(t));
-  }
-  if (before.assigneeIds.slice().sort().join("|") !== t.assigneeIds.slice().sort().join("|")) changes.push("负责人：" + memberNames(before.assigneeIds) + " → " + memberNames(t.assigneeIds));
-  if (before.parentId !== t.parentId) changes.push("上级任务关联已调整，请在任务详情查看当前关联。");
-  if (before.status !== t.status) changes.push("状态：" + STATUS_LABEL[before.status] + " → " + STATUS_LABEL[t.status]);
-  return changes;
-}
-function notifyTaskChange(t, before, type){
-  const changes = taskChanges(before, t);
-  if (before && !changes.length) return;
-  if (type === "update" && before.urgency !== t.urgency) type = "priority";
-  const recipients = unique(taskParties(t).concat(taskParties(before)));
-  const overrides = {};
-  recipients.forEach(function(id){
-    const p = personById(id);
-    if (before && p && visibleTasks(p).indexOf(t) === -1){
-      overrides[id] = { title: before.title, changes: ["你与此任务的关联已调整。当前已无权查看任务详情，请联系创建者了解后续安排。"], targetType: "task", targetId: t.id };
-    } else if (before && p && before.parentId !== t.parentId){
-      function parentName(parentId){
-        if (!parentId) return "无";
-        const parent = taskById(parentId);
-        return parent && visibleTasks(p).indexOf(parent) !== -1 ? parent.title : "不可见的上级任务";
-      }
-      overrides[id] = { changes: changes.map(function(change){
-        return change.indexOf("上级任务关联") === 0 ? "上级任务：" + parentName(before.parentId) + " → " + parentName(t.parentId) : change;
-      }) };
-    }
-  });
-  /* 父任务汇总与子任务依赖同样属于相关变动；受限收件人只收到自己有权查看的关联对象摘要。 */
-  const related = [], seen = new Set([t.id]);
-  function addAncestors(id){
-    while (id && !seen.has(id)){
-      seen.add(id); const parent = taskById(id); if (!parent) break;
-      related.push(parent); id = parent.parentId;
-    }
-  }
-  addAncestors(t.parentId); if (before) addAncestors(before.parentId);
-  childrenOf(t.id).forEach(function(child){ if (!seen.has(child.id)){ seen.add(child.id); related.push(child); } });
-  related.forEach(function(linked){
-    taskParties(linked).forEach(function(id){
-      const p = personById(id);
-      if (recipients.indexOf(id) !== -1 || !p || visibleTasks(p).indexOf(linked) === -1) return;
-      recipients.push(id);
-      overrides[id] = { title: linked.title, label: "关联任务变动", targetType: "task", targetId: linked.id,
-        changes: ["关联的上级或子任务发生了“" + (NOTIF_LABEL[type] || "任务更新") + "”变动，请查看当前任务及汇总信息。"] };
-    });
-  });
-  pushNotification({ type: type, targetType: "task", targetId: t.id, taskId: t.id,
-    title: t.title, changes: changes, recipients: recipients, overrides: overrides });
-}
-function notifyLogChange(l, before){
-  const changes = [];
-  if (!before) changes.push("新增日志：" + l.content);
-  else {
-    if (before.content !== l.content) changes.push("日志内容：" + before.content + " → " + l.content);
-    if (before.taskId !== l.taskId) changes.push("关联任务已调整，请在日志详情查看当前关联。");
-  }
-  if (!changes.length) return;
-  pushNotification({ type: before ? "log-update" : "log-create", targetType: "log", targetId: l.id,
-    title: memberNames([l.authorId]) + "的工作日志", changes: changes,
-    recipients: PEOPLE.filter(function(p){ return visibleLogs(p).indexOf(l) !== -1; }).map(function(p){ return p.id; }) });
-}
-function notifyInfoChange(kind, item, before, deleted){
-  pushNotification({ type: kind + (deleted ? "-delete" : before ? "-update" : "-create"), targetType: kind,
-    targetId: item.id, ownerId: kind === "personal" ? actor().id : null, title: item.text,
-    changes: [deleted ? "已删除：" + item.text : before ? "内容：" + before + " → " + item.text : "新增内容：" + item.text],
-    recipients: kind === "company" ? PEOPLE.map(function(p){ return p.id; }) : [actor().id] });
-}
-function notificationPayload(n, a){ return Object.assign({}, n, (n.overrides || {})[a.id] || {}); }
-function notificationTargetView(n){
-  const a = actor(), p = notificationPayload(n, a);
-  if (n.recipients.indexOf(a.id) === -1) return null;
-  if (p.targetType === "task") return taskDetailView(p.targetId);
-  if (p.targetType === "log") return logDetailView(p.targetId);
-  if (p.targetType === "consult"){
-    const c = CONSULTATIONS.find(function(x){ return x.id === p.targetId && (x.fromId === a.id || x.toId === a.id); });
-    if (!c) return null;
-    return { title: "请示详情", body: '<div class="kv"><span class="k">申请人</span><span class="v">' + esc(memberNames([c.fromId])) + '</span><span class="k">处理人</span><span class="v">' + esc(memberNames([c.toId])) + '</span></div><p class="notification-text">' + esc(c.content) + '</p><p class="notification-text">' + esc(c.reply ? "回复：" + c.reply : "等待回复") + '</p>',
-      foot: withBack(c.toId === a.id ? '<button type="button" class="btn primary" data-action="reply-consult" data-id="' + c.id + '">回复请示</button>' : '<button type="button" class="btn" data-action="sheet-close">关闭</button>') };
-  }
-  let item;
-  if (p.targetType === "company") item = COMPANY_ITEMS.find(function(x){ return x.id === p.targetId; });
-  if (p.targetType === "personal" && n.ownerId === a.id) item = personalItemsFor(a.id).find(function(x){ return x.id === p.targetId; });
-  return item ? { title: p.targetType === "company" ? "公司信息" : "个人信息", body: '<p class="notification-text">' + esc(item.text) + '</p>', foot: withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>') } : null;
-}
-function notificationDetailView(n){
-  const p = notificationPayload(n, actor());
-  const available = !!notificationTargetView(n);
-  let exists = false;
-  if (p.targetType === "task") exists = !!taskById(p.targetId);
-  else if (p.targetType === "log") exists = !!logById(p.targetId);
-  else if (p.targetType === "consult") exists = CONSULTATIONS.some(function(c){ return c.id === p.targetId; });
-  else if (p.targetType === "company") exists = COMPANY_ITEMS.some(function(item){ return item.id === p.targetId; });
-  else if (p.targetType === "personal") exists = n.ownerId !== actor().id || personalItemsFor(actor().id).some(function(item){ return item.id === p.targetId; });
-  const unavailable = exists ? "你目前已无权查看该对象的详情。以上为当时发送给你的通知记录。" : "该对象已删除，以上通知记录仍然保留。";
-  const targetLabel = { task: "查看任务", log: "查看日志", consult: "查看请示", company: "查看公司信息", personal: "查看个人信息" };
-  return { title: "通知详情", body: '<div class="notification-details"><span class="badge ' + (NOTIF_CLASS[n.type] || "b-brand") + '">' + esc(p.label || NOTIF_LABEL[n.type] || "信息更新") + '</span><h3 class="notification-object">' + esc(p.title) + '</h3><p class="tiny muted">' + esc(n.actorName || "系统提醒") + ' · ' + esc(fmtDateTime(n.time)) + '</p><ul class="notification-change-list">' + p.changes.map(function(change){ return '<li>' + esc(change) + '</li>'; }).join("") + '</ul>' +
-    (available ? '' : '<div class="callout notification-unavailable">' + unavailable + '</div>') + '</div>',
-    foot: '<button type="button" class="btn" data-action="notification-list">返回通知</button>' + (available ? '<button type="button" class="btn primary" data-action="notification-target" data-id="' + n.id + '">' + targetLabel[p.targetType] + '</button>' : '') };
 }
 
 function saveTask(mode, id){
@@ -1908,21 +1674,13 @@ function saveTask(mode, id){
   const titleEl = document.getElementById("tf-title");
   const title = titleEl ? titleEl.value.trim() : "";
   if (!title) return showError("tf-error", "请填写任务名称。");
-  const startDateEl = document.getElementById("tf-start-date");
-  const startTimeEl = document.getElementById("tf-start-time");
-  const dueDateEl = document.getElementById("tf-due-date");
-  const dueTimeEl = document.getElementById("tf-due-time");
-  const allDay = document.getElementById("tf-all-day").checked;
-  if (!startDateEl.value || !dueDateEl.value) return showError("tf-error", "请填写开始日期与截止日期。");
-  if (!allDay && (!startTimeEl.value || !dueTimeEl.value)) return showError("tf-error", "非全天任务需要填写开始时间与截止时间。");
-  const startParts = startDateEl.value.split("-").map(Number);
-  const dueParts = dueDateEl.value.split("-").map(Number);
-  const startHM = allDay ? [0, 0] : startTimeEl.value.split(":").map(Number);
-  const dueHM = allDay ? [23, 59] : dueTimeEl.value.split(":").map(Number);
-  const start = new Date(startParts[0], startParts[1] - 1, startParts[2], startHM[0], startHM[1], 0, 0);
-  const due = new Date(dueParts[0], dueParts[1] - 1, dueParts[2], dueHM[0], dueHM[1], allDay ? 59 : 0, allDay ? 999 : 0);
-  if (isNaN(start.getTime()) || isNaN(due.getTime())) return showError("tf-error", "任务起止时间无效。");
-  if (due.getTime() <= start.getTime()) return showError("tf-error", "截止时间必须晚于开始时间。");
+  const dateEl = document.getElementById("tf-due-date");
+  const timeEl = document.getElementById("tf-due-time");
+  if (!dateEl.value || !timeEl.value) return showError("tf-error", "请填写截止日期与时刻。");
+  const parts = dateEl.value.split("-").map(Number);
+  const hm = timeEl.value.split(":").map(Number);
+  const due = new Date(parts[0], parts[1] - 1, parts[2], hm[0], hm[1], 0, 0);
+  if (isNaN(due.getTime())) return showError("tf-error", "截止时间无效。");
 
   const urgencyEl = document.querySelector('#tf-urgency [aria-pressed="true"]');
   const urgency = urgencyEl ? urgencyEl.dataset.urgency : "中";
@@ -1932,11 +1690,11 @@ function saveTask(mode, id){
 
   const existing = mode === "edit" ? taskById(id) : null;
   const type = existing ? existing.type : (document.querySelector('#tf-type [aria-pressed="true"]').dataset.type);
-  const statusEl = document.querySelector('#tf-status [aria-pressed="true"]');
-  const selectedStatus = statusEl ? statusEl.dataset.status : "todo";
   let assigneeIds = [];
   if (type === "normal"){
-    assigneeIds = formChoice.assigneeIds.slice();
+    assigneeIds = Array.prototype.slice.call(document.querySelectorAll("[data-assignee]"))
+      .filter(function(cb){ return cb.checked; })
+      .map(function(cb){ return cb.dataset.assignee; });
     if (!assigneeIds.length) return showError("tf-error", "普通任务至少需要一名负责人。");
   }
   const allowed = assignablePeople(a).map(function(p){ return p.id; });
@@ -1961,22 +1719,17 @@ function saveTask(mode, id){
   if (mode === "edit"){
     /* 提交处理同样复用编辑权限规则，而不只是隐藏入口 */
     if (!canEditTask(a, existing)) return showError("tf-error", "只有任务创建者可以修改任务信息。");
-    const before = taskSnapshot(existing);
     existing.title = title;
     existing.desc = desc;
-    existing.start = start;
     existing.due = due;
-    existing.allDay = allDay;
     existing.urgency = urgency;
     existing.parentId = parentId;
     if (existing.type === "normal"){
       existing.assigneeIds = assigneeIds;
       existing.selfCreated = assigneeIds.indexOf(existing.creatorId) !== -1;
-      if (existing.status === "pending-create") existing.requestedStatus = selectedStatus;
-      else existing.status = selectedStatus;
-      existing.progress = selectedStatus === "done" ? 100 : selectedStatus === "doing" ? 50 : 0;
+      const p = document.getElementById("tf-progress");
+      if (p){ existing.progress = Math.max(0, Math.min(100, Number(p.value) || 0)); }
     }
-    notifyTaskChange(existing, before, "update");
     renderAll();
     closeSheet();
     return;
@@ -1986,18 +1739,20 @@ function saveTask(mode, id){
   const t = mkTask({
     id: nextId("t"), type: type, title: title, desc: desc, parentId: parentId,
     creatorId: a.id, assigneeIds: assigneeIds, selfCreated: selfCreated,
-    createdAt: new Date(), start: start, due: due, allDay: allDay, urgency: urgency,
-    status: type === "normal" ? selectedStatus : "todo",
-    progress: selectedStatus === "done" ? 100 : selectedStatus === "doing" ? 50 : 0, progressNote: ""
+    start: new Date(), due: due, urgency: urgency, status: "todo", progress: 0, progressNote: ""
   });
+  const progressEl = document.getElementById("tf-progress");
+  if (progressEl && type === "normal"){
+    t.progress = Math.max(0, Math.min(100, Number(progressEl.value) || 0));
+    if (t.progress > 0) t.status = "doing";
+  }
   const reviewer = createReviewer(t);
   if (selfCreated && reviewer){
-    t.requestedStatus = type === "normal" ? selectedStatus : "todo";
     t.status = "pending-create";
     t.progress = 0;
   }
   TASKS.push(t);
-  notifyTaskChange(t, null, t.status === "pending-create" ? "pending-create" : "create");
+  if (t.status !== "pending-create") notifyTaskCreated(t);
   renderAll();
   closeSheet();
 }
@@ -2006,20 +1761,11 @@ function saveProgress(id){
   const a = actor();
   const t = taskById(id);
   if (!t || !canUpdateProgress(a, t)) return;
-  const selected = document.querySelector('#pf-status [aria-pressed="true"]');
-  const status = selected ? selected.dataset.progressStatus : "todo";
-  const before = taskSnapshot(t);
+  const p = Number(document.getElementById("pf-progress").value);
+  if (isNaN(p) || p < 0 || p > 100) return showError("pf-error", "进度需为 0 到 100 之间的数字。");
+  t.progress = Math.round(p);
   t.progressNote = document.getElementById("pf-note").value.trim();
-  t.progress = status === "done" ? 100 : status === "doing" ? 50 : 0;
-  if (status === "done"){
-    const reviewer = completionReviewer(t);
-    t.status = reviewer ? "pending-complete" : "done";
-    t.reviewNote = "";
-    notifyTaskChange(t, before, reviewer ? "submit-complete" : "complete");
-  } else {
-    t.status = status;
-    notifyTaskChange(t, before, "progress");
-  }
+  if (t.progress > 0 && t.status === "todo") t.status = "doing";
   renderAll();
   closeSheet();
 }
@@ -2027,14 +1773,12 @@ function confirmComplete(id){
   const a = actor();
   const t = taskById(id);
   if (!t || !canUpdateProgress(a, t)) return;
-  const before = taskSnapshot(t);
   const noteEl = document.getElementById("cf-note");
   if (noteEl && noteEl.value.trim()) t.progressNote = noteEl.value.trim();
   t.progress = 100;
   const reviewer = completionReviewer(t);
   t.status = reviewer ? "pending-complete" : "done";
   t.reviewNote = "";
-  notifyTaskChange(t, before, reviewer ? "submit-complete" : "complete");
   renderAll();
   closeSheet();
 }
@@ -2044,19 +1788,15 @@ function approveCreate(id){
   if (!t || t.status !== "pending-create") return;
   const r = createReviewer(t);
   if (!r || r.id !== a.id) return;
-  const before = taskSnapshot(t);
-  t.status = t.requestedStatus || "todo";
-  t.progress = t.status === "done" ? 100 : t.status === "doing" ? 50 : 0;
-  delete t.requestedStatus;
+  t.status = "todo";
   t.reviewNote = "";
-  notifyTaskChange(t, before, "approve-create");
+  notifyTaskCreated(t);
   afterReviewAction();
 }
 function rejectTask(kind, id, reason){
   const a = actor();
   const t = taskById(id);
-  if (!t || !reason.trim() || ["create", "complete"].indexOf(kind) === -1) return;
-  const before = taskSnapshot(t);
+  if (!t) return;
   if (kind === "create"){
     const r = createReviewer(t);
     if (!r || r.id !== a.id || t.status !== "pending-create") return;
@@ -2068,7 +1808,6 @@ function rejectTask(kind, id, reason){
     t.status = "doing";
     t.reviewNote = reason;
   }
-  notifyTaskChange(t, before, kind === "create" ? "reject-create" : "reject-complete");
   afterReviewAction();
 }
 function approveComplete(id){
@@ -2077,11 +1816,9 @@ function approveComplete(id){
   if (!t || t.status !== "pending-complete") return;
   const r = completionReviewer(t);
   if (!r || r.id !== a.id) return;
-  const before = taskSnapshot(t);
   t.status = "done";
   t.progress = 100;
   t.reviewNote = "";
-  notifyTaskChange(t, before, "approve-complete");
   afterReviewAction();
 }
 /* 审核后：刷新日志页当前筛选的列表与计数，并关闭可能打开的任务详情弹层 */
@@ -2096,18 +1833,13 @@ function saveLog(id){
   if (!content) return showError("lf-error", "请填写日志内容。");
   const taskSel = document.getElementById("lf-task");
   const taskId = taskSel && taskSel.value ? taskSel.value : null;
-  if (taskId && !visibleTasks(a).some(function(t){ return t.id === taskId && t.type === "normal"; })) return showError("lf-error", "关联任务不在当前可见范围内。");
   if (id){
     const l = logById(id);
     if (!l || l.authorId !== a.id) return;
-    const before = Object.assign({}, l);
     l.content = content;
     l.taskId = taskId;
-    notifyLogChange(l, before);
   } else {
-    const l = { id: nextId("l"), authorId: a.id, time: new Date(), taskId: taskId, content: content };
-    LOGS.push(l);
-    notifyLogChange(l, null);
+    LOGS.push({ id: nextId("l"), authorId: a.id, time: new Date(), taskId: taskId, content: content });
   }
   renderAll();
   closeSheet();
@@ -2119,9 +1851,7 @@ function saveConsult(){
   if (!sup) return showError("qk-error", "当前身份没有直属上层。");
   const content = document.getElementById("qk-content").value.trim();
   if (!content) return showError("qk-error", "请填写请示内容。");
-  const c = { id: nextId("c"), fromId: a.id, toId: sup.id, time: new Date(), content: content, status: "pending", reply: "" };
-  CONSULTATIONS.push(c);
-  pushNotification({ type: "consult", targetType: "consult", targetId: c.id, title: "来自" + a.name + "的请示", changes: [content], recipients: [c.fromId, c.toId] });
+  CONSULTATIONS.push({ id: nextId("c"), fromId: a.id, toId: sup.id, time: new Date(), content: content, status: "pending", reply: "" });
   renderAll();
   closeSheet();
 }
@@ -2131,12 +1861,9 @@ function saveReply(id){
   if (!c || c.toId !== a.id) return;
   const content = document.getElementById("rp-content").value.trim();
   if (!content) return showError("rp-error", "请填写回复内容。");
-  if (c.reply === content && c.status === "replied"){ closeSheet(); return; }
-  const previous = c.reply;
   c.reply = content;
   c.status = "replied";
   c.replyTime = new Date();
-  pushNotification({ type: "reply", targetType: "consult", targetId: c.id, title: "请示收到回复", changes: [previous ? "回复内容：" + previous + " → " + content : "回复：" + content], recipients: [c.fromId, c.toId] });
   renderAll();
   closeSheet();
 }
@@ -2149,33 +1876,28 @@ function saveCompanyItem(id){
   if (id){
     const it = COMPANY_ITEMS.find(function(x){ return x.id === id; });
     if (!it) return;
-    if (it.text !== text){ const before = it.text; it.text = text; notifyInfoChange("company", it, before, false); }
+    it.text = text;
   } else {
     /* 保存处理同样执行上限校验，不只依赖界面禁用 */
     if (COMPANY_ITEMS.length >= 10) return showError("ci-error", "公司统一信息最多 10 条，请先删除后再新增。");
-    const it = { id: nextId("co"), text: text };
-    COMPANY_ITEMS.push(it);
-    notifyInfoChange("company", it, null, false);
+    COMPANY_ITEMS.push({ id: nextId("co"), text: text });
   }
   renderAll();
   closeSheet();
 }
 /* 删除公司与个人信息：个人信息在首次变更前先物化日志摘录 */
 function deleteItem(kind, id){
-  if (["company", "personal"].indexOf(kind) === -1) return;
   const a = actor();
   if (kind === "company"){
     if (a.role !== "upper") return;
     const i = COMPANY_ITEMS.findIndex(function(x){ return x.id === id; });
     if (i === -1) return;
-    const removed = COMPANY_ITEMS.splice(i, 1)[0];
-    notifyInfoChange("company", removed, null, true);
+    COMPANY_ITEMS.splice(i, 1);
   } else {
     const st = materializePersonal(a.id);
     const i = st.items.findIndex(function(x){ return x.id === id; });
     if (i === -1) return;
-    const removed = st.items.splice(i, 1)[0];
-    notifyInfoChange("personal", removed, null, true);
+    st.items.splice(i, 1);
   }
   renderAll();
   closeSheet();
@@ -2190,24 +1912,17 @@ function materializePersonal(pid){
 }
 function savePersonalItem(id){
   const a = actor();
+  const st = materializePersonal(a.id);
   const textEl = document.getElementById("pi-text");
   const text = textEl ? textEl.value.trim() : "";
   if (!text) return showError("pi-error", "内容不能为空。");
-  const currentItems = personalItemsFor(a.id);
-  const currentItem = id ? currentItems.find(function(x){ return x.id === id; }) : null;
-  if (id && !currentItem) return;
-  if (currentItem && currentItem.text === text){ closeSheet(); return; }
-  if (!id && currentItems.length >= 10) return showError("pi-error", "个人信息最多 10 条，请先删除后再新增。");
-  const st = materializePersonal(a.id);
   if (id){
     const it = st.items.find(function(x){ return x.id === id; });
     if (!it) return;
-    if (it.text !== text){ const before = it.text; it.text = text; notifyInfoChange("personal", it, before, false); }
+    it.text = text;
   } else {
     if (st.items.length >= 10) return showError("pi-error", "个人信息最多 10 条，请先删除后再新增。");
-    const it = { id: nextId("pi"), text: text, logId: null };
-    st.items.push(it);
-    notifyInfoChange("personal", it, null, false);
+    st.items.push({ id: nextId("pi"), text: text, logId: null });
   }
   renderAll();
   closeSheet();
@@ -2279,22 +1994,7 @@ function setPage(page){
 }
 
 /* 弹层内的临时选择状态 */
-const formChoice = {
-  type: "normal", urgency: "中", status: "todo", assigneeIds: [],
-  assigneeDept: null, assigneeQuery: "", taskDraft: null
-};
-function beginTaskForm(mode, id){
-  const a = actor();
-  const t = mode === "edit" ? taskById(id) : null;
-  formChoice.type = t ? t.type : "normal";
-  formChoice.urgency = t ? t.urgency : "中";
-  formChoice.status = simpleTaskStatus(t);
-  formChoice.assigneeIds = t ? t.assigneeIds.slice() : (a.role === "lower" ? [a.id] : []);
-  formChoice.assigneeDept = null;
-  formChoice.assigneeQuery = "";
-  formChoice.taskDraft = null;
-  openSheet(taskFormView(mode, id));
-}
+const formChoice = { type: "normal", urgency: "中" };
 function syncChoiceRow(selector, attr, value){
   document.querySelectorAll(selector + " [" + attr + "]").forEach(function(b){
     b.setAttribute("aria-pressed", String(b.dataset[attr.replace("data-", "")] === value));
@@ -2310,27 +2010,9 @@ function runAction(el){
     case "new-log": openSheet(logFormView()); return;
     case "edit-log": openSheet(logFormView(id)); return;
     case "new-task":
-      beginTaskForm("create"); return;
-    case "edit-task": beginTaskForm("edit", id); return;
-    case "open-assignee-picker":
-      captureTaskFormDraft(el.dataset.mode, id);
-      formChoice.assigneeDept = null;
-      formChoice.assigneeQuery = "";
-      openSheet(assigneeDepartmentView());
-      return;
-    case "select-assignee-dept":
-      formChoice.assigneeDept = el.dataset.dept;
-      formChoice.assigneeQuery = "";
-      sheetStack[sheetStack.length - 1] = assigneePeopleView();
-      renderSheet();
-      return;
-    case "assignee-departments":
-      formChoice.assigneeDept = null;
-      formChoice.assigneeQuery = "";
-      sheetStack[sheetStack.length - 1] = assigneeDepartmentView();
-      renderSheet();
-      return;
-    case "return-task-form": returnToTaskForm(); return;
+      formChoice.type = "normal"; formChoice.urgency = "中";
+      openSheet(taskFormView("create")); return;
+    case "edit-task": openSheet(taskFormView("edit", id)); return;
     case "update-progress": openSheet(progressFormView(id)); return;
     case "submit-complete": openSheet(submitCompleteView(id)); return;
     case "save-task": saveTask(el.dataset.mode, id); return;
@@ -2361,29 +2043,16 @@ function runAction(el){
     case "save-consult": saveConsult(); return;
     case "reply-consult": openSheet(replyConsultView(id)); return;
     case "save-reply": saveReply(id); return;
-    case "open-notif": {
-      const n = notificationsFor(actor()).find(function(x){ return x.id === id; });
-      if (!n) return;
-      if (n.read.indexOf(actor().id) === -1) n.read.push(actor().id);
-      renderAll();
-      sheetStack = [notificationsView()];
-      openSheet(notificationDetailView(n));
+    case "open-notif":
+      const n = NOTIFICATIONS.find(function(x){ return x.id === id; });
+      if (n){
+        if (n.read.indexOf(actor().id) === -1) n.read.push(actor().id);
+        const tv = taskDetailView(n.taskId);
+        sheetStack = [];
+        renderAll();
+        if (tv) openSheet(tv);
+      }
       return;
-    }
-    case "notification-target": {
-      const n = notificationsFor(actor()).find(function(x){ return x.id === id; });
-      if (!n) return;
-      const view = notificationTargetView(n);
-      if (view) openSheet(view);
-      else { sheetStack = [notificationsView()]; openSheet(notificationDetailView(n)); }
-      return;
-    }
-    case "notification-read-all":
-      notificationsFor(actor()).forEach(function(n){ if (n.read.indexOf(actor().id) === -1) n.read.push(actor().id); });
-      renderAll();
-      sheetStack = [notificationsView()]; renderSheet(); return;
-    case "notification-list":
-      sheetStack = [notificationsView()]; renderSheet(); return;
     case "save-company": saveCompanyItem(id); return;
     case "save-personal": savePersonalItem(id); return;
     case "new-company": openSheet(companyItemFormView(null)); return;
@@ -2391,12 +2060,6 @@ function runAction(el){
     case "delete-company": { const v = confirmDeleteView("company", id); if (v) openSheet(v); return; }
     case "delete-personal": { const v = confirmDeleteView("personal", id); if (v) openSheet(v); return; }
     case "confirm-delete": deleteItem(el.dataset.kind, id); return;
-    case "view-toggle-expand": {
-      state.viewExpanded = !state.viewExpanded;
-      renderView();
-      document.querySelector('[data-action="view-toggle-expand"]').focus({ preventScroll: true });
-      return;
-    }
     case "toggle-month-picker":
       state.pickerOpen = !state.pickerOpen;
       renderAll();
@@ -2432,34 +2095,9 @@ function runAction(el){
 document.addEventListener("input", function(ev){
   const target = ev.target;
   if (!target || typeof target.closest !== "function") return;
-  if (target.id === "assigneeSearchInput"){
-    formChoice.assigneeQuery = target.value;
-    refreshAssigneeResults();
-    return;
-  }
   if (!target.closest("#logAuthorInput")) return;
   state.logAuthorQuery = normalizeAuthorQuery(target.value);
   refreshLogResults();
-});
-
-document.addEventListener("change", function(ev){
-  const target = ev.target;
-  if (!target || typeof target.closest !== "function") return;
-  if (target.id === "tf-all-day"){
-    const startTime = document.getElementById("tf-start-time-field");
-    const dueTime = document.getElementById("tf-due-time-field");
-    if (startTime) startTime.hidden = target.checked;
-    if (dueTime) dueTime.hidden = target.checked;
-    return;
-  }
-  const picker = target.closest("[data-picker-assignee]");
-  if (picker){
-    const pid = picker.dataset.pickerAssignee;
-    const index = formChoice.assigneeIds.indexOf(pid);
-    if (picker.checked && index === -1) formChoice.assigneeIds.push(pid);
-    if (!picker.checked && index !== -1) formChoice.assigneeIds.splice(index, 1);
-    refreshAssigneeResults();
-  }
 });
 
 document.addEventListener("click", function(ev){
@@ -2487,7 +2125,7 @@ document.addEventListener("click", function(ev){
   if (taskEl){ openTaskDetail(taskEl.dataset.task); return; }
   const logEl = ev.target.closest("[data-log]");
   if (logEl){ openLogDetail(logEl.dataset.log); return; }
-  /* 月视图的周入口与日期按钮分别下钻；任务条及 +N 已优先处理 */
+  /* 下钻只在非任务条、非 +N 的空白命中区生效 */
   const weekEl = ev.target.closest("[data-drill-week]");
   if (weekEl){
     state.viewMode = "week";
@@ -2519,28 +2157,15 @@ document.addEventListener("click", function(ev){
     formChoice.type = typeEl.dataset.type;
     syncChoiceRow("#tf-type", "data-type", formChoice.type);
     const field = document.getElementById("tf-assignee-field");
-    const status = document.getElementById("tf-status-field");
+    const prog = document.getElementById("tf-progress-field");
     if (field) field.hidden = formChoice.type === "abstract";
-    if (status) status.hidden = formChoice.type === "abstract";
+    if (prog) prog.hidden = formChoice.type === "abstract";
     return;
   }
   const urgencyEl = ev.target.closest("[data-urgency]");
   if (urgencyEl){
     formChoice.urgency = urgencyEl.dataset.urgency;
     syncChoiceRow("#tf-urgency", "data-urgency", formChoice.urgency);
-    return;
-  }
-  const statusEl = ev.target.closest("[data-status]");
-  if (statusEl){
-    formChoice.status = statusEl.dataset.status;
-    syncChoiceRow("#tf-status", "data-status", formChoice.status);
-    return;
-  }
-  const progressStatusEl = ev.target.closest("[data-progress-status]");
-  if (progressStatusEl){
-    document.querySelectorAll("#pf-status [data-progress-status]").forEach(function(b){
-      b.setAttribute("aria-pressed", String(b === progressStatusEl));
-    });
     return;
   }
   const actionEl = ev.target.closest("[data-action]");
