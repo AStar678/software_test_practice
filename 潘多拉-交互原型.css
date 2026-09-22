@@ -77,7 +77,6 @@
     border-radius:999px;background:var(--urgent);color:#fff;font-size:10px;font-weight:700;
     display:grid;place-items:center;border:2px solid #fff;
   }
-  .bell .dot[hidden]{display:none}
 
   .app-main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:12px 12px 16px;background:#fafbfd}
   /* 导图激活时整页不滚动，滚动责任下放到各象限内容区 */
@@ -182,8 +181,6 @@
   /* ---------- 视图：响应式类甘特（无横向滚动） ---------- */
   .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--muted);align-items:center}
   .view-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-  .view-toolbar .view-expand-toggle{margin-left:auto;min-width:74px;color:var(--brand);font-size:12px;border-color:#cbdcff}
-  .view-toolbar .view-expand-toggle[aria-expanded="true"]{background:var(--brand-soft);font-weight:600}
   .gantt{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden;min-width:0;max-width:100%}
   .g-head{display:flex;align-items:stretch;background:#f7f9fc;border-bottom:1px solid var(--line-2)}
   .g-axis{flex:1;min-width:0;display:grid;grid-template-columns:repeat(var(--cols,7),minmax(0,1fr))}
@@ -209,22 +206,16 @@
   .g-grid > i{border-right:1px solid var(--line-2)}
   .g-grid > i:last-child{border-right:0}
   .g-grid > i.is-today{background:#f5f8ff}
-  /* 日视图：全天带位于小时轴上方，完全展开时随任务数增长；全天任务不进入小时泳道 */
+  /* 日视图：稳定高度的全天带，位于小时轴上方；全天任务不进入小时泳道 */
   .g-allday{border-bottom:1px solid var(--line);background:#fbfcfe;padding:5px 0 6px}
   .g-allday-head{display:flex;align-items:baseline;gap:6px;padding:0 6px 4px;font-size:10.5px;font-weight:700;color:var(--ink-2)}
-  /* 保留三条全天泳道的最小高度；紧凑模式超过三条时聚合为 +N */
+  /* 三条全天泳道的稳定高度：无任务时带高不变，超过三条时聚合为 +N */
   .g-allday .g-lanes{min-height:76px;gap:2px}
   .g-allday .g-lane{height:24px}
   .g-allday .g-lane.is-expand{height:auto;min-height:22px}
-  /* 月视图：每周独立周入口、日期带和至少五条任务行，完全展开后按任务数增高 */
+  /* 月视图：每周先日期带（约 1.5 条任务行高），再五条等高任务行；下钻只挂在日期按钮上 */
   .g-month{--task-row-h:20px}
   .g-month .g-week{flex-direction:column}
-  .g-week-link{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:36px;padding:6px 10px;border:0;border-bottom:1px solid var(--line);background:#f7f9fc;text-align:left;cursor:pointer}
-  .g-week-range{font-size:12px;line-height:1.5;color:var(--ink-2)}
-  .g-week-action{display:flex;align-items:center;gap:5px;flex-shrink:0;font-size:12px;line-height:1.5;font-weight:600;color:var(--brand)}
-  .g-week-action > span{font-size:18px;font-weight:400;line-height:1}
-  .g-week-link:hover,.g-week-link:active{background:var(--brand-soft)}
-  .g-week-link:focus-visible{outline-offset:-2px;border-radius:0}
   .g-date-band{display:grid;grid-template-columns:repeat(var(--cols,7),minmax(0,1fr));min-height:calc(var(--task-row-h) * 1.5);background:#fbfcfe;border-bottom:1px solid var(--line-2)}
   .g-date{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:0;border-right:1px solid var(--line-2);background:transparent;padding:2px 1px;min-width:0;cursor:pointer;font-size:10.5px;font-weight:700;color:var(--ink-2);overflow:hidden}
   .g-date:last-child{border-right:0}
@@ -322,7 +313,6 @@
   .to-top svg{width:20px;height:20px;stroke:var(--ink-2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
   .field{display:flex;flex-direction:column;gap:4px}
-  .field[hidden]{display:none}
   .field > label{font-size:11.5px;font-weight:600;color:var(--ink-2)}
   .field input[type="text"],.field input[type="search"],.field input[type="date"],.field input[type="time"],.field input[type="number"],.field select,.field textarea{
     border:1px solid var(--line);border-radius:9px;padding:8px 9px;font:inherit;font-size:13px;background:#fff;color:var(--ink);width:100%;
@@ -373,31 +363,15 @@
   .chip-choice[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
   .child-task{border:1px solid var(--line);border-radius:9px;padding:7px 9px;display:flex;flex-direction:column;gap:4px;background:#fcfdff;cursor:pointer;text-align:left;width:100%}
   .child-task:hover{border-color:#c9d3e5}
-  .notification-summary{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 12px;padding-bottom:10px;border-bottom:1px solid var(--line);font-size:12px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
-  .notification-summary strong{color:var(--brand);font-weight:600}
-  .notif{display:flex;align-items:flex-start;gap:9px;min-height:72px;padding:12px 4px;border-bottom:1px solid var(--line-2);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-top:0;width:100%;max-width:100%;flex:0 0 auto}
+  .notif{display:flex;gap:9px;padding:9px 4px;border-bottom:1px solid var(--line-2);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-top:0;width:100%}
   .notif:last-child{border-bottom:0}
-  .notif:hover,.notif:active{background:#f7f9ff}
-  .notif:focus-visible{outline-offset:-2px}
-  .notif .nbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
-  .notif .ntitle{font-size:14px;line-height:1.5;font-weight:600;overflow-wrap:anywhere}
-  .notif .nsummary{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-size:12px;line-height:1.6;color:var(--ink-2);white-space:pre-line;overflow-wrap:anywhere}
-  .notif .nmeta{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:12px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
-  .notif .nmeta > *{min-width:0;max-width:100%}
-  .notif .nmeta .badge{font-size:12px;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
-  .notif .nmeta time{margin-left:auto}
-  .notif .ndot{width:8px;height:8px;border-radius:50%;background:var(--brand);margin-top:7px;flex:0 0 auto}
+  .notif:hover{background:#fcfdff}
+  .notif .nbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .notif .ntitle{font-size:12.5px;font-weight:600}
+  .notif .nmeta{font-size:11px;color:var(--muted)}
+  .notif .ndot{width:8px;height:8px;border-radius:50%;background:var(--brand);margin-top:6px;flex:0 0 auto}
   .notif.is-read .ntitle{font-weight:500;color:var(--ink-2)}
   .notif.is-read .ndot{background:transparent}
-  .notification-details{display:flex;flex-direction:column;gap:12px;min-width:0;max-width:100%;font-size:14px;line-height:1.6;overflow-wrap:anywhere}
-  .notification-details > .tiny,.notification-details > .badge{font-size:12px}
-  .notification-details > .badge{align-self:flex-start}
-  .notification-details .notification-object{margin:0;font-size:14px;font-weight:600;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
-  .notification-details .notification-change-list{margin:0;padding:0 0 0 20px;min-width:0;font-size:13px;line-height:1.7}
-  .notification-details .notification-change-list li{padding-left:2px;white-space:pre-wrap;overflow-wrap:anywhere}
-  .notification-details .notification-change-list li + li{margin-top:8px}
-  .notification-details .notification-unavailable{font-size:12px;line-height:1.6;white-space:normal;overflow-wrap:anywhere}
-  .notification-text{margin:0;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
 
   @media (max-width:900px){
     .preview-bar{margin:10px 10px 8px}

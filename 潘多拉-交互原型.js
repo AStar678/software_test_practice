@@ -259,9 +259,10 @@ const LOGS = [
     content: "活动预算已提交，等待财务反馈。" }
 ];
 
-/* 保留任务、审核与请示的通知样例；后续业务操作会生成新的站内事件通知。
-   临近截止示例为预置记录，原型不执行定时扫描或外部推送。
-   每条事件记录相关人员与当时的内容快照，已读状态按人员独立保存。 */
+/* 通知样例：目标可以是任务、审核事项或请示，全部由种子数据提供。
+   原型不实现通知触发、定时临期扫描、去重或推送机制。
+   recipients 显式列出该次事件的相关人员：创建者、当前/新增/被移除的负责人、
+   审核人和请示参与者。 */
 const NOTIFICATIONS = [
   /* 任务创建：面向创建者与全部负责人 */
   { id: "n1", targetType: "task", targetId: "t9", type: "task-created", recipients: ["u1", "e1", "m1"],
@@ -314,14 +315,7 @@ const NOTIF_LABEL = {
   "review-request": "待审核",
   "review-result": "审核结果",
   "consult-request": "新请示",
-  "consult-reply": "请示回复",
-  "pending-create": "任务创建待审核", "note-update": "文字进展更新",
-  "submit-complete": "提交完成审核", complete: "任务已完成",
-  "approve-complete": "完成审核通过", "approve-create": "创建审核通过",
-  "reject-create": "创建审核拒绝", "reject-complete": "完成审核退回",
-  "log-create": "日志创建", "log-update": "日志更新",
-  "company-create": "公司信息新增", "company-update": "公司信息更新", "company-delete": "公司信息删除",
-  "personal-create": "个人信息新增", "personal-update": "个人信息更新", "personal-delete": "个人信息删除"
+  "consult-reply": "请示回复"
 };
 const NOTIF_CLASS = {
   "task-created": "b-brand",
@@ -332,19 +326,8 @@ const NOTIF_CLASS = {
   "review-request": "b-pending",
   "review-result": "b-ok",
   "consult-request": "b-brand",
-  "consult-reply": "b-ok", complete: "b-ok", "approve-complete": "b-ok", "approve-create": "b-ok",
-  "pending-create": "b-pending", "submit-complete": "b-pending", "reject-create": "b-reject", "reject-complete": "b-reject"
+  "consult-reply": "b-ok"
 };
-/* 示例摘要也是历史快照，目标后续改名或改派不会改写它。 */
-NOTIFICATIONS.forEach(function(n){
-  /* 固定钟点的样例不能排在页面加载后真实产生的通知前。 */
-  if (n.time > LOAD_AT) n.time = new Date(LOAD_AT);
-  n.title = n.summary;
-  n.changes = [n.type === "due" ? "任务即将截止，请关注当前安排。" : n.summary];
-  n.actorId = null;
-  n.actorName = "系统提醒";
-  n.overrides = {};
-});
 
 const CONSULTATIONS = [
   { id: "c1", fromId: "m1", toId: "u1", time: at(0, 9, 45), content: "老板，校徽项目的推进方式想请您确认下，是否按当前节奏继续？", status: "pending", reply: "" },
@@ -379,7 +362,6 @@ const state = {
   page: "map",
   viewMode: "month",      // month | week | day
   viewAnchor: startOfDay(BASE_DAY),
-  viewExpanded: false,    // 月、周、日视图共用的全部任务展开状态
   pickerOpen: false,      // 月视图年月选择面板
   logFilter: "logs",      // 日志页单选内容筛选
   logsMineOnly: false,    // 日志查找：只看自己
@@ -516,10 +498,15 @@ const KIND_LABEL = { own: "我负责", assigned: "我分配", other: "仅可见"
 const KIND_EMOJI = { own: "👤", assigned: "📤", other: "👁️" };
 
 /* 通知与请示 */
-/* 删除或失去目标访问权后，收件人的历史通知仍然保留。 */
+/* 目标存在性：任务/审核目标指向任务，请示目标指向请示记录 */
+function notificationTargetExists(n){
+  if (n.targetType === "task" || n.targetType === "review") return !!taskById(n.targetId);
+  if (n.targetType === "consult") return CONSULTATIONS.some(function(c){ return c.id === n.targetId; });
+  return false;
+}
 function notificationsFor(a){
-  return NOTIFICATIONS.slice().reverse()
-    .filter(function(n){ return n.recipients.indexOf(a.id) !== -1; })
+  return NOTIFICATIONS
+    .filter(function(n){ return n.recipients.indexOf(a.id) !== -1 && notificationTargetExists(n); })
     .sort(function(x, y){ return y.time.getTime() - x.time.getTime(); });
 }
 function unreadCount(a){
@@ -668,9 +655,9 @@ function registerOverflow(title, tasks, dateKey){
   overflowGroups[id] = { title: title, ids: tasks.map(function(t){ return t.id; }), date: dateKey || null };
   return id;
 }
-/* 紧凑模式的泳道上限；完全展开时各视图直接展示范围内全部任务。 */
+/* 视口高度策略：周、日视图同一展示位置最多显示的泳道数，其余聚合为 +N（月视图用逐日容量模型） */
 const LANE_CAPACITY = { week: 4, day: 6 };
-/* 月视图紧凑模式固定五条任务行，完全展开时按当周所需泳道增加行高。 */
+/* 月视图固定五条任务行，逐日容量也是五（四项直显 + 一项 +N） */
 const MONTH_LANES = 5;
 const MONTH_DIRECT_LIMIT = 5;
 const MONTH_OVERFLOW_KEEP = 4;
@@ -801,7 +788,7 @@ function barHTML(t, a, range){
       "</button></div>";
 }
 function lanesHTML(tasks, a, range, title, cap){
-  cap = state.viewExpanded ? tasks.length : (cap || LANE_CAPACITY[state.viewMode]);
+  cap = cap || LANE_CAPACITY[state.viewMode];
   const shown = tasks.slice(0, cap), rest = tasks.slice(cap);
   let html = shown.map(function(t){ return barHTML(t, a, range); }).join("");
   if (rest.length){
@@ -829,11 +816,12 @@ function monthGrid(anchor){
   return { start: start, end: addDays(start, weekCount * 7), weeks: weeks };
 }
 
-/* 完全展开时选取当天全部任务；紧凑模式下，超过五项才保留前四项并登记 +N。 */
+/* 逐日选取：不超过五项时全部直显；超过五项时保留排序前四项，其余登记为该日期专属溢出。
+   +N 因此恒为 当日可见任务数 - 4。 */
 function dateOccurrences(list, date){
   const dayStart = startOfDay(date);
   const hits = viewSortTasks(tasksInRange(list, { start: dayStart, end: addDays(dayStart, 1) }));
-  if (state.viewExpanded || hits.length <= MONTH_DIRECT_LIMIT) return { shown: hits, overflow: [] };
+  if (hits.length <= MONTH_DIRECT_LIMIT) return { shown: hits, overflow: [] };
   return { shown: hits.slice(0, MONTH_OVERFLOW_KEEP), overflow: hits.slice(MONTH_OVERFLOW_KEEP) };
 }
 
@@ -867,14 +855,16 @@ function weekSegments(week, list){
         start: c.col, end: c.col, order: c.rank, lane: 0 });
     });
   });
-  return assignLanes(segs, state.viewExpanded ? Infinity : MONTH_LANES);
+  return assignLanes(segs);
 }
 
 /* 逐列分配泳道，与分段的产出顺序无关：
    先按起始列（同列按展示次序）整理，再自左向右逐列分配——延续到本列的段保留原泳道，
-   本列新起的段取当列最小空闲泳道。紧凑模式按五行容量校验，完全展开可继续分配新行。
-   容量模型意外被破坏时不强行塞入最后一行，以免覆盖其他任务。 */
-function assignLanes(segs, capacity = MONTH_LANES){
+   本列新起的段取当列最小空闲泳道。dateOccurrences 保证每个日期至多 MONTH_LANES 个
+   条目（四项任务 + 一个 +N），因此当列被占用的泳道必少于 MONTH_LANES，空闲泳道必然存在。
+   这里没有任何“强行塞进最后一条泳道”的兜底：万一容量模型被破坏，宁可跳过该段并报错，
+   也不让两个同日期的条目落在同一泳道。 */
+function assignLanes(segs){
   const ordered = segs.slice().sort(function(x, y){
     if (x.start !== y.start) return x.start - y.start;
     const ox = typeof x.order === "number" ? x.order : 0;
@@ -892,7 +882,7 @@ function assignLanes(segs, capacity = MONTH_LANES){
       if (s.start !== col) return;
       let lane = 0;
       while (used[lane]) lane++;
-      if (lane >= capacity){
+      if (lane >= MONTH_LANES){
         console.error("月视图泳道容量被突破，已跳过该段：", s.key, s.start, s.end);
         s.lane = -1;   /* 不参与渲染，避免与同日期条目重叠 */
         return;
@@ -907,7 +897,7 @@ function assignLanes(segs, capacity = MONTH_LANES){
 /* 相邻月份日期用可见的月份文字与类名区分，不只依赖颜色或透明度弱化 */
 function monthDateAria(d, monthIndex){
   const base = fmtDate(d) + "，" + WEEK_NAMES[(d.getDay() + 6) % 7];
-  return base + (d.getMonth() === monthIndex ? "" : "，相邻月份") + "，进入日视图";
+  return d.getMonth() === monthIndex ? base : base + "，相邻月份";
 }
 function monthSegHTML(s, a, weekStart){
   const geo = "left:" + fx(s.start / 7 * 100) + "%;width:" + fx((s.end - s.start + 1) / 7 * 100) + "%;";
@@ -929,7 +919,7 @@ function monthSegHTML(s, a, weekStart){
     "</button>";
 }
 
-/* 每周：独立周入口、七个日期按钮，以及按展示模式分配的等高任务行。 */
+/* 每周：日期带（七天各一个真实按钮）+ 五条固定等高任务行；无周侧栏、无重复星期头 */
 function monthGanttHTML(list, a){
   const grid = monthGrid(state.viewAnchor);
   const scoped = tasksInRange(list, grid);
@@ -942,7 +932,7 @@ function monthGanttHTML(list, a){
       const d = addDays(w.start, i);
       const outside = d.getMonth() !== monthIndex;
       band += '<button type="button" class="g-date' + (outside ? " is-outside" : "") +
-        (sameDay(d, BASE_DAY) ? " is-today" : "") + '" data-drill-day="' + isoDate(d) +
+        (sameDay(d, BASE_DAY) ? " is-today" : "") + '" data-drill-week="' + isoDate(w.start) +
         '" aria-label="' + esc(monthDateAria(d, monthIndex)) + '">' +
         '<span class="g-day-num" aria-hidden="true">' + d.getDate() + "</span>" +
         (outside ? '<span class="g-day-mon" aria-hidden="true">' + (d.getMonth() + 1) + "月</span>" : "") +
@@ -950,25 +940,18 @@ function monthGanttHTML(list, a){
       cells += '<i class="' + (sameDay(d, BASE_DAY) ? "is-today" : "") + '"></i>';
     }
     let lanes = "";
-    const laneCount = state.viewExpanded
-      ? segs.reduce(function(count, s){ return Math.max(count, s.lane + 1); }, MONTH_LANES)
-      : MONTH_LANES;
-    for (let l = 0; l < laneCount; l++){
+    for (let l = 0; l < MONTH_LANES; l++){
       lanes += '<div class="g-lane">' + segs.filter(function(s){ return s.lane === l; })
         .map(function(s){ return monthSegHTML(s, a, w.start); }).join("") + "</div>";
     }
-    const weekLabel = fmtDate(w.start) + " — " + fmtDate(addDays(w.start, 6));
     rows += '<div class="g-week">' +
-      '<button type="button" class="g-week-link" data-drill-week="' + isoDate(w.start) +
-        '" aria-label="查看' + esc(weekLabel) + '的周视图"><span class="g-week-range">' + esc(weekLabel) +
-        '</span><span class="g-week-action">查看本周 <span aria-hidden="true">›</span></span></button>' +
       '<div class="g-date-band" style="--cols:7">' + band + "</div>" +
       '<div class="g-weekbody" style="--cols:7">' +
         '<div class="g-grid">' + cells + "</div>" +
         '<div class="g-lanes">' + lanes + "</div>" +
       "</div></div>";
   });
-  return '<div id="view-calendar" class="gantt g-month"><div class="g-weeks">' + rows + "</div></div>";
+  return '<div class="gantt g-month"><div class="g-weeks">' + rows + "</div></div>";
 }
 
 /* ---- 周视图：七天横轴，星期/日期标题本身是唯一下钻入口 ----
@@ -985,7 +968,7 @@ function weekGanttHTML(list, a){
       "<b>" + WEEK_NAMES[i] + "</b><i>" + (d.getMonth() + 1) + "/" + d.getDate() + "</i></button>";
     grid += '<i class="' + (today ? "is-today" : "") + '"></i>';
   }
-  return '<div id="view-calendar" class="gantt">' +
+  return '<div class="gantt">' +
     '<div class="g-head"><div class="g-axis" style="--cols:7">' + axis + "</div></div>" +
     '<div class="g-body" style="--cols:7">' +
       '<div class="g-grid">' + grid + "</div>" +
@@ -993,13 +976,12 @@ function weekGanttHTML(list, a){
     "</div></div>";
 }
 
-/* ---- 日视图：上方全天带 + 下方非全天任务的 24 小时泳道 ----
+/* ---- 日视图：上方稳定高度的全天带 + 下方非全天任务的 24 小时泳道 ----
    全天任务只出现在全天带，非全天任务只出现在小时泳道，同一任务不会重复出现；
    全天带没有时刻轴，因此不会为全天任务伪造 00:00 / 24:00 标签。 */
 const DAY_ALLLDAY_LANES = 3;
 function allDayBandHTML(tasks, a, range){
-  const cap = state.viewExpanded ? tasks.length : DAY_ALLLDAY_LANES;
-  const shown = tasks.slice(0, cap), rest = tasks.slice(cap);
+  const shown = tasks.slice(0, DAY_ALLLDAY_LANES), rest = tasks.slice(DAY_ALLLDAY_LANES);
   let lanes = shown.map(function(t){ return barHTML(t, a, range); }).join("");
   if (rest.length){
     const gid = registerOverflow(fmtDate(range.start) + " 全天其余 " + rest.length + " 项", rest);
@@ -1021,7 +1003,7 @@ function dayGanttHTML(list, a){
     axis += "<span>" + pad2(i * 3) + ":00</span>";
     grid += "<i></i>";
   }
-  return '<div id="view-calendar" class="gantt">' +
+  return '<div class="gantt">' +
     allDayBandHTML(allDayTasks, a, range) +
     '<div class="g-head"><div class="g-axis" style="--cols:8">' + axis + "</div></div>" +
     '<div class="g-body" style="--cols:8">' +
@@ -1045,25 +1027,23 @@ function pickerHTML(){
     '</div><div class="picker-grid">' + grid + "</div></div>";
 }
 function viewToolbarHTML(){
-  const expand = '<button type="button" class="btn tiny-btn view-expand-toggle" data-action="view-toggle-expand" aria-expanded="' +
-    String(state.viewExpanded) + '" aria-controls="view-calendar">' + (state.viewExpanded ? "收起" : "完全展开") + '</button>';
   if (state.viewMode === "month"){
     const y = state.viewAnchor.getFullYear(), m = state.viewAnchor.getMonth();
     return '<div class="view-toolbar">' +
       '<button type="button" class="btn tiny-btn" data-action="toggle-month-picker" aria-expanded="' +
-        String(state.pickerOpen) + '">选择年月（' + y + "年" + (m + 1) + "月）</button>" + expand + "</div>" +
+        String(state.pickerOpen) + '">选择年月（' + y + "年" + (m + 1) + "月）</button></div>" +
       (state.pickerOpen ? pickerHTML() : "");
   }
   if (state.viewMode === "week"){
     return '<div class="view-toolbar">' +
       '<button type="button" class="btn tiny-btn" data-action="view-prev">上一周</button>' +
       '<button type="button" class="btn tiny-btn" data-action="view-next">下一周</button>' +
-      '<button type="button" class="btn tiny-btn" data-action="view-up">返回月视图</button>' + expand + '</div>';
+      '<button type="button" class="btn tiny-btn" data-action="view-up">返回月视图</button></div>';
   }
   return '<div class="view-toolbar">' +
     '<button type="button" class="btn tiny-btn" data-action="view-prev">前一天</button>' +
     '<button type="button" class="btn tiny-btn" data-action="view-next">后一天</button>' +
-    '<button type="button" class="btn tiny-btn" data-action="view-up">返回周视图</button>' + expand + '</div>';
+    '<button type="button" class="btn tiny-btn" data-action="view-up">返回周视图</button></div>';
 }
 
 function viewTasks(a){
@@ -1108,12 +1088,8 @@ function renderView(){
 }
 
 /* ============================== 页面：日志 ============================== */
-function visibleTaskById(id, a){
-  const t = id ? taskById(id) : null;
-  return t && visibleTasks(a || actor()).indexOf(t) !== -1 ? t : null;
-}
 function logCardHTML(l, a){
-  const t = visibleTaskById(l.taskId, a);
+  const t = l.taskId ? taskById(l.taskId) : null;
   const mine = l.authorId === a.id;
   return '<article class="log-card">' +
     "<header><span class=\"who\">" + esc(personById(l.authorId).name) + "</span>" +
@@ -1125,7 +1101,7 @@ function logCardHTML(l, a){
         : '<span class="tiny muted">只读</span>') +
     "</header>" +
     "<p>" + esc(l.content) + "</p>" +
-    (t ? '<button type="button" class="btn ghost tiny-btn log-link" data-task="' + t.id + '">关联任务：' + esc(t.title) + "</button>" : '<span class="tiny muted">' + (l.taskId ? "关联任务已不可见" : "未关联任务") + "</span>") +
+    (t ? '<button type="button" class="btn ghost tiny-btn log-link" data-task="' + t.id + '">关联任务：' + esc(t.title) + "</button>" : '<span class="tiny muted">未关联任务</span>') +
   "</article>";
 }
 
@@ -1452,7 +1428,7 @@ function renderSheet(){
   overlayEl.hidden = false;
   sheetBodyEl.scrollTop = 0;
   const target = sheetBodyEl.querySelector("[data-autofocus]") ||
-    sheetFootEl.querySelector("button:not(:disabled)") ||
+    sheetFootEl.querySelector("button") ||
     sheetBodyEl.querySelector("button, input, select, textarea");
   if (target) target.focus();
 }
@@ -1589,12 +1565,12 @@ function logDetailView(id){
   const a = actor();
   const l = logById(id);
   if (!l || visibleLogs(a).indexOf(l) === -1) return null;
-  const t = visibleTaskById(l.taskId, a);
+  const t = l.taskId ? taskById(l.taskId) : null;
   const mine = l.authorId === a.id;
   const body = '<div class="kv">' +
       '<span class="k">作者</span><span class="v">' + esc(personById(l.authorId).name) + "</span>" +
       '<span class="k">时间</span><span class="v">' + esc(fmtDateTime(l.time)) + "</span>" +
-      '<span class="k">关联任务</span><span class="v">' + (t ? esc(t.title) : l.taskId ? "关联任务已不可见" : "未关联") + "</span>" +
+      '<span class="k">关联任务</span><span class="v">' + (t ? esc(t.title) : "未关联") + "</span>" +
       '<span class="k">编辑权限</span><span class="v">' + (mine ? "本人可编辑" : "仅作者可编辑，当前为只读") + "</span>" +
     "</div><div class=\"divider\"></div><p style=\"margin:0;font-size:13px;white-space:pre-wrap\">" + esc(l.content) + "</p>" +
     (t ? '<div class="divider"></div><button type="button" class="btn" data-task="' + t.id + '">查看关联任务</button>' : "");
@@ -1620,16 +1596,19 @@ function overflowView(gid){
 
 /* ---------- 通知列表 ---------- */
 function notificationsView(){
-  const a = actor(), items = notificationsFor(a), unread = unreadCount(a);
-  const body = '<div class="notification-summary">' + unread + ' 条未读 · 共 ' + items.length + ' 条通知</div>' + (items.length
+  const a = actor();
+  const items = notificationsFor(a);
+  const body = items.length
     ? items.map(function(n){
-        const p = notificationPayload(n, a), isRead = n.read.indexOf(a.id) !== -1;
+        const isRead = n.read.indexOf(a.id) !== -1;
         return '<button type="button" class="notif' + (isRead ? " is-read" : "") + '" data-action="open-notif" data-id="' + n.id + '">' +
-          '<span class="ndot" aria-hidden="true"></span><span class="nbody"><span class="ntitle">' + esc(p.title) + '</span>' +
-          '<span class="nsummary">' + esc(p.changes.join("；")) + '</span>' +
-          '<span class="nmeta"><span class="badge ' + (NOTIF_CLASS[n.type] || "b-brand") + '">' + esc(p.label || NOTIF_LABEL[n.type] || "信息更新") + '</span><span>' + esc(n.actorName || "系统提醒") + '</span><time>' + esc(fmtDateTime(n.time)) + '</time>' + (isRead ? '' : '<span>未读</span>') + '</span></span></button>';
-      }).join("") : '<div class="empty">暂无通知</div>');
-  return { title: "通知", body: body, foot: '<button type="button" class="btn" data-action="notification-read-all"' + (unread ? '' : ' disabled') + '>全部标为已读</button><button type="button" class="btn" data-action="sheet-close">关闭</button>' };
+          '<span class="ndot" aria-hidden="true"></span>' +
+          '<span class="nbody"><span class="ntitle">' + esc(n.summary) + "</span>" +
+            '<span class="nmeta"><span class="badge ' + NOTIF_CLASS[n.type] + '">' + NOTIF_LABEL[n.type] + "</span> " +
+              esc(fmtDateTime(n.time)) + (isRead ? "" : " · 未读") + "</span></span></button>";
+      }).join("")
+    : '<div class="empty">暂无通知</div>';
+  return { title: "通知", body: body, foot: '<button type="button" class="btn" data-action="sheet-close">关闭</button>' };
 }
 
 /* ---------- 请示详情：通知里 targetType=consult 的跳转目标 ---------- */
@@ -1705,11 +1684,10 @@ function syncTaskDraft(){
   const read = function(elId){ const el = document.getElementById(elId); return el ? el.value : null; };
   const title = read("tf-title"); if (title !== null) d.title = title;
   const desc = read("tf-desc"); if (desc !== null) d.desc = desc;
-  /* 空字符串也是用户的有效编辑，必须交给保存校验，不能回退到旧排期。 */
-  const sd = read("tf-start-date"); if (sd !== null) d.startDate = sd;
-  const st = read("tf-start-time"); if (st !== null) d.startTime = st;
-  const ed = read("tf-end-date"); if (ed !== null) d.endDate = ed;
-  const et = read("tf-end-time"); if (et !== null) d.endTime = et;
+  const sd = read("tf-start-date"); if (sd) d.startDate = sd;
+  const st = read("tf-start-time"); if (st) d.startTime = st;
+  const ed = read("tf-end-date"); if (ed) d.endDate = ed;
+  const et = read("tf-end-time"); if (et) d.endTime = et;
   const urgencyEl = document.querySelector('#tf-urgency [aria-pressed="true"]');
   if (urgencyEl) d.urgency = urgencyEl.dataset.urgency;
 }
@@ -1802,11 +1780,11 @@ function openTaskForm(mode, id){
 function logFormView(){
   const d = drafts.log;
   if (!d) return null;
-  const linked = visibleTaskById(d.taskId);
+  const linked = d.taskId ? taskById(d.taskId) : null;
   const body = '<div class="field"><label for="lf-content">日志内容</label><textarea id="lf-content" data-autofocus>' + esc(d.content) + "</textarea></div>" +
     '<div class="field"><label>关联任务（可选）</label>' +
       '<div class="summary-line" id="lf-task-summary">' +
-        (linked ? esc(linked.title) : '<span class="muted">' + (d.taskId ? "关联任务已不可见，可重新选择或清空关联" : "未关联任务") + "</span>") + "</div>" +
+        (linked ? esc(linked.title) : '<span class="muted">未关联任务</span>') + "</div>" +
       '<div class="row" style="margin-top:6px">' +
         '<button type="button" class="btn tiny-btn" data-action="pick-log-task">选择关联任务</button>' +
         (d.taskId ? '<button type="button" class="btn tiny-btn ghost" data-action="clear-log-task">清空关联</button>' : "") +
@@ -1841,9 +1819,9 @@ function taskPickerCandidates(){
   return sortTasks(visibleTasks(a));
 }
 function taskPickerCurrentHTML(){
-  const t = visibleTaskById(taskPicker.selectedId);
+  const t = taskPicker.selectedId ? taskById(taskPicker.selectedId) : null;
   return '<div class="summary-line" id="tpCurrent">' +
-    (t ? "<strong>已选：</strong>" + esc(t.title) : '<span class="muted">' + (taskPicker.selectedId ? "已选任务当前不可见" : "当前未选择任务") + "</span>") + "</div>";
+    (t ? "<strong>已选：</strong>" + esc(t.title) : '<span class="muted">当前未选择任务</span>') + "</div>";
 }
 function taskPickerResultsHTML(){
   const q = normalizeQuery(taskPicker.query);
@@ -2098,131 +2076,8 @@ function showError(elId, msg){
   const el = document.getElementById(elId);
   if (el){ el.hidden = false; el.textContent = msg; }
 }
-
-/* 通知记录保存事件发生时的文字快照；业务权限仍由当前对象的详情入口校验。 */
-function pushNotification(event){
-  const recipients = unique(event.recipients || []).filter(function(id){ return !!personById(id); });
-  if (!recipients.length) return;
-  NOTIFICATIONS.push(Object.assign({ id: nextId("n"), time: new Date(), actorId: actor().id,
-    actorName: actor().name, read: [], changes: [], overrides: {} }, event, { recipients: recipients }));
-}
-function taskParties(t){
-  if (!t) return [];
-  const creation = createReviewer(t), completion = completionReviewer(t);
-  return unique([t.creatorId].concat(t.assigneeIds || [], [creation && creation.id, completion && completion.id]));
-}
-function taskSnapshot(t){
-  return Object.assign({}, t, { assigneeIds: t.assigneeIds.slice(), start: new Date(t.start), due: new Date(t.due) });
-}
-function memberNames(ids){ return ids.map(function(id){ const p = personById(id); return p ? p.name : id; }).join("、") || "无"; }
-function taskChanges(before, t){
-  function timeLabel(task, key){ return toDateInput(task[key]) + (task.allDay ? "" : " " + toTimeInput(task[key])); }
-  if (!before) return ["状态：" + STATUS_LABEL[t.status], "负责人：" + memberNames(t.assigneeIds),
-    "紧急程度：" + t.urgency, "全天任务：" + (t.allDay ? "是" : "否"),
-    "开始时间：" + timeLabel(t, "start"), "截止时间：" + timeLabel(t, "due")];
-  const changes = [];
-  [["title", "任务名称"], ["desc", "任务说明"], ["urgency", "紧急程度"], ["progressNote", "进展备注"], ["reviewNote", "审核意见"]].forEach(function(pair){
-    if (before[pair[0]] !== t[pair[0]]) changes.push(pair[1] + "：" + (before[pair[0]] || "未填写") + " → " + (t[pair[0]] || "已清空"));
-  });
-  if (!!before.allDay !== !!t.allDay) changes.push("全天任务：" + (before.allDay ? "是" : "否") + " → " + (t.allDay ? "是" : "否"));
-  [["start", "开始时间"], ["due", "截止时间"]].forEach(function(pair){
-    if (+before[pair[0]] !== +t[pair[0]] || !!before.allDay !== !!t.allDay){
-      changes.push(pair[1] + "：" + timeLabel(before, pair[0]) + " → " + timeLabel(t, pair[0]));
-    }
-  });
-  if (before.assigneeIds.slice().sort().join("|") !== t.assigneeIds.slice().sort().join("|")) changes.push("负责人：" + memberNames(before.assigneeIds) + " → " + memberNames(t.assigneeIds));
-  if (before.parentId !== t.parentId) changes.push("上级任务关联已调整，请在任务详情查看当前关联。");
-  if (before.status !== t.status) changes.push("状态：" + STATUS_LABEL[before.status] + " → " + STATUS_LABEL[t.status]);
-  return changes;
-}
-function notifyTaskChange(t, before, type){
-  const changes = taskChanges(before, t);
-  if (before && !changes.length) return;
-  if (type === "task-updated" && before && before.urgency !== t.urgency) type = "urgency-change";
-  const recipients = unique(taskParties(t).concat(taskParties(before)));
-  const overrides = {};
-  recipients.forEach(function(id){
-    const p = personById(id);
-    if (before && p && visibleTasks(p).indexOf(t) === -1){
-      overrides[id] = { title: before.title, changes: ["你与此任务的关联已调整。当前已无权查看任务详情，请联系创建者了解后续安排。"], targetType: "task", targetId: t.id };
-    } else if (before && p && before.parentId !== t.parentId){
-      function parentName(parentId){
-        if (!parentId) return "无";
-        const parent = taskById(parentId);
-        return parent && visibleTasks(p).indexOf(parent) !== -1 ? parent.title : "不可见的上级任务";
-      }
-      overrides[id] = { changes: changes.map(function(change){
-        return change.indexOf("上级任务关联") === 0 ? "上级任务：" + parentName(before.parentId) + " → " + parentName(t.parentId) : change;
-      }) };
-    }
-  });
-  /* 父子任务关联同样属于相关变动；受限收件人只收到自己有权查看的关联对象摘要。 */
-  const related = [], seen = new Set([t.id]);
-  function addAncestors(id){
-    while (id && !seen.has(id)){
-      seen.add(id); const parent = taskById(id); if (!parent) break;
-      related.push(parent); id = parent.parentId;
-    }
-  }
-  addAncestors(t.parentId); if (before) addAncestors(before.parentId);
-  childrenOf(t.id).forEach(function(child){ if (!seen.has(child.id)){ seen.add(child.id); related.push(child); } });
-  related.forEach(function(linked){
-    taskParties(linked).forEach(function(id){
-      const p = personById(id);
-      if (recipients.indexOf(id) !== -1 || !p || visibleTasks(p).indexOf(linked) === -1) return;
-      recipients.push(id);
-      overrides[id] = { title: linked.title, label: "关联任务变动", targetType: "task", targetId: linked.id,
-        changes: ["关联的上级或子任务发生了“" + (NOTIF_LABEL[type] || "任务更新") + "”变动，请查看当前任务及关联信息。"] };
-    });
-  });
-  pushNotification({ type: type, targetType: "task", targetId: t.id, taskId: t.id,
-    title: t.title, changes: changes, recipients: recipients, overrides: overrides });
-}
-function notifyLogChange(l, before){
-  const changes = [];
-  if (!before) changes.push("新增日志：" + l.content);
-  else {
-    if (before.content !== l.content) changes.push("日志内容：" + before.content + " → " + l.content);
-    if (before.taskId !== l.taskId) changes.push("关联任务已调整，请在日志详情查看当前关联。");
-  }
-  if (!changes.length) return;
-  pushNotification({ type: before ? "log-update" : "log-create", targetType: "log", targetId: l.id,
-    title: memberNames([l.authorId]) + "的工作日志", changes: changes,
-    recipients: PEOPLE.filter(function(p){ return visibleLogs(p).indexOf(l) !== -1; }).map(function(p){ return p.id; }) });
-}
-function notifyInfoChange(kind, item, before, deleted){
-  pushNotification({ type: kind + (deleted ? "-delete" : before ? "-update" : "-create"), targetType: kind,
-    targetId: item.id, ownerId: kind === "personal" ? actor().id : null, title: item.text,
-    changes: [deleted ? "已删除：" + item.text : before ? "内容：" + before + " → " + item.text : "新增内容：" + item.text],
-    recipients: kind === "company" ? PEOPLE.map(function(p){ return p.id; }) : [actor().id] });
-}
-function notificationPayload(n, a){ return Object.assign({}, n, (n.overrides || {})[a.id] || {}); }
-function notificationTargetView(n){
-  const a = actor(), p = notificationPayload(n, a);
-  if (n.recipients.indexOf(a.id) === -1) return null;
-  if (p.targetType === "task" || p.targetType === "review") return taskDetailView(p.targetId);
-  if (p.targetType === "log") return logDetailView(p.targetId);
-  if (p.targetType === "consult") return consultDetailView(p.targetId);
-  let item;
-  if (p.targetType === "company") item = COMPANY_ITEMS.find(function(x){ return x.id === p.targetId; });
-  if (p.targetType === "personal" && n.ownerId === a.id) item = personalItemsFor(a.id).find(function(x){ return x.id === p.targetId; });
-  return item ? { title: p.targetType === "company" ? "公司信息" : "个人信息", body: '<p class="notification-text">' + esc(item.text) + '</p>', foot: withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>') } : null;
-}
-function notificationDetailView(n){
-  if (!n || n.recipients.indexOf(actor().id) === -1) return null;
-  const p = notificationPayload(n, actor());
-  const available = !!notificationTargetView(n);
-  let exists = false;
-  if (p.targetType === "task" || p.targetType === "review") exists = !!taskById(p.targetId);
-  else if (p.targetType === "log") exists = !!logById(p.targetId);
-  else if (p.targetType === "consult") exists = CONSULTATIONS.some(function(c){ return c.id === p.targetId; });
-  else if (p.targetType === "company") exists = COMPANY_ITEMS.some(function(item){ return item.id === p.targetId; });
-  else if (p.targetType === "personal") exists = n.ownerId !== actor().id || personalItemsFor(actor().id).some(function(item){ return item.id === p.targetId; });
-  const unavailable = exists ? "你目前已无权查看该对象的详情。以上为当时发送给你的通知记录。" : "该对象已删除，以上通知记录仍然保留。";
-  const targetLabel = { task: "查看任务", review: "查看审核任务", log: "查看日志", consult: "查看请示", company: "查看公司信息", personal: "查看个人信息" };
-  return { title: "通知详情", body: '<div class="notification-details"><span class="badge ' + (NOTIF_CLASS[n.type] || "b-brand") + '">' + esc(p.label || NOTIF_LABEL[n.type] || "信息更新") + '</span><h3 class="notification-object">' + esc(p.title) + '</h3><p class="tiny muted">' + esc(n.actorName || "系统提醒") + ' · ' + esc(fmtDateTime(n.time)) + '</p><ul class="notification-change-list">' + p.changes.map(function(change){ return '<li>' + esc(change) + '</li>'; }).join("") + '</ul>' +
-    (available ? '' : '<div class="callout notification-unavailable">' + unavailable + '</div>') + '</div>',
-    foot: '<button type="button" class="btn" data-action="notification-list">返回通知</button>' + (available ? '<button type="button" class="btn primary" data-action="notification-target" data-id="' + n.id + '">' + targetLabel[p.targetType] + '</button>' : '') };
+function unique(list){
+  return list.filter(function(x, i){ return x && list.indexOf(x) === i; });
 }
 
 /* 保存任务：一律从草稿读取并重新校验，不信任已渲染控件的状态。
@@ -2286,7 +2141,6 @@ function saveTask(){
   const dueValue = d.allDay ? startOfDay(due) : due;
 
   if (existing){
-    const before = taskSnapshot(existing);
     existing.title = title;
     existing.desc = desc;
     existing.start = startValue;
@@ -2297,7 +2151,6 @@ function saveTask(){
     existing.assigneeIds = assigneeIds;
     existing.selfCreated = assigneeIds.indexOf(existing.creatorId) !== -1;
     /* createdAt 保持不变：编辑排期不改写创建时间 */
-    notifyTaskChange(existing, before, "task-updated");
     renderAll();
     closeSheet();
     return;
@@ -2313,7 +2166,6 @@ function saveTask(){
   const reviewer = createReviewer(t);
   if (t.selfCreated && reviewer) t.status = "pending-create";
   TASKS.push(t);
-  notifyTaskChange(t, null, t.status === "pending-create" ? "pending-create" : "task-created");
   renderAll();
   closeSheet();
 }
@@ -2326,10 +2178,8 @@ function saveNote(id){
   const noteEl = document.getElementById("pf-note");
   const note = noteEl ? noteEl.value.trim() : "";
   if (!note) return showError("pf-error", "请填写进展备注。");
-  const before = taskSnapshot(t);
   t.progressNote = note;
   if (t.status === "todo") t.status = "doing";
-  notifyTaskChange(t, before, "note-update");
   renderAll();
   closeSheet();
 }
@@ -2337,13 +2187,11 @@ function confirmComplete(id){
   const a = actor();
   const t = taskById(id);
   if (!t || !canUpdateTaskNote(a, t)) return;
-  const before = taskSnapshot(t);
   const noteEl = document.getElementById("cf-note");
   if (noteEl && noteEl.value.trim()) t.progressNote = noteEl.value.trim();
   const reviewer = completionReviewer(t);
   t.status = reviewer ? "pending-complete" : "done";
   t.reviewNote = "";
-  notifyTaskChange(t, before, reviewer ? "submit-complete" : "complete");
   renderAll();
   closeSheet();
 }
@@ -2353,17 +2201,14 @@ function approveCreate(id){
   if (!t || t.status !== "pending-create") return;
   const r = createReviewer(t);
   if (!r || r.id !== a.id) return;
-  const before = taskSnapshot(t);
   t.status = "todo";
   t.reviewNote = "";
-  notifyTaskChange(t, before, "approve-create");
   afterReviewAction();
 }
 function rejectTask(kind, id, reason){
   const a = actor();
   const t = taskById(id);
-  if (!t || !reason.trim() || ["create", "complete"].indexOf(kind) === -1) return;
-  const before = taskSnapshot(t);
+  if (!t) return;
   if (kind === "create"){
     const r = createReviewer(t);
     if (!r || r.id !== a.id || t.status !== "pending-create") return;
@@ -2375,7 +2220,6 @@ function rejectTask(kind, id, reason){
     t.status = "doing";
     t.reviewNote = reason;
   }
-  notifyTaskChange(t, before, kind === "create" ? "reject-create" : "reject-complete");
   afterReviewAction();
 }
 function approveComplete(id){
@@ -2384,10 +2228,8 @@ function approveComplete(id){
   if (!t || t.status !== "pending-complete") return;
   const r = completionReviewer(t);
   if (!r || r.id !== a.id) return;
-  const before = taskSnapshot(t);
   t.status = "done";
   t.reviewNote = "";
-  notifyTaskChange(t, before, "approve-complete");
   afterReviewAction();
 }
 /* 审核后：刷新日志页当前筛选的列表与计数，并关闭可能打开的任务详情弹层 */
@@ -2404,25 +2246,17 @@ function saveLog(){
   syncLogDraft();
   const content = String(d.content || "").trim();
   if (!content) return showError("lf-error", "请填写日志内容。");
-  const existing = d.id ? logById(d.id) : null;
-  if (d.id && (!existing || existing.authorId !== a.id)) return;
-  const taskId = d.taskId || null;
-  const linked = taskId ? taskById(taskId) : null;
-  /* 作者可以保留已有的关联；新关联必须存在且在当前可见范围内。 */
-  const keptAssociation = !!(existing && linked && existing.taskId === taskId);
-  if (taskId && (!linked || (!keptAssociation && visibleTasks(a).indexOf(linked) === -1))){
+  let taskId = d.taskId || null;
+  if (taskId && visibleTasks(a).indexOf(taskById(taskId)) === -1){
     return showError("lf-error", "关联任务不在当前可见范围内，请重新选择。");
   }
-  if (existing){
-    const l = existing;
-    const before = Object.assign({}, l);
+  if (d.id){
+    const l = logById(d.id);
+    if (!l || l.authorId !== a.id) return;
     l.content = content;
     l.taskId = taskId;
-    notifyLogChange(l, before);
   } else {
-    const l = { id: nextId("l"), authorId: a.id, time: new Date(), taskId: taskId, content: content };
-    LOGS.push(l);
-    notifyLogChange(l, null);
+    LOGS.push({ id: nextId("l"), authorId: a.id, time: new Date(), taskId: taskId, content: content });
   }
   renderAll();
   closeSheet();
@@ -2434,9 +2268,7 @@ function saveConsult(){
   if (!sup) return showError("qk-error", "当前身份没有直属上层。");
   const content = document.getElementById("qk-content").value.trim();
   if (!content) return showError("qk-error", "请填写请示内容。");
-  const c = { id: nextId("c"), fromId: a.id, toId: sup.id, time: new Date(), content: content, status: "pending", reply: "" };
-  CONSULTATIONS.push(c);
-  pushNotification({ type: "consult-request", targetType: "consult", targetId: c.id, title: "来自" + a.name + "的请示", changes: [content], recipients: [c.fromId, c.toId] });
+  CONSULTATIONS.push({ id: nextId("c"), fromId: a.id, toId: sup.id, time: new Date(), content: content, status: "pending", reply: "" });
   renderAll();
   closeSheet();
 }
@@ -2446,12 +2278,9 @@ function saveReply(id){
   if (!c || c.toId !== a.id) return;
   const content = document.getElementById("rp-content").value.trim();
   if (!content) return showError("rp-error", "请填写回复内容。");
-  if (c.reply === content && c.status === "replied"){ closeSheet(); return; }
-  const previous = c.reply;
   c.reply = content;
   c.status = "replied";
   c.replyTime = new Date();
-  pushNotification({ type: "consult-reply", targetType: "consult", targetId: c.id, title: "请示收到回复", changes: [previous ? "回复内容：" + previous + " → " + content : "回复：" + content], recipients: [c.fromId, c.toId] });
   renderAll();
   closeSheet();
 }
@@ -2464,33 +2293,28 @@ function saveCompanyItem(id){
   if (id){
     const it = COMPANY_ITEMS.find(function(x){ return x.id === id; });
     if (!it) return;
-    if (it.text !== text){ const before = it.text; it.text = text; notifyInfoChange("company", it, before, false); }
+    it.text = text;
   } else {
     /* 保存处理同样执行上限校验，不只依赖界面禁用 */
     if (COMPANY_ITEMS.length >= 10) return showError("ci-error", "公司统一信息最多 10 条，请先删除后再新增。");
-    const it = { id: nextId("co"), text: text };
-    COMPANY_ITEMS.push(it);
-    notifyInfoChange("company", it, null, false);
+    COMPANY_ITEMS.push({ id: nextId("co"), text: text });
   }
   renderAll();
   closeSheet();
 }
 /* 删除公司与个人信息：个人信息在首次变更前先物化日志摘录 */
 function deleteItem(kind, id){
-  if (["company", "personal"].indexOf(kind) === -1) return;
   const a = actor();
   if (kind === "company"){
     if (a.role !== "upper") return;
     const i = COMPANY_ITEMS.findIndex(function(x){ return x.id === id; });
     if (i === -1) return;
-    const removed = COMPANY_ITEMS.splice(i, 1)[0];
-    notifyInfoChange("company", removed, null, true);
+    COMPANY_ITEMS.splice(i, 1);
   } else {
     const st = materializePersonal(a.id);
     const i = st.items.findIndex(function(x){ return x.id === id; });
     if (i === -1) return;
-    const removed = st.items.splice(i, 1)[0];
-    notifyInfoChange("personal", removed, null, true);
+    st.items.splice(i, 1);
   }
   renderAll();
   closeSheet();
@@ -2505,24 +2329,17 @@ function materializePersonal(pid){
 }
 function savePersonalItem(id){
   const a = actor();
+  const st = materializePersonal(a.id);
   const textEl = document.getElementById("pi-text");
   const text = textEl ? textEl.value.trim() : "";
   if (!text) return showError("pi-error", "内容不能为空。");
-  const currentItems = personalItemsFor(a.id);
-  const currentItem = id ? currentItems.find(function(x){ return x.id === id; }) : null;
-  if (id && !currentItem) return;
-  if (currentItem && currentItem.text === text){ closeSheet(); return; }
-  if (!id && currentItems.length >= 10) return showError("pi-error", "个人信息最多 10 条，请先删除后再新增。");
-  const st = materializePersonal(a.id);
   if (id){
     const it = st.items.find(function(x){ return x.id === id; });
     if (!it) return;
-    if (it.text !== text){ const before = it.text; it.text = text; notifyInfoChange("personal", it, before, false); }
+    it.text = text;
   } else {
     if (st.items.length >= 10) return showError("pi-error", "个人信息最多 10 条，请先删除后再新增。");
-    const it = { id: nextId("pi"), text: text, logId: null };
-    st.items.push(it);
-    notifyInfoChange("personal", it, null, false);
+    st.items.push({ id: nextId("pi"), text: text, logId: null });
   }
   renderAll();
   closeSheet();
@@ -2600,14 +2417,29 @@ function syncChoiceRow(selector, attr, value){
   });
 }
 
-/* 阅读事件快照不授予目标访问权，当前详情始终重新校验可见范围。 */
+/* 通知跳转：按目标类型进入任务详情、审核或请示，并在跳转前复用可见性检查 */
 function openNotif(id){
-  const a = actor(), n = notificationsFor(a).find(function(x){ return x.id === id; });
-  if (!n) return;
+  const a = actor();
+  const n = NOTIFICATIONS.find(function(x){ return x.id === id; });
+  if (!n || n.recipients.indexOf(a.id) === -1) return;
   if (n.read.indexOf(a.id) === -1) n.read.push(a.id);
+  sheetStack = [];
+  if (n.targetType === "consult"){
+    const cv = consultDetailView(n.targetId);
+    renderAll();
+    if (cv){ openSheet(cv); return; }
+    state.page = "log";
+    state.logFilter = "pending-consults";
+    renderAll();
+    return;
+  }
+  const tv = taskDetailView(n.targetId);
   renderAll();
-  sheetStack = [notificationsView()];
-  openSheet(notificationDetailView(n));
+  if (tv){ openSheet(tv); return; }
+  /* 目标任务已不可见时退回审核列表，不泄露不可见任务信息 */
+  state.page = "log";
+  state.logFilter = "reviews";
+  renderAll();
 }
 
 function runAction(el){
@@ -2684,20 +2516,6 @@ function runAction(el){
     case "reply-consult": openSheet(replyConsultView(id)); return;
     case "save-reply": saveReply(id); return;
     case "open-notif": openNotif(id); return;
-    case "notification-target": {
-      const n = notificationsFor(actor()).find(function(x){ return x.id === id; });
-      if (!n) return;
-      const view = notificationTargetView(n);
-      if (view) openSheet(view);
-      else { sheetStack = [notificationsView()]; openSheet(notificationDetailView(n)); }
-      return;
-    }
-    case "notification-read-all":
-      notificationsFor(actor()).forEach(function(n){ if (n.read.indexOf(actor().id) === -1) n.read.push(actor().id); });
-      renderAll();
-      sheetStack = [notificationsView()]; renderSheet(); return;
-    case "notification-list":
-      sheetStack = [notificationsView()]; renderSheet(); return;
     case "save-company": saveCompanyItem(id); return;
     case "save-personal": savePersonalItem(id); return;
     case "new-company": openSheet(companyItemFormView(null)); return;
@@ -2705,11 +2523,6 @@ function runAction(el){
     case "delete-company": { const v = confirmDeleteView("company", id); if (v) openSheet(v); return; }
     case "delete-personal": { const v = confirmDeleteView("personal", id); if (v) openSheet(v); return; }
     case "confirm-delete": deleteItem(el.dataset.kind, id); return;
-    case "view-toggle-expand":
-      state.viewExpanded = !state.viewExpanded;
-      renderAll();
-      document.querySelector('.view-expand-toggle').focus({ preventScroll: true });
-      return;
     case "toggle-month-picker":
       state.pickerOpen = !state.pickerOpen;
       renderAll();
@@ -2839,7 +2652,7 @@ document.addEventListener("click", function(ev){
   if (taskEl){ openTaskDetail(taskEl.dataset.task); return; }
   const logEl = ev.target.closest("[data-log]");
   if (logEl){ openLogDetail(logEl.dataset.log); return; }
-  /* 月视图独立周入口进入周视图；月、周日期按钮均直接进入对应日视图。 */
+  /* 月视图日期标题下钻（周视图下钻入口是轴标题按钮，走同一条 [data-drill-day] 分支） */
   const weekEl = ev.target.closest("[data-drill-week]");
   if (weekEl){
     state.viewMode = "week";
