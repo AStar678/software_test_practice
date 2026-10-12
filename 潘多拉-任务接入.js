@@ -1,0 +1,451 @@
+"use strict";
+/* 真实任务/审批适配。原型只承担布局与临时表单；共享业务状态由后端确认。 */
+(function () {
+  const P = window.Pandora;
+  if (!P) throw new Error("请先加载潘多拉后端接入核心。");
+  const originalForm = taskFormView;
+  const originalDraft = taskDraftFrom;
+  const originalSync = syncTaskDraft;
+  const originalPickerConfirm = confirmTaskPicker;
+  const originalRunAction = runAction;
+  const priorityCode = { "紧急": "urgent", "高": "high", "中": "medium", "低": "low" };
+  const priorityName = { urgent: "紧急", high: "高", medium: "中", low: "低" };
+  const kindName = { create: "创建任务", change: "修改资料", progress: "更新进展", complete: "提交完成", reopen: "重开任务" };
+  const resultName = { pending: "待审核", approved: "已通过", rejected: "已退回", withdrawn: "已撤销", direct: "已生效（免审）" };
+  const actionForms = new Map();
+  const reviewContexts = new Map();
+  let formSequence = 0;
+  let approvalFilter = "reviewer";
+
+  function me() { return P.data && P.data.me; }
+  function session() { return { epoch: P.epoch, user: me() && me().id }; }
+  function stillHere(mark) { return mark.epoch === P.epoch && mark.user === (me() && me().id); }
+  function newSlot(kind) { formSequence += 1; return "task-ui:" + P.epoch + ":" + kind + ":" + formSequence; }
+  function etag(raw) { return '"' + raw.rowVersion + '"'; }
+  function taskTag(raw) { const value = etag(raw); P.taskEtags.set(raw.taskId || raw.id, value); return value; }
+  function reviewTag(raw) { const value = etag(raw); P.approvalEtags.set(raw.id || raw.requestId, value); return value; }
+  function attr(value) { return esc(value); }
+  function textField(id, label, value, max, autofocus) {
+    return '<div class="field"><label for="' + id + '">' + label + '</label><textarea id="' + id + '" maxlength="' + max + '"' + (autofocus ? ' data-autofocus' : '') + '>' + esc(value || "") + '</textarea></div>';
+  }
+  function errorBox(id) { return '<div class="callout reject" id="' + id + '" role="alert" hidden></div>'; }
+  function personName(id, context) {
+    if (!id) return "暂未确定";
+    const summaries = context && context.participants || [];
+    const known = summaries.find(function (person) { return person.id === id; });
+    if (known) return known.displayName || known.name || "相关成员";
+    const person = personById(id);
+    if (person) return person.name || person.displayName || "相关成员";
+    if (me() && id === me().id) return me().displayName || me().name || "本人";
+    return "相关成员";
+  }
+  function peopleText(ids, context) { return (ids || []).map(function (id) { return personName(id, context); }).join("、") || "暂无"; }
+  function when(value) {
+    if (!value) return "—";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "—" : date.getFullYear() + "年" + fmtDateTime(date);
+  }
+  function taskName(id) { const task = taskById(id); return task ? task.title : "关联任务不可查看"; }
+  function requestRows() { return P.data && Array.isArray(P.data.approvals) ? P.data.approvals : []; }
+  function filteredRequests(filter) {
+    const id = me() && me().id;
+    let rows = requestRows();
+    if (["reviewer", "reviews", "reviewing"].indexOf(filter) !== -1) rows = rows.filter(function (r) { return r.currentReviewerId === id && r.status === "pending"; });
+    else if (["applicant", "self", "submitted"].indexOf(filter) !== -1) rows = rows.filter(function (r) { return r.applicantId === id; });
+    return rows.slice().sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
+  }
+  function pendingForTask(id) {
+    return requestRows().find(function (r) { return r.taskId === id && r.status === "pending"; });
+  }
+  function resultMessage(result) {
+    return result.outcome === "pending" ? "申请已提交，审核通过后生效。" : result.outcome === "direct" ? "操作已生效。" : result.outcome === "approved" ? "申请已通过。" : result.outcome === "withdrawn" ? "申请已撤销。" : "申请已退回。";
+  }
+  async function finish(result, mark) {
+    if (!stillHere(mark)) return;
+    await P.reload();
+    if (stillHere(mark)) { closeSheet(); P.notice(resultMessage(result)); }
+  }
+  function required(value, name, max) {
+    const text = String(value == null ? "" : value).trim();
+    if (!text || Array.from(text).length > max) throw new Error(name + "须为1至" + max + "字。");
+    return text;
+  }
+  function inputValue(id) { const node = document.getElementById(id); return node ? node.value : ""; }
+  function strictDate(value) {
+    const date = parseDateInput(value);
+    return date && toDateInput(date) === value ? date : null;
+  }
+  function timedValue(date, time) {
+    if (!strictDate(date) || !parseTimeInput(time)) return null;
+    const value = parseDateTime(date, time);
+    return value && toDateInput(value) === date && toTimeInput(value) === time ? value : null;
+  }
+  function rawFormDraft(raw, mode, mark) {
+    const mapped = P.mapTask(raw);
+    const times = defaultTimedTimes(mapped);
+    return {
+      mode: mode, id: raw.taskId || raw.id, title: mapped.title, desc: mapped.desc,
+      acceptanceCriteria: raw.acceptanceCriteria || "", reason: "", allDay: !!raw.allDay,
+      startDate: raw.allDay ? raw.startDate : toDateInput(mapped.start), startTime: times.start,
+      endDate: raw.allDay ? raw.dueDate : toDateInput(mapped.due), endTime: times.end,
+      urgency: mapped.urgency, parentId: raw.parentTaskId || null,
+      parentUnavailable: !!raw.parentUnavailable, parentTouched: false,
+      assigneeIds: (raw.assigneeIds || []).slice(), etag: taskTag(raw),
+      reviewerId: raw.reviewerId || null, mark: mark, slot: newSlot(mode)
+    };
+  }
+
+  /* 权限只控制界面入口；服务端仍独立检查每次读写。负责人摘要不是派发候选。 */
+  window.visibleTasks = function () { return TASKS.slice(); };
+  window.assignablePeople = function (account) {
+    if (!account || !me() || account.id !== me().id || account.role === "admin") return [];
+    return (P.data.users || []).filter(function (user) {
+      if (user.role === "admin" || user.active === false || user.active === 0) return false;
+      return account.role === "upper" || user.id === account.id || (account.role === "middle" && me().teamId && user.teamId === me().teamId && user.role === "lower");
+    }).map(function (user) { return personById(user.id); }).filter(Boolean);
+  };
+  window.canEditTask = function (account, task) {
+    return !!(account && task && account.role !== "admin" && task.creatorId === account.id && !task.frozen && (task.status === "todo" || task.status === "doing"));
+  };
+  window.canUpdateTaskNote = function (account, task) {
+    return !!(account && task && account.role !== "admin" && !task.frozen && task.assigneeIds.indexOf(account.id) !== -1 && (task.status === "todo" || task.status === "doing"));
+  };
+  function canReopen(task) { return !!(me() && task && task.creatorId === me().id && !task.frozen && task.status === "done"); }
+  window.completionReviewer = window.createReviewer = function (task) {
+    const id = task && task.raw && task.raw.reviewerId;
+    return id ? { id: id, name: personName(id, task.raw) } : null;
+  };
+  window.pendingReviewCount = function () { return filteredRequests("reviewer").length; };
+  window.isOverdue = function (task) {
+    return !!(task && task.status !== "done" && task.raw && task.raw.dueAt && new Date(task.raw.dueAt).getTime() < Date.now());
+  };
+  window.statusBadge = function (task) {
+    return '<span class="badge ' + (STATUS_CLASS[task.status] || "b-normal") + '">' + esc(STATUS_LABEL[task.status] || "待开始") + '</span>' + (task.frozen ? '<span class="badge b-pending">审核中</span>' : '');
+  };
+
+  window.taskDraftFrom = function (mode, id) {
+    const value = originalDraft(mode, id);
+    if (!value) return null;
+    const task = id && taskById(id);
+    value.acceptanceCriteria = task && task.raw ? task.raw.acceptanceCriteria || "" : "";
+    value.reason = "";
+    value.parentUnavailable = !!(task && task.raw && task.raw.parentUnavailable);
+    value.parentTouched = false;
+    value.etag = task && task.raw ? taskTag(task.raw) : null;
+    value.reviewerId = task && task.raw && task.raw.reviewerId;
+    value.mark = session();
+    value.slot = newSlot(mode);
+    return value;
+  };
+  window.syncTaskDraft = function () {
+    originalSync();
+    if (!drafts.task) return;
+    [ ["tf-acceptance", "acceptanceCriteria"], ["tf-reason", "reason"] ].forEach(function (pair) {
+      const node = document.getElementById(pair[0]);
+      if (node) drafts.task[pair[1]] = node.value;
+    });
+    // Preserve cleared inputs instead of restoring an older date from the draft.
+    [ ["tf-start-date", "startDate"], ["tf-start-time", "startTime"], ["tf-end-date", "endDate"], ["tf-end-time", "endTime"] ].forEach(function (pair) {
+      const node = document.getElementById(pair[0]);
+      if (node) drafts.task[pair[1]] = node.value;
+    });
+  };
+  window.taskFormView = function () {
+    const draft = drafts.task;
+    if (!draft) return null;
+    const view = originalForm();
+    view.title = draft.mode === "create" ? "创建任务" : draft.mode === "resubmit" ? "修改并重新提交" : "编辑任务";
+    view.body = view.body.replace('id="tf-title" type="text"', 'id="tf-title" type="text" maxlength="80"')
+      .replace('<textarea id="tf-desc">', '<textarea id="tf-desc" maxlength="5000">')
+      .replace('说明</label>', '任务说明（必填）</label>')
+      .replace('<div class="field"><label>上级任务（可选）', textField("tf-acceptance", "完成标准（必填，最多2000字）", draft.acceptanceCriteria, 2000, false) + '<div class="field"><label>上级任务（可选）')
+      .replace(/<div class="callout info">(?:下层|中层)自建任务需经直属上级审核通过后才进入执行状态。<\/div>/g, '')
+      .replace('下层只能给自己创建任务，需直属上级审核后生效。', '下层只能给自己创建任务，审核结果由系统确定。')
+      .replace('创建时间在保存时单独记录，编辑排期不会改变创建时间。', '全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。');
+    if (draft.parentUnavailable && !draft.parentTouched && !draft.parentId) {
+      view.body = view.body.replace('未指定上级任务', '现有上级任务不可查看，将保留关系')
+        .replace('选择上级任务</button>', '选择上级任务</button><button type="button" class="btn tiny-btn ghost" data-action="clear-parent">移除现有关系</button>');
+    }
+    let extra = draft.mode === "edit" ? textField("tf-reason", "变更原因（必填，最多500字）", draft.reason, 500, false) : "";
+    const reviewer = draft.reviewerId ? personName(draft.reviewerId) : "由系统按负责人和组织关系确定";
+    extra += '<div class="callout info">审核人：' + esc(reviewer) + '。' + (draft.mode === "edit" ? '本次变更沿用当前负责人的审核路线；审核前继续展示原有效内容。' : '需要审核时，新任务在通过前只出现在申请列表。') + '</div>';
+    view.body = view.body.replace('<div class="callout" id="tf-error" hidden></div>', extra + errorBox("tf-error"));
+    view.foot = withBack('<button type="button" class="btn primary" data-action="save-task">' + (draft.mode === "create" ? '提交任务' : draft.mode === "resubmit" ? '重新提交' : '提交变更') + '</button>');
+    view.rebuild = taskFormView;
+    return view;
+  };
+  window.confirmTaskPicker = function () {
+    if (taskPicker.kind === "parent" && drafts.task) drafts.task.parentTouched = true;
+    originalPickerConfirm();
+  };
+  window.openTaskForm = function (mode, id) {
+    if (!me() || me().role === "admin") return;
+    if (mode === "create") {
+      drafts.task = taskDraftFrom("create");
+      openSheet(taskFormView());
+      return;
+    }
+    return P.busy(async function () {
+      const mark = session();
+      const raw = await P.request("/tasks/" + encodeURIComponent(id));
+      if (!stillHere(mark)) return;
+      if (!raw.currentVersionId) throw new Error("该任务尚未发布，请从申请详情修改重提。");
+      P.upsertTask(raw);
+      if (!canEditTask(actor(), taskById(id))) throw new Error(raw.frozen ? "任务正在审核，暂时不能编辑。" : "当前账号不能编辑此任务。");
+      drafts.task = rawFormDraft(raw, "edit", mark);
+      openSheet(taskFormView());
+    });
+  };
+  window.saveTask = function () {
+    return P.busy(async function () {
+      syncTaskDraft();
+      const draft = drafts.task;
+      if (!draft || !stillHere(draft.mark)) throw new Error("表单已失效，请重新打开。");
+      const body = {
+        title: required(draft.title, "任务名称", 80), description: required(draft.desc, "任务说明", 5000),
+        acceptanceCriteria: required(draft.acceptanceCriteria, "完成标准", 2000),
+        priority: priorityCode[draft.urgency], allDay: !!draft.allDay, assigneeIds: unique(draft.assigneeIds.slice())
+      };
+      if (!body.priority) throw new Error("请选择紧急程度。");
+      if (!body.assigneeIds.length) throw new Error("至少选择一位负责人。");
+      const eligible = assignablePeople(actor()).map(function (person) { return person.id; });
+      if (body.assigneeIds.some(function (id) { return eligible.indexOf(id) === -1; })) throw new Error("负责人已不在可派发范围，请重新选择。");
+      const start = draft.allDay ? strictDate(draft.startDate) : timedValue(draft.startDate, draft.startTime);
+      const due = draft.allDay ? strictDate(draft.endDate) : timedValue(draft.endDate, draft.endTime);
+      if (!start || !due || due < start) throw new Error("请填写有效的起止日期和时刻，截止不得早于开始。");
+      if (draft.allDay) { body.startDate = draft.startDate; body.dueDate = draft.endDate; }
+      else { body.startAt = start.toISOString(); body.dueAt = due.toISOString(); }
+      if (!draft.parentUnavailable || draft.parentTouched) body.parentTaskId = draft.parentId || null;
+      if (body.parentTaskId && (body.parentTaskId === draft.id || isDescendant(body.parentTaskId, draft.id))) throw new Error("上级任务不能是自己或自己的子任务。");
+      if (draft.mode === "edit") { body.command = "change"; body.reason = required(draft.reason, "变更原因", 500); }
+      if (draft.mode === "resubmit") body.command = "create";
+      const path = draft.mode === "create" ? "/tasks" : "/tasks/" + encodeURIComponent(draft.id);
+      const result = await P.mutation(draft.slot, draft.mode === "create" ? "POST" : "PATCH", path, body, draft.etag);
+      await finish(result, draft.mark);
+    }, "tf-error");
+  };
+
+  function kv(label, value) { return '<span class="k">' + label + '</span><span class="v" style="white-space:pre-wrap">' + esc(value) + '</span>'; }
+  function taskLink(id, title, status) {
+    return '<button type="button" class="child-task" data-task="' + attr(id) + '"><span class="t-title">' + esc(title) + '</span>' + (status ? '<span class="task-meta">' + esc(STATUS_LABEL[status] || status) + '</span>' : '') + '</button>';
+  }
+  window.taskDetailView = function (id) {
+    const task = taskById(id);
+    if (!task || !me()) return null;
+    const raw = task.raw || {};
+    let body = '<div class="row wrap">' + statusBadge(task) + urgencyBadge(task.urgency) + allDayBadge(task) + kindTag(task, actor()) + '</div>';
+    body += '<div class="kv">' + kv("任务名称", task.title) + kv("创建者", personName(task.creatorId, raw)) + kv("创建时间", when(raw.createdAt)) +
+      kv("任务排期", fmtSchedule(task)) + kv("截止", when(raw.dueAt) + (isOverdue(task) ? " · 已逾期" : "")) +
+      kv("负责人", peopleText(task.assigneeIds, raw)) + kv("审核人", raw.reviewerId ? personName(raw.reviewerId, raw) : "待配置") +
+      kv("任务说明", task.desc || "暂无") + kv("完成标准", raw.acceptanceCriteria || "暂无") + kv("当前进展", task.progressNote || "暂无") + '</div>';
+    if (raw.parentUnavailable) body += '<div class="callout info">上级任务不可查看。关联关系不扩大访问权限。</div>';
+    else if (task.parentId) body += '<div class="divider"></div><div class="card-head"><h2>上级任务</h2></div>' + taskLink(task.parentId, taskName(task.parentId));
+    const children = Array.isArray(raw.children) ? raw.children : childrenOf(id).map(function (child) { return { id: child.id, title: child.title, executionState: child.status }; });
+    if (children.length) body += '<div class="divider"></div><div class="card-head"><h2>子任务</h2></div><div class="stack">' + children.map(function (child) { return taskLink(child.id, child.title, child.executionState); }).join("") + '</div><p class="tiny muted">父子任务各自推进，完成状态不会自动联动。</p>';
+    const siblings = task.parentId ? childrenOf(task.parentId).filter(function (other) { return other.id !== id; }) : [];
+    if (siblings.length) body += '<div class="divider"></div><div class="card-head"><h2>同级任务</h2><span class="hint">同一上级任务下</span></div><div class="stack">' + siblings.map(function (other) { return taskLink(other.id, other.title, other.status); }).join("") + '</div>';
+    if (Array.isArray(raw.records) && raw.records.length) body += '<div class="divider"></div><div class="card-head"><h2>有效进展与执行记录</h2></div><div class="stack">' + raw.records.map(function (record) {
+      return '<article class="log-item"><div class="tiny muted">' + esc((kindName[record.kind] || (record.kind === "return" ? "完成退回" : "执行记录")) + " · " + personName(record.authorId, raw) + " · " + when(record.effectiveAt || record.createdAt)) + '</div><p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(record.body) + '</p></article>';
+    }).join("") + '</div>';
+    const request = pendingForTask(id);
+    const requestId = raw.pendingRequestId || request && request.id;
+    if (task.frozen) body += '<div class="callout info">该任务有待审核申请。当前展示的是有效版本；审核结束前暂停资料修改、进展、完成及重开操作。</div>';
+    const buttons = [];
+    if (canEditTask(actor(), task)) buttons.push('<button type="button" class="btn primary" data-action="edit-task" data-id="' + attr(id) + '">编辑任务</button>');
+    if (canUpdateTaskNote(actor(), task)) buttons.push('<button type="button" class="btn" data-action="update-note" data-id="' + attr(id) + '">更新进展</button><button type="button" class="btn ok" data-action="submit-complete" data-id="' + attr(id) + '">提交完成</button>');
+    if (canReopen(task)) buttons.push('<button type="button" class="btn primary" data-action="p-reopen-task" data-id="' + attr(id) + '">重开任务</button>');
+    if (requestId) buttons.push('<button type="button" class="btn" data-action="p-open-approval" data-id="' + attr(requestId) + '">查看当前申请</button>');
+    if (!buttons.length) buttons.push('<button type="button" class="btn" data-action="sheet-close">关闭</button>');
+    return { title: task.title, body: body, foot: withBack(buttons.join("")), taskId: id };
+  };
+  window.openTaskDetail = function (id) {
+    return P.busy(async function () {
+      const mark = session();
+      const raw = await P.request("/tasks/" + encodeURIComponent(id));
+      if (!stillHere(mark)) return;
+      taskTag(raw);
+      if (!raw.currentVersionId) {
+        const requestId = raw.pendingRequestId || raw.latestRequestId;
+        if (!requestId) throw new Error("该任务尚未发布。");
+        await openApprovalNow(requestId, mark);
+        return;
+      }
+      P.upsertTask(raw);
+      const view = taskDetailView(id);
+      if (view) openSheet(view);
+    });
+  };
+  P.openTask = window.openTaskDetail;
+
+  function actionView(command, id) {
+    const task = taskById(id);
+    if (!task || (command === "reopen" ? !canReopen(task) : !canUpdateTaskNote(actor(), task))) return null;
+    const context = { id: id, command: command, etag: taskTag(task.raw), mark: session(), slot: newSlot(command) };
+    actionForms.set(command + ":" + id, context);
+    const noteId = command === "progress" ? "pf-note" : command === "complete" ? "cf-note" : "reopen-reason";
+    const errorId = command === "progress" ? "pf-error" : command === "complete" ? "cf-error" : "reopen-error";
+    const label = command === "progress" ? "本次进展（必填）" : command === "complete" ? "完成说明（必填）" : "重开原因（必填）";
+    const hint = command === "complete" ? "通过后任务标记为已完成，退回后继续执行；撤销申请保留提交前状态。" : command === "reopen" ? "仅原创建者可以发起重开；生效后回到进行中，并进入新的执行轮次。" : "进展也需要审核。通过后更新有效进展，首条有效进展使任务进入进行中。";
+    const buttonAction = command === "progress" ? "save-note" : command === "complete" ? "confirm-complete" : "p-confirm-reopen";
+    return { title: kindName[command], body: '<div class="callout info">' + hint + '创建者本人等于当前审核人时按免审规则直接生效。</div>' + textField(noteId, label, "", command === "reopen" ? 500 : 2000, true) + errorBox(errorId),
+      foot: withBack('<button type="button" class="btn primary" data-action="' + buttonAction + '" data-id="' + attr(id) + '">提交</button>') };
+  }
+  window.noteFormView = function (id) { return actionView("progress", id); };
+  window.submitCompleteView = function (id) { return actionView("complete", id); };
+  function openAction(command, id) {
+    return P.busy(async function () {
+      const mark = session();
+      const raw = await P.request("/tasks/" + encodeURIComponent(id));
+      if (!stillHere(mark)) return;
+      if (!raw.currentVersionId) throw new Error("任务尚未发布，不能执行该操作。");
+      P.upsertTask(raw);
+      const view = actionView(command, id);
+      if (!view) throw new Error(raw.frozen ? "任务正在审核，暂时不能操作。" : "当前账号不能执行此操作。");
+      openSheet(view);
+    });
+  }
+  function saveAction(command, id) {
+    const field = command === "progress" ? "pf-note" : command === "complete" ? "cf-note" : "reopen-reason";
+    const errorId = command === "progress" ? "pf-error" : command === "complete" ? "cf-error" : "reopen-error";
+    return P.busy(async function () {
+      const context = actionForms.get(command + ":" + id);
+      if (!context || !stillHere(context.mark)) throw new Error("操作表单已失效，请重新打开。");
+      const body = { command: command };
+      body[command === "progress" ? "progressNote" : command === "complete" ? "completionNote" : "reason"] = required(inputValue(field), command === "reopen" ? "重开原因" : command === "complete" ? "完成说明" : "进展", command === "reopen" ? 500 : 2000);
+      const result = await P.mutation(context.slot, "PATCH", "/tasks/" + encodeURIComponent(id), body, context.etag);
+      await finish(result, context.mark);
+      actionForms.delete(command + ":" + id);
+    }, errorId);
+  }
+  window.saveNote = function (id) { return saveAction("progress", id); };
+  window.confirmComplete = function (id) { return saveAction("complete", id); };
+
+  P.renderApprovalsHTML = function (filter) {
+    const rows = filteredRequests(filter);
+    if (!rows.length) return '<div class="empty">' + (["reviewer", "reviews", "reviewing"].indexOf(filter) !== -1 ? '暂无待你审核的申请' : '暂无申请记录') + '</div>';
+    return '<div class="stack">' + rows.map(function (request) {
+      const pending = request.status === "pending";
+      return '<button type="button" class="task-item" data-action="p-open-approval" data-id="' + attr(request.id || request.requestId) + '"><span class="t-title">' + esc(request.title || "任务申请") + '</span><span class="task-meta"><span class="badge ' + (pending ? 'b-pending' : request.status === "rejected" ? 'b-reject' : 'b-normal') + '">' + esc(resultName[request.status] || request.status) + '</span><span>' + esc(kindName[request.kind] || request.kind) + '</span><span>申请人：' + esc(personName(request.applicantId, request)) + '</span></span><span class="tiny muted">' + esc(when(request.createdAt)) + '</span></button>';
+    }).join("") + '</div>';
+  };
+  function approvalsView() {
+    const mine = filteredRequests("applicant").length;
+    const waiting = filteredRequests("reviewer").length;
+    return { title: "任务申请", body: '<div class="choice-row"><button type="button" class="choice" data-action="p-approval-filter" data-filter="reviewer" aria-pressed="' + (approvalFilter === "reviewer") + '">待我审核 ' + waiting + '</button><button type="button" class="choice" data-action="p-approval-filter" data-filter="applicant" aria-pressed="' + (approvalFilter === "applicant") + '">我提交的申请 ' + mine + '</button></div>' + P.renderApprovalsHTML(approvalFilter), foot: withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>'), rebuild: approvalsView };
+  }
+  P.openApprovals = function () { openSheet(approvalsView()); };
+
+  function snapshotHTML(snapshot, request) {
+    if (!snapshot) return '<div class="empty">尚无有效版本</div>';
+    let schedule = snapshot.allDay ? snapshot.startDate + " 至 " + snapshot.dueDate + "（全天；截止日18:00）" : when(snapshot.startAt) + " → " + when(snapshot.dueAt);
+    return '<div class="kv">' + kv("名称", snapshot.title) + kv("任务说明", snapshot.description) + kv("完成标准", snapshot.acceptanceCriteria) + kv("负责人", peopleText(snapshot.assigneeIds, request)) + kv("排期", schedule) + kv("紧急程度", priorityName[snapshot.priority] || snapshot.priority) + kv("执行状态", STATUS_LABEL[snapshot.executionState] || snapshot.executionState) + kv("进展", snapshot.progressNote || "暂无") + kv("上级任务", snapshot.parentUnavailable ? "关联任务不可查看" : snapshot.parentTaskId ? taskName(snapshot.parentTaskId) : "无") + '</div>';
+  }
+  function differenceHTML(request) {
+    if (!request.baseVersion) return "";
+    const old = request.baseVersion, proposed = request.proposedVersion;
+    const labels = { title: "名称", description: "任务说明", acceptanceCriteria: "完成标准", assigneeIds: "负责人", allDay: "全天标记", startAt: "开始时间", dueAt: "截止时间", priority: "紧急程度", executionState: "执行状态", progressNote: "进展", parentTaskId: "上级任务" };
+    const changed = Object.keys(labels).filter(function (key) {
+      if (key === "assigneeIds") return JSON.stringify((old[key] || []).slice().sort()) !== JSON.stringify((proposed[key] || []).slice().sort());
+      return JSON.stringify(old[key]) !== JSON.stringify(proposed[key]);
+    }).map(function (key) { return labels[key]; });
+    return '<div class="callout info">本次拟变更：' + esc(changed.join("、") || "申请说明，请查看下方记录") + '。审核通过后才替换有效版本。</div>';
+  }
+  function approvalDetailView(request) {
+    const id = request.id || request.requestId;
+    const pending = request.status === "pending";
+    let body = '<div class="row wrap"><span class="badge ' + (pending ? 'b-pending' : 'b-normal') + '">' + esc(resultName[request.status] || request.status) + '</span><span>' + esc(kindName[request.kind] || request.kind) + '</span></div>';
+    body += '<div class="kv">' + kv("申请人", personName(request.applicantId, request)) + kv("当前审核人", request.currentReviewerId ? personName(request.currentReviewerId, request) : "待配置") + kv("申请时间", when(request.createdAt)) + (request.decidedAt ? kv("处理时间", when(request.decidedAt)) : '') + '</div>';
+    if (request.exemptionReason) body += '<div class="callout info">免审原因：' + esc(request.exemptionReason) + '</div>';
+    if (request.comment) body += '<div class="callout ' + (request.status === "rejected" ? 'reject' : 'info') + '" style="white-space:pre-wrap">处理意见：' + esc(request.comment) + '</div>';
+    body += differenceHTML(request) + '<div class="card-head"><h2>' + (pending ? '申请快照' : '本次提交内容') + '</h2></div>' + snapshotHTML(request.proposedVersion, request);
+    if (request.baseVersion) body += '<details style="margin-top:12px"><summary>查看申请前有效版本</summary>' + snapshotHTML(request.baseVersion, request) + '</details>';
+    if (request.records && request.records.length) body += '<div class="divider"></div><div class="card-head"><h2>申请说明</h2></div>' + request.records.map(function (record) { return '<div class="callout" style="white-space:pre-wrap">' + esc(record.body) + '</div>'; }).join("");
+    body += errorBox("approval-error");
+    const buttons = [];
+    if (pending && request.currentReviewerId === me().id) buttons.push('<button type="button" class="btn ok" data-action="p-approve-request" data-id="' + attr(id) + '">通过</button><button type="button" class="btn danger" data-action="p-reject-request" data-id="' + attr(id) + '">退回</button>');
+    if (pending && request.applicantId === me().id) buttons.push('<button type="button" class="btn" data-action="p-withdraw-request" data-id="' + attr(id) + '">撤销申请</button>');
+    if (!pending && request.kind === "create" && ["rejected", "withdrawn"].indexOf(request.status) !== -1 && request.applicantId === me().id) buttons.push('<button type="button" class="btn primary" data-action="p-resubmit-create" data-id="' + attr(id) + '">修改并重提</button>');
+    if (!buttons.length) buttons.push('<button type="button" class="btn" data-action="sheet-close">关闭</button>');
+    return { title: kindName[request.kind] + " · " + (request.proposedVersion.title || "申请详情"), body: body, foot: withBack(buttons.join("")), approvalId: id };
+  }
+  async function openApprovalNow(id, mark) {
+    const request = await P.request("/approval-requests/" + encodeURIComponent(id));
+    if (!stillHere(mark)) return;
+    reviewContexts.set(id, { request: request, etag: reviewTag(request), mark: mark, slot: newSlot("review:" + id) });
+    openSheet(approvalDetailView(request));
+  }
+  P.openApproval = function (id) { return P.busy(async function () { await openApprovalNow(id, session()); }); };
+  function decisionForm(id, decision) {
+    const context = reviewContexts.get(id);
+    if (!context || !stillHere(context.mark)) throw new Error("审批详情已失效，请重新打开。");
+    const request = context.request;
+    if (request.status !== "pending") throw new Error("该申请已处理。");
+    if (decision === "withdraw" ? request.applicantId !== me().id : request.currentReviewerId !== me().id) throw new Error("当前账号不能执行此操作。");
+    const withdraw = decision === "withdraw";
+    return { title: withdraw ? "撤销申请" : "退回申请", body: '<div class="callout info">' + (withdraw ? '撤销后本次申请不会生效，任务保持申请前的有效内容。' : request.kind === "complete" ? '退回完成申请后任务进入进行中，请说明仍需处理的事项。' : '退回后保留原有效内容；创建申请不会进入普通任务列表。') + '</div>' + (withdraw ? '' : textField("review-comment", "退回原因（必填）", "", 2000, true)) + errorBox("review-decision-error"), foot: withBack('<button type="button" class="btn danger" data-action="p-confirm-decision" data-decision="' + decision + '" data-id="' + attr(id) + '">' + (withdraw ? '确认撤销' : '确认退回') + '</button>') };
+  }
+  function decide(id, decision, suppliedComment) {
+    return P.busy(async function () {
+      const context = reviewContexts.get(id);
+      if (!context || !stillHere(context.mark)) throw new Error("审批详情已失效，请重新打开。");
+      const body = { decision: decision };
+      if (decision === "reject") body.comment = required(suppliedComment == null ? inputValue("review-comment") : suppliedComment, "退回原因", 2000);
+      const result = await P.mutation(context.slot + ":" + decision, "PATCH", "/approval-requests/" + encodeURIComponent(id), body, context.etag);
+      await finish(result, context.mark);
+      reviewContexts.delete(id);
+    }, decision === "approve" ? "approval-error" : "review-decision-error");
+  }
+  function resubmitCreate(id) {
+    return P.busy(async function () {
+      const mark = session();
+      const request = await P.request("/approval-requests/" + encodeURIComponent(id));
+      if (!stillHere(mark)) return;
+      if (request.applicantId !== me().id || request.kind !== "create" || ["rejected", "withdrawn"].indexOf(request.status) === -1) throw new Error("该申请不能修改重提。");
+      const raw = await P.request("/tasks/" + encodeURIComponent(request.taskId));
+      if (!stillHere(mark)) return;
+      if (raw.currentVersionId) throw new Error("任务已发布，请从有效任务详情编辑。");
+      if (raw.pending) throw new Error("该任务已有新的待审核申请。");
+      const draftRaw = Object.assign({}, raw.proposedVersion || request.proposedVersion, { id: request.taskId, taskId: request.taskId, originalCreatorId: me().id, rowVersion: raw.rowVersion, reviewerId: request.currentReviewerId });
+      drafts.task = rawFormDraft(draftRaw, "resubmit", mark);
+      openSheet(taskFormView());
+    });
+  }
+
+  /* 旧入口全部转向请求级审核，不再修改原型数组。 */
+  function legacyRequest(id, decision) {
+    const request = requestRows().find(function (row) { return (row.taskId === id || row.id === id) && row.status === "pending"; });
+    if (!request) { P.notice("没有可处理的待审核申请，请刷新申请列表。"); return; }
+    return P.openApproval(request.id);
+  }
+  window.approveCreate = window.approveComplete = function (id) { return legacyRequest(id, "approve"); };
+  window.rejectTask = function (_kind, id, reason) {
+    const request = requestRows().find(function (row) { return (row.taskId === id || row.id === id) && row.status === "pending"; });
+    if (!request || !reviewContexts.has(request.id)) return legacyRequest(id, "reject");
+    return decide(request.id, "reject", reason);
+  };
+  window.rejectFormView = function (_kind, id) {
+    const request = requestRows().find(function (row) { return (row.taskId === id || row.id === id) && row.status === "pending"; });
+    if (request && reviewContexts.has(request.id)) return decisionForm(request.id, "reject");
+    return { title: "查看审核申请", body: '<div class="callout info">请先打开申请快照后处理。</div>', foot: request ? '<button type="button" class="btn primary" data-action="p-open-approval" data-id="' + attr(request.id) + '">打开申请</button>' : '<button type="button" class="btn" data-action="sheet-close">关闭</button>' };
+  };
+  window.runAction = function (element) {
+    const action = element.dataset.action, id = element.dataset.id;
+    if (action === "clear-parent" && drafts.task) drafts.task.parentTouched = true;
+    if (action === "p-open-approval") return P.openApproval(id);
+    if (action === "p-open-approvals") return P.openApprovals();
+    if (action === "p-approval-filter") { approvalFilter = element.dataset.filter === "applicant" ? "applicant" : "reviewer"; replaceTopSheet(approvalsView()); return; }
+    if (action === "update-note") return openAction("progress", id);
+    if (action === "submit-complete") return openAction("complete", id);
+    if (action === "p-reopen-task") return openAction("reopen", id);
+    if (action === "p-confirm-reopen") return saveAction("reopen", id);
+    if (action === "p-approve-request") return decide(id, "approve");
+    if (action === "p-reject-request" || action === "p-withdraw-request") {
+      try { openSheet(decisionForm(id, action === "p-reject-request" ? "reject" : "withdraw")); }
+      catch (error) { P.notice(error.message); }
+      return;
+    }
+    if (action === "p-confirm-decision") return decide(id, element.dataset.decision);
+    if (action === "p-resubmit-create") return resubmitCreate(id);
+    return originalRunAction(element);
+  };
+})();

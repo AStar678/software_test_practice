@@ -1,0 +1,28 @@
+server:
+  address: ${PANDORA_BIND_ADDRESS:127.0.0.1}
+  port: ${PANDORA_PORT:8080}
+  error:
+    include-message: never
+spring:
+  application:
+    name: pandora-backend
+  datasource:
+    url: ${PANDORA_DB_URL:jdbc:mysql://127.0.0.1:13306/pandora?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&sslMode=DISABLED}
+    username: ${PANDORA_DB_USER:pandora}
+    password: ${PANDORA_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 8
+      connection-init-sql: SET SESSION innodb_lock_wait_timeout=5
+  flyway:
+    enabled: true
+  jackson:
+    time-zone: UTC
+    deserialization:
+      fail-on-unknown-properties: true
+  mvc:
+    problemdetails:
+      enabled: false
+pandora:
+  seed: ${PANDORA_SEED:false}
+  worker-enabled: ${PANDORA_WORKER_ENABLED:true}
+  demo-password: ${PANDORA_DEMO_PASSWORD:Demo@123456}

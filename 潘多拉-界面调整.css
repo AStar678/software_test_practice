@@ -1,0 +1,160 @@
+/* 所有栏目共用原手机外框；日程内容按外框实际宽度适配。 */
+.phone{container-type:inline-size;container-name:pandora}
+.app-main.is-schedule{display:flex;flex-direction:column;padding:12px 12px 16px;background:#fafbfd;overflow:hidden}
+#page-view{gap:0}
+.app-main.is-schedule #page-view{flex:1;min-height:0}
+.card.p-schedule-card{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;padding:0;overflow:hidden}
+.p-schedule-header{flex:0 0 auto;background:var(--card);border-bottom:1px solid var(--line)}
+.p-schedule-toolbar{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 8px;padding:8px 10px}
+.p-date-button{display:flex;align-items:center;gap:6px;padding:0;background:none;border:0;font-size:16px;font-weight:700;letter-spacing:-.5px;white-space:nowrap;cursor:pointer}
+.p-date-button svg,.p-icon-button svg,.p-text-button svg,.p-schedule-create svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+.p-date-button svg{color:var(--muted);width:15px}
+.p-schedule-navigation{display:flex;align-items:center;gap:3px;justify-self:end}
+.p-icon-button{display:grid;place-items:center;border:0;background:none;border-radius:7px;width:26px;height:26px;cursor:pointer;color:var(--muted)}
+.p-icon-button:hover,.p-today-button:hover{background:var(--line-2);color:var(--ink)}
+.p-today-button{border:1px solid var(--line);border-radius:7px;background:#fff;padding:4px 9px;font-size:12px;cursor:pointer}
+.p-schedule-modes{justify-self:start;display:grid;grid-template-columns:repeat(3,40px);padding:2px;border:1px solid var(--line-2);border-radius:9px;background:var(--grey-soft)}
+.p-schedule-modes button{border:0;border-radius:6px;background:none;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--muted)}
+.p-schedule-modes button[aria-pressed="true"]{background:#fff;box-shadow:0 1px 4px #1f293712;color:var(--brand);font-weight:700}
+.p-schedule-create{display:flex;align-items:center;justify-content:center;justify-self:end;gap:5px;white-space:nowrap;padding:5px 9px;font-size:12px}
+.p-schedule-content{--axis-width:34px;flex:1;min-height:0;overflow:hidden}
+.p-text-button{display:inline-flex;align-items:center;gap:2px;border:0;background:none;color:var(--brand);font-size:12px;padding:4px 0;cursor:pointer;white-space:nowrap}
+.p-text-button:hover{text-decoration:underline}
+.p-text-button svg{width:14px;height:14px}
+.p-caption{font-size:11px;color:var(--muted);font-weight:500}
+/* 连续月历：日期保持七列，任务以整段色条跨越日期，在周边界自然接续。 */
+.p-month-layout{--month-date-height:24px;--month-track-height:18px;--month-track-gap:2px;--month-more-height:16px;display:flex;flex-direction:column;height:100%;min-width:0;overflow:hidden}
+.p-weekday-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));flex:0 0 26px;align-items:center;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;text-align:center;background:#fff}
+.p-weekday-row span:nth-last-child(-n+2){color:#b07b52}
+.p-month-grid{display:grid;grid-template-rows:repeat(var(--calendar-weeks),minmax(0,1fr));flex:1;min-height:0;overflow:hidden}
+.p-month-week{position:relative;min-height:0;border-bottom:1px solid var(--line);background:#fff}
+.p-month-week:last-child{border-bottom:0}
+.p-month-days{position:absolute;inset:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.p-month-date{min-width:0;display:flex;align-items:flex-start;text-align:left;border:0;border-right:1px solid var(--line-2);border-radius:0;padding:0;background:none;cursor:pointer}
+.p-month-date:last-child{border-right:0}
+.p-month-date.is-other-month{color:#a7acb5;background:#fcfcfd}
+.p-month-date.is-selected{background:#f0f5ff}
+.p-month-date:hover{background:#f5f8fe}
+.p-month-date:focus-visible{outline-offset:-2px;border-radius:0}
+.p-month-date-label{display:flex;align-items:center;gap:2px;min-width:0;height:var(--month-date-height);padding:1px 3px}
+.p-month-date strong{flex:0 0 auto;display:grid;place-items:center;min-width:22px;height:22px;font-size:17px;font-weight:400;line-height:1;font-variant-numeric:tabular-nums;border-radius:50%}
+.p-month-date small{font-size:8px;font-weight:400;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-month-date.is-other-month small{color:#b7bbc3}
+.p-month-date.is-today strong{background:var(--brand);color:#fff;font-weight:600}
+.p-month-tracks{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:repeat(var(--month-rows),var(--month-track-height));row-gap:var(--month-track-gap);margin-top:var(--month-date-height);pointer-events:none}
+.p-month-event{display:flex;align-items:center;min-width:0;margin:0 1px;padding:1px 3px;background:var(--tc-bg);background:color-mix(in srgb,var(--tc-bg) 78%,var(--tc-bd));border:0;border-left:2px solid var(--tc-bd);border-radius:3px;text-align:left;font-size:11px;line-height:1.35;cursor:pointer;color:var(--ink);pointer-events:auto}
+.p-month-event span{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.p-month-event.continues-before{border-left:0;border-top-left-radius:0;border-bottom-left-radius:0}
+.p-month-event.continues-after{border-top-right-radius:0;border-bottom-right-radius:0}
+.p-month-event:hover{filter:brightness(.95)}
+.p-month-event.is-done span{text-decoration:line-through;color:#596170}
+.p-month-overflow{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));height:var(--month-more-height);margin-top:2px;pointer-events:none}
+.p-month-more{border:0;background:none;color:var(--muted);font-size:10px;line-height:14px;padding:0 3px;cursor:pointer;text-align:left;min-width:0;white-space:nowrap;pointer-events:auto}
+.p-month-more:hover{color:var(--brand)}
+/* 短屏容不下任务条时，日期与真实任务数量同行，仍可打开完整清单。 */
+.p-month-layout.is-summary .p-month-tracks,.p-month-layout.is-summary .p-month-date small{display:none}
+.p-month-layout.is-summary .p-month-date-label{gap:0;padding:2px;height:24px}
+.p-month-layout.is-summary .p-month-date strong{min-width:18px;height:20px;font-size:15px}
+.p-month-layout.is-summary .p-month-overflow{position:absolute;inset:0;height:auto;margin:0;align-items:start}
+.p-month-layout.is-summary .p-month-more{justify-self:end;margin-top:3px;max-width:calc(100% - 20px);padding:0 2px;line-height:20px;font-size:9px;overflow:hidden;text-overflow:ellipsis}
+.p-agenda{min-width:0;padding:20px 16px;border-left:1px solid var(--line);background:#fcfdff;overflow:auto}
+.p-agenda-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:15px}
+.p-agenda-heading h2{font-size:20px;letter-spacing:-.5px;margin:0;font-weight:650}
+.p-agenda-item{display:flex;gap:9px;width:100%;min-width:0;padding:12px 0;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;cursor:pointer;align-items:flex-start}
+.p-agenda-item:hover{background:var(--line-2)}
+.p-agenda-marker{flex:0 0 4px;width:4px;height:30px;border-radius:2px;background:var(--tc-bd);margin-top:3px}
+.p-agenda-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.p-agenda-copy strong{font-size:12px;font-weight:600;line-height:1.5;overflow-wrap:anywhere}
+.p-agenda-copy>span{font-size:10.5px;color:var(--muted)}
+.p-agenda-meta{display:flex;flex-wrap:wrap;gap:4px}
+.p-agenda-meta .badge{font-size:9px;padding:1px 5px}
+.p-calendar-empty{font-size:12px;color:var(--muted);padding:24px 0;display:flex;align-items:flex-start;flex-direction:column;gap:8px}
+/* 日历沿时间纵向排列，独立保留完整0–24点刻度。 */
+.p-day-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 6px 4px;gap:2px}
+.p-day-strip button{display:flex;justify-content:center;align-items:center;gap:3px;border:0;background:none;border-radius:7px;padding:3px 1px;cursor:pointer}
+.p-day-strip button>span{font-size:9px;color:var(--muted)}
+.p-day-strip strong{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.p-day-strip .is-today strong{color:var(--brand);box-shadow:inset 0 0 0 1px #c2d4fb}
+.p-day-strip .is-selected{background:#f4f7fe}
+.p-day-strip .is-selected strong{background:var(--brand);color:white;box-shadow:none}
+.p-day-layout{display:grid;grid-template-columns:minmax(0,1fr);height:100%;min-height:0}
+.p-agenda-day{display:none}
+.p-time-panel{display:flex;flex-direction:column;min-height:0;min-width:0}
+.p-time-heading{display:flex;justify-content:space-between;align-items:center;padding:4px 9px;border-bottom:1px solid var(--line-2);gap:8px;flex:0 0 auto}
+.p-time-heading strong{font-size:12px;font-weight:600}
+.p-time-heading strong span{font-size:11px;color:var(--muted);font-weight:400;margin-left:5px}
+.p-day-allday{display:grid;grid-template-columns:var(--axis-width) minmax(0,1fr);gap:4px;padding:4px 6px 4px 0;border-bottom:1px solid var(--line);flex:0 0 auto;background:#fcfdff}
+.p-day-allday>span{font-size:10px;color:var(--muted);text-align:right;padding:3px 6px 0 0}
+.p-day-allday>div{display:flex;gap:4px;min-width:0}
+.p-day-allday .p-month-more{flex:0 0 auto}
+.p-all-day-event{display:block;flex:1;max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:0;border-left:3px solid var(--tc-bd);border-radius:3px;background:var(--tc-bg);font-size:11px;text-align:left;padding:3px 5px;cursor:pointer}
+.p-all-day-empty{font-size:11px;color:#9ca3af;padding:3px}
+.p-timeline-scroll{flex:1;min-height:0;overflow:hidden;padding:8px 4px 8px 0}
+.p-day-canvas,.p-week-time{position:relative;min-height:1px}
+.p-time-axis{position:absolute;left:0;top:0;bottom:0;width:var(--axis-width);pointer-events:none}
+.p-time-axis>span{position:absolute;right:3px;transform:translateY(-50%);color:#8892a2;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:9px;font-variant-numeric:tabular-nums;background:#fff;padding:0 1px}
+.p-day-events{position:absolute;left:var(--axis-width);right:0;top:0;bottom:0;border-left:1px solid var(--line);border-bottom:1px solid var(--line);background:repeating-linear-gradient(to bottom,var(--line) 0,var(--line) 1px,transparent 1px,transparent var(--hour-height))}
+.p-time-event{position:absolute;display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;padding:7px 8px 5px 10px;border:0;border-radius:5px;background:var(--tc-bg);overflow:hidden;cursor:pointer;color:var(--ink);min-width:0}
+.p-event-true-duration{position:absolute;left:0;top:var(--actual-offset,0px);height:var(--actual-height);max-height:100%;width:3px;background:var(--tc-bd)}
+.p-time-event strong{font-size:12px;font-weight:600;line-height:1.45;overflow-wrap:anywhere;max-height:4.35em;overflow:hidden;width:100%}
+.p-event-time{font-size:10px;line-height:1.5;color:#4b5563;overflow-wrap:anywhere}
+.p-event-state{font-size:9px;border:1px solid #ffffff99;border-radius:3px;padding:1px 4px;background:#ffffff99;color:var(--muted)}
+.p-time-event:hover{filter:brightness(.96);z-index:3;box-shadow:0 1px 5px #1f293717}
+.p-time-event.is-short{padding:1px 4px 1px 6px}
+.p-time-event.is-short strong{white-space:nowrap;text-overflow:ellipsis;line-height:16px;font-size:10.5px;flex:0 0 auto}
+.p-time-event.is-short .p-event-time,.p-time-event.is-short .p-event-state{display:none}
+.p-time-event.is-done strong{text-decoration:line-through;opacity:.65}
+.p-time-more{position:absolute;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:flex-start;padding:8px 3px;border:1px dashed #cad4e2;border-radius:5px;background:#f5f7fb;color:#64748b;overflow:hidden;cursor:pointer}
+.p-time-more strong{font-size:12px;white-space:nowrap}
+.p-time-more span{font-size:10px;line-height:1.4}
+.p-time-more.is-short{padding:1px 2px}
+.p-time-more.is-short span{display:none}
+.p-time-more:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-soft)}
+.p-now-line{position:absolute;height:1px;background:#ef6464;left:0;right:0;z-index:4;pointer-events:none}
+.p-now-line span{position:absolute;left:-3px;top:-2px;width:5px;height:5px;border-radius:50%;background:#ef6464}
+/* 周历七列与完整时间轴同屏，密集日程点开查看。 */
+.p-week-panel{height:100%;display:flex;min-height:0}
+.p-week-scroll{display:flex;flex:1;min-height:0;min-width:0;overflow:hidden}
+.p-week-canvas{display:flex;flex-direction:column;min-width:0;width:100%;height:100%;min-height:0}
+.p-week-sticky{position:relative;flex:0 0 auto;z-index:5;background:#fff;box-shadow:0 1px 0 var(--line)}
+.p-week-columns{display:grid;grid-template-columns:var(--axis-width) repeat(7,minmax(0,1fr))}
+.p-week-heading{height:40px;border-bottom:1px solid var(--line-2)}
+.p-week-heading>button{display:flex;flex-direction:column;gap:1px;align-items:center;justify-content:center;min-width:0;padding:0;border:0;border-left:1px solid var(--line-2);background:none;cursor:pointer}
+.p-week-heading>button span{font-size:9px;color:var(--muted)}
+.p-week-heading>button strong{display:grid;place-items:center;width:20px;height:20px;font-size:12px;border-radius:50%;font-weight:600}
+.p-week-heading>button.is-today strong{background:var(--brand);color:#fff}
+.p-week-gutter{font-size:9px;color:var(--muted);align-self:center;text-align:right;padding-right:4px}
+.p-week-spanning{display:grid;grid-template-columns:var(--axis-width) minmax(0,1fr);border-bottom:1px solid var(--line);background:#fcfdff}
+.p-week-spanning>.p-week-gutter{align-self:start;padding-top:6px;line-height:16px}
+.p-week-span-content{min-width:0;padding:4px 0;background:repeating-linear-gradient(to right,var(--line-2) 0,var(--line-2) 1px,transparent 1px,transparent calc(100% / 7))}
+.p-week-span-tracks{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:repeat(var(--span-rows),20px);row-gap:2px}
+.p-week-span-event{gap:4px;font-size:10px}
+.p-week-span-event>span{flex:1}
+.p-week-span-time{display:none}
+.p-week-span-event[data-span="1"] .p-week-span-time{display:none}
+.p-week-span-overflow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));height:18px;margin-top:2px}
+.p-week-time{flex:1 1 0;min-height:0;margin-top:8px;margin-bottom:10px}
+.p-week-event-columns{position:absolute;left:var(--axis-width);right:0;top:0;bottom:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.p-week-event-day{position:relative;border-left:1px solid var(--line);border-bottom:1px solid var(--line);background:repeating-linear-gradient(to bottom,var(--line) 0,var(--line) 1px,transparent 1px,transparent var(--hour-height))}
+.p-week-event-day .p-time-event{padding:5px 4px 4px 6px}
+.p-week-event-day .p-time-event strong{font-size:10px;max-height:5.8em}
+.p-week-event-day .p-time-event.is-short{padding:1px 2px 1px 4px}
+.p-week-event-day .p-event-time{font-size:9px}
+.p-week-event-day .p-time-more{gap:4px;padding:6px 1px}
+.p-week-event-day .p-time-more strong{font-size:10px}
+.p-week-event-day .p-time-more span{font-size:9px}
+.p-week-event-day .p-time-more.is-short{padding:1px}
+/* 日志筛选收为一行标签，个人资料字段继续复用现有表单。 */
+.p-log-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 0 4px}
+.p-log-header h2{margin:0;font-size:16px;font-weight:650}
+.p-log-header .btn{font-size:12px;padding:7px 13px}
+.p-log-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;border-radius:10px;padding:4px;background:#eaf0f6}
+.p-log-tab{min-width:0;border:0;border-radius:7px;padding:8px 3px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:11.5px;background:none;color:var(--muted);cursor:pointer;white-space:nowrap}
+.p-log-tab[aria-selected="true"]{background:#fff;color:var(--brand);font-weight:650;box-shadow:0 1px 4px #1f293712}
+.p-log-count{display:inline-block;min-width:17px;padding:0 4px;border-radius:5px;font-size:9px;line-height:17px;background:#dce5ef;color:#64748b;font-variant-numeric:tabular-nums}
+.p-log-tab[aria-selected="true"] .p-log-count{background:var(--brand-soft);color:var(--brand)}
+.p-log-panel{padding:12px}
+.field input[type="email"],.field input[type="tel"]{border:1px solid var(--line);border-radius:9px;padding:8px 9px;font:inherit;font-size:13px;background:#fff;color:var(--ink);width:100%}
+@container pandora (max-width:359px){.p-month-date-label{gap:1px;padding-left:2px;padding-right:1px}.p-month-date strong{font-size:16px;min-width:20px}.p-month-date small{font-size:7px}.p-week-span-overflow .p-month-more{font-size:9px;padding:0 1px}}
+@media(max-width:480px){.p-log-tab{font-size:11px;gap:3px}.p-log-count{font-size:9px;padding:0 3px;min-width:15px}}
+@media(prefers-reduced-motion:reduce){.p-schedule-content *{scroll-behavior:auto}}

@@ -2720,4 +2720,4 @@ document.addEventListener("keydown", function(ev){
   }
 });
 
-renderAll();
+/* 由后端接入脚本在登录并读取数据后首次渲染。 */

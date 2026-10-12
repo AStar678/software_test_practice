@@ -1,1 +1,10 @@
 .tmp-verify/
+.DS_Store
+__pycache__/
+.env
+.env.*
+!.env.example
+/tmp/
+/output/
+/本地备份/
+/潘多拉-原型源码.zip

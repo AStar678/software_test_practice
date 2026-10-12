@@ -1,0 +1,200 @@
+# Local API examples. Use a REST client or copy each request into your HTTP tool.
+# 1. Run the two login requests; obtain user IDs from their user objects or GET /me.
+# 2. Copy token/IDs and the latest GET response ETag into the variables below.
+# 3. Use a new Idempotency-Key for each NEW command. Retrying the identical command
+#    must retain the original key, body and If-Match. Keys below use {{$guid}}.
+#    To test a retry, replace {{$guid}} with one fixed UUID for both sends.
+# 4. Dates are ISO 8601 instants. Change the example schedule if needed.
+# Demo credentials are for the seeded local environment only.
+
+@baseUrl = http://localhost:8080
+@password = Demo@123456
+@employeeToken = PASTE_EMPLOYEE_TOKEN
+@managerToken = PASTE_MIDDLE_TOKEN
+@employeeId = PASTE_EMPLOYEE_USER_ID
+@taskId = PASTE_TASK_ID
+@requestId = PASTE_APPROVAL_REQUEST_ID
+@logId = PASTE_LOG_ID
+@notificationId = PASTE_NOTIFICATION_ID
+@jobId = PASTE_JOB_ID
+@taskEtag = "1"
+@requestEtag = "1"
+@logEtag = "1"
+@notificationEtag = "1"
+
+### Health performs a database connection check; no authentication required.
+GET {{baseUrl}}/health
+
+### Employee login: response {token,tokenType,expiresAt,user}.
+POST {{baseUrl}}/api/v1/auth/sessions
+Content-Type: application/json
+
+{"username":"employee","password":"{{password}}"}
+
+### Manager login: this manager reviews the example employee's self-created tasks.
+POST {{baseUrl}}/api/v1/auth/sessions
+Content-Type: application/json
+
+{"username":"middle","password":"{{password}}"}
+
+### Discover the current server identity. Do not send a client-selected actor ID.
+GET {{baseUrl}}/api/v1/me
+Authorization: Bearer {{employeeToken}}
+
+### Four home panels.
+GET {{baseUrl}}/api/v1/home
+Authorization: Bearer {{employeeToken}}
+
+### Effective tasks only. q/from/to/state/priority/assigneeId/creatorId are optional.
+GET {{baseUrl}}/api/v1/tasks?limit=20&offset=0
+Authorization: Bearer {{employeeToken}}
+
+### Create a task: response provides taskId and requestId.
+POST {{baseUrl}}/api/v1/tasks
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+Content-Type: application/json
+
+{
+  "title": "Local example: supplier review",
+  "description": "Compare supplier delivery records.",
+  "acceptanceCriteria": "Provide a reviewed comparison and next actions.",
+  "assigneeIds": ["{{employeeId}}"],
+  "priority": "medium",
+  "allDay": false,
+  "startAt": "2030-01-14T01:00:00Z",
+  "dueAt": "2030-01-17T10:00:00Z"
+}
+
+### Applicant queue; pending creations do not appear in the normal task list.
+GET {{baseUrl}}/api/v1/approval-requests?mine=applicant
+Authorization: Bearer {{employeeToken}}
+
+### Manager queue.
+GET {{baseUrl}}/api/v1/approval-requests?mine=reviewer
+Authorization: Bearer {{managerToken}}
+
+### Read the request snapshot and copy its ETag to requestEtag.
+GET {{baseUrl}}/api/v1/approval-requests/{{requestId}}
+Authorization: Bearer {{managerToken}}
+
+### Approve. For rejection use decision=reject with a nonempty comment.
+PATCH {{baseUrl}}/api/v1/approval-requests/{{requestId}}
+Authorization: Bearer {{managerToken}}
+Idempotency-Key: {{$guid}}
+If-Match: {{requestEtag}}
+Content-Type: application/json
+
+{"decision":"approve"}
+
+### Effective task detail. Copy its latest ETag to taskEtag before any PATCH.
+GET {{baseUrl}}/api/v1/tasks/{{taskId}}
+Authorization: Bearer {{employeeToken}}
+
+### Definition change requires original-creator permission and a reason.
+PATCH {{baseUrl}}/api/v1/tasks/{{taskId}}
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+If-Match: {{taskEtag}}
+Content-Type: application/json
+
+{"command":"change","title":"Local example: supplier review updated","reason":"Clarify scope"}
+
+### Progress requires current-assignee permission and enters review unless exempt.
+# Finish/withdraw the preceding pending request, then obtain a fresh task ETag.
+PATCH {{baseUrl}}/api/v1/tasks/{{taskId}}
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+If-Match: {{taskEtag}}
+Content-Type: application/json
+
+{"command":"progress","progressNote":"Delivery records collected; comparison in progress."}
+
+### Submit completion; it is not done until the request takes effect.
+PATCH {{baseUrl}}/api/v1/tasks/{{taskId}}
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+If-Match: {{taskEtag}}
+Content-Type: application/json
+
+{"command":"complete","completionNote":"Comparison and next actions have been checked."}
+
+### Only the applicant may withdraw a pending request; read its fresh ETag first.
+PATCH {{baseUrl}}/api/v1/approval-requests/{{requestId}}
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+If-Match: {{requestEtag}}
+Content-Type: application/json
+
+{"decision":"withdraw"}
+
+### Reopen a done task, original creator only in this local implementation.
+PATCH {{baseUrl}}/api/v1/tasks/{{taskId}}
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+If-Match: {{taskEtag}}
+Content-Type: application/json
+
+{"command":"reopen","reason":"A follow-up correction is required."}
+
+### Own logs; scope=visible expands only to the current user's authorized range.
+GET {{baseUrl}}/api/v1/work-logs?scope=self&limit=20&offset=0
+Authorization: Bearer {{employeeToken}}
+
+### A log is independent from task approval. taskId is optional and must be visible.
+POST {{baseUrl}}/api/v1/work-logs
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+Content-Type: application/json
+
+{"body":"Reviewed the supplier data and recorded follow-up questions.","businessDate":"2030-01-14","taskId":"{{taskId}}"}
+
+### Read a log and copy its ETag before editing.
+GET {{baseUrl}}/api/v1/work-logs/{{logId}}
+Authorization: Bearer {{employeeToken}}
+
+### Only the author may edit their log.
+PATCH {{baseUrl}}/api/v1/work-logs/{{logId}}
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+If-Match: {{logEtag}}
+Content-Type: application/json
+
+{"body":"Reviewed supplier data and confirmed the follow-up owner."}
+
+### Notifications belong to the current user.
+GET {{baseUrl}}/api/v1/notifications?limit=20&offset=0
+Authorization: Bearer {{managerToken}}
+
+### Obtain current notification ETag before read/hide.
+GET {{baseUrl}}/api/v1/notifications/{{notificationId}}
+Authorization: Bearer {{managerToken}}
+
+### Reading a notification does not approve it. action=hide hides only this message.
+PATCH {{baseUrl}}/api/v1/notifications/{{notificationId}}
+Authorization: Bearer {{managerToken}}
+Idempotency-Key: {{$guid}}
+If-Match: {{notificationEtag}}
+Content-Type: application/json
+
+{"action":"read"}
+
+### Effective, visible task summary.
+GET {{baseUrl}}/api/v1/analytics/task-summary
+Authorization: Bearer {{employeeToken}}
+
+### Local rule-based analysis; no external model is called.
+POST {{baseUrl}}/api/v1/ai-jobs
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+Content-Type: application/json
+
+{"scopeType":"self"}
+
+### Owner-only result; sources are checked again.
+GET {{baseUrl}}/api/v1/ai-jobs/{{jobId}}
+Authorization: Bearer {{employeeToken}}
+
+### Revoke the current session.
+DELETE {{baseUrl}}/api/v1/auth/sessions/current
+Authorization: Bearer {{employeeToken}}

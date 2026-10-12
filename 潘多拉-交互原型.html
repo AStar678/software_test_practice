@@ -4,14 +4,16 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>潘多拉 · 交互原型</title>
+<script>if (location.protocol === 'file:') location.replace('http://127.0.0.1:8080/' + location.search + location.hash);</script>
 <link rel="stylesheet" href="潘多拉-交互原型.css" />
+<link rel="stylesheet" href="潘多拉-界面调整.css?v=20261012-fit-card-4" />
 </head>
 <body>
 
 <div class="preview-bar">
-  <span class="preview-tag">原型预览</span>
-  <span class="preview-note">身份切换仅用于演示分级权限，不属于产品功能。</span>
-  <div class="role-switch" id="roleSwitch" role="group" aria-label="预览身份">
+  <span class="preview-tag">本地运行</span>
+  <span class="preview-note">正在连接本地后端…</span>
+  <div class="role-switch" id="roleSwitch" role="group" aria-label="切换登录账号">
     <button type="button" data-role="upper" aria-pressed="false">上层</button>
     <button type="button" data-role="middle" aria-pressed="false">中层</button>
     <button type="button" data-role="lower" aria-pressed="false">下层</button>
@@ -80,5 +82,10 @@
 </div>
 
 <script src="潘多拉-交互原型.js" defer></script>
+<script src="潘多拉-api.js" defer></script>
+<script src="潘多拉-任务接入.js" defer></script>
+<script src="潘多拉-工作区接入.js" defer></script>
+<script src="潘多拉-日程视图.js?v=20261012-fit-card-4" defer></script>
+<script src="潘多拉-个人资料.js" defer></script>
 </body>
 </html>

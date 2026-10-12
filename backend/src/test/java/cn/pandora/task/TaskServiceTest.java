@@ -1,0 +1,137 @@
+package cn.pandora.task;
+
+import cn.pandora.auth.Access;
+import cn.pandora.auth.Actor;
+import cn.pandora.common.ApiException;
+import cn.pandora.common.Db;
+import cn.pandora.common.Events;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.Instant;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+class TaskServiceTest {
+    private static final String CREATOR = "10000000-0000-0000-0000-000000000001";
+    private static final String EMPLOYEE_A = "10000000-0000-0000-0000-000000000002";
+    private static final String EMPLOYEE_B = "10000000-0000-0000-0000-000000000003";
+    private static final String MANAGER_A = "10000000-0000-0000-0000-000000000004";
+    private static final String MANAGER_B = "10000000-0000-0000-0000-000000000005";
+    private static final String UPPER = "10000000-0000-0000-0000-000000000006";
+    private static final Actor ACTOR = new Actor(CREATOR, "org", "upper", "team", null, 1);
+
+    @Test
+    void validatesUnicodeTextLengthsAndRequiredValues() {
+        assertEquals("工作", TaskService.requiredText(Map.of("title", "  工作  "), "title", 2));
+        assertEquals("😀😀", TaskService.requiredText(Map.of("title", "😀😀"), "title", 2));
+        assertThrows(ApiException.class, () -> TaskService.requiredText(Map.of("title", "😀😀😀"), "title", 2));
+        assertThrows(ApiException.class, () -> TaskService.requiredText(Map.of("title", " \n "), "title", 80));
+        assertThrows(ApiException.class, () -> TaskService.requiredText(Map.of("title", 42), "title", 80));
+    }
+
+    @Test
+    void rejectsDuplicateOrMalformedAssigneesAndUntrustedFields() {
+        assertThrows(ApiException.class, () -> TaskService.ids(List.of(CREATOR, CREATOR)));
+        assertThrows(ApiException.class, () -> TaskService.ids(List.of()));
+        assertThrows(ApiException.class, () -> TaskService.ids(List.of("1-1-1-1-1")));
+        assertThrows(ApiException.class, () -> TaskService.allowed(Map.of("executionState", "done"), Set.of("title")));
+    }
+
+    @Test
+    void requiresZonedTimesAndValidDates() {
+        assertEquals(Instant.parse("2026-10-12T01:00:00Z"), TaskService.instant("2026-10-12T09:00:00+08:00", "startAt"));
+        assertThrows(ApiException.class, () -> TaskService.instant("2026-10-12T09:00:00", "startAt"));
+        assertThrows(ApiException.class, () -> TaskService.requiredDate("2026-02-30", "dueDate"));
+    }
+
+    @Test
+    void allDayTaskUsesOrganizationWorkdayDeadlineAndKeepsCalendarDates() {
+        Db db = mock(Db.class);
+        when(db.one("SELECT time_zone FROM organizations WHERE id=?", "org")).thenReturn(Map.of("timeZone", "Asia/Shanghai"));
+        TaskService service = new TaskService(db, mock(Access.class), mock(Events.class));
+        Map<String, Object> input = new LinkedHashMap<>(Map.of("title", "全天任务", "description", "说明",
+                "acceptanceCriteria", "标准", "assigneeIds", List.of(CREATOR), "allDay", true,
+                "startDate", "2026-10-12", "dueDate", "2026-10-13"));
+        Map<String, Object> result = ReflectionTestUtils.invokeMethod(service, "validateForm", ACTOR, input, null);
+        assertNotNull(result);
+        assertEquals("2026-10-11T16:00:00Z", result.get("startAt"));
+        assertEquals("2026-10-13T10:00:00Z", result.get("dueAt"));
+        assertEquals("2026-10-12", result.get("startDate"));
+        assertEquals("2026-10-13", result.get("dueDate"));
+        input.put("dueDate", "2026-10-11");
+        assertThrows(ApiException.class, () -> ReflectionTestUtils.invokeMethod(service, "validateForm", ACTOR, input, null));
+        input.put("allDay", 1);
+        assertThrows(ApiException.class, () -> ReflectionTestUtils.invokeMethod(service, "validateForm", ACTOR, input, null));
+    }
+
+    @Test
+    void commandAliasesCannotDisagreeOrBypassTypeValidation() {
+        assertEquals("complete", TaskService.command(Map.of("command", "complete"), "command", "action", "change"));
+        assertThrows(ApiException.class, () -> TaskService.command(Map.of("command", "complete", "action", "reopen"), "command", "action", "change"));
+        assertThrows(ApiException.class, () -> TaskService.command(Map.of("command", 1), "command", "action", "change"));
+    }
+
+    @Test
+    void commonManagerIsUsedForMultipleHighestAssignees() {
+        TaskService service = service(Map.of(
+                CREATOR, user(CREATOR, "upper", 1, null, true),
+                EMPLOYEE_A, user(EMPLOYEE_A, "lower", 3, MANAGER_A, true),
+                EMPLOYEE_B, user(EMPLOYEE_B, "lower", 3, MANAGER_B, true),
+                MANAGER_A, user(MANAGER_A, "middle", 2, UPPER, true),
+                MANAGER_B, user(MANAGER_B, "middle", 2, UPPER, true),
+                UPPER, user(UPPER, "upper", 1, null, true)));
+        assertEquals(UPPER, route(service, List.of(EMPLOYEE_A, EMPLOYEE_B)));
+    }
+
+    @Test
+    void noManagerFallsBackToOriginalCreatorNotAssignee() {
+        TaskService service = service(Map.of(
+                CREATOR, user(CREATOR, "upper", 1, null, true),
+                UPPER, user(UPPER, "upper", 1, null, true)));
+        assertEquals(CREATOR, route(service, List.of(UPPER)));
+    }
+
+    @Test
+    void inactiveManagerIsSkippedButMissingCreatorNeverSilentlyApproves() {
+        TaskService service = service(Map.of(
+                CREATOR, user(CREATOR, "upper", 1, null, false),
+                EMPLOYEE_A, user(EMPLOYEE_A, "lower", 3, MANAGER_A, true),
+                MANAGER_A, user(MANAGER_A, "middle", 2, UPPER, false),
+                UPPER, user(UPPER, "upper", 1, null, true)));
+        assertEquals(UPPER, route(service, List.of(EMPLOYEE_A)));
+        assertThrows(ApiException.class, () -> route(service, List.of(UPPER)));
+    }
+
+    @Test
+    void corruptOrganizationCycleBlocksReviewRouting() {
+        TaskService service = service(Map.of(
+                CREATOR, user(CREATOR, "upper", 1, null, true),
+                EMPLOYEE_A, user(EMPLOYEE_A, "lower", 3, MANAGER_A, true),
+                MANAGER_A, user(MANAGER_A, "middle", 2, EMPLOYEE_A, true)));
+        assertThrows(ApiException.class, () -> route(service, List.of(EMPLOYEE_A)));
+    }
+
+    private static String route(TaskService service, List<String> owners) {
+        return ReflectionTestUtils.invokeMethod(service, "reviewer", ACTOR, owners, CREATOR);
+    }
+
+    private static TaskService service(Map<String, Map<String, Object>> people) {
+        Db db = mock(Db.class);
+        when(db.find(anyString(), any(), any())).thenAnswer(call -> people.get(call.getArgument(2)));
+        return new TaskService(db, mock(Access.class), mock(Events.class));
+    }
+
+    private static Map<String, Object> user(String id, String role, int rank, String manager, boolean active) {
+        Map<String, Object> user = new HashMap<>();
+        user.put("id", id);
+        user.put("role", role);
+        user.put("rankLevel", rank);
+        user.put("managerId", manager);
+        user.put("active", active);
+        return user;
+    }
+}

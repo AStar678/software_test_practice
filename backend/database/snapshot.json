@@ -1,0 +1,35 @@
+{
+  "exportedAt": "2026-10-12T12:22:34.908390+00:00",
+  "sourceDatabase": "pandora",
+  "mysqlVersion": "9.3.0",
+  "file": "pandora.sql",
+  "sha256": "afd3542f6e7506b41b599d3938d42f735112fb02b0d95e07329b9c0023ccc703",
+  "bytes": 491417,
+  "rows": {
+    "ai_jobs": 4,
+    "approval_requests": 81,
+    "audit_logs": 213,
+    "auth_sessions": 0,
+    "domain_events": 253,
+    "flyway_schema_history": 4,
+    "home_items": 9,
+    "idempotency_keys": 185,
+    "notifications": 320,
+    "organizations": 1,
+    "reminder_receipts": 40,
+    "task_records": 38,
+    "task_version_assignees": 88,
+    "task_versions": 84,
+    "tasks": 43,
+    "teams": 3,
+    "users": 7,
+    "work_logs": 22
+  },
+  "omittedData": [
+    "auth_sessions"
+  ],
+  "restoreVerified": true,
+  "businessRowCountsMatchSource": true,
+  "integrityChecksPassed": 18,
+  "flywayVersion": "4"
+}
