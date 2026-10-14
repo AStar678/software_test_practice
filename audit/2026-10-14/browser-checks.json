@@ -1,0 +1,288 @@
+{
+  "completedAt": "2026-10-14T12:02:56.374Z",
+  "base": "http://127.0.0.1:8080",
+  "device": "Headless desktop Chrome with emulated CSS viewports; not a physical device",
+  "fixturePolicy": "Calendar overlap fixtures were browser-memory-only; server data not changed by those checks.",
+  "checks": [
+    {
+      "id": "WEB-001",
+      "label": "Mobile viewport applied",
+      "expected": [
+        390,
+        844
+      ],
+      "actual": [
+        390,
+        844
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "WEB-002",
+      "label": "Exactly five business navigation entries",
+      "expected": 5,
+      "actual": [
+        "导图",
+        "视图",
+        "日志",
+        "AI地图",
+        "我的"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "WEB-003",
+      "label": "Company home items readonly",
+      "expected": 0,
+      "actual": 0,
+      "result": "PASS"
+    },
+    {
+      "id": "WEB-004",
+      "label": "Home task rows show only title/right priority",
+      "expected": 0,
+      "actual": {
+        "extraMetadataElements": 11
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-005",
+      "label": "Personal edit/delete confined to detail",
+      "expected": 0,
+      "actual": {
+        "listEditDeleteButtons": 2
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-006",
+      "label": "Dashboard uses four independent scroll areas",
+      "expected": true,
+      "actual": {
+        "pageOverflow": false,
+        "quadrants": [
+          {
+            "height": 258,
+            "overflow": "auto"
+          },
+          {
+            "height": 258,
+            "overflow": "auto"
+          },
+          {
+            "height": 227,
+            "overflow": "auto"
+          },
+          {
+            "height": 258,
+            "overflow": "auto"
+          }
+        ]
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "WEB-007",
+      "label": "Calendar search/sidebar/applications/floating creation present",
+      "expected": true,
+      "actual": {
+        "search": false,
+        "ownApplications": false,
+        "floatingCreate": false,
+        "toolbarText": "2026年10月今天月周日创建任务"
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-008",
+      "label": "Month titles clipped without ellipsis",
+      "expected": "clip",
+      "actual": "ellipsis",
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-009",
+      "label": "Non-all-day spanning task stays on real time axis",
+      "expected": {
+        "inAllDaySpanArea": false,
+        "timedCopies": 2
+      },
+      "actual": {
+        "inAllDaySpanArea": true,
+        "timedCopies": 0
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-010",
+      "label": "Every concurrent task visible in week columns",
+      "expected": true,
+      "actual": {
+        "shown": [],
+        "aggregate": 1
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-011",
+      "label": "Every concurrent task visible in day columns",
+      "expected": true,
+      "actual": {
+        "shown": [
+          "audit-cross-day",
+          "audit-overlap-0"
+        ],
+        "aggregate": 1,
+        "overflow": "hidden",
+        "height": 411,
+        "viewport": 427
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-012",
+      "label": "Timeline allows vertical browsing rather than fit-all shrink",
+      "expected": true,
+      "actual": {
+        "shown": [
+          "audit-cross-day",
+          "audit-overlap-0"
+        ],
+        "aggregate": 1,
+        "overflow": "hidden",
+        "height": 411,
+        "viewport": 427
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-013",
+      "label": "All-day tasks not replaced by overflow aggregation",
+      "expected": 2,
+      "actual": 1,
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-014",
+      "label": "Date swipe moves full week preserving weekday",
+      "expected": "2026-10-21",
+      "actual": {
+        "before": "2026-10-14",
+        "after": "2026-10-14"
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-015-1440",
+      "label": "Viewport applied for overlap inspection",
+      "expected": [
+        1440,
+        900
+      ],
+      "actual": [
+        1440,
+        900
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "WEB-015-320",
+      "label": "Viewport applied for overlap inspection",
+      "expected": [
+        320,
+        740
+      ],
+      "actual": [
+        320,
+        740
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "WEB-016",
+      "label": "Log page excludes task approvals and applications",
+      "expected": true,
+      "actual": {
+        "tabs": [
+          "工作日志20",
+          "待我审核0",
+          "我的申请8"
+        ],
+        "otherAuthors": 17,
+        "searchAvailable": false
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-017",
+      "label": "Log page defaults to self and provides authorized person search",
+      "expected": true,
+      "actual": {
+        "tabs": [
+          "工作日志20",
+          "待我审核0",
+          "我的申请8"
+        ],
+        "otherAuthors": 17,
+        "searchAvailable": false
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-018",
+      "label": "Creator initially selected as owner for management accounts",
+      "expected": true,
+      "actual": {
+        "defaultSelf": false
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-019",
+      "label": "Reviewer determined and shown before submit",
+      "expected": true,
+      "actual": {
+        "placeholder": true
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-020",
+      "label": "Profile includes company, position, separate team, password and direct reports",
+      "expected": true,
+      "actual": {
+        "company": true,
+        "position": false,
+        "team": false,
+        "password": false,
+        "reports": false
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-021",
+      "label": "Word cloud extracts actual text beyond fixed sample dictionary",
+      "expected": "nonempty terms from task text",
+      "actual": [],
+      "result": "FAIL"
+    },
+    {
+      "id": "WEB-022",
+      "label": "No uncaught browser exceptions",
+      "expected": [],
+      "actual": [],
+      "result": "PASS"
+    }
+  ],
+  "screenshots": [
+    "mobile-home.png",
+    "mobile-week-cross-day.png",
+    "mobile-week-overlap.png",
+    "mobile-day-overlap.png",
+    "week-overlap-1440.png",
+    "week-overlap-320.png",
+    "mobile-log.png"
+  ],
+  "errors": []
+}

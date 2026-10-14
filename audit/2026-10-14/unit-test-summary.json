@@ -1,0 +1,26 @@
+{
+  "recordedAt": "2026-10-14T11:51:33.435Z",
+  "command": "mvn -B -ntp test",
+  "summaries": [
+    {
+      "path": "cn.pandora.auth.AccessTest.txt",
+      "line": "Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.326 s -- in cn.pandora.auth.AccessTest"
+    },
+    {
+      "path": "cn.pandora.profile.ProfileServiceTest.txt",
+      "line": "Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in cn.pandora.profile.ProfileServiceTest"
+    },
+    {
+      "path": "cn.pandora.task.TaskParticipantSummaryTest.txt",
+      "line": "Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in cn.pandora.task.TaskParticipantSummaryTest"
+    },
+    {
+      "path": "cn.pandora.task.TaskServiceTest.txt",
+      "line": "Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in cn.pandora.task.TaskServiceTest"
+    },
+    {
+      "path": "cn.pandora.workspace.ProfilePrivacyAndCompanyTest.txt",
+      "line": "Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.043 s -- in cn.pandora.workspace.ProfilePrivacyAndCompanyTest"
+    }
+  ]
+}

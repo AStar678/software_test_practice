@@ -1,0 +1,439 @@
+{
+  "startedAgainst": "http://127.0.0.1:8080",
+  "completedAt": "2026-10-14T11:52:14.698Z",
+  "prefix": "Audit b4e3263c-bb71-4fe8-bb38-3dd87490ecd3",
+  "note": "Requirement checks, not implementation-shaped expectations. FAIL is a deviation to inspect.",
+  "checks": [
+    {
+      "id": "API-001",
+      "label": "Unauthenticated tasks rejected",
+      "expected": "401",
+      "actual": 401,
+      "result": "PASS"
+    },
+    {
+      "id": "API-002",
+      "label": "Admin can create an employee",
+      "expected": "2xx",
+      "actual": 405,
+      "result": "FAIL"
+    },
+    {
+      "id": "API-003",
+      "label": "Password change endpoint exists",
+      "expected": "2xx or validation response",
+      "actual": 404,
+      "result": "FAIL"
+    },
+    {
+      "id": "API-004",
+      "label": "Profile has company, department, position and team fields",
+      "expected": true,
+      "actual": {
+        "keys": [
+          "id",
+          "username",
+          "displayName",
+          "phone",
+          "email",
+          "profileVersion",
+          "role",
+          "teamId",
+          "teamName",
+          "managerId",
+          "managerName",
+          "rowVersion"
+        ]
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-005",
+      "label": "Admin company maintenance exists",
+      "expected": "2xx",
+      "actual": {
+        "status": 403,
+        "code": "BUSINESS_ROLE_REQUIRED"
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-006",
+      "label": "Upper company writes forbidden",
+      "expected": "403",
+      "actual": 403,
+      "result": "PASS"
+    },
+    {
+      "id": "API-007",
+      "label": "Admin identity cannot create employee tasks",
+      "expected": "403",
+      "actual": 403,
+      "result": "PASS"
+    },
+    {
+      "id": "API-008",
+      "label": "Creator equal reviewer still requires explicit review",
+      "expected": "pending",
+      "actual": "direct",
+      "result": "FAIL"
+    },
+    {
+      "id": "API-009",
+      "label": "First highest assignee selects management chain",
+      "expected": "d4881565-23f0-44e9-9bb7-26e151cb5f3b",
+      "actual": "754a9d0e-2574-4e65-824b-f8ab19b5786c",
+      "result": "FAIL"
+    },
+    {
+      "id": "API-010",
+      "label": "Assignee order survives storage and retrieval",
+      "expected": [
+        "c0cb6236-519c-453e-9b91-2221c9176739",
+        "84ef0689-0afa-4494-94c5-e70c2df8a49f"
+      ],
+      "actual": [
+        "84ef0689-0afa-4494-94c5-e70c2df8a49f",
+        "c0cb6236-519c-453e-9b91-2221c9176739"
+      ],
+      "result": "FAIL"
+    },
+    {
+      "id": "API-011",
+      "label": "Both existing team managers can see cross-team task",
+      "expected": [
+        200,
+        200
+      ],
+      "actual": [
+        200,
+        200
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "API-012",
+      "label": "Employee self task enters pending",
+      "expected": "pending",
+      "actual": "pending",
+      "result": "PASS"
+    },
+    {
+      "id": "API-013",
+      "label": "Unrelated upper cannot read pending task/request",
+      "expected": [
+        404,
+        404
+      ],
+      "actual": [
+        404,
+        404
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "API-014",
+      "label": "Pending create excluded from normal search, home and summary",
+      "expected": true,
+      "actual": {
+        "inSearch": false,
+        "inHome": false,
+        "summaryDelta": 0
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "API-015",
+      "label": "Review request delivered in-app",
+      "expected": true,
+      "actual": {
+        "delivered": true
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "API-016",
+      "label": "Opening notification automatically marks read",
+      "expected": true,
+      "actual": {
+        "readAt": null
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-017",
+      "label": "Initiator can retract their operation notification within 3 minutes",
+      "expected": "2xx",
+      "actual": {
+        "status": 404,
+        "code": "NOT_FOUND"
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-018",
+      "label": "Pending change retains old title and freezes",
+      "expected": true,
+      "actual": {
+        "titleUnchanged": true,
+        "frozen": true
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "API-019",
+      "label": "Second pending operation rejected",
+      "expected": "409",
+      "actual": 409,
+      "result": "PASS"
+    },
+    {
+      "id": "API-020",
+      "label": "Applicant receives no reviewer-only base/diff data",
+      "expected": false,
+      "actual": {
+        "baseVersionExposed": true
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-021",
+      "label": "Reviewer cannot withdraw someone else request",
+      "expected": "403",
+      "actual": 403,
+      "result": "PASS"
+    },
+    {
+      "id": "API-022",
+      "label": "Withdraw preserves old version/state and unfreezes",
+      "expected": true,
+      "actual": {
+        "unfrozen": true,
+        "titleUnchanged": true,
+        "state": "todo"
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "API-023",
+      "label": "Reject requires comment",
+      "expected": "400",
+      "actual": 400,
+      "result": "PASS"
+    },
+    {
+      "id": "API-024",
+      "label": "Completion return publishes doing",
+      "expected": "doing",
+      "actual": "doing",
+      "result": "PASS"
+    },
+    {
+      "id": "API-025",
+      "label": "Already expired creation cannot be approved",
+      "expected": "rejected/expired",
+      "actual": {
+        "status": 200,
+        "outcome": "approved"
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-026",
+      "label": "Pending crossing deadline expires and unfreezes",
+      "expected": "expired",
+      "actual": {
+        "status": "pending",
+        "taskFrozen": true
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-027",
+      "label": "Owner change reviewed by proposed owners chain",
+      "expected": "d4881565-23f0-44e9-9bb7-26e151cb5f3b",
+      "actual": "5f25c5c4-d8a3-401b-b5e8-5e1bc2319630",
+      "result": "FAIL"
+    },
+    {
+      "id": "API-037",
+      "label": "Delivered historical notification survives owner removal",
+      "expected": "200 with readonly task access",
+      "actual": {
+        "notificationStatus": 404,
+        "taskStatus": 404
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-028",
+      "label": "One author/date cannot create a second log",
+      "expected": "duplicate rejected",
+      "actual": {
+        "statuses": [
+          200,
+          200
+        ]
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-029",
+      "label": "Past log cannot be edited or redated",
+      "expected": "rejected",
+      "actual": {
+        "status": 200,
+        "editable": true
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-030",
+      "label": "Other employee cannot edit log",
+      "expected": "403/404",
+      "actual": 404,
+      "result": "PASS"
+    },
+    {
+      "id": "API-031",
+      "label": "Reopen accepts necessary schedule adjustment",
+      "expected": "2xx",
+      "actual": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-032",
+      "label": "Ordinary reopen enters doing/new execution round",
+      "expected": true,
+      "actual": {
+        "state": "doing",
+        "round": 2
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "API-033",
+      "label": "Assignee cannot edit creator base information",
+      "expected": "403",
+      "actual": 403,
+      "result": "PASS"
+    },
+    {
+      "id": "API-034",
+      "label": "Summary exposes priority distribution and pending-completion separately",
+      "expected": true,
+      "actual": {
+        "keys": [
+          "total",
+          "todo",
+          "doing",
+          "done",
+          "frozen",
+          "overdue",
+          "ruleBased",
+          "generatedAt",
+          "scope"
+        ]
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-035",
+      "label": "Other-user directory contains no phone",
+      "expected": false,
+      "actual": {
+        "exposed": false
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "API-038",
+      "label": "No near-due reminder at 90 percent remaining",
+      "expected": 0,
+      "actual": {
+        "nearDueCount": 1
+      },
+      "result": "FAIL"
+    },
+    {
+      "id": "API-036",
+      "label": "Logout revokes current credential",
+      "expected": "401",
+      "actual": 401,
+      "result": "PASS"
+    }
+  ],
+  "fixtures": [
+    {
+      "type": "task",
+      "suffix": "explicit-self-review",
+      "taskId": "33836f0f-7ac7-4e3f-aef0-c57a544b8d73",
+      "requestId": "aa74eb59-5de5-49a0-ba42-093609620672",
+      "outcome": "direct",
+      "rowVersion": 2
+    },
+    {
+      "type": "task",
+      "suffix": "ordered-route",
+      "taskId": "21961802-b475-402b-956a-0f11ee1aeb29",
+      "requestId": "c25031f4-bd41-4f8f-b11c-e72a5bca66f7",
+      "outcome": "direct",
+      "rowVersion": 2
+    },
+    {
+      "type": "task",
+      "suffix": "pending-isolation",
+      "taskId": "292cf7ac-ba39-420e-a314-f4e24ce61bad",
+      "requestId": "b8802db8-88bd-4406-b0fb-48ec490bfe12",
+      "outcome": "pending",
+      "rowVersion": 1
+    },
+    {
+      "type": "task",
+      "suffix": "already-expired",
+      "taskId": "5a52dc9b-88b3-4843-b03b-003893a2f9fe",
+      "requestId": "e07e353f-eacf-4118-a541-2b94204e2aea",
+      "outcome": "pending",
+      "rowVersion": 1
+    },
+    {
+      "type": "task",
+      "suffix": "cross-deadline",
+      "taskId": "c2b925aa-4611-4af5-87b4-18c3a7fa82db",
+      "requestId": "743bde96-137e-405c-9350-f3313865313d",
+      "outcome": "pending",
+      "rowVersion": 1
+    },
+    {
+      "type": "task",
+      "suffix": "new-owner-route",
+      "taskId": "9abb1658-cddd-4d1c-a193-69ecd7744424",
+      "requestId": "857f73e7-2bd9-453b-8339-fdd45cecdd01",
+      "outcome": "pending",
+      "rowVersion": 1
+    },
+    {
+      "type": "log",
+      "id": "2bfdd4ef-f097-4d34-9932-e5a4bd36ab31"
+    },
+    {
+      "type": "task",
+      "suffix": "complete-reopen",
+      "taskId": "9d4a52b3-d55f-4f0d-be75-b2373a67f1ad",
+      "requestId": "0d252054-f91c-4259-be13-5103fa846717",
+      "outcome": "direct",
+      "rowVersion": 2
+    },
+    {
+      "type": "task",
+      "suffix": "reminder-at-90-percent-remaining",
+      "taskId": "1396c184-17d9-4f92-8946-2a975656b166",
+      "requestId": "236950d1-89bc-4a3b-85a8-f00568a3435f",
+      "outcome": "pending",
+      "rowVersion": 1
+    }
+  ]
+}

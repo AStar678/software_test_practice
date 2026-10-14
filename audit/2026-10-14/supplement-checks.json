@@ -1,0 +1,101 @@
+{
+  "completedAt": "2026-10-14T12:04:11.713Z",
+  "prefix": "Audit supplement b6329968-ebf7-4e7a-9f8e-9d74fd9b0316",
+  "checks": [
+    {
+      "id": "SUP-001",
+      "label": "Retry creates no second task/request",
+      "expected": {
+        "taskId": "55609a0a-dd51-4b82-93db-c42ca109722f",
+        "requestId": "59842c8c-2276-41ae-8a24-f7d4f5b34faa",
+        "outcome": "pending",
+        "rowVersion": 1
+      },
+      "actual": {
+        "taskId": "55609a0a-dd51-4b82-93db-c42ca109722f",
+        "outcome": "pending",
+        "requestId": "59842c8c-2276-41ae-8a24-f7d4f5b34faa",
+        "rowVersion": 1
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "SUP-002",
+      "label": "Applicant cannot approve a different reviewer request",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS"
+    },
+    {
+      "id": "SUP-003",
+      "label": "Approval/withdrawal race has one final outcome",
+      "expected": "one 2xx and one 409/412",
+      "actual": {
+        "statuses": [
+          200,
+          412
+        ],
+        "final": "approved"
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "SUP-004",
+      "label": "Resolved request cannot be approved again",
+      "expected": "409/412",
+      "actual": 412,
+      "result": "PASS"
+    },
+    {
+      "id": "SUP-005",
+      "label": "Completion withdrawal restores todo/version",
+      "expected": "todo and original version",
+      "actual": {
+        "state": "todo",
+        "sameVersion": true
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "SUP-006",
+      "label": "First progress changes state only after approval",
+      "expected": "todo pending, doing after",
+      "actual": {
+        "before": "todo",
+        "after": "doing"
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "SUP-007",
+      "label": "Manager log access is readonly",
+      "expected": "403/404",
+      "actual": 404,
+      "result": "PASS"
+    },
+    {
+      "id": "SUP-008",
+      "label": "Past-day log cannot be deleted to bypass freezing",
+      "expected": "rejected",
+      "actual": 200,
+      "result": "FAIL"
+    }
+  ],
+  "fixtures": [
+    {
+      "taskId": "55609a0a-dd51-4b82-93db-c42ca109722f",
+      "requestId": "59842c8c-2276-41ae-8a24-f7d4f5b34faa",
+      "outcome": "pending",
+      "rowVersion": 1
+    },
+    {
+      "taskId": "f089563e-db83-4de0-b9bc-800d2da2823b",
+      "requestId": "f9c0c7d8-8697-4e1f-ac79-8b7c0c898292",
+      "outcome": "pending",
+      "rowVersion": 1
+    },
+    {
+      "logId": "8ff0cc64-c911-4e4b-863b-cfa5545f66e3"
+    }
+  ]
+}
