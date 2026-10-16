@@ -24,6 +24,13 @@ public class TaskController {
         return tasks.list(actor, filters);
     }
 
+    /** Authorized assignee candidates; reading a department never puts its people in this list. */
+    @GetMapping("/assignee-candidates")
+    public Map<String, Object> assigneeCandidates(@RequestAttribute("actor") Actor actor,
+            @RequestParam(value = "q", required = false) String query) {
+        return tasks.assigneeCandidates(actor, query);
+    }
+
     @GetMapping("/tasks/{id}")
     public ResponseEntity<Map<String, Object>> detail(@RequestAttribute("actor") Actor actor, @PathVariable String id) {
         Map<String, Object> result = tasks.detail(actor, id);

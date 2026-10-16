@@ -1,5 +1,6 @@
 package cn.pandora.workspace;
 
+import cn.pandora.auth.Access;
 import cn.pandora.auth.Actor;
 import cn.pandora.common.Db;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -29,9 +30,10 @@ public class EventsWorker {
     private final WorkspaceService workspace;
     private final ObjectMapper mapper;
     private final TransactionTemplate transaction;
+    private final Access access;
 
-    public EventsWorker(Db db,WorkspaceService workspace,ObjectMapper mapper,PlatformTransactionManager tx) {
-        this.db=db;this.workspace=workspace;this.mapper=mapper;this.transaction=new TransactionTemplate(tx);
+    public EventsWorker(Db db,WorkspaceService workspace,ObjectMapper mapper,PlatformTransactionManager tx,Access access) {
+        this.db=db;this.workspace=workspace;this.mapper=mapper;this.transaction=new TransactionTemplate(tx);this.access=access;
     }
 
     @Scheduled(fixedDelayString="${pandora.worker.delay-ms:3000}",initialDelayString="${pandora.worker.initial-delay-ms:3000}")
@@ -94,7 +96,7 @@ public class EventsWorker {
     private Actor activeActor(String org,String userId) {
         var user=db.find("SELECT * FROM users WHERE organization_id=? AND id=? AND active=1",org,userId);
         if(user==null || "admin".equals(s(user,"role"))) return null;
-        return new Actor(s(user,"id"),org,s(user,"role"),s(user,"teamId"),s(user,"managerId"),(int)n(user,"rankLevel"));
+        return access.actor(user);
     }
     private static String summary(String type) {
         if("task.overdue".equals(type)) return "任务已超过截止时间，请查看当前安排。";

@@ -32,6 +32,8 @@ public class WorkspaceController {
         return writes.run(a,key,"DELETE /home/items/"+id,Map.of(),match,()->workspace.deleteHomeItem(a,id,match));
     }
     @GetMapping("/work-logs") public Map<String,Object> logs(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.logs(a,filters);}
+    /** Author filter (list + tree) for the log page, limited to the reader's log range. */
+    @GetMapping("/work-log-authors") public Map<String,Object> logAuthors(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.logAuthors(a,filters);}
     @GetMapping("/work-logs/{id}") public ResponseEntity<Map<String,Object>> log(@RequestAttribute("actor") Actor a,@PathVariable String id) {
         var result=workspace.log(a,id);return ResponseEntity.ok().eTag("\""+result.get("rowVersion")+"\"").body(result);
     }

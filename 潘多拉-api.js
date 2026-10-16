@@ -55,11 +55,53 @@
         const result = await P.request("/auth/sessions", { method: "POST", body: { username, password } });
         P.epoch++;
         P.token = result.token; sessionStorage.setItem(SESSION_KEY, P.token);
+        // A new account or a reset account must change its password before any business page loads.
+        if (result.passwordChangeRequired) { passwordPage(password, ""); return; }
         try { await P.reload(); }
         catch (error) { if (P.token) loadFailure(error); throw error; }
       }, "login-error");
     });
   }
+  /* 强制改密受限会话：只能改密或退出，业务接口在服务端一律拒绝。 */
+  function passwordPage(currentPassword, message) {
+    state.page = "map";
+    document.querySelectorAll(".page").forEach(el => el.classList.toggle("is-active", el.id === "page-map"));
+    document.getElementById("appMain").classList.remove("is-map");
+    document.getElementById("pageTitle").textContent = "修改密码";
+    document.querySelectorAll(".role-switch button").forEach(b => b.setAttribute("aria-pressed", "false"));
+    document.getElementById("page-map").innerHTML = '<section class="card"><div class="card-head"><h2>首次登录必须修改密码</h2></div>' +
+      '<p class="tiny muted">当前会话仅可修改密码或退出，业务数据在改密前不会加载。</p>' +
+      '<form id="backend-password">' +
+      '<div class="field"><label for="pw-current">当前密码</label><input id="pw-current" name="currentPassword" type="password" autocomplete="current-password" required></div>' +
+      '<div class="field"><label for="pw-new">新密码</label><input id="pw-new" name="newPassword" type="password" autocomplete="new-password" required></div>' +
+      '<div class="field"><label for="pw-confirm">确认新密码</label><input id="pw-confirm" type="password" autocomplete="new-password" required></div>' +
+      '<p class="tiny muted">至少10个字符，须同时含字母和数字，UTF-8 长度不超过72字节。改密成功后所有会话失效，需重新登录。</p>' +
+      '<div class="callout" id="password-error"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
+      '<div class="row"><button type="submit" class="btn primary">修改密码</button>' +
+      '<button type="button" class="btn" id="password-logout">退出登录</button></div></form></section>';
+    gate();
+    const currentField = document.getElementById("pw-current");
+    if (currentPassword) currentField.value = currentPassword;
+    document.getElementById("password-logout").addEventListener("click", () => P.busy(async () => { await P.logout(); }));
+    document.getElementById("backend-password").addEventListener("submit", event => {
+      event.preventDefault();
+      P.busy(async () => {
+        const current = document.getElementById("pw-current").value;
+        const next = document.getElementById("pw-new").value;
+        const confirm = document.getElementById("pw-confirm").value;
+        const error = document.getElementById("password-error");
+        if (next !== confirm) { error.textContent = "两次输入的新密码不一致。"; error.hidden = false; return; }
+        await P.request("/auth/password", { method: "POST", body: { currentPassword: current, newPassword: next } });
+        P.reLogin("密码已修改，请使用新密码重新登录。");
+      }, "password-error");
+    });
+  }
+  P.passwordPage = passwordPage;
+  /* 改密成功后服务端撤销全部会话；客户端必须清空本地会话并回到登录页。 */
+  P.reLogin = function (message) {
+    P.epoch++; P.token = ""; sessionStorage.removeItem(SESSION_KEY);
+    clearData(); loginPage("", message || "请重新登录。");
+  };
   function expire() {
     P.epoch++; P.token = ""; sessionStorage.removeItem(SESSION_KEY);
     clearData(); loginPage("", "登录已过期，请重新登录。");
@@ -94,6 +136,11 @@
     if (epoch !== P.epoch) throw cancelled();
     if (!response.ok) {
       if (response.status === 401 && path !== "/auth/sessions") expire();
+      // The forced-change gate is enforced by the server; react to it instead of showing business UI.
+      if (response.status === 403 && result.code === "PASSWORD_CHANGE_REQUIRED" && path !== "/auth/password") {
+        P.ready = false; gate(); clearData();
+        passwordPage("", "请先修改初始密码，修改成功后再进入业务页面。");
+      }
       let message = result.message || "请求失败，请稍后重试。";
       if (response.status === 412) message = "这条记录已被更新。请关闭后重新打开，再提交修改。";
       throw Object.assign(new Error(message), { status: response.status, code: result.code });
@@ -210,6 +257,13 @@
   clearData(); gate();
   document.addEventListener("DOMContentLoaded", function () {
     if (!P.token) { loginPage(); P.notice("请使用真实账号登录。"); return; }
-    P.busy(async () => { try { await P.reload(); } catch (error) { if (P.token) loadFailure(error); throw error; } });
+    P.busy(async () => {
+      try {
+        // Ask for the identity first: a restricted session must never load the workspace.
+        const identity = await P.request("/auth/session");
+        if (identity.mustChangePassword) { passwordPage("", ""); P.notice("请先修改初始密码。"); return; }
+        await P.reload();
+      } catch (error) { if (P.token) loadFailure(error); throw error; }
+    });
   });
 })();

@@ -1,0 +1,282 @@
+{
+  "generatedAt": "2026-10-16T02:13:22.827061+00:00",
+  "database": "pandora_precheck_20261016021322",
+  "tables": [
+    "ai_jobs",
+    "approval_requests",
+    "audit_logs",
+    "auth_sessions",
+    "domain_events",
+    "flyway_schema_history",
+    "home_items",
+    "idempotency_keys",
+    "notifications",
+    "organizations",
+    "reminder_receipts",
+    "task_records",
+    "task_version_assignees",
+    "task_versions",
+    "tasks",
+    "teams",
+    "users",
+    "work_logs"
+  ],
+  "checks": {
+    "organization": {
+      "users": 7,
+      "activeUsers": 7,
+      "teams": 3,
+      "departmentsDefined": 0,
+      "positionsDefined": 0,
+      "usersMissingDepartment": 7,
+      "usersMissingPosition": 7,
+      "teamsMissingDepartment": 3,
+      "legacyTeams": [
+        {
+          "id": "5a4ea7e6-c37b-4fe1-9364-1c16f8a184e0",
+          "name": "产品部",
+          "users": 3
+        },
+        {
+          "id": "1997b763-4b1a-4580-b8e4-65d41a2364da",
+          "name": "公司管理层",
+          "users": 2
+        },
+        {
+          "id": "5d194f35-2ee2-4a39-9d56-da202f830784",
+          "name": "市场部",
+          "users": 2
+        }
+      ],
+      "note": "V4 teams are not proof of a real department; a human administrator must supply the department/position mapping before NOT NULL is enforced."
+    },
+    "workLogs": {
+      "total": 22,
+      "duplicateGroups": 1,
+      "duplicateRows": 5,
+      "sameDayDifferentAuthors": 3,
+      "duplicates": [
+        {
+          "organizationId": "10000000-0000-0000-0000-000000000001",
+          "authorId": "18630b79-6a3e-4ccf-aa95-86e892bcb9d2",
+          "authorName": "张涛",
+          "businessDate": "2026-10-12",
+          "copies": 5,
+          "rows": [
+            {
+              "id": "e0555e86-814f-4ea2-b7a8-892ce6a3aa57",
+              "body": "完成本日工作整理，记录待办与协作问题。",
+              "taskId": "1c31a93c-d02b-4c49-988c-3a169d036717",
+              "rowVersion": "1",
+              "createdAt": "2026-10-12 07:24:37.589056"
+            },
+            {
+              "id": "13274808-13e5-4852-a0d8-ce2af531a038",
+              "body": "Smoke 1548fa9e-8382-4a38-93d2-6143d0011dde work log",
+              "taskId": "76e49f88-91fd-4b98-b2eb-6c9f1df1d71d",
+              "rowVersion": "1",
+              "createdAt": "2026-10-12 07:32:07.803633"
+            },
+            {
+              "id": "751fe68a-9fe6-4e1a-b2da-c7afebef02cb",
+              "body": "Smoke 8bdb27f4-bf90-40c6-ab32-0061d241f447 work log",
+              "taskId": "95f8a50a-9f19-4c9b-9eba-312b6573a4b4",
+              "rowVersion": "1",
+              "createdAt": "2026-10-12 07:39:28.430104"
+            },
+            {
+              "id": "bd7e38b7-d579-4839-bd42-2fd7a555ccc2",
+              "body": "Smoke 5ca9aacb-7978-4073-b2d4-08e1eeb19625 work log",
+              "taskId": "48191929-8f11-451e-94ac-9d598cca1615",
+              "rowVersion": "1",
+              "createdAt": "2026-10-12 08:25:16.452187"
+            },
+            {
+              "id": "ad55f262-4734-4909-83ec-039a4c95b8b6",
+              "body": "界面联调日志 1012-1635：已完成任务创建和主管审批，刷新后应仍能查看。",
+              "taskId": "NULL",
+              "rowVersion": "1",
+              "createdAt": "2026-10-12 08:38:01.919844"
+            }
+          ]
+        }
+      ],
+      "note": "Duplicate groups must be merged with every original body and source preserved in an archive row before the per-day unique key is enabled. Authors are never merged across each other."
+    },
+    "assigneeOrder": {
+      "ordinalColumnPresent": false,
+      "rows": 88,
+      "rowsMissingOrdinal": 88,
+      "multiAssigneeVersions": 4,
+      "orderRecoverableVersions": 0,
+      "samples": [
+        {
+          "versionId": "5907bcd9-0dc6-4686-8ce8-76930c291cb4",
+          "assignees": "2",
+          "orderRecoverable": false,
+          "legacyCompatOrder": [
+            "18630b79-6a3e-4ccf-aa95-86e892bcb9d2",
+            "1b86fe11-7976-46a4-acb2-dc399e70729f"
+          ],
+          "legacyOrderUnknown": true
+        },
+        {
+          "versionId": "68cf9f48-7593-484e-a70d-df23a02afcad",
+          "assignees": "2",
+          "orderRecoverable": false,
+          "legacyCompatOrder": [
+            "18630b79-6a3e-4ccf-aa95-86e892bcb9d2",
+            "1b86fe11-7976-46a4-acb2-dc399e70729f"
+          ],
+          "legacyOrderUnknown": true
+        },
+        {
+          "versionId": "882e6cb7-85ae-4643-b445-d20373d16849",
+          "assignees": "2",
+          "orderRecoverable": false,
+          "legacyCompatOrder": [
+            "18630b79-6a3e-4ccf-aa95-86e892bcb9d2",
+            "1b86fe11-7976-46a4-acb2-dc399e70729f"
+          ],
+          "legacyOrderUnknown": true
+        },
+        {
+          "versionId": "d46a9a0a-98d2-42e7-8cd6-2deacb2c8576",
+          "assignees": "2",
+          "orderRecoverable": false,
+          "legacyCompatOrder": [
+            "18630b79-6a3e-4ccf-aa95-86e892bcb9d2",
+            "1b86fe11-7976-46a4-acb2-dc399e70729f"
+          ],
+          "legacyOrderUnknown": true
+        }
+      ],
+      "note": "No persisted submission order exists in V4. The first formal edit per version must save an explicit order; reads fall back to the deterministic user_id order and mark legacy-order-unknown rather than claiming the real order was restored."
+    },
+    "dispatch": {
+      "dispatchTablePresent": false,
+      "rows": 0,
+      "rowsMissingAssignedAt": 0,
+      "currentAssigneeRows": 35,
+      "recoverableFromApprovalTime": 35,
+      "estimatedOnly": 0,
+      "note": "Assignment timestamps recoverable from an approved request decision keep that proven source; the rest are stored as legacy-estimate so compatibility ordering is explicit and new dispatches get an exact time."
+    },
+    "notifications": {
+      "total": 320,
+      "withEvent": 320,
+      "boundToRequest": 280,
+      "unbound": 40,
+      "unbindableReviewMessages": 0,
+      "tasksWithAmbiguousSource": 11,
+      "note": "Only a provable domain_event/request binding may migrate. Messages that cannot be bound stay read-only and keep no review action; they are never guessed from the task's current pending request."
+    },
+    "requestRoutes": {
+      "pending": 7,
+      "direct": 25,
+      "expiredPendingCandidates": 1,
+      "reviewerNullablePresent": false,
+      "note": "Every pending request gets a migration route reassignment record. Requests whose applicable deadline already passed are expired, not approved."
+    }
+  },
+  "blockers": [
+    "7 user(s) lack a department and 7 lack a position; the NOT NULL tightening and the formal organization write flow stay disabled until an administrator supplies the mapping.",
+    "1 duplicate work-log group(s) (5 rows) must be merged losslessly before the per-day unique key.",
+    "1 pending request(s) are past their applicable deadline and must be expired, not approved."
+  ],
+  "limitations": [
+    "88 assignee row(s) have no provable submission order; they keep the deterministic compatibility order marked legacy-order-unknown.",
+    "40 notification(s) cannot be bound to an originating request and stay read-only."
+  ],
+  "rehearsal": {
+    "scratchDatabase": "pandora_precheck_20261016021322",
+    "snapshot": "/Users/watuji/MyGitDev/software_test_practice/backend/database/pandora.sql",
+    "snapshotDigest": "afd3542f6e7506b41b599d3938d42f735112fb02b0d95e07329b9c0023ccc703",
+    "scratchFingerprintBefore": "bff44e434cf1e953f8194c265856155c3103156d4f58a458061c80d25250fcc2",
+    "scratchFingerprintAfterPrecheck": "bff44e434cf1e953f8194c265856155c3103156d4f58a458061c80d25250fcc2",
+    "scratchUnchangedByPrecheck": true,
+    "originalDatabase": "pandora",
+    "originalFingerprintBefore": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "originalFingerprintAfter": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "originalUnchanged": true,
+    "restoreVerified": true
+  },
+  "fingerprint": {
+    "database": "pandora_precheck_20261016021322",
+    "tables": {
+      "ai_jobs": {
+        "rows": 4,
+        "sha256": "d84fb3b3dc8da29e163a9e63293c5d659df05f0303f0fa5d67c6a7aaf14c2660"
+      },
+      "approval_requests": {
+        "rows": 81,
+        "sha256": "77f62e7a33c5e28f4d9d48d9349d7dd976702d367bb488be5f5dc56c9766ae0d"
+      },
+      "audit_logs": {
+        "rows": 213,
+        "sha256": "fc5a6c8b7fc73171da788c4e02c823b2be2a9678dbab8faa6b87acedc197eb91"
+      },
+      "auth_sessions": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "domain_events": {
+        "rows": 253,
+        "sha256": "c2253e2940b2a9ede2d8ad2651b85863ebc275b574509350b0fc6bf1ecdc7060"
+      },
+      "flyway_schema_history": {
+        "rows": 4,
+        "sha256": "530a77922c86d844477a4332a16c0e11066c087a5b2e44560d2772ad7a4df18d"
+      },
+      "home_items": {
+        "rows": 9,
+        "sha256": "9dcc534bc839b40c30bf54ea1d3fb53a09c6eda8181d59ebc7695b6b50c9c532"
+      },
+      "idempotency_keys": {
+        "rows": 185,
+        "sha256": "fc0dd07e063ccc48bab3e5caa10b47fe1f5c84d8832f872324da450a9a1b0f34"
+      },
+      "notifications": {
+        "rows": 320,
+        "sha256": "2221faf5159a98e382fcb8c8beab371ec3e1579948a1ad5f32a38a65432fc124"
+      },
+      "organizations": {
+        "rows": 1,
+        "sha256": "8d96816a3297e2a16d107a56e6d380e3b6d6d7cbaf499a6acb90877367afddea"
+      },
+      "reminder_receipts": {
+        "rows": 40,
+        "sha256": "45e7b874469bb25d9fa2efca8fe0cc999391bae795da04eb16a5a559dd62ec75"
+      },
+      "task_records": {
+        "rows": 38,
+        "sha256": "bfff385b7406073745f62420f3d3912ebd61e7d84894b3c410de505fcc4173ca"
+      },
+      "task_version_assignees": {
+        "rows": 88,
+        "sha256": "cbb42b5f6b1ad0dbf1ee8546cc2fdbd7a73cb8a76b8d901e05600c155a615442"
+      },
+      "task_versions": {
+        "rows": 84,
+        "sha256": "15edc5b81c52caac907874bf673a083f6771ac408ad0ad8d35ee5e07265f115e"
+      },
+      "tasks": {
+        "rows": 43,
+        "sha256": "2a371d891628f399f4b2ec8475e640eb6efd81dfc654e8c3f8e750eacc3b48ea"
+      },
+      "teams": {
+        "rows": 3,
+        "sha256": "6a0700d6edd4d579b9967a5d72ffa6a40a8f4e9e3224609708606866a26b2e55"
+      },
+      "users": {
+        "rows": 7,
+        "sha256": "483d72bd3f483212d962189849d15896890d7e92b1246c5c5af4f98b6cf9a04c"
+      },
+      "work_logs": {
+        "rows": 22,
+        "sha256": "17fca57594cd622bd978794ad6d686e9cb19864cde1b5f246dd9efb3eadd08fb"
+      }
+    },
+    "digest": "bff44e434cf1e953f8194c265856155c3103156d4f58a458061c80d25250fcc2"
+  }
+}

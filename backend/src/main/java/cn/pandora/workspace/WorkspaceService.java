@@ -23,9 +23,15 @@ public class WorkspaceService {
     }
 
     public Map<String,Object> me(Actor a) {
-        var row=db.one("SELECT u.*,t.name team_name,m.display_name manager_name FROM users u LEFT JOIN teams t ON t.id=u.team_id AND t.organization_id=u.organization_id LEFT JOIN users m ON m.id=u.manager_id AND m.organization_id=u.organization_id WHERE u.id=? AND u.organization_id=? AND u.active=1", a.id(), a.organizationId());
+        var row=db.one("SELECT u.*,o.name AS organization_name,d.name AS department_name,p.name AS position_name,t.name team_name,m.display_name manager_name "
+            + "FROM users u LEFT JOIN organizations o ON o.id=u.organization_id "
+            + "LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
+            + "LEFT JOIN positions p ON p.organization_id=u.organization_id AND p.id=u.position_id "
+            + "LEFT JOIN teams t ON t.id=u.team_id AND t.organization_id=u.organization_id "
+            + "LEFT JOIN users m ON m.id=u.manager_id AND m.organization_id=u.organization_id "
+            + "WHERE u.id=? AND u.organization_id=? AND u.active=1", a.id(), a.organizationId());
         var result=safeUser(row);
-        for(String key:List.of("phone","email","profileVersion","managerName")) result.put(key,row.get(key));
+        for(String key:List.of("phone","email","profileVersion","managerName","organizationName","departmentName","positionName")) result.put(key,row.get(key));
         return result;
     }
 
@@ -42,8 +48,11 @@ public class WorkspaceService {
     public Map<String,Object> logs(Actor a, Map<String,String> filters) {
         business(a);
         String scope = filters.getOrDefault("scope", "self");
-        if (!Set.of("self","visible").contains(scope)) throw bad("scope 只能为 self 或 visible");
-        var allowedIds = new HashSet<>(scope.equals("self") ? List.of(a.id()) : access.visibleUserIds(a));
+        if (!Set.of("self","visible","log").contains(scope)) throw bad("scope 只能为 self 或 visible");
+        // The log range is its own authority: company for the executive, direct reports for a
+        // manager, self below that. Being a teammate or sharing a task grants nothing here.
+        var allowedIds = new HashSet<>(access.logAuthorIds(a));
+        if (scope.equals("self")) allowedIds.retainAll(Set.of(a.id()));
         String author = filters.get("authorId");
         if (author != null && !allowedIds.contains(author)) throw ApiException.notFound();
         if (author != null) allowedIds.retainAll(Set.of(author));
@@ -57,11 +66,55 @@ public class WorkspaceService {
         return page(result,filters);
     }
 
+    /** Author filter for the log page: only people inside the reader's own log range. */
+    public Map<String,Object> logAuthors(Actor a, Map<String,String> filters) {
+        business(a);
+        String query = filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
+        var allowed = new LinkedHashSet<>(access.logAuthorIds(a));
+        var rows = db.list("SELECT u.id,u.username,u.display_name,u.manager_id,u.department_id,u.team_id,"
+                + "d.name AS department_name,t.name AS team_name FROM users u "
+                + "LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
+                + "LEFT JOIN teams t ON t.organization_id=u.organization_id AND t.id=u.team_id "
+                + "WHERE u.organization_id=? AND u.active=1 ORDER BY u.rank_level,u.display_name,u.id",a.organizationId())
+            .stream().filter(u -> allowed.contains(s(u,"id"))).toList();
+        var items = rows.stream()
+            .filter(u -> query.isEmpty()
+                || s(u,"displayName").toLowerCase(Locale.ROOT).contains(query)
+                || s(u,"username").toLowerCase(Locale.ROOT).contains(query))
+            .map(u -> {
+                Map<String,Object> item = new LinkedHashMap<>();
+                for (String key : List.of("id","username","displayName","managerId","departmentId","departmentName","teamId","teamName")) item.put(key,u.get(key));
+                item.put("self", a.id().equals(s(u,"id")));
+                return item;
+            }).toList();
+        // Tree edges only ever point at people the reader may already read.
+        Map<String,Map<String,Object>> nodes = new LinkedHashMap<>();
+        for (var u : rows) {
+            Map<String,Object> node = new LinkedHashMap<>();
+            node.put("id", s(u,"id"));
+            node.put("displayName", s(u,"displayName"));
+            node.put("departmentName", u.get("departmentName"));
+            node.put("children", new ArrayList<Map<String,Object>>());
+            nodes.put(s(u,"id"), node);
+        }
+        List<Map<String,Object>> roots = new ArrayList<>();
+        for (var u : rows) {
+            Map<String,Object> node = nodes.get(s(u,"id"));
+            Map<String,Object> parent = nodes.get(s(u,"managerId"));
+            if (parent == null) roots.add(node);
+            else ((List<Map<String,Object>>) parent.get("children")).add(node);
+        }
+        Map<String,Object> result = new LinkedHashMap<>();
+        result.put("items", items);
+        result.put("tree", roots);
+        result.put("empty", items.isEmpty());
+        return result;
+    }
+
     public Map<String,Object> log(Actor a, String logId) {
         business(a);
         var row = db.one("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.id=?",a.organizationId(),logId);
-        var author = db.one("SELECT * FROM users WHERE organization_id=? AND id=?",a.organizationId(),s(row,"authorId"));
-        if (!access.canSeePerson(a,author)) throw ApiException.notFound();
+        if (!access.canReadLogAuthor(a, s(row,"authorId"))) throw ApiException.notFound();
         return safeLog(a,row);
     }
 

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>潘多拉 · 管理端</title>
+<style>
+  :root { color-scheme: light; --line:#d8dbe2; --ink:#1f2430; --muted:#69707d; --brand:#3f6ad8; --danger:#c0392b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; color:var(--ink); background:#f5f6f8; }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:12px 20px; display:flex; align-items:center; gap:16px; }
+  header h1 { font-size:17px; margin:0; }
+  header .who { margin-left:auto; color:var(--muted); font-size:13px; }
+  main { padding:16px 20px 60px; max-width:1180px; margin:0 auto; }
+  nav { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  nav button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 14px; cursor:pointer; font-size:13px; }
+  nav button[aria-selected="true"] { background:var(--brand); border-color:var(--brand); color:#fff; }
+  section { display:none; background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px; }
+  section.active { display:block; }
+  h2 { font-size:15px; margin:0 0 12px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:7px 8px; border-bottom:1px solid #eceef2; vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  input, select, textarea { font:inherit; font-size:13px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:#fff; }
+  button.primary { background:var(--brand); border:1px solid var(--brand); color:#fff; border-radius:6px; padding:7px 14px; cursor:pointer; font-size:13px; }
+  button.ghost { background:#fff; border:1px solid var(--line); border-radius:6px; padding:5px 10px; cursor:pointer; font-size:12px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+  .card { border:1px solid var(--line); border-radius:8px; padding:10px; margin-bottom:10px; font-size:13px; background:#fafbfc; }
+  .muted { color:var(--muted); }
+  .error { color:var(--danger); font-size:13px; min-height:18px; }
+  .ok { color:#1e7f4f; font-size:13px; min-height:18px; }
+  .secret { font-family: ui-monospace, Menlo, monospace; background:#fff7e6; border:1px dashed #d9a300; padding:8px; border-radius:6px; display:inline-block; }
+  .tag { display:inline-block; background:#eef1f7; border-radius:4px; padding:1px 6px; margin-right:4px; font-size:12px; }
+  dialog { border:1px solid var(--line); border-radius:10px; padding:18px; width:min(560px, 92vw); }
+  dialog::backdrop { background:rgba(20,24,33,.45); }
+  label { display:block; font-size:12px; color:var(--muted); margin:8px 0 3px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>潘多拉 · 管理端</h1>
+  <span class="muted" id="scope"></span>
+  <span class="who" id="who"></span>
+  <button class="ghost" id="logout">退出</button>
+</header>
+<main>
+  <div id="login" class="card">
+    <div class="row">
+      <input id="username" placeholder="管理员用户名" autocomplete="username">
+      <input id="password" type="password" placeholder="密码" autocomplete="current-password">
+      <button class="primary" id="loginButton">登录</button>
+    </div>
+    <div class="error" id="loginError"></div>
+    <p class="muted">仅管理员账号可进入；业务账号在此处会被服务端拒绝。</p>
+  </div>
+
+  <div id="console" hidden>
+    <nav id="tabs"></nav>
+
+    <section id="tab-employees">
+      <h2>员工</h2>
+      <div class="row">
+        <input id="employeeQuery" placeholder="搜索姓名/用户名/部门">
+        <button class="ghost" id="employeeRefresh">刷新</button>
+        <button class="primary" id="employeeNew">新增员工</button>
+      </div>
+      <div id="employeeSecret"></div>
+      <table><thead><tr><th>姓名</th><th>用户名</th><th>部门/职位</th><th>团队</th><th>直属上级</th><th>层级</th><th>角色</th><th>联系方式</th><th></th></tr></thead>
+        <tbody id="employeeRows"></tbody></table>
+    </section>
+
+    <section id="tab-departments">
+      <h2>部门</h2>
+      <div class="row"><input id="departmentName" placeholder="新部门名称"><button class="primary" id="departmentCreate">新增部门</button></div>
+      <table><thead><tr><th>部门</th><th>上级部门</th><th>团队数</th><th></th></tr></thead><tbody id="departmentRows"></tbody></table>
+    </section>
+
+    <section id="tab-positions">
+      <h2>职位</h2>
+      <div class="row"><input id="positionName" placeholder="新职位名称"><button class="primary" id="positionCreate">新增职位</button></div>
+      <table><thead><tr><th>职位</th><th>排序</th><th></th></tr></thead><tbody id="positionRows"></tbody></table>
+    </section>
+
+    <section id="tab-teams">
+      <h2>团队</h2>
+      <div class="row">
+        <select id="teamDepartment"></select>
+        <input id="teamName" placeholder="新团队名称">
+        <select id="teamLead"></select>
+        <button class="primary" id="teamCreate">新增团队</button>
+      </div>
+      <p class="muted">获授权的部门负责人可在本部门建团队并转交负责人；负责人身份不会自动带来派发权。管理员跨部门建团队时必须指定本部门成员为负责人。</p>
+      <table><thead><tr><th>团队</th><th>部门</th><th>负责人</th><th>成员</th><th></th></tr></thead><tbody id="teamRows"></tbody></table>
+    </section>
+
+    <section id="tab-roles">
+      <h2>角色与授权</h2>
+      <table><thead><tr><th>角色</th><th>能力</th><th>查看范围</th><th>派发范围</th><th>日志范围</th><th>资料范围</th></tr></thead><tbody id="roleRows"></tbody></table>
+      <p class="muted">查看范围与派发范围分别配置：可见某部门不等于可向该部门派发。管理员不取得员工业务权限。</p>
+    </section>
+
+    <section id="tab-company">
+      <h2>公司信息</h2>
+      <div class="row">
+        <input id="offWorkTime" placeholder="HH:MM">
+        <button class="primary" id="offWorkSave">保存下班时刻</button>
+        <span class="muted">仅影响之后的新排期或排期修订。</span>
+      </div>
+      <div class="row"><input id="companyTitle" placeholder="标题（可空）"><input id="companyBody" placeholder="内容"><button class="primary" id="companyCreate">新增公司信息</button></div>
+      <p class="muted" id="companyLimit"></p>
+      <table><thead><tr><th>顺序</th><th>标题</th><th>内容</th><th></th></tr></thead><tbody id="companyRows"></tbody></table>
+    </section>
+
+    <section id="tab-health">
+      <h2>组织完整性</h2>
+      <div id="health"></div>
+    </section>
+
+    <div class="error" id="consoleError"></div>
+    <div class="ok" id="consoleOk"></div>
+  </div>
+</main>
+
+<dialog id="employeeDialog">
+  <h2 id="employeeDialogTitle">员工</h2>
+  <input type="hidden" id="employeeId">
+  <div class="grid2">
+    <div><label>用户名</label><input id="fUsername"></div>
+    <div><label>姓名</label><input id="fDisplayName"></div>
+    <div><label>部门</label><select id="fDepartment"></select></div>
+    <div><label>职位</label><select id="fPosition"></select></div>
+    <div><label>团队（可空）</label><select id="fTeam"></select></div>
+    <div><label>直属上级（可空）</label><select id="fManager"></select></div>
+    <div><label>组织层级 0–100（顶层为0，必须显式设置）</label><input id="fLevel" type="number" min="0" max="100"></div>
+    <div><label>角色</label><select id="fRoles" multiple size="4"></select></div>
+    <div><label>手机号（仅写入，不回显）</label><input id="fPhone" placeholder="留空表示不修改"></div>
+  </div>
+  <div class="row" style="margin-top:14px">
+    <button class="primary" id="employeeSave">保存</button>
+    <button class="ghost" id="employeeTransfer">转岗…</button>
+    <button class="ghost" id="employeeCancel">取消</button>
+  </div>
+  <div class="error" id="employeeError"></div>
+</dialog>
+
+<dialog id="transferDialog">
+  <h2>转岗</h2>
+  <p class="muted">转岗会递增组织授权版本，使旧页面、旧候选、旧分析和旧幂等回放失效。</p>
+  <div class="grid2">
+    <div><label>新部门</label><select id="tDepartment"></select></div>
+    <div><label>新职位</label><select id="tPosition"></select></div>
+    <div><label>新团队（可空）</label><select id="tTeam"></select></div>
+    <div><label>新直属上级（可空）</label><select id="tManager"></select></div>
+    <div><label>组织层级</label><input id="tLevel" type="number" min="0" max="100"></div>
+    <div><label>角色</label><select id="tRoles" multiple size="4"></select></div>
+  </div>
+  <label>原因</label><input id="tReason" placeholder="转岗原因（必填）">
+  <div class="row" style="margin-top:14px"><button class="primary" id="transferSave">提交转岗</button><button class="ghost" id="transferCancel">取消</button></div>
+  <div class="error" id="transferError"></div>
+</dialog>
+
+<script>
+const state = { token: null, user: null, structure: null, employees: [], editing: null, transferring: null, tabs: [
+  ['employees','员工'], ['departments','部门'], ['positions','职位'], ['teams','团队'],
+  ['roles','角色与授权'], ['company','公司信息'], ['health','组织完整性']
+] };
+
+const $ = (id) => document.getElementById(id);
+
+async function api(method, path, body, options = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (state.token) headers.Authorization = 'Bearer ' + state.token;
+  if (options.key) headers['Idempotency-Key'] = options.key;
+  if (options.ifMatch) headers['If-Match'] = options.ifMatch;
+  const response = await fetch(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  const text = await response.text();
+  const payload = text ? JSON.parse(text) : {};
+  if (!response.ok) { const error = new Error(payload.message || ('请求失败 ' + response.status)); error.status = response.status; error.code = payload.code; throw error; }
+  return { body: payload, headers: response.headers };
+}
+
+const newKey = () => 'admin-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+const fail = (message) => { $('consoleError').textContent = message || ''; };
+const ok = (message) => { $('consoleOk').textContent = message || ''; setTimeout(() => ok(''), 4000); };
+
+function login() {
+  $('loginError').textContent = '';
+  fetch('/api/v1/auth/sessions', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: $('username').value.trim(), password: $('password').value })
+  }).then(async (response) => {
+    const payload = await response.json();
+    if (!response.ok) { $('loginError').textContent = payload.message || '登录失败'; return; }
+    state.token = payload.token;
+    state.user = payload.user;
+    localStorage.setItem('pandora.admin.token', payload.token);
+    enterConsole();
+  });
+}
+
+function enterConsole() {
+  $('login').hidden = true;
+  $('console').hidden = false;
+  $('who').textContent = (state.user.displayName || state.user.username) + '（' + (state.user.role || '') + '）';
+  renderTabs();
+  reloadAll();
+}
+
+function renderTabs() {
+  const nav = $('tabs');
+  nav.innerHTML = '';
+  state.tabs.forEach(([id, label], index) => {
+    const button = document.createElement('button');
+    button.textContent = label;
+    button.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+    button.onclick = () => selectTab(id, button);
+    nav.appendChild(button);
+  });
+  selectTab('employees', nav.firstChild);
+}
+
+function selectTab(id, button) {
+  document.querySelectorAll('nav button').forEach((b) => b.setAttribute('aria-selected', 'false'));
+  if (button) button.setAttribute('aria-selected', 'true');
+  document.querySelectorAll('section').forEach((s) => s.classList.remove('active'));
+  $('tab-' + id).classList.add('active');
+}
+
+async function reloadAll() {
+  fail('');
+  try {
+    state.structure = (await api('GET', '/api/v1/admin/organization')).body;
+    state.employees = (await api('GET', '/api/v1/admin/employees')).body.items || [];
+    renderStructure();
+    renderEmployees();
+    renderRoles();
+    await renderCompany();
+  } catch (error) {
+    fail(error.message + (error.status === 403 ? '：该账号没有管理端权限' : ''));
+    if (error.status === 403 || error.status === 401) { logout(); }
+  }
+}
+
+function options(select, items, { value = 'id', label = 'name', empty = null } = {}) {
+  select.innerHTML = '';
+  if (empty !== null) { const option = document.createElement('option'); option.value = ''; option.textContent = empty; select.appendChild(option); }
+  items.forEach((item) => { const option = document.createElement('option'); option.value = item[value]; option.textContent = item[label]; select.appendChild(option); });
+}
+
+function renderStructure() {
+  const { departments, positions, teams, roles, organization, constraints } = state.structure;
+  $('scope').textContent = organization.name + ' · 授权版本 v' + organization.authzVersion;
+
+  options($('teamDepartment'), departments, { label: 'name' });
+  options($('fDepartment'), departments);
+  options($('fPosition'), positions);
+  options($('fTeam'), teams, { label: 'name', empty: '（不加入团队）' });
+  options($('fManager'), state.employees, { label: 'displayName', empty: '（无直属上级）' });
+  options($('fRoles'), roles, { value: 'code', label: 'name' });
+  options($('tDepartment'), departments);
+  options($('tPosition'), positions);
+  options($('tTeam'), teams, { empty: '（不加入团队）' });
+  options($('tManager'), state.employees, { label: 'displayName', empty: '（无直属上级）' });
+  options($('tRoles'), roles, { value: 'code', label: 'name' });
+
+  $('departmentRows').innerHTML = departments.map((d) =>
+    `<tr><td>${d.name}</td><td>${d.parentName || '—'}</td><td>${d.teamCount}</td>
+     <td><button class="ghost" data-rename-department="${d.id}" data-name="${d.name}" data-version="${d.rowVersion}">重命名</button></td></tr>`).join('');
+
+  $('positionRows').innerHTML = positions.map((p) =>
+    `<tr><td>${p.name}</td><td>${p.sortOrder}</td>
+     <td><button class="ghost" data-rename-position="${p.id}" data-name="${p.name}" data-version="${p.rowVersion}">重命名</button></td></tr>`).join('');
+
+  $('teamRows').innerHTML = teams.map((t) => {
+    const members = state.employees.filter((e) => e.teamId === t.id).map((e) => e.displayName).join('、') || '—';
+    return `<tr><td>${t.name}</td><td>${t.departmentName || '—'}</td><td>${t.leadName || '—'}</td><td>${members}</td>
+      <td><select data-team-lead="${t.id}">${state.employees.map((e) => `<option value="${e.id}" ${e.id === t.leadUserId ? 'selected' : ''}>${e.displayName}</option>`).join('')}</select>
+      <button class="ghost" data-save-team-lead="${t.id}" data-version="${t.rowVersion}">转交负责人</button></td></tr>`;
+  }).join('');
+
+  document.querySelectorAll('[data-rename-department]').forEach((button) => button.onclick = async () => {
+    const name = prompt('新的部门名称', button.dataset.name);
+    if (!name) return;
+    try { await api('PATCH', '/api/v1/admin/departments/' + button.dataset.renameDepartment, { name }, { key: newKey(), ifMatch: '"' + button.dataset.version + '"' }); ok('部门已更新'); reloadAll(); }
+    catch (error) { fail(error.message); }
+  });
+  document.querySelectorAll('[data-rename-position]').forEach((button) => button.onclick = async () => {
+    const name = prompt('新的职位名称', button.dataset.name);
+    if (!name) return;
+    try { await api('PATCH', '/api/v1/admin/positions/' + button.dataset.renamePosition, { name }, { key: newKey(), ifMatch: '"' + button.dataset.version + '"' }); ok('职位已更新'); reloadAll(); }
+    catch (error) { fail(error.message); }
+  });
+  document.querySelectorAll('[data-save-team-lead]').forEach((button) => button.onclick = async () => {
+    const teamId = button.dataset.saveTeamLead;
+    const leadUserId = document.querySelector(`[data-team-lead="${teamId}"]`).value;
+    try { await api('PATCH', '/api/v1/admin/teams/' + teamId, { leadUserId }, { key: newKey(), ifMatch: '"' + button.dataset.version + '"' }); ok('团队负责人已转交'); reloadAll(); }
+    catch (error) { fail(error.message); }
+  });
+
+  $('health').innerHTML = `
+    <div class="card">待收紧约束：员工缺部门 ${constraints.usersMissingDepartment} 人，缺职位 ${constraints.usersMissingPosition} 人，团队缺部门 ${constraints.teamsMissingDepartment} 个；
+    部门和职位必填约束${constraints.tighteningApplied ? '已收紧' : '尚未收紧（映射未完成）'}。</div>
+    ${(constraints.openBlockers || []).map((b) => `<div class="card"><b>${b.category}</b><div class="muted">${b.detail}</div></div>`).join('') || '<div class="card">没有未解决的阻断项。</div>'}`;
+  loadTeamLeads();
+}
+
+function renderEmployees() {
+  const query = $('employeeQuery').value.trim().toLowerCase();
+  const rows = state.employees.filter((e) => !query || [e.displayName, e.username, e.departmentName].some((v) => (v || '').toLowerCase().includes(query)));
+  $('employeeRows').innerHTML = rows.map((e) => `<tr>
+    <td>${e.displayName}</td><td>${e.username}</td><td>${e.departmentName || '—'} / ${e.positionName || '—'}</td>
+    <td>${e.teamName || '—'}</td><td>${e.managerName || '—'}</td><td>${e.rankLevel}</td>
+    <td>${(e.roles || []).map((r) => `<span class="tag">${r}</span>`).join('')}</td>
+    <td>${e.hasPhone ? '已登记' : '—'}</td>
+    <td><button class="ghost" data-edit="${e.id}">编辑</button>
+        <button class="ghost" data-reset="${e.id}">重置密码</button></td></tr>`).join('');
+  document.querySelectorAll('[data-edit]').forEach((button) => button.onclick = () => openEmployee(button.dataset.edit));
+  document.querySelectorAll('[data-reset]').forEach((button) => button.onclick = async () => {
+    if (!confirm('重置该员工密码？该账号的全部会话会立即失效，并重新要求首次改密。')) return;
+    try {
+      const result = await api('POST', '/api/v1/admin/employees/' + button.dataset.reset + '/password-reset', undefined, { key: newKey() });
+      if (result.body.initialPassword) {
+        $('employeeSecret').innerHTML = '<div class="card">新的初始密码仅显示一次，请立即交付本人：<span class="secret">' + result.body.initialPassword +
+          '</span><div class="muted">已撤销 ' + result.body.sessionsRevoked + ' 个旧会话；刷新或重试都不会再次显示，需要时请再次重置。</div></div>';
+      } else {
+        $('employeeSecret').innerHTML = '<div class="card">该重置请求已处理过，出于安全考虑不再回显密码。如未收到密码，请再次重置生成新的初始密码。</div>';
+      }
+      ok('密码已重置');
+    } catch (error) { fail(error.message); }
+  });
+}
+
+function renderRoles() {
+  $('roleRows').innerHTML = state.structure.roles.map((r) => `<tr>
+    <td>${r.name}<div class="muted">${r.code}${r.administrator ? ' · 管理员' : ''}</div></td>
+    <td>${(r.capabilities || []).map((c) => `<span class="tag">${c}</span>`).join('') || '—'}</td>
+    <td>${r.scopes.task_view || '—'}</td><td>${r.scopes.task_dispatch || '—'}</td>
+    <td>${r.scopes.log_read || '—'}</td><td>${r.scopes.profile_read || '—'}</td></tr>`).join('');
+}
+
+async function renderCompany() {
+  const company = (await api('GET', '/api/v1/admin/company')).body;
+  $('offWorkTime').value = (company.offWorkTime || '18:00:00').slice(0, 5);
+  $('companyLimit').textContent = `当前 ${company.items.length} / ${company.limit} 条，默认按创建顺序，可人工调序。`;
+  $('companyRows').innerHTML = company.items.map((item, index) => `<tr>
+    <td>${index + 1}</td><td>${item.title}</td><td>${item.body}</td>
+    <td><button class="ghost" data-company-up="${item.id}" ${index === 0 ? 'disabled' : ''}>上移</button>
+        <button class="ghost" data-company-edit="${item.id}" data-version="${item.rowVersion}" data-title="${item.title}" data-body="${item.body}">编辑</button>
+        <button class="ghost" data-company-delete="${item.id}" data-version="${item.rowVersion}">删除</button></td></tr>`).join('');
+  document.querySelectorAll('[data-company-up]').forEach((button) => button.onclick = () => reorder(button.dataset.companyUp));
+  document.querySelectorAll('[data-company-edit]').forEach((button) => button.onclick = async () => {
+    const body = prompt('内容', button.dataset.body);
+    if (body === null) return;
+    try { await api('PATCH', '/api/v1/admin/company/items/' + button.dataset.companyEdit, { title: button.dataset.title, body }, { key: newKey(), ifMatch: '"' + button.dataset.version + '"' }); ok('已保存'); renderCompany(); }
+    catch (error) { fail(error.message); }
+  });
+  document.querySelectorAll('[data-company-delete]').forEach((button) => button.onclick = async () => {
+    if (!confirm('删除该条公司信息？')) return;
+    try { await api('DELETE', '/api/v1/admin/company/items/' + button.dataset.companyDelete, undefined, { key: newKey(), ifMatch: '"' + button.dataset.version + '"' }); ok('已删除'); renderCompany(); }
+    catch (error) { fail(error.message); }
+  });
+}
+
+async function reorder(moveUpId) {
+  const company = (await api('GET', '/api/v1/admin/company')).body;
+  const ids = company.items.map((i) => i.id);
+  const index = ids.indexOf(moveUpId);
+  if (index <= 0) return;
+  [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
+  try { await api('POST', '/api/v1/admin/company/items/reorder', { orderedIds: ids }, { key: newKey() }); ok('顺序已保存'); renderCompany(); }
+  catch (error) { fail(error.message); }
+}
+
+function openEmployee(id) {
+  const employee = id ? state.employees.find((e) => e.id === id) : null;
+  state.editing = employee;
+  $('employeeDialogTitle').textContent = employee ? '编辑员工' : '新增员工';
+  $('employeeId').value = employee ? employee.id : '';
+  $('fUsername').value = employee ? employee.username : '';
+  $('fUsername').disabled = !!employee;
+  $('fDisplayName').value = employee ? employee.displayName : '';
+  $('fDepartment').value = employee ? employee.departmentId : ($('fDepartment').options[0] || {}).value;
+  $('fPosition').value = employee ? employee.positionId : ($('fPosition').options[0] || {}).value;
+  $('fTeam').value = employee ? (employee.teamId || '') : '';
+  $('fManager').value = employee ? (employee.managerId || '') : '';
+  $('fLevel').value = employee ? employee.rankLevel : 3;
+  $('fPhone').value = '';
+  Array.from($('fRoles').options).forEach((option) => { option.selected = employee ? (employee.roles || []).includes(option.value) : option.value === 'employee'; });
+  $('employeeError').textContent = '';
+  $('employeeTransfer').hidden = !employee;
+  $('employeeDialog').showModal();
+}
+
+async function saveEmployee() {
+  const roles = Array.from($('fRoles').selectedOptions).map((o) => o.value);
+  const id = $('employeeId').value;
+  const common = {
+    displayName: $('fDisplayName').value.trim(), departmentId: $('fDepartment').value,
+    positionId: $('fPosition').value, teamId: $('fTeam').value || null,
+    managerId: $('fManager').value || null, level: Number($('fLevel').value), roleCodes: roles
+  };
+  const phone = $('fPhone').value.trim();
+  if (phone) common.phone = phone;
+  try {
+    if (id) {
+      const detail = await api('GET', '/api/v1/admin/employees/' + id);
+      await api('PATCH', '/api/v1/admin/employees/' + id, common, { key: newKey(), ifMatch: detail.headers.get('ETag') });
+      ok('员工已更新');
+    } else {
+      const created = await api('POST', '/api/v1/admin/employees', Object.assign({ username: $('fUsername').value.trim() }, common), { key: newKey() });
+      if (created.body.initialPassword) {
+        $('employeeSecret').innerHTML = '<div class="card">初始密码仅显示一次，请立即交付本人：<span class="secret">' + created.body.initialPassword + '</span><div class="muted">刷新或重试都不会再次显示；忘记时请重置密码。</div></div>';
+      }
+      ok('员工已创建');
+    }
+    $('employeeDialog').close();
+    reloadAll();
+  } catch (error) { $('employeeError').textContent = error.message; }
+}
+
+function openTransfer() {
+  const employee = state.editing;
+  if (!employee) return;
+  state.transferring = employee;
+  $('tDepartment').value = employee.departmentId || '';
+  $('tPosition').value = employee.positionId || '';
+  $('tTeam').value = employee.teamId || '';
+  $('tManager').value = employee.managerId || '';
+  $('tLevel').value = employee.rankLevel;
+  $('tReason').value = '';
+  Array.from($('tRoles').options).forEach((option) => { option.selected = (employee.roles || []).includes(option.value); });
+  $('transferError').textContent = '';
+  $('employeeDialog').close();
+  $('transferDialog').showModal();
+}
+
+async function saveTransfer() {
+  const employee = state.transferring;
+  try {
+    const detail = await api('GET', '/api/v1/admin/employees/' + employee.id);
+    await api('POST', '/api/v1/admin/employees/' + employee.id + '/transfer', {
+      departmentId: $('tDepartment').value, positionId: $('tPosition').value,
+      teamId: $('tTeam').value || null, managerId: $('tManager').value || null,
+      level: Number($('tLevel').value), roleCodes: Array.from($('tRoles').selectedOptions).map((o) => o.value),
+      reason: $('tReason').value.trim()
+    }, { key: newKey(), ifMatch: detail.headers.get('ETag') });
+    $('transferDialog').close();
+    ok('转岗已生效，旧页面与旧授权缓存已失效');
+    reloadAll();
+  } catch (error) { $('transferError').textContent = error.message; }
+}
+
+$('loginButton').onclick = login;
+$('password').addEventListener('keydown', (event) => { if (event.key === 'Enter') login(); });
+$('logout').onclick = logout;
+$('employeeQuery').oninput = renderEmployees;
+$('employeeRefresh').onclick = reloadAll;
+$('employeeNew').onclick = () => openEmployee(null);
+$('employeeSave').onclick = saveEmployee;
+$('employeeTransfer').onclick = openTransfer;
+$('employeeCancel').onclick = () => $('employeeDialog').close();
+$('transferSave').onclick = saveTransfer;
+$('transferCancel').onclick = () => $('transferDialog').close();
+$('departmentCreate').onclick = async () => {
+  try { await api('POST', '/api/v1/admin/departments', { name: $('departmentName').value.trim() }, { key: newKey() }); $('departmentName').value = ''; ok('部门已创建'); reloadAll(); }
+  catch (error) { fail(error.message); }
+};
+$('positionCreate').onclick = async () => {
+  try { await api('POST', '/api/v1/admin/positions', { name: $('positionName').value.trim() }, { key: newKey() }); $('positionName').value = ''; ok('职位已创建'); reloadAll(); }
+  catch (error) { fail(error.message); }
+};
+$('teamCreate').onclick = async () => {
+  const payload = { name: $('teamName').value.trim(), departmentId: $('teamDepartment').value };
+  if ($('teamLead').value) payload.leadUserId = $('teamLead').value;
+  try { await api('POST', '/api/v1/admin/teams', payload, { key: newKey() }); $('teamName').value = ''; ok('团队已创建，创建者为默认负责人'); reloadAll(); }
+  catch (error) { fail(error.message); }
+};
+$('teamDepartment').onchange = loadTeamLeads;
+async function loadTeamLeads() {
+  const departmentId = $('teamDepartment').value;
+  if (!departmentId) { $('teamLead').innerHTML = ''; return; }
+  try {
+    const members = (await api('GET', '/api/v1/admin/departments/' + departmentId + '/members')).body.items || [];
+    options($('teamLead'), members, { label: 'displayName', empty: '（创建者默认负责）' });
+  } catch (error) { $('teamLead').innerHTML = ''; }
+}
+$('companyCreate').onclick = async () => {
+  try { await api('POST', '/api/v1/admin/company/items', { title: $('companyTitle').value.trim() || undefined, body: $('companyBody').value.trim() }, { key: newKey() }); $('companyTitle').value = ''; $('companyBody').value = ''; ok('公司信息已创建'); renderCompany(); }
+  catch (error) { fail(error.message); }
+};
+$('offWorkSave').onclick = async () => {
+  try { await api('PUT', '/api/v1/admin/company/off-work-time', { offWorkTime: $('offWorkTime').value.trim() }, { key: newKey() }); ok('下班时刻已保存，仅适用于之后的排期'); renderCompany(); }
+  catch (error) { fail(error.message); }
+};
+
+function logout() {
+  state.token = null; state.user = null;
+  localStorage.removeItem('pandora.admin.token');
+  $('console').hidden = true; $('login').hidden = false;
+  $('password').value = '';
+}
+
+(async function boot() {
+  const saved = localStorage.getItem('pandora.admin.token');
+  if (!saved) return;
+  try {
+    // Verify the saved session first; the console is only entered for a real authenticated identity.
+    const response = await fetch('/api/v1/me', { headers: { Authorization: 'Bearer ' + saved } });
+    if (!response.ok) { localStorage.removeItem('pandora.admin.token'); return; }
+    const me = await response.json();
+    state.token = saved;
+    state.user = { displayName: me.displayName, username: me.username, role: me.role };
+    enterConsole();
+  } catch (error) { localStorage.removeItem('pandora.admin.token'); }
+})();
+</script>
+</body>
+</html>

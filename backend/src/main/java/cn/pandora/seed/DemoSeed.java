@@ -1,5 +1,6 @@
 package cn.pandora.seed;
 
+import cn.pandora.admin.RoleCatalog;
 import cn.pandora.auth.*;
 import cn.pandora.common.*;
 import cn.pandora.task.TaskService;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import java.time.*;
@@ -15,27 +17,38 @@ import static cn.pandora.common.Db.*;
 
 /** Seed once in a single transaction. Restarting never resets edited business data. */
 @Component
+@Order(DemoSeed.ORDER)
 @ConditionalOnProperty(name="pandora.seed",havingValue="true")
 public class DemoSeed implements ApplicationRunner {
+    /** Before {@link cn.pandora.admin.OrganizationConstraints} so a seeded database is already mapped. */
+    public static final int ORDER = 0;
     private static final String ORG="10000000-0000-0000-0000-000000000001";
     private final Db db; private final TaskService tasks;private final TransactionTemplate tx;private final String password;
+    private final RoleCatalog roles;
+    private final cn.pandora.auth.Access access;
     private final Map<String,Actor> actors=new LinkedHashMap<>();
     private final LocalDate today=LocalDate.now(ZoneId.of("Asia/Shanghai"));
-    public DemoSeed(Db db,TaskService tasks,TransactionTemplate tx,@Value("${pandora.demo-password}") String password) {this.db=db;this.tasks=tasks;this.tx=tx;this.password=password;}
+    public DemoSeed(Db db,TaskService tasks,TransactionTemplate tx,@Value("${pandora.demo-password}") String password,RoleCatalog roles,cn.pandora.auth.Access access) {this.db=db;this.tasks=tasks;this.tx=tx;this.password=password;this.roles=roles;this.access=access;}
     @Override public void run(ApplicationArguments args) {
         tx.executeWithoutResult(status->{
             db.update("INSERT IGNORE INTO organizations(id,name,time_zone) VALUES(?,?,?)",ORG,"潘多拉演示公司","Asia/Shanghai");
             db.one("SELECT id FROM organizations WHERE id=? FOR UPDATE",ORG);
             if(db.jdbc.queryForObject("SELECT COUNT(*) FROM users WHERE organization_id=?",Long.class,ORG)>0) return;
-            String management=team("公司管理层"), product=team("产品部"), marketing=team("市场部");
+            String managementDepartment=department("管理层"), productDepartment=department("产品部"), marketingDepartment=department("市场部");
+            String generalManager=position("总经理"), departmentManager=position("部门经理"), specialist=position("专员"), administrator=position("系统管理员");
+            String management=team("公司管理层",managementDepartment), product=team("产品部",productDepartment), marketing=team("市场部",marketingDepartment);
+            roles.ensureDefaults(ORG);
             String hash=AuthService.PASSWORDS.encode(password);
-            user("upper","王海", "upper",management,null,1,hash);
-            user("admin","系统管理员","admin",management,null,0,hash);
-            user("middle","李敏","middle",product,actors.get("upper").id(),2,hash);
-            user("market","陈冲","middle",marketing,actors.get("upper").id(),2,hash);
-            user("employee","张涛","lower",product,actors.get("middle").id(),3,hash);
-            user("colleague","赵蕾","lower",product,actors.get("middle").id(),3,hash);
-            user("marketing","孙悦","lower",marketing,actors.get("market").id(),3,hash);
+            user("upper","王海", "upper",management,managementDepartment,generalManager,null,1,hash);
+            user("admin","系统管理员","admin",management,managementDepartment,administrator,null,0,hash);
+            user("middle","李敏","middle",product,productDepartment,departmentManager,actors.get("upper").id(),2,hash);
+            user("market","陈冲","middle",marketing,marketingDepartment,departmentManager,actors.get("upper").id(),2,hash);
+            user("employee","张涛","lower",product,productDepartment,specialist,actors.get("middle").id(),3,hash);
+            user("colleague","赵蕾","lower",product,productDepartment,specialist,actors.get("middle").id(),3,hash);
+            user("marketing","孙悦","lower",marketing,marketingDepartment,specialist,actors.get("market").id(),3,hash);
+            lead(management,actors.get("upper").id());
+            lead(product,actors.get("middle").id());
+            lead(marketing,actors.get("market").id());
             String parent=create("upper","季度产品目标",List.of("middle"),-3,15,false,true);
             String doing=create("middle","上线素材校对",List.of("employee","colleague"),-2,2,false,true);
             command("employee",doing,Map.of("command","progress","progressNote","已完成第一轮校对，等待产品确认。"),true);
@@ -66,10 +79,15 @@ public class DemoSeed implements ApplicationRunner {
             for(int i=1;i<=3;i++) db.update("INSERT INTO home_items(id,organization_id,kind,title,body,sort_order) VALUES(?,?,'company',?,?,?)",id(),ORG,"公司目标 "+i,List.of("按计划交付并保障质量","及时处理客户反馈","完善协作与知识记录").get(i-1),i);
         });
     }
-    private String team(String name) {String id=id();db.update("INSERT INTO teams(id,organization_id,name) VALUES(?,?,?)",id,ORG,name);return id;}
-    private void user(String username,String name,String role,String team,String manager,int rank,String hash) {
-        String uid=id();db.update("INSERT INTO users(id,organization_id,team_id,manager_id,username,password_hash,display_name,role,rank_level) VALUES(?,?,?,?,?,?,?,?,?)",uid,ORG,team,manager,username,hash,name,role,rank);
-        actors.put(username,new Actor(uid,ORG,role,team,manager,rank));
+    private String department(String name) {String id=id();db.update("INSERT INTO departments(id,organization_id,name) VALUES(?,?,?)",id,ORG,name);return id;}
+    private String position(String name) {String id=id();db.update("INSERT INTO positions(id,organization_id,name) VALUES(?,?,?)",id,ORG,name);return id;}
+    private String team(String name,String departmentId) {String id=id();db.update("INSERT INTO teams(id,organization_id,name,department_id) VALUES(?,?,?,?)",id,ORG,name,departmentId);return id;}
+    private void lead(String teamId,String userId) {db.update("UPDATE teams SET lead_user_id=? WHERE organization_id=? AND id=?",userId,ORG,teamId);}
+    private void user(String username,String name,String role,String team,String department,String position,String manager,int rank,String hash) {
+        String uid=id();db.update("INSERT INTO users(id,organization_id,team_id,department_id,position_id,manager_id,username,password_hash,display_name,role,rank_level) VALUES(?,?,?,?,?,?,?,?,?,?,?)",uid,ORG,team,department,position,manager,username,hash,name,role,rank);
+        roles.grant(ORG,uid,RoleCatalog.codeForLegacyRole(role),null);
+        // The seeded actors carry their real capabilities and ranges, exactly like a logged-in one.
+        actors.put(username,access.actor(db.one("SELECT * FROM users WHERE id=?",uid)));
     }
     private Map<String,Object> input(String title,List<String> owners,int start,int due,boolean allDay) {
         Map<String,Object> body=new LinkedHashMap<>();body.put("title",title);body.put("description","本地演示任务，用于核对任务流转与人员权限。");body.put("acceptanceCriteria","材料完整、结果可复核，并经审核确认。");body.put("priority",due<0?"urgent":"medium");body.put("allDay",allDay);body.put("assigneeIds",owners.stream().map(k->actors.get(k).id()).toList());

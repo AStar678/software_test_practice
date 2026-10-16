@@ -74,8 +74,29 @@ public class TaskService {
         return result;
     }
 
-    public Map<String, Object> detail(Actor actor, String id) {
-        Map<String, Object> task = task(actor, id, false);
+    /**
+     * Assignee candidates come from the dispatch range only (DEV-002). The list is deliberately
+     * narrower than what the actor may view: seeing a department's tasks never offers its people.
+     */
+    public Map<String, Object> assigneeCandidates(Actor actor, String query) {
+        requireBusiness(actor);
+        if (query != null && query.length() > 100) throw bad("搜索内容最多100字");
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (Map<String, Object> person : access.dispatchCandidates(actor, query)) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            for (String key : List.of("id", "username", "displayName", "departmentId", "departmentName",
+                    "positionId", "positionName", "teamId", "rankLevel")) {
+                item.put(key, person.get(key));
+            }
+            items.add(item);
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("items", items);
+        result.put("empty", items.isEmpty());
+        return result;
+    }
+
+    public Map<String, Object> detail(Actor actor, String id) {        Map<String, Object> task = task(actor, id, false);
         String current = s(task, "currentVersionId");
         if (current == null) {
             Map<String, Object> request = db.find("SELECT * FROM approval_requests WHERE organization_id=? AND task_id=? ORDER BY created_at DESC,id DESC LIMIT 1", actor.organizationId(), id);
@@ -353,7 +374,11 @@ public class TaskService {
         String id = Db.id();
         db.update("INSERT INTO task_versions(id,organization_id,task_id,version_no,title,description,acceptance_criteria,priority,all_day,start_at,due_at,start_date,due_date,execution_state,progress_note,parent_task_id,status,created_by,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 id, actor.organizationId(), taskId, nextVersionNumber(actor, taskId), values.get("title"), values.get("description"), values.get("acceptanceCriteria"), values.get("priority"), bool(values.get("allDay"), "allDay"), Timestamp.from(instant(values.get("startAt"), "startAt")), Timestamp.from(instant(values.get("dueAt"), "dueAt")), values.get("startDate"), values.get("dueDate"), values.get("executionState"), values.get("progressNote"), values.get("parentTaskId"), status, actor.id(), now());
-        for (String owner : owners) db.update("INSERT INTO task_version_assignees(organization_id,version_id,user_id) VALUES(?,?,?)", actor.organizationId(), id, owner);
+        int ordinal = 0;
+        for (String owner : owners) {
+            db.update("INSERT INTO task_version_assignees(organization_id,version_id,user_id,ordinal,order_source) VALUES(?,?,?,?,?)",
+                    actor.organizationId(), id, owner, ordinal++, "submitted");
+        }
         return id;
     }
 
@@ -484,22 +509,18 @@ public class TaskService {
 
     private void validateAssignable(Actor actor, List<String> owners) {
         requireBusiness(actor);
-        for (String id : owners) {
-            Map<String, Object> user = access.user(actor, id);
-            if ("admin".equals(s(user, "role"))) throw bad("管理员账号不能担任业务负责人");
-            boolean allowed = "upper".equals(actor.role()) || actor.id().equals(id)
-                    || "middle".equals(actor.role()) && "lower".equals(s(user, "role")) && Objects.equals(actor.teamId(), s(user, "teamId")) && actor.teamId() != null;
-            if (!allowed) throw forbidden("不可向同级或超出管理范围的人员派发任务");
-        }
+        for (String id : owners) access.requireDispatchable(actor, id);
     }
 
     private void validateActiveOwners(Actor actor, List<String> owners) {
-        for (String id : owners) if ("admin".equals(s(access.user(actor, id), "role"))) throw bad("管理员账号不能担任业务负责人");
+        for (String id : owners) {
+            Map<String, Object> user = access.activeUser(actor, id);
+            if (user == null || "admin".equals(s(user, "role"))) throw bad("管理员账号不能担任业务负责人");
+        }
     }
 
     private Actor activeActor(Actor context, String id) {
-        Map<String, Object> user = access.user(context, id);
-        return new Actor(id, context.organizationId(), s(user, "role"), s(user, "teamId"), s(user, "managerId"), Math.toIntExact(n(user, "rankLevel")));
+        return access.actor(access.user(context, id));
     }
 
     private void validateRequestActor(Actor applicant, Map<String, Object> task, Map<String, Object> base, String kind) {
@@ -582,7 +603,9 @@ public class TaskService {
     }
 
     private List<String> assignees(Actor actor, String versionId) {
-        return db.list("SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=? ORDER BY user_id", actor.organizationId(), versionId).stream().map(row -> s(row, "userId")).toList();
+        // Saved submission order drives reviewer routing (DEV-006); legacy rows keep the deterministic
+        // compatibility order with order_source='legacy-order-unknown'.
+        return db.list("SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=? ORDER BY ordinal,user_id", actor.organizationId(), versionId).stream().map(row -> s(row, "userId")).toList();
     }
 
     private ZoneId organizationZone(Actor actor) {
@@ -692,7 +715,7 @@ public class TaskService {
     }
 
     private static void requireBusiness(Actor actor) {
-        if (!Set.of("upper", "middle", "lower").contains(actor.role())) throw forbidden("管理员不参与普通业务操作");
+        if (!actor.business()) throw forbidden("管理员不参与普通业务操作");
     }
 
     private static Timestamp now() { return Timestamp.from(Instant.now()); }
