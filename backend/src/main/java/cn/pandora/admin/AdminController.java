@@ -2,6 +2,7 @@ package cn.pandora.admin;
 
 import cn.pandora.auth.Actor;
 import cn.pandora.common.Writes;
+import cn.pandora.task.TaskService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,10 +15,18 @@ import java.util.Map;
 public class AdminController {
     private final OrganizationService organization;
     private final Writes writes;
+    private final TaskService tasks;
 
-    public AdminController(OrganizationService organization, Writes writes) {
+    public AdminController(OrganizationService organization, Writes writes, TaskService tasks) {
         this.organization = organization;
         this.writes = writes;
+        this.tasks = tasks;
+    }
+
+    /** Complete operation history of one task; the App has no equivalent entry point (DEV-016). */
+    @GetMapping("/tasks/{id}/history")
+    public Map<String, Object> taskHistory(@RequestAttribute("actor") Actor actor, @PathVariable String id) {
+        return tasks.taskHistory(actor, id);
     }
 
     @GetMapping("/organization")

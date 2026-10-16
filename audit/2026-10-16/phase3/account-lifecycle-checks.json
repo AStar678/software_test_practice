@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-16T02:41:13.761307+00:00",
+  "generatedAt": "2026-10-16T05:46:46.694600+00:00",
   "baseUrl": "http://127.0.0.1:18092",
   "passed": 47,
   "total": 47,
@@ -17,8 +17,8 @@
       "evidence": {
         "status": 201,
         "body": {
-          "userId": "61621a86-276b-466e-8e0e-54255bb34dfe",
-          "username": "acct-6fe07f",
+          "userId": "c9b12388-9203-46fb-940e-ed7dbc36a484",
+          "username": "acct-12b40a",
           "rowVersion": 1,
           "mustChangePassword": true
         }
@@ -28,7 +28,7 @@
       "check": "3.1 no plaintext initial password reaches idempotency/audit/outbox",
       "pass": true,
       "evidence": {
-        "searchedBytes": 7273
+        "searchedBytes": 10849
       }
     },
     {
@@ -204,7 +204,7 @@
       "check": "3.3 the chosen new password is never persisted in clear text",
       "pass": true,
       "evidence": {
-        "searchedBytes": 4068
+        "searchedBytes": 5569
       }
     },
     {
@@ -213,7 +213,7 @@
       "evidence": {
         "status": 200,
         "body": {
-          "userId": "61621a86-276b-466e-8e0e-54255bb34dfe",
+          "userId": "c9b12388-9203-46fb-940e-ed7dbc36a484",
           "mustChangePassword": true,
           "sessionsRevoked": 1,
           "credentialVersion": 3
@@ -283,9 +283,9 @@
       "evidence": {
         "status": 200,
         "body": {
-          "rowVersion": 2,
-          "id": "9a9f0a43-6e25-4e2d-a19f-a6c20f0a1afc",
-          "profileVersion": 2
+          "id": "6c92fd81-86f7-483b-90d1-123676657190",
+          "profileVersion": 2,
+          "rowVersion": 2
         }
       }
     },
@@ -293,7 +293,7 @@
       "check": "3.5 the owner sees their own saved phone",
       "pass": true,
       "evidence": {
-        "phone": "13926533326"
+        "phone": "13918316119"
       }
     },
     {
@@ -324,7 +324,7 @@
       "evidence": {
         "status": 200,
         "body": {
-          "userId": "61621a86-276b-466e-8e0e-54255bb34dfe",
+          "userId": "c9b12388-9203-46fb-940e-ed7dbc36a484",
           "rowVersion": 2,
           "changed": [
             "phone"
@@ -372,7 +372,7 @@
       "check": "3.5 no stored audit/outbox/idempotency payload contains a phone number",
       "pass": true,
       "evidence": {
-        "searchedBytes": 8574
+        "searchedBytes": 12150
       }
     },
     {

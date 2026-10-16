@@ -35,11 +35,21 @@ public class OrganizationService {
     private final RoleCatalog roles;
     private final OrganizationConstraints constraints;
     private final AuthService auth;
+    private final cn.pandora.task.TaskService tasks;
 
     public OrganizationService(Db db, Access access, Events events, RoleCatalog roles,
-                               OrganizationConstraints constraints, AuthService auth) {
+                               OrganizationConstraints constraints, AuthService auth,
+                               cn.pandora.task.TaskService tasks) {
         this.db = db; this.access = access; this.events = events; this.roles = roles;
-        this.constraints = constraints; this.auth = auth;
+        this.constraints = constraints; this.auth = auth; this.tasks = tasks;
+    }
+
+    /**
+     * A real organization change must leave every pending request pointing at a reviewer who can still
+     * decide it, and must record who moved and why (DEV-010). Runs inside the same transaction.
+     */
+    private void refreshPendingRoutes(Actor actor) {
+        tasks.refreshPendingRoutes(actor);
     }
 
     // ------------------------------------------------------------------ //
@@ -273,6 +283,7 @@ public class OrganizationService {
         result.put("changed", changed);
         // Field-change receipt only: never echo another employee's phone number back.
         result.put("phoneUpdated", changed.contains("phone"));
+        refreshPendingRoutes(actor);
         return result;
     }
 
@@ -318,6 +329,7 @@ public class OrganizationService {
         result.put("rowVersion", n(row, "orgVersion") + 1);
         result.put("transferred", true);
         result.put("authorizationInvalidated", true);
+        refreshPendingRoutes(actor);
         return result;
     }
 
@@ -357,6 +369,7 @@ public class OrganizationService {
                 : codes.isEmpty() ? RoleCatalog.EMPLOYEE : codes.getFirst());
         db.update("UPDATE users SET role=?,org_version=org_version+1 WHERE organization_id=? AND id=?", legacyRole, actor.organizationId(), id);
         bumpAuthority(actor, "organization.roles.granted", Map.of("userId", id, "roleCodes", codes));
+        refreshPendingRoutes(actor);
         return Map.of("userId", id, "rowVersion", n(row, "orgVersion") + 1, "roles", codes);
     }
 
@@ -393,6 +406,7 @@ public class OrganizationService {
         if (leadUserId != null) requireMemberOfDepartment(actor, leadUserId, departmentId);
         db.update("UPDATE teams SET name=?,department_id=?,lead_user_id=?,row_version=row_version+1 WHERE organization_id=? AND id=?", name, departmentId, leadUserId, actor.organizationId(), id);
         bumpAuthority(actor, "organization.team.updated", Map.of("teamId", id, "leadUserId", Objects.toString(leadUserId, "")));
+        refreshPendingRoutes(actor);
         return Map.of("teamId", id, "leadUserId", leadUserId, "rowVersion", n(row, "rowVersion") + 1);
     }
 

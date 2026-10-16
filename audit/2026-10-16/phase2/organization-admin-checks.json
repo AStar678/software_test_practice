@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-16T02:41:29.968171+00:00",
+  "generatedAt": "2026-10-16T05:46:43.196109+00:00",
   "baseUrl": "http://127.0.0.1:18091",
   "passed": 48,
   "total": 48,
@@ -40,8 +40,8 @@
       "evidence": {
         "status": 200,
         "body": {
-          "rowVersion": 1,
-          "departmentId": "94c4a966-e022-4d7c-9c52-7f0a728baf0b"
+          "departmentId": "e3a24941-69d6-42e1-8d3b-767fb93ef565",
+          "rowVersion": 1
         }
       }
     },
@@ -51,8 +51,8 @@
       "evidence": {
         "status": 409,
         "body": {
-          "code": "DATA_CONFLICT",
-          "message": "部门名称已存在"
+          "message": "部门名称已存在",
+          "code": "DATA_CONFLICT"
         }
       }
     },
@@ -62,8 +62,8 @@
       "evidence": {
         "status": 200,
         "body": {
-          "rowVersion": 1,
-          "positionId": "6ed305c1-b4d6-4101-a27d-2d835eaecf14"
+          "positionId": "ac74704c-20f4-448c-838e-38a004bf77ba",
+          "rowVersion": 1
         }
       }
     },
@@ -73,8 +73,8 @@
       "evidence": {
         "status": 200,
         "body": {
-          "rowVersion": 1,
-          "departmentId": "d022509e-6025-46e8-ae13-2fcb2aefb4e6"
+          "departmentId": "92fc0f2a-4d2f-4ac6-81b0-5ecbba8e73d5",
+          "rowVersion": 1
         }
       }
     },
@@ -84,8 +84,8 @@
       "evidence": {
         "status": 400,
         "body": {
-          "code": "INVALID_INPUT",
-          "message": "部门层级不能形成循环"
+          "message": "部门层级不能形成循环",
+          "code": "INVALID_INPUT"
         }
       }
     },
@@ -95,8 +95,8 @@
       "evidence": {
         "status": 400,
         "body": {
-          "code": "INVALID_INPUT",
-          "message": "departmentId须为有效UUID"
+          "message": "departmentId须为有效UUID",
+          "code": "INVALID_INPUT"
         }
       }
     },
@@ -106,8 +106,8 @@
       "evidence": {
         "status": 400,
         "body": {
-          "code": "INVALID_INPUT",
-          "message": "positionId须为有效UUID"
+          "message": "positionId须为有效UUID",
+          "code": "INVALID_INPUT"
         }
       }
     },
@@ -117,8 +117,8 @@
       "evidence": {
         "status": 400,
         "body": {
-          "code": "INVALID_INPUT",
-          "message": "组织层级须为0至100的整数，且必须显式设置"
+          "message": "组织层级须为0至100的整数，且必须显式设置",
+          "code": "INVALID_INPUT"
         }
       }
     },
@@ -128,8 +128,8 @@
       "evidence": {
         "status": 400,
         "body": {
-          "code": "INVALID_INPUT",
-          "message": "员工只能加入其所属部门下的团队"
+          "message": "员工只能加入其所属部门下的团队",
+          "code": "INVALID_INPUT"
         }
       }
     },
@@ -139,8 +139,8 @@
       "evidence": {
         "status": 409,
         "body": {
-          "code": "SECOND_ADMINISTRATOR",
-          "message": "公司只能有一个管理员账号"
+          "message": "公司只能有一个管理员账号",
+          "code": "SECOND_ADMINISTRATOR"
         }
       }
     },
@@ -150,11 +150,11 @@
       "evidence": {
         "status": 201,
         "body": {
-          "userId": "ad85f301-3bae-4d63-8485-f63a17b4415c",
-          "username": "qa1-b3f119",
+          "userId": "ac00ebe1-3288-4843-ac6f-d3481ac2930d",
+          "username": "qa1-34e5f1",
           "mustChangePassword": true,
           "rowVersion": 1,
-          "initialPassword": "p-S8VFQ6Qzp5FTCE"
+          "initialPassword": "UrYBk36*E424yYPw"
         }
       }
     },
@@ -164,8 +164,8 @@
       "evidence": {
         "status": 201,
         "body": {
-          "userId": "ad85f301-3bae-4d63-8485-f63a17b4415c",
-          "username": "qa1-b3f119",
+          "userId": "ac00ebe1-3288-4843-ac6f-d3481ac2930d",
+          "username": "qa1-34e5f1",
           "rowVersion": 1,
           "mustChangePassword": true
         }
@@ -185,8 +185,8 @@
       "evidence": {
         "status": 400,
         "body": {
-          "code": "INVALID_INPUT",
-          "message": "上下级关系不能形成循环"
+          "message": "上下级关系不能形成循环",
+          "code": "INVALID_INPUT"
         }
       }
     },
@@ -195,23 +195,23 @@
       "pass": true,
       "evidence": {
         "row": {
-          "id": "ad85f301-3bae-4d63-8485-f63a17b4415c",
-          "username": "qa1-b3f119",
+          "id": "ac00ebe1-3288-4843-ac6f-d3481ac2930d",
+          "username": "qa1-34e5f1",
           "displayName": "质检一号",
           "role": "lower",
           "rankLevel": 3,
           "active": true,
-          "departmentId": "94c4a966-e022-4d7c-9c52-7f0a728baf0b",
-          "departmentName": "质检部-b3f119",
-          "positionId": "6ed305c1-b4d6-4101-a27d-2d835eaecf14",
-          "positionName": "质检专员-b3f119",
+          "departmentId": "e3a24941-69d6-42e1-8d3b-767fb93ef565",
+          "departmentName": "质检部-34e5f1",
+          "positionId": "ac74704c-20f4-448c-838e-38a004bf77ba",
+          "positionName": "质检专员-34e5f1",
           "teamId": null,
           "teamName": null,
           "managerId": null,
           "managerName": null,
           "reviewerAvailable": true,
           "mustChangePassword": true,
-          "createdAt": "2026-10-16T02:41:29.185047Z",
+          "createdAt": "2026-10-16T05:46:42.344432Z",
           "rowVersion": 1,
           "hasPhone": true,
           "hasEmail": false,
@@ -293,9 +293,9 @@
       "pass": true,
       "evidence": {
         "authors": [
-          "6e63b5ed-1347-4cd5-873e-7a45e02efbf9",
-          "bd27e741-4c18-41cc-ba60-4ca9f7f1d56e",
-          "fd05f3b1-aa2f-4e4f-8269-63c48dd2a836"
+          "574f21eb-4bea-4a99-a291-73d2ad2c68ec",
+          "74627d9f-71b4-443c-b6ca-86211d640238",
+          "e123179f-a7d5-4247-8fee-ddd67cdba689"
         ]
       }
     },
@@ -312,8 +312,8 @@
       "evidence": {
         "status": 404,
         "body": {
-          "code": "NOT_FOUND",
-          "message": "内容不存在或无权查看"
+          "message": "内容不存在或无权查看",
+          "code": "NOT_FOUND"
         }
       }
     },
@@ -330,9 +330,9 @@
       "evidence": {
         "status": 200,
         "body": {
-          "teamId": "e5b2b152-b30b-48f3-9792-14e8524da856",
+          "leadUserId": "74627d9f-71b4-443c-b6ca-86211d640238",
           "rowVersion": 1,
-          "leadUserId": "fd05f3b1-aa2f-4e4f-8269-63c48dd2a836"
+          "teamId": "440be04b-8a36-4669-b032-27974b3855e5"
         }
       }
     },
@@ -341,8 +341,8 @@
       "pass": true,
       "evidence": {
         "teams": [
-          "产品一组-b3f119",
-          "产品二组-b3f119",
+          "产品一组-34e5f1",
+          "产品二组-34e5f1",
           "产品部"
         ]
       }
@@ -367,9 +367,9 @@
       "evidence": {
         "status": 200,
         "body": {
-          "teamId": "e5b2b152-b30b-48f3-9792-14e8524da856",
+          "leadUserId": "574f21eb-4bea-4a99-a291-73d2ad2c68ec",
           "rowVersion": 2,
-          "leadUserId": "bd27e741-4c18-41cc-ba60-4ca9f7f1d56e"
+          "teamId": "440be04b-8a36-4669-b032-27974b3855e5"
         }
       }
     },
@@ -377,7 +377,7 @@
       "check": "2.4 the transferred lead is stored",
       "pass": true,
       "evidence": {
-        "leadUserId": "bd27e741-4c18-41cc-ba60-4ca9f7f1d56e"
+        "leadUserId": "574f21eb-4bea-4a99-a291-73d2ad2c68ec"
       }
     },
     {
@@ -395,7 +395,7 @@
       "evidence": {
         "status": 200,
         "body": {
-          "userId": "5c4953f2-8bd8-4426-b16a-3f9a30f9c2e4",
+          "userId": "38b10bdb-35ce-472a-a66b-59b77f3c0b9c",
           "rowVersion": 2,
           "transferred": true,
           "authorizationInvalidated": true
@@ -438,8 +438,8 @@
       "evidence": {
         "status": 200,
         "body": {
-          "rowVersion": 2,
-          "departmentId": "94c4a966-e022-4d7c-9c52-7f0a728baf0b"
+          "departmentId": "e3a24941-69d6-42e1-8d3b-767fb93ef565",
+          "rowVersion": 2
         }
       }
     },
@@ -449,8 +449,8 @@
       "evidence": {
         "status": 412,
         "body": {
-          "code": "VERSION_CONFLICT",
-          "message": "内容已更新，请刷新后重试"
+          "message": "内容已更新，请刷新后重试",
+          "code": "VERSION_CONFLICT"
         }
       }
     },
@@ -478,8 +478,8 @@
       "evidence": {
         "status": 400,
         "body": {
-          "code": "INVALID_INPUT",
-          "message": "下班时刻须为 HH:MM 或 HH:MM:SS"
+          "message": "下班时刻须为 HH:MM 或 HH:MM:SS",
+          "code": "INVALID_INPUT"
         }
       }
     },
@@ -489,8 +489,8 @@
       "evidence": {
         "status": 409,
         "body": {
-          "code": "HOME_ITEM_LIMIT",
-          "message": "公司信息最多10条，请先删除后再新增"
+          "message": "公司信息最多10条，请先删除后再新增",
+          "code": "HOME_ITEM_LIMIT"
         }
       }
     },
@@ -507,19 +507,19 @@
       "evidence": {
         "status": 200,
         "body": {
-          "reordered": true,
           "orderedIds": [
-            "3fb682bd-b986-4d43-9557-d7fdecee1df8",
-            "65ed2d30-e455-4a19-9b9f-0c14f4454810",
-            "7d024e3e-ac60-4eb3-a67f-52d5dccc7533",
-            "87f2cd5d-53a7-4ae5-b707-af9914adbae6",
-            "303a3e9a-b357-469c-b767-6b951d6a127a",
-            "f009f140-3cba-405c-b90a-dd836a6ccbd1",
-            "f4ca58e4-997b-4fbd-8fad-09f72aea28eb",
-            "72c41ad3-f0f5-4472-80a6-51231a5dc49f",
-            "44c80b20-eef4-4fae-af02-bc2249a083fe",
-            "7e41e423-64e6-4bff-8941-be5847455e1b"
-          ]
+            "4a05f59a-4021-495d-a8d1-5fb3900f72f3",
+            "a19df401-86c3-47bb-8a8a-7046caf5ef52",
+            "5393e2fe-da7a-4e8d-8fb1-3f65dc09d0ed",
+            "39a11784-f52d-490e-8af2-ea83534ca25a",
+            "1633847b-605b-40ef-8c49-15fc9af627fb",
+            "a24a5c22-c457-4c56-a957-763bc15a13b1",
+            "5688f4fa-8dd3-430a-89c4-2ad8839a4e6f",
+            "8ac98cb6-bc34-4edb-a666-bc9566dc4147",
+            "fae79eef-aee3-4566-ac91-b89068994b4b",
+            "e045a320-cc11-45cd-9485-0d6c00b9e309"
+          ],
+          "reordered": true
         }
       }
     },
@@ -527,8 +527,8 @@
       "check": "2.7 the manual order is persisted",
       "pass": true,
       "evidence": {
-        "first": "3fb682bd-b986-4d43-9557-d7fdecee1df8",
-        "expected": "3fb682bd-b986-4d43-9557-d7fdecee1df8"
+        "first": "4a05f59a-4021-495d-a8d1-5fb3900f72f3",
+        "expected": "4a05f59a-4021-495d-a8d1-5fb3900f72f3"
       }
     },
     {

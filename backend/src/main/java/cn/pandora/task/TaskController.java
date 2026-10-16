@@ -31,6 +31,22 @@ public class TaskController {
         return tasks.assigneeCandidates(actor, query);
     }
 
+    /** Read-only reviewer preview; it creates no request and is not an authorization token. */
+    @PostMapping("/tasks/reviewer-preview")
+    public Map<String, Object> reviewerPreview(@RequestAttribute("actor") Actor actor, @RequestBody Map<String, Object> input) {
+        return tasks.reviewerPreview(actor, input);
+    }
+
+    /** Dedicated handover: replaces one assignee position and can never carry a base field. */
+    @PostMapping("/tasks/{id}/handover")
+    public ResponseEntity<Map<String, Object>> handover(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch, @RequestBody Map<String, Object> input) {
+        Map<String, Object> result = writes.run(actor, key, "POST:/tasks/" + id + "/handover", input, ifMatch,
+                () -> tasks.handover(actor, id, ifMatch, input));
+        return ResponseEntity.ok().eTag("\"" + result.get("rowVersion") + "\"").body(result);
+    }
+
     @GetMapping("/tasks/{id}")
     public ResponseEntity<Map<String, Object>> detail(@RequestAttribute("actor") Actor actor, @PathVariable String id) {
         Map<String, Object> result = tasks.detail(actor, id);

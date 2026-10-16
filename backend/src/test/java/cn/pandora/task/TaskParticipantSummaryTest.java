@@ -43,9 +43,10 @@ class TaskParticipantSummaryTest {
                 .thenReturn(Map.of("id", "employee", "rankLevel", 3, "managerId", "reviewer", "active", true, "role", "lower"));
         when(db.find("SELECT * FROM users WHERE organization_id=? AND id=?", "org", "reviewer"))
                 .thenReturn(Map.of("id", "reviewer", "rankLevel", 2, "active", true, "role", "middle"));
+        Set<String> requested = new HashSet<>();
         when(db.list(startsWith("SELECT id,display_name FROM users"), any(Object[].class))).thenAnswer(call -> {
             Object[] args = (Object[]) call.getRawArguments()[1];
-            assertEquals(Set.of("org", "employee", "creator", "reviewer"), new HashSet<>(Arrays.asList(args)));
+            requested.addAll(Arrays.stream(args).map(String::valueOf).toList());
             return List.of(Map.of("id", "employee", "displayName", "员工"), Map.of("id", "creator", "displayName", "创建者"), Map.of("id", "reviewer", "displayName", "审核人"));
         });
         TaskService service = new TaskService(db, mock(Access.class), mock(Events.class));
@@ -57,6 +58,9 @@ class TaskParticipantSummaryTest {
         assertFalse(result.containsKey("pendingRequestId"));
         assertEquals("旧有效标题", result.get("title"));
         assertEquals(3, ((List<?>) result.get("participants")).size());
+        // The route projection and the participant list together, but never the hidden proposal.
+        assertEquals(Set.of("org", "employee", "creator", "reviewer"), requested);
+        assertFalse(requested.contains("hidden-proposal"));
         verify(db, never()).list(contains("task_version_assignees"), eq("org"), eq("hidden-proposal"));
     }
 
