@@ -4,10 +4,18 @@
 - Schema: spec-driven
 - Store: local (no registered store; `openspec store list --json` returns none)
 - Implementation roots: `/Users/watuji/MyGitDev/software_test_practice` (backend at `backend/`, loaded pages at the repo root)
-- Updated: 2026-10-16T03:45Z (2026-10-16 11:45 Asia/Shanghai)
-- Implementation revision: `5a8987e` with a dirty worktree
-- Scope this round: the user narrowed the goal to **sections 1-3 only** (tasks 1.1-1.5, 2.1-2.7, 3.1-3.5). Sections 4-11 are explicitly out of scope and must not be marked complete.
-- Progress: 17/64 tasks complete. **Sections 1, 2 and 3 are complete.** The remaining 47 tasks are out of this goal's scope.
+- Updated: 2026-10-16T04:20Z (2026-10-16 12:20 Asia/Shanghai)
+- Implementation revision: `de543e1` (sections 1-3 committed and pushed)
+- Progress: **17/64 tasks complete.** Sections 1, 2 and 3 (tasks 1.1-1.5, 2.1-2.7, 3.1-3.5) are implemented and verified.
+- Remaining work: **tasks 4.1-11.6 (47 tasks) are still pending and are the active work of this change.** In the previous run the user asked for sections 1-3 only, so the run stopped there; that was a scope instruction for that run, not a change to the plan. Nothing in `tasks.md`, the specs or the design was narrowed, and no pending task may be treated as dropped.
+
+## How to continue this change
+
+1. Read the current state from the CLI rather than from this file: `openspec instructions apply --change "fix-pandora-formal-requirement-deviations" --json`. It reported `state=ready`, `progress=17/64`, next pending task ids 18-20 (= 4.1-4.3) at revision `de543e1`.
+2. Confirm the scope with the user before continuing past section 3: the previous run was explicitly limited to sections 1-3, and only the user can say whether that still holds.
+3. Build and test: `cd backend && mvn -B -ntp test` (38 tests) and `mvn -B -ntp package`.
+4. Reproduce the section 1-3 evidence before trusting it: the three verification suites each need a **freshly created, freshly seeded** scratch database, otherwise their "fresh database" assertions fail and look like regressions. See the `Checks Run` setup column for the exact commands. `scripts/migration_precheck.py rehearse` creates and drops its own scratch database and needs no setup.
+5. `backend/.runtime/` (database password, local MySQL data, Maven cache) is git-ignored and intentionally absent from a fresh clone; run `backend/scripts/start-db.sh` first.
 
 ## Implementation Map
 
@@ -103,6 +111,10 @@ skipped.
   only the replayable part. The lifecycle suite searches the stored `idempotency_keys`, `audit_logs`
   and `domain_events` payloads for the generated secret and the chosen new password. Verify that no
   later command routes a secret through `Writes.run`.
+- The administrator console's **company off-work time setting is stored, validated and audited but
+  not yet consumed**: `TaskService` still uses a hardcoded `ALL_DAY_CUTOFF = 18:00`. Changing the
+  setting does not move any existing or newly created all-day deadline until section 6 introduces the
+  schedule version and the cut-off snapshot. Do not report task 2.7 as having changed task deadlines.
 - The account flows **were** driven in headless Chrome (login, first change, everyday change, reset).
   The **administration console's own click-through was not**; `admin.html` is verified as served by
   the packaged application plus the HTTP operations it performs. Do not treat the console as
@@ -119,6 +131,8 @@ skipped.
 - The seeded demo accounts keep `must_change_password = FALSE`, so they sign in directly; only
   administrator-created or administrator-reset accounts hit the gate. Confirm that is the intended
   demo experience.
-- Sections 4-11 are out of this goal's scope by explicit user instruction. Everything those sections
-  own (ordered reviewer routing, expiration, reminders, notification lifecycle, log rules, calendar,
-  analytics, integration verification) is unimplemented and must not be reported as verified.
+- Sections 4-11 are **unimplemented and unverified**, and nothing in them may be reported as done.
+  They are still pending work in `tasks.md`, not removed scope: the previous run simply stopped at
+  section 3 because the user asked for that. Everything those sections own (ordered reviewer routing,
+  expiration, reminders, notification lifecycle, log rules, calendar, analytics, integration
+  verification) still has to be built.
