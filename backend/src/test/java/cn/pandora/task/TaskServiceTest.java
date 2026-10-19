@@ -5,6 +5,7 @@ import cn.pandora.auth.Actor;
 import cn.pandora.common.ApiException;
 import cn.pandora.common.Db;
 import cn.pandora.common.Events;
+import cn.pandora.workspace.ExpiryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -52,7 +53,8 @@ class TaskServiceTest {
     void allDayTaskUsesOrganizationWorkdayDeadlineAndKeepsCalendarDates() {
         Db db = mock(Db.class);
         when(db.one("SELECT time_zone FROM organizations WHERE id=?", "org")).thenReturn(Map.of("timeZone", "Asia/Shanghai"));
-        TaskService service = new TaskService(db, mock(Access.class), mock(Events.class));
+        when(db.one("SELECT off_work_time FROM organizations WHERE id=?", "org")).thenReturn(Map.of("offWorkTime", "18:00:00"));
+        TaskService service = new TaskService(db, mock(Access.class), mock(Events.class), java.time.Clock.systemUTC(), mock(ExpiryService.class));
         Map<String, Object> input = new LinkedHashMap<>(Map.of("title", "全天任务", "description", "说明",
                 "acceptanceCriteria", "标准", "assigneeIds", List.of(CREATOR), "allDay", true,
                 "startDate", "2026-10-12", "dueDate", "2026-10-13"));
@@ -186,7 +188,7 @@ class TaskServiceTest {
     private static TaskService service(Map<String, Map<String, Object>> people) {
         Db db = mock(Db.class);
         when(db.find(anyString(), any(), any())).thenAnswer(call -> people.get(call.getArgument(2)));
-        return new TaskService(db, mock(Access.class), mock(Events.class));
+        return new TaskService(db, mock(Access.class), mock(Events.class), java.time.Clock.systemUTC(), mock(ExpiryService.class));
     }
 
     private static Map<String, Object> user(String id, String role, int rank, String manager, boolean active) {

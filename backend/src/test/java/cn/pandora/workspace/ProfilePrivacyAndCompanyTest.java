@@ -18,7 +18,7 @@ class ProfilePrivacyAndCompanyTest {
     @Test
     void everyBusinessRoleIsRejectedBeforeCreatingCompanyInformation() {
         Db db = mock(Db.class);
-        WorkspaceService service = new WorkspaceService(db, mock(Access.class), mock(TaskService.class), mock(Events.class));
+        WorkspaceService service = new WorkspaceService(db, mock(Access.class), mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         for (String role : List.of("upper", "middle", "lower")) {
             Actor actor = new Actor(role, "org", role, "team", null, 1);
             ApiException error = assertThrows(ApiException.class, () -> service.createHomeItem(actor, Map.of("kind", "company", "body", "公司信息")));
@@ -33,7 +33,7 @@ class ProfilePrivacyAndCompanyTest {
         Db db = mock(Db.class);
         when(db.find(anyString(), eq("org"), eq("company-item"))).thenReturn(Map.of("kind", "company"));
         Writes writes = mock(Writes.class);
-        WorkspaceService service = new WorkspaceService(db, mock(Access.class), mock(TaskService.class), mock(Events.class));
+        WorkspaceService service = new WorkspaceService(db, mock(Access.class), mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         WorkspaceController controller = new WorkspaceController(service, writes);
         assertEquals(403, assertThrows(ApiException.class, () -> controller.changeHomeItem(UPPER, "company-item", "old-key-123", "\"1\"", Map.of("body", "changed"))).status);
         assertEquals(403, assertThrows(ApiException.class, () -> controller.deleteHomeItem(UPPER, "company-item", "old-key-123", "\"1\"")).status);
@@ -45,7 +45,7 @@ class ProfilePrivacyAndCompanyTest {
     void alreadyDeletedPersonalItemsStillReachIdempotencyReplay() {
         Db db = mock(Db.class);
         when(db.find(anyString(), eq("org"), eq("already-deleted-personal"))).thenReturn(null);
-        WorkspaceService service = new WorkspaceService(db, mock(Access.class), mock(TaskService.class), mock(Events.class));
+        WorkspaceService service = new WorkspaceService(db, mock(Access.class), mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         assertDoesNotThrow(() -> service.checkHomeItemWriteAccess(UPPER, "already-deleted-personal"));
         verify(db).find(anyString(), eq("org"), eq("already-deleted-personal"));
     }
@@ -60,7 +60,7 @@ class ProfilePrivacyAndCompanyTest {
         when(db.one(anyString(), eq("upper"), eq("org"))).thenReturn(row);
         when(db.list(anyString(), eq("org"))).thenReturn(List.of(row));
         when(access.canSeePerson(eq(UPPER), anyMap())).thenReturn(true);
-        WorkspaceService service = new WorkspaceService(db, access, mock(TaskService.class), mock(Events.class));
+        WorkspaceService service = new WorkspaceService(db, access, mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         assertEquals("private@example.test", service.me(UPPER).get("email"));
         for (boolean admin : List.of(false, true)) {
             Map<String, Object> person = ((List<Map<String, Object>>) service.users(UPPER, Map.of(), admin).get("items")).getFirst();
@@ -78,7 +78,7 @@ class ProfilePrivacyAndCompanyTest {
                 "passwordHash", "secret");
         when(access.user(UPPER, "report")).thenReturn(raw);
         when(access.canSeePerson(UPPER, raw)).thenReturn(true);
-        WorkspaceService service = new WorkspaceService(db, access, mock(TaskService.class), mock(Events.class));
+        WorkspaceService service = new WorkspaceService(db, access, mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         assertFalse(service.person(UPPER, "report").containsKey("phone"));
         when(access.canReadPhone(UPPER, raw)).thenReturn(true);
         var detail = service.person(UPPER, "report");

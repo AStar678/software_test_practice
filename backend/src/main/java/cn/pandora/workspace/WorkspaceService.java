@@ -6,6 +6,7 @@ import cn.pandora.common.*;
 import cn.pandora.task.TaskService;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.time.*;
 import java.util.*;
 
@@ -17,9 +18,10 @@ public class WorkspaceService {
     private final Access access;
     private final TaskService tasks;
     private final Events events;
+    private final Clock clock;
 
-    public WorkspaceService(Db db, Access access, TaskService tasks, Events events) {
-        this.db = db; this.access = access; this.tasks = tasks; this.events = events;
+    public WorkspaceService(Db db, Access access, TaskService tasks, Events events, Clock clock) {
+        this.db = db; this.access = access; this.tasks = tasks; this.events = events; this.clock = clock;
     }
 
     public Map<String,Object> me(Actor a) {
@@ -165,42 +167,235 @@ public class WorkspaceService {
 
     public Map<String,Object> notifications(Actor a, Map<String,String> filters) {
         boolean unread = "true".equals(filters.get("unread"));
-        var allowed = db.list("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND hidden_at IS NULL ORDER BY created_at DESC,id",a.organizationId(),a.id()).stream()
-            .filter(row -> notificationVisible(a,row)).map(this::safeNotification).toList();
-        var result = page(allowed.stream().filter(row -> !unread || row.get("readAt")==null).toList(),filters);
-        result.put("unreadCount",allowed.stream().filter(row -> row.get("readAt")==null).count());
+        Instant now = clock.instant();
+        var visible = db.list("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND hidden_at IS NULL ORDER BY created_at DESC,id",a.organizationId(),a.id()).stream()
+            .filter(row -> notificationVisible(a,row,now)).map(row -> safeNotification(a,row,now)).toList();
+        var result = page(visible.stream().filter(row -> !unread || row.get("readAt")==null).toList(),filters);
+        result.put("unreadCount",visible.stream().filter(row -> row.get("readAt")==null).count());
         return result;
     }
 
+    /** Non-mutating detail read; opening a message goes through {@link #openNotification}. */
     public Map<String,Object> notification(Actor a, String notificationId) {
         var row = db.one("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=? AND hidden_at IS NULL",a.organizationId(),a.id(),notificationId);
-        if (!notificationVisible(a,row)) throw ApiException.notFound();
-        return safeNotification(row);
+        Instant now = clock.instant();
+        if (!notificationVisible(a,row,now)) throw ApiException.notFound();
+        return safeNotification(a,row,now);
+    }
+
+    /**
+     * Open-as-read command (DEV-031). The ordinary list GET never changes state; this command marks the
+     * message read and returns the same authoritative view, so the unread badge can refresh from it.
+     */
+    public Map<String,Object> openNotification(Actor a, String notificationId) {
+        var row = db.one("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=? AND hidden_at IS NULL FOR UPDATE",a.organizationId(),a.id(),notificationId);
+        Instant now = clock.instant();
+        if (!notificationVisible(a,row,now)) throw ApiException.notFound();
+        if (row.get("readAt")==null) {
+            db.update("UPDATE notifications SET read_at=?,row_version=row_version+1 WHERE organization_id=? AND id=?",Timestamp.from(now),a.organizationId(),notificationId);
+            row.put("readAt",now.toString());
+            row.put("rowVersion",n(row,"rowVersion")+1);
+        }
+        Map<String,Object> view = safeNotification(a,row,now);
+        view.put("unreadCount",unreadCount(a,now));
+        return view;
     }
 
     public Map<String,Object> changeNotification(Actor a, String notificationId, String ifMatch, Map<String,Object> body) {
         allowed(body,Set.of("action"));
         var row = db.one("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=? FOR UPDATE",a.organizationId(),a.id(),notificationId);
-        if (!notificationVisible(a,row)) throw ApiException.notFound();
+        Instant now = clock.instant();
+        if (!notificationVisible(a,row,now)) throw ApiException.notFound();
         long version = notificationVersion(row);
         Writes.checkVersion(ifMatch,version);
         String action = required(body,"action",20);
         if (action.equals("read")) {
-            db.update("UPDATE notifications SET read_at=COALESCE(read_at,UTC_TIMESTAMP(6)) WHERE organization_id=? AND id=?",a.organizationId(),notificationId);
+            db.update("UPDATE notifications SET read_at=COALESCE(read_at,?) WHERE organization_id=? AND id=?",Timestamp.from(now),a.organizationId(),notificationId);
             if (row.get("readAt")==null) version++;
-        } else if (action.equals("hide")) {
-            db.update("UPDATE notifications SET hidden_at=COALESCE(hidden_at,UTC_TIMESTAMP(6)) WHERE organization_id=? AND id=?",a.organizationId(),notificationId);
+        } else if (action.equals("hide") || action.equals("delete")) {
+            db.update("UPDATE notifications SET hidden_at=COALESCE(hidden_at,?) WHERE organization_id=? AND id=?",Timestamp.from(now),a.organizationId(),notificationId);
             if (row.get("hiddenAt")==null) version+=2;
-        } else throw bad("action 只能为 read 或 hide");
-        events.record(a,null,"notification."+action,List.of(),Map.of("notificationId",notificationId));
-        return Map.of("notificationId",notificationId,"rowVersion",version,"action",action);
+        } else throw bad("action 只能为 read、hide 或 delete");
+        return Map.of("notificationId",notificationId,"rowVersion",version,"action",action,"unreadCount",unreadCount(a,now));
+    }
+
+    /**
+     * Event-level withdrawal (DEV-032). The business initiator or a notification manager may withdraw
+     * only while the event is strictly younger than 180 seconds. Automatic reminders are managed by the
+     * administrator only. Every copy keeps a placeholder with no body or jump target.
+     */
+    public Map<String,Object> withdrawNotification(Actor a, String notificationId, Map<String,Object> body) {
+        allowed(body,Set.of("reason"));
+        var row = db.one("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=?",a.organizationId(),a.id(),notificationId);
+        return withdrawEvent(a,s(row,"eventId"),body);
+    }
+
+    public Map<String,Object> withdrawEvent(Actor a, String eventId, Map<String,Object> body) {
+        allowed(body,Set.of("reason"));
+        String reason = body != null && body.containsKey("reason") ? required(body,"reason",500) : "发起人撤回";
+        var event = db.one("SELECT * FROM domain_events WHERE organization_id=? AND id=? FOR UPDATE",a.organizationId(),eventId);
+        Instant now = clock.instant();
+        Instant occurred = event.get("occurredAt")==null ? null : Instant.parse(String.valueOf(event.get("occurredAt")));
+        if (event.get("revokedAt")!=null) throw conflict("NOTIFICATION_WITHDRAWN","该通知已撤回");
+        if (occurred == null || now.isBefore(occurred) || !now.isBefore(occurred.plusSeconds(180)))
+            throw conflict("WITHDRAW_WINDOW_CLOSED","通知发出已满3分钟，不能撤回");
+        Map<String,Object> details = event.get("detailsJson")==null ? Map.of() : db.parse(s(event,"detailsJson"));
+        boolean automatic = "scheduled_rule".equals(Objects.toString(details.get("origin"),"")) || event.get("initiatorId")==null;
+        boolean manager = a.can("manage_notifications");
+        if (automatic && !manager) throw forbidden("仅管理员可管理自动提醒");
+        if (!manager && !a.id().equals(s(event,"initiatorId"))) throw forbidden("仅业务发起人或通知管理员可撤回");
+        int changed = db.update("UPDATE domain_events SET revoked_at=?,revoked_by=?,revocation_reason=? WHERE organization_id=? AND id=? AND revoked_at IS NULL",
+                Timestamp.from(now),a.id(),reason,a.organizationId(),eventId);
+        if (changed != 1) throw conflict("NOTIFICATION_WITHDRAWN","该通知已撤回");
+        int copies = db.update("UPDATE notifications SET summary=?,title=NULL,change_summary=NULL,task_id=NULL,readonly=TRUE,row_version=row_version+1 WHERE organization_id=? AND event_id=?",
+                "该通知已被撤回。",a.organizationId(),eventId);
+        db.update("INSERT INTO audit_logs(id,organization_id,actor_id,object_id,action,details_json) VALUES(?,?,?,?,?,?)",
+                id(),a.organizationId(),a.id(),eventId,"notification.withdrawn",db.json(Map.of("reason",reason,"copies",copies)));
+        return Map.of("eventId",eventId,"withdrawn",true,"copies",copies);
+    }
+
+    /** Administration notification management (DEV-001, DEV-032): visible to explicit managers only. */
+    public Map<String,Object> adminNotifications(Actor a, Map<String,String> filters) {
+        access.requireCapability(a,"manage_notifications");
+        Instant now = clock.instant();
+        var rows = db.list("SELECT n.*,u.display_name AS recipient_name,e.revoked_at,e.expires_at AS event_expires_at,e.title AS event_title,"
+                + "e.change_summary AS event_summary FROM notifications n "
+                + "LEFT JOIN users u ON u.organization_id=n.organization_id AND u.id=n.recipient_id "
+                + "LEFT JOIN domain_events e ON e.organization_id=n.organization_id AND e.id=n.event_id "
+                + "WHERE n.organization_id=? ORDER BY n.created_at DESC,n.id",a.organizationId())
+            .stream().map(row -> {
+                Map<String,Object> view = new LinkedHashMap<>();
+                for (String key : List.of("id","eventId","eventType","recipientId","recipientName","title","summary",
+                        "changeSummary","taskId","requestId","createdAt","deliveredAt","readAt","hiddenAt","revokedAt")) view.put(key,row.get(key));
+                Object expires = row.get("expiresAt")!=null?row.get("expiresAt"):row.get("eventExpiresAt");
+                view.put("expiresAt",expires);
+                view.put("expired",expires!=null && !now.isBefore(Instant.parse(String.valueOf(expires))));
+                return view;
+            }).toList();
+        return page(rows,filters);
+    }
+
+    /**
+     * Dedicated read-only historical entry (DEV-033). It is available only through the recipient's own
+     * delivered, non-deleted, non-withdrawn, unexpired message; it returns the current effective task
+     * only and never a proposal, diff, contact, log, route or business action.
+     */
+    public Map<String,Object> notificationTask(Actor a, String notificationId) {
+        var row = db.one("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=? AND hidden_at IS NULL",a.organizationId(),a.id(),notificationId);
+        Instant now = clock.instant();
+        if (!notificationVisible(a,row,now)) throw ApiException.notFound();
+        if (s(row,"taskId")==null) throw conflict("HISTORICAL_TASK_UNAVAILABLE","该消息没有可查看的任务");
+        Map<String,Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?",a.organizationId(),s(row,"taskId"));
+        if (task == null || s(task,"currentVersionId")==null) throw conflict("HISTORICAL_TASK_UNAVAILABLE","该任务尚未发布或已不可用");
+        Map<String,Object> version = db.find("SELECT * FROM task_versions WHERE organization_id=? AND id=?",a.organizationId(),s(task,"currentVersionId"));
+        List<String> owners = db.list("SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=? ORDER BY ordinal,user_id",a.organizationId(),s(version,"id"))
+                .stream().map(r -> s(r,"userId")).toList();
+        boolean accessRevoked = !access.canSeeTask(a,task,version,owners);
+        Map<String,Object> view = new LinkedHashMap<>();
+        for (String key : List.of("title","description","acceptanceCriteria","priority","allDay","startAt","dueAt",
+                "startDate","dueDate","executionState","progressNote")) view.put(key,version.get(key));
+        view.put("taskId",s(task,"id"));
+        view.put("originalCreatorId",s(task,"originalCreatorId"));
+        view.put("createdAt",task.get("createdAt"));
+        view.put("readonly",true);
+        view.put("historical",true);
+        view.put("accessRevoked",accessRevoked);
+        view.put("relationLost",row.get("relationLost"));
+        view.put("notice",accessRevoked ? "你已不再具有该任务的当前权限，此页仅展示消息送达时保留的只读摘要。"
+                : "该入口仅提供当前有效任务的只读摘要，不开放任何业务操作。");
+        view.put("assignees",participantSummaries(a,owners));
+        view.put("creator",db.find("SELECT id,display_name AS displayName FROM users WHERE organization_id=? AND id=?",a.organizationId(),s(task,"originalCreatorId")));
+        return view;
+    }
+
+    /** Retention cleanup: expired message copies are removed; task/request/audit history is untouched. */
+    public int cleanupNotifications(String organizationId, Instant now) {
+        return db.update("DELETE FROM notifications WHERE organization_id=? AND expires_at IS NOT NULL AND expires_at<=?",organizationId,Timestamp.from(now));
+    }
+
+    private long unreadCount(Actor a, Instant now) {
+        return db.list("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND hidden_at IS NULL",a.organizationId(),a.id())
+                .stream().filter(row -> notificationVisible(a,row,now) && row.get("readAt")==null).count();
+    }
+
+    private Map<String,Object> safeNotification(Actor a, Map<String,Object> row, Instant now) {
+        var event = db.find("SELECT * FROM domain_events WHERE organization_id=? AND id=?",a.organizationId(),s(row,"eventId"));
+        boolean revoked = event != null && event.get("revokedAt")!=null;
+        Map<String,Object> details = event == null || event.get("detailsJson")==null ? Map.of() : db.parse(s(event,"detailsJson"));
+        Instant occurred = event == null || event.get("occurredAt")==null ? null : Instant.parse(String.valueOf(event.get("occurredAt")));
+        boolean manager = a.can("manage_notifications");
+        boolean automatic = "scheduled_rule".equals(Objects.toString(details.get("origin"),"")) || (event != null && event.get("initiatorId")==null);
+        boolean withinWithdrawal = occurred != null && !now.isBefore(occurred) && now.isBefore(occurred.plusSeconds(180));
+        var view = new LinkedHashMap<String,Object>();
+        for (String key : List.of("id","eventId","eventType","createdAt","deliveredAt","readAt","taskId","requestId","readonly","relationLost")) view.put(key,row.get(key));
+        if (revoked) {
+            view.put("taskId",null);
+            view.put("requestId",null);
+            view.put("title",null);
+            view.put("summary","该通知已被撤回。");
+            view.put("changeSummary",null);
+            view.put("readonly",true);
+        } else {
+            view.put("title",row.get("title")!=null?row.get("title"):event==null?null:event.get("title"));
+            view.put("summary",row.get("summary"));
+            view.put("changeSummary",row.get("changeSummary")!=null?row.get("changeSummary"):event==null?null:event.get("changeSummary"));
+        }
+        view.put("revoked",revoked);
+        view.put("withdrawn",revoked);
+        view.put("expiresAt",row.get("expiresAt")!=null?row.get("expiresAt"):event==null?null:event.get("expiresAt"));
+        view.put("rowVersion",notificationVersion(row));
+        view.put("canWithdraw",!revoked && withinWithdrawal && (manager || (!automatic && event!=null && a.id().equals(s(event,"initiatorId")))));
+        view.put("canOpenTask",!revoked && s(row,"taskId")!=null);
+        view.put("canReview",false);
+        view.put("requestStatus",null);
+        view.put("requestKind",null);
+        String requestId = revoked ? null : s(row,"requestId");
+        if (requestId != null) {
+            var request = db.find("SELECT id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline FROM approval_requests WHERE organization_id=? AND id=?",a.organizationId(),requestId);
+            if (request != null) {
+                view.put("requestStatus",s(request,"status"));
+                view.put("requestKind",s(request,"kind"));
+                view.put("requestComment",request.get("comment"));
+                view.put("requestDecidedAt",request.get("decidedAt"));
+                boolean deadlineOpen = request.get("applicableDeadline")==null
+                        || now.isBefore(Instant.parse(String.valueOf(request.get("applicableDeadline"))));
+                view.put("canReview",!revoked && "pending".equals(s(request,"status")) && deadlineOpen
+                        && a.id().equals(s(request,"currentReviewerId")));
+            }
+        }
+        return view;
+    }
+
+    private boolean notificationVisible(Actor a, Map<String,Object> row, Instant now) {
+        if (row.get("hiddenAt")!=null) return false;
+        var event = db.find("SELECT revoked_at,occurred_at,expires_at FROM domain_events WHERE organization_id=? AND id=?",a.organizationId(),s(row,"eventId"));
+        Object expires = row.get("expiresAt")!=null?row.get("expiresAt"):event==null?null:event.get("expiresAt");
+        if (expires != null && !now.isBefore(Instant.parse(String.valueOf(expires)))) return false;
+        boolean revoked = event != null && event.get("revokedAt")!=null;
+        if (revoked) return true;
+        if (s(row,"taskId")==null) return true;
+        if (canReadTask(a,s(row,"taskId"),true)) return true;
+        // Delivered event messages keep a read-only historical entry after the current authority is lost;
+        // legacy-unbound copies and undelivered candidates never gain that exception (DEV-033).
+        return row.get("deliveredAt")!=null && "event".equals(s(row,"source"));
+    }
+
+    private List<Map<String,Object>> participantSummaries(Actor a, Collection<String> ids) {
+        List<String> safeIds = ids.stream().filter(id -> id != null && !id.isBlank()).toList();
+        if (safeIds.isEmpty()) return List.of();
+        List<Object> args = new ArrayList<>();
+        args.add(a.organizationId());
+        args.addAll(safeIds);
+        String placeholders = String.join(",", Collections.nCopies(safeIds.size(), "?"));
+        return db.list("SELECT id,display_name FROM users WHERE organization_id=? AND id IN ("+placeholders+") ORDER BY display_name,id",args.toArray())
+                .stream().map(row -> Map.<String,Object>of("id",s(row,"id"),"displayName",s(row,"displayName"))).toList();
     }
 
     public Map<String,Object> home(Actor a) {
         business(a);
         var assigned = visibleTasks(a,"self").stream().filter(t -> !a.id().equals(s(t,"originalCreatorId")) && !"done".equals(s(t,"executionState")))
             .map(t -> Map.<String,Object>of("taskId",s(t,"id"),"title",s(t,"title"),"priority",s(t,"priority"))).limit(10).toList();
-        LocalDate today = LocalDate.now(zone(a));
+        LocalDate today = clock.instant().atZone(zone(a)).toLocalDate();
         var logPage = logs(a,Map.of("scope","self","from",today.minusDays(9).toString(),"to",today.toString(),"limit","10"));
         return Map.of("companyItems",db.list("SELECT id,kind,title,body,sort_order,row_version FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id LIMIT 10",a.organizationId()),
             "personalItems",db.list("SELECT id,kind,title,body,sort_order,row_version FROM home_items WHERE organization_id=? AND kind='personal' AND owner_id=? ORDER BY sort_order,created_at,id LIMIT 10",a.organizationId(),a.id()),
@@ -277,7 +472,7 @@ public class WorkspaceService {
         var summary = summarize(visible);
         summary.put("scope",scope);
         var suggestions = new ArrayList<Map<String,Object>>();
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         for (var t : visible) {
             if (Boolean.TRUE.equals(t.get("frozen")) || "done".equals(s(t,"executionState"))) continue;
             Instant due = instant(s(t,"dueAt"));
@@ -358,7 +553,7 @@ public class WorkspaceService {
     }
 
     private Map<String,Object> summarize(List<Map<String,Object>> rows) {
-        var result = new LinkedHashMap<String,Object>(); Instant now=Instant.now();
+        var result = new LinkedHashMap<String,Object>(); Instant now=clock.instant();
         result.put("total",rows.size());
         for (String state : List.of("todo","doing","done")) result.put(state,rows.stream().filter(t->state.equals(s(t,"executionState"))).count());
         result.put("frozen",rows.stream().filter(t->Boolean.TRUE.equals(t.get("frozen"))).count());
@@ -387,7 +582,7 @@ public class WorkspaceService {
     }
     private ZoneId zone(Actor a) {return ZoneId.of(s(db.one("SELECT time_zone FROM organizations WHERE id=?",a.organizationId()),"timeZone"));}
     private LocalDate dateFor(Actor a,Map<String,Object> body,String key) {
-        String value=nullable(body,key); return value==null?LocalDate.now(zone(a)):optionalDate(value);
+        String value=nullable(body,key); return value==null?clock.instant().atZone(zone(a)).toLocalDate():optionalDate(value);
     }
     private static LocalDate optionalDate(String value) {try{return value==null?null:LocalDate.parse(value);}catch(Exception e){throw bad("日期必须为 YYYY-MM-DD");}}
     static Instant instant(String value) {try{return value==null?null:Instant.parse(value);}catch(Exception e){return null;}}
@@ -397,6 +592,8 @@ public class WorkspaceService {
     static String required(Map<String,Object> body,String key,int max) {if(!(body.get(key) instanceof String))throw bad(key+" 必须为文字");String value=nullable(body,key);if(value==null||value.length()>max)throw bad(key+" 不能为空且不得超过 "+max+" 字");return value;}
     static void allowed(Map<String,Object> body,Set<String> keys) {if(!keys.containsAll(body.keySet()))throw bad("请求含不支持的字段");}
     static ApiException bad(String message) {return new ApiException(400,"INVALID_INPUT",message);}
+    static ApiException forbidden(String message) {return new ApiException(403,"FORBIDDEN",message);}
+    static ApiException conflict(String code,String message) {return new ApiException(409,code,message);}
     static Map<String,Object> page(List<Map<String,Object>> rows,Map<String,String> filters) {
         int limit=number(filters,"limit",20,1,100),offset=number(filters,"offset",0,0,Integer.MAX_VALUE);
         int start=Math.min(offset,rows.size()),end=(int)Math.min((long)start+limit,rows.size());

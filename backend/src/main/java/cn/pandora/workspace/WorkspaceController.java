@@ -51,9 +51,20 @@ public class WorkspaceController {
     @GetMapping("/notifications/{id}") public ResponseEntity<Map<String,Object>> notification(@RequestAttribute("actor") Actor a,@PathVariable String id) {
         var result=workspace.notification(a,id);return ResponseEntity.ok().eTag("\""+result.get("rowVersion")+"\"").body(result);
     }
+    /** Opening a message marks it read and returns the authoritative view plus the refreshed unread count. */
+    @PostMapping("/notifications/{id}/open") public Map<String,Object> openNotification(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestHeader(value="Idempotency-Key",required=false) String key) {
+        return writes.run(a,key,"POST /notifications/"+id+"/open",Map.of(),null,()->workspace.openNotification(a,id));
+    }
     @PatchMapping("/notifications/{id}") public Map<String,Object> changeNotification(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestHeader(value="If-Match",required=false) String match,@RequestBody Map<String,Object> body) {
         return writes.run(a,key,"PATCH /notifications/"+id,body,match,()->workspace.changeNotification(a,id,match,body));
     }
+    /** Event-level withdrawal: business initiator or notification manager, strictly under 180 seconds. */
+    @PostMapping("/notifications/{id}/withdraw") public Map<String,Object> withdrawNotification(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestBody(required=false) Map<String,Object> body) {
+        var input=body==null?Map.<String,Object>of():body;
+        return writes.run(a,key,"POST /notifications/"+id+"/withdraw",input,null,()->workspace.withdrawNotification(a,id,input));
+    }
+    /** Dedicated read-only current-task summary for a delivered message. */
+    @GetMapping("/notifications/{id}/task") public Map<String,Object> notificationTask(@RequestAttribute("actor") Actor a,@PathVariable String id) {return workspace.notificationTask(a,id);}
     @GetMapping("/analytics/task-summary") public Map<String,Object> stats(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.statistics(a,filters);}
     @PostMapping("/ai-jobs") public Map<String,Object> createAi(@RequestAttribute("actor") Actor a,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestBody(required=false) Map<String,Object> body) {
         var input=body==null?Map.<String,Object>of():body;return writes.run(a,key,"POST /ai-jobs",input,null,()->workspace.createAiJob(a,input));
@@ -62,4 +73,9 @@ public class WorkspaceController {
     @GetMapping("/admin/users") public Map<String,Object> adminUsers(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.users(a,filters,true);}
     @GetMapping("/admin/teams") public Map<String,Object> adminTeams(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.adminTeams(a,filters);}
     @GetMapping("/admin/audit-logs") public Map<String,Object> audit(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.audit(a,filters);}
+    @GetMapping("/admin/notifications") public Map<String,Object> adminNotifications(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.adminNotifications(a,filters);}
+    @PostMapping("/admin/notifications/{eventId}/withdraw") public Map<String,Object> adminWithdraw(@RequestAttribute("actor") Actor a,@PathVariable String eventId,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestBody(required=false) Map<String,Object> body) {
+        var input=body==null?Map.<String,Object>of():body;
+        return writes.run(a,key,"POST /admin/notifications/"+eventId+"/withdraw",input,null,()->workspace.withdrawEvent(a,eventId,input));
+    }
 }

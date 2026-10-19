@@ -85,6 +85,11 @@ public class TaskController {
             @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @RequestHeader(value = "If-Match", required = false) String ifMatch, @RequestBody Map<String, Object> input) {
         Map<String, Object> result = writes.run(actor, key, "PATCH:/approval-requests/" + id, input, ifMatch, () -> tasks.decide(actor, id, ifMatch, input));
+        // The expired terminal state (and its unfreeze/overdue events) is committed by writes.run before
+        // this business error is returned; rolling it back would let the old page approve afterwards.
+        if (Boolean.TRUE.equals(result.get("deadlineExpired"))) {
+            throw new cn.pandora.common.ApiException(409, "REQUEST_EXPIRED", "申请已到适用截止时间失效，请调整后重提");
+        }
         return ResponseEntity.ok().eTag("\"" + result.get("requestRowVersion") + "\"").body(result);
     }
 }

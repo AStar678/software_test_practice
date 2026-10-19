@@ -254,47 +254,101 @@
     }, "home-delete-error");
   };
 
+  const REQUEST_KIND = { create: "创建任务", change: "修改资料", progress: "更新进展", complete: "提交完成", reopen: "重开任务", handover: "交接" };
+  const REQUEST_RESULT = { pending: "待审核", approved: "已通过", rejected: "已退回", withdrawn: "已撤销", direct: "已生效", expired: "已失效" };
   notificationsFor = () => NOTIFICATIONS.slice().sort((a, b) => b.time - a.time);
   unreadCount = () => NOTIFICATIONS.filter(n => !n.raw.readAt).length;
   notificationsView = function () {
     const list = notificationsFor();
-    return { title: "通知", body: list.length ? list.map(n =>
-      '<button type="button" class="notif' + (n.raw.readAt ? ' is-read' : '') + '" data-action="open-notif" data-id="' + esc(n.id) +
-      '"><span class="ndot" aria-hidden="true"></span><span class="nbody"><span class="ntitle">' + esc(n.summary) +
-      '</span><span class="nmeta">' + esc(timeText(n.raw.createdAt)) + (n.raw.readAt ? " · 已读" : " · 未读") + '</span></span></button>'
-    ).join("") : '<div class="empty">暂无通知</div>' };
+    return { title: "通知", body: list.length ? list.map(n => {
+      const raw = n.raw, title = raw.title || raw.summary || "通知";
+      const state = raw.revoked ? "已撤回" : raw.relationLost ? "权限已变化" : raw.readAt ? "已读" : "未读";
+      return '<button type="button" class="notif' + (raw.readAt ? ' is-read' : '') + (raw.revoked ? ' is-withdrawn' : '') +
+        '" data-action="open-notif" data-id="' + esc(n.id) + '"><span class="ndot" aria-hidden="true"></span><span class="nbody"><span class="ntitle">' +
+        esc(title) + '</span><span class="nmeta">' + esc(timeText(raw.createdAt)) + " · " + esc(state) + '</span></span></button>';
+    }).join("") : '<div class="empty">暂无通知</div>' };
   };
   openNotifications = function () {
     P.busy(async () => { await P.reload(); openSheet(notificationsView()); });
   };
+  function requestResultText(raw) {
+    if (!raw.requestId) return "";
+    const kind = REQUEST_KIND[raw.requestKind] || "任务申请";
+    const result = REQUEST_RESULT[raw.requestStatus] || raw.requestStatus || "已处理";
+    return kind + " · " + result + (raw.requestStatus === "pending" ? "" : "（已办结，不再提供审核按钮）");
+  }
   function notificationView(raw) {
-    const related = raw.taskId && (P.data.approvals || []).find(r => r.taskId === raw.taskId && r.status === "pending");
-    const task = raw.taskId && taskById(raw.taskId);
-    return { title: "通知详情", body: '<div class="kv"><span class="k">时间</span><span class="v">' + esc(timeText(raw.createdAt)) +
-      '</span><span class="k">状态</span><span class="v">' + (raw.readAt ? "已读" : "未读") + '</span></div><div class="divider"></div><p style="white-space:pre-wrap;overflow-wrap:anywhere">' +
-      esc(raw.summary) + '</p>' + (related ? button("p-open-approval", "查看相关申请", related.id || related.requestId) : task ? '<button type="button" class="btn" data-task="' + esc(task.id) + '">查看相关任务</button>' : '') +
-      '<div class="callout" id="notification-error" hidden></div>', foot: withBack((raw.readAt ? "" : button("p-read-notification", "标为已读", raw.id, "primary")) +
-      button("p-hide-notification", "隐藏通知", raw.id) + button("sheet-close", "关闭"), actor()) };
+    const revoked = !!raw.revoked;
+    let body = '<div class="kv"><span class="k">时间</span><span class="v">' + esc(timeText(raw.createdAt)) +
+      '</span><span class="k">状态</span><span class="v">' + (revoked ? "已撤回" : raw.readAt ? "已读" : "未读") + '</span></div>';
+    if (revoked) {
+      body += '<div class="divider"></div><p>该通知已被撤回。</p>';
+    } else {
+      if (raw.title) body += '<div class="card-head"><h2>' + esc(raw.title) + '</h2></div>';
+      body += '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(raw.summary || "") + '</p>';
+      if (raw.changeSummary && raw.changeSummary !== raw.summary) body += '<p class="tiny muted" style="white-space:pre-wrap">' + esc(raw.changeSummary) + '</p>';
+      if (raw.requestId) body += '<div class="callout info">原申请：' + esc(requestResultText(raw)) + '</div>';
+      if (raw.relationLost) body += '<div class="callout info">你已不再是该任务负责人；此消息仅保留只读摘要，不能用于修改或审核。</div>';
+    }
+    body += '<div class="callout" id="notification-error" hidden></div>';
+    const buttons = [];
+    if (!revoked && raw.requestId) buttons.push(button("p-open-approval", raw.canReview ? "审核此申请" : "查看原申请结果", raw.requestId, raw.canReview ? "primary" : ""));
+    if (!revoked && raw.taskId) buttons.push(raw.relationLost || raw.readonly
+      ? button("p-open-historical-task", "查看历史只读详情", raw.id)
+      : button("p-open-notification-task", "查看相关任务", raw.id));
+    if (!revoked && raw.canWithdraw) buttons.push(button("p-withdraw-notification", "撤回通知", raw.id));
+    if (!revoked) buttons.push(button("p-hide-notification", "删除此消息", raw.id));
+    buttons.push(button("sheet-close", "关闭"));
+    return { title: "通知详情", body: body, foot: withBack(buttons.join(""), actor()) };
+  }
+  function historicalTaskView(raw) {
+    const rows = [["标题", raw.title], ["说明", raw.description], ["完成标准", raw.acceptanceCriteria],
+      ["紧急程度", ({ urgent: "紧急", high: "高", medium: "中", low: "低" })[raw.priority] || raw.priority],
+      ["排期", raw.allDay ? (raw.startDate + " 至 " + raw.dueDate) : (timeText(raw.startAt) + " 至 " + timeText(raw.dueAt))],
+      ["负责人", (raw.assignees || []).map(person => person.displayName).join("、")],
+      ["执行状态", ({ todo: "待开始", doing: "进行中", done: "已完成" })[raw.executionState] || raw.executionState],
+      ["当前进展", raw.progressNote || "暂无"]];
+    return { title: "历史只读详情", body: '<div class="callout info">' + esc(raw.notice || "该页仅提供只读摘要。") + '</div>' +
+      rows.map(([key, value]) => '<div class="profile-row"><span class="k">' + esc(key) + '</span><span class="v" style="min-width:0;overflow-wrap:anywhere">' + esc(value == null || value === "" ? "—" : value) + '</span></div>').join(""),
+      foot: withBack(button("sheet-close", "关闭"), actor()) };
   }
   openNotif = function (id) {
     P.busy(async () => {
-      const raw = await P.request("/notifications/" + endpoint(id));
-      notificationSnapshot = { raw, etag: version(raw), epoch: P.epoch };
-      openSheet(notificationView(raw));
-    });
+      await P.mutation("notification-open:" + id, "POST", "/notifications/" + endpoint(id) + "/open");
+      await P.reload();
+      const raw = NOTIFICATIONS.find(n => n.id === id);
+      if (!raw) throw new Error("该通知已不可用。");
+      notificationSnapshot = { raw: raw.raw, etag: version(raw.raw), epoch: P.epoch };
+      openSheet(notificationView(raw.raw));
+    }, "notification-error");
   };
-  function changeNotification(id, action) {
+  function deleteNotification(id) {
     P.busy(async () => {
       const snapshot = notificationSnapshot;
       if (!snapshot || snapshot.epoch !== P.epoch || snapshot.raw.id !== id) throw new Error("请重新打开通知后再操作。");
-      const result = await P.mutation("notification:" + id + ":" + action, "PATCH", "/notifications/" + endpoint(id), { action }, snapshot.etag);
-      await P.reload();
-      if (action === "hide") { closeSheet(); openSheet(notificationsView()); P.notice("通知已隐藏。"); }
-      else {
-        snapshot.raw = Object.assign({}, snapshot.raw, { readAt: new Date().toISOString(), rowVersion: result.rowVersion });
-        sheetStack = sheetStack.map(view => view.title === "通知" ? notificationsView() : view);
-        snapshot.etag = version(result); replaceTopSheet(notificationView(snapshot.raw)); P.notice("已标为已读。");
-      }
+      await P.mutation("notification-delete:" + id, "PATCH", "/notifications/" + endpoint(id),
+        { action: "delete" }, snapshot.etag);
+      await P.reload(); closeSheet(); openSheet(notificationsView()); P.notice("通知已删除。");
+    }, "notification-error");
+  }
+  function withdrawNotification(id) {
+    P.busy(async () => {
+      const snapshot = notificationSnapshot;
+      if (!snapshot || snapshot.epoch !== P.epoch || snapshot.raw.id !== id) throw new Error("请重新打开通知后再操作。");
+      await P.mutation("notification-withdraw:" + id, "POST", "/notifications/" + endpoint(id) + "/withdraw",
+        { reason: "发起人撤回" });
+      await P.reload(); closeSheet(); openSheet(notificationsView()); P.notice("通知已撤回，业务结果不变。");
+    }, "notification-error");
+  }
+  function openNotificationTask(id) {
+    const snapshot = notificationSnapshot;
+    if (!snapshot || snapshot.raw.id !== id || !snapshot.raw.taskId) { P.notice("该消息没有可查看的任务。"); return; }
+    openTaskDetail(snapshot.raw.taskId);
+  }
+  function openHistoricalTask(id) {
+    P.busy(async () => {
+      const raw = await P.request("/notifications/" + endpoint(id) + "/task");
+      openSheet(historicalTaskView(raw));
     }, "notification-error");
   }
   document.getElementById("bellBtn").removeEventListener("click", oldNotifications);
@@ -362,9 +416,10 @@
       case "picker-task-confirm":
         if (taskPicker.kind === "log" && drafts.log) drafts.log.relationshipChanged = true;
         oldActions(el); return;
-      case "p-read-notification": changeNotification(el.dataset.id, "read"); return;
-      case "p-hide-notification": changeNotification(el.dataset.id, "hide"); return;
-      case "p-refresh-notifications": P.busy(async () => { await P.reload(); replaceTopSheet(notificationsView()); }); return;
+      case "p-hide-notification": deleteNotification(el.dataset.id); return;
+      case "p-withdraw-notification": withdrawNotification(el.dataset.id); return;
+      case "p-open-notification-task": openNotificationTask(el.dataset.id); return;
+      case "p-open-historical-task": openHistoricalTask(el.dataset.id); return;
       case "p-generate-analysis": generateAnalysis(); return;
       case "p-refresh-workspace": P.busy(async () => { analysis = null; await P.reload(); P.notice("已读取最新数据。"); }); return;
       case "p-logout": P.busy(() => P.logout()); return;

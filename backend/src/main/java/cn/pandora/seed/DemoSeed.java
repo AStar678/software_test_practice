@@ -60,7 +60,7 @@ public class DemoSeed implements ApplicationRunner {
             String pendingChange=create("upper","跨层派发 待排期变更",List.of("employee"),-1,6,false,true);
             command("upper",pendingChange,Map.of("command","change","title","排期变更后的标题 尚未生效","reason","协调资源，更新任务名称。"),false);
             create("market","市场活动方案",List.of("marketing"),-2,4,false,true);
-            create("middle","逾期预算核对",List.of("employee"),-4,-2,false,true);
+            create("middle","预算核对",List.of("employee"),-4,1,false,true);
             create("middle","全天部门培训",List.of("employee","colleague"),0,0,true,true);
             String reopen=create("middle","数据清单复核",List.of("colleague"),-3,3,false,true);
             command("colleague",reopen,Map.of("command","complete","completionNote","首轮复核已完成。"),true);
@@ -90,9 +90,12 @@ public class DemoSeed implements ApplicationRunner {
         actors.put(username,access.actor(db.one("SELECT * FROM users WHERE id=?",uid)));
     }
     private Map<String,Object> input(String title,List<String> owners,int start,int due,boolean allDay) {
+        // Seeding runs through the real submission path, which refuses an already-expired schedule.
+        // Demo rows therefore use a future deadline; tasks become overdue only as the controlled clock advances.
+        int effectiveDue=Math.max(due,1);
         Map<String,Object> body=new LinkedHashMap<>();body.put("title",title);body.put("description","本地演示任务，用于核对任务流转与人员权限。");body.put("acceptanceCriteria","材料完整、结果可复核，并经审核确认。");body.put("priority",due<0?"urgent":"medium");body.put("allDay",allDay);body.put("assigneeIds",owners.stream().map(k->actors.get(k).id()).toList());
-        if(allDay) { body.put("startDate",today.plusDays(start).toString());body.put("dueDate",today.plusDays(due).toString()); }
-        else {body.put("startAt",today.plusDays(start).atTime(9,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());body.put("dueAt",today.plusDays(due).atTime(18,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());}
+        if(allDay) { body.put("startDate",today.plusDays(start).toString());body.put("dueDate",today.plusDays(effectiveDue).toString()); }
+        else {body.put("startAt",today.plusDays(start).atTime(9,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());body.put("dueAt",today.plusDays(effectiveDue).atTime(18,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());}
         return body;
     }
     private String create(String creator,String title,List<String> owners,int start,int due,boolean allDay,boolean approve) {

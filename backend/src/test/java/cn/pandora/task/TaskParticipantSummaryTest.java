@@ -5,6 +5,7 @@ import cn.pandora.auth.Actor;
 import cn.pandora.common.ApiException;
 import cn.pandora.common.Db;
 import cn.pandora.common.Events;
+import cn.pandora.workspace.ExpiryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -26,7 +27,7 @@ class TaskParticipantSummaryTest {
             assertArrayEquals(new Object[]{"org", "employee", "creator"}, args);
             return List.of(Map.of("id", "employee", "displayName", "员工", "username", "private", "managerId", "reviewer"));
         });
-        TaskService service = new TaskService(db, mock(Access.class), mock(Events.class));
+        TaskService service = new TaskService(db, mock(Access.class), mock(Events.class), java.time.Clock.systemUTC(), mock(ExpiryService.class));
         List<Map<String, Object>> result = ReflectionTestUtils.invokeMethod(service, "participantSummaries", ACTOR,
                 Arrays.asList("employee", "creator", "employee", null, ""));
         assertEquals(List.of(Map.of("id", "employee", "displayName", "员工")), result);
@@ -49,7 +50,7 @@ class TaskParticipantSummaryTest {
             requested.addAll(Arrays.stream(args).map(String::valueOf).toList());
             return List.of(Map.of("id", "employee", "displayName", "员工"), Map.of("id", "creator", "displayName", "创建者"), Map.of("id", "reviewer", "displayName", "审核人"));
         });
-        TaskService service = new TaskService(db, mock(Access.class), mock(Events.class));
+        TaskService service = new TaskService(db, mock(Access.class), mock(Events.class), java.time.Clock.systemUTC(), mock(ExpiryService.class));
         Map<String, Object> task = Map.of("id", TASK, "originalCreatorId", "creator", "rowVersion", 4, "executionRound", 1, "dueVersion", 1);
         Map<String, Object> version = Map.of("id", "effective", "createdBy", "creator", "title", "旧有效标题");
         Map<String, Object> result = ReflectionTestUtils.invokeMethod(service, "taskView", ACTOR, task, version, List.of("employee"));
@@ -73,7 +74,7 @@ class TaskParticipantSummaryTest {
         when(db.one("SELECT * FROM task_versions WHERE organization_id=? AND id=?", "org", "effective"))
                 .thenReturn(Map.of("id", "effective"));
         when(db.list(startsWith("SELECT user_id FROM task_version_assignees"), eq("org"), eq("effective"))).thenReturn(List.of());
-        TaskService service = new TaskService(db, access, mock(Events.class));
+        TaskService service = new TaskService(db, access, mock(Events.class), java.time.Clock.systemUTC(), mock(ExpiryService.class));
         assertThrows(ApiException.class, () -> service.detail(ACTOR, TASK));
         verify(db, never()).list(startsWith("SELECT id,display_name FROM users"), any(Object[].class));
     }

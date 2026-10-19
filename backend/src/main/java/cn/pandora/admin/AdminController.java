@@ -1,8 +1,13 @@
 package cn.pandora.admin;
 
+import cn.pandora.auth.Access;
 import cn.pandora.auth.Actor;
+import cn.pandora.common.ApiException;
+import cn.pandora.common.ControllableClock;
 import cn.pandora.common.Writes;
 import cn.pandora.task.TaskService;
+import cn.pandora.workspace.EventsWorker;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,11 +21,53 @@ public class AdminController {
     private final OrganizationService organization;
     private final Writes writes;
     private final TaskService tasks;
+    private final Access access;
+    private final java.time.Clock clock;
+    private final ObjectProvider<EventsWorker> worker;
 
-    public AdminController(OrganizationService organization, Writes writes, TaskService tasks) {
+    public AdminController(OrganizationService organization, Writes writes, TaskService tasks, Access access,
+                           java.time.Clock clock, ObjectProvider<EventsWorker> worker) {
         this.organization = organization;
         this.writes = writes;
         this.tasks = tasks;
+        this.access = access;
+        this.clock = clock;
+        this.worker = worker;
+    }
+
+    /**
+     * Controlled clock for deadline, reminder and retention verification. It exists only when
+     * pandora.clock.controllable=true and is restricted to an administrator, so production runs use
+     * the normal system clock and no business endpoint can move time.
+     */
+    @GetMapping("/clock")
+    public Map<String,Object> clock(@RequestAttribute("actor") Actor actor) {
+        access.requireAdmin(actor);
+        return Map.of("now", clock.instant().toString(), "controllable", clock instanceof ControllableClock);
+    }
+
+    @PostMapping("/clock/advance")
+    public Map<String,Object> advanceClock(@RequestAttribute("actor") Actor actor, @RequestBody Map<String,Object> input) {
+        access.requireAdmin(actor);
+        if (!(clock instanceof ControllableClock controllable)) {
+            throw new ApiException(409, "CLOCK_NOT_CONTROLLABLE", "当前运行未启用受控时钟");
+        }
+        Object seconds = input.get("seconds");
+        if (!(seconds instanceof Number number) || number.longValue() < 0 || number.longValue() > 86400L * 400) {
+            throw new ApiException(400, "INVALID_INPUT", "seconds 须为 0 至 34560000 的整数");
+        }
+        controllable.advance(java.time.Duration.ofSeconds(number.longValue()));
+        return Map.of("now", clock.instant().toString(), "offsetSeconds", controllable.offset().toSeconds());
+    }
+
+    /** Run one worker pass deterministically during verification (expiry → reminders → delivery → clean-up). */
+    @PostMapping("/worker/run-once")
+    public Map<String,Object> runWorker(@RequestAttribute("actor") Actor actor) {
+        access.requireAdmin(actor);
+        EventsWorker eventsWorker = worker.getIfAvailable();
+        if (eventsWorker == null) throw new ApiException(409, "WORKER_DISABLED", "当前运行未启用事件工作器");
+        eventsWorker.runOnce();
+        return Map.of("ran", true, "now", clock.instant().toString());
     }
 
     /** Complete operation history of one task; the App has no equivalent entry point (DEV-016). */
