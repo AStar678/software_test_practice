@@ -15,6 +15,7 @@ public class WorkspaceController {
 
     @GetMapping("/me") public Map<String,Object> me(@RequestAttribute("actor") Actor a) {return workspace.me(a);}
     @GetMapping("/users") public Map<String,Object> users(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.users(a,filters,false);}
+    @GetMapping("/users/{id}") public Map<String,Object> person(@RequestAttribute("actor") Actor a,@PathVariable String id) {return workspace.person(a,id);}
     @GetMapping("/home") public Map<String,Object> home(@RequestAttribute("actor") Actor a) {return workspace.home(a);}
     @GetMapping("/home/items/{id}") public ResponseEntity<Map<String,Object>> homeItem(@RequestAttribute("actor") Actor a,@PathVariable String id) {
         var result=workspace.homeItem(a,id);return ResponseEntity.ok().eTag("\""+result.get("rowVersion")+"\"").body(result);

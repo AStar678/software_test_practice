@@ -45,6 +45,15 @@ public class WorkspaceService {
         return page(allowed, filters);
     }
 
+    public Map<String,Object> person(Actor a, String userId) {
+        business(a);
+        var row = access.user(a, userId);
+        if (!access.canSeePerson(a, row)) throw ApiException.notFound();
+        var result = safeUser(row);
+        if (access.canReadPhone(a, row)) result.put("phone", row.get("phone"));
+        return result;
+    }
+
     public Map<String,Object> logs(Actor a, Map<String,String> filters) {
         business(a);
         String scope = filters.getOrDefault("scope", "self");
