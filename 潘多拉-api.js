@@ -157,6 +157,8 @@
     if (etag != null) headers["If-Match"] = etag;
     return P.request(path, { method, body, headers });
   };
+  /* Test/UX helper: a page command is idle when no P.busy operation owns the UI. */
+  P.idle = function () { return !working; };
   P.busy = async function (fn, errorId) {
     if (working) return;
     working = true;

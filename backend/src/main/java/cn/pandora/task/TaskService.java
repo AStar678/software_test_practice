@@ -6,9 +6,11 @@ import cn.pandora.common.ApiException;
 import cn.pandora.common.Db;
 import cn.pandora.common.Events;
 import cn.pandora.common.Writes;
+import cn.pandora.workspace.ExpiryService;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.sql.Time;
 import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -28,16 +30,21 @@ public class TaskService {
     private static final Set<String> COMMANDS = Set.of("create", "change", "progress", "complete", "reopen");
     private static final Set<String> STATES = Set.of("todo", "doing", "done");
     private static final Set<String> PRIORITIES = Set.of("urgent", "high", "medium", "low");
-    // Local V1 policy: all-day tasks are due at 18:00 in the organization's time zone.
-    private static final LocalTime ALL_DAY_CUTOFF = LocalTime.of(18, 0);
+    private static final Set<String> SCHEDULE_FIELDS = Set.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
+    /** Documented default for an organization that has not configured a cut-off. */
+    private static final LocalTime DEFAULT_ALL_DAY_CUTOFF = LocalTime.of(18, 0);
     private final Db db;
     private final Access access;
     private final Events events;
+    private final Clock clock;
+    private final ExpiryService expiry;
 
-    public TaskService(Db db, Access access, Events events) {
+    public TaskService(Db db, Access access, Events events, Clock clock, ExpiryService expiry) {
         this.db = db;
         this.access = access;
         this.events = events;
+        this.clock = clock;
+        this.expiry = expiry;
     }
 
     public Map<String, Object> list(Actor actor, Map<String, String> filters) {
@@ -174,6 +181,11 @@ public class TaskService {
         String command = command(input, "command", "action", "change");
         if (!Set.of("create", "change", "progress", "complete", "reopen").contains(command)) throw bad("不支持的任务动作");
         Map<String, Object> task = task(actor, id, true);
+        // A deadline that passed while the request was pending produces its terminal state first; the
+        // submission then starts from an unfrozen task (DEV-012).
+        if (expiry.expirePendingForTask(actor.organizationId(), id, clock.instant()) > 0) {
+            task = task(actor, id, true);
+        }
         String currentId = s(task, "currentVersionId");
         Map<String, Object> current = currentId == null ? null : version(actor, currentId);
         List<String> currentOwners = current == null ? List.of() : assignees(actor, currentId);
@@ -204,6 +216,13 @@ public class TaskService {
             Map<String, Object> base = new LinkedHashMap<>(current);
             base.put("assigneeIds", currentOwners);
             proposed = validateForm(actor, input, base);
+            // A non-schedule edit keeps the effective schedule and its cut-off snapshot exactly as
+            // submitted; only an actual schedule revision adopts the current company setting (DEV-015).
+            if (!hasScheduleInput(input)) {
+                for (String field : List.of("allDay", "startAt", "dueAt", "startDate", "dueDate", "allDayCutoffTime")) {
+                    proposed.put(field, current.get(field));
+                }
+            }
             proposed.put("executionState", s(current, "executionState"));
             proposed.put("progressNote", current.get("progressNote"));
         } else {
@@ -312,6 +331,8 @@ public class TaskService {
         view.put("exemptionReason", request.get("exemptionReason"));
         view.put("createdAt", request.get("createdAt"));
         view.put("decidedAt", request.get("decidedAt"));
+        view.put("applicableDeadline", request.get("applicableDeadline"));
+        view.put("expiredAt", request.get("expiredAt"));
         view.put("title", s(proposed, "title"));
         view.put("versionNo", proposed.get("versionNo"));
         view.put("route", routeView(actor, storedRoute(actor, request)));
@@ -365,6 +386,20 @@ public class TaskService {
         Map<String, Object> request = request(actor, id, true); // Always task first, request second.
         if (!canSeeRequest(actor, request, task)) throw ApiException.notFound();
         Writes.checkVersion(ifMatch, n(request, "rowVersion"));
+        Instant decidedAt = clock.instant();
+        if ("pending".equals(s(request, "status")) && request.get("applicableDeadline") != null
+                && !decidedAt.isBefore(ExpiryService.instant(request.get("applicableDeadline")))) {
+            // The expiry terminal state is written in this transaction and is returned to the caller
+            // as a business error only after this transaction commits (controller boundary), so the
+            // unfreeze/expiry event can never be rolled back to make the old page succeed (DEV-012).
+            expiry.expire(actor.organizationId(), request, decidedAt, "decide_after_deadline");
+            Map<String, Object> expired = result(s(task, "id"), id, "expired", n(task(actor, s(task, "id"), false), "rowVersion"));
+            expired.put("status", "expired");
+            expired.put("requestStatus", "expired");
+            expired.put("deadlineExpired", true);
+            expired.put("message", "申请已到适用截止时间失效，请调整后重提");
+            return expired;
+        }
         if (!"pending".equals(s(request, "status"))) throw conflict("REQUEST_RESOLVED", "该申请已处理，请刷新");
         String reviewer = requestReviewer(actor, request, task);
         if ("withdraw".equals(decision)) {
@@ -434,7 +469,16 @@ public class TaskService {
         decided.put("comment", Objects.toString(comment, ""));
         recordHistory(actor, taskId, id, "request_decided", "status", "pending", status, decided);
         Set<String> recipients = recipients(task, base, proposed, s(request, "applicantId"), reviewer, "create".equals(kind) && !"approve".equals(decision), "approve".equals(decision));
-        events.record(actor, taskId, "task." + kind + "." + status, recipients, Map.of("requestId", id, "kind", kind, "status", status));
+        List<String> baseOwners = base == null ? List.of() : assignees(actor, s(base, "id"));
+        List<String> removedOwners = new ArrayList<>(baseOwners);
+        removedOwners.removeAll(newOwners);
+        Map<String, Object> eventDetails = new LinkedHashMap<>();
+        eventDetails.put("requestId", id);
+        eventDetails.put("kind", kind);
+        eventDetails.put("status", status);
+        if (!removedOwners.isEmpty()) eventDetails.put("removedUserIds", removedOwners);
+        events.record(actor, taskId, "task." + kind + "." + status, recipients, eventDetails,
+                id, s(proposed, "id"), s(proposed, "title"), eventSummary(actor, kind, status, base, proposed));
         Map<String, Object> updated = task(actor, taskId, false);
         Map<String, Object> result = result(taskId, id, status, n(updated, "rowVersion"));
         result.put("requestRowVersion", n(request, "rowVersion") + 1);
@@ -481,6 +525,9 @@ public class TaskService {
         requireBusiness(actor);
         allowed(input, Set.of("sourceUserId", "targetUserId", "reason"));
         Map<String, Object> task = task(actor, taskId, true);
+        if (expiry.expirePendingForTask(actor.organizationId(), taskId, clock.instant()) > 0) {
+            task = task(actor, taskId, true);
+        }
         String currentId = s(task, "currentVersionId");
         if (currentId == null) throw conflict("TASK_NOT_PUBLISHED", "未发布任务不能交接");
         Map<String, Object> current = version(actor, currentId);
@@ -588,8 +635,13 @@ public class TaskService {
             String previous = reviewerOfRecord(request);
             if (!route.hasReviewer()) {
                 Instant deadline = applicableDeadline(actor, request);
-                if (deadline != null && !Instant.now().isBefore(deadline)) {
-                    throw conflict("ROUTE_BLOCKED_DEADLINE", "组织变更会使待审申请失去审核人，且该申请已超过适用截止；请先处理该申请再调整组织");
+                Instant refreshedAt = clock.instant();
+                if (deadline != null && !refreshedAt.isBefore(deadline)) {
+                    // Section 5 owns the expiry terminal state: an organization change no longer blocks
+                    // when the pending request would lose its reviewer after the deadline.
+                    expiry.expire(actor.organizationId(), request, refreshedAt, "route_refresh_after_deadline");
+                    moved++;
+                    continue;
                 }
                 applyWithoutReviewer(actor, task, request, route);
                 moved++;
@@ -610,7 +662,9 @@ public class TaskService {
             recipients.remove(null);
             events.record(actor, taskId, "task." + kind + ".reassigned", recipients,
                     Map.of("requestId", s(request, "id"), "kind", kind,
-                            "previousReviewerId", Objects.toString(previous, ""), "reviewerId", route.reviewerId()));
+                            "previousReviewerId", Objects.toString(previous, ""), "reviewerId", route.reviewerId()),
+                    s(request, "id"), s(request, "proposedVersionId"), titleOf(actor, request),
+                    "任务《" + titleOf(actor, request) + "》的审核人已调整，请重新处理。");
             moved++;
         }
         return moved;
@@ -636,7 +690,9 @@ public class TaskService {
         recordHistory(actor, taskId, requestId, "no_reviewer", "exemptionReason", null, route.reasonText(),
                 Map.of("basisAssigneeId", Objects.toString(route.basisAssigneeId(), ""), "source", "route_refresh"));
         events.record(actor, taskId, "task." + kind + ".direct", Set.of(s(request, "applicantId")),
-                Map.of("requestId", requestId, "kind", kind, "status", "direct", "reason", route.reason()));
+                Map.of("requestId", requestId, "kind", kind, "status", "direct", "reason", route.reason()),
+                requestId, s(proposed, "id"), s(proposed, "title"),
+                "任务《" + s(proposed, "title") + "》的管理链无有效审核人，已记录原因后直接生效。");
     }
 
     /** Best-effort applicable deadline: the stored snapshot, else the route's own version deadline. */
@@ -653,18 +709,24 @@ public class TaskService {
 
     private Map<String, Object> submit(Actor actor, Map<String, Object> task, Map<String, Object> base, Map<String, Object> proposed, List<String> owners, Route route, String kind, String body) {
         String taskId = s(task, "id");
+        Instant deadline = expiry.applicableDeadline(kind, base, proposed);
+        Instant submittedAt = clock.instant();
+        if (deadline == null || !submittedAt.isBefore(deadline)) {
+            throw conflict("DEADLINE_PASSED", "提交的排期或当前有效截止时间已到，请调整后重提");
+        }
         // Only a genuinely reviewer-less route applies straight away, with its reason recorded; a route that
         // has a reviewer always creates a pending request, even when the applicant is that reviewer (DEV-007).
         boolean direct = !route.hasReviewer();
         String versionId = insertVersion(actor, taskId, proposed, owners, direct ? "applied" : "proposed");
         proposed.put("id", versionId);
         String requestId = Db.id();
-        Timestamp now = now();
-        db.update("INSERT INTO approval_requests(id,organization_id,task_id,proposed_version_id,applicant_id,current_reviewer_id,kind,status,comment,base_version_id,previous_state,row_version,created_at,decided_at,decided_by,exemption_reason,route_basis_assignee_id,route_reason,route_authz_version) VALUES(?,?,?,?,?,?,?,?,NULL,?,?,1,?,?,NULL,?,?,?,?)",
+        Timestamp now = Timestamp.from(submittedAt);
+        db.update("INSERT INTO approval_requests(id,organization_id,task_id,proposed_version_id,applicant_id,current_reviewer_id,kind,status,comment,base_version_id,previous_state,row_version,created_at,decided_at,decided_by,exemption_reason,route_basis_assignee_id,route_reason,route_authz_version,applicable_deadline) VALUES(?,?,?,?,?,?,?,?,NULL,?,?,1,?,?,NULL,?,?,?,?,?)",
                 requestId, actor.organizationId(), taskId, versionId, actor.id(), route.reviewerId(),
                 kind, direct ? "direct" : "pending", base == null ? null : s(base, "id"),
                 s(task, "executionState"), now, direct ? now : null,
-                direct ? route.reasonText() : null, route.basisAssigneeId(), route.reason(), route.authzVersion());
+                direct ? route.reasonText() : null, route.basisAssigneeId(), route.reason(), route.authzVersion(),
+                Timestamp.from(deadline));
         if (body != null) insertRecord(actor, taskId, requestId, body, kind, direct);
         Map<String, Object> submitted = new LinkedHashMap<>();
         submitted.put("kind", kind);
@@ -681,10 +743,32 @@ public class TaskService {
         } else if (base != null || n(task, "rowVersion") > 1) {
             db.update("UPDATE tasks SET row_version=row_version+1,updated_at=? WHERE organization_id=? AND id=?", now, actor.organizationId(), taskId);
         }
+        Set<String> eventRecipients;
+        if (direct) {
+            eventRecipients = recipients(task, base, proposed, actor.id(), route.reviewerId(), false, true);
+        } else if (base == null) {
+            // An unpublished creation is visible only to its applicant and the reviewer of record.
+            eventRecipients = new LinkedHashSet<>();
+            eventRecipients.add(actor.id());
+            eventRecipients.add(route.reviewerId());
+            eventRecipients.remove(null);
+        } else {
+            // A published task's submission notifies only the reviewer of record; the applicant tracks it.
+            eventRecipients = route.reviewerId() == null ? Set.of(actor.id()) : Set.of(route.reviewerId());
+        }
+        Map<String, Object> eventDetails = new LinkedHashMap<>();
+        eventDetails.put("requestId", requestId);
+        eventDetails.put("kind", kind);
+        eventDetails.put("status", direct ? "direct" : "pending");
+        eventDetails.put("reviewerId", Objects.toString(route.reviewerId(), ""));
+        if (base != null && direct) {
+            List<String> previousOwners = assignees(actor, s(base, "id"));
+            previousOwners.removeAll(owners);
+            if (!previousOwners.isEmpty()) eventDetails.put("removedUserIds", previousOwners);
+        }
         events.record(actor, taskId, "task." + kind + "." + (direct ? "applied" : "submitted"),
-                recipients(task, base, proposed, actor.id(), route.reviewerId(), base == null && !direct, direct),
-                Map.of("requestId", requestId, "kind", kind, "status", direct ? "direct" : "pending",
-                        "reviewerId", Objects.toString(route.reviewerId(), "")));
+                eventRecipients, eventDetails, requestId, versionId, s(proposed, "title"),
+                eventSummary(actor, kind, direct ? "applied" : "submitted", base, proposed));
         return result(taskId, requestId, direct ? "direct" : "pending", n(task(actor, taskId, false), "rowVersion"));
     }
 
@@ -726,16 +810,109 @@ public class TaskService {
         return value == null ? null : String.valueOf(value);
     }
 
+    /** One human-readable message per operation, listing the actual changed fields (DEV-030). */
+    private String eventSummary(Actor actor, String kind, String status, Map<String, Object> base, Map<String, Object> proposed) {
+        String title = s(proposed, "title");
+        String label = ExpiryService.kindLabel(kind);
+        String changes = changesText(actor, base, proposed);
+        return switch (status == null ? "" : status) {
+            case "submitted" -> "提交" + label + "任务《" + title + "》，等待审核。" + changes;
+            case "direct", "applied" -> "任务《" + title + "》的" + label + "已生效。" + changes;
+            case "approved" -> "任务《" + title + "》的" + label + "申请已通过。" + changes;
+            case "rejected" -> "任务《" + title + "》的" + label + "申请已退回，请查看审核意见。";
+            case "withdrawn" -> "任务《" + title + "》的" + label + "申请已撤销。";
+            case "expired" -> "任务《" + title + "》的" + label + "申请已失效，请调整后重提。";
+            default -> "任务《" + title + "》的" + label + "状态已更新。" + changes;
+        };
+    }
+
+    private String changesText(Actor actor, Map<String, Object> base, Map<String, Object> proposed) {
+        List<Map<String, Object>> changes = diff(actor, base, proposed);
+        if (changes.isEmpty()) return "";
+        StringBuilder text = new StringBuilder("本次变化：");
+        for (Map<String, Object> change : changes) {
+            if (text.length() > 800) break;
+            String field = Objects.toString(change.get("field"), "");
+            String before = Objects.toString(change.get("before"), "");
+            String after = Objects.toString(change.get("after"), "");
+            if ("assigneeIds".equals(field)) {
+                before = names(actor, before);
+                after = names(actor, after);
+            } else if ("priority".equals(field)) {
+                before = priorityLabel(before);
+                after = priorityLabel(after);
+            }
+            text.append(fieldLabel(field)).append('：').append(abbreviate(before)).append("→").append(abbreviate(after)).append("；");
+        }
+        return text.toString();
+    }
+
+    private String names(Actor actor, String csv) {
+        if (csv == null || csv.isBlank()) return "无";
+        List<String> ids = Arrays.asList(csv.split(","));
+        Map<String, String> names = new LinkedHashMap<>();
+        for (Map<String, Object> row : db.list("SELECT id,display_name FROM users WHERE organization_id=? ORDER BY display_name,id", actor.organizationId())) {
+            names.put(s(row, "id"), s(row, "displayName"));
+        }
+        List<String> result = new ArrayList<>();
+        for (String id : ids) result.add(names.getOrDefault(id, id));
+        return String.join("、", result);
+    }
+
+    private String titleOf(Actor actor, Map<String, Object> request) {
+        Map<String, Object> version = version(actor, s(request, "proposedVersionId"));
+        return version == null ? "任务" : s(version, "title");
+    }
+
+    private static String fieldLabel(String field) {
+        return switch (field) {
+            case "title" -> "标题";
+            case "description" -> "说明";
+            case "acceptanceCriteria" -> "完成标准";
+            case "priority" -> "紧急程度";
+            case "allDay" -> "全天";
+            case "startAt" -> "开始时间";
+            case "dueAt" -> "截止时间";
+            case "startDate" -> "开始日期";
+            case "dueDate" -> "截止日期";
+            case "assigneeIds" -> "负责人";
+            case "parentTaskId" -> "上级任务";
+            default -> field;
+        };
+    }
+
+    private static String priorityLabel(String value) {
+        return switch (value == null ? "" : value) {
+            case "urgent" -> "紧急";
+            case "high" -> "高";
+            case "medium" -> "中";
+            case "low" -> "低";
+            default -> value;
+        };
+    }
+
+    private static String abbreviate(String value) {
+        if (value == null) return "空";
+        return value.length() <= 60 ? value : value.substring(0, 60) + "…";
+    }
+
     private void applyVersion(Actor actor, Map<String, Object> task, Map<String, Object> base, Map<String, Object> proposed, String kind) {
-        boolean dueChanged = base != null && !instant(base.get("dueAt"), "dueAt").equals(instant(proposed.get("dueAt"), "dueAt"));
-        db.update("UPDATE tasks SET current_version_id=?,execution_state=?,row_version=row_version+1,execution_round=execution_round+?,due_version=due_version+?,updated_at=? WHERE organization_id=? AND id=?",
-                s(proposed, "id"), s(proposed, "executionState"), "reopen".equals(kind) ? 1 : 0, dueChanged ? 1 : 0, now(), actor.organizationId(), s(task, "id"));
+        // schedule_version is the reminder/schedule identity (DEV-014): only a real start/end/all-day
+        // change bumps it. Execution round changes only on an approved reopen. due_version is retained
+        // for historical rows but is deliberately no longer written.
+        boolean scheduleChanged = base != null && ExpiryService.scheduleChanged(base, proposed);
+        db.update("UPDATE tasks SET current_version_id=?,execution_state=?,row_version=row_version+1,"
+                        + "execution_round=execution_round+?,schedule_version=schedule_version+?,"
+                        + "all_day_cutoff_time=?,updated_at=? WHERE organization_id=? AND id=?",
+                s(proposed, "id"), s(proposed, "executionState"), "reopen".equals(kind) ? 1 : 0,
+                scheduleChanged ? 1 : 0, cutoffTime(proposed.get("allDayCutoffTime")),
+                now(), actor.organizationId(), s(task, "id"));
     }
 
     private String insertVersion(Actor actor, String taskId, Map<String, Object> values, List<String> owners, String status) {
         String id = Db.id();
-        db.update("INSERT INTO task_versions(id,organization_id,task_id,version_no,title,description,acceptance_criteria,priority,all_day,start_at,due_at,start_date,due_date,execution_state,progress_note,parent_task_id,status,created_by,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                id, actor.organizationId(), taskId, nextVersionNumber(actor, taskId), values.get("title"), values.get("description"), values.get("acceptanceCriteria"), values.get("priority"), bool(values.get("allDay"), "allDay"), Timestamp.from(instant(values.get("startAt"), "startAt")), Timestamp.from(instant(values.get("dueAt"), "dueAt")), values.get("startDate"), values.get("dueDate"), values.get("executionState"), values.get("progressNote"), values.get("parentTaskId"), status, actor.id(), now());
+        db.update("INSERT INTO task_versions(id,organization_id,task_id,version_no,title,description,acceptance_criteria,priority,all_day,start_at,due_at,start_date,due_date,execution_state,progress_note,parent_task_id,status,created_by,created_at,all_day_cutoff_time) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                id, actor.organizationId(), taskId, nextVersionNumber(actor, taskId), values.get("title"), values.get("description"), values.get("acceptanceCriteria"), values.get("priority"), bool(values.get("allDay"), "allDay"), Timestamp.from(instant(values.get("startAt"), "startAt")), Timestamp.from(instant(values.get("dueAt"), "dueAt")), values.get("startDate"), values.get("dueDate"), values.get("executionState"), values.get("progressNote"), values.get("parentTaskId"), status, actor.id(), now(), cutoffTime(values.get("allDayCutoffTime")));
         int ordinal = 0;
         for (String owner : owners) {
             db.update("INSERT INTO task_version_assignees(organization_id,version_id,user_id,ordinal,order_source) VALUES(?,?,?,?,?)",
@@ -762,6 +939,8 @@ public class TaskService {
         result.put("originalCreatorId", s(task, "originalCreatorId"));
         result.put("rowVersion", n(task, "rowVersion"));
         result.put("executionRound", n(task, "executionRound"));
+        result.put("scheduleVersion", task.get("scheduleVersion") == null ? 1 : n(task, "scheduleVersion"));
+        result.put("allDayCutoffTime", task.get("allDayCutoffTime") == null ? null : task.get("allDayCutoffTime").toString());
         result.put("dueVersion", n(task, "dueVersion"));
         result.put("published", true);
         result.put("createdAt", task.get("createdAt"));
@@ -799,6 +978,7 @@ public class TaskService {
     private Map<String, Object> snapshotView(Actor actor, Map<String, Object> version) {
         Map<String, Object> result = new LinkedHashMap<>();
         for (String key : List.of("id", "taskId", "versionNo", "title", "description", "acceptanceCriteria", "priority", "allDay", "startAt", "dueAt", "startDate", "dueDate", "executionState", "progressNote", "status", "createdBy", "createdAt")) result.put(key, version.get(key));
+        result.put("allDayCutoffTime", version.get("allDayCutoffTime") == null ? null : version.get("allDayCutoffTime").toString());
         result.put("assigneeIds", assignees(actor, s(version, "id")));
         String parent = s(version, "parentTaskId");
         boolean seeParent = parent == null || canSeeEffective(actor, parent);
@@ -1001,16 +1181,19 @@ public class TaskService {
             LocalDate dueDate = requiredDate(values.get("dueDate"), "dueDate");
             if (dueDate.isBefore(startDate)) throw bad("截止日期不得早于开始日期");
             ZoneId zone = organizationZone(actor);
+            LocalTime cutoff = offWorkTime(actor);
             start = startDate.atStartOfDay(zone).toInstant();
-            due = dueDate.atTime(ALL_DAY_CUTOFF).atZone(zone).toInstant();
+            due = dueDate.atTime(cutoff).atZone(zone).toInstant();
             values.put("startDate", startDate.toString());
             values.put("dueDate", dueDate.toString());
+            values.put("allDayCutoffTime", cutoff.toString());
         } else {
             start = instant(values.get("startAt"), "startAt");
             due = instant(values.get("dueAt"), "dueAt");
             if (due.isBefore(start)) throw bad("截止时间不得早于开始时间");
             values.put("startDate", null);
             values.put("dueDate", null);
+            values.put("allDayCutoffTime", null);
         }
         values.put("startAt", start.toString());
         values.put("dueAt", due.toString());
@@ -1170,7 +1353,39 @@ public class TaskService {
         if (!actor.business()) throw forbidden("管理员不参与普通业务操作");
     }
 
-    private static Timestamp now() { return Timestamp.from(Instant.now()); }
+    private LocalTime offWorkTime(Actor actor) {
+        Map<String, Object> organization = db.one("SELECT off_work_time FROM organizations WHERE id=?", actor.organizationId());
+        Object value = organization.get("offWorkTime");
+        if (value instanceof Time time) return time.toLocalTime();
+        if (value instanceof LocalTime time) return time;
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return LocalTime.parse(text);
+            } catch (DateTimeParseException exception) {
+                throw conflict("INVALID_ORGANIZATION_CUTOFF", "公司全天截止时刻配置无效");
+            }
+        }
+        return DEFAULT_ALL_DAY_CUTOFF;
+    }
+
+    private static Time cutoffTime(Object value) {
+        if (value == null) return null;
+        if (value instanceof Time time) return time;
+        if (value instanceof LocalTime time) return Time.valueOf(time);
+        String text = value.toString();
+        if (text.isBlank()) return null;
+        try {
+            return Time.valueOf(LocalTime.parse(text));
+        } catch (RuntimeException exception) {
+            return null;
+        }
+    }
+
+    private static boolean hasScheduleInput(Map<String, Object> input) {
+        return SCHEDULE_FIELDS.stream().anyMatch(input::containsKey);
+    }
+
+    private Timestamp now() { return Timestamp.from(clock.instant()); }
     private static ApiException bad(String message) { return new ApiException(400, "INVALID_INPUT", message); }
     private static ApiException forbidden(String message) { return new ApiException(403, "FORBIDDEN", message); }
     private static ApiException conflict(String code, String message) { return new ApiException(409, code, message); }
