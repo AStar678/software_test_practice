@@ -262,7 +262,7 @@
       '<button type="button" class="notif' + (n.raw.readAt ? ' is-read' : '') + '" data-action="open-notif" data-id="' + esc(n.id) +
       '"><span class="ndot" aria-hidden="true"></span><span class="nbody"><span class="ntitle">' + esc(n.summary) +
       '</span><span class="nmeta">' + esc(timeText(n.raw.createdAt)) + (n.raw.readAt ? " · 已读" : " · 未读") + '</span></span></button>'
-    ).join("") : '<div class="empty">暂无通知</div>', foot: button("p-refresh-notifications", "刷新") + button("sheet-close", "关闭") };
+    ).join("") : '<div class="empty">暂无通知</div>' };
   };
   openNotifications = function () {
     P.busy(async () => { await P.reload(); openSheet(notificationsView()); });
