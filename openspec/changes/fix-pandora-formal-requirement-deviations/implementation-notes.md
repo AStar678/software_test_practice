@@ -4,17 +4,17 @@
 - Schema: spec-driven
 - Store: local (no registered store; `openspec store list --json` returns none)
 - Implementation roots: `/Users/watuji/MyGitDev/software_test_practice` (backend at `backend/`, loaded pages at the repo root)
-- Updated: 2026-10-16T06:10Z (2026-10-16 14:10 Asia/Shanghai)
-- Implementation revision: `b3941dc` plus the uncommitted section-4 work
-- Progress: **26/64 tasks complete.** Sections 1, 2, 3 and 4 are implemented and verified.
-- Remaining work: **tasks 5.1-11.6 (38 tasks) are still pending and are the active work of this change.** Sections 1-3 were requested in an earlier run and section 4 in the next; those were scope instructions for those runs, not a change to the plan. Nothing in `tasks.md`, the specs or the design was narrowed.
+- Updated: 2026-10-19T11:04Z (2026-10-19 19:04 Asia/Shanghai)
+- Implementation revision: `a239568` (includes section 4 at `4252451` and the `4247dcc` / PR #6 adjustments); this run changes documentation only, with an uncommitted documentation worktree.
+- Progress: **25/65 tasks checked complete.** Sections 1-4 have historical implementation evidence from 2026-10-16, but task 3.5 is reopened because the phone policy changed. Those checks are implementation evidence, not a current independent e13 verification verdict.
+- Remaining work: **3.5 and 5.1-11.7 (40 tasks) are pending.** The imported code supplies parts of 3.5/8.4 and the UI changes covered by 11.7; it does not complete tasks 5-7. This documentation-only reconciliation accepts the imported behavior into the plan without claiming its HTTP/browser acceptance.
 
 ## How to continue this change
 
-1. Read the current state from the CLI rather than from this file: `openspec instructions apply --change "fix-pandora-formal-requirement-deviations" --json`. It reported `state=ready`, `progress=26/64`, next pending task ids 27-29 (= 5.1-5.3).
-2. Confirm the scope with the user before continuing past section 4: the previous runs were explicitly limited, and only the user can say whether that still holds.
-3. Build and test: `cd backend && mvn -B -ntp test` (40 tests) and `mvn -B -ntp package`.
-4. Reproduce the section 1-4 evidence before trusting it: every suite except the migration rehearsal needs a **freshly created, freshly seeded** scratch database, otherwise their "fresh database" assertions fail and look like regressions. See the `Checks Run` setup column for the exact commands. `scripts/migration_precheck.py rehearse` creates and drops its own scratch database and needs no setup.
+1. Read the current state from the CLI rather than from this file: `openspec instructions apply --change "fix-pandora-formal-requirement-deviations" --json`. After this revision the expected progress is 25/65; use task labels (3.5, 5.1, etc.), since adding 11.7 changes CLI task totals.
+2. The 2026-10-19 request authorizes documentation reconciliation only. On a later implementation request, follow that request's scope; the earlier section-4 limit is historical and does not require a second confirmation when the user already authorizes the next work. Keep tasks 5-7 separate from the imported UI/profile adjustments.
+3. Build and test when implementation resumes: `cd backend && mvn -B -ntp test` and `mvn -B -ntp package`. The historical section-4 run had 40 tests; `4247dcc` adds three phone tests, whose execution is not evidenced by this documentation run.
+4. Reproduce the section 1-4 evidence before trusting it: the HTTP suites need a **freshly created, freshly seeded** scratch database, otherwise their "fresh database" assertions fail and look like regressions. See the `Checks Run` setup column for exact commands. `scripts/migration_precheck.py rehearse` creates and drops its own scratch database and needs no setup. Extend the existing contact checks for `/api/v1/users/{id}` and the new chain/transfer matrix; old directory-only privacy checks do not cover that endpoint.
 5. `backend/.runtime/` (database password, local MySQL data, Maven cache) is git-ignored and intentionally absent from a fresh clone; run `backend/scripts/start-db.sh` first.
 
 ## Implementation Map
@@ -37,7 +37,7 @@
 | 3.2 restricted session and one API gate (DEV-003) | [`AuthFilter.java`](backend/src/main/java/cn/pandora/auth/AuthFilter.java), [`AuthService.java`](backend/src/main/java/cn/pandora/auth/AuthService.java) | The gate is in the filter, keyed on the database flag, and allows only `GET /api/v1/auth/session`, `POST /api/v1/auth/password` and `DELETE /api/v1/auth/sessions/current`. Every other business or admin route answers 403 `PASSWORD_CHANGE_REQUIRED`; refresh is refused so a token rotation cannot lift the gate, and the login response announces `passwordChangeRequired` so the client never loads the workspace first. |
 | 3.3 password policy and full session revocation (DEV-003) | [`Credentials.java`](backend/src/main/java/cn/pandora/admin/Credentials.java), [`AuthService.changePassword`](backend/src/main/java/cn/pandora/auth/AuthService.java), [`CredentialsTest.java`](backend/src/test/java/cn/pandora/admin/CredentialsTest.java) | One command serves the first change and the everyday change: the current password is always verified (a stolen restricted session alone cannot set a new one), the new password must be at least 10 characters with letters and digits and at most 72 UTF-8 bytes, and success bumps `credential_version` and revokes **every** session including the caller's. `tests` cover generation and each policy boundary. |
 | 3.4 login / first change / everyday change / admin reset interfaces (DEV-003, 028) | [`潘多拉-api.js`](潘多拉-api.js), [`潘多拉-个人资料.js`](潘多拉-个人资料.js), [`admin.html`](admin.html), [`check_account_browser.js`](backend/scripts/check_account_browser.js) | The login form routes a restricted identity straight to the change screen; the API layer reacts to `PASSWORD_CHANGE_REQUIRED` from any call; `P.reLogin` clears the local session after a change. The 我的 page gains 修改密码, the console gains 重置密码 with the one-time banner. Verified by driving the served page in headless Chrome. Self-registration is absent and asserted. |
-| 3.5 self-service contacts and phone privacy (DEV-002, 028) | [`ProfileService.java`](backend/src/main/java/cn/pandora/profile/ProfileService.java), [`WorkspaceService.me`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java) | The owner keeps a name/e-mail/phone whitelist; organization fields and level are rejected by the same validator. `me` now returns company/department/position/team/manager as separate read-only fields. Other readers never receive a number: the directory, participant summaries, notifications, analytics, the admin roster (presence boolean only) and the audit trail are all asserted free of the stored numbers, including the raw audit/outbox/idempotency rows. |
+| 3.5 self-service contacts and phone privacy (DEV-002, 028; reopened) | [`ProfileService.java`](backend/src/main/java/cn/pandora/profile/ProfileService.java), [`WorkspaceService.me/person`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java), [`Access.canReadPhone`](backend/src/main/java/cn/pandora/auth/Access.java) | The owner keeps a name/e-mail/phone whitelist; organization fields and level are rejected. `me` returns separate read-only organization fields. The historical suites check that the directory, participant summaries, notifications, analytics, admin roster and stored audit/outbox/idempotency rows contain no numbers. The new person detail may return a phone to a higher actual superior with current profile access; that revised matrix requires new HTTP/browser evidence. |
 | 4.1 ordered assignees / 4.2 unified routing (DEV-006, 007, 009) | [`TaskService.route`](backend/src/main/java/cn/pandora/task/TaskService.java), [`TaskServiceTest.java`](backend/src/test/java/cn/pandora/task/TaskServiceTest.java) | `route(...)` replaces the common-manager and `actor == creator == reviewer` algorithms: highest organization level first, ties broken by the saved ordinal (the basis assignee), then that person's single manager chain walked **in full** so a cycle or a dangling manager anywhere above is reported as `ROUTE_BLOCKED`, taking the first manager who is active, available for review, not an administrator and actually higher; then a usable original creator; only then a genuine `no-reviewer` exemption with the reason persisted. A route with a reviewer always creates a pending request, even when the applicant is that reviewer. The old assertions were replaced rather than deleted, and the cycle/dangling/admin cases now assert an error instead of an exemption. |
 | 4.3 review preview and consistent routes (DEV-008, 010) | [`TaskService.reviewerPreview`](backend/src/main/java/cn/pandora/task/TaskService.java), [`TaskController.java`](backend/src/main/java/cn/pandora/task/TaskController.java) | `POST /api/v1/tasks/reviewer-preview` computes the real route without creating a request, and is not an authorization token. Detail returns the effective `route` and, separately, the request's `pendingRoute`, both read from the stored columns: a read never recomputes a reviewer. Assignee changes route by the proposed owners, everything else by the effective owners. |
 | 4.4 persisted reassignment after organization changes (DEV-010, 016) | [`TaskService.refreshPendingRoutes`](backend/src/main/java/cn/pandora/task/TaskService.java), [`OrganizationService.java`](backend/src/main/java/cn/pandora/admin/OrganizationService.java) | Every employee/team mutation refreshes the pending requests inside the same transaction: the reviewer moves with the chain, a `request_reassignments` row keeps both reviewers, the basis and the reason, the request version increments, a `reviewer_reassigned` history entry and a notification event are written, and the previous reviewer can no longer read or decide the request. A request that would lose its last reviewer is applied with the documented reason — unless it is already past its applicable deadline, in which case the organization change is refused rather than publishing a stale proposal (the deadline enforcement itself belongs to section 5). |
@@ -48,9 +48,27 @@
 | 4.9 approval regression (DEV-007, 035) | [`check_review_routing.py`](backend/scripts/check_review_routing.py) | Covers one pending per task under concurrency, the freeze, effective-version isolation while frozen, every progress needing its own approval, a completion rejection returning to `doing`, a withdrawal restoring the pre-submission state, and parent/child state independence — all built from a fresh fixture created through the administration API rather than from the old exemption shortcuts. |
 | V10 corrective migration | [`V10__retire_superseded_check_constraints.sql`](backend/src/main/resources/db/migration/V10__retire_superseded_check_constraints.sql) | V6's `status`/`kind` constraint replacement silently did nothing: MySQL stores those clauses as `\'reopen\'`, so its `LIKE '%''reopen''%'` lookup never matched and the narrower V1 constraints stayed in force, rejecting `handover` (and, later, `expired`). V10 drops the four superseded constraints by exact name behind existence checks and records a blocker finding if any survive. V6 is already applied elsewhere, so its checksum must not change. |
 
+## Imported adjustments (2026-10-19)
+
+Compared `4252451..a239568`: 11 files changed, 152 insertions and 20 deletions. `8e3f749` was reverted by `882d01c`; `4247dcc` reintroduced the same tree, then PR #6 merged it at `a239568`. No Flyway migration or OpenSpec artifact changed in those commits. The user has now accepted these adjustments into this change's planning artifacts.
+
+| Tasks / behavior | Existing code and tests | Current evidence / remaining work |
+| ---------------- | ----------------------- | --------------------------------- |
+| 3.5 / 8.4, person detail and phone policy | `Access.canReadPhone`, `WorkspaceController.person`, `WorkspaceService.person`, `潘多拉-个人资料.js`; two added `AccessTest` cases and one `ProfilePrivacyAndCompanyTest` case | Source inspected: details check profile access then phone access; the UI lists the intersection of visible users and the management chain. Three unit tests exist, but were not run in this session. HTTP, current relationship changes, separate log authorization and browser behavior remain to be checked. |
+| 11.7, expanded task text fields and full-screen log editor | `潘多拉-交互原型.css`, `潘多拉-交互原型.js`; `潘多拉-工作区接入.js` wraps the original log form | Source inspected: task text fields have a 234px minimum; the log view passes `fullscreen: true`, and sheet rendering toggles the class. No built-page browser evidence collected. |
+| 11.7, notification list actions and keyboard focus | `潘多拉-交互原型.js`, `潘多拉-工作区接入.js`, `潘多拉-交互原型.css` | Source inspected: both list renderers omit footer actions and focus handling includes the header close button. The existing detail still uses manual read and task-based pending-request lookup; task 7.3/7.7 work remains. |
+
 ## Checks Run
 
-All commands below were run this session (2026-10-16, Asia/Shanghai). `A` is
+### Documentation reconciliation — 2026-10-19
+
+- From the repository root: `git diff --stat 4252451..HEAD`, `git diff 4252451..HEAD`, `git diff --quiet 8e3f749 4247dcc`, `git diff --exit-code 4252451..HEAD -- openspec`, and reads of the affected source/tests. These establish the imported scope and identical reintroduced tree; they are not runtime tests.
+- From the repository root: `openspec validate fix-pandora-formal-requirement-deviations --strict` passed (`Change 'fix-pandora-formal-requirement-deviations' is valid`); `git diff --check` passed. `openspec instructions apply --change fix-pandora-formal-requirement-deviations --json` reports `state=ready`, 25 complete / 65 total / 40 remaining. These are documentation checks, not implementation acceptance.
+- Java tests, package builds, live MySQL/HTTP checks and browser checks were not run. Existing evidence below remains historical and does not verify the revised phone policy or imported UI.
+
+### Historical implementation checks — 2026-10-16
+
+The following commands were run in the earlier implementation session (2026-10-16, Asia/Shanghai). `A` is
 `backend/.runtime/mysql-admin.cnf` (project option file, credentials never printed). The project MySQL
 is the repo-local instance on `127.0.0.1:13306`, started with `backend/scripts/start-db.sh`.
 
@@ -74,7 +92,7 @@ is the repo-local instance on `127.0.0.1:13306`, started with `backend/scripts/s
 | `mvn -B -ntp test` | `backend/` (Java 21) | PASS. Tests run: 40, Failures: 0, Errors: 0, Skipped: 0; BUILD SUCCESS. The four routing tests that asserted the old common-manager and auto-exemption behaviour were replaced with assertions for the new rules rather than deleted. | section-4 work |
 | Flyway V5-V10 on a fresh database | `backend/`; scratch `pandora_phase4` | PASS. Ten migrations applied; V1-V4 checksums still unchanged; V10 left 0 open findings, confirming the superseded V1 constraints are gone. | section-4 work |
 
-Failed/skipped this session: an earlier V7 revision failed twice under Flyway (`1136` missing
+Historical failed/skipped checks (2026-10-16): an earlier V7 revision failed twice under Flyway (`1136` missing
 `version_id` column in the `task_assignments` backfill, then `1048` NULL `active` for unpublished
 tasks) and a first empty-database boot failed with `1364 Field 'ordinal' doesn't have a default
 value`. During phase 2, `requireDepartment`/`requirePosition` were found to reuse the *uniqueness*
@@ -149,11 +167,14 @@ which was corrected in the harness rather than in the product.
 - The seeded demo accounts keep `must_change_password = FALSE`, so they sign in directly; only
   administrator-created or administrator-reset accounts hit the gate. Confirm that is the intended
   demo experience.
-- Sections 4-11 are **unimplemented and unverified**, and nothing in them may be reported as done.
-  They are still pending work in `tasks.md`, not removed scope: the previous run simply stopped at
-  section 3 because the user asked for that. Everything those sections own (ordered reviewer routing,
-  expiration, reminders, notification lifecycle, log rules, calendar, analytics, integration
-  verification) still has to be built.
+- The earlier "sections 4-11 unimplemented" reminder is superseded: section 4 was implemented at
+  `4252451`, with historical checks above. Sections 5-11 remain pending as full task groups, although
+  `4247dcc` supplies parts of the profile/UI work now tracked by 3.5, 8.4 and 11.7. Do not count the
+  imported notification footer change as deadline, reminder or notification-lifecycle completion.
+- The original phone-only-self and direct-report-only profile-entry rules are superseded by the
+  2026-10-19 delta. Verify current profile scope AND a higher actual management-chain relationship
+  before returning another user's phone; indirect profile access must not grant log access. Existing
+  directory privacy assertions remain valid, but do not establish the new person-detail matrix.
 - **V6's constraint replacement was broken and V10 repairs it.** Verify on an upgraded database (not just a fresh one) that `approval_requests_chk_1`, `approval_requests_chk_2`, `approval_requests_chk_3` and `task_versions_chk_4` are gone; V10 records a `legacy_check_constraint` blocker finding if any survive. This matters for section 5: `status='expired'` on both `approval_requests` and `task_versions` is rejected by those old constraints.
 - `refreshPendingRoutes` deliberately refuses an organization change (409 `ROUTE_BLOCKED_DEADLINE`) when a pending request would lose its last reviewer *and* is already past its applicable deadline, because the expiry terminal state belongs to section 5. Once 5.x exists, that branch should expire the request instead of blocking the administrator.
 - `applicableDeadline` in `TaskService` is a best-effort read used only by that refusal: it prefers the stored `applicable_deadline`, else the route's own version deadline. Section 5.1 owns computing and persisting it on submit, and 5.2 owns the terminal state.

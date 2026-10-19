@@ -66,9 +66,11 @@ cd backend
 
 写操作（登录除外）携带 `Idempotency-Key`；修改任务、审批、日志、通知、个人信息条目及本人资料携带详情 GET 返回的 `ETag`，写在 `If-Match` 头。无权对象返回404；缺少前置版本返回428，版本过期返回412，同键不同请求返回409。公司信息写接口对业务账号返回403。会话令牌只保存摘要，密码保存 BCrypt 哈希。
 
-本地业务默认（第 4—11 章尚未实施，以下描述的是**当前代码**的实际行为）：同层多负责人取共同有效上级；无有效上级回退原创建者，无法找到审核人则阻止提交；进展纳入审核；创建者兼审核人时仍走旧的免审分支。全天任务目前仍使用固定的 18:00 截止（`TaskService.ALL_DAY_CUTOFF`）：管理端保存的“公司下班时刻”已持久化、校验并记入审计，但要等第 6 章排期版本落地后才会真正用于新排期，改设置不会立即影响已有或新建任务。
+本地业务默认（对应 OpenSpec tasks 第 1—4 节的实现）：按最高组织层级负责人、同层保存顺序首位及其管理链确定唯一审核人，可用原创建者兜底；有审核人一律显式审核，包括本人审核，确实无审核人时留因生效。已接入审核预览、持久化改派、专用交接、完整排期重开及管理端任务历史。全天任务目前仍使用固定的 18:00 截止（`TaskService.ALL_DAY_CUTOFF`）：管理端保存的“公司下班时刻”已持久化、校验并记入审计，但要等第 6 节排期版本落地后才会真正用于新排期，改设置不会立即影响已有或新建任务。
 
-当前采用同组织写事务串行化，适合本地验证和小规模演示；API 与站内事件工作线程在同一进程，事件持久化于 MySQL。AI 区域显示可追溯的规则提示，不调用外部模型。组织维护、账户/密码生命周期与联系方式隐私已接入（第 1—3 章）；有序审核路由、交接、截止失效、比例提醒、消息生命周期、日历与分析改版尚未接入（第 4—11 章）。详细状态以实施说明为准。
+当前采用同组织写事务串行化，适合本地验证和小规模演示；API 与站内事件工作线程在同一进程，事件持久化于 MySQL。AI 区域显示可追溯的规则提示，不调用外部模型。截止失效、比例提醒、完整消息生命周期、日志规则、日历与分析改版及集成复验仍是 tasks 第 5—11 节的待办。
+
+2026-10-19 将 `4247dcc` / PR #6 纳入当前 change：任务说明/完成标准输入框最小高度 234px、日志全屏编辑、通知列表移除底部刷新/关闭操作，以及“我的”管理链下属资料和手机号详情权限。列表保留头部关闭。已有代码只覆盖相关任务的一部分，任务 3.5 因手机号规则变化重新打开，8.4/11.7 等待完整接口与浏览器验收；这些调整不代表 tasks 第 5—7 节完成。
 
 ## 配置与数据位置
 
@@ -88,7 +90,7 @@ python3 scripts/check_home_integration.py --report .runtime/home-integration.jso
 python3 scripts/check_profile_integration.py --report .runtime/profile-integration.json
 ```
 
-第 1—3 章的专项验证（2026-10-16 全部通过，证据见仓库根目录 `audit/2026-10-16/`）：
+tasks 第 1—4 节的历史专项验证（2026-10-16 通过，证据见仓库根目录 `audit/2026-10-16/`；不证明 2026-10-19 新手机号规则和界面已通过）：
 
 ```sh
 # 迁移预检与隔离演练：自行创建并删除临时库，无需准备
@@ -102,9 +104,12 @@ python3 scripts/check_account_lifecycle.py --base-url http://127.0.0.1:18092 --d
 
 # 真实浏览器（无头 Chrome，390x844）驱动已构建页面
 node scripts/check_account_browser.js --base-url http://127.0.0.1:18092
+
+# 审核路由/交接/重开/历史：独立的新种子库
+python3 scripts/check_review_routing.py --base-url http://127.0.0.1:18093
 ```
 
-后三个脚本会断言「新种子库」的前提（默认下班时刻为 18:00、账号名按次随机），**必须对全新库运行**；对已经跑过的库重跑会出现“freshly seeded”一条失败，那是脚本前提而非回归。准备方式：用 `.runtime/mysql-admin.cnf` 建库并授权，再用 `PANDORA_DB_URL`/`PANDORA_SEED=true` 启动服务。
+组织、账户、浏览器与路由脚本使用「新种子库」前提（例如默认下班时刻为 18:00、账号名按次随机），**必须按各套件说明准备全新库**；对已被修改的库重跑可能出现“freshly seeded”前提失败。准备方式：用 `.runtime/mysql-admin.cnf` 建库并授权，再用 `PANDORA_DB_URL`/`PANDORA_SEED=true` 启动服务。现有联系方式套件需补 `/api/v1/users/{id}` 的新管理链权限矩阵，目录无号码检查仍须保留。
 
 2026年10月12日，当前版本24项Java单元测试、25项个人资料HTTP检查和44项首页信息HTTP检查全部通过；专项验证结束后，本人资料恢复原值，临时个人信息条目已清理，公司信息保持不变。此前原页面接入阶段的50项任务等HTTP检查和18项数据库完整性检查也已通过。停止并再次启动后，已有数据保留，种子没有重复插入。原页面已在1440×900电脑和390×844手机尺寸检查。浏览器验证覆盖登录、任务申请/审批、日志保存刷新、首页信息、通知、规则分析；另验证保存成功但响应丢失后重试不会重复新增，以及会话过期清理。
 
@@ -114,4 +119,4 @@ HTTP 集成验证连接正在运行的真实 MySQL 后端，覆盖登录、越�
 
 技术参考：[Spring Boot 系统要求](https://docs.spring.io/spring-boot/3.5/system-requirements.html)、[MySQL 生成列](https://dev.mysql.com/doc/refman/8.0/en/create-table-generated-columns.html)。MySQL 通过生成列与唯一键约束每个任务最多一条待审请求，复合外键限制跨组织引用。
 
-第 1—3 章的书面现状另见 [实施说明](docs/implementation-status.md) 末节（2026-10-16）；该节明确列出第 4—11 章尚未实施，以及“公司下班时刻”设置尚未被排期消费。接管请先读变更目录 `openspec/changes/fix-pandora-formal-requirement-deviations/implementation-notes.md` 的 “How to continue this change”。
+当前状态见 [实施说明](docs/implementation-status.md) 的 2026-10-19 协调记录；此前各节为历史结果。“公司下班时刻”设置仍未被排期消费。接管请先读变更目录 `openspec/changes/fix-pandora-formal-requirement-deviations/implementation-notes.md` 的 “How to continue this change”，任务勾选和测试证据均不替代独立 e13 verify。
