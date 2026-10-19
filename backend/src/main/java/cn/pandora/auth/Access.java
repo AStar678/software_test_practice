@@ -176,24 +176,6 @@ public class Access {
         };
     }
 
-    /** Phone access follows the actual management chain, never a role name or profile scope. */
-    public boolean canReadPhone(Actor a, Map<String, Object> user) {
-        if (user == null || !a.organizationId().equals(s(user, "organizationId")) || !enabled(user)) return false;
-        if (a.id().equals(s(user, "id"))) return true;
-        if (a.administrator() || "admin".equals(s(user, "role")) || user.get("rankLevel") == null
-                || a.rank() >= n(user, "rankLevel")) return false;
-        Set<String> visited = new HashSet<>();
-        visited.add(s(user, "id"));
-        String managerId = s(user, "managerId");
-        while (managerId != null && visited.add(managerId)) {
-            if (a.id().equals(managerId)) return true;
-            Map<String, Object> manager = activeUser(a, managerId);
-            if (manager == null) return false;
-            managerId = s(manager, "managerId");
-        }
-        return false;
-    }
-
     public List<String> visibleUserIds(Actor a) {
         return db.list("SELECT * FROM users WHERE organization_id=? AND active=1", a.organizationId())
                 .stream().filter(u -> canSeePerson(a, u)).map(u -> s(u, "id")).toList();

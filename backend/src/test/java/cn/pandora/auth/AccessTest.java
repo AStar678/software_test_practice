@@ -201,45 +201,4 @@ class AccessTest {
         otherOrgPerson.put("organizationId", "org-b");
         assertFalse(access.canSeePerson(executive, otherOrgPerson));
     }
-
-    @Test
-    void phoneIsVisibleToSelfAndActualSuperiorsButNeverPeersOrUnrelatedHigherRanks() {
-        Db db = mock(Db.class);
-        when(db.find(startsWith("SELECT * FROM users WHERE id=?"), eq("lead"), eq("org")))
-                .thenReturn(person("lead", "d1", "exec", 2));
-        Access access = access(db);
-        Map<String, Object> report = person("report", "d1", "lead", 3);
-        assertTrue(access.canReadPhone(employee("report", "d1", "lead"), report));
-        assertTrue(access.canReadPhone(departmentLead("lead", "d1"), report));
-        assertTrue(access.canReadPhone(executive("exec"), report), "indirect superior");
-        assertFalse(access.canReadPhone(employee("peer", "d1", "lead"), report));
-        assertFalse(access.canReadPhone(departmentLead("other-lead", "d1"), report));
-        assertFalse(access.canReadPhone(executive("other-exec"), report), "company scope is insufficient");
-        assertFalse(access.canReadPhone(employee("report", "d1", "lead"), person("lead", "d1", "exec", 2)));
-        assertFalse(access.canReadPhone(administrator(), report));
-        assertFalse(access.canReadPhone(executive("exec"), person("peer-exec", "d1", "exec", 1)),
-                "same rank never receives phone access even with a malformed manager link");
-    }
-
-    @Test
-    void phoneAccessStopsAtOrganizationBoundariesRevokedRelationshipsAndCycles() {
-        Db db = mock(Db.class);
-        Access access = access(db);
-        Actor exec = executive("exec");
-        Map<String, Object> report = new HashMap<>(person("report", "d1", "lead", 3));
-        report.put("organizationId", "other-org");
-        assertFalse(access.canReadPhone(exec, report));
-        report.put("organizationId", "org");
-        report.put("active", false);
-        assertFalse(access.canReadPhone(exec, report));
-        report.put("active", true);
-        assertFalse(access.canReadPhone(exec, report), "inactive or missing intermediate manager");
-        when(db.find(startsWith("SELECT * FROM users WHERE id=?"), eq("lead"), eq("org")))
-                .thenReturn(person("lead", "d1", "exec", 2));
-        assertTrue(access.canReadPhone(exec, report));
-        when(db.find(startsWith("SELECT * FROM users WHERE id=?"), eq("lead"), eq("org")))
-                .thenReturn(person("lead", "d1", "report", 2));
-        assertFalse(access.canReadPhone(exec, report), "reassignment and a cycle revoke the old superior");
-        assertFalse(access.canReadPhone(exec, null));
-    }
 }

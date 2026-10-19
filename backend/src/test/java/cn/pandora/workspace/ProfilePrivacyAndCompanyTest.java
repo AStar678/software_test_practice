@@ -69,26 +69,4 @@ class ProfilePrivacyAndCompanyTest {
             assertFalse(person.containsKey("profileVersion"));
         }
     }
-
-    @Test
-    void personDetailChecksBothProfileAndPhoneAccessWithoutReturningOtherPrivateFields() {
-        Db db = mock(Db.class);
-        Access access = mock(Access.class);
-        Map<String, Object> raw = Map.of("id", "report", "phone", "13800000000", "email", "private@example.test",
-                "passwordHash", "secret");
-        when(access.user(UPPER, "report")).thenReturn(raw);
-        when(access.canSeePerson(UPPER, raw)).thenReturn(true);
-        WorkspaceService service = new WorkspaceService(db, access, mock(TaskService.class), mock(Events.class));
-        assertFalse(service.person(UPPER, "report").containsKey("phone"));
-        when(access.canReadPhone(UPPER, raw)).thenReturn(true);
-        var detail = service.person(UPPER, "report");
-        assertEquals("13800000000", detail.get("phone"));
-        assertFalse(detail.containsKey("email"));
-        assertFalse(detail.containsKey("passwordHash"));
-        assertFalse(detail.containsKey("profileVersion"));
-        when(access.canSeePerson(UPPER, raw)).thenReturn(false);
-        assertEquals(404, assertThrows(ApiException.class, () -> service.person(UPPER, "report")).status);
-        Actor admin = new Actor("admin", "org", "admin", null, null, 0);
-        assertEquals(403, assertThrows(ApiException.class, () -> service.person(admin, "report")).status);
-    }
 }

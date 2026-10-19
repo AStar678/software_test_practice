@@ -1413,9 +1413,7 @@ let sheetStack = [];
 let lastFocused = null;
 
 function renderSheet(){
-  const sheet = document.getElementById("sheet");
   if (!sheetStack.length){
-    sheet.classList.remove("is-fullscreen");
     overlayEl.hidden = true;
     document.getElementById("sheetFoot").hidden = false;
     if (lastFocused && document.contains(lastFocused)) lastFocused.focus();
@@ -1423,7 +1421,6 @@ function renderSheet(){
     return;
   }
   const view = sheetStack[sheetStack.length - 1];
-  sheet.classList.toggle("is-fullscreen", !!view.fullscreen);
   sheetTitleEl.textContent = view.title;
   sheetBodyEl.innerHTML = view.body;
   sheetFootEl.innerHTML = view.foot || "";
@@ -1432,7 +1429,7 @@ function renderSheet(){
   sheetBodyEl.scrollTop = 0;
   const target = sheetBodyEl.querySelector("[data-autofocus]") ||
     sheetFootEl.querySelector("button") ||
-    sheetBodyEl.querySelector("button, input, select, textarea") || document.getElementById("sheetClose");
+    sheetBodyEl.querySelector("button, input, select, textarea");
   if (target) target.focus();
 }
 function openSheet(view){
@@ -1611,7 +1608,7 @@ function notificationsView(){
               esc(fmtDateTime(n.time)) + (isRead ? "" : " · 未读") + "</span></span></button>";
       }).join("")
     : '<div class="empty">暂无通知</div>';
-  return { title: "通知", body: body };
+  return { title: "通知", body: body, foot: '<button type="button" class="btn" data-action="sheet-close">关闭</button>' };
 }
 
 /* ---------- 请示详情：通知里 targetType=consult 的跳转目标 ---------- */
@@ -1784,7 +1781,7 @@ function logFormView(){
   const d = drafts.log;
   if (!d) return null;
   const linked = d.taskId ? taskById(d.taskId) : null;
-  const body = '<div class="field log-content-field"><label for="lf-content">日志内容</label><textarea id="lf-content" data-autofocus>' + esc(d.content) + "</textarea></div>" +
+  const body = '<div class="field"><label for="lf-content">日志内容</label><textarea id="lf-content" data-autofocus>' + esc(d.content) + "</textarea></div>" +
     '<div class="field"><label>关联任务（可选）</label>' +
       '<div class="summary-line" id="lf-task-summary">' +
         (linked ? esc(linked.title) : '<span class="muted">未关联任务</span>') + "</div>" +
@@ -1796,7 +1793,7 @@ function logFormView(){
     '<div class="callout" id="lf-error" hidden></div>';
   return { title: d.id ? "编辑日志" : "写日志", body: body,
     foot: withBack('<button type="button" class="btn primary" data-action="save-log">保存日志</button>', actor()),
-    draftKind: "log", rebuild: logFormView, fullscreen: true };
+    draftKind: "log", rebuild: logFormView };
 }
 function openLogForm(id){
   const d = logDraftFrom(id);
@@ -2714,7 +2711,7 @@ document.addEventListener("keydown", function(ev){
   if (ev.key === "Tab"){
     const focusables = sheetBodyEl.querySelectorAll("button, input, select, textarea, [href]");
     const footFocusables = sheetFootEl.querySelectorAll("button");
-    const list = [document.getElementById("sheetClose")].concat(Array.prototype.slice.call(focusables), Array.prototype.slice.call(footFocusables))
+    const list = Array.prototype.slice.call(focusables).concat(Array.prototype.slice.call(footFocusables))
       .filter(function(el){ return !el.disabled && el.offsetParent !== null; });
     if (!list.length) return;
     const first = list[0], last = list[list.length - 1];
