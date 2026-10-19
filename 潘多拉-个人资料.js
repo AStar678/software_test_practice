@@ -1,5 +1,5 @@
 "use strict";
-/* 私人资料只通过本人接口读取和保存；不把联系人加入人员目录。 */
+/* 本人资料可编辑；下属资料由后端逐次检查查看权限和手机号权限。 */
 (function () {
   const P = window.Pandora;
   if (!P) throw new Error("请先加载潘多拉后端接入核心。");
@@ -12,7 +12,7 @@
   function row(label, value) {
     return '<div class="profile-row"><span class="k">' + label + '</span><span class="v" style="min-width:0;overflow-wrap:anywhere">' + esc(value == null || value === "" ? "未填写" : value) + '</span></div>';
   }
-  function button(action, label, style) { return '<button type="button" class="btn ' + (style || "") + '" data-action="' + action + '">' + label + '</button>'; }
+  function button(action, label, style, id) { return '<button type="button" class="btn ' + (style || "") + '" data-action="' + action + '"' + (id ? ' data-id="' + esc(id) + '"' : '') + '>' + esc(label) + '</button>'; }
   function superior(user) {
     if (user.managerName) return user.managerName;
     const person = user.managerId && personById(user.managerId);
@@ -26,13 +26,45 @@
     return '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" type="' + type + '" value="' + esc(value || "") + '" maxlength="' + max + '" autocomplete="' + autocomplete + '"' + (required ? ' required data-autofocus' : '') + ' /></div>';
   }
 
+  function reports() {
+    const user = me(), users = P.data.users || [];
+    const byId = new Map(users.map(person => [person.id, person]));
+    return users.filter(person => {
+      if (person.id === user.id || person.rankLevel <= user.rankLevel) return false;
+      const visited = new Set([person.id]);
+      let managerId = person.managerId;
+      while (managerId && !visited.has(managerId)) {
+        if (managerId === user.id) return true;
+        visited.add(managerId);
+        managerId = (byId.get(managerId) || {}).managerId;
+      }
+      return false;
+    });
+  }
+
+  function reportsSection() {
+    const list = reports();
+    if (!list.length) return "";
+    return '<section class="card"><div class="card-head"><h2>下属资料</h2></div><div class="stack">' +
+      list.map(person => button("p-open-person", person.displayName, "", person.id)).join("") + '</div></section>';
+  }
+
+  function openPerson(id) {
+    return P.busy(async function () {
+      const person = await P.request("/users/" + encodeURIComponent(id));
+      openSheet({ title: "人员资料", body: row("姓名", person.displayName) +
+        row("身份", ROLE_LABEL[person.role] || person.role) + row("直属上级", superior(person)) +
+        (Object.prototype.hasOwnProperty.call(person, "phone") ? row("手机号", person.phone) : "") });
+    });
+  }
+
   renderMe = function () {
     const user = me();
     document.getElementById("page-me").innerHTML = '<section class="card profile-card"><div class="profile-row"><div class="avatar">' +
       esc(Array.from(user.displayName || "")[0] || "") + '</div><div style="min-width:0;overflow-wrap:anywhere"><div class="v">' + esc(user.displayName) + '</div><div class="tiny muted">当前登录账号</div></div></div>' +
       row("姓名", user.displayName) + row("联系电话", user.phone) + row("邮箱", user.email) + readonlyRows(user) +
       '<div class="action-grid" style="margin-top:12px">' + button("p-edit-profile", "编辑个人资料", "primary") + button("p-change-password", "修改密码") + '</div></section>' +
-      '<section class="card"><div class="card-head"><h2>账号与数据</h2></div><div class="action-grid">' + row("账号", user.username) + row("身份", ROLE_LABEL[user.role] || user.role) + button("p-refresh-workspace", "刷新数据") + button("p-logout", "退出登录") + '</div></section>';
+      reportsSection() + '<section class="card"><div class="card-head"><h2>账号与数据</h2></div><div class="action-grid">' + row("账号", user.username) + row("身份", ROLE_LABEL[user.role] || user.role) + button("p-refresh-workspace", "刷新数据") + button("p-logout", "退出登录") + '</div></section>';
   };
 
   function formView(draft) {
@@ -42,7 +74,7 @@
       body: field("profile-display-name", "text", "姓名（必填）", raw.displayName, 100, "name", true) +
         field("profile-phone", "tel", "联系电话（选填）", raw.phone, 32, "tel", false) +
         field("profile-email", "email", "邮箱（选填）", raw.email, 254, "email", false) +
-        '<p class="tiny muted">联系电话和邮箱仅在本人的个人资料中展示；留空可清除。</p><div class="divider"></div>' + readonlyRows(raw) +
+        '<p class="tiny muted">手机号仅本人及管理链上的上级可见，邮箱仅本人可见；留空可清除。</p><div class="divider"></div>' + readonlyRows(raw) +
         '<p class="tiny muted">账号、部门、身份和直属上级由管理员维护。</p><div class="callout reject" id="profile-error" role="alert" hidden></div>',
       foot: withBack(button("p-save-profile", "保存资料", "primary"))
     };
@@ -113,6 +145,7 @@
   }
 
   runAction = function (element) {
+    if (element.dataset.action === "p-open-person") return openPerson(element.dataset.id);
     if (element.dataset.action === "p-edit-profile") return openProfile();
     if (element.dataset.action === "p-save-profile") return saveProfile();
     if (element.dataset.action === "p-change-password") return openPassword();
