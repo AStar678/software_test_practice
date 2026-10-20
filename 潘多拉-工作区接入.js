@@ -54,29 +54,60 @@
     if (!P.data.me || P.data.me.id !== pid) return [];
     return ((P.data.home || {}).personalItems || []).map(row => ({ id: row.id, text: row.body || row.title, raw: row }));
   };
+  const HOME_PRIORITY = { urgent: "紧急", high: "高", medium: "中", low: "低" };
+  function homeAssignedBody() {
+    const items = (P.data.home || {}).assignedTasks || [];
+    if (!items.length) return '<div class="empty">暂无被派发的未完成任务</div>';
+    return items.map(item =>
+      '<button type="button" class="home-task" data-task="' + esc(item.taskId) + '"><span class="home-task-title">' +
+        esc(item.title) + '</span><span class="home-task-priority">' + esc(HOME_PRIORITY[item.priority] || "中") + '</span></button>'
+    ).join("");
+  }
+  function homePersonalBody() {
+    const items = (P.data.home || {}).personalItems || [];
+    if (!items.length) return '<div class="empty">暂无个人信息，可手动添加</div>';
+    return items.map((item, index) =>
+      '<button type="button" class="item-line home-personal-item" data-action="p-open-home-personal" data-id="' + esc(item.id) +
+        '"><span class="idx">' + (index + 1) + '</span><span class="txt">' + esc(item.body || item.title) + '</span></button>'
+    ).join("");
+  }
+  function homeLogsBody() {
+    const logs = (P.data.home || {}).recentLogs || [];
+    if (!logs.length) return '<div class="empty">近十天暂无日志</div>';
+    return logs.map(l =>
+      '<button type="button" class="log-line" data-log="' + esc(l.id) + '"><span class="lt">' + esc(l.businessDate) +
+      '</span><span class="lc">' + esc(l.body) + '</span></button>'
+    ).join("");
+  }
   renderMap = function () {
-    oldMap();
     const home = P.data.home || {};
-    const quads = document.querySelectorAll("#page-map .quad");
-    if (quads[0]) {
-      const items = home.companyItems || [];
-      quads[0].innerHTML = '<div class="card-head"><h2 id="q1">公司统一信息</h2><span class="hint">统一发布</span></div>' +
-        '<div class="q-body">' + (items.length ? items.map((item, index) =>
-          '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt">' +
-          esc(item.body || item.title) + '</span></div></div>'
-        ).join("") : '<div class="empty">暂无公司信息</div>') + '</div>';
-    }
-    if (quads[2]) quads[2].querySelector(".hint").textContent = (home.personalItems || []).length + "/10 · 本人维护";
-    if (quads[3]) {
-      quads[3].querySelector("h2").textContent = "近十天日志";
-      quads[3].querySelector(".hint").textContent = "最近10条";
-      const logs = home.recentLogs || [];
-      quads[3].querySelector(".q-body").innerHTML = logs.length ? logs.map(l =>
-        '<button type="button" class="log-line" data-log="' + esc(l.id) + '"><span class="lt">' + esc(l.businessDate) +
-        '</span><span class="lc">' + esc(l.body) + '</span></button>'
-      ).join("") : '<div class="empty">近十天暂无日志</div>';
-    }
+    const company = home.companyItems || [];
+    const personal = home.personalItems || [];
+    const assigned = home.assignedTasks || [];
+    document.getElementById("page-map").innerHTML =
+      '<div class="map-grid">' +
+        '<section class="quad" aria-labelledby="q1"><div class="card-head"><h2 id="q1">公司统一信息</h2><span class="hint">统一发布</span></div>' +
+          '<div class="q-body">' + (company.length ? company.map((item, index) =>
+            '<div class="item-line"><span class="idx">' + (index + 1) + '</span><span class="txt">' + esc(item.body || item.title) + '</span></div>'
+          ).join("") : '<div class="empty">暂无公司信息</div>') + '</div></section>' +
+        '<section class="quad" aria-labelledby="q2"><div class="card-head"><h2 id="q2">我被派发未完成</h2><span class="hint">' +
+          assigned.length + '/10</span></div><div class="q-body">' + homeAssignedBody() + '</div></section>' +
+        '<section class="quad" aria-labelledby="q3"><div class="card-head has-actions"><h2 id="q3">个人信息</h2><span class="hint">' +
+          personal.length + '/10 · 本人维护</span><button type="button" class="btn tiny-btn" data-action="new-personal"' +
+          (personal.length >= 10 ? ' disabled' : '') + ' aria-label="新增个人信息">新增</button></div>' +
+          '<div class="q-body">' + homePersonalBody() + '</div></section>' +
+        '<section class="quad" aria-labelledby="q4"><div class="card-head"><h2 id="q4">近十天日志</h2><span class="hint">最近10条</span></div>' +
+          '<div class="q-body">' + homeLogsBody() + '</div></section>' +
+      '</div>';
   };
+
+  function openPersonalDetail(id) {
+    return P.busy(async function () {
+      const raw = await P.request("/home/items/" + endpoint(id));
+      openSheet({ title: "个人信息", body: '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(raw.body || raw.title) + '</p>',
+        foot: withBack(button("p-edit-home-personal", "编辑", "primary", id) + button("p-delete-home-personal", "删除", "danger", id) + button("sheet-close", "关闭")) });
+    });
+  }
 
   LOG_FILTER_LABEL.logs = "工作日志";
   function logAuthors() { return (P.data.logAuthors || {}).items || []; }
@@ -518,8 +549,16 @@
       case "confirm-delete":
         if (el.dataset.kind === "company") { P.notice("公司统一信息由管理端统一发布。"); return; }
         oldActions(el); return;
-      case "toggle-logs-mine": case "clear-log-author":
-        clearLogSearch(); if (state.page === "log") renderLog(); return;
+      case "clear-log-author":
+        state.logAuthorQuery = "";
+        { const input = document.getElementById("logAuthorInput"); if (input) { input.value = ""; input.focus(); } }
+        refreshLogResults();
+        return;
+      case "toggle-logs-mine":
+        return;
+      case "p-open-home-personal": openPersonalDetail(el.dataset.id); return;
+      case "p-edit-home-personal": openHomeItem("personal", el.dataset.id, false); return;
+      case "p-delete-home-personal": openHomeItem("personal", el.dataset.id, true); return;
       case "clear-log-task":
         if (drafts.log) drafts.log.relationshipChanged = true;
         oldActions(el); return;
