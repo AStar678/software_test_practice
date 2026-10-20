@@ -42,6 +42,7 @@ public class TaskController {
     public ResponseEntity<Map<String, Object>> handover(@RequestAttribute("actor") Actor actor, @PathVariable String id,
             @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @RequestHeader(value = "If-Match", required = false) String ifMatch, @RequestBody Map<String, Object> input) {
+        tasks.expireBeforeSubmit(actor, id);
         Map<String, Object> result = writes.run(actor, key, "POST:/tasks/" + id + "/handover", input, ifMatch,
                 () -> tasks.handover(actor, id, ifMatch, input));
         return ResponseEntity.ok().eTag("\"" + result.get("rowVersion") + "\"").body(result);
@@ -79,6 +80,8 @@ public class TaskController {
     public ResponseEntity<Map<String, Object>> change(@RequestAttribute("actor") Actor actor, @PathVariable String id,
             @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @RequestHeader(value = "If-Match", required = false) String ifMatch, @RequestBody Map<String, Object> input) {
+        // Commit the deadline terminal state before the command so a stale-page 4xx cannot roll it back.
+        tasks.expireBeforeSubmit(actor, id);
         Map<String, Object> result = writes.run(actor, key, "PATCH:/tasks/" + id, input, ifMatch, () -> tasks.change(actor, id, ifMatch, input));
         return ResponseEntity.ok().eTag("\"" + result.get("rowVersion") + "\"").body(result);
     }

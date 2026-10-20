@@ -182,16 +182,21 @@ public class Access {
         if (a.id().equals(s(user, "id"))) return true;
         if (a.administrator() || "admin".equals(s(user, "role")) || user.get("rankLevel") == null
                 || a.rank() >= n(user, "rankLevel")) return false;
+        // Walk the whole chain to its root before granting: finding the viewer is not enough because a
+        // cycle, a dangling reference or an inactive/cross-company manager anywhere in the chain means
+        // the relationship cannot be proven, so the answer must fail closed (DEV-028, V-004).
         Set<String> visited = new HashSet<>();
         visited.add(s(user, "id"));
+        boolean viewerIsAncestor = false;
         String managerId = s(user, "managerId");
-        while (managerId != null && visited.add(managerId)) {
-            if (a.id().equals(managerId)) return true;
+        while (managerId != null) {
+            if (!visited.add(managerId)) return false;
+            if (a.id().equals(managerId)) viewerIsAncestor = true;
             Map<String, Object> manager = activeUser(a, managerId);
             if (manager == null) return false;
             managerId = s(manager, "managerId");
         }
-        return false;
+        return viewerIsAncestor;
     }
 
     public List<String> visibleUserIds(Actor a) {

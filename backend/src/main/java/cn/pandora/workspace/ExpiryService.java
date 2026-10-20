@@ -4,6 +4,8 @@ import cn.pandora.common.ApiException;
 import cn.pandora.common.Db;
 import cn.pandora.common.Events;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -25,11 +27,27 @@ public class ExpiryService {
     private final Db db;
     private final Events events;
     private final ReminderService reminders;
+    private final TransactionTemplate transaction;
 
-    public ExpiryService(Db db, Events events, ReminderService reminders) {
+    public ExpiryService(Db db, Events events, ReminderService reminders, PlatformTransactionManager tx) {
         this.db = db;
         this.events = events;
         this.reminders = reminders;
+        this.transaction = new TransactionTemplate(tx);
+    }
+
+    /**
+     * Committed expiry for a submission entry point. The command transaction that follows may reject a
+     * stale page with 4xx, but the deadline terminal state (status, unfreeze, expiry/overdue events)
+     * must survive that error, so it is written and committed in its own transaction first
+     * (design §6, DEV-012). Call this only outside {@code Writes.run}.
+     */
+    public int expirePendingBeforeSubmit(String organizationId, String taskId, Instant now) {
+        Integer expired = transaction.execute(status -> {
+            db.one("SELECT * FROM organizations WHERE id=? FOR UPDATE", organizationId);
+            return expirePendingForTask(organizationId, taskId, now);
+        });
+        return expired == null ? 0 : expired;
     }
 
     /**

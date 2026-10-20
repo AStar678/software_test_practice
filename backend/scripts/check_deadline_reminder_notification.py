@@ -216,6 +216,65 @@ def main() -> int:
           deadline_detail.get("pending"))
     check("5.2 expiry notifies the applicant and reviewer", notification_count(api, "employee", deadline_task, "task.progress.expired") >= 1)
 
+    # ---------------- 5.2 submission entries commit expiry before a stale-page error ----------------
+    base = server_now(api)
+    status, created = create_task(api, api.tokens["middle"], "提交入口失效落库", [employee],
+                                  base + dt.timedelta(seconds=20), base + dt.timedelta(seconds=40))
+    stale_task = created["taskId"]
+    stale_request = created["requestId"]
+    _, stale_detail, stale_headers = task(api, api.tokens["middle"], stale_task)
+    stale_etag = api.etag(stale_detail, stale_headers)
+    advance(api, 41)
+    status, stale_submit, _ = api.call("PATCH", "/api/v1/tasks/" + stale_task, api.tokens["middle"],
+                                       {"command": "change", "title": "跨截止重提", "reason": "过期页面重提"},
+                                       api.key("stale-submit"), stale_etag)
+    check("5.2 a submission from a page older than expiry is refused", status == 412,
+          {"status": status, "body": stale_submit})
+    status, stale_view, _ = approval(api, api.tokens["middle"], stale_request)
+    check("5.2 the submission-entry expiry terminal state survives the 4xx",
+          status == 200 and stale_view.get("status") == "expired", stale_view.get("status"))
+    _, stale_after, _ = task(api, api.tokens["middle"], stale_task)
+    check("5.2 the unpublished task stays unpublished and unfrozen after the refusal",
+          stale_after.get("published") is False and stale_after.get("pending") is False
+          and stale_after.get("frozen") is False
+          and (stale_after.get("proposedVersion") or {}).get("executionState") == "todo",
+          {key: stale_after.get(key) for key in ("published", "pending", "frozen", "proposedVersion")})
+    status, stale_decision, _ = decide(api, api.tokens["middle"], stale_request)
+    check("5.2 the expired submission can no longer be approved", status == 409,
+          {"status": status, "code": stale_decision.get("code")})
+
+    base = server_now(api)
+    status, created = create_task(api, api.tokens["middle"], "交接入口失效落库", [employee],
+                                  base + dt.timedelta(seconds=25), base + dt.timedelta(seconds=45))
+    handover_task = created["taskId"]
+    decide(api, api.tokens["middle"], created["requestId"])
+    _, handover_detail, handover_headers = task(api, api.tokens["employee"], handover_task)
+    status, first_handover, _ = api.call(
+        "POST", "/api/v1/tasks/" + handover_task + "/handover", api.tokens["employee"],
+        {"sourceUserId": employee, "targetUserId": colleague, "reason": "交接失效验证"},
+        api.key("handover-first"), api.etag(handover_detail, handover_headers))
+    check("5.2 a valid handover is pending before the deadline",
+          status == 200 and first_handover.get("outcome") == "pending",
+          {"status": status, "body": first_handover})
+    handover_request = first_handover.get("requestId")
+    _, frozen_handover, frozen_headers = task(api, api.tokens["employee"], handover_task)
+    frozen_etag = api.etag(frozen_handover, frozen_headers)
+    advance(api, 46)
+    status, stale_handover, _ = api.call(
+        "POST", "/api/v1/tasks/" + handover_task + "/handover", api.tokens["employee"],
+        {"sourceUserId": employee, "targetUserId": colleague, "reason": "旧页面重提"},
+        api.key("handover-stale"), frozen_etag)
+    check("5.2 a handover from a page older than expiry is refused", status == 412,
+          {"status": status, "body": stale_handover})
+    status, handover_view, _ = approval(api, api.tokens["employee"], handover_request)
+    check("5.2 the handover expiry terminal state survives the 4xx",
+          status == 200 and handover_view.get("status") == "expired", handover_view.get("status"))
+    _, handover_after, _ = task(api, api.tokens["employee"], handover_task)
+    check("5.2 the handover expiry unfreezes the still-effective task",
+          handover_after.get("pending") is False and handover_after.get("frozen") is False
+          and handover_after.get("executionState") == "todo",
+          {key: handover_after.get(key) for key in ("pending", "frozen", "executionState")})
+
     # Worker-driven expiry and exactly-on-deadline boundary.
     base = server_now(api)
     status, created = create_task(api, api.tokens["middle"], "扫描失效任务", [employee],
@@ -647,6 +706,60 @@ def main() -> int:
           status == 200 and any(row.get("previousReviewerId") == middle and row.get("newReviewerId") == upper
                                 and row.get("source") == "organization_change" for row in reassignments),
           reassignments)
+
+    # ---------------- 7.2 ordinary undelivered event losing authority (V-001) ----------------
+    _, before_list, _ = api.call("GET", "/api/v1/notifications?limit=100", api.tokens["employee"])
+    known_ids = {row["id"] for row in before_list.get("items", [])}
+    base = server_now(api)
+    status, created = create_task(api, api.tokens["middle"], "E13 confidential undelivered title", [employee],
+                                  base + dt.timedelta(minutes=5), base + dt.timedelta(minutes=65))
+    undelivered_task = created["taskId"]
+    # The earlier reassignment scenario moved the employee to the upper chain, so resolve the actual
+    # reviewer of record instead of assuming the original manager.
+    _, create_view, _ = approval(api, api.tokens["middle"], created["requestId"])
+    create_reviewer = api.tokens["upper"] if create_view.get("currentReviewerId") == upper else api.tokens["middle"]
+    status, approved_create, _ = decide(api, create_reviewer, created["requestId"])
+    check("7.2 the ordinary create notice is queued before the owner changes",
+          status == 200 and approved_create.get("outcome") == "approved",
+          {"status": status, "body": approved_create})
+    status, changed, _ = submit(api, api.tokens["middle"], undelivered_task,
+                                {"command": "change", "title": "E13 reassigned visible title",
+                                 "assigneeIds": [colleague], "reason": "改派后失权"})
+    check("7.2 the ordinary create notification is still queued when the owner changes",
+          status == 200 and changed.get("outcome") == "pending", changed)
+    decide(api, api.tokens["middle"], changed["requestId"])
+    status, _after_removal, _ = task(api, api.tokens["employee"], undelivered_task)
+    check("7.2 the removed owner can no longer read the task", status == 404, status)
+    run_worker(api)
+    _, after_list, _ = api.call("GET", "/api/v1/notifications?limit=100", api.tokens["employee"])
+    fresh = [row for row in after_list.get("items", []) if row["id"] not in known_ids]
+    masked = [row for row in fresh if row.get("eventType") == "task.create.approved"]
+    check("7.2 the undelivered ordinary notice keeps no restricted title or change summary",
+          len(masked) == 1 and masked[0].get("taskId") is None and masked[0].get("title") is None
+          and masked[0].get("changeSummary") is None and masked[0].get("requestId") is None
+          and masked[0].get("requestStatus") is None and masked[0].get("canOpenTask") is False
+          and "E13" not in json.dumps(masked[0], ensure_ascii=False),
+          masked)
+    if masked:
+        status, masked_detail, _ = api.call("GET", "/api/v1/notifications/" + masked[0]["id"], api.tokens["employee"])
+        check("7.2 the message detail cannot refill restricted content from the event",
+              status == 200 and masked_detail.get("title") is None and masked_detail.get("changeSummary") is None
+              and masked_detail.get("taskId") is None and masked_detail.get("requestId") is None,
+              masked_detail)
+        status, historical, _ = api.call("GET", "/api/v1/notifications/" + masked[0]["id"] + "/task",
+                                         api.tokens["employee"])
+        check("7.2 the undelivered copy grants no historical task entry", status in (404, 409),
+              {"status": status, "body": historical})
+        status, opened, _ = api.call("POST", "/api/v1/notifications/" + masked[0]["id"] + "/open",
+                                     api.tokens["employee"], {}, api.key("open-masked"))
+        check("7.2 the read response repeats no restricted content",
+              status == 200 and "E13" not in json.dumps(opened, ensure_ascii=False)
+              and "title" not in opened and "changeSummary" not in opened,
+              opened)
+    removal = [row for row in fresh
+               if row.get("eventType") == "task.change.approved" and row.get("relationLost") is True]
+    check("7.2 a real removal event still keeps its read-only summary",
+          len(removal) == 1 and removal[0].get("title") == "E13 reassigned visible title", removal)
 
     report = {"success": all(row["pass"] for row in RESULTS), "checksPassed": sum(1 for row in RESULTS if row["pass"]),
               "checksFailed": sum(1 for row in RESULTS if not row["pass"]), "checks": RESULTS}

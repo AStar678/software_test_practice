@@ -1,5 +1,6 @@
 package cn.pandora.common;
 
+import cn.pandora.admin.OrganizationConstraints;
 import cn.pandora.auth.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
@@ -12,7 +13,10 @@ import static cn.pandora.common.Db.*;
 @Component
 public class Writes {
     private final Db db; private final TransactionTemplate tx; private final ObjectMapper mapper; private final AuthService auth;
-    public Writes(Db db,TransactionTemplate tx,ObjectMapper mapper,AuthService auth) {this.db=db;this.tx=tx;this.mapper=mapper;this.auth=auth;}
+    private final OrganizationConstraints constraints;
+    public Writes(Db db,TransactionTemplate tx,ObjectMapper mapper,AuthService auth,OrganizationConstraints constraints) {
+        this.db=db;this.tx=tx;this.mapper=mapper;this.auth=auth;this.constraints=constraints;
+    }
 
     /**
      * A command outcome split into the part that may be replayed from the idempotency cache and the
@@ -39,6 +43,13 @@ public class Writes {
             var org=db.one("SELECT * FROM organizations WHERE id=? FOR UPDATE",actor.organizationId());
             var user=db.one("SELECT * FROM users WHERE id=? AND organization_id=? AND active=1",actor.id(),actor.organizationId());
             if(!actor.equals(auth.actor(user))) throw new ApiException(409,"AUTHORIZATION_CHANGED","权限已更新，请重新读取后操作");
+            // A reviewed V4 mapping must be complete before formal business writes start. Administration
+            // repair scopes stay available so the mapping can be finished through the console, and old
+            // idempotency replays cannot bypass the gate because it runs before the cache lookup
+            // (Migration Plan §2, DEV-001/002).
+            if(!scope.contains("/admin/") && !constraints.formalWritesReady())
+                throw new ApiException(409,"ORGANIZATION_MAPPING_INCOMPLETE",
+                        "组织部门/职位映射尚未完成，正式业务写入暂不可用，请管理员在管理端补齐映射");
             var previous=db.find("SELECT * FROM idempotency_keys WHERE organization_id=? AND user_id=? AND scope=? AND key_value=?",actor.organizationId(),actor.id(),scope,key);
             if(previous!=null) {
                 if(!digest.equals(s(previous,"requestHash"))) throw new ApiException(409,"IDEMPOTENCY_CONFLICT","同一幂等键不能用于不同请求");

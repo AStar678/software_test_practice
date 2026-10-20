@@ -99,6 +99,10 @@ def main() -> int:
     check('2.6 the administration page is served from the build with every maintenance area',
           status == 200 and all(section in markup for section in sections),
           {'status': status, 'missing': [s for s in sections if s not in markup]})
+    check('2.6 the role editor exposes independent view/dispatch scope selectors',
+          'data-scope-type' in markup and 'data-save-scopes' in markup
+          and '/scopes' in markup,
+          {'hasSelectors': 'data-scope-type' in markup})
 
     # ---------------- 2.1 organization maintenance ----------------
     data = structure(api)
@@ -209,6 +213,65 @@ def main() -> int:
     status, body, _ = api.call('POST', '/api/v1/admin/departments', api.token('middle'),
                                {'name': f'越权部门-{RUN}'}, Api.key())
     check('2.2 a middle manager cannot write organization data', status == 403, {'status': status})
+
+    # ---------------- 2.2 configurable independent view / dispatch ranges (V-006) ----------------
+    _, before_structure, _ = api.call('GET', '/api/v1/admin/organization', api.token('admin'))
+    version_before = before_structure['organization']['authzVersion']
+    replay_key = Api.key()
+    status, replay_create, _ = api.call('POST', '/api/v1/home/items', api.token('upper'),
+                                        {'kind': 'personal', 'body': '范围配置前的幂等样例'}, replay_key)
+    check('2.2 a business write before the scope change succeeds', status == 200,
+          {'status': status, 'body': replay_create})
+    status, configured, _ = api.call('PATCH', '/api/v1/admin/roles/executive/scopes', api.token('admin'),
+                                     {'scopes': {'task_view': 'company', 'task_dispatch': 'self',
+                                                 'log_read': 'company', 'profile_read': 'company'}}, Api.key())
+    check('2.2 the administrator configures company view with self-only dispatch',
+          status == 200 and configured.get('scopes', {}).get('task_view') == 'company'
+          and configured.get('scopes', {}).get('task_dispatch') == 'self',
+          {'status': status, 'body': configured})
+    _, after_structure, _ = api.call('GET', '/api/v1/admin/organization', api.token('admin'))
+    executive_role = next(row for row in after_structure['roles'] if row['code'] == 'executive')
+    check('2.2 the independent ranges persist and advance the authorization version',
+          executive_role['scopes'].get('task_view') == 'company'
+          and executive_role['scopes'].get('task_dispatch') == 'self'
+          and after_structure['organization']['authzVersion'] > version_before,
+          {'scopes': executive_role['scopes'], 'before': version_before,
+           'after': after_structure['organization']['authzVersion']})
+    status, replay_body, _ = api.call('POST', '/api/v1/home/items', api.token('upper'),
+                                      {'kind': 'personal', 'body': '范围配置前的幂等样例'}, replay_key)
+    check('2.2 an idempotent replay from before the scope change is rejected',
+          status == 409 and replay_body.get('code') == 'AUTHORIZATION_CHANGED',
+          {'status': status, 'body': replay_body})
+    _, limited_candidates, _ = api.call('GET', '/api/v1/assignee-candidates', api.token('upper'))
+    check('2.2 the executive can now see company tasks but only dispatch to themselves',
+          [row['username'] for row in limited_candidates.get('items', [])] == ['upper'],
+          {'items': [row['username'] for row in limited_candidates.get('items', [])]})
+    _, visible_tasks, _ = api.call('GET', '/api/v1/tasks?limit=100', api.token('upper'))
+    check('2.2 the configured company view still returns the company task set',
+          visible_tasks.get('total', 0) > 0, {'total': visible_tasks.get('total')})
+    now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+    _, employee_me, _ = api.call('GET', '/api/v1/me', api.token('employee'))
+    status, forbidden_create, _ = api.call('POST', '/api/v1/tasks', api.token('upper'),
+                                           {'title': f'越权派发-{RUN}', 'description': '核验',
+                                            'acceptanceCriteria': '核验', 'priority': 'medium', 'allDay': False,
+                                            'startAt': now.isoformat().replace('+00:00', 'Z'),
+                                            'dueAt': (now + dt.timedelta(days=1)).isoformat().replace('+00:00', 'Z'),
+                                            'assigneeIds': [employee_me['id']]}, Api.key())
+    check('2.2 a dispatch outside the configured range is refused',
+          status == 403 and forbidden_create.get('code') == 'DISPATCH_NOT_ALLOWED',
+          {'status': status, 'body': forbidden_create})
+    status, admin_scope_body, _ = api.call('PATCH', '/api/v1/admin/roles/admin/scopes', api.token('admin'),
+                                           {'scopes': {'task_view': 'self'}}, Api.key())
+    check('2.2 the administrator role cannot be given employee business ranges', status == 400,
+          {'status': status, 'body': admin_scope_body})
+    status, restored, _ = api.call('PATCH', '/api/v1/admin/roles/executive/scopes', api.token('admin'),
+                                   {'scopes': {'task_view': 'company', 'task_dispatch': 'company',
+                                               'log_read': 'company', 'profile_read': 'company'}}, Api.key())
+    _, restored_candidates, _ = api.call('GET', '/api/v1/assignee-candidates', api.token('upper'))
+    restored_names = {row['username'] for row in restored_candidates.get('items', [])}
+    check('2.2 restoring the dispatch range restores the candidate set',
+          status == 200 and 'employee' in restored_names,
+          {'status': status, 'items': sorted(restored_names)})
 
     # ---------------- 2.3 log author range ----------------
     _, authors, _ = api.call('GET', '/api/v1/work-log-authors', api.token('middle'))

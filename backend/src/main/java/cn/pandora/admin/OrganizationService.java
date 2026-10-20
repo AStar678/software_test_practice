@@ -73,9 +73,64 @@ public class OrganizationService {
         return result;
     }
 
+    /**
+     * Applies the staged NOT NULL tightening after an administrator completes the mapping. The caller
+     * invokes this after the write command has committed, because the DDL implicitly commits and must
+     * not run inside the organization write transaction.
+     */
+    public boolean applyOrganizationConstraints() {
+        return constraints.tryTighten();
+    }
+
     public List<Map<String, Object>> roles(Actor actor) {
         access.requireAdmin(actor);
         return db.list("SELECT * FROM roles WHERE organization_id=? ORDER BY administrator DESC,code", actor.organizationId());
+    }
+
+    private static final Set<String> SCOPE_TYPES = Set.of("task_view", "task_dispatch", "log_read", "profile_read");
+    private static final Set<String> SCOPE_LEVELS = Set.of("self", "reports", "department", "company");
+
+    /**
+     * Independently configure the ranges of one role definition. View and dispatch stay separate, so
+     * e.g. a company-wide view with self-only dispatch is a real, persisted combination rather than a
+     * hand-built test actor (DEV-002). The authorization version advances, so a stale page, an old
+     * candidate list, a pending approval and an idempotent replay are all rechecked.
+     */
+    public Map<String, Object> updateRoleScopes(Actor actor, String code, Map<String, Object> input) {
+        access.requireCapability(actor, "manage_organization");
+        allowed(input, Set.of("scopes"));
+        Object raw = input.get("scopes");
+        if (!(raw instanceof Map<?, ?> requested)) throw bad("scopes须为范围对象");
+        Map<String, Object> role = db.find("SELECT id,administrator FROM roles WHERE organization_id=? AND code=?",
+                actor.organizationId(), code);
+        if (role == null) throw bad("未知角色代码");
+        boolean administratorRole = Boolean.TRUE.equals(role.get("administrator"))
+                || role.get("administrator") instanceof Number flag && flag.intValue() == 1;
+        if (administratorRole && !requested.isEmpty()) {
+            throw bad("管理员不取得员工查看、派发、日志或资料范围");
+        }
+        Map<String, String> scopes = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : requested.entrySet()) {
+            String type = String.valueOf(entry.getKey());
+            if (!SCOPE_TYPES.contains(type)) throw bad("未知授权范围类型：" + type);
+            if (!(entry.getValue() instanceof String level) || !SCOPE_LEVELS.contains(level)) {
+                throw bad("范围级别须为 self、reports、department 或 company");
+            }
+            scopes.put(type, level);
+        }
+        String roleId = s(role, "id");
+        for (Map.Entry<String, String> entry : scopes.entrySet()) {
+            db.update("INSERT INTO role_scopes(organization_id,role_id,scope_type,scope_level) VALUES(?,?,?,?) "
+                    + "ON DUPLICATE KEY UPDATE scope_level=VALUES(scope_level)",
+                    actor.organizationId(), roleId, entry.getKey(), entry.getValue());
+        }
+        bumpAuthority(actor, "organization.role.scopes_updated",
+                Map.of("roleCode", code, "scopes", scopes));
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("roleCode", code);
+        result.put("scopes", roles.scopesForRole(actor.organizationId(), roleId));
+        result.put("authzVersion", n(db.one("SELECT authz_version FROM organizations WHERE id=?", actor.organizationId()), "authzVersion"));
+        return result;
     }
 
     // ------------------------------------------------------------------ //
@@ -407,7 +462,7 @@ public class OrganizationService {
         db.update("UPDATE teams SET name=?,department_id=?,lead_user_id=?,row_version=row_version+1 WHERE organization_id=? AND id=?", name, departmentId, leadUserId, actor.organizationId(), id);
         bumpAuthority(actor, "organization.team.updated", Map.of("teamId", id, "leadUserId", Objects.toString(leadUserId, "")));
         refreshPendingRoutes(actor);
-        return Map.of("teamId", id, "leadUserId", leadUserId, "rowVersion", n(row, "rowVersion") + 1);
+        return Map.of("teamId", id, "leadUserId", Objects.toString(leadUserId, ""), "rowVersion", n(row, "rowVersion") + 1);
     }
 
     // ------------------------------------------------------------------ //

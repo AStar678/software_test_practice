@@ -403,18 +403,28 @@ public class WorkspaceService {
     private Map<String,Object> safeNotification(Actor a, Map<String,Object> row, Instant now) {
         var event = db.find("SELECT * FROM domain_events WHERE organization_id=? AND id=?",a.organizationId(),s(row,"eventId"));
         boolean revoked = event != null && event.get("revokedAt")!=null;
+        // Copies masked at delivery must never regain the restricted title/summary from the event row.
+        boolean contentMasked = Boolean.TRUE.equals(row.get("contentMasked"))
+                || row.get("contentMasked") instanceof Number masked && masked.intValue() == 1;
         Map<String,Object> details = event == null || event.get("detailsJson")==null ? Map.of() : db.parse(s(event,"detailsJson"));
         Instant occurred = event == null || event.get("occurredAt")==null ? null : Instant.parse(String.valueOf(event.get("occurredAt")));
         boolean manager = a.can("manage_notifications");
         boolean automatic = "scheduled_rule".equals(Objects.toString(details.get("origin"),"")) || (event != null && event.get("initiatorId")==null);
         boolean withinWithdrawal = occurred != null && !now.isBefore(occurred) && now.isBefore(occurred.plusSeconds(180));
         var view = new LinkedHashMap<String,Object>();
-        for (String key : List.of("id","eventId","eventType","createdAt","deliveredAt","readAt","taskId","requestId","readonly","relationLost")) view.put(key,row.get(key));
+        for (String key : List.of("id","eventId","eventType","createdAt","deliveredAt","readAt","readonly","relationLost")) view.put(key,row.get(key));
+        view.put("taskId",contentMasked||revoked?null:row.get("taskId"));
+        view.put("requestId",contentMasked||revoked?null:row.get("requestId"));
         if (revoked) {
-            view.put("taskId",null);
-            view.put("requestId",null);
             view.put("title",null);
             view.put("summary","该通知已被撤回。");
+            view.put("changeSummary",null);
+            view.put("readonly",true);
+        } else if (contentMasked) {
+            // Ordinary event whose recipient lost task authority before delivery: keep only the generic
+            // delivery message, with no restricted title, change summary, request metadata or task jump.
+            view.put("title",null);
+            view.put("summary",row.get("summary")!=null?row.get("summary"):"你的工作关系或访问范围已变化，请查看当前工作安排。");
             view.put("changeSummary",null);
             view.put("readonly",true);
         } else {
@@ -427,11 +437,11 @@ public class WorkspaceService {
         view.put("expiresAt",row.get("expiresAt")!=null?row.get("expiresAt"):event==null?null:event.get("expiresAt"));
         view.put("rowVersion",notificationVersion(row));
         view.put("canWithdraw",!revoked && withinWithdrawal && (manager || (!automatic && event!=null && a.id().equals(s(event,"initiatorId")))));
-        view.put("canOpenTask",!revoked && s(row,"taskId")!=null);
+        view.put("canOpenTask",!revoked && !contentMasked && s(row,"taskId")!=null);
         view.put("canReview",false);
         view.put("requestStatus",null);
         view.put("requestKind",null);
-        String requestId = revoked ? null : s(row,"requestId");
+        String requestId = revoked || contentMasked ? null : s(row,"requestId");
         if (requestId != null) {
             var request = db.find("SELECT id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline FROM approval_requests WHERE organization_id=? AND id=?",a.organizationId(),requestId);
             if (request != null) {
