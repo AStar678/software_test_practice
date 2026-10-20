@@ -22,7 +22,15 @@ public class ProfileService {
     public ProfileService(Db db, Events events) { this.db = db; this.events = events; }
 
     public Map<String, Object> get(Actor actor) {
-        Map<String, Object> row = db.one("SELECT u.id,u.username,u.display_name,u.phone,u.email,u.profile_version,u.role,u.team_id,t.name AS team_name,u.manager_id,m.display_name AS manager_name FROM users u LEFT JOIN teams t ON t.organization_id=u.organization_id AND t.id=u.team_id LEFT JOIN users m ON m.organization_id=u.organization_id AND m.id=u.manager_id WHERE u.organization_id=? AND u.id=? AND u.active=1", actor.organizationId(), actor.id());
+        Map<String, Object> row = db.one("SELECT u.id,u.username,u.display_name,u.phone,u.email,u.profile_version,u.role,"
+                + "u.team_id,u.manager_id,o.name AS organization_name,d.name AS department_name,"
+                + "p.name AS position_name,t.name AS team_name,m.display_name AS manager_name "
+                + "FROM users u LEFT JOIN organizations o ON o.id=u.organization_id "
+                + "LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
+                + "LEFT JOIN positions p ON p.organization_id=u.organization_id AND p.id=u.position_id "
+                + "LEFT JOIN teams t ON t.organization_id=u.organization_id AND t.id=u.team_id "
+                + "LEFT JOIN users m ON m.organization_id=u.organization_id AND m.id=u.manager_id "
+                + "WHERE u.organization_id=? AND u.id=? AND u.active=1", actor.organizationId(), actor.id());
         row.put("rowVersion", n(row, "profileVersion"));
         return row;
     }

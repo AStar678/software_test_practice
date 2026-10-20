@@ -177,6 +177,17 @@ class AccessTest {
     }
 
     @Test
+    void profileCompanyScopeDoesNotGrantLogsForAnIndirectReport() {
+        Access access = access(managers(Map.of("indirect", "someone-else")));
+        Actor manager = actor("lead", "middle", "d1", "exec", 2,
+                Set.of(), Map.of("profile_read", "company", "log_read", "reports"));
+        Map<String, Object> indirect = person("indirect", "d1", "someone-else", 3);
+
+        assertTrue(access.canSeePerson(manager, indirect), "company profile scope exposes the chain person");
+        assertFalse(access.canReadLogAuthor(manager, "indirect"), "log authority stays reports-only");
+    }
+
+    @Test
     void handoverIsItsOwnAuthorityForSelfOrADirectReport() {
         Access access = access(managers(Map.of("report", "lead", "stranger", "other")));
         Actor lead = departmentLead("lead", "d1");
