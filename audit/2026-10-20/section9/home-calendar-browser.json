@@ -1,0 +1,196 @@
+{
+  "checks": [
+    {
+      "check": "9.2 the home has four independent quadrants",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2 assigned tasks are title + priority rows",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2 personal items do not expose edit/delete in the list",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2 personal detail has edit and delete commands",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the calendar has panel, date, search and floating create entries",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the side panel exposes modes, range counts and my applications",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the independent application entry opens only my applications",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 name search returns the visible task for the current user",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.4 month capacity never exceeds five and title uses direct clip",
+      "pass": true,
+      "evidence": {
+        "rows": 2,
+        "clip": "clip"
+      }
+    },
+    {
+      "check": "9.4 month overflow uses the actual hidden count",
+      "pass": true,
+      "evidence": {
+        "count": 2,
+        "text": "+2 项"
+      }
+    },
+    {
+      "check": "9.4 opening the month overflow lists every hidden task",
+      "pass": true,
+      "evidence": {
+        "listed": 2,
+        "hidden": 2
+      }
+    },
+    {
+      "check": "9.4 the pinned task shows a visible pin marker in the month",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.4 the pinned task sorts before other tasks in its week",
+      "pass": true,
+      "evidence": true
+    },
+    {
+      "check": "9.8 month bars carry a visible relationship marker",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.4 task detail exposes the pin toggle",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.4 the detail pin toggle clears the month pin",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.8 the visible range counts match the deduplicated task set",
+      "pass": true,
+      "evidence": true
+    },
+    {
+      "check": "9.5 a timed cross-day task is split into two day columns",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.5 midnight and zero-duration tasks do not create extra day copies",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.6 all-day tasks are not aggregated behind +N",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.6 four overlapping tasks render as four clickable events",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.6 the full timeline is taller than its scrollport",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.6 multiple all-day tasks are individually present",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.8 all-day bars carry a visible relationship marker",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.8 every event carries a visible non-colour relationship marker",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.7 a horizontal swipe moves one complete week and keeps the weekday",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "t": 1792512000000,
+          "weekday": 3
+        },
+        "after": {
+          "t": 1793116800000,
+          "weekday": 3
+        }
+      }
+    },
+    {
+      "check": "9.7 a vertical gesture does not switch the week",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.7 clicking a task opens detail without changing the day/week mode",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 an off-today day view exposes the return-to-today shortcut",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.7 a day-view swipe moves one complete week and keeps the weekday",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "t": 1792512000000,
+          "weekday": 3
+        },
+        "after": {
+          "t": 1793116800000,
+          "weekday": 3
+        }
+      }
+    },
+    {
+      "check": "9.6 layout 320 keeps the floating create button inside the viewport",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.6 layout 390 keeps the floating create button inside the viewport",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.6 layout 1440 keeps the floating create button inside the viewport",
+      "pass": true,
+      "evidence": null
+    }
+  ]
+}

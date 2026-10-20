@@ -293,15 +293,28 @@ class Smoke:
         self.decide("employee", resubmission["requestId"], "withdraw")
 
         business_date = dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).date().isoformat()
-        _, log, _ = self.clients["employee"].call("POST", "/api/v1/work-logs",
-                                                  {"body": self.prefix + " work log", "businessDate": business_date, "taskId": task_id}, expected=(200, 201))
-        log_id = log["logId"]
-        self.created["logs"].append(log_id)
+        _, today_logs, _ = self.clients["employee"].call(
+            "GET", "/api/v1/work-logs?scope=self&from=" + business_date + "&to=" + business_date + "&limit=1")
+        if today_logs.get("items"):
+            log_id = today_logs["items"][0]["id"]
+            log_etag = '"' + str(today_logs["items"][0]["rowVersion"]) + '"'
+            self.clients["employee"].call("PATCH", "/api/v1/work-logs/" + log_id,
+                                          {"body": self.prefix + " work log", "taskId": task_id},
+                                          etag=log_etag, expected=(200,))
+        else:
+            _, log, _ = self.clients["employee"].call(
+                "POST", "/api/v1/work-logs",
+                {"body": self.prefix + " work log", "businessDate": business_date, "taskId": task_id},
+                expected=(200, 201))
+            log_id = log["logId"]
+            self.created["logs"].append(log_id)
         self.forbidden("colleague", "/work-logs/" + log_id)
         manager_log, manager_log_headers = self.get("middle", "/work-logs/" + log_id)
         self.forbidden("middle", "/work-logs/" + log_id, "PATCH", {"body": "Manager cannot rewrite employee log"}, self.tag(manager_log, manager_log_headers))
-        self.clients["employee"].call("POST", "/api/v1/work-logs",
-                                       {"body": self.prefix + " invalid relation", "businessDate": business_date, "taskId": market["taskId"]}, expected=(403, 404))
+        current, current_headers = self.get("employee", "/work-logs/" + log_id)
+        self.clients["employee"].call("PATCH", "/api/v1/work-logs/" + log_id,
+                                      {"body": self.prefix + " invalid relation", "taskId": market["taskId"]},
+                                      etag=self.tag(current, current_headers), expected=(403, 404))
         self.check("log read/write and associated task permissions independent", True)
 
         race = self.create("employee", "approval-withdraw-race", ["employee"])

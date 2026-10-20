@@ -1,10 +1,16 @@
 package cn.pandora.common;
 
+import java.util.Map;
+
 public class ApiException extends RuntimeException {
     public final int status;
     public final String code;
+    public final Map<String,Object> details;
     public ApiException(int status, String code, String message) {
-        super(message); this.status=status; this.code=code;
+        this(status, code, message, Map.of());
+    }
+    public ApiException(int status, String code, String message, Map<String,Object> details) {
+        super(message); this.status=status; this.code=code; this.details=details==null?Map.of():Map.copyOf(details);
     }
     public static ApiException notFound() { return new ApiException(404,"NOT_FOUND","内容不存在或无权查看"); }
 }

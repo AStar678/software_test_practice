@@ -47,6 +47,21 @@ public class TaskController {
         return ResponseEntity.ok().eTag("\"" + result.get("rowVersion") + "\"").body(result);
     }
 
+    /** Personal month-view pin; never changes task data or another user's order. */
+    @PutMapping("/tasks/{id}/pin")
+    public Map<String, Object> pin(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key) {
+        return writes.run(actor, key, "PUT /tasks/" + id + "/pin", Map.of(), null,
+                () -> tasks.setPinned(actor, id, true));
+    }
+
+    @DeleteMapping("/tasks/{id}/pin")
+    public Map<String, Object> unpin(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key) {
+        return writes.run(actor, key, "DELETE /tasks/" + id + "/pin", Map.of(), null,
+                () -> tasks.setPinned(actor, id, false));
+    }
+
     @GetMapping("/tasks/{id}")
     public ResponseEntity<Map<String, Object>> detail(@RequestAttribute("actor") Actor actor, @PathVariable String id) {
         Map<String, Object> result = tasks.detail(actor, id);

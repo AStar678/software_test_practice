@@ -1,0 +1,482 @@
+{
+  "checks": [
+    {
+      "check": "8.4 the self profile contains organizationName",
+      "pass": true,
+      "evidence": {
+        "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "username": "employee",
+        "displayName": "张涛",
+        "phone": null,
+        "email": null,
+        "profileVersion": 1,
+        "role": "lower",
+        "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+        "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "organizationName": "潘多拉演示公司",
+        "departmentName": "产品部",
+        "positionName": "专员",
+        "teamName": "产品部",
+        "managerName": "李敏",
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "8.4 the self profile contains departmentName",
+      "pass": true,
+      "evidence": {
+        "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "username": "employee",
+        "displayName": "张涛",
+        "phone": null,
+        "email": null,
+        "profileVersion": 1,
+        "role": "lower",
+        "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+        "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "organizationName": "潘多拉演示公司",
+        "departmentName": "产品部",
+        "positionName": "专员",
+        "teamName": "产品部",
+        "managerName": "李敏",
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "8.4 the self profile contains positionName",
+      "pass": true,
+      "evidence": {
+        "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "username": "employee",
+        "displayName": "张涛",
+        "phone": null,
+        "email": null,
+        "profileVersion": 1,
+        "role": "lower",
+        "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+        "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "organizationName": "潘多拉演示公司",
+        "departmentName": "产品部",
+        "positionName": "专员",
+        "teamName": "产品部",
+        "managerName": "李敏",
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "8.4 the self profile contains teamName",
+      "pass": true,
+      "evidence": {
+        "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "username": "employee",
+        "displayName": "张涛",
+        "phone": null,
+        "email": null,
+        "profileVersion": 1,
+        "role": "lower",
+        "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+        "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "organizationName": "潘多拉演示公司",
+        "departmentName": "产品部",
+        "positionName": "专员",
+        "teamName": "产品部",
+        "managerName": "李敏",
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "8.4 the self profile contains managerName",
+      "pass": true,
+      "evidence": {
+        "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "username": "employee",
+        "displayName": "张涛",
+        "phone": null,
+        "email": null,
+        "profileVersion": 1,
+        "role": "lower",
+        "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+        "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "organizationName": "潘多拉演示公司",
+        "departmentName": "产品部",
+        "positionName": "专员",
+        "teamName": "产品部",
+        "managerName": "李敏",
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "8.4 the employee saves a phone for the detail boundary",
+      "pass": true,
+      "evidence": {
+        "profileVersion": 2,
+        "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "rowVersion": 2
+      }
+    },
+    {
+      "check": "8.4 the executive subordinate list includes direct and indirect chains",
+      "pass": true,
+      "evidence": [
+        "1390a7b8-ee74-4888-8867-01b03d61ca0f",
+        "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "5e265e0b-9b7c-4a03-b8ba-6da0629ef4b0",
+        "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "beacb811-73da-466f-81fd-88eec02f1ce8"
+      ]
+    },
+    {
+      "check": "8.4 the executive list excludes the administrator and unrelated self",
+      "pass": true,
+      "evidence": [
+        "1390a7b8-ee74-4888-8867-01b03d61ca0f",
+        "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "5e265e0b-9b7c-4a03-b8ba-6da0629ef4b0",
+        "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "beacb811-73da-466f-81fd-88eec02f1ce8"
+      ]
+    },
+    {
+      "check": "8.4 the manager list contains direct reports only",
+      "pass": true,
+      "evidence": [
+        "1390a7b8-ee74-4888-8867-01b03d61ca0f",
+        "b8038b81-ed19-4d78-b8c7-74c2e9179d36"
+      ]
+    },
+    {
+      "check": "8.4 non-chain people never enter the manager list",
+      "pass": true,
+      "evidence": [
+        "1390a7b8-ee74-4888-8867-01b03d61ca0f",
+        "b8038b81-ed19-4d78-b8c7-74c2e9179d36"
+      ]
+    },
+    {
+      "check": "8.4 an employee has no subordinate entry",
+      "pass": true,
+      "evidence": {
+        "items": []
+      }
+    },
+    {
+      "check": "8.4 the administrator has no business subordinate list",
+      "pass": true,
+      "evidence": {
+        "code": "BUSINESS_ROLE_REQUIRED",
+        "message": "管理员请使用管理端接口"
+      }
+    },
+    {
+      "check": "8.4 upper subordinate rows carry no phone or email",
+      "pass": true,
+      "evidence": {
+        "items": [
+          {
+            "id": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+            "displayName": "李敏",
+            "role": "middle",
+            "rankLevel": 2,
+            "departmentId": "772984d8-44a7-4751-b37a-1b008642a368",
+            "departmentName": "产品部",
+            "positionId": "121d76e1-3ae2-498b-b9f5-cc8a1f787da0",
+            "positionName": "部门经理",
+            "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+            "teamName": "产品部",
+            "managerId": "14c156f4-fc37-4cbe-bedc-a63a51f8f00b",
+            "managerName": "王海",
+            "canReadLogs": true
+          },
+          {
+            "id": "5e265e0b-9b7c-4a03-b8ba-6da0629ef4b0",
+            "displayName": "陈冲",
+            "role": "middle",
+            "rankLevel": 2,
+            "departmentId": "b59f999c-87b8-4a2d-bf60-50ec79dcf9a1",
+            "departmentName": "市场部",
+            "positionId": "121d76e1-3ae2-498b-b9f5-cc8a1f787da0",
+            "positionName": "部门经理",
+            "teamId": "ded3efc6-567d-48a3-b555-7a7cca6768d2",
+            "teamName": "市场部",
+            "managerId": "14c156f4-fc37-4cbe-bedc-a63a51f8f00b",
+            "managerName": "王海",
+            "canReadLogs": true
+          },
+          {
+            "id": "beacb811-73da-466f-81fd-88eec02f1ce8",
+            "displayName": "孙悦",
+            "role": "lower",
+            "rankLevel": 3,
+            "departmentId": "b59f999c-87b8-4a2d-bf60-50ec79dcf9a1",
+            "departmentName": "市场部",
+            "positionId": "d6236436-22f7-484e-82c7-7b09b56710f5",
+            "positionName": "专员",
+            "teamId": "ded3efc6-567d-48a3-b555-7a7cca6768d2",
+            "teamName": "市场部",
+            "managerId": "5e265e0b-9b7c-4a03-b8ba-6da0629ef4b0",
+            "managerName": "陈冲",
+            "canReadLogs": true
+          },
+          {
+            "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+            "displayName": "张涛",
+            "role": "lower",
+            "rankLevel": 3,
+            "departmentId": "772984d8-44a7-4751-b37a-1b008642a368",
+            "departmentName": "产品部",
+            "positionId": "d6236436-22f7-484e-82c7-7b09b56710f5",
+            "positionName": "专员",
+            "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+            "teamName": "产品部",
+            "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+            "managerName": "李敏",
+            "canReadLogs": true
+          },
+          {
+            "id": "1390a7b8-ee74-4888-8867-01b03d61ca0f",
+            "displayName": "赵蕾",
+            "role": "lower",
+            "rankLevel": 3,
+            "departmentId": "772984d8-44a7-4751-b37a-1b008642a368",
+            "departmentName": "产品部",
+            "positionId": "d6236436-22f7-484e-82c7-7b09b56710f5",
+            "positionName": "专员",
+            "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+            "teamName": "产品部",
+            "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+            "managerName": "李敏",
+            "canReadLogs": true
+          }
+        ]
+      }
+    },
+    {
+      "check": "8.4 middle subordinate rows carry no phone or email",
+      "pass": true,
+      "evidence": {
+        "items": [
+          {
+            "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+            "displayName": "张涛",
+            "role": "lower",
+            "rankLevel": 3,
+            "departmentId": "772984d8-44a7-4751-b37a-1b008642a368",
+            "departmentName": "产品部",
+            "positionId": "d6236436-22f7-484e-82c7-7b09b56710f5",
+            "positionName": "专员",
+            "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+            "teamName": "产品部",
+            "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+            "managerName": "李敏",
+            "canReadLogs": true
+          },
+          {
+            "id": "1390a7b8-ee74-4888-8867-01b03d61ca0f",
+            "displayName": "赵蕾",
+            "role": "lower",
+            "rankLevel": 3,
+            "departmentId": "772984d8-44a7-4751-b37a-1b008642a368",
+            "departmentName": "产品部",
+            "positionId": "d6236436-22f7-484e-82c7-7b09b56710f5",
+            "positionName": "专员",
+            "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+            "teamName": "产品部",
+            "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+            "managerName": "李敏",
+            "canReadLogs": true
+          }
+        ]
+      }
+    },
+    {
+      "check": "8.4 the direct manager reads the employee phone through person details",
+      "pass": true,
+      "evidence": {
+        "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "username": "employee",
+        "displayName": "张涛",
+        "role": "lower",
+        "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+        "teamName": "产品部",
+        "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "rankLevel": 3,
+        "active": true,
+        "organizationName": "潘多拉演示公司",
+        "departmentName": "产品部",
+        "positionName": "专员",
+        "managerName": "李敏",
+        "canReadLogs": true,
+        "phone": "13914034852"
+      }
+    },
+    {
+      "check": "8.4 person details expose the separate log authority",
+      "pass": true,
+      "evidence": {
+        "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "username": "employee",
+        "displayName": "张涛",
+        "role": "lower",
+        "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+        "teamName": "产品部",
+        "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "rankLevel": 3,
+        "active": true,
+        "organizationName": "潘多拉演示公司",
+        "departmentName": "产品部",
+        "positionName": "专员",
+        "managerName": "李敏",
+        "canReadLogs": true,
+        "phone": "13914034852"
+      }
+    },
+    {
+      "check": "8.4 another person's detail never returns email",
+      "pass": true,
+      "evidence": {
+        "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "username": "employee",
+        "displayName": "张涛",
+        "role": "lower",
+        "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+        "teamName": "产品部",
+        "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "rankLevel": 3,
+        "active": true,
+        "organizationName": "潘多拉演示公司",
+        "departmentName": "产品部",
+        "positionName": "专员",
+        "managerName": "李敏",
+        "canReadLogs": true,
+        "phone": "13914034852"
+      }
+    },
+    {
+      "check": "8.4 the indirect executive reads the employee phone",
+      "pass": true,
+      "evidence": {
+        "id": "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "username": "employee",
+        "displayName": "张涛",
+        "role": "lower",
+        "teamId": "8966f7b6-50da-4b0d-8396-1fef8d283dc3",
+        "teamName": "产品部",
+        "managerId": "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "rankLevel": 3,
+        "active": true,
+        "organizationName": "潘多拉演示公司",
+        "departmentName": "产品部",
+        "positionName": "专员",
+        "managerName": "李敏",
+        "canReadLogs": true,
+        "phone": "13914034852"
+      }
+    },
+    {
+      "check": "8.4 a non-chain person is refused even when the id is known",
+      "pass": true,
+      "evidence": {
+        "code": "NOT_FOUND",
+        "message": "内容不存在或无权查看"
+      }
+    },
+    {
+      "check": "8.4 the administrator gets no employee person detail",
+      "pass": true,
+      "evidence": {
+        "code": "BUSINESS_ROLE_REQUIRED",
+        "message": "管理员请使用管理端接口"
+      }
+    },
+    {
+      "check": "8.4 the temporary organization change is accepted",
+      "pass": true,
+      "evidence": {
+        "userId": "1390a7b8-ee74-4888-8867-01b03d61ca0f",
+        "rowVersion": 2,
+        "transferred": true,
+        "authorizationInvalidated": true
+      }
+    },
+    {
+      "check": "8.4 the manager list does not gain the new indirect report",
+      "pass": true,
+      "evidence": [
+        "b8038b81-ed19-4d78-b8c7-74c2e9179d36"
+      ]
+    },
+    {
+      "check": "8.4 the executive list still contains the new indirect report",
+      "pass": true,
+      "evidence": [
+        "1390a7b8-ee74-4888-8867-01b03d61ca0f",
+        "31ea12ef-4b33-4f9e-9fd8-efbe102b97d8",
+        "5e265e0b-9b7c-4a03-b8ba-6da0629ef4b0",
+        "b8038b81-ed19-4d78-b8c7-74c2e9179d36",
+        "beacb811-73da-466f-81fd-88eec02f1ce8"
+      ]
+    },
+    {
+      "check": "8.4 the manager cannot read the indirect person detail",
+      "pass": true,
+      "evidence": {
+        "code": "NOT_FOUND",
+        "message": "内容不存在或无权查看"
+      }
+    },
+    {
+      "check": "8.4 the manager cannot read the indirect report's logs",
+      "pass": true,
+      "evidence": {
+        "code": "NOT_FOUND",
+        "message": "内容不存在或无权查看"
+      }
+    },
+    {
+      "check": "8.4 the executive still reads company logs from the log page",
+      "pass": true,
+      "evidence": {
+        "items": [
+          {
+            "id": "4ffac56e-d2bd-4bd0-b3c7-d6e71a0a8e95",
+            "authorId": "1390a7b8-ee74-4888-8867-01b03d61ca0f",
+            "businessDate": "2026-10-20",
+            "body": "完成本日工作整理，记录待办与协作问题。",
+            "taskId": null,
+            "rowVersion": 1,
+            "createdAt": "2026-10-20T08:02:20.972335Z",
+            "updatedAt": "2026-10-20T08:02:20.972335Z",
+            "authorName": "赵蕾",
+            "editable": false
+          },
+          {
+            "id": "20046ea6-fc2c-492a-8aa9-a3c0ce06bc75",
+            "authorId": "1390a7b8-ee74-4888-8867-01b03d61ca0f",
+            "businessDate": "2026-10-19",
+            "body": "复盘工作进展并补充后续计划。",
+            "taskId": null,
+            "rowVersion": 1,
+            "createdAt": "2026-10-20T08:02:20.972501Z",
+            "updatedAt": "2026-10-20T08:02:20.972501Z",
+            "authorName": "赵蕾",
+            "editable": false
+          },
+          {
+            "id": "cdc1ebae-545b-4bc9-acbe-db9e93bbf53b",
+            "authorId": "1390a7b8-ee74-4888-8867-01b03d61ca0f",
+            "businessDate": "2026-10-18",
+            "body": "复盘工作进展并补充后续计划。",
+            "taskId": null,
+            "rowVersion": 1,
+            "createdAt": "2026-10-20T08:02:20.972640Z",
+            "updatedAt": "2026-10-20T08:02:20.972640Z",
+            "authorName": "赵蕾",
+            "editable": false
+          }
+        ],
+        "total": 3,
+        "nextOffset": null
+      }
+    }
+  ]
+}

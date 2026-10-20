@@ -764,7 +764,7 @@ function barGeom(left, width){
 function taskAriaLabel(t, a){
   return t.title + "，" + KIND_LABEL[taskKind(t, a)] + "，" + STATUS_LABEL[t.status] +
     "，紧急程度" + t.urgency + "，" + (t.allDay ? "全天 " : "") + fmtSchedule(t) +
-    (t.desc ? "，说明：" + t.desc : "");
+    (t.pinned ? "，已置顶" : "") + (t.desc ? "，说明：" + t.desc : "");
 }
 /* 任务条可见文本：仅关系 emoji 前缀（对辅助技术隐藏，语义由按钮名与图例给出）与任务名称。
    描述、状态、截止日期等元数据只出现在任务详情与按钮无障碍名称中。 */

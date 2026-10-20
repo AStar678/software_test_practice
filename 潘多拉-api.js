@@ -143,7 +143,7 @@
       }
       let message = result.message || "请求失败，请稍后重试。";
       if (response.status === 412) message = "这条记录已被更新。请关闭后重新打开，再提交修改。";
-      throw Object.assign(new Error(message), { status: response.status, code: result.code });
+      throw Object.assign(new Error(message), { status: response.status, code: result.code, body: result });
     }
     return result;
   };
@@ -199,7 +199,9 @@
       start: t.allDay ? parseISO(t.startDate) : new Date(t.startAt), due: t.allDay ? parseISO(t.dueDate) : new Date(t.dueAt),
       urgency: ({ urgent: "紧急", high: "高", medium: "中", low: "低" })[t.priority] || "中",
       status: t.executionState || "todo", progressNote: t.progressNote || "", reviewNote: "",
-      frozen: !!t.frozen || !!t.pending, rowVersion: t.rowVersion, acceptanceCriteria: t.acceptanceCriteria || "", raw: t };
+      frozen: !!t.frozen || !!t.pending, pinned: !!t.pinned, assignedAt: t.assignedAt || null,
+      pendingKind: t.pendingKind || null,
+      rowVersion: t.rowVersion, acceptanceCriteria: t.acceptanceCriteria || "", raw: t };
   };
   P.rememberPeople = function (rows) {
     (rows || []).forEach(u => { if (!personById(u.id)) PEOPLE.push(mapPerson(u)); });
@@ -215,12 +217,16 @@
     const epoch = P.epoch, sequence = ++reloadSequence;
     const me = await P.request("/me");
     if (me.role === "admin") throw new Error("此页面供业务账号使用。管理员请使用 /debug.html 管理查询页。");
-    const [users, tasks, logs, approvals, notifications, home, analytics] = await Promise.all([
-      all("/users"), all("/tasks"), all("/work-logs?scope=visible"), all("/approval-requests?mine=all"),
-      all("/notifications"), P.request("/home"), P.request("/analytics/task-summary?scope=visible")
+    const [users, tasks, logs, logAuthors, reports, approvals, notifications, home, analytics] = await Promise.all([
+      all("/users"), all("/tasks"), all("/work-logs?scope=self"), P.request("/work-log-authors"), P.request("/me/reports"),
+      all("/approval-requests?mine=all"), all("/notifications"), P.request("/home"), P.request("/analytics/task-summary?scope=visible")
     ]);
     if (epoch !== P.epoch || sequence !== reloadSequence) throw cancelled();
-    P.data = { me, users, rawTasks: tasks, approvals, home, analytics };
+    P.data = { me, users, rawTasks: tasks, approvals, home, analytics, logAuthors, reports };
+    // A data reload starts the log page on the default self scope; the page itself preserves
+    // the user's search text and author selection until the next explicit reload.
+    state.logAll = false;
+    state.logAuthorId = me.id;
     const people = new Map(users.map(u => [u.id, mapPerson(u)])); people.set(me.id, mapPerson(me));
     tasks.concat(approvals).forEach(t => (t.participants || []).forEach(u => { if (!people.has(u.id)) people.set(u.id, mapPerson(u)); }));
     logs.forEach(l => { if (!people.has(l.authorId)) people.set(l.authorId, mapPerson({ id: l.authorId, displayName: l.authorName })); });
@@ -239,7 +245,8 @@
   P.logout = async function (username) {
     if (P.token) await P.request("/auth/sessions/current", { method: "DELETE" });
     P.epoch++; P.token = ""; sessionStorage.removeItem(SESSION_KEY);
-    clearData(); state.logFilter = "logs"; state.logsMineOnly = false; state.logAuthorQuery = ""; state.pickerOpen = false;
+    clearData(); state.logFilter = "logs"; state.logsMineOnly = false; state.logAuthorQuery = "";
+    state.logAll = false; state.logAuthorId = null; state.pickerOpen = false;
     loginPage(typeof username === "string" ? username : "upper"); P.notice("请使用真实账号登录。");
   };
   visibleTasks = () => TASKS.slice();

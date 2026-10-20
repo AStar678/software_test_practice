@@ -1,0 +1,33 @@
+{
+  "success": false,
+  "baseUrl": "http://127.0.0.1:18122",
+  "prefix": "Smoke 0624aa40-9cae-4a66-93d4-c382c4aa9ed7",
+  "checksPassed": 17,
+  "checks": [
+    "running API reports healthy MySQL connection",
+    "login and server identity: admin",
+    "login and server identity: upper",
+    "login and server identity: middle",
+    "login and server identity: market",
+    "login and server identity: employee",
+    "login and server identity: colleague",
+    "login and server identity: marketing",
+    "unauthenticated request rejected",
+    "same idempotency key replays the same task/request",
+    "same key with different body rejected",
+    "pending creation hidden from upper and unrelated employee",
+    "pending creation absent from normal task list",
+    "pending creation excluded from statistics",
+    "creation routed to direct manager",
+    "applicant cannot approve own non-exempt request",
+    "reading notification does not approve request"
+  ],
+  "created": {
+    "tasks": [
+      "9f38a056-9c08-461d-9112-7ea4ff4b5a0a"
+    ],
+    "logs": []
+  },
+  "seconds": 2.91,
+  "error": "'id'"
+}

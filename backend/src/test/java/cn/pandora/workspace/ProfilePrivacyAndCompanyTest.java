@@ -75,8 +75,9 @@ class ProfilePrivacyAndCompanyTest {
         Db db = mock(Db.class);
         Access access = mock(Access.class);
         Map<String, Object> raw = Map.of("id", "report", "phone", "13800000000", "email", "private@example.test",
-                "passwordHash", "secret");
-        when(access.user(UPPER, "report")).thenReturn(raw);
+                "passwordHash", "secret", "departmentName", "产品部", "positionName", "专员",
+                "teamName", "产品部", "managerName", "李敏");
+        when(db.one(anyString(), eq("report"), eq("org"))).thenReturn(raw);
         when(access.canSeePerson(UPPER, raw)).thenReturn(true);
         WorkspaceService service = new WorkspaceService(db, access, mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         assertFalse(service.person(UPPER, "report").containsKey("phone"));

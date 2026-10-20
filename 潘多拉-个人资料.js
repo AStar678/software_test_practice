@@ -27,19 +27,7 @@
   }
 
   function reports() {
-    const user = me(), users = P.data.users || [];
-    const byId = new Map(users.map(person => [person.id, person]));
-    return users.filter(person => {
-      if (person.id === user.id || person.rankLevel <= user.rankLevel) return false;
-      const visited = new Set([person.id]);
-      let managerId = person.managerId;
-      while (managerId && !visited.has(managerId)) {
-        if (managerId === user.id) return true;
-        visited.add(managerId);
-        managerId = (byId.get(managerId) || {}).managerId;
-      }
-      return false;
-    });
+    return ((P.data.reports || {}).items || []);
   }
 
   function reportsSection() {
@@ -52,9 +40,26 @@
   function openPerson(id) {
     return P.busy(async function () {
       const person = await P.request("/users/" + encodeURIComponent(id));
-      openSheet({ title: "人员资料", body: row("姓名", person.displayName) +
-        row("身份", ROLE_LABEL[person.role] || person.role) + row("直属上级", superior(person)) +
-        (Object.prototype.hasOwnProperty.call(person, "phone") ? row("手机号", person.phone) : "") });
+      const detail = row("姓名", person.displayName) +
+        (person.departmentName ? row("部门", person.departmentName) : "") +
+        (person.positionName ? row("职位", person.positionName) : "") +
+        (person.teamName ? row("独立团队", person.teamName) : "") +
+        row("直属上级", person.managerName || superior(person)) +
+        (Object.prototype.hasOwnProperty.call(person, "phone") ? row("手机号", person.phone) : "");
+      const foot = person.canReadLogs
+        ? withBack(button("p-open-person-logs", "查看日志", "primary", id) + button("sheet-close", "关闭"))
+        : withBack(button("sheet-close", "关闭"));
+      openSheet({ title: "人员资料", body: detail, foot: foot });
+    });
+  }
+
+  function openPersonLogs(id) {
+    return P.busy(async function () {
+      closeSheet();
+      state.logAll = false;
+      state.logAuthorQuery = "";
+      state.logAuthorId = id;
+      await P.openLogsFor(id);
     });
   }
 
@@ -146,6 +151,7 @@
 
   runAction = function (element) {
     if (element.dataset.action === "p-open-person") return openPerson(element.dataset.id);
+    if (element.dataset.action === "p-open-person-logs") return openPersonLogs(element.dataset.id);
     if (element.dataset.action === "p-edit-profile") return openProfile();
     if (element.dataset.action === "p-save-profile") return saveProfile();
     if (element.dataset.action === "p-change-password") return openPassword();

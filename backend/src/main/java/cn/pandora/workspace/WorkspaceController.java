@@ -14,6 +14,8 @@ public class WorkspaceController {
     public WorkspaceController(WorkspaceService workspace,Writes writes) {this.workspace=workspace;this.writes=writes;}
 
     @GetMapping("/me") public Map<String,Object> me(@RequestAttribute("actor") Actor a) {return workspace.me(a);}
+    /** Subordinates inside both the current profile scope and the actual management chain. */
+    @GetMapping("/me/reports") public Map<String,Object> reports(@RequestAttribute("actor") Actor a) {return workspace.reports(a);}
     @GetMapping("/users") public Map<String,Object> users(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.users(a,filters,false);}
     @GetMapping("/users/{id}") public Map<String,Object> person(@RequestAttribute("actor") Actor a,@PathVariable String id) {return workspace.person(a,id);}
     @GetMapping("/home") public Map<String,Object> home(@RequestAttribute("actor") Actor a) {return workspace.home(a);}
