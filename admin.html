@@ -96,7 +96,7 @@
 
     <section id="tab-roles">
       <h2>角色与授权</h2>
-      <table><thead><tr><th>角色</th><th>能力</th><th>查看范围</th><th>派发范围</th><th>日志范围</th><th>资料范围</th></tr></thead><tbody id="roleRows"></tbody></table>
+      <table><thead><tr><th>角色</th><th>能力</th><th>查看范围</th><th>派发范围</th><th>日志范围</th><th>资料范围</th><th></th></tr></thead><tbody id="roleRows"></tbody></table>
       <p class="muted">查看范围与派发范围分别配置：可见某部门不等于可向该部门派发。管理员不取得员工业务权限。</p>
     </section>
 
@@ -299,7 +299,8 @@ function renderStructure() {
   });
 
   $('health').innerHTML = `
-    <div class="card">待收紧约束：员工缺部门 ${constraints.usersMissingDepartment} 人，缺职位 ${constraints.usersMissingPosition} 人，团队缺部门 ${constraints.teamsMissingDepartment} 个；
+    <div class="card">正式业务写入：${constraints.formalWritesReady ? '映射已完成，可用' : '暂不可用（须先补齐部门/职位映射）'}。
+    待收紧约束：员工缺部门 ${constraints.usersMissingDepartment} 人，缺职位 ${constraints.usersMissingPosition} 人，团队缺部门 ${constraints.teamsMissingDepartment} 个；
     部门和职位必填约束${constraints.tighteningApplied ? '已收紧' : '尚未收紧（映射未完成）'}。</div>
     ${(constraints.openBlockers || []).map((b) => `<div class="card"><b>${b.category}</b><div class="muted">${b.detail}</div></div>`).join('') || '<div class="card">没有未解决的阻断项。</div>'}`;
   loadTeamLeads();
@@ -331,12 +332,38 @@ function renderEmployees() {
   });
 }
 
+const SCOPE_TYPES = [['task_view', '查看范围'], ['task_dispatch', '派发范围'], ['log_read', '日志范围'], ['profile_read', '资料范围']];
+const SCOPE_LEVELS = [['self', '本人'], ['reports', '直属下属'], ['department', '本部门'], ['company', '公司']];
+
+function scopeSelect(role, type) {
+  const current = (role.scopes || {})[type] || '';
+  return `<select data-scope-role="${role.code}" data-scope-type="${type}" aria-label="${role.name}${SCOPE_TYPES.find(([key]) => key === type)[1]}">` +
+    `<option value="">—</option>` +
+    SCOPE_LEVELS.map(([value, label]) => `<option value="${value}"${current === value ? ' selected' : ''}>${label}</option>`).join('') +
+    '</select>';
+}
+
 function renderRoles() {
   $('roleRows').innerHTML = state.structure.roles.map((r) => `<tr>
     <td>${r.name}<div class="muted">${r.code}${r.administrator ? ' · 管理员' : ''}</div></td>
     <td>${(r.capabilities || []).map((c) => `<span class="tag">${c}</span>`).join('') || '—'}</td>
-    <td>${r.scopes.task_view || '—'}</td><td>${r.scopes.task_dispatch || '—'}</td>
-    <td>${r.scopes.log_read || '—'}</td><td>${r.scopes.profile_read || '—'}</td></tr>`).join('');
+    ${SCOPE_TYPES.map(([type]) => `<td>${r.administrator ? (r.scopes[type] || '—') : scopeSelect(r, type)}</td>`).join('')}
+    <td>${r.administrator ? '—' : `<button class="ghost" data-save-scopes="${r.code}">保存范围</button>`}</td></tr>`).join('');
+  document.querySelectorAll('[data-save-scopes]').forEach((button) => button.onclick = () => saveRoleScopes(button.dataset.saveScopes));
+}
+
+async function saveRoleScopes(code) {
+  const button = document.querySelector(`[data-save-scopes="${code}"]`);
+  const row = button.closest('tr');
+  const scopes = {};
+  row.querySelectorAll('select[data-scope-type]').forEach((select) => {
+    if (select.value) scopes[select.dataset.scopeType] = select.value;
+  });
+  try {
+    await api('PATCH', '/api/v1/admin/roles/' + code + '/scopes', { scopes }, { key: newKey() });
+    ok('授权范围已保存，旧页面、旧候选与旧幂等回放已失效');
+    await reloadAll();
+  } catch (error) { fail(error.message); }
 }
 
 async function renderCompany() {

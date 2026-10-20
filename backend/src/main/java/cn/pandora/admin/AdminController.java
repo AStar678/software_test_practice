@@ -103,6 +103,7 @@ public class AdminController {
             @RequestBody Map<String, Object> input) {
         Map<String, Object> result = writes.runOutcome(actor, key, "POST /admin/employees", input, null,
                 () -> organization.createEmployee(actor, input));
+        tightenOrganizationConstraints();
         return ResponseEntity.created(URI.create("/api/v1/admin/employees/" + result.get("userId")))
                 .eTag("\"" + result.get("rowVersion") + "\"").body(result);
     }
@@ -114,6 +115,7 @@ public class AdminController {
             @RequestBody Map<String, Object> input) {
         Map<String, Object> result = writes.run(actor, key, "PATCH /admin/employees/" + id, input, ifMatch,
                 () -> organization.updateEmployee(actor, id, ifMatch, input));
+        tightenOrganizationConstraints();
         return ResponseEntity.ok().eTag("\"" + result.get("rowVersion") + "\"").body(result);
     }
 
@@ -124,6 +126,7 @@ public class AdminController {
             @RequestBody Map<String, Object> input) {
         Map<String, Object> result = writes.run(actor, key, "POST /admin/employees/" + id + "/transfer", input, ifMatch,
                 () -> organization.transferEmployee(actor, id, ifMatch, input));
+        tightenOrganizationConstraints();
         return ResponseEntity.ok().eTag("\"" + result.get("rowVersion") + "\"").body(result);
     }
 
@@ -246,5 +249,27 @@ public class AdminController {
             @RequestBody Map<String, Object> input) {
         return writes.run(actor, key, "PUT /admin/company/off-work-time", input, null,
                 () -> organization.setOffWorkTime(actor, input));
+    }
+
+    /**
+     * Independently configure one role's view/dispatch (and log/profile) ranges. Written through the
+     * normal organization write contract so the authorization version advances and old pages,
+     * candidates, approvals and idempotent replays are invalidated immediately (DEV-002).
+     */
+    @PatchMapping("/roles/{code}/scopes")
+    public Map<String, Object> updateRoleScopes(@RequestAttribute("actor") Actor actor, @PathVariable String code,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @RequestBody Map<String, Object> input) {
+        return writes.run(actor, key, "PATCH /admin/roles/" + code + "/scopes", input, null,
+                () -> organization.updateRoleScopes(actor, code, input));
+    }
+
+    /** Tighten the staged constraints once the mapping is complete; DDL must run after the command commits. */
+    private void tightenOrganizationConstraints() {
+        try {
+            organization.applyOrganizationConstraints();
+        } catch (RuntimeException ignored) {
+            // The mapping stays staged and reported in the administration console; never fail the write.
+        }
     }
 }

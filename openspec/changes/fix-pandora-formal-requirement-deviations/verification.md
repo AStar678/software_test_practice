@@ -303,8 +303,8 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 - Actual: 返回 `taskId:null, relationLost:false, readonly:true, title:"E13 confidential undelivered title"`、泛化 summary，同时 `changeSummary:"任务《E13 confidential undelivered title》的创建申请已通过。"`，并携带 `requestStatus:"approved"`。这是普通旧事件，不是允许向被移除人发送的移除通知。禁用了跳转仍没有阻止内容泄露。
 - Repair guidance: 对送达前已失权的普通事件执行字段级脱敏或不投递，读取层不得从事件回填受限内容；同时审查原申请元数据的权限。保留合法已送达及移除事件所需摘要。
 - Acceptance checks: 在独立库重做上述暂停/改权/投递顺序，检查列表、消息详情、消息 task 入口及已读响应均无受限内容/历史权；对照已送达后撤权、真正移除事件仍保留受限只读例外；其他查询持续排除。
-- Repair status: pending
-- Repair notes: —（首次独立验证，尚无修复记录）
+- Repair status: addressed-awaiting-verification
+- Repair notes: 修复：新增 V13__mask_undelivered_notification_content.sql（notifications.content_masked 及旧副本回填）；EventsWorker.deliver 对未撤销、送达前已失权且非移除事件的副本清空 title/change_summary/request_id/task_version_id 并写入泛化摘要；WorkspaceService.safeNotification 对 content_masked 行不再从 domain_event 回填标题/摘要/申请元数据，taskId/requestId 置空、canOpenTask=false，/task 入口不可用。回归：check_deadline_reminder_notification.py 新增“创建通过后改标题并改派→原负责人失权→再投递”用例，断言列表、详情、/task 入口与 open 响应均无受限内容，真实移除事件仍保留只读摘要；E 91/91，mvn test 62/62。
 - Reverification notes: 现有 E 的已送达移除用例通过，但不覆盖“普通消息排队期间失权”；上述独立接口输出与静态路径共同确认。
 
 ### V-002: 提交入口触发的待审失效随版本冲突一起回滚
@@ -317,8 +317,8 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 - Actual: PATCH 返回 `412 VERSION_CONFLICT`；随后 GET 原申请仍 `pending`、任务仍 `frozen:true`。决定入口的独立 75 项套件确能在错误后提交失效，不能替代提交入口证据。
 - Repair guidance: 确保提交/交接入口的失效终态及解冻在后续命令失败时仍能持久化，保持事务授权与并发语义；不要求忽略真实过时 ETag。
 - Acceptance checks: 未发布创建、已发布任务的进展/修改/重开及交接入口，在扫描前跨截止后提交；即使收到 4xx，旧请求也 expired 且解冻，原有效版/提交前状态不变，未发布不发布，失效/逾期事件各按规则去重；再测并发与相同幂等键重试。
-- Repair status: pending
-- Repair notes: —（首次独立验证，尚无修复记录）
+- Repair status: addressed-awaiting-verification
+- Repair notes: 修复：ExpiryService.expirePendingBeforeSubmit 在独立事务先取组织锁并提交 expirePendingForTask；TaskService.change/handover 移除命令事务内的先失效逻辑；TaskController 在 writes.run 之前调用 tasks.expireBeforeSubmit，使后续 412/409 不回滚 expired、解冻及失效/逾期事件。回归：E 新增未发布创建、已发布交接跨截止后用旧 ETag 重提，均收到 412 但申请已 expired、任务解冻且不发布/保持 todo，旧申请不能再批准；E 91/91。
 - Reverification notes: 已执行创建待审跨截止再提交；交接同事务结构为静态同源影响，修复后须执行，未冒称本轮已经执行该分支。
 
 ### V-003: 失去最后审核人的待审改派存在 SQL 参数错误并回滚组织维护
@@ -331,8 +331,8 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 - Actual: org 更新事务 500 回滚，申请保持 pending；新建时原本无审核人的正向用例通过，但已有待审转入该分支失败。
 - Repair guidance: 修正该分支的 SQL/参数契约，并确保无审核人直接生效仍执行有效截止、授权和历史规则。
 - Acceptance checks: 重做待审失去最后审核人的接口流程，组织变更成功，申请 direct/原因可追溯，内容及状态正确生效；覆盖有替代审核人、确无审核人、损坏链阻断、已过截止，旧审核人/旧页面不能越权决定。
-- Repair status: pending
-- Repair notes: —（首次独立验证，尚无修复记录）
+- Repair status: addressed-awaiting-verification
+- Repair notes: 修复：applyWithoutReviewer 的 UPDATE 参数由 9 个改为 8 个以匹配占位符，并提取 NO_REVIEWER_APPLY_SQL 与 noReviewerApplyArgs 常量/构造器；TaskServiceTest 新增占位符数等于参数数断言。HTTP：check_review_routing.py 新增 boss 自建待审、admin 关闭最后审核人场景，组织更新 200、申请 direct 且原因可查、任务发布；R 64/64。
 - Reverification notes: 此 500 已重复确认；早期 `independent-probes.json` 中无实际变化的员工更新 200 不是该分支证据，以最终明确待审夹具结果为准。没有把尚未能穿过 SQL 的其他潜在问题宣告为已发生。
 
 ### V-004: 手机号鉴权在遇到查看者时提前成功，未识别后续管理链循环
@@ -345,8 +345,8 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 - Actual: 访问者出现在循环之前时被当作有效上级，循环没有触发拒绝。组织维护 API 拒绝新建环并不能满足规格明确要求的损坏数据防御。
 - Repair guidance: 在授予号码前完成相关管理链有效性校验，错误链 fail closed；正常本人、直属和有资料权的间接上级仍按既有规则读取。
 - Acceptance checks: 在隔离库构造 actor 位于环内/环前/环外、失效中间人、跨组织引用、转岗后旧关系，确保详情或号码被拒绝/裁剪；重跑 P/A 及下属浏览器矩阵，目录/audit/outbox 无号码。
-- Repair status: pending
-- Repair notes: —（首次独立验证，尚无修复记录）
+- Repair status: addressed-awaiting-verification
+- Repair notes: 修复：Access.canReadPhone 遍历整条当前 manager_id 链到根并全程防环，只有完整有效链且查看者确为上级才返回 true；循环、失效、跨公司或缺失中间人一律 fail closed。回归：AccessTest 新增查看者位于环内、环上及环外的用例；新增 backend/scripts/check_phone_cycle.py，在隔离库构造 employee→middle→upper→middle，middle/upper 人员详情均无号码、本人可读，恢复有效链后直接上级恢复读取；5/5，P 26/26。
 - Reverification notes: 当前 AccessTest 的循环用例只覆盖 actor 不在循环中的情况；本轮真实 HTTP 覆盖其遗漏分支，不声称 UI 能创建循环。
 
 ### V-005: V4 组织映射阻断未解决时仍接受正式业务写入
@@ -359,8 +359,8 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 - Actual: 缺正式组织字段仍可建立新任务/申请。迁移能启动及 blocker 可见不等于业务已被阻止。
 - Repair guidance: 将就绪状态纳入正式写入口，保留受权管理修复通路；完成映射、验证和约束收紧后才能解除门禁，旧页面与幂等重放也不能绕过。
 - Acceptance checks: 同一 V4 副本未映射时业务写明确拒绝，管理补齐仍可用；清障后 NOT NULL/其他约束就绪且正式写恢复；新空库不回归；预检仍只读、旧日志无损合并、旧顺序/旧通知兼容不造假。
-- Repair status: pending
-- Repair notes: —（首次独立验证，尚无修复记录）
+- Repair status: addressed-awaiting-verification
+- Repair notes: 修复：Writes.runOutcome 在幂等缓存之前、对非 /admin/ 作用域调用 OrganizationConstraints.formalWritesReady，未完成映射返回 409 ORGANIZATION_MAPPING_INCOMPLETE；管理端修复通路豁免。OrganizationConstraints 增加 mappingBlockers/formalWritesReady；AdminController 在员工/团队写事务提交后调用 tryTighten，清障后收紧 NOT NULL；同时修复 updateTeam 在 leadUserId 为空时 Map.of 抛 NPE，保证映射修复通路可用。验收：V4 快照恢复到隔离库 e13r_gate 并由 Flyway 升至 V13，seed=false；新增 check_mapping_write_gate.py：未映射时 task/home 写 409、管理端可建部门职位并映射 7 员工/3 团队、清障后约束收紧、同一任务写 201、管理通路仍可用，10/10。
 - Reverification notes: V4 原日志 22 条，升级后 18 正常+4 归档、重复组 0、`uq_log_day` 3 列，未确认日志丢失。暂停 worker 后旧过期待审尚未扫描是测试设置，未据此另立缺陷；本项只针对明确设计要求的写门禁。
 
 ### V-006: 管理端无法分别配置任务查看范围和派发范围
@@ -373,8 +373,8 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 - Actual: 存在两种 scope 列及不同 Access 检查函数，但管理端/API 不能产生不同的范围组合；只能直接改 SQL。现有 Access 单测手工构造“部门可见/仅本人派发”Actor，不能证明配置流程已实现。
 - Repair guidance: 补齐可操作的受权独立配置与持久化途径，更新权限版本并即时重算候选/写权限；不要求特定新增 endpoint 名称。
 - Acceptance checks: 无直接 SQL，在管理界面/API 配置 company-view+self-dispatch 及 department-view+self-dispatch；重新登录/刷新后保留，能看却不能派发，越权请求和权限改变前的旧页面/批准/幂等重放被拒绝；仅有管理员不能取得员工业务权。
-- Repair status: pending
-- Repair notes: —（首次独立验证，尚无修复记录）
+- Repair status: addressed-awaiting-verification
+- Repair notes: 修复：新增 PATCH /api/v1/admin/roles/{code}/scopes（OrganizationService.updateRoleScopes），分别持久化 task_view/task_dispatch/log_read/profile_read，校验范围级别、拒绝给 admin 角色员工范围，并递增 authz_version 使旧页面、旧候选、批准与幂等回放失效；admin.html 角色表改为四个范围下拉加保存按钮，健康页展示 formalWritesReady。验收：O 新增 executive company-view+self-dispatch 配置、持久化与版本递增、配置前幂等键重放 409 AUTHORIZATION_CHANGED、候选仅本人、公司任务仍可见、越权派发 403、admin 范围 400、恢复公司派发后候选恢复；O 58/58。
 - Reverification notes: O 的固定角色授权/派发拒绝矩阵通过；这不覆盖独立配置能力本身。已检查当前服务和所有角色维护路由，非基于猜测某个 API 返回 404 下结论。
 
 ### V-007: 完整日列表强制全天优先，破坏同置顶组的时间顺序
@@ -387,8 +387,8 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 - Actual: 原函数返回 `['later-all-day','earlier-timed']`；月格与当日列表采用不同顺序。
 - Repair guidance: 日列表与月格使用相同的置顶/真实开始时间/稳定 ID 规则，不改变全天区或时间轴实际位置。
 - Acceptance checks: 覆盖跨日定时与稍后全天混排、相同 start、不同 pin、刷新持久化及另一账号排序，完整日列表和月格一致；时间轴仍不随 pin 移位。
-- Repair status: pending
-- Repair notes: —（首次独立验证，尚无修复记录）
+- Repair status: addressed-awaiting-verification
+- Repair notes: 修复：潘多拉-日程视图.js 的 dayListSort 与 monthSortTasks 统一为置顶优先→真实 start→id 稳定排序，去掉全天 -1 偏移，时间轴位置不变。新增 check_calendar_sort.js 直接加载实际文件函数，覆盖跨日定时与稍后全天混排、相同 start、置顶及另一账号输入；4/4，且以修复前文件运行 4/4 失败。回归：H 12/12、BH 33/33（含置顶私有性、跨日分段、全天/重叠逐项、三视口 FAB）。
 - Reverification notes: H/BH 验证了 pin 私有性和 pin 优先，但未覆盖同 pin 组全天/跨日混排；补充执行原函数确认。
 
 ## Historical Traceability Cross-check

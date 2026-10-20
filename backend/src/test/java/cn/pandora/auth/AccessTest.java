@@ -253,4 +253,26 @@ class AccessTest {
         assertFalse(access.canReadPhone(exec, report), "reassignment and a cycle revoke the old superior");
         assertFalse(access.canReadPhone(exec, null));
     }
+
+    @Test
+    void phoneAccessFailsClosedWhenTheChainCyclesPastTheViewer() {
+        // employee -> middle -> upper -> middle. The viewer (middle) appears before the repeated node,
+        // so returning as soon as the viewer is found would grant a phone number from corrupt data.
+        Db db = mock(Db.class);
+        when(db.find(startsWith("SELECT * FROM users WHERE id=?"), anyString(), eq("org")))
+                .thenAnswer(call -> switch (call.getArgument(1).toString()) {
+                    case "middle" -> person("middle", "d1", "upper", 2);
+                    case "upper" -> person("upper", "d1", "middle", 1);
+                    default -> null;
+                });
+        Access access = access(db);
+        Map<String, Object> employeeRow = person("employee", "d1", "middle", 3);
+
+        assertFalse(access.canReadPhone(departmentLead("middle", "d1"), employeeRow),
+                "a cycle beyond the viewer cannot prove a valid management chain");
+        assertFalse(access.canReadPhone(executive("upper"), employeeRow),
+                "the same corrupt chain is refused for a higher viewer too");
+        assertFalse(access.canReadPhone(employee("peer", "d1", "middle"), employeeRow),
+                "a viewer outside the chain is still refused");
+    }
 }

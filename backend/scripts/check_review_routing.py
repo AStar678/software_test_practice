@@ -469,6 +469,28 @@ def main() -> int:
     api.call('PATCH', f'/api/v1/admin/employees/{lead_b_id}', admin, {'reviewerAvailable': True},
              Api.key(), api.call('GET', f'/api/v1/admin/employees/{lead_b_id}', admin)[2].get('ETag'))
 
+    # ---------------- 4.4 a pending request loses its last reviewer (V-003) ----------------
+    status, created, _ = create(boss, '最后审核人撤销验证', [boss_id])
+    check('4.4 a self-created task keeps its creator-fallback reviewer',
+          status == 201, {'status': status, 'body': created})
+    _, last_reviewer_view, _ = request_of(created['requestId'], boss)
+    check('4.4 the only reviewer is the creator of record',
+          last_reviewer_view['currentReviewerId'] == boss_id, last_reviewer_view.get('currentReviewerId'))
+    boss_etag = api.call('GET', f'/api/v1/admin/employees/{boss_id}', admin)[2].get('ETag')
+    status, body, _ = api.call('PATCH', f'/api/v1/admin/employees/{boss_id}', admin,
+                               {'reviewerAvailable': False}, Api.key(), boss_etag)
+    check('4.4 removing the last reviewer completes the organization change',
+          status == 200, {'status': status, 'body': body})
+    _, final_view, _ = request_of(created['requestId'], boss)
+    check('4.4 the request applies directly with the no-reviewer reason instead of failing',
+          final_view['status'] == 'direct' and final_view['currentReviewerId'] is None
+          and bool(final_view.get('exemptionReason')), final_view)
+    _, final_task, _ = detail(boss, created['taskId'])
+    check('4.4 the direct application publishes the created task',
+          final_task.get('published') is True, final_task.get('published'))
+    api.call('PATCH', f'/api/v1/admin/employees/{boss_id}', admin, {'reviewerAvailable': True},
+             Api.key(), api.call('GET', f'/api/v1/admin/employees/{boss_id}', admin)[2].get('ETag'))
+
     # ---------------- 4.9 unique pending under concurrency ----------------
     status, created, _ = create(lead_a, '并发唯一待审', [w1_id])
     task_concurrent = created['taskId']

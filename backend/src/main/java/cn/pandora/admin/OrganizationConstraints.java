@@ -70,14 +70,29 @@ public class OrganizationConstraints implements ApplicationRunner {
         long teamsMissingDepartment = n(db.one(
             "SELECT COUNT(*) AS c FROM teams WHERE department_id IS NULL"), "c");
         boolean nullable = isNullable("users", "department_id") || isNullable("teams", "department_id");
+        long mappingBlockers = n(db.one(
+            "SELECT COUNT(*) AS c FROM migration_findings WHERE severity='blocker' AND resolved_at IS NULL "
+            + "AND category IN ('organization_mapping','team_department_mapping')"), "c");
         result.put("usersMissingDepartment", usersMissingDepartment);
         result.put("usersMissingPosition", usersMissingPosition);
         result.put("teamsMissingDepartment", teamsMissingDepartment);
+        result.put("mappingBlockers", mappingBlockers);
         result.put("tighteningApplied", !nullable);
+        result.put("formalWritesReady", usersMissingDepartment == 0 && usersMissingPosition == 0
+            && teamsMissingDepartment == 0 && mappingBlockers == 0);
         result.put("openBlockers", db.list(
             "SELECT category,subject,detail FROM migration_findings "
             + "WHERE severity='blocker' AND resolved_at IS NULL ORDER BY category,subject"));
         return result;
+    }
+
+    /**
+     * Formal business writes stay disabled until the reviewed organization mapping is complete.
+     * The administration repair paths are exempt so an unmapped V4 database can be fixed through the
+     * console instead of direct SQL (Migration Plan §2, DEV-001/002).
+     */
+    public boolean formalWritesReady() {
+        return Boolean.TRUE.equals(status().get("formalWritesReady"));
     }
 
     /** Applies NOT NULL only when nothing would violate it. Returns true when it did apply. */

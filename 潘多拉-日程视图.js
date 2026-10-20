@@ -54,7 +54,10 @@
     return list.slice().sort((a, b) => {
       const pa = a.pinned ? 1 : 0, pb = b.pinned ? 1 : 0;
       if (pa !== pb) return pb - pa;
-      const ta = a.allDay ? -1 : +a.start, tb = b.allDay ? -1 : +b.start;
+      // Same rule as the month cell: pinned first, then the real start instant, then the stable id.
+      // An all-day task keeps its own 00:00 start, so it no longer jumps ahead of a timed task that
+      // began on an earlier day and continues into the selected one.
+      const ta = +a.start, tb = +b.start;
       if (ta !== tb) return ta - tb;
       return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
     });

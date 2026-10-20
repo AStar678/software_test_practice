@@ -180,16 +180,20 @@ public class TaskService {
         return submit(actor, task, null, proposed, owners, route, "create", null);
     }
 
+    /**
+     * Committed deadline handling before a submission transaction. The controller calls this before
+     * {@code Writes.run}: if the page it is about to submit is stale, the 4xx response must not roll
+     * back the expiry/unfreeze terminal state (design §6, DEV-012).
+     */
+    public void expireBeforeSubmit(Actor actor, String taskId) {
+        expiry.expirePendingBeforeSubmit(actor.organizationId(), taskId, clock.instant());
+    }
+
     public Map<String, Object> change(Actor actor, String id, String ifMatch, Map<String, Object> input) {
         requireBusiness(actor);
         String command = command(input, "command", "action", "change");
         if (!Set.of("create", "change", "progress", "complete", "reopen").contains(command)) throw bad("不支持的任务动作");
         Map<String, Object> task = task(actor, id, true);
-        // A deadline that passed while the request was pending produces its terminal state first; the
-        // submission then starts from an unfrozen task (DEV-012).
-        if (expiry.expirePendingForTask(actor.organizationId(), id, clock.instant()) > 0) {
-            task = task(actor, id, true);
-        }
         String currentId = s(task, "currentVersionId");
         Map<String, Object> current = currentId == null ? null : version(actor, currentId);
         List<String> currentOwners = current == null ? List.of() : assignees(actor, currentId);
@@ -529,9 +533,6 @@ public class TaskService {
         requireBusiness(actor);
         allowed(input, Set.of("sourceUserId", "targetUserId", "reason"));
         Map<String, Object> task = task(actor, taskId, true);
-        if (expiry.expirePendingForTask(actor.organizationId(), taskId, clock.instant()) > 0) {
-            task = task(actor, taskId, true);
-        }
         String currentId = s(task, "currentVersionId");
         if (currentId == null) throw conflict("TASK_NOT_PUBLISHED", "未发布任务不能交接");
         Map<String, Object> current = version(actor, currentId);
@@ -674,6 +675,21 @@ public class TaskService {
         return moved;
     }
 
+    /**
+     * SQL and argument contract for applying a request with no reviewer. Kept in one place so the
+     * placeholder count and the argument count cannot drift apart (V-003).
+     */
+    static final String NO_REVIEWER_APPLY_SQL = "UPDATE approval_requests SET status='direct',"
+            + "current_reviewer_id=NULL,exemption_reason=?,route_basis_assignee_id=?,route_reason=?,"
+            + "route_authz_version=?,decided_at=?,decided_by=NULL,route_refreshed_at=UTC_TIMESTAMP(6),"
+            + "row_version=row_version+1 WHERE organization_id=? AND id=? AND status='pending' AND row_version=?";
+
+    static Object[] noReviewerApplyArgs(Route route, Timestamp now, String organizationId, String requestId,
+                                        long requestRowVersion) {
+        return new Object[]{route.reasonText(), route.basisAssigneeId(), route.reason(), route.authzVersion(),
+                now, organizationId, requestId, requestRowVersion};
+    }
+
     /** Applies a request whose refreshed route has no reviewer at all, with the reason persisted. */
     private void applyWithoutReviewer(Actor actor, Map<String, Object> task, Map<String, Object> request, Route route) {
         String taskId = s(task, "id");
@@ -682,9 +698,8 @@ public class TaskService {
         Map<String, Object> proposed = version(actor, s(request, "proposedVersionId"));
         Map<String, Object> base = s(request, "baseVersionId") == null ? null : version(actor, s(request, "baseVersionId"));
         Timestamp now = now();
-        int changed = db.update("UPDATE approval_requests SET status='direct',current_reviewer_id=NULL,exemption_reason=?,route_basis_assignee_id=?,route_reason=?,route_authz_version=?,decided_at=?,decided_by=NULL,route_refreshed_at=UTC_TIMESTAMP(6),row_version=row_version+1 WHERE organization_id=? AND id=? AND status='pending' AND row_version=?",
-                route.reasonText(), route.basisAssigneeId(), route.reason(), route.authzVersion(), now, now,
-                actor.organizationId(), requestId, n(request, "rowVersion"));
+        int changed = db.update(NO_REVIEWER_APPLY_SQL,
+                noReviewerApplyArgs(route, now, actor.organizationId(), requestId, n(request, "rowVersion")));
         if (changed != 1) return;
         db.update("UPDATE task_versions SET status='applied' WHERE organization_id=? AND id=? AND status='proposed'", actor.organizationId(), s(proposed, "id"));
         applyVersion(actor, task, base, proposed, kind, "create".equals(kind) ? "created" : "approval");

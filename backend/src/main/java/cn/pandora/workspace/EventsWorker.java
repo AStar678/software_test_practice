@@ -98,6 +98,11 @@ public class EventsWorker {
                 boolean canRead=taskId!=null && workspace.canReadTask(actor,taskId,true);
                 boolean relationLost=!canRead && removed.contains(recipient);
                 boolean keepTask=!revoked && (canRead||relationLost);
+                // An ordinary candidate who lost task authority before delivery gets no restricted
+                // content and no historical entry. Only a recipient that can still read the task, or a
+                // removal event that proves the old effective-owner fact, keeps the title/summary
+                // (design §7, DEV-033).
+                boolean contentMasked=!revoked && !canRead && !relationLost;
                 String copySummary;
                 String copyTitle;
                 boolean readonly;
@@ -112,12 +117,12 @@ public class EventsWorker {
                     copySummary="你的工作关系或访问范围已变化，请查看当前工作安排。";copyTitle=null;readonly=true;
                 }
                 db.update("INSERT IGNORE INTO notifications(id,organization_id,event_id,recipient_id,event_type,task_id,summary,"
-                                + "request_id,task_version_id,delivered_at,expires_at,source,readonly,title,change_summary,relation_lost) "
-                                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,'event',?,?,?,?)",
+                                + "request_id,task_version_id,delivered_at,expires_at,source,readonly,title,change_summary,relation_lost,content_masked) "
+                                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,'event',?,?,?,?,?)",
                         id(),org,s(event,"id"),recipient,s(event,"eventType"),keepTask?taskId:null,copySummary,
-                        s(event,"requestId"),s(event,"taskVersionId"),Timestamp.from(now),
+                        contentMasked?null:s(event,"requestId"),contentMasked?null:s(event,"taskVersionId"),Timestamp.from(now),
                         event.get("expiresAt"),readonly,copyTitle,
-                        revoked?null:s(event,"changeSummary"),relationLost);
+                        contentMasked||revoked?null:s(event,"changeSummary"),relationLost,contentMasked);
             }
             db.update("UPDATE domain_events SET status='delivered',delivered_at=? WHERE organization_id=? AND id=? AND status='pending'",
                     Timestamp.from(now),org,s(event,"id"));

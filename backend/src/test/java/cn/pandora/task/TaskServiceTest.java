@@ -191,6 +191,18 @@ class TaskServiceTest {
         return new TaskService(db, mock(Access.class), mock(Events.class), java.time.Clock.systemUTC(), mock(ExpiryService.class));
     }
 
+    @Test
+    void noReviewerApplicationBindsEveryPlaceholderToExactlyOneArgument() {
+        // V-003: the update used to pass a duplicated argument while the SQL had one fewer placeholder.
+        TaskService.Route route = new TaskService.Route(null, "basis", List.of(), "no-reviewer",
+                TaskService.routeReasonText("no-reviewer"), 3L);
+        Object[] args = TaskService.noReviewerApplyArgs(route, java.sql.Timestamp.from(Instant.EPOCH),
+                "org", "request", 7L);
+        long placeholders = TaskService.NO_REVIEWER_APPLY_SQL.chars().filter(c -> c == '?').count();
+        assertEquals(placeholders, args.length);
+        assertEquals(8, args.length);
+    }
+
     private static Map<String, Object> user(String id, String role, int rank, String manager, boolean active) {
         Map<String, Object> user = new HashMap<>();
         user.put("id", id);
