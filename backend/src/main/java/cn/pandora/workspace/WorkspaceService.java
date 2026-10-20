@@ -463,8 +463,12 @@ public class WorkspaceService {
 
     public Map<String,Object> home(Actor a) {
         business(a);
-        var assigned = visibleTasks(a,"self").stream().filter(t -> !a.id().equals(s(t,"originalCreatorId")) && !"done".equals(s(t,"executionState")))
-            .map(t -> Map.<String,Object>of("taskId",s(t,"id"),"title",s(t,"title"),"priority",s(t,"priority"))).limit(10).toList();
+        var assigned = db.list("SELECT t.id AS task_id,v.title,v.priority,a.assigned_at,a.assigned_source "
+                + "FROM task_assignments a JOIN tasks t ON t.organization_id=a.organization_id AND t.id=a.task_id "
+                + "JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
+                + "WHERE a.organization_id=? AND a.user_id=? AND a.active=TRUE "
+                + "AND t.current_version_id IS NOT NULL AND t.execution_state<>'done' AND t.original_creator_id<>? "
+                + "ORDER BY a.assigned_at DESC,t.id LIMIT 10",a.organizationId(),a.id(),a.id());
         LocalDate today = clock.instant().atZone(zone(a)).toLocalDate();
         var logPage = logs(a,Map.of("scope","self","from",today.minusDays(9).toString(),"to",today.toString(),"limit","10"));
         return Map.of("companyItems",db.list("SELECT id,kind,title,body,sort_order,row_version FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id LIMIT 10",a.organizationId()),

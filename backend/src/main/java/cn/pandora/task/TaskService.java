@@ -62,6 +62,7 @@ public class TaskService {
         LocalDate to = optionalDate(filters.get("to"), "to");
         if (from != null && to != null && to.isBefore(from)) throw bad("结束日期不得早于开始日期");
         ZoneId zone = organizationZone(actor);
+        Set<String> pinned = pinnedIds(actor);
         List<Map<String, Object>> visible = new ArrayList<>();
         for (Map<String, Object> task : db.list("SELECT * FROM tasks WHERE organization_id=? AND current_version_id IS NOT NULL ORDER BY created_at DESC,id", actor.organizationId())) {
             Map<String, Object> version = version(actor, s(task, "currentVersionId"));
@@ -75,7 +76,9 @@ public class TaskService {
             LocalDate start = instant(version.get("startAt"), "startAt").atZone(zone).toLocalDate();
             LocalDate due = instant(version.get("dueAt"), "dueAt").atZone(zone).toLocalDate();
             if (from != null && due.isBefore(from) || to != null && start.isAfter(to)) continue;
-            visible.add(taskView(actor, task, version, owners));
+            Map<String, Object> view = taskView(actor, task, version, owners);
+            view.put("pinned", pinned.contains(s(task, "id")));
+            visible.add(view);
         }
         int begin = Math.min(offset, visible.size());
         int end = (int) Math.min((long) begin + limit, visible.size());
@@ -143,6 +146,7 @@ public class TaskService {
         List<String> owners = assignees(actor, current);
         if (!access.canSeeTask(actor, task, version, owners)) throw ApiException.notFound();
         Map<String, Object> result = taskView(actor, task, version, owners);
+        result.put("pinned", isPinned(actor, id));
         // The effective route and, for whoever may see it, this request's own route (DEV-010).
         Map<String, Object> pendingRequest = pending(actor, id, false);
         result.put("pendingRoute", pendingRequest != null && canSeeRequest(actor, pendingRequest, task)
@@ -431,7 +435,7 @@ public class TaskService {
         if (changed != 1) throw conflict("REQUEST_RESOLVED", "该申请已处理，请刷新");
         db.update("UPDATE task_versions SET status=? WHERE organization_id=? AND id=? AND status='proposed'", "approve".equals(decision) ? "applied" : status, actor.organizationId(), s(proposed, "id"));
         if ("approve".equals(decision)) {
-            applyVersion(actor, task, base, proposed, kind);
+            applyVersion(actor, task, base, proposed, kind, "approval");
             db.update("UPDATE task_records SET effective_at=? WHERE organization_id=? AND request_id=?", now, actor.organizationId(), id);
             recordHistory(actor, taskId, id, "version_applied", "versionId", base == null ? null : s(base, "id"), s(proposed, "id"),
                     Map.of("kind", kind, "executionRound", n(task(actor, taskId, false), "executionRound"), "executionState", Objects.toString(s(proposed, "executionState"), "")));
@@ -455,7 +459,7 @@ public class TaskService {
             returned.put("executionState", "doing");
             String newVersion = insertVersion(actor, taskId, returned, assignees(actor, baseId), "applied");
             returned.put("id", newVersion);
-            applyVersion(actor, task, base, returned, "return");
+            applyVersion(actor, task, base, returned, "return", "approval");
             insertRecord(actor, taskId, id, comment, "return", true);
             recordHistory(actor, taskId, id, "completion_returned", "executionState", "done", "doing",
                     Map.of("comment", Objects.toString(comment, ""), "versionId", newVersion));
@@ -683,7 +687,7 @@ public class TaskService {
                 actor.organizationId(), requestId, n(request, "rowVersion"));
         if (changed != 1) return;
         db.update("UPDATE task_versions SET status='applied' WHERE organization_id=? AND id=? AND status='proposed'", actor.organizationId(), s(proposed, "id"));
-        applyVersion(actor, task, base, proposed, kind);
+        applyVersion(actor, task, base, proposed, kind, "create".equals(kind) ? "created" : "approval");
         db.update("UPDATE task_records SET effective_at=? WHERE organization_id=? AND request_id=?", now, actor.organizationId(), requestId);
         db.update("INSERT INTO request_reassignments(id,organization_id,request_id,task_id,previous_reviewer_id,new_reviewer_id,basis_assignee_id,reason,source) VALUES(?,?,?,?,?,NULL,?,?,'route_refresh')",
                 Db.id(), actor.organizationId(), requestId, taskId, reviewerOfRecord(request), route.basisAssigneeId(), route.reasonText());
@@ -739,7 +743,7 @@ public class TaskService {
         if (direct) {
             recordHistory(actor, taskId, requestId, "no_reviewer", "exemptionReason", null, route.reasonText(),
                     Map.of("basisAssigneeId", Objects.toString(route.basisAssigneeId(), "")));
-            applyVersion(actor, task, base, proposed, kind);
+            applyVersion(actor, task, base, proposed, kind, "create".equals(kind) ? "created" : "approval");
         } else if (base != null || n(task, "rowVersion") > 1) {
             db.update("UPDATE tasks SET row_version=row_version+1,updated_at=? WHERE organization_id=? AND id=?", now, actor.organizationId(), taskId);
         }
@@ -896,7 +900,7 @@ public class TaskService {
         return value.length() <= 60 ? value : value.substring(0, 60) + "…";
     }
 
-    private void applyVersion(Actor actor, Map<String, Object> task, Map<String, Object> base, Map<String, Object> proposed, String kind) {
+    private void applyVersion(Actor actor, Map<String, Object> task, Map<String, Object> base, Map<String, Object> proposed, String kind, String assignmentSource) {
         // schedule_version is the reminder/schedule identity (DEV-014): only a real start/end/all-day
         // change bumps it. Execution round changes only on an approved reopen. due_version is retained
         // for historical rows but is deliberately no longer written.
@@ -907,6 +911,65 @@ public class TaskService {
                 s(proposed, "id"), s(proposed, "executionState"), "reopen".equals(kind) ? 1 : 0,
                 scheduleChanged ? 1 : 0, cutoffTime(proposed.get("allDayCutoffTime")),
                 now(), actor.organizationId(), s(task, "id"));
+        syncAssignments(actor, s(task, "id"), s(proposed, "id"), assignees(actor, s(proposed, "id")), assignmentSource);
+    }
+
+    /**
+     * Keep one active assignment row per current owner. Existing owners keep their original
+     * assigned_at across reorders and schedule changes; a removed owner is deactivated and a later
+     * re-add creates a fresh row with a fresh dispatch time.
+     */
+    private void syncAssignments(Actor actor, String taskId, String versionId, List<String> owners, String source) {
+        Map<String, Object> current = db.one("SELECT schedule_version,execution_round FROM tasks WHERE organization_id=? AND id=?", actor.organizationId(), taskId);
+        long scheduleVersion = current.get("scheduleVersion") == null ? 1 : n(current, "scheduleVersion");
+        int executionRound = current.get("executionRound") == null ? 1 : Math.toIntExact(n(current, "executionRound"));
+        Timestamp now = now();
+        List<Map<String, Object>> active = db.list("SELECT id,user_id FROM task_assignments WHERE organization_id=? AND task_id=? AND active=TRUE", actor.organizationId(), taskId);
+        Set<String> activeUsers = new LinkedHashSet<>();
+        for (Map<String, Object> row : active) {
+            String user = s(row, "userId");
+            if (owners.contains(user)) {
+                activeUsers.add(user);
+                db.update("UPDATE task_assignments SET version_id=?,schedule_version=?,execution_round=? WHERE organization_id=? AND id=?",
+                        versionId, scheduleVersion, executionRound, actor.organizationId(), s(row, "id"));
+            } else {
+                db.update("UPDATE task_assignments SET active=FALSE,removed_at=? WHERE organization_id=? AND id=?",
+                        now, actor.organizationId(), s(row, "id"));
+            }
+        }
+        for (String owner : owners) {
+            if (activeUsers.contains(owner)) continue;
+            db.update("INSERT INTO task_assignments(id,organization_id,task_id,version_id,user_id,assigned_at,assigned_source,schedule_version,execution_round,active) VALUES(?,?,?,?,?,?,?,?,?,TRUE)",
+                    Db.id(), actor.organizationId(), taskId, versionId, owner, now, source, scheduleVersion, executionRound);
+        }
+    }
+
+    private Set<String> pinnedIds(Actor actor) {
+        return new LinkedHashSet<>(db.list("SELECT task_id FROM user_task_pins WHERE organization_id=? AND user_id=?", actor.organizationId(), actor.id())
+                .stream().map(row -> s(row, "taskId")).toList());
+    }
+
+    private boolean isPinned(Actor actor, String taskId) {
+        return db.find("SELECT 1 FROM user_task_pins WHERE organization_id=? AND user_id=? AND task_id=?",
+                actor.organizationId(), actor.id(), taskId) != null;
+    }
+
+    public Map<String, Object> setPinned(Actor actor, String taskId, boolean pinned) {
+        requireBusiness(actor);
+        Map<String, Object> task = task(actor, taskId, false);
+        String current = s(task, "currentVersionId");
+        if (current == null) throw conflict("TASK_NOT_PUBLISHED", "未发布任务不能置顶");
+        Map<String, Object> version = version(actor, current);
+        List<String> owners = assignees(actor, current);
+        if (!access.canSeeTask(actor, task, version, owners)) throw ApiException.notFound();
+        if (pinned) {
+            db.update("INSERT IGNORE INTO user_task_pins(organization_id,user_id,task_id) VALUES(?,?,?)",
+                    actor.organizationId(), actor.id(), taskId);
+        } else {
+            db.update("DELETE FROM user_task_pins WHERE organization_id=? AND user_id=? AND task_id=?",
+                    actor.organizationId(), actor.id(), taskId);
+        }
+        return Map.of("taskId", taskId, "pinned", pinned);
     }
 
     private String insertVersion(Actor actor, String taskId, Map<String, Object> values, List<String> owners, String status) {
@@ -948,6 +1011,7 @@ public class TaskService {
         Map<String, Object> request = pending(actor, s(task, "id"), false);
         result.put("pending", request != null);
         result.put("frozen", request != null);
+        result.put("pendingKind", request == null ? null : s(request, "kind"));
         if (request != null && canSeeRequest(actor, request, task)) result.put("pendingRequestId", s(request, "id"));
         Route route = null;
         try { route = route(actor, owners, s(task, "originalCreatorId")); }
