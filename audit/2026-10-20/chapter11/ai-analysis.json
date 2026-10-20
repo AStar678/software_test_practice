@@ -1,0 +1,35 @@
+{
+  "success": true,
+  "baseUrl": "http://127.0.0.1:18095",
+  "prefix": "AI-bbcd15b11e",
+  "checksPassed": 18,
+  "checks": [
+    "administrator has no default business analysis",
+    "upper statistics use the authorized normal-task scope",
+    "upper statistics expose pending-complete, strict overdue and four priorities",
+    "middle statistics use the authorized normal-task scope",
+    "middle statistics expose pending-complete, strict overdue and four priorities",
+    "employee statistics use the authorized normal-task scope",
+    "employee statistics expose pending-complete, strict overdue and four priorities",
+    "unpublished proposals stay outside totals and keywords",
+    "an unregistered Chinese term is extracted from real title and description",
+    "keyword frequency changes after approved task content changes",
+    "lower analysis is self-scoped and explicitly local rule based",
+    "proportional 20 percent advice includes its exact source",
+    "schedule conflict advice includes both source tasks",
+    "urgent task produces independent high-priority advice",
+    "lower advice excludes a department-only task",
+    "middle analysis separates department statistics and personal suggestions",
+    "upper analysis uses company statistics, keywords and suggestions",
+    "stored analysis is re-authorized after organization authority changes"
+  ],
+  "createdTaskIds": [
+    "98332686-290e-49b7-8e77-cc878d60be91",
+    "73d16186-4a2c-4c7a-9407-6b10a71a65c7",
+    "64cf0b36-6553-4747-a1d1-5e5f19f8022e",
+    "c5fffc95-0f9c-4cf1-a197-692d486cbca9",
+    "692a7c72-c36c-4876-a716-226080c7b314"
+  ],
+  "seconds": 2.75,
+  "error": null
+}

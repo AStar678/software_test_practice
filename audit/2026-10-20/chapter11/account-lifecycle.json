@@ -1,0 +1,408 @@
+{
+  "generatedAt": "2026-10-20T13:40:15.185223+00:00",
+  "baseUrl": "http://127.0.0.1:18095",
+  "passed": 47,
+  "total": 47,
+  "results": [
+    {
+      "check": "3.1 creating an account returns a generated initial password once",
+      "pass": true,
+      "evidence": {
+        "status": 201
+      }
+    },
+    {
+      "check": "3.1 a repeated create never re-displays the secret",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "body": {
+          "userId": "ed0b96a4-f3ae-4f0a-b42a-00dfee04980b",
+          "username": "acct-331242",
+          "rowVersion": 1,
+          "mustChangePassword": true
+        }
+      }
+    },
+    {
+      "check": "3.1 no plaintext initial password reaches idempotency/audit/outbox",
+      "pass": true,
+      "evidence": {
+        "searchedBytes": 72699
+      }
+    },
+    {
+      "check": "3.1 only a BCrypt hash is stored for the account",
+      "pass": true,
+      "evidence": {
+        "prefix": "$2a$12$"
+      }
+    },
+    {
+      "check": "3.2 login reports the password change requirement up front",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "passwordChangeRequired": true
+      }
+    },
+    {
+      "check": "3.2 a restricted session may read its own identity",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.2 a restricted session cannot read business data",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "message": "首次登录或管理员重置后必须修改密码，当前会话仅可改密或退出",
+          "code": "PASSWORD_CHANGE_REQUIRED"
+        }
+      }
+    },
+    {
+      "check": "3.2 a restricted session cannot list tasks",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "3.2 a restricted session cannot reach the administration API",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "3.2 refreshing cannot bypass the gate",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "message": "首次登录或管理员重置后必须修改密码，当前会话仅可改密或退出",
+          "code": "PASSWORD_CHANGE_REQUIRED"
+        }
+      }
+    },
+    {
+      "check": "3.3 a wrong current password is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_CURRENT_PASSWORD",
+          "message": "当前密码不正确"
+        }
+      }
+    },
+    {
+      "check": "3.3 a policy violation is rejected (fewer than ten characters)",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_PASSWORD",
+          "message": "新密码至少10个字符"
+        }
+      }
+    },
+    {
+      "check": "3.3 a policy violation is rejected (letters only)",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_PASSWORD",
+          "message": "新密码须同时包含字母和数字"
+        }
+      }
+    },
+    {
+      "check": "3.3 a policy violation is rejected (digits only)",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_PASSWORD",
+          "message": "新密码须同时包含字母和数字"
+        }
+      }
+    },
+    {
+      "check": "3.3 a policy violation is rejected (more than 72 UTF-8 bytes)",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_PASSWORD",
+          "message": "新密码的UTF-8长度不得超过72字节"
+        }
+      }
+    },
+    {
+      "check": "3.3 a second session can be established before the change",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.3 a valid change succeeds and demands a new login",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "changed": true,
+          "credentialVersion": 2,
+          "sessionsRevoked": 2,
+          "reLoginRequired": true
+        }
+      }
+    },
+    {
+      "check": "3.3 the session that changed the password is revoked",
+      "pass": true,
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "check": "3.3 the other session is revoked too",
+      "pass": true,
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "check": "3.3 the old password no longer works",
+      "pass": true,
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "check": "3.3 the new password works and the gate is lifted",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "passwordChangeRequired": false
+      }
+    },
+    {
+      "check": "3.3 business data is reachable after the change",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.3 the chosen new password is never persisted in clear text",
+      "pass": true,
+      "evidence": {
+        "searchedBytes": 46971
+      }
+    },
+    {
+      "check": "3.1 an administrator reset issues a new one-time password",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "ed0b96a4-f3ae-4f0a-b42a-00dfee04980b",
+          "mustChangePassword": true,
+          "sessionsRevoked": 1,
+          "credentialVersion": 3
+        }
+      }
+    },
+    {
+      "check": "3.1 the reset is a different secret from the created one",
+      "pass": true,
+      "evidence": {
+        "distinct": true
+      }
+    },
+    {
+      "check": "3.1 the reset revokes the previously valid sessions",
+      "pass": true,
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "check": "3.1 the password from before the reset no longer works",
+      "pass": true,
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "check": "3.1 the reset restores the forced change gate",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "passwordChangeRequired": true
+      }
+    },
+    {
+      "check": "3.2 a restricted session may log out",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.1 a later reset issues a fresh secret, never the previous one",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.5 the seeded employee can sign in normally",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.5 the owner can read their own contacts",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.5 the owner can write name, phone and email",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "rowVersion": 4,
+          "id": "f40c8b5f-36b9-43c8-acd2-e77f5c12967b",
+          "profileVersion": 4
+        }
+      }
+    },
+    {
+      "check": "3.5 the owner sees their own saved phone",
+      "pass": true,
+      "evidence": {
+        "phone": "13944498221"
+      }
+    },
+    {
+      "check": "3.5 the owner cannot change an organization field",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "仅可修改姓名、联系电话和邮箱，请至少填写一项"
+        }
+      }
+    },
+    {
+      "check": "3.5 the owner cannot change their organization level",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "仅可修改姓名、联系电话和邮箱，请至少填写一项"
+        }
+      }
+    },
+    {
+      "check": "3.5 the administrator writes a phone and gets a receipt without the number",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "ed0b96a4-f3ae-4f0a-b42a-00dfee04980b",
+          "rowVersion": 2,
+          "changed": [
+            "phone"
+          ],
+          "phoneUpdated": true
+        }
+      }
+    },
+    {
+      "check": "3.5 the employee directory never contains a phone number",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.5 task detail and participant summaries contain no phone number",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.5 notifications contain no phone number",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.5 analytics contain no phone number",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.5 the audit trail contains no phone number",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.5 no stored audit/outbox/idempotency payload contains a phone number",
+      "pass": true,
+      "evidence": {
+        "searchedBytes": 74004
+      }
+    },
+    {
+      "check": "3.4 the login page wires first-login and everyday password changes",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.4 a normal account can change its password from the profile page",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.4 the administrator console exposes password reset",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "3.4 self-registration does not exist and creates no account",
+      "pass": true,
+      "evidence": {
+        "status": 401,
+        "accounts": 0
+      }
+    }
+  ]
+}

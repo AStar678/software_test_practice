@@ -12,9 +12,15 @@
 const { spawn } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 
-const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+const CHROME = process.env.CHROME_BIN || [
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  "/usr/bin/google-chrome", "/usr/bin/google-chrome-stable",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+].find((candidate) => fs.existsSync(candidate));
 const results = [];
 const RUN = crypto.randomBytes(3).toString("hex");
 
@@ -46,7 +52,7 @@ async function openBrowser(url) {
     "--no-default-browser-check", "--disable-crash-reporter", "--hide-scrollbars",
     "--force-device-scale-factor=1",
     "--remote-debugging-port=" + port,
-    "--user-data-dir=/tmp/cdp-" + crypto.randomBytes(4).toString("hex"),
+    "--user-data-dir=" + path.join(os.tmpdir(), "pandora-cdp-" + crypto.randomBytes(4).toString("hex")),
     url,
   ], { stdio: "ignore" });
 
@@ -84,7 +90,7 @@ async function openBrowser(url) {
 
   await send("Runtime.enable");
   await send("Page.enable");
-  await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  await send("Emulation.setDeviceMetricsOverride", { width: Number(arg("width", "390")), height: Number(arg("height", "844")), deviceScaleFactor: 1, mobile: true });
 
   const evaluate = async (expression) => {
     const result = await send("Runtime.evaluate",
@@ -242,7 +248,8 @@ async function main() {
   if (output) {
     fs.mkdirSync(path.dirname(output), { recursive: true });
     fs.writeFileSync(output, JSON.stringify({
-      generatedAt: new Date().toISOString(), baseUrl: base, passed, total: results.length, results,
+      generatedAt: new Date().toISOString(), baseUrl: base,
+      viewport: { width: Number(arg("width", "390")), height: Number(arg("height", "844")) }, passed, total: results.length, results,
     }, null, 2) + "\n");
     console.log("wrote " + output);
   }

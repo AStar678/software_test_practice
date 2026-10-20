@@ -1,0 +1,237 @@
+{
+  "checks": [
+    {
+      "check": "8.1 the self scope returns only the current author's day",
+      "pass": true,
+      "evidence": {
+        "items": [],
+        "total": 0,
+        "nextOffset": null
+      }
+    },
+    {
+      "check": "8.1 a first today log can be created",
+      "pass": true,
+      "evidence": {
+        "logId": "b8165118-a9c9-4bf6-bdc6-16d5c083394a",
+        "businessDate": "2026-10-21",
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "8.1 the editable flag is true on the company day",
+      "pass": true,
+      "evidence": {
+        "id": "b8165118-a9c9-4bf6-bdc6-16d5c083394a",
+        "authorId": "f40c8b5f-36b9-43c8-acd2-e77f5c12967b",
+        "businessDate": "2026-10-21",
+        "body": "8.1-8.3-cdf81775 created",
+        "taskId": null,
+        "rowVersion": 1,
+        "createdAt": "2026-10-20T13:40:55.166687Z",
+        "updatedAt": "2026-10-20T13:40:55.166687Z",
+        "authorName": "张涛",
+        "editable": true
+      }
+    },
+    {
+      "check": "8.1 a second today create returns 409 with the existing id",
+      "pass": true,
+      "evidence": {
+        "code": "WORK_LOG_EXISTS",
+        "message": "今天已有日志，请打开已有记录编辑",
+        "logId": "b8165118-a9c9-4bf6-bdc6-16d5c083394a",
+        "businessDate": "2026-10-21",
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "8.2 changing the recorded date is rejected",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "日志日期不能修改"
+      }
+    },
+    {
+      "check": "8.2 the log is still editable at 23:59:59",
+      "pass": true,
+      "evidence": {
+        "id": "b8165118-a9c9-4bf6-bdc6-16d5c083394a",
+        "authorId": "f40c8b5f-36b9-43c8-acd2-e77f5c12967b",
+        "businessDate": "2026-10-21",
+        "body": "8.1-8.3-cdf81775 created",
+        "taskId": null,
+        "rowVersion": 1,
+        "createdAt": "2026-10-20T13:40:55.166687Z",
+        "updatedAt": "2026-10-20T13:40:55.166687Z",
+        "authorName": "张涛",
+        "editable": true
+      }
+    },
+    {
+      "check": "8.2 the log is frozen at 00:00:00",
+      "pass": true,
+      "evidence": {
+        "id": "b8165118-a9c9-4bf6-bdc6-16d5c083394a",
+        "authorId": "f40c8b5f-36b9-43c8-acd2-e77f5c12967b",
+        "businessDate": "2026-10-21",
+        "body": "8.1-8.3-cdf81775 created",
+        "taskId": null,
+        "rowVersion": 1,
+        "createdAt": "2026-10-20T13:40:55.166687Z",
+        "updatedAt": "2026-10-20T13:40:55.166687Z",
+        "authorName": "张涛",
+        "editable": false
+      }
+    },
+    {
+      "check": "8.2 a frozen log cannot be edited",
+      "pass": true,
+      "evidence": {
+        "code": "WORK_LOG_FROZEN",
+        "message": "该日志已过公司当天，不能再修改"
+      }
+    },
+    {
+      "check": "8.2 a frozen log cannot be deleted",
+      "pass": true,
+      "evidence": {
+        "code": "WORK_LOG_FROZEN",
+        "message": "该日志已过公司当天，不能再删除"
+      }
+    },
+    {
+      "check": "8.2 an old day cannot be recreated after midnight",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "只能新建公司当天的日志"
+      }
+    },
+    {
+      "check": "8.1 the new day starts empty for this author",
+      "pass": true,
+      "evidence": {
+        "items": [],
+        "total": 0,
+        "nextOffset": null
+      }
+    },
+    {
+      "check": "8.1 concurrent creates with distinct keys produce one row",
+      "pass": true,
+      "evidence": {
+        "statuses": [
+          200,
+          409
+        ],
+        "bodies": [
+          {
+            "code": "WORK_LOG_EXISTS",
+            "message": "今天已有日志，请打开已有记录编辑",
+            "logId": "72327b14-4d6a-4cbf-a0fb-67fa1dca196f",
+            "businessDate": "2026-10-22",
+            "rowVersion": 1
+          },
+          {
+            "logId": "72327b14-4d6a-4cbf-a0fb-67fa1dca196f",
+            "businessDate": "2026-10-22",
+            "rowVersion": 1
+          }
+        ]
+      }
+    },
+    {
+      "check": "8.1 only one persisted log exists for the new day",
+      "pass": true,
+      "evidence": {
+        "items": [
+          {
+            "id": "72327b14-4d6a-4cbf-a0fb-67fa1dca196f",
+            "authorId": "f40c8b5f-36b9-43c8-acd2-e77f5c12967b",
+            "businessDate": "2026-10-22",
+            "body": "8.1-8.3-cdf81775 concurrent",
+            "taskId": null,
+            "rowVersion": 1,
+            "createdAt": "2026-10-20T13:40:55.218756Z",
+            "updatedAt": "2026-10-20T13:40:55.218756Z",
+            "authorName": "张涛",
+            "editable": true
+          }
+        ],
+        "total": 1,
+        "nextOffset": null
+      }
+    },
+    {
+      "check": "8.2 a client timezone date is not accepted as today",
+      "pass": true,
+      "evidence": {
+        "utcDate": "2026-10-21",
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "只能新建公司当天的日志"
+        }
+      }
+    },
+    {
+      "check": "8.3 the author tree contains self and direct reports only",
+      "pass": true,
+      "evidence": [
+        "colleague",
+        "employee",
+        "middle"
+      ]
+    },
+    {
+      "check": "8.3 author search keeps only matches inside the permission tree",
+      "pass": true,
+      "evidence": {
+        "items": [
+          {
+            "id": "f40c8b5f-36b9-43c8-acd2-e77f5c12967b",
+            "username": "employee",
+            "displayName": "张涛",
+            "managerId": "202453a0-863b-4324-97c3-e3b8c358dee8",
+            "departmentId": "ed299c00-83d3-461a-be0e-28dfe36e89e8",
+            "departmentName": "产品部",
+            "teamId": "a12bf7d8-d8bb-438c-a0c9-818cdb0b794c",
+            "teamName": "产品部",
+            "self": false
+          }
+        ],
+        "tree": [
+          {
+            "id": "202453a0-863b-4324-97c3-e3b8c358dee8",
+            "displayName": "李敏",
+            "departmentName": "产品部",
+            "children": [
+              {
+                "id": "f40c8b5f-36b9-43c8-acd2-e77f5c12967b",
+                "displayName": "张涛",
+                "departmentName": "产品部",
+                "children": []
+              },
+              {
+                "id": "b9fa2e22-1a0a-4f1a-871a-41db74fdb158",
+                "displayName": "赵蕾",
+                "departmentName": "产品部",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "empty": false
+      }
+    },
+    {
+      "check": "8.3 an author outside the log range is refused",
+      "pass": true,
+      "evidence": {
+        "code": "NOT_FOUND",
+        "message": "内容不存在或无权查看"
+      }
+    }
+  ]
+}

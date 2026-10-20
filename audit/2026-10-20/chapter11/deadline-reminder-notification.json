@@ -1,0 +1,494 @@
+{
+  "success": true,
+  "checksPassed": 75,
+  "checksFailed": 0,
+  "checks": [
+    {
+      "check": "5.2 rejects a submission whose proposed deadline already passed",
+      "pass": true,
+      "evidence": {
+        "code": "DEADLINE_PASSED",
+        "message": "提交的排期或当前有效截止时间已到，请调整后重提"
+      }
+    },
+    {
+      "check": "5.2 the rejected creation is rolled back and never appears",
+      "pass": true,
+      "evidence": {
+        "items": [],
+        "total": 0,
+        "nextCursor": null
+      }
+    },
+    {
+      "check": "5.1 a valid creation is approved before its deadline",
+      "pass": true,
+      "evidence": {
+        "taskId": "9664a91f-8908-48f7-8910-6fa2feece9af",
+        "requestId": "10336fea-0420-4aec-b377-52f73c223e6c",
+        "outcome": "approved",
+        "rowVersion": 2,
+        "requestRowVersion": 2
+      }
+    },
+    {
+      "check": "5.1 progress submission succeeds before the effective deadline",
+      "pass": true,
+      "evidence": {
+        "taskId": "9664a91f-8908-48f7-8910-6fa2feece9af",
+        "requestId": "b3c9d8f7-aadd-4f5b-b13b-6939f4087a34",
+        "outcome": "pending",
+        "rowVersion": 3
+      }
+    },
+    {
+      "check": "5.1 the request stores an applicable deadline",
+      "pass": true,
+      "evidence": "2026-10-20T14:57:55.822995Z"
+    },
+    {
+      "check": "5.2 decide after the deadline is refused",
+      "pass": true,
+      "evidence": {
+        "code": "REQUEST_EXPIRED",
+        "message": "申请已到适用截止时间失效，请调整后重提"
+      }
+    },
+    {
+      "check": "5.2 the expiry terminal state survives the error response",
+      "pass": true,
+      "evidence": "expired"
+    },
+    {
+      "check": "5.2 expiry unfreezes the task and keeps the pre-submission effective version",
+      "pass": true,
+      "evidence": false
+    },
+    {
+      "check": "5.2 expiry notifies the applicant and reviewer",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "5.3 the scheduled scan expires a pending request at the deadline",
+      "pass": true,
+      "evidence": "expired"
+    },
+    {
+      "check": "5.3 the scan backfills one overdue notice for a published unfinished task",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "5.3 repeated scans do not create a duplicate expiry result",
+      "pass": true,
+      "evidence": [
+        1,
+        1
+      ]
+    },
+    {
+      "check": "5.4 concurrent decisions after the deadline never approve the old request",
+      "pass": true,
+      "evidence": [
+        409,
+        412
+      ]
+    },
+    {
+      "check": "5.4 the race ends in exactly one expired terminal state",
+      "pass": true,
+      "evidence": "expired"
+    },
+    {
+      "check": "5.4 a later retry cannot revive the expired request",
+      "pass": true,
+      "evidence": "REQUEST_RESOLVED"
+    },
+    {
+      "check": "6.1 the administrator can set the company cut-off",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "6.1 the new all-day schedule snapshots the configured cut-off",
+      "pass": true,
+      "evidence": "23:59:00"
+    },
+    {
+      "check": "6.1 an all-day task keeps the complete first and last calendar dates",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.1 a non-schedule edit keeps the schedule and cut-off snapshot",
+      "pass": true,
+      "evidence": [
+        1,
+        1
+      ]
+    },
+    {
+      "check": "6.1 a real schedule change increments the schedule version",
+      "pass": true,
+      "evidence": [
+        1,
+        2
+      ]
+    },
+    {
+      "check": "6.1 changing only the start time recalculates the schedule version",
+      "pass": true,
+      "evidence": [
+        1,
+        2
+      ]
+    },
+    {
+      "check": "6.2 no reminder is sent before the first reached node",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.2 the 20% node fires first for a ten-hour task",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.2 no 90% reminder is produced",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.4 an ordinary recipient cannot withdraw an automatic reminder",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.4 a notification manager can withdraw an automatic reminder",
+      "pass": true,
+      "evidence": {
+        "copies": 1,
+        "withdrawn": true,
+        "eventId": "3c565ea9-12b5-4c44-b74d-0b926ad6cdf4"
+      }
+    },
+    {
+      "check": "7.4 notification administration is denied to ordinary accounts",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.4 the administrator can list notification copies",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.2 the 10% node fires next",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.2 the 5% node fires next",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.2 a finished schedule becomes overdue exactly once",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.2 a repeated scan does not repeat the overdue reminder",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.3 a late first scan sends only the nearest reached node (10%)",
+      "pass": true,
+      "evidence": [
+        1,
+        0
+      ]
+    },
+    {
+      "check": "6.3 a second scan does not backfill the skipped 20% node",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.3 the following 5% node still fires normally",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.3 a zero-duration task sends only one overdue notice",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.4 a pending request suspends normal reminders",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.4 the applicant can withdraw and unfreeze the task",
+      "pass": true,
+      "evidence": {
+        "taskId": "a924c772-2204-4b07-9113-a39f8dc24fe7",
+        "requestId": "1d944e0a-069e-4427-9f72-d048c779b3e0",
+        "outcome": "withdrawn",
+        "rowVersion": 4,
+        "requestRowVersion": 2
+      }
+    },
+    {
+      "check": "6.4 reminders resume after the withdrawal",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.4 a completed task gets no proportional reminder",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.4 a removed recipient does not receive a new reminder",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.4 a new effective schedule gets its own reminder identity",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "6.4 a reopen creates a new round with its own reminder identity",
+      "pass": true,
+      "evidence": [
+        1,
+        200,
+        2
+      ]
+    },
+    {
+      "check": "7.1 an unpublished creation notifies the applicant and reviewer only",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.1 creation approval notifies the task people",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.1 one event delivers once even when applicant and reviewer are the same identity",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.1 a published submission notifies only the reviewer",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.1 one event carries one actual multi-field summary",
+      "pass": true,
+      "evidence": "任务《通知矩阵任务 已更新》的修改申请已通过。本次变化：标题：通知矩阵任务→通知矩阵任务 已更新；紧急程度：高→紧急；负责人：张涛→张涛、赵蕾；"
+    },
+    {
+      "check": "7.1 the new assignee receives the applied change",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.2 a removed assignee receives a delivered read-only summary",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.2 the removed assignee loses normal task access",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.6 the dedicated historical DTO is read-only and shows the revocation",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "7.6 the historical DTO leaks no proposal, diff, phone or log",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.6 historical access does not rejoin normal task lists",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 opening a message marks it read and refreshes the unread count",
+      "pass": true,
+      "evidence": [
+        89,
+        88
+      ]
+    },
+    {
+      "check": "7.3 opening is idempotent",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 a list GET does not change read state",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 an old review message keeps its own completed request",
+      "pass": true,
+      "evidence": [
+        "bd54d51b-bbed-4ba7-b452-488daf8e5cdb",
+        "approved"
+      ]
+    },
+    {
+      "check": "7.4 a business initiator can withdraw strictly before 180 seconds",
+      "pass": true,
+      "evidence": {
+        "copies": 1,
+        "withdrawn": true,
+        "eventId": "d2875447-84f2-4bfc-8d87-97f230f9c2c1"
+      }
+    },
+    {
+      "check": "7.4 withdrawal keeps a placeholder without body or jump",
+      "pass": true,
+      "evidence": {
+        "id": "73327250-7944-4fe5-9019-b4100dc4d444",
+        "eventId": "d2875447-84f2-4bfc-8d87-97f230f9c2c1",
+        "eventType": "task.change.submitted",
+        "createdAt": "2026-10-20T13:48:01.777740Z",
+        "deliveredAt": "2026-10-23T13:47:16.731683Z",
+        "readAt": null,
+        "taskId": null,
+        "requestId": null,
+        "readonly": true,
+        "relationLost": false,
+        "title": null,
+        "summary": "该通知已被撤回。",
+        "changeSummary": null,
+        "revoked": true,
+        "withdrawn": true,
+        "expiresAt": "2027-01-23T13:47:16.696152Z",
+        "rowVersion": 1,
+        "canWithdraw": false,
+        "canOpenTask": false,
+        "canReview": false,
+        "requestStatus": null,
+        "requestKind": null
+      }
+    },
+    {
+      "check": "7.4 withdrawal does not change the business task",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.4 a 180-second-old event can no longer be withdrawn",
+      "pass": true,
+      "evidence": {
+        "code": "WITHDRAW_WINDOW_CLOSED",
+        "message": "通知发出已满3分钟，不能撤回"
+      }
+    },
+    {
+      "check": "7.4 a recipient can delete only their own copy",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.4 a personally deleted copy is gone for that recipient",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.4 the other recipients still hold their copies",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.5 a personally deleted message cannot be used as a historical entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.1 notification copies carry an explicit retention instant",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.5 the read interface rejects a message at/after its retention instant without waiting for cleanup",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "7.5 a message past three calendar months is no longer readable",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "7.8 retention cleanup keeps the complete task history",
+      "pass": true,
+      "evidence": [
+        16,
+        17
+      ]
+    },
+    {
+      "check": "7.8 retention cleanup keeps the effective task",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.1 an organization change is accepted for a pending request",
+      "pass": true,
+      "evidence": {
+        "userId": "e2155474-1092-42e9-8d10-623e4712717f",
+        "rowVersion": 2,
+        "changed": [
+          "managerId"
+        ],
+        "phoneUpdated": false
+      }
+    },
+    {
+      "check": "7.1 the pending request moves to the new reviewer of record",
+      "pass": true,
+      "evidence": "669bb647-7da7-4da9-9991-18c1412c0606"
+    },
+    {
+      "check": "7.1 the reassignment event reaches the new reviewer",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.1 the reassignment keeps previous/new reviewer and source",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "492b90a2-4369-4904-8d47-1a9e3e867a2b",
+          "organizationId": "10000000-0000-0000-0000-000000000001",
+          "requestId": "9da72362-176e-4456-907b-da2799112db6",
+          "taskId": "cb3035ce-6f48-494d-9d71-a6c16bd1a97d",
+          "previousReviewerId": "f1672ed6-e07a-405f-a822-d559e9973405",
+          "newReviewerId": "669bb647-7da7-4da9-9991-18c1412c0606",
+          "basisAssigneeId": "e2155474-1092-42e9-8d10-623e4712717f",
+          "reason": "按最高组织层级负责人的管理链上溯",
+          "source": "organization_change",
+          "createdAt": "2026-10-20T13:48:02.919979Z"
+        }
+      ]
+    }
+  ]
+}

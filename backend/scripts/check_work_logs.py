@@ -13,6 +13,7 @@ import argparse
 import concurrent.futures
 import datetime as dt
 import json
+import math
 from pathlib import Path
 import urllib.error
 import urllib.parse
@@ -131,7 +132,9 @@ def run(base: str) -> int:
                                   api.key(), '"' + str(detail["rowVersion"]) + '"')
     check("8.2 changing the recorded date is rejected", status == 400, changed)
 
-    seconds_to_last = int((midnight - dt.timedelta(seconds=1) - server_now(api).astimezone(COMPANY)).total_seconds())
+    # The controllable clock keeps the startup microseconds. Round upward so the first
+    # advance reaches 23:59:59.x instead of truncating to 23:59:58.x.
+    seconds_to_last = math.ceil((midnight - dt.timedelta(seconds=1) - server_now(api).astimezone(COMPANY)).total_seconds())
     advance(api, max(0, seconds_to_last))
     status, before_midnight, _ = api.call("GET", "/api/v1/work-logs/" + old_log_id, employee)
     check("8.2 the log is still editable at 23:59:59", status == 200 and before_midnight.get("editable") is True,

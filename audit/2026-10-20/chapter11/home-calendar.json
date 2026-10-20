@@ -1,0 +1,576 @@
+{
+  "checks": [
+    {
+      "check": "9.1 a newly dispatched task ranks before the older assignment",
+      "pass": true,
+      "evidence": [
+        "648cc69c-e85b-4368-a14a-aad1ef83fd20",
+        "36df591a-bedc-4bd7-b247-3875bbfe136f",
+        "58b0ccba-9d02-40b2-a011-7ece59192ebd",
+        "77625fdb-cf3a-4ec6-aedd-e5421bf95d50",
+        "d316820b-3f11-4ff9-9ab2-e7e89adafc3e",
+        "436cc623-aa12-4763-b268-122659ab42ff",
+        "5739b671-fbf3-48ad-b5b2-83d82024643e",
+        "92960107-c063-424e-afbb-8b8e1214d2e7",
+        "35f032ff-4e49-4f9d-a9ef-f91a81fae1ca",
+        "40188099-db03-43d5-b99f-f81c5632623f"
+      ]
+    },
+    {
+      "check": "9.1 home limits to ten and carries assignment metadata",
+      "pass": true,
+      "evidence": [
+        {
+          "taskId": "648cc69c-e85b-4368-a14a-aad1ef83fd20",
+          "title": "S9 new assignment 8d32ce5f",
+          "priority": "medium",
+          "assignedAt": "2026-10-20T13:46:31.895319Z",
+          "assignedSource": "approval"
+        },
+        {
+          "taskId": "36df591a-bedc-4bd7-b247-3875bbfe136f",
+          "title": "S9 old assignment 8d32ce5f",
+          "priority": "medium",
+          "assignedAt": "2026-10-20T13:46:31.804803Z",
+          "assignedSource": "approval"
+        },
+        {
+          "taskId": "58b0ccba-9d02-40b2-a011-7ece59192ebd",
+          "title": "今日排期事项 6",
+          "priority": "medium",
+          "assignedAt": "2026-10-20T13:46:13.662258Z",
+          "assignedSource": "approval"
+        },
+        {
+          "taskId": "77625fdb-cf3a-4ec6-aedd-e5421bf95d50",
+          "title": "今日排期事项 5",
+          "priority": "medium",
+          "assignedAt": "2026-10-20T13:46:13.655079Z",
+          "assignedSource": "approval"
+        },
+        {
+          "taskId": "d316820b-3f11-4ff9-9ab2-e7e89adafc3e",
+          "title": "今日排期事项 4",
+          "priority": "medium",
+          "assignedAt": "2026-10-20T13:46:13.644571Z",
+          "assignedSource": "approval"
+        },
+        {
+          "taskId": "436cc623-aa12-4763-b268-122659ab42ff",
+          "title": "今日排期事项 3",
+          "priority": "medium",
+          "assignedAt": "2026-10-20T13:46:13.635932Z",
+          "assignedSource": "approval"
+        },
+        {
+          "taskId": "5739b671-fbf3-48ad-b5b2-83d82024643e",
+          "title": "今日排期事项 2",
+          "priority": "medium",
+          "assignedAt": "2026-10-20T13:46:13.623415Z",
+          "assignedSource": "approval"
+        },
+        {
+          "taskId": "92960107-c063-424e-afbb-8b8e1214d2e7",
+          "title": "今日排期事项 1",
+          "priority": "medium",
+          "assignedAt": "2026-10-20T13:46:13.610401Z",
+          "assignedSource": "approval"
+        },
+        {
+          "taskId": "35f032ff-4e49-4f9d-a9ef-f91a81fae1ca",
+          "title": "产品资料 子任务",
+          "priority": "medium",
+          "assignedAt": "2026-10-20T13:46:13.599890Z",
+          "assignedSource": "approval"
+        },
+        {
+          "taskId": "40188099-db03-43d5-b99f-f81c5632623f",
+          "title": "全天部门培训",
+          "priority": "medium",
+          "assignedAt": "2026-10-20T13:46:13.548860Z",
+          "assignedSource": "approval"
+        }
+      ]
+    },
+    {
+      "check": "9.1 reordering owners does not reset the dispatch time",
+      "pass": true,
+      "evidence": {
+        "before": "2026-10-20T13:46:31.804803Z",
+        "after": "2026-10-20T13:46:31.804803Z"
+      }
+    },
+    {
+      "check": "9.1 removing and re-adding an owner creates a new dispatch time",
+      "pass": true,
+      "evidence": {
+        "before": "2026-10-20T13:46:31.804803Z",
+        "readded": "2026-10-20T13:46:32.139557Z"
+      }
+    },
+    {
+      "check": "9.1 the re-added task returns to the top",
+      "pass": true,
+      "evidence": [
+        "36df591a-bedc-4bd7-b247-3875bbfe136f",
+        "648cc69c-e85b-4368-a14a-aad1ef83fd20",
+        "58b0ccba-9d02-40b2-a011-7ece59192ebd",
+        "77625fdb-cf3a-4ec6-aedd-e5421bf95d50",
+        "d316820b-3f11-4ff9-9ab2-e7e89adafc3e",
+        "436cc623-aa12-4763-b268-122659ab42ff",
+        "5739b671-fbf3-48ad-b5b2-83d82024643e",
+        "92960107-c063-424e-afbb-8b8e1214d2e7",
+        "35f032ff-4e49-4f9d-a9ef-f91a81fae1ca",
+        "40188099-db03-43d5-b99f-f81c5632623f"
+      ]
+    },
+    {
+      "check": "9.2 recent logs are limited and inside the ten-day window",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "605a27ca-d9ab-49de-8d16-368804ad4517",
+          "authorId": "11504f1d-b970-4d4f-b3e3-237352793c12",
+          "businessDate": "2026-10-20",
+          "body": "完成本日工作整理，记录待办与协作问题。",
+          "taskId": "7a09a330-1d32-409b-8516-d3ceb1a8c9df",
+          "rowVersion": 1,
+          "createdAt": "2026-10-20T13:46:13.669695Z",
+          "updatedAt": "2026-10-20T13:46:13.669695Z",
+          "authorName": "张涛",
+          "editable": true
+        },
+        {
+          "id": "060c11c5-6ec7-48da-8801-8795306d4217",
+          "authorId": "11504f1d-b970-4d4f-b3e3-237352793c12",
+          "businessDate": "2026-10-19",
+          "body": "复盘工作进展并补充后续计划。",
+          "taskId": "7a09a330-1d32-409b-8516-d3ceb1a8c9df",
+          "rowVersion": 1,
+          "createdAt": "2026-10-20T13:46:13.669795Z",
+          "updatedAt": "2026-10-20T13:46:13.669795Z",
+          "authorName": "张涛",
+          "editable": false
+        },
+        {
+          "id": "93927a6e-a521-4fa5-9f13-d1057ab7c737",
+          "authorId": "11504f1d-b970-4d4f-b3e3-237352793c12",
+          "businessDate": "2026-10-18",
+          "body": "复盘工作进展并补充后续计划。",
+          "taskId": "7a09a330-1d32-409b-8516-d3ceb1a8c9df",
+          "rowVersion": 1,
+          "createdAt": "2026-10-20T13:46:13.669883Z",
+          "updatedAt": "2026-10-20T13:46:13.669883Z",
+          "authorName": "张涛",
+          "editable": false
+        }
+      ]
+    },
+    {
+      "check": "9.3 task search is permission-scoped",
+      "pass": true,
+      "evidence": {
+        "employee": {
+          "items": [],
+          "total": 0,
+          "nextCursor": null
+        },
+        "upper": {
+          "items": [
+            {
+              "id": "810a3687-4d8d-497e-b970-1de0192a2b40",
+              "taskId": "810a3687-4d8d-497e-b970-1de0192a2b40",
+              "versionNo": 1,
+              "title": "市场活动方案",
+              "description": "本地演示任务，用于核对任务流转与人员权限。",
+              "acceptanceCriteria": "材料完整、结果可复核，并经审核确认。",
+              "priority": "medium",
+              "allDay": false,
+              "startAt": "2026-10-18T01:00:00Z",
+              "dueAt": "2026-10-24T10:00:00Z",
+              "startDate": null,
+              "dueDate": null,
+              "executionState": "todo",
+              "progressNote": "",
+              "status": "applied",
+              "createdBy": "bce83c10-218e-405d-bd00-f31aced60dce",
+              "createdAt": "2026-10-20T13:46:13.515323Z",
+              "allDayCutoffTime": null,
+              "assigneeIds": [
+                "7126388b-3957-47ad-89e5-6adedc7fa09c"
+              ],
+              "parentTaskId": null,
+              "parentUnavailable": false,
+              "versionId": "36ae0de6-17e5-4d50-9317-6ba5319a35f7",
+              "currentVersionId": "36ae0de6-17e5-4d50-9317-6ba5319a35f7",
+              "originalCreatorId": "bce83c10-218e-405d-bd00-f31aced60dce",
+              "rowVersion": 2,
+              "executionRound": 1,
+              "scheduleVersion": 1,
+              "dueVersion": 1,
+              "published": true,
+              "updatedAt": "2026-10-20T13:46:13.523834Z",
+              "pending": false,
+              "frozen": false,
+              "pendingKind": null,
+              "route": {
+                "reviewerId": "bce83c10-218e-405d-bd00-f31aced60dce",
+                "basisAssigneeId": "7126388b-3957-47ad-89e5-6adedc7fa09c",
+                "path": [
+                  "bce83c10-218e-405d-bd00-f31aced60dce",
+                  "5c46aa70-b633-4ece-8007-51a51231bd4c"
+                ],
+                "reason": "manager-chain",
+                "reasonText": "按最高组织层级负责人的管理链上溯",
+                "authzVersion": 1,
+                "reviewerAvailable": true,
+                "participants": [
+                  {
+                    "id": "7126388b-3957-47ad-89e5-6adedc7fa09c",
+                    "displayName": "孙悦"
+                  },
+                  {
+                    "id": "bce83c10-218e-405d-bd00-f31aced60dce",
+                    "displayName": "陈冲"
+                  }
+                ]
+              },
+              "reviewerId": "bce83c10-218e-405d-bd00-f31aced60dce",
+              "participants": [
+                {
+                  "id": "7126388b-3957-47ad-89e5-6adedc7fa09c",
+                  "displayName": "孙悦"
+                },
+                {
+                  "id": "bce83c10-218e-405d-bd00-f31aced60dce",
+                  "displayName": "陈冲"
+                }
+              ],
+              "pinned": false
+            }
+          ],
+          "total": 1,
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "check": "9.4 an employee can pin a visible task",
+      "pass": true,
+      "evidence": {
+        "taskId": "36df591a-bedc-4bd7-b247-3875bbfe136f",
+        "pinned": true
+      }
+    },
+    {
+      "check": "9.4 the owner reads the pinned flag",
+      "pass": true,
+      "evidence": {
+        "id": "36df591a-bedc-4bd7-b247-3875bbfe136f",
+        "taskId": "36df591a-bedc-4bd7-b247-3875bbfe136f",
+        "versionNo": 4,
+        "title": "S9 old assignment 8d32ce5f",
+        "description": "section9",
+        "acceptanceCriteria": "check",
+        "priority": "medium",
+        "allDay": false,
+        "startAt": "2026-10-20T14:46:31.740826Z",
+        "dueAt": "2026-10-22T13:46:31.741030Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "todo",
+        "progressNote": "",
+        "status": "applied",
+        "createdBy": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+        "createdAt": "2026-10-20T13:46:31.758254Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "ade02892-21e0-4d94-a968-886f6d751ca4",
+          "11504f1d-b970-4d4f-b3e3-237352793c12"
+        ],
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "aa400d19-6762-4413-ae52-5f26b532f704",
+        "currentVersionId": "aa400d19-6762-4413-ae52-5f26b532f704",
+        "originalCreatorId": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+        "rowVersion": 8,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-10-20T13:46:32.138552Z",
+        "pending": false,
+        "frozen": false,
+        "pendingKind": null,
+        "route": {
+          "reviewerId": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+          "basisAssigneeId": "ade02892-21e0-4d94-a968-886f6d751ca4",
+          "path": [
+            "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+            "5c46aa70-b633-4ece-8007-51a51231bd4c"
+          ],
+          "reason": "manager-chain",
+          "reasonText": "按最高组织层级负责人的管理链上溯",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "participants": [
+            {
+              "id": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+              "displayName": "李敏"
+            },
+            {
+              "id": "ade02892-21e0-4d94-a968-886f6d751ca4",
+              "displayName": "赵蕾"
+            }
+          ]
+        },
+        "reviewerId": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+        "participants": [
+          {
+            "id": "11504f1d-b970-4d4f-b3e3-237352793c12",
+            "displayName": "张涛"
+          },
+          {
+            "id": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+            "displayName": "李敏"
+          },
+          {
+            "id": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+            "displayName": "王海"
+          },
+          {
+            "id": "ade02892-21e0-4d94-a968-886f6d751ca4",
+            "displayName": "赵蕾"
+          }
+        ],
+        "pinned": true,
+        "pendingRoute": {},
+        "records": [
+          {
+            "id": "aa24d9ed-144b-479d-b284-375db492da50",
+            "authorId": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+            "body": "section9 reorder",
+            "kind": "change",
+            "effectiveAt": "2026-10-20T13:46:31.965062Z",
+            "createdAt": "2026-10-20T13:46:31.936526Z"
+          },
+          {
+            "id": "19267e7a-892f-44db-9649-3cfdab063372",
+            "authorId": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+            "body": "section9 reorder",
+            "kind": "change",
+            "effectiveAt": "2026-10-20T13:46:32.032507Z",
+            "createdAt": "2026-10-20T13:46:32.004238Z"
+          },
+          {
+            "id": "9214ae60-c915-4a91-b542-7cfefef90efa",
+            "authorId": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+            "body": "section9 reorder",
+            "kind": "change",
+            "effectiveAt": "2026-10-20T13:46:32.137046Z",
+            "createdAt": "2026-10-20T13:46:32.109228Z"
+          }
+        ],
+        "children": []
+      }
+    },
+    {
+      "check": "9.4 another user does not inherit the pin",
+      "pass": true,
+      "evidence": {
+        "id": "36df591a-bedc-4bd7-b247-3875bbfe136f",
+        "taskId": "36df591a-bedc-4bd7-b247-3875bbfe136f",
+        "versionNo": 4,
+        "title": "S9 old assignment 8d32ce5f",
+        "description": "section9",
+        "acceptanceCriteria": "check",
+        "priority": "medium",
+        "allDay": false,
+        "startAt": "2026-10-20T14:46:31.740826Z",
+        "dueAt": "2026-10-22T13:46:31.741030Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "todo",
+        "progressNote": "",
+        "status": "applied",
+        "createdBy": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+        "createdAt": "2026-10-20T13:46:31.758254Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "ade02892-21e0-4d94-a968-886f6d751ca4",
+          "11504f1d-b970-4d4f-b3e3-237352793c12"
+        ],
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "aa400d19-6762-4413-ae52-5f26b532f704",
+        "currentVersionId": "aa400d19-6762-4413-ae52-5f26b532f704",
+        "originalCreatorId": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+        "rowVersion": 8,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-10-20T13:46:32.138552Z",
+        "pending": false,
+        "frozen": false,
+        "pendingKind": null,
+        "route": {
+          "reviewerId": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+          "basisAssigneeId": "ade02892-21e0-4d94-a968-886f6d751ca4",
+          "path": [
+            "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+            "5c46aa70-b633-4ece-8007-51a51231bd4c"
+          ],
+          "reason": "manager-chain",
+          "reasonText": "按最高组织层级负责人的管理链上溯",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "participants": [
+            {
+              "id": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+              "displayName": "李敏"
+            },
+            {
+              "id": "ade02892-21e0-4d94-a968-886f6d751ca4",
+              "displayName": "赵蕾"
+            }
+          ]
+        },
+        "reviewerId": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+        "participants": [
+          {
+            "id": "11504f1d-b970-4d4f-b3e3-237352793c12",
+            "displayName": "张涛"
+          },
+          {
+            "id": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+            "displayName": "李敏"
+          },
+          {
+            "id": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+            "displayName": "王海"
+          },
+          {
+            "id": "ade02892-21e0-4d94-a968-886f6d751ca4",
+            "displayName": "赵蕾"
+          }
+        ],
+        "pinned": false,
+        "pendingRoute": {},
+        "records": [
+          {
+            "id": "aa24d9ed-144b-479d-b284-375db492da50",
+            "authorId": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+            "body": "section9 reorder",
+            "kind": "change",
+            "effectiveAt": "2026-10-20T13:46:31.965062Z",
+            "createdAt": "2026-10-20T13:46:31.936526Z"
+          },
+          {
+            "id": "19267e7a-892f-44db-9649-3cfdab063372",
+            "authorId": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+            "body": "section9 reorder",
+            "kind": "change",
+            "effectiveAt": "2026-10-20T13:46:32.032507Z",
+            "createdAt": "2026-10-20T13:46:32.004238Z"
+          },
+          {
+            "id": "9214ae60-c915-4a91-b542-7cfefef90efa",
+            "authorId": "5c46aa70-b633-4ece-8007-51a51231bd4c",
+            "body": "section9 reorder",
+            "kind": "change",
+            "effectiveAt": "2026-10-20T13:46:32.137046Z",
+            "createdAt": "2026-10-20T13:46:32.109228Z"
+          }
+        ],
+        "children": []
+      }
+    },
+    {
+      "check": "9.4 pinning can be cleared",
+      "pass": true,
+      "evidence": {
+        "taskId": "36df591a-bedc-4bd7-b247-3875bbfe136f",
+        "pinned": false
+      }
+    },
+    {
+      "check": "9.8 pending completion is exposed independently of execution state",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "972266a0-4a75-439e-b248-fa93f1fa0af4",
+          "taskId": "972266a0-4a75-439e-b248-fa93f1fa0af4",
+          "versionNo": 1,
+          "title": "产品验收 待完成审核",
+          "description": "本地演示任务，用于核对任务流转与人员权限。",
+          "acceptanceCriteria": "材料完整、结果可复核，并经审核确认。",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-10-18T01:00:00Z",
+          "dueAt": "2026-10-21T10:00:00Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "applied",
+          "createdBy": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+          "createdAt": "2026-10-20T13:46:13.475362Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "11504f1d-b970-4d4f-b3e3-237352793c12"
+          ],
+          "parentTaskId": null,
+          "parentUnavailable": false,
+          "versionId": "338a0a19-4066-4532-a751-3f42c28842f9",
+          "currentVersionId": "338a0a19-4066-4532-a751-3f42c28842f9",
+          "originalCreatorId": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+          "rowVersion": 3,
+          "executionRound": 1,
+          "scheduleVersion": 1,
+          "dueVersion": 1,
+          "published": true,
+          "updatedAt": "2026-10-20T13:46:13.486865Z",
+          "pending": true,
+          "frozen": true,
+          "pendingKind": "complete",
+          "pendingRequestId": "30c86abb-a22e-4308-b087-60cce31783d4",
+          "route": {
+            "reviewerId": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+            "basisAssigneeId": "11504f1d-b970-4d4f-b3e3-237352793c12",
+            "path": [
+              "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+              "5c46aa70-b633-4ece-8007-51a51231bd4c"
+            ],
+            "reason": "manager-chain",
+            "reasonText": "按最高组织层级负责人的管理链上溯",
+            "authzVersion": 1,
+            "reviewerAvailable": true,
+            "participants": [
+              {
+                "id": "11504f1d-b970-4d4f-b3e3-237352793c12",
+                "displayName": "张涛"
+              },
+              {
+                "id": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+                "displayName": "李敏"
+              }
+            ]
+          },
+          "reviewerId": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+          "participants": [
+            {
+              "id": "11504f1d-b970-4d4f-b3e3-237352793c12",
+              "displayName": "张涛"
+            },
+            {
+              "id": "4ebe823b-3670-4cbe-90c2-1d3fb1708666",
+              "displayName": "李敏"
+            }
+          ],
+          "pinned": false
+        }
+      ]
+    }
+  ]
+}

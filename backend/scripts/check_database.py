@@ -76,7 +76,8 @@ CHECKS = {
           AND COLLATION_NAME NOT LIKE '%_bin' AND COLLATION_NAME NOT LIKE '%_cs'""",
     "idempotency_results_contain_no_task_text_or_credentials": """
         SELECT COUNT(*) FROM idempotency_keys WHERE JSON_CONTAINS_PATH(response_json,'one',
-          '$.title','$.description','$.body','$.token','$.password','$.passwordHash','$.result')=1""",
+          '$.title','$.description','$.body','$.token','$.accessToken','$.password',
+          '$.initialPassword','$.passwordHash','$.credential')=1""",
     "tokens_are_only_sha256_hashes": """
         SELECT COUNT(*) FROM auth_sessions WHERE token_hash NOT REGEXP '^[0-9a-f]{64}$'""",
 }

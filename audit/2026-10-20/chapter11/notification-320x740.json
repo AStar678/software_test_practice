@@ -1,0 +1,116 @@
+{
+  "success": true,
+  "viewport": {
+    "width": 320,
+    "height": 740
+  },
+  "checksPassed": 21,
+  "checksFailed": 0,
+  "checks": [
+    {
+      "check": "7.7 the served page loads the real employee workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.7 the notification list opens from the bell",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.7 the list has no footer action bar",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.7 the header close button exists in the focus order",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 the list shows real event titles",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3/7.7 opening a message shows its detail",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 opening automatically marks the message read",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 no manual read button remains",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 an old resolved request shows the result and no approve button",
+      "pass": true,
+      "evidence": "{\"body\":\"时间\\n2026年10月20日 21:28\\n状态\\n已读\\n通知UI已办结 645e73\\n\\n任务《通知UI已办结 645e73》的创建申请已通过。\\n\\n原申请：创建任务 · 已通过（已办结，不再提供审核按钮）\",\"buttons\":[\"上层\",\"中层\",\"下层\",\"\\n          \\n          9+\\n        \",\"通知UI移除负责人 645e73中\",\"通知UI已办结 645e73中\",\"Smoke a765d0ca-25a8-4c37-a829-cb9858ca5514 child-direct中\",\"Smoke 4a324d41-856e-4d9b-9ace-b53d7fcdb2c1 child-direct中\",\"今日排期事项 6中\",\"今日排期事项 5中\",\"今日排期事项 4中\",\"今日排期事项 3中\",\"今日排期事项 2中\",\"今日排期事项 1中\",\"新增\",\"1明确完成标准，及时同步阻塞事项。\",\"2026-10-20Smoke a765d0ca-25a8-4c37-a829-cb9858ca5514 work log\",\"2026-10-19复盘工作进展并补充后续计划。\",\"2026-10-18复盘工作进展并补充后续计划。\",\"\\n        \\n      \",\"\\n          \\n          导图\\n        \",\"\\n          \\n          视图\\n        \",\"\\n          \\n          日志\\n        \",\"\\n          \\n          AI地图\\n        \",\"\\n          \\n          我的\\n        \",\"✕\",\"查看原申请结果\",\"查看相关任务\",\"删除此消息\",\"关闭\"]}"
+    },
+    {
+      "check": "7.3 the read state is persisted and the unread count refreshes",
+      "pass": true,
+      "evidence": "2026-10-20T13:28:17.032576Z"
+    },
+    {
+      "check": "7.7 the business initiator sees the withdrawal action",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.7 the withdrawn message is listed as withdrawn",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.7 withdrawal keeps a placeholder without a jump",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 the 我的 page lists management-chain subordinates",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 the subordinate detail opens from 我的",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 the actual superior reads the phone in the served page",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 the profile card has no dispatch button",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.6 a removed recipient sees the read-only historical entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.6 the historical read-only page opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.6 the historical page explains the lost current authority",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.6 the historical page has no business action",
+      "pass": true,
+      "evidence": null
+    }
+  ]
+}

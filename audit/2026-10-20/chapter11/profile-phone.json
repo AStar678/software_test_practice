@@ -1,0 +1,149 @@
+{
+  "success": true,
+  "checksPassed": 26,
+  "checksFailed": 0,
+  "checks": [
+    {
+      "check": "3.5 the owner can save their own phone",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 2,
+        "id": "f40c8b5f-36b9-43c8-acd2-e77f5c12967b",
+        "profileVersion": 2
+      }
+    },
+    {
+      "check": "3.5 the owner reads their own phone from person details",
+      "pass": true,
+      "evidence": "13900001111"
+    },
+    {
+      "check": "3.5 the direct superior with current profile access reads the phone",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "3.5 the indirect actual superior reads the phone",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "3.5 another person's detail never returns email",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 same-level colleague gets no person detail or phone",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "3.5 other chain manager gets no person detail or phone",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "3.5 a subordinate cannot read a superior's phone",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "3.5 an administrator does not get employee person details",
+      "pass": true,
+      "evidence": 403
+    },
+    {
+      "check": "3.5 the people directory contains no phone or email",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 task summaries contain no phone",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 notification summaries contain no phone",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 home data contains no phone",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 the administration roster returns no phone value",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 audit output contains no phone",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 log filtering contains no phone",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 analytics output contains no phone",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 stored analysis detail contains no phone",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 the owner cannot edit organization fields",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "仅可修改姓名、联系电话和邮箱，请至少填写一项"
+      }
+    },
+    {
+      "check": "3.5 the organization change is accepted",
+      "pass": true,
+      "evidence": {
+        "userId": "f40c8b5f-36b9-43c8-acd2-e77f5c12967b",
+        "rowVersion": 2,
+        "transferred": true,
+        "authorizationInvalidated": true
+      }
+    },
+    {
+      "check": "3.5 the old superior loses the phone and person detail after transfer",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "3.5 the new actual superior gains the phone after transfer",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "3.5 the higher actual superior still reads the phone through the new chain",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "3.5 the original organization is restored",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "3.5 the restored superior reads the phone again",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "3.5 the original phone is restored",
+      "pass": true,
+      "evidence": null
+    }
+  ]
+}

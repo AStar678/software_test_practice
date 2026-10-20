@@ -1,0 +1,97 @@
+{
+  "mode": "read_only",
+  "mysqlVersion": "9.7.0",
+  "passed": false,
+  "checks": [
+    {
+      "check": "current_pointer_is_applied_same_task_and_state",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "one_pending_request_per_task",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "pending_base_matches_current_pointer",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "request_and_snapshot_statuses_agree",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "every_snapshot_has_assignee",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "direct_requests_have_reason_and_no_fictional_reviewer_decision",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "settled_requests_have_decision_timestamp",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "pending_requests_have_no_decision_timestamp",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "task_records_reference_the_same_task_as_request",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "disclosed_notification_task_matches_event",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "no_duplicate_notification_recipient",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "all_business_foreign_keys_include_organization",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "all_checks_are_enforced",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "pending_uniqueness_index_exists",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "pending_unique_column_is_generated",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "idempotency_keys_are_case_sensitive",
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check": "idempotency_results_contain_no_task_text_or_credentials",
+      "violations": 12,
+      "passed": false
+    },
+    {
+      "check": "tokens_are_only_sha256_hashes",
+      "violations": 0,
+      "passed": true
+    }
+  ]
+}

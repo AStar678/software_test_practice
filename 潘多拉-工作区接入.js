@@ -5,7 +5,7 @@
   if (!P) return;
   const version = row => '"' + row.rowVersion + '"';
   const endpoint = id => encodeURIComponent(id);
-  let logSnapshot = null, notificationSnapshot = null, analysis = null;
+  let logSnapshot = null, notificationSnapshot = null, analysis = null, analysisLoading = false, analysisSequence = 0;
   const homeVersions = new Map();
   const oldMap = renderMap;
   const oldLogForm = logFormView;
@@ -13,6 +13,8 @@
   const oldDeleteView = confirmDeleteView;
   const oldActions = runAction;
   const oldNotifications = openNotifications;
+  const oldReload = P.reload;
+  const oldSetPage = setPage;
 
   function homeRow(kind, id) {
     const home = P.data.home || {};
@@ -496,42 +498,63 @@
   document.getElementById("bellBtn").addEventListener("click", openNotifications);
 
   renderAI = function () {
-    const stat = P.data.analytics || {};
-    const labels = [["任务总数","total"],["进行中","doing"],["待开始","todo"],["已完成","done"],["待审冻结","frozen"],["已逾期","overdue"]];
-    const visibleIds = new Set(TASKS.map(task => task.id));
-    if (analysis && (analysis.epoch !== P.epoch || analysis.sourceIds.some(id => !visibleIds.has(id)))) analysis = null;
-    const result = analysis && analysis.epoch === P.epoch ? analysis.result : null;
+    if (analysis && analysis.epoch !== P.epoch) analysis = null;
+    const result = analysis ? analysis.result : null;
+    const stat = result ? result.summary || {} : P.data.analytics || {};
+    const labels = [["任务总数","total"],["进行中","doing"],["待开始","todo"],["已完成","done"],["待完成审核","pendingComplete"],["全部待审冻结","frozen"],["逾期未完成","overdue"]];
+    const priority = stat.priority || {};
+    const priorities = [["紧急","urgent"],["高","high"],["中","medium"],["低","low"]];
     const suggestions = result ? result.suggestions || [] : [];
-    const words = keywordStats(TASKS);
-    const maxCount = words.length ? words[0].n : 1;
-    const cloud = words.length ? words.map(w => '<span style="font-size:' + (12 + Math.round(w.n / maxCount * 8)) +
-      'px;font-weight:' + (w.n > 1 ? 700 : 500) + ';color:' + (w.n > 1 ? '#1d4ed8' : '#4b5563') + '" title="' +
-      esc(w.word + "：出现 " + w.n + " 次") + '">' + esc(w.word) + '</span>').join("") : '<span class="tiny muted">范围内暂无可提取的关键词</span>';
+    const words = stat.keywords || [];
+    const maxCount = words.length ? Number(words[0].count || 1) : 1;
+    const cloud = words.length ? words.map(w => {
+      const count = Number(w.count || 0);
+      return '<span style="font-size:' + (12 + Math.round(count / maxCount * 8)) + 'px;font-weight:' + (count > 1 ? 700 : 500) +
+        ';color:' + (count > 1 ? '#1d4ed8' : '#4b5563') + '" title="' + esc(w.word + "：出现 " + count + " 次") + '">' + esc(w.word) + '</span>';
+    }).join("") : '<span class="tiny muted">范围内暂无可提取的关键词</span>';
+    const scope = result ? result.statisticsScopeLabel : stat.scopeLabel;
+    const suggestionScope = result ? result.suggestionScopeLabel : "按当前授权自动确定";
+    const generatedAt = result ? result.generatedAt : stat.generatedAt;
+    const ruleNames = { overdue: "已逾期", remaining_20_percent: "剩余工期 20%", remaining_10_percent: "剩余工期 10%",
+      remaining_5_percent: "剩余工期 5%", schedule_conflict: "排期冲突", high_priority: "高紧急程度" };
+    function suggestionHTML(item){
+      const sourceIds = Array.from(new Set(item.sourceTaskIds || (item.taskId ? [item.taskId] : [])));
+      const links = sourceIds.filter(id => taskById(id)).map(id => '<button type="button" class="btn tiny-btn" data-task="' + esc(id) + '">查看「' + esc(taskById(id).title) + '」</button>').join("");
+      return '<div class="advice"><div class="row"><strong>' + esc(ruleNames[item.rule] || item.rule) + '</strong><span class="tiny muted">' +
+        esc(item.title || "规则建议") + '</span></div><p>' + esc(item.message) + '</p>' + (links ? '<div class="action-grid">' + links + '</div>' : '') + '</div>';
+    }
     document.getElementById("page-ai").innerHTML =
-      '<section class="card"><div class="card-head"><h2>任务数据统计</h2><span class="hint">当前可见范围</span></div><div class="stat-grid">' +
+      '<section class="card"><div class="card-head"><h2>任务数据统计</h2><span class="hint">' + esc(scope || "当前授权范围") + '</span></div><div class="stat-grid">' +
       labels.map(([label,key]) => '<div class="stat"><div class="v">' + esc(stat[key] == null ? "—" : stat[key]) + '</div><div class="k">' + label + '</div></div>').join("") +
-      '</div><p class="tiny muted">更新于 ' + esc(timeText(stat.generatedAt)) + '</p></section>' +
-      '<section class="card"><div class="card-head"><h2>关键词词云</h2><span class="hint">当前可见任务</span></div><div class="wc">' + cloud + '</div></section>' +
-      '<section class="card"><div class="card-head"><h2>AI 建议</h2><span class="hint">规则分析 · rule_based</span></div><p class="tiny muted">根据当前可见任务的截止时间生成提醒建议，未调用 AI 模型。分析不会修改任务。</p>' +
-      '<div class="action-grid">' + button("p-generate-analysis", result ? "重新生成摘要" : "生成分析摘要", null, "primary") + button("p-refresh-workspace", "刷新数据") +
+      '</div><h3>紧急程度分布</h3><div class="stat-grid">' + priorities.map(([label,key]) => '<div class="stat"><div class="v">' + esc(priority[key] == null ? "—" : priority[key]) + '</div><div class="k">' + label + '</div></div>').join("") +
+      '</div><p class="tiny muted">统计方法：当前有效任务 · 更新于 ' + esc(timeText(generatedAt)) + '</p></section>' +
+      '<section class="card"><div class="card-head"><h2>关键词词云</h2><span class="hint">' + esc(scope || "当前授权范围") + '</span></div><div class="wc">' + cloud + '</div><p class="tiny muted">从授权范围内任务的标题和说明实时提取，不读取工作日志。</p></section>' +
+      '<section class="card"><div class="card-head"><h2>规则建议</h2><span class="hint">' + esc(suggestionScope) + '</span></div><p class="tiny muted">本地规则分析：比例临期/逾期、排期冲突和高紧急程度；不调用外部模型，也不会修改任务。</p>' +
+      '<div class="action-grid">' + button("p-refresh-analysis", analysisLoading ? "正在重算…" : "刷新并重算", null, "primary") +
       '</div><div class="callout" id="analysis-error" hidden></div>' +
-      (result ? '<p class="tiny muted">生成于 ' + esc(timeText(result.generatedAt)) + '</p><div class="advice">本次分析包含 ' + esc(result.summary.total) + ' 项任务，已完成 ' + esc(result.summary.done) + ' 项，待审冻结 ' + esc(result.summary.frozen) + ' 项。</div>' +
-        (suggestions.length ? suggestions.map(s => '<div class="advice"><strong>' + esc(s.title) + '</strong><p>' + esc(s.message) + '</p>' +
-          (taskById(s.taskId) ? '<button type="button" class="btn tiny-btn" data-task="' + esc(s.taskId) + '">查看任务</button>' : '') + '</div>').join("") : '<div class="empty">当前没有临期或逾期的可执行任务建议</div>')
-        : '<div class="empty">点击“生成分析摘要”，查看基于真实任务的建议</div>') + '</section>';
+      (analysisLoading ? '<div class="empty">正在按当前权限重新计算…</div>' : result ? '<p class="tiny muted">生成于 ' + esc(timeText(result.generatedAt)) + ' · ' + esc(result.method || "local_proportional_schedule_rules") + '</p>' +
+        (suggestions.length ? suggestions.map(suggestionHTML).join("") : '<div class="empty">当前没有触发比例临期、逾期、排期冲突或高紧急规则</div>')
+        : '<div class="empty">进入本页后将自动按当前权限生成分析</div>') + '</section>';
+    const refresh = document.querySelector('[data-action="p-refresh-analysis"]');
+    if (refresh) refresh.disabled = analysisLoading;
   };
-  function generateAnalysis() {
-    P.busy(async () => {
-      const sourceIds = TASKS.map(task => task.id);
-      const job = await P.mutation("ai-job", "POST", "/ai-jobs", { scopeType: "visible" });
+  async function createAnalysis(silent) {
+    analysisLoading = true;
+    if (state.page === "ai") renderAI();
+    try {
+      const job = await P.mutation("ai-job:" + P.epoch + ":" + (++analysisSequence), "POST", "/ai-jobs", { scopeType: "auto" });
       const saved = await P.request("/ai-jobs/" + endpoint(job.jobId));
-      analysis = { epoch: P.epoch, result: saved.result,
-        sourceIds: Array.from(new Set(sourceIds.concat((saved.result.suggestions || []).map(s => s.taskId)))) };
-      await P.reload();
-      if (analysis && analysis.result === saved.result)
-        analysis.sourceIds = Array.from(new Set(analysis.sourceIds.concat(TASKS.map(task => task.id))));
-      P.notice("规则分析已生成并保存。");
-    }, "analysis-error");
+      analysis = { epoch: P.epoch, jobId: job.jobId, result: saved.result };
+      P.data.analytics = saved.result.summary;
+      if (!silent) P.notice("已按当前权限刷新规则分析。");
+      return saved.result;
+    } finally {
+      analysisLoading = false;
+      if (state.page === "ai") renderAI();
+    }
+  }
+  function generateAnalysis(silent) {
+    return P.busy(() => createAnalysis(!!silent), "analysis-error");
   }
   renderMe = function () {
     const me = P.data.me || {}, superior = personById(me.managerId);
@@ -569,13 +592,25 @@
       case "p-withdraw-notification": withdrawNotification(el.dataset.id); return;
       case "p-open-notification-task": openNotificationTask(el.dataset.id); return;
       case "p-open-historical-task": openHistoricalTask(el.dataset.id); return;
-      case "p-generate-analysis": generateAnalysis(); return;
+      case "p-generate-analysis": case "p-refresh-analysis":
+        P.busy(async () => { analysis = null; await P.reload(); P.notice("已读取最新数据并重新计算分析。"); }, "analysis-error"); return;
       case "p-refresh-workspace": P.busy(async () => { analysis = null; await P.reload(); P.notice("已读取最新数据。"); }); return;
       case "p-logout": P.busy(() => P.logout()); return;
       case "new-consult": case "save-consult": case "reply-consult": case "save-reply":
         P.notice("请示功能尚未接入后端，未保存任何内容。"); return;
       default: oldActions(el);
     }
+  };
+  P.reload = async function () {
+    analysis = null;
+    const data = await oldReload.apply(P, arguments);
+    if (state.page === "ai") await createAnalysis(true);
+    return data;
+  };
+  setPage = function (page) {
+    if (page === "ai") analysis = null;
+    oldSetPage(page);
+    if (page === "ai") generateAnalysis(true);
   };
   RENDER.map = renderMap; RENDER.log = renderLog; RENDER.ai = renderAI; RENDER.me = renderMe;
 })();

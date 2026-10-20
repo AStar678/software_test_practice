@@ -10,11 +10,17 @@ import org.springframework.stereotype.Service;
 import java.sql.Timestamp;
 import java.time.*;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static cn.pandora.common.Db.*;
 
 @Service
 public class WorkspaceService {
+    private static final Pattern HAN_RUN = Pattern.compile("\\p{IsHan}{2,}");
+    private static final Pattern OTHER_WORD = Pattern.compile("[\\p{L}\\p{N}][\\p{L}\\p{N}_-]{1,31}");
+    private static final Set<String> KEYWORD_STOP_WORDS = Set.of(
+            "任务", "项目", "工作", "进行", "完成", "需要", "以及", "一个", "我们", "相关", "当前",
+            "the", "and", "for", "with", "from", "this", "that");
     private final Db db;
     private final Access access;
     private final TaskService tasks;
@@ -255,7 +261,8 @@ public class WorkspaceService {
 
     /**
      * Open-as-read command (DEV-031). The ordinary list GET never changes state; this command marks the
-     * message read and returns the same authoritative view, so the unread badge can refresh from it.
+     * message read and returns only command metadata, so the unread badge can refresh without
+     * copying notification/task text into the idempotency cache. Detail remains a separate GET.
      */
     public Map<String,Object> openNotification(Actor a, String notificationId) {
         var row = db.one("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=? AND hidden_at IS NULL FOR UPDATE",a.organizationId(),a.id(),notificationId);
@@ -263,12 +270,17 @@ public class WorkspaceService {
         if (!notificationVisible(a,row,now)) throw ApiException.notFound();
         if (row.get("readAt")==null) {
             db.update("UPDATE notifications SET read_at=?,row_version=row_version+1 WHERE organization_id=? AND id=?",Timestamp.from(now),a.organizationId(),notificationId);
-            row.put("readAt",now.toString());
-            row.put("rowVersion",n(row,"rowVersion")+1);
+            // Read back MySQL's DATETIME(6) value so the first response and a later
+            // idempotent open expose the same microsecond-normalized timestamp.
+            row = db.one("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=?",
+                a.organizationId(),a.id(),notificationId);
         }
-        Map<String,Object> view = safeNotification(a,row,now);
-        view.put("unreadCount",unreadCount(a,now));
-        return view;
+        Map<String,Object> result = new LinkedHashMap<>();
+        result.put("notificationId",notificationId);
+        result.put("readAt",Objects.toString(row.get("readAt"),null));
+        result.put("rowVersion",n(row,"rowVersion"));
+        result.put("unreadCount",unreadCount(a,now));
+        return result;
     }
 
     public Map<String,Object> changeNotification(Actor a, String notificationId, String ifMatch, Map<String,Object> body) {
@@ -535,33 +547,47 @@ public class WorkspaceService {
 
     public Map<String,Object> statistics(Actor a, Map<String,String> filters) {
         if(!Set.of("scope").containsAll(filters.keySet())) throw bad("统计接口当前仅支持 scope，不支持日期筛选");
-        String scope=filters.getOrDefault("scope","visible");
-        var summary=summarize(visibleTasks(a,scope));summary.put("scope",scope);return summary;
+        String requested=filters.getOrDefault("scope","auto");
+        AnalysisScope scope=analysisScope(a,requested);
+        var rows=visibleTasks(a,scope.statisticsQuery());
+        var summary=summarize(rows);
+        summary.put("scope",scope.statisticsScope());
+        summary.put("scopeLabel",scopeLabel(scope.statisticsScope()));
+        summary.put("method","current_effective_tasks");
+        summary.put("keywords",keywords(rows));
+        summary.put("keywordMethod","unicode_text_frequency");
+        return summary;
     }
 
     public Map<String,Object> createAiJob(Actor a, Map<String,Object> input) {
         allowed(input,Set.of("scopeType"));
-        String scope = Optional.ofNullable(nullable(input,"scopeType")).orElse("visible");
-        var visible = visibleTasks(a,scope);
-        var summary = summarize(visible);
-        summary.put("scope",scope);
-        var suggestions = new ArrayList<Map<String,Object>>();
+        String requested = Optional.ofNullable(nullable(input,"scopeType")).orElse("auto");
+        AnalysisScope scope = analysisScope(a,requested);
+        var statisticsRows = visibleTasks(a,scope.statisticsQuery());
+        var suggestionRows = scope.statisticsQuery().equals(scope.suggestionQuery())
+                ? statisticsRows : visibleTasks(a,scope.suggestionQuery());
+        var summary = summarize(statisticsRows);
+        summary.put("scope",scope.statisticsScope());
+        summary.put("scopeLabel",scopeLabel(scope.statisticsScope()));
+        summary.put("method","current_effective_tasks");
+        summary.put("keywords",keywords(statisticsRows));
+        summary.put("keywordMethod","unicode_text_frequency");
         Instant now = clock.instant();
-        for (var t : visible) {
-            if (Boolean.TRUE.equals(t.get("frozen")) || "done".equals(s(t,"executionState"))) continue;
-            Instant due = instant(s(t,"dueAt"));
-            if (due != null && !due.isAfter(now.plus(Duration.ofDays(3)))) {
-                suggestions.add(Map.of("taskId",s(t,"id"),"title",s(t,"title"),"rule",due.isBefore(now)?"overdue":"due_within_72_hours",
-                    "message",due.isBefore(now)?"任务已逾期，建议确认未完成事项与下一步安排。":"任务临近截止，建议确认剩余事项与需要协调的资源。"));
-            }
-            if (suggestions.size() == 10) break;
-        }
+        var suggestions = suggestions(suggestionRows,now);
+        var sourceTaskIds = new LinkedHashSet<String>();
+        statisticsRows.forEach(t->sourceTaskIds.add(s(t,"id")));
+        suggestionRows.forEach(t->sourceTaskIds.add(s(t,"id")));
         var result = new LinkedHashMap<String,Object>();
-        result.put("mode","rule_based"); result.put("modelUsed",false); result.put("summary",summary); result.put("suggestions",suggestions);
-        result.put("sourceTaskIds",visible.stream().map(t->s(t,"id")).toList()); result.put("generatedAt",now.toString());
+        result.put("mode","rule_based"); result.put("method","local_proportional_schedule_rules"); result.put("modelUsed",false);
+        result.put("statisticsScope",scope.statisticsScope()); result.put("statisticsScopeLabel",scopeLabel(scope.statisticsScope()));
+        result.put("keywordScope",scope.statisticsScope()); result.put("suggestionScope",scope.suggestionScope());
+        result.put("suggestionScopeLabel",scopeLabel(scope.suggestionScope())); result.put("requestedScope",scope.requestedScope());
+        result.put("authzVersion",a.authzVersion()); result.put("summary",summary); result.put("suggestions",suggestions);
+        result.put("sourceTaskIds",List.copyOf(sourceTaskIds)); result.put("generatedAt",now.toString());
         String jobId = id();
-        db.update("INSERT INTO ai_jobs(id,organization_id,requested_by,status,scope_type,result_json,completed_at) VALUES(?,?,?,'completed',?,?,UTC_TIMESTAMP(6))",jobId,a.organizationId(),a.id(),scope,db.json(result));
-        events.record(a,null,"analysis.completed",List.of(),Map.of("jobId",jobId,"mode","rule_based"));
+        db.update("INSERT INTO ai_jobs(id,organization_id,requested_by,status,scope_type,result_json,completed_at) VALUES(?,?,?,'completed',?,?,UTC_TIMESTAMP(6))",jobId,a.organizationId(),a.id(),"role_scoped",db.json(result));
+        events.record(a,null,"analysis.completed",List.of(),Map.of("jobId",jobId,"mode","rule_based",
+                "statisticsScope",scope.statisticsScope(),"suggestionScope",scope.suggestionScope()));
         return Map.of("jobId",jobId,"status","completed","mode","rule_based");
     }
 
@@ -569,7 +595,24 @@ public class WorkspaceService {
         business(a);
         var row = db.one("SELECT * FROM ai_jobs WHERE organization_id=? AND requested_by=? AND id=?",a.organizationId(),a.id(),jobId);
         var result = db.parse(s(row,"resultJson"));
-        var currentIds = new HashSet<>(visibleTasks(a,s(row,"scopeType")).stream().map(t->s(t,"id")).toList());
+        Set<String> currentIds;
+        if ("role_scoped".equals(s(row,"scopeType"))) {
+            Object storedVersion=result.get("authzVersion");
+            if (storedVersion instanceof Number number && number.longValue()!=a.authzVersion()) {
+                throw new ApiException(409,"ANALYSIS_SCOPE_CHANGED","授权范围已变化，请重新生成分析");
+            }
+            AnalysisScope current=analysisScope(a,Optional.ofNullable(s(result,"requestedScope")).orElse("auto"));
+            if (!Objects.equals(current.statisticsScope(),s(result,"statisticsScope"))
+                    || !Objects.equals(current.suggestionScope(),s(result,"suggestionScope"))) {
+                throw new ApiException(409,"ANALYSIS_SCOPE_CHANGED","授权范围已变化，请重新生成分析");
+            }
+            currentIds=new HashSet<>();
+            visibleTasks(a,current.statisticsQuery()).forEach(t->currentIds.add(s(t,"id")));
+            visibleTasks(a,current.suggestionQuery()).forEach(t->currentIds.add(s(t,"id")));
+        } else {
+            // Backward compatibility for jobs written before role-scoped analysis was introduced.
+            currentIds=new HashSet<>(visibleTasks(a,s(row,"scopeType")).stream().map(t->s(t,"id")).toList());
+        }
         if (result.get("sourceTaskIds") instanceof Collection<?> ids && !currentIds.containsAll(ids)) {
             throw new ApiException(409,"ANALYSIS_SCOPE_CHANGED","可见范围已变化，请重新生成分析");
         }
@@ -622,7 +665,8 @@ public class WorkspaceService {
             if (items.size()<100) break;
             offset+=items.size();
         }
-        if (scope.equals("self")) rows.removeIf(t -> !(t.get("assigneeIds") instanceof Collection<?> ids && ids.contains(a.id())));
+        if (scope.equals("self")) rows.removeIf(t -> !a.id().equals(s(t,"originalCreatorId"))
+                && !(t.get("assigneeIds") instanceof Collection<?> ids && ids.contains(a.id())));
         return rows;
     }
 
@@ -631,10 +675,140 @@ public class WorkspaceService {
         result.put("total",rows.size());
         for (String state : List.of("todo","doing","done")) result.put(state,rows.stream().filter(t->state.equals(s(t,"executionState"))).count());
         result.put("frozen",rows.stream().filter(t->Boolean.TRUE.equals(t.get("frozen"))).count());
+        result.put("pendingComplete",rows.stream().filter(t->Boolean.TRUE.equals(t.get("pending")) && "complete".equals(s(t,"pendingKind"))).count());
         result.put("overdue",rows.stream().filter(t->!"done".equals(s(t,"executionState"))).filter(t->{var due=instant(s(t,"dueAt"));return due!=null&&due.isBefore(now);}).count());
+        var priority=new LinkedHashMap<String,Object>();
+        for(String level:List.of("urgent","high","medium","low"))
+            priority.put(level,rows.stream().filter(t->level.equals(s(t,"priority"))).count());
+        result.put("priority",priority);
         result.put("ruleBased",true); result.put("generatedAt",now.toString());
         return result;
     }
+
+    /** Analysis ranges are derived from the current authority snapshot; callers cannot broaden them. */
+    private AnalysisScope analysisScope(Actor a,String requested) {
+        business(a);
+        String normalized="visible".equals(requested)?"auto":requested;
+        if (!Set.of("auto","self").contains(normalized)) throw bad("scope 只能为 auto、visible 或 self");
+        if ("self".equals(normalized)) return new AnalysisScope("self","self","self","self","self");
+        String statisticsScope=switch(a.scope("task_view")) {
+            case "company" -> "company";
+            case "department" -> "department";
+            default -> "self";
+        };
+        String statisticsQuery="self".equals(statisticsScope)?"self":"visible";
+        String suggestionScope="department".equals(statisticsScope)?"self":statisticsScope;
+        String suggestionQuery="self".equals(suggestionScope)?"self":"visible";
+        return new AnalysisScope(statisticsScope,statisticsQuery,suggestionScope,suggestionQuery,"auto");
+    }
+
+    private static String scopeLabel(String scope) {
+        return switch(scope) {case "company"->"全公司";case "department"->"本部门";default->"本人";};
+    }
+
+    /** Real title/description extraction; the vocabulary is learned from the authorized task text. */
+    static List<Map<String,Object>> keywords(List<Map<String,Object>> rows) {
+        Map<String,Integer> counts=new LinkedHashMap<>();
+        Set<String> primaryTokens=new HashSet<>();
+        for(var row:rows) {
+            String text=String.join(" ",Objects.toString(row.get("title"),""),Objects.toString(row.get("description"),""))
+                    .toLowerCase(Locale.ROOT);
+            var han=HAN_RUN.matcher(text);
+            StringBuffer nonHan=new StringBuffer();
+            while(han.find()) {
+                String value=han.group(); addChineseKeywords(counts,primaryTokens,value);
+                han.appendReplacement(nonHan," ");
+            }
+            han.appendTail(nonHan);
+            var other=OTHER_WORD.matcher(nonHan.toString());
+            while(other.find()) {
+                String value=other.group(); addKeyword(counts,value); primaryTokens.add(value.toLowerCase(Locale.ROOT));
+            }
+        }
+        return counts.entrySet().stream()
+                // Prefer complete text tokens over fallback CJK n-grams, then rank by real frequency.
+                .sorted(Comparator.<Map.Entry<String,Integer>>comparingInt(entry->primaryTokens.contains(entry.getKey())?1:0).reversed()
+                        .thenComparing(Comparator.<Map.Entry<String,Integer>>comparingInt(Map.Entry::getValue).reversed())
+                        .thenComparing((left,right)->Integer.compare(right.getKey().length(),left.getKey().length()))
+                        .thenComparing(Map.Entry::getKey))
+                .limit(24)
+                .map(entry->Map.<String,Object>of("word",entry.getKey(),"count",entry.getValue()))
+                .toList();
+    }
+
+    private static void addChineseKeywords(Map<String,Integer> counts,Set<String> primaryTokens,String value) {
+        if(value.length()<=12) {addKeyword(counts,value);primaryTokens.add(value);}
+        int max=Math.min(3,value.length());
+        for(int size=2;size<=max;size++) {
+            for(int start=0;start+size<=value.length();start++) addKeyword(counts,value.substring(start,start+size));
+        }
+    }
+
+    private static void addKeyword(Map<String,Integer> counts,String word) {
+        String value=word.strip().toLowerCase(Locale.ROOT);
+        if(value.length()<2 || KEYWORD_STOP_WORDS.contains(value)) return;
+        counts.merge(value,1,Integer::sum);
+    }
+
+    /** Rule-only advice: proportional deadline nodes, overlapping schedules and high priorities. */
+    static List<Map<String,Object>> suggestions(List<Map<String,Object>> rows,Instant now) {
+        List<Map<String,Object>> active=rows.stream()
+                .filter(t->!Boolean.TRUE.equals(t.get("frozen")) && !"done".equals(s(t,"executionState"))).toList();
+        var result=new ArrayList<Map<String,Object>>();
+        for(var task:active) {
+            Instant start=instant(s(task,"startAt")),due=instant(s(task,"dueAt"));
+            ReminderService.Node node=start==null||due==null?null:ReminderService.chooseNode(start,due,now);
+            if(node!=null) {
+                boolean overdue="overdue".equals(node.node());
+                String rule=overdue?"overdue":"remaining_"+node.node()+"_percent";
+                String message=overdue?"任务已逾期，请确认未完成事项与下一步安排。"
+                        :"任务已到剩余工期 "+node.node()+"% 节点，请确认进展与所需资源。";
+                result.add(suggestion(rule,task,List.of(task),message,node.node(),node.at()));
+            }
+        }
+        int conflictCount=0;
+        conflicts: for(int left=0;left<active.size();left++) {
+            var first=active.get(left); Instant firstStart=instant(s(first,"startAt")),firstDue=instant(s(first,"dueAt"));
+            if(firstStart==null||firstDue==null||!firstStart.isBefore(firstDue)) continue;
+            for(int right=left+1;right<active.size();right++) {
+                var second=active.get(right); Instant secondStart=instant(s(second,"startAt")),secondDue=instant(s(second,"dueAt"));
+                if(secondStart==null||secondDue==null||!secondStart.isBefore(secondDue)) continue;
+                if(firstStart.isBefore(secondDue)&&secondStart.isBefore(firstDue)) {
+                    result.add(suggestion("schedule_conflict",first,List.of(first,second),
+                            "任务《"+s(first,"title")+"》与《"+s(second,"title")+"》排期重叠，请确认优先级或协调资源。",null,null));
+                    if(++conflictCount>=50) break conflicts;
+                }
+            }
+        }
+        for(var task:active) {
+            String priority=s(task,"priority");
+            if(Set.of("urgent","high").contains(priority)) {
+                result.add(suggestion("high_priority",task,List.of(task),
+                        "urgent".equals(priority)?"任务紧急程度为“紧急”，建议优先确认负责人和处理计划。":"任务紧急程度为“高”，建议预留处理时间并持续跟进。",null,null));
+            }
+        }
+        return result;
+    }
+
+    private static Map<String,Object> suggestion(String rule,Map<String,Object> primary,List<Map<String,Object>> sources,
+                                                  String message,String reminderNode,Instant scheduledAt) {
+        var value=new LinkedHashMap<String,Object>();
+        value.put("rule",rule); value.put("taskId",s(primary,"id")); value.put("title",s(primary,"title")); value.put("message",message);
+        value.put("sourceTaskIds",sources.stream().map(t->s(t,"id")).toList());
+        value.put("sources",sources.stream().map(WorkspaceService::analysisSource).toList());
+        if(reminderNode!=null)value.put("reminderNode",reminderNode);
+        if(scheduledAt!=null)value.put("scheduledAt",scheduledAt.toString());
+        return value;
+    }
+
+    private static Map<String,Object> analysisSource(Map<String,Object> task) {
+        var value=new LinkedHashMap<String,Object>();
+        for(String key:List.of("id","title","priority","startAt","dueAt")) value.put(key,task.get(key));
+        return value;
+    }
+
+    private record AnalysisScope(String statisticsScope,String statisticsQuery,String suggestionScope,
+                                 String suggestionQuery,String requestedScope) {}
 
     private Map<String,Object> ownedLog(Actor a,String logId) {
         return db.one("SELECT * FROM work_logs WHERE organization_id=? AND author_id=? AND id=? FOR UPDATE",a.organizationId(),a.id(),logId);

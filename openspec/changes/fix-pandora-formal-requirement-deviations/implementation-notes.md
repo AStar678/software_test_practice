@@ -1,147 +1,119 @@
 # Implementation Notes
 
-- Change: fix-pandora-formal-requirement-deviations
-- Schema: spec-driven
-- Store: local (no registered store)
-- Implementation roots: `/home/rmy/桌面/panDuola` (backend at `backend/`, loaded pages at the repository root)
-- Updated: 2026-10-20T17:35+08:00 (2026-10-20T09:35Z)
-- Implementation revision: `3c73aef` plus an uncommitted worktree (sections 8.1-9.8, V12 and verification scripts)
-- Progress: **54/65 tasks checked complete**. Sections 8.1-9.8 were completed in these runs; sections 10-11 remain pending.
-- This is an apply handoff, not an independent e13 verification or archive authority.
-- File paths and links below are repository-relative (this file lives under `openspec/changes/fix-pandora-formal-requirement-deviations/`).
+- Change: `fix-pandora-formal-requirement-deviations`
+- Schema: `spec-driven`
+- Store: local repository
+- Repository: `C:\Users\20943\Desktop\software_test_practice`
+- Updated: 2026-10-20 (Asia/Shanghai)
+- Implementation revision: `29e3f99` plus the current uncommitted worktree
+- Progress at handoff: 65/65 OpenSpec implementation tasks after task 11.6 is checked
+- Scope exception: DEV-029 system push and A-25/real-device work were explicitly deferred and are not represented as implemented or verified
+- Authority: this is an apply-stage implementation handoff. It is not an independent e13 verification result and does not authorize archive.
 
-## How to continue
+## Implemented scope
 
-1. Read current state from the CLI, not this file: `openspec instructions apply --change "fix-pandora-formal-requirement-deviations" --json`. The expected progress after this run is 54/65, `state=ready`.
-2. Sections 10-11 are still unimplemented. Do not treat 8.1-9.8 evidence as coverage of 10.1-11.7, and do not run a full independent verification or archive yet.
-3. The HTTP/browser suites need a **freshly created, freshly seeded** database. A reused database has an advanced controlled clock, expired pending requests, read notifications and possibly existing logs for the test day, which changes assertions.
-4. Start the project MySQL first: `cd backend && ./scripts/start-db.sh`. Database credentials live in the git-ignored `backend/.runtime/database.env`; never copy them into reports.
-5. The 2026-10-19 runs used two scratch databases: `pandora_final` (HTTP checks, worker delay 60s, controlled clock) and `pandora_final_ui` (browser checks, initial/delay 1h so only the explicit `/admin/worker/run-once` scans run).
-6. The controlled clock and one-shot worker are verification facilities: `/api/v1/admin/clock`, `/api/v1/admin/clock/advance` and `/api/v1/admin/worker/run-once`. They require an administrator and work only when `pandora.clock.controllable=true` (the worker endpoint requires the worker bean). Do not enable the controlled clock in a normal deployment.
+The change now contains reviewable implementation and evidence for the non-deferred portions of DEV-001—035:
 
-## Implementation Map
+- organization, role/scope authorization, team ownership, transfer and admin maintenance;
+- account creation/reset, forced first password change, session invalidation and profile/phone privacy;
+- reviewer routing, explicit self-review, proposed-route preview, reassignment, handover, reopen and durable history;
+- deadline expiry, race-safe decisions, schedule versions, 20%/10%/5% reminders and organization cut-off snapshots;
+- event/notification recipient rules, automatic read, original-request binding, withdrawal, personal deletion, retention and historical read-only access;
+- one-log-per-day and midnight freeze, permission-scoped log browsing, profile/subordinate entry;
+- home assignment ordering, calendar navigation/search/pins/cross-day rendering/full timelines/swipes/counts;
+- authority-scoped AI statistics, real-text keywords, pending-complete/priority distribution, proportional/conflict/high-priority suggestions and stale-result reauthorization;
+- current tests, scripts, static-resource allowlists, API examples and implementation documentation.
 
-### Previously implemented (sections 1-4)
+The generated one-row-per-requirement mapping is `audit/2026-10-20/chapter11/traceability.md`. It contains exactly 35 DEV rows, 150 AUD rows and 25 A rows and preserves the original audit documents unchanged.
 
-| Area / task | Code and tests | Note |
+## Build and unit-test baseline
+
+Run with Java 21 from `backend/`:
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot'
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+mvn -B -ntp test
+mvn -B -ntp package
+```
+
+Current result: **PASS, 60 tests**, with 0 failures, 0 errors and 0 skipped. The package command also passed and produced the served frontend/backend artifact.
+
+## Integration evidence
+
+All current JSON reports below are under `audit/2026-10-20/chapter11/`. HTTP suites used freshly created, seeded MySQL databases so that controlled-clock state, expired requests, existing daily logs and read notifications could not leak across suites.
+
+| Area | Command from `backend/` | Current result |
 | --- | --- | --- |
-| 1.1 migration precheck | [`migration_precheck.py`](backend/scripts/migration_precheck.py) | Read-only guard; isolated restore/rehearsal; fingerprints unchanged. |
-| 1.2-1.5 migrations | [`V5`](backend/src/main/resources/db/migration/V5__organization_roles_and_account_gate.sql), [`V6`](backend/src/main/resources/db/migration/V6__ordered_routing_expiration_and_handover.sql), [`V7`](backend/src/main/resources/db/migration/V7__event_provenance_dispatch_and_pins.sql), [`V8`](backend/src/main/resources/db/migration/V8__lossless_work_log_merge_and_unique_day.sql), [`V10`](backend/src/main/resources/db/migration/V10__retire_superseded_check_constraints.sql) | Staged backfill and explicit findings; V10 repairs the superseded constraint lookup. |
-| 2.1-2.7 organization and administration | [`OrganizationService.java`](backend/src/main/java/cn/pandora/admin/OrganizationService.java), [`AdminController.java`](backend/src/main/java/cn/pandora/admin/AdminController.java), [`admin.html`](admin.html) | Department/position required, one team/manager, cycles, company boundary, one administrator, team lead transfer, company items and off-work time. |
-| 3.1-3.4 accounts | [`Credentials.java`](backend/src/main/java/cn/pandora/admin/Credentials.java), [`AuthService.java`](backend/src/main/java/cn/pandora/auth/AuthService.java), [`AuthFilter.java`](backend/src/main/java/cn/pandora/auth/AuthFilter.java) | One-time initial password, forced-change gate, policy, full session revocation, real UI. |
-| 4.1-4.9 routing/handover/history | [`TaskService.java`](backend/src/main/java/cn/pandora/task/TaskService.java), [`check_review_routing.py`](backend/scripts/check_review_routing.py) | Ordered routing, proposed-route assignment, handover, reopen schedule, audience-trimmed request DTO, durable history, concurrency/freeze regression. |
+| Corrected smoke | `python scripts/smoke_test.py --base-url http://127.0.0.1:18095 --report ../audit/2026-10-20/chapter11/smoke.json` | PASS 53/53 |
+| Organization/admin | `python scripts/check_organization_admin.py --base-url http://127.0.0.1:18095 --output ../audit/2026-10-20/chapter11/organization-admin.json` | PASS 48/48 |
+| Account lifecycle | `python scripts/check_account_lifecycle.py --base-url http://127.0.0.1:18095 --output ../audit/2026-10-20/chapter11/account-lifecycle.json` | PASS 47/47 |
+| Review routing | `python scripts/check_review_routing.py --base-url http://127.0.0.1:18095 --output ../audit/2026-10-20/chapter11/review-routing.json` | PASS 59/59 |
+| Profile phone/privacy | `python scripts/check_profile_phone_matrix.py --base-url http://127.0.0.1:18095 --output ../audit/2026-10-20/chapter11/profile-phone.json` | PASS 26/26 |
+| Work logs | `python scripts/check_work_logs.py --base-url http://127.0.0.1:18096 --output ../audit/2026-10-20/chapter11/work-logs.json` | PASS 17/17 |
+| Home/calendar API | `python scripts/check_home_calendar.py --base-url http://127.0.0.1:18095 --output ../audit/2026-10-20/chapter11/home-calendar.json` | PASS 12/12 |
+| AI analysis | `python scripts/check_ai_analysis.py --base-url http://127.0.0.1:18095 --output ../audit/2026-10-20/chapter11/ai-analysis.json` | PASS 18/18 |
+| Deadline/reminder/notification | `python scripts/check_deadline_reminder_notification.py --base-url http://127.0.0.1:18097 --output ../audit/2026-10-20/chapter11/deadline-reminder-notification.json` | PASS 75/75 |
+| Database integrity | `python scripts/check_database.py --base-url http://127.0.0.1:18097 --output ../audit/2026-10-20/chapter11/database-event.json` | PASS 18/18 |
 
-### Completed in this run
+The final event database was `pandora_event_20261020_2148`, running MySQL 9.7 with Flyway V1 through V12 applied. The database evidence checks constraints, idempotency secrecy, event/history persistence and the single terminal outcome expected by the race scenarios. Database names are disposable evidence identifiers; credentials remain only in ignored runtime configuration and are not copied here.
 
-| Task / requirement / scenario | Code and tests | Decisions / evidence |
+The suites are order-sensitive by design:
+
+1. Create and seed a fresh database, then start the jar with the suite-specific port and test-only clock/worker flags.
+2. Run non-time-mutating suites before any suite that advances the controlled clock.
+3. Use a separate fresh database for `check_work_logs.py` and another for deadline/event checks. Reusing a time-mutated database changes the business date, expiry state, notification read state and uniqueness preconditions.
+4. Never enable `pandora.clock.controllable=true` in a normal deployment.
+
+## Browser evidence
+
+The browser scripts discover Chrome on Windows and pass explicit viewport dimensions. They exercise the built jar's real pages with API-backed state.
+
+| Area | Evidence | Current result |
 | --- | --- | --- |
-| 3.5 person-detail phone matrix and no contact leakage (DEV-002, 028) | [`Access.canReadPhone`](backend/src/main/java/cn/pandora/auth/Access.java), [`WorkspaceService.person`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java), [`check_profile_phone_matrix.py`](backend/scripts/check_profile_phone_matrix.py), [`check_notification_browser.js`](backend/scripts/check_notification_browser.js) | Owner, direct superior, indirect superior and new superior after transfer read the phone; same-level, other-chain, subordinate, administrator get no detail/phone. Directory, task summaries, logs, notifications, home, analytics, AI job detail, administration roster and audit contain no number. Owner cannot edit organization fields. HTTP 26/26 and browser subordinate-card checks pass. |
-| 5.1 injectable clock and applicable deadline (DEV-012, 013) | [`TimeConfig.java`](backend/src/main/java/cn/pandora/common/TimeConfig.java), [`ControllableClock.java`](backend/src/main/java/cn/pandora/common/ControllableClock.java), [`ExpiryService.java`](backend/src/main/java/cn/pandora/workspace/ExpiryService.java) | One `Clock` bean. Create, schedule-changing change and reopen use the proposed deadline; progress/complete/handover use the effective deadline. Exactly-at/after deadline is rejected. The HTTP check advances the controlled clock rather than changing the OS clock. |
-| 5.2 transactional expiry and expired-submission rejection (DEV-012) | [`ExpiryService.expire`](backend/src/main/java/cn/pandora/workspace/ExpiryService.java), [`TaskService.submit`](backend/src/main/java/cn/pandora/task/TaskService.java), [`TaskController.decide`](backend/src/main/java/cn/pandora/task/TaskController.java) | Expiry updates request/task-version status, unfreezes, keeps the effective version and previous execution state, writes history and notifies applicant/reviewer. The decision error is thrown **after** `Writes.run` commits the expiry result. Creation with a past deadline rolls back and leaves no task. |
-| 5.3 decision-time and scheduled expiry (DEV-012) | [`ExpiryService.expirePending`](backend/src/main/java/cn/pandora/workspace/ExpiryService.java), [`EventsWorker`](backend/src/main/java/cn/pandora/workspace/EventsWorker.java) | The worker scans expiry before reminders. A decision without a scan first expires the request. Repeated scans do not repeat the expiry/overdue result. |
-| 5.4 one terminal state under concurrency (DEV-012, 016) | [`Writes.run`](backend/src/main/java/cn/pandora/common/Writes.java), [`check_deadline_reminder_notification.py`](backend/scripts/check_deadline_reminder_notification.py) | Both concurrent decisions return 409 `REQUEST_EXPIRED` or 412 `VERSION_CONFLICT`, never approve; final request state is `expired`; a later retry cannot revive it. |
-| 6.1 schedule version and all-day cut-off snapshot (DEV-014, 015) | [`TaskService.validateForm`](backend/src/main/java/cn/pandora/task/TaskService.java), [`TaskService.applyVersion`](backend/src/main/java/cn/pandora/task/TaskService.java), [`V11`](backend/src/main/resources/db/migration/V11__schedule_snapshots_reminder_nodes_and_notification_lifecycle.sql) | `task_versions.all_day_cutoff_time` snapshots the company setting per version. A non-schedule edit keeps schedule and cut-off; a real start/end/all-day change increments `schedule_version`; only-start changes recalculate; a reopen increments the round. Calendar first/last dates are unchanged. `due_version` is no longer written. |
-| 6.2 proportional reminders (DEV-014) | [`ReminderService.java`](backend/src/main/java/cn/pandora/workspace/ReminderService.java), [`ReminderNodeTest.java`](backend/src/test/java/cn/pandora/workspace/ReminderNodeTest.java) | 20/10/5 percent and one overdue node. Dedupe key contains organization/task/recipient/round/schedule-version/node. The ten-hour sample fires at 17:00/18:00/18:30 and not at 90% remaining; repeated scans do not repeat overdue. |
-| 6.3 late scan and zero duration (DEV-014) | [`ReminderService.chooseNode`](backend/src/main/java/cn/pandora/workspace/ReminderService.java) | A late first scan sends only the nearest reached node and writes `state='skipped'` receipts for earlier nodes. 18:10 sends 10%, 18:20 does not backfill 20%, 18:30 sends 5%. A zero-duration task only gets one overdue notice. |
-| 6.4 permission/competition and independent rounds (DEV-012, 014) | [`ReminderService`](backend/src/main/java/cn/pandora/workspace/ReminderService.java), [`EventsWorker`](backend/src/main/java/cn/pandora/workspace/EventsWorker.java) | Pending, done, unpublished and removed recipients are excluded. Withdrawal resumes reminders. A new effective schedule and a reopen round get independent dedupe identities. The worker holds the organization lock and remains single-pass. |
-| 7.1 event matrix and actual summary (DEV-010, 030) | [`Events.java`](backend/src/main/java/cn/pandora/common/Events.java), [`TaskService.eventSummary`](backend/src/main/java/cn/pandora/task/TaskService.java) | Events persist request/version/initiator/title/summary/occurred/expires. Unpublished creation goes only to applicant+reviewer; published submission only to the reviewer; approval goes to task people; a removed assignee is in the recipient facts. One event carries one multi-field Chinese summary; recipient sets dedupe self. An organization change writes a `task.*.reassigned` event, a persisted previous/new reviewer row and history. |
-| 7.2 delivery and removed-owner exception (DEV-030, 033) | [`EventsWorker.deliver`](backend/src/main/java/cn/pandora/workspace/EventsWorker.java) | Ordinary undelivered events that lost task authority get no restricted content or task entry. A removal event proves the old effective-owner fact, so the removed person gets a delivered read-only summary with `relationLost=true`; a new owner gets no pre-approval proposed content. |
-| 7.3 open-as-read and original request (DEV-031) | [`WorkspaceService.openNotification`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java), [`WorkspaceController`](backend/src/main/java/cn/pandora/workspace/WorkspaceController.java), [`潘多拉-工作区接入.js`](潘多拉-工作区接入.js) | `POST /notifications/{id}/open` marks read and returns the refreshed unread count; list GET does not mutate. The message keeps `requestId`/status/result of its own request; a later pending request on the same task is not used. UI has no manual-read button and shows a resolved request grey with no approve action. |
-| 7.4 withdrawal, personal delete and admin management (DEV-001, 032) | [`WorkspaceService.withdrawEvent`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java), [`WorkspaceController`](backend/src/main/java/cn/pandora/workspace/WorkspaceController.java) | Business initiator/notification manager may withdraw only while `0 <= now-occurred < 180s`; 179s allowed, 180s rejected. Automatic reminders are manager-only. Withdrawal keeps a placeholder, clears body/jump and leaves business/task/audit unchanged. Personal delete affects only one copy. Admin list/withdraw endpoints require `manage_notifications`. |
-| 7.5 three-calendar-month retention (DEV-032) | [`Events.retentionEndsAt`](backend/src/main/java/cn/pandora/common/Events.java), [`EventsRetentionTest.java`](backend/src/test/java/cn/pandora/common/EventsRetentionTest.java), [`WorkspaceService.cleanupNotifications`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java) | Company-zone `plusMonths(3)` truncates month-end; unit tests cover 10/31→1/31, 1/31→4/30 and leap-year 11/30→2/29. The read interface rejects at/after the retention instant without waiting for cleanup. Cleanup deletes message copies only; task/request/history remain. |
-| 7.6 dedicated read-only historical DTO (DEV-033) | [`WorkspaceService.notificationTask`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java), [`潘多拉-工作区接入.js`](潘多拉-工作区接入.js) | Available only through the recipient's own delivered, non-deleted, non-withdrawn, unexpired message. Returns current effective task fields, assignee/creator display names, `readonly`, `accessRevoked` and a notice; no proposal/diff/route/phone/log/action. Historical access does not rejoin task lists; personal delete/withdraw/expiry closes it. |
-| 7.7 real notification UI (DEV-031—033) | [`潘多拉-工作区接入.js`](潘多拉-工作区接入.js), [`潘多拉-api.js`](潘多拉-api.js), [`check_notification_browser.js`](backend/scripts/check_notification_browser.js) | Real headless Chrome at 390×844: auto-read, no footer bar, header close in focus order, resolved-result grey, withdrawal placeholder, historical read-only page and subordinate phone card. 21/21 browser checks. |
-| 7.8 history after message removal (DEV-016, 032) | [`TaskService.taskHistory`](backend/src/main/java/cn/pandora/task/TaskService.java), [`check_deadline_reminder_notification.py`](backend/scripts/check_deadline_reminder_notification.py) | After retention cleanup, admin task history still contains the original entries (the history set is a superset; an expired pending request can add one more entry), and the effective task remains readable. App has no full-history entry. |
-| V11 schema | [`V11__schedule_snapshots_reminder_nodes_and_notification_lifecycle.sql`](backend/src/main/resources/db/migration/V11__schedule_snapshots_reminder_nodes_and_notification_lifecycle.sql) | Adds version cut-off snapshots, reminder node/state/schedule/round/event columns, notification title/change-summary/relation-lost columns and scan indexes. Applied on fresh databases; V1-V8 checksums are unchanged. |
+| Account flows | `account-320x740.json`, `account-390x844.json`, `account-1440x900.json` | PASS 15/15 at each viewport |
+| Logs/profile | `logs-profile-320x740.json`, `logs-profile-390x844.json`, `logs-profile-1440x900.json` | PASS 22/22 at each viewport |
+| Notification lifecycle | `notification-320x740.json`, `notification-390x844.json`, `notification-1440x900.json` | PASS 21/21 at each viewport |
+| Home/calendar | `home-calendar-three-viewports.json` | PASS 33/33 over 320×740, 390×844 and 1440×900 |
+| Chapter 11 integrated UI | `chapter11-browser.json` | PASS 45/45 over all three viewports |
 
-### Completed in this run — 2026-10-20 (sections 8.1-8.4)
+`chapter11-browser.json` covers login, 234px task description/acceptance fields, full-screen log editing and task picker/back navigation, automatic AI analysis, admin tabs/new-employee dialog and frozen old-effective-version behavior. Screenshots are in `audit/2026-10-20/chapter11/screenshots/`.
 
-| Task / requirement / scenario | Code and tests | Decisions / evidence |
-| --- | --- | --- |
-| 8.1 one log per author/day; existing today opens edit (DEV-025) | [`WorkspaceService.java`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java) `createLog`/`findLog`/`logExists`; [`ApiException.java`](backend/src/main/java/cn/pandora/common/ApiException.java), [`ApiAdvice.java`](backend/src/main/java/cn/pandora/common/ApiAdvice.java); [`潘多拉-工作区接入.js`](潘多拉-工作区接入.js), [`潘多拉-api.js`](潘多拉-api.js); [`check_work_logs.py`](backend/scripts/check_work_logs.py) | Create defaults to the company today; a different date is 400. A duplicate returns 409 `WORK_LOG_EXISTS` with the existing `logId`/`rowVersion`; the UI opens that record. The existing V8 `uq_log_day` remains the persistent guard. Concurrent distinct keys produced exactly one row. |
-| 8.2 midnight freeze, immutable date and server timezone (DEV-026) | [`WorkspaceService.java`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java) `changeLog`/`deleteLog`/`safeLog`/`today`; [`check_work_logs.py`](backend/scripts/check_work_logs.py) | The row is locked before the freeze check; old logs return 409 `WORK_LOG_FROZEN` for PATCH, DELETE and backdated create. A date change is 400. `editable` uses the same company-day rule. The clock was advanced from 23:59:59 to 00:00:00 in the application only. |
-| 8.3 default-self logs, permission tree/search, no mixed task tabs (DEV-005, 027) | [`WorkspaceService.java`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java) `logs`/`logAuthors`/`safeLog`; [`潘多拉-api.js`](潘多拉-api.js), [`潘多拉-工作区接入.js`](潘多拉-工作区接入.js), [`潘多拉-界面调整.css`](潘多拉-界面调整.css); [`check_work_logs.py`](backend/scripts/check_work_logs.py), [`check_logs_profile_browser.js`](backend/scripts/check_logs_profile_browser.js) | Initial reload requests `scope=self`. The page renders only the log workflow (no review/application/consult tabs or task-create commands), defaults to self, keeps the “all visible” option for upper/middle, and offers a permission-filtered author tree plus name search. The search input, selected author and scroll-to-top state survive navigation. A log whose linked task is not readable loses `taskId` in the service. |
-| 8.4 profile fields, management-chain subordinate intersection, independent log entry (DEV-028) | [`ProfileService.java`](backend/src/main/java/cn/pandora/profile/ProfileService.java); [`WorkspaceService.java`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java) `person`/`reports`; [`WorkspaceController.java`](backend/src/main/java/cn/pandora/workspace/WorkspaceController.java) `/me/reports`; [`潘多拉-api.js`](潘多拉-api.js), [`潘多拉-个人资料.js`](潘多拉-个人资料.js); [`check_profile_reports.py`](backend/scripts/check_profile_reports.py), [`check_logs_profile_browser.js`](backend/scripts/check_logs_profile_browser.js) | `/me/profile` now returns organization/department/position/team/manager names. `/me/reports` intersects `canSeePerson` with a cycle-safe manager-chain walk: `reports` stays direct-only, `company` can include indirect reports. Person details expose `canReadLogs`; the profile UI only shows the log entry when true and never offers dispatch. A temporary three-level transfer proved that the manager list and log scope do not expand together; the organization was restored in cleanup. |
+These are desktop headless Chrome viewport simulations. They are not physical-device evidence and must not be used to close A-25 or the true-device portions of AUD-UX-001—005.
 
-### Completed in this run — 2026-10-20 (sections 9.1-9.8)
+## Migration status
 
-| Task / requirement / scenario | Code and tests | Decisions / evidence |
-| --- | --- | --- |
-| 9.1 assignment dispatch-time ranking (DEV-017) | [`V12__backfill_task_assignments.sql`](backend/src/main/resources/db/migration/V12__backfill_task_assignments.sql); [`TaskService.java`](backend/src/main/java/cn/pandora/task/TaskService.java) `applyVersion`/`syncAssignments`; [`WorkspaceService.java`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java) `home`; [`check_home_calendar.py`](backend/scripts/check_home_calendar.py) | V12 backfills current owners as `legacy-estimate`; new/direct/approved versions write `task_assignments`. Existing owners keep `assigned_at` across reorder/schedule changes; removed then re-added owners get a new timestamp. `/home` returns the backend top ten by `assigned_at`. |
-| 9.2 home quadrants, personal detail and ten-day logs (DEV-018) | [`潘多拉-工作区接入.js`](潘多拉-工作区接入.js), [`潘多拉-界面调整.css`](潘多拉-界面调整.css); [`check_home_calendar_browser.js`](backend/scripts/check_home_calendar_browser.js) | Assigned rows are title + right urgency; personal rows open a read-only detail and only that sheet exposes edit/delete; recent logs come from `/home` (today plus previous nine natural days, max ten); four quadrants keep independent overflow. |
-| 9.3 calendar entry, side panel, search, application (DEV-019, 027) | [`潘多拉-日程视图.js`](潘多拉-日程视图.js), [`潘多拉-任务接入.js`](潘多拉-任务接入.js), [`潘多拉-界面调整.css`](潘多拉-界面调整.css); [`check_home_calendar.py`](backend/scripts/check_home_calendar.py), [`check_home_calendar_browser.js`](backend/scripts/check_home_calendar_browser.js) | Top-left panel toggle, clickable period, permission-scoped name search, off-range return shortcut, side panel modes/counts and personal application entry; floating create button. Search uses `/tasks?q=` so the server authority is unchanged. Log tabs remain removed from 8.3. |
-| 9.4 month sorting, personal pins, capacity and clip (DEV-020) | [`TaskService.java`](backend/src/main/java/cn/pandora/task/TaskService.java) `setPinned`/`taskView`; [`TaskController.java`](backend/src/main/java/cn/pandora/task/TaskController.java) pin endpoints; [`潘多拉-api.js`](潘多拉-api.js), [`潘多拉-任务接入.js`](潘多拉-任务接入.js), [`潘多拉-日程视图.js`](潘多拉-日程视图.js), [`潘多拉-界面调整.css`](潘多拉-界面调整.css) | Pin is per user; the detail page toggles it and month bars show a visible pin marker. Month order is pinned → start time → id, capacity is 0—5, and overflow counts are the actual hidden tasks. Title uses direct clip rather than an ellipsis. |
-| 9.5 cross-day split and all-day boundaries (DEV-021) | [`潘多拉-日程视图.js`](潘多拉-日程视图.js) `isSharedWeekTask`/`groupsFor`/`timedEvents`/`weekSpans` | Week all-day/spanning band contains only `allDay`; timed cross-day tasks are clipped into each day. Midnight end and zero duration do not create an extra copy. Browser fixtures cover 20:00→next 10:00, midnight and zero duration. |
-| 9.6 full timeline and all overlapping columns (DEV-022) | [`潘多拉-日程视图.js`](潘多拉-日程视图.js), [`潘多拉-界面调整.css`](潘多拉-界面调整.css) | Removed time-axis compression and overlap caps; fixed 48px hour height with vertical scroll, all columns rendered, all-day tasks no longer limited to one. 320/390/1440 viewport checks passed. |
-| 9.7 date-strip swipe (DEV-023) | [`潘多拉-日程视图.js`](潘多拉-日程视图.js) pointer listeners; [`check_home_calendar_browser.js`](backend/scripts/check_home_calendar_browser.js) | Horizontal pointer swipes on week/day date rows move seven days, keep the day weekday, ignore vertical intent, and suppress the following date click. Task clicks remain detail-only. |
-| 9.8 range counts and non-colour relationship markers (DEV-024) | [`TaskService.java`](backend/src/main/java/cn/pandora/task/TaskService.java) `pendingKind`; [`潘多拉-api.js`](潘多拉-api.js), [`潘多拉-日程视图.js`](潘多拉-日程视图.js) `rangeSummary`/panel/markers | Counts dedupe by task id over the current natural range; own/assigned/other are mutually exclusive; pending completion, done and overdue are separate (pending completion may overlap overdue, completed never overdue). Month, timed and all-day events carry emoji/label markers, not colour alone. |
+- Fresh empty databases: **PASS**, Flyway V1—V12 applied successfully with the current seed and application startup.
+- Current final integration database: **PASS**, MySQL 9.7, V12 current.
+- Historical V4 snapshot rehearsal: still reports explicit `organization_mapping`, `team_department_mapping` and `expired_pending_request` data blockers. The migration intentionally does not fabricate mappings or silently tighten constraints. Those source-data blockers must be resolved before that particular snapshot can reach the tightened state.
+- Old migrations were not rewritten; the current work adds later migrations and validation scripts.
 
-## Checks Run
+## Failures found and repaired during apply
 
-### Current run — 2026-10-20 (section 9)
+The final PASS reports above supersede, but do not erase, these useful debugging facts:
 
-| Command | Working directory / setup | Result / evidence | Run time |
-| --- | --- | --- | --- |
-| `mvn -B -ntp test` | `backend/`, Java 21 | **PASS, 55 tests**, 0 failures/errors/skips. | 2026-10-20 |
-| `python3 scripts/check_home_calendar.py --base-url http://127.0.0.1:18130 --output ../audit/2026-10-20/section9/home-calendar.json` | fresh `pandora_section9_test`, V12 applied, seed, worker disabled | **PASS, 12/12**. New dispatch ranks first; reorder preserves `assignedAt`; remove/re-add gets a new time; home metadata/limit; ten-day logs; permission-scoped search; pin isolation; pending completion kind. Evidence: [`home-calendar.json`](audit/2026-10-20/section9/home-calendar.json). | 2026-10-20 |
-| `node scripts/check_home_calendar_browser.js --base-url http://127.0.0.1:18130 --output ../audit/2026-10-20/section9/home-calendar-browser.json` | fresh seed, real headless Chrome, 320/390/1440 | **PASS, 33/33**. Home quadrants/personal detail; calendar entry/panel/search/app; pin toggle/marker/isolation; month capacity/overflow/actual hidden count; cross-day/midnight/zero/all-day; four concurrent columns/full scroll; swipe; counts and markers. Evidence: [`home-calendar-browser.json`](audit/2026-10-20/section9/home-calendar-browser.json). | 2026-10-20 |
+- The first updated smoke run failed because it still expected the obsolete reviewer DTO/id and direct self-approval behavior. The assertions were replaced with explicit self-review and current route semantics; the current smoke report is 53/53.
+- The first work-log boundary run advanced by a truncated fraction and could miss the intended last second before midnight. The script now uses a ceiling calculation; the current report is 17/17.
+- The first database integrity run used an overbroad `.result` secret-field check. It now checks concrete sensitive fields rather than rejecting harmless result metadata.
+- The first event run reached 74/75 because the command response timestamp and replay timestamp could differ at database precision. `openNotification` now rereads the committed row and returns minimal command metadata, avoiding notification/task text in the idempotency cache; the current event report is 75/75 and database report 18/18.
 
-### Current run — 2026-10-20
+## Known deferrals and non-claims
 
-| Command | Working directory / setup | Result / evidence | Run time |
-| --- | --- | --- | --- |
-| `mvn -B -ntp test` | `backend/`, Java 21 | **PASS, 55 tests**, 0 failures/errors/skips. Adds `WorkspaceLogAndReportsTest` (6 tests) and the `AccessTest` separate-profile/log-authority case. | 2026-10-20 |
-| `python3 scripts/check_work_logs.py --base-url http://127.0.0.1:18120 --output ../audit/2026-10-20/logs.json` | fresh `pandora_logs_test`, controlled clock fixed at 2026-10-20T15:59:30Z (23:59:30 Asia/Shanghai), worker disabled | **PASS, 17/17**. One row under concurrent distinct keys; duplicate 409 with existing id; date change 400; 23:59:59 editable, 00:00:00 frozen; PATCH/DELETE old day 409; backdated/UTC date 400; default self and permission-scoped author tree/search. Evidence: [`logs.json`](audit/2026-10-20/logs.json). | 2026-10-20 |
-| `python3 scripts/check_profile_reports.py --base-url http://127.0.0.1:18121 --output ../audit/2026-10-20/profile-reports.json` | fresh `pandora_profile_test`, seed, worker disabled | **PASS, 26/26**. Profile names present; executive sees indirect chain, manager direct-only; employee/admin no subordinate list; no phone/email in list rows; direct/indirect phone via person details; non-chain detail/log denied; temporary transfer restored. Evidence: [`profile-reports.json`](audit/2026-10-20/profile-reports.json). | 2026-10-20 |
-| `node scripts/check_logs_profile_browser.js --base-url http://127.0.0.1:18121 --output ../audit/2026-10-20/logs-profile-browser.json` | fresh `pandora_profile_test`, headless Chrome 390×844 | **PASS, 22/22**. Default self, no mixed tabs/commands, permission tree/search, input+author survive navigation, read-only subordinate logs, profile fields, direct/indirect subordinate list, no dispatch, separate log entry. Evidence: [`logs-profile-browser.json`](audit/2026-10-20/logs-profile-browser.json). | 2026-10-20 |
-| `python3 scripts/smoke_test.py --base-url http://127.0.0.1:18122 --report ../audit/2026-10-20/smoke-report.json` | fresh `pandora_smoke_test`, worker enabled | **FAIL at 17 checks**: `scripts/smoke_test.py:200` expects `x['id']` in `/approval-requests?mine=reviewer`, but the current DTO returns a different key. This is the known section 11.1 smoke reconciliation item, not an 8.1-8.4 behavior failure. The log section was updated to edit an existing today record instead of assuming create always succeeds. Evidence: [`smoke-report.json`](audit/2026-10-20/smoke-report.json). | 2026-10-20 |
+- **DEV-029**: operating-system push subscriptions/adapters and physical-device delivery are not implemented or verified. Only in-app delivery is covered.
+- **A-25 / AUD-UX-004**: no physical device model, OS or real-device run is recorded. It remains deferred and unverified.
+- **AUD-UX-001/002/003/005**: browser viewport behavior has evidence; any physical-device interaction/experience part remains deferred.
+- **A-19 / AUD-NTF-001 / AUD-NTF-009**: in-app notification behavior has evidence, but the system-push portion remains deferred; therefore the complete acceptance item is not claimed as verified.
+- Apply does not declare any AUD, A or DEV item independently verified. `audit/2026-10-20/chapter11/traceability.md` deliberately uses “待独立 e13 verify” or a deferred/partial status.
+- `openspec validate fix-pandora-formal-requirement-deviations --strict` parses the change but reports two planning-quality warnings: the added requirements “Account password lifecycle” and “Notification lifecycle and historical access” each exceed 500 characters. Apply did not rewrite planning artifacts to silence these warnings; an update-change pass may split examples/edge cases into scenarios before archive if required by the independent verifier.
 
-### Current run — 2026-10-19
+## Independent e13 verify handoff
 
-| Command | Working directory / setup | Result / evidence | Run time |
-| --- | --- | --- | --- |
-| `mvn -B -ntp test` | `backend/`, Java 21 | **PASS, 48 tests**, 0 failures/errors/skips. Adds `EventsRetentionTest` (month-end/leap) and `ReminderNodeTest` (20/10/5, late scan, zero duration) to the previous 43. | 2026-10-19 |
-| `mvn -B -ntp package -DskipTests` | `backend/` | **PASS**, served jar rebuilt with the notification UI and `P.idle` helper. | 2026-10-19 |
-| `python3 scripts/check_deadline_reminder_notification.py --base-url http://127.0.0.1:18110 --output ../audit/2026-10-19/phase567/deadline-reminder-notification-checks.json` | `backend/`; fresh `pandora_final`, `PANDORA_SEED=true PANDORA_WORKER_ENABLED=true PANDORA_WORKER_DELAY_MS=60000 PANDORA_CLOCK_CONTROLLABLE=true`, port 18110 | **PASS, 75/75**. Sections 5.1-5.4, 6.1-6.4, 7.1-7.8: deadline rejection/expiry/race, schedule snapshot/version/only-start, 20/10/5/late/zero-duration, pending/done/removed/new-schedule/reopen dedupe, event matrix/self-dedup, removed-owner delivery, reassignment event and persisted previous/new reviewer, auto-read, 179/180s withdrawal, personal delete, admin notification, exact expiry and history-after-cleanup. Evidence: [`deadline-reminder-notification-checks.json`](audit/2026-10-19/phase567/deadline-reminder-notification-checks.json). | 2026-10-19 |
-| `python3 scripts/check_profile_phone_matrix.py --base-url http://127.0.0.1:18110 --output ../audit/2026-10-19/phase567/profile-phone-matrix-checks.json` | `backend/`; same `pandora_final` | **PASS, 26/26**. Self/direct/indirect/new-superior phone; same-level/other-chain/subordinate/admin denial; directory/tasks/logs/notifications/home/analytics/AI/audit no phone; organization fields rejected; transfer loses old superior access and restores. The employee phone is restored to its original value. Evidence: [`profile-phone-matrix-checks.json`](audit/2026-10-19/phase567/profile-phone-matrix-checks.json). | 2026-10-19 |
-| Stored-contact SQL audit on `pandora_final` | `mysql --defaults-file=.runtime/mysql-admin.cnf pandora_final` after the phone check | **PASS, 0 rows** for the test number in `users.phone`, `audit_logs.details_json`, `domain_events` details/title/summary, `idempotency_keys.response_json`, `notifications` summary/change-summary/title, `work_logs.body` and `ai_jobs.result_json`. | 2026-10-19 |
-| `node scripts/check_notification_browser.js --base-url http://127.0.0.1:18111 --output ../audit/2026-10-19/phase567/notification-browser-checks.json` | `backend/`; fresh `pandora_final_ui`, worker scheduled only via explicit run-once, headless Chrome 390×844, port 18111 | **PASS, 21/21**. Real served page: notification list, no footer, header close, auto-read, resolved result grey, withdrawal placeholder, middle subordinate phone card, colleague historical read-only page. Evidence: [`notification-browser-checks.json`](audit/2026-10-19/phase567/notification-browser-checks.json). | 2026-10-19 |
-| Flyway fresh-database check | `pandora_final` created empty, application boot with seed | **PASS**: V1-V11 applied successfully; V1-V4 checksums match the 2026-10-16 baseline (`437426298`, `-355631081`, `511408697`, `-1925861515`); V5-V8 checksums also unchanged. | 2026-10-19 |
-| `openspec validate fix-pandora-formal-requirement-deviations --strict` | repository root | **PASS**: `Change 'fix-pandora-formal-requirement-deviations' is valid`. | 2026-10-19 |
-| `git diff --check` | repository root | **PASS** (exit 0). | 2026-10-19 |
-| `openspec instructions apply --change fix-pandora-formal-requirement-deviations --json` | repository root | `state=ready`, **42 complete / 65 total / 23 remaining**. | 2026-10-19 |
+Before deciding a verdict, the independent verifier should:
 
-### Historical implementation checks — 2026-10-16 (still referenced, not re-run here)
+1. Inspect this change's proposal, design, specs, tasks, current diff and `audit/2026-10-20/chapter11/traceability.md`.
+2. Re-run the Java 21 test/package commands and the relevant HTTP/browser suites against fresh isolated databases using the ordering above.
+3. Confirm V1—V12 on a new database and separately review the disclosed V4 snapshot blockers rather than treating a new-database run as proof of historical-data readiness.
+4. Check the deferred rows remain deferred and that viewport simulation is not presented as system-push or physical-device evidence.
+5. Write the independent verdict through `$openspec-e13-verify-change fix-pandora-formal-requirement-deviations`.
 
-The earlier sections were verified at `5a8987e + dirty` with 40 Java tests, 48/48 organization/admin, 47/47 account lifecycle, 15/15 account browser, 59/59 review-routing checks, plus the V5-V10 migration exercises. Those results remain historical evidence for sections 1-4; they do not verify the 2026-10-19 phone rule or the new notification lifecycle. The previous `implementation-notes` detail was kept in Git history if exact command rows are needed.
-
-## Verification Reminders
-
-- **Chapters 10-11 are still pending.** This handoff now covers 3.5, 5-7, 8.1-8.4 and 9.1-9.8. Do not report the change as complete: 10.1-10.4 and 11.1-11.7 have no checkboxes.
-- **V12 backfills assignment rows after V7.** Existing owners get `assigned_source='legacy-estimate'` from the current version applied/created time; do not describe those rows as exact historical dispatch times. New approvals/direct creates write exact assignment rows.
-- **Pin endpoints are per-user writes.** `PUT/DELETE /tasks/{id}/pin` require an Idempotency-Key through `Writes`; they never change task results or another user's order. The month view sorts pinned tasks first, then start time and id, while the week/day timeline ignores pin order.
-- **The calendar uses a fixed 48px hour and scrolls.** This is intentional for 9.6; do not reintroduce viewport-height compression or overlap `+N` aggregation. Month capacity is still dynamic 0—5 and is separate from time-axis height.
-- **8.3 removed the log review/application tabs.** Section 9.3 adds the personal application entry in the calendar side panel; do not re-add the old log tabs.
-- **Log write semantics changed for task 8.1/8.2.** A create with a non-company-today date is 400; a second create for the same author/day is 409 `WORK_LOG_EXISTS` with `logId`/`rowVersion`; old-day PATCH/DELETE is 409 `WORK_LOG_FROZEN`; a date change is 400. Do not restore the old smoke assumption that every POST creates a new row.
-- **The log page is intentionally no longer a task workflow.** Review lives in notifications and applications will move to the view in section 9.3. Do not treat the removed review/self/consult tabs as a regression; do not re-add them to make older smoke/UI checks pass.
-- **`/me/reports` is a separate authority intersection.** `reports` profile scope remains direct-only; `company` scope may include indirect chain members. `canReadLogs`/the log entry is always checked independently, so a visible indirect profile must not grant its logs.
-- **The 8.4 integration test temporarily transfers `colleague` under `employee` and restores it.** If a run is interrupted, inspect and restore the `managerId` before reusing the database; do not treat the temporary chain as seed data.
-- **The 2026-10-16 V4 snapshot still has three open migration blockers** (`organization_mapping`, `team_department_mapping`, `expired_pending_request`). The 2026-10-19 runs used fresh empty/seed databases; they do not prove the staged V4 migration path. Verify both the staged and tightened states separately (task 11.3).
-- **Controlled clock / worker endpoints are test-only.** `/api/v1/admin/clock*` and `/api/v1/admin/worker/run-once` are administrator-only and the clock is controllable only with `pandora.clock.controllable=true`. Do not enable this in a normal deployment.
-- **The seed now uses future deadlines.** `DemoSeed` rounds a due date up to at least tomorrow because the real submission path rejects an already-expired schedule. Consequently the seed has no pre-existing overdue task; overdue behavior is exercised by advancing the controlled clock. A stale script that seeds a past due date will now get `DEADLINE_PASSED` (task 11.1 must reconcile smoke fixtures).
-- **Browser coverage is still viewport emulation, not a real device.** `check_notification_browser.js` covers 7.3/7.7 and the 3.5 subordinate phone card; `check_logs_profile_browser.js` covers 8.3/8.4; `check_home_calendar_browser.js` covers 9.2-9.8 at 320/390/1440. Task 11.4/11.7 still owns the full multi-width/imported-UI regression and real-device evidence. The 9.x script discovers Linux Chrome via `CHROME_BIN` or `/usr/bin/google-chrome`; the older two scripts still hardcode the macOS path.
-- **The exact-retention HTTP check advances one second past the instant** because the admin clock endpoint accepts whole seconds. The equality rule itself is `!now.isBefore(expiresAt)`; the pure month-end/leap rule is unit-tested. Do not describe the HTTP check as microsecond-exact.
-- **Reminder receipts use `state='sent'|'skipped'` and `event_id` now points at the delivered domain event.** A skipped node has no domain event; that is intentional. Check both tables if verifying “no stale node was sent”.
-- **Notification cleanup deletes message copies.** After `cleanupNotifications`, `GET /notifications/{id}` and historical DTO are expected to fail; task/request/audit/history must remain. Do not treat a missing notification row as lost business history.
-- **History count can grow after cleanup.** An additional `request_expired` history entry may be written when a still-pending request crosses its deadline during the 93-day clock advance. The assertion is “all earlier entries are still present”, not “exact same row count”.
-- **`due_version` is retained but no longer written.** `schedule_version` is the live reminder identity. A verifier seeing `due_version` stale on new tasks should treat that as expected, not a regression.
-- **`TaskService.validateForm` preserves the cut-off for a non-schedule edit** by copying the effective version after validation. Any future caller that bypasses this copy must decide whether it is a schedule revision; otherwise an all-day task could silently adopt a new company cut-off.
-- **`TaskService.decide` returns a `deadlineExpired` result map instead of throwing inside the transaction.** `TaskController.decide` converts it to 409 after `Writes.run` commits. A direct caller of `TaskService.decide` (not the controller) must handle that result itself.
-- **`refreshPendingRoutes` now expires a past-deadline pending request** instead of refusing the organization change (`route_refresh_after_deadline`). Re-check the `409 ROUTE_BLOCKED_DEADLINE` branch; it should be unreachable in normal operation.
-- **`WorkspaceService.safeNotification`/`adminNotifications` issue small N+1 lookups per row.** Fine at the current scale; do not treat N+1 as a correctness failure, but watch it if notification volume grows.
-- **`EventsWorker` is a local single-pass worker** guarded by an in-process `AtomicBoolean`; it uses the organization row lock but is not a distributed scheduler. A second application instance would need a shared claim/leader mechanism.
-- **`ReminderService` writes one event per recipient** and then delivers one notification copy per event/recipient. The event-level recipient list is a candidate fact for removal events; ordinary permissions are rechecked at delivery. Do not replace this with a simple `canReadTask` filter.
-- **The notification UI needs `window.Pandora.idle()` for deterministic browser clicks.** `P.busy` silently drops a command while another reload is running; the helper is exposed for tests. A user can still click during a reload; the click is intentionally ignored by the existing busy guard.
-- **Old `DemoSeed`/smoke tests may assert the old three-day reminder, common-manager or exemption rules.** The new suites replace the section 5-7 checks, but `TaskServiceTest`, `AccessTest`, `ProfilePrivacyAndCompanyTest` and `smoke_test.py` still need the section 11.1 reconciliation. Do not delete failing assertions; replace them with the new rules.
-- **DEV-029 system push and A-25 real-device acceptance remain deferred** by user decision; only in-app delivery is verified. Do not call the browser evidence a system-push or real-device pass.
-- **The administrator console click-through is still only partially browser-verified.** The 2026-10-19 browser check covers the business notification/subordinate UI; the admin console remains covered by HTTP checks and being served from the build, not by a full console click-through.
+No `verification.md` was edited by apply, and the change has not been archived.
