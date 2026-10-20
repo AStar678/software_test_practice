@@ -254,6 +254,7 @@
     if (canEditTask(actor(), task)) buttons.push('<button type="button" class="btn primary" data-action="edit-task" data-id="' + attr(id) + '">编辑任务</button>');
     if (canUpdateTaskNote(actor(), task)) buttons.push('<button type="button" class="btn" data-action="update-note" data-id="' + attr(id) + '">更新进展</button><button type="button" class="btn ok" data-action="submit-complete" data-id="' + attr(id) + '">提交完成</button>');
     if (canReopen(task)) buttons.push('<button type="button" class="btn primary" data-action="p-reopen-task" data-id="' + attr(id) + '">重开任务</button>');
+    buttons.push('<button type="button" class="btn" data-action="p-toggle-task-pin" data-id="' + attr(id) + '">' + (task.pinned ? '取消置顶' : '置顶到我的月视图') + '</button>');
     if (requestId) buttons.push('<button type="button" class="btn" data-action="p-open-approval" data-id="' + attr(requestId) + '">查看当前申请</button>');
     if (!buttons.length) buttons.push('<button type="button" class="btn" data-action="sheet-close">关闭</button>');
     return { title: task.title, body: body, foot: withBack(buttons.join("")), taskId: id };
@@ -328,12 +329,19 @@
       return '<button type="button" class="task-item" data-action="p-open-approval" data-id="' + attr(request.id || request.requestId) + '"><span class="t-title">' + esc(request.title || "任务申请") + '</span><span class="task-meta"><span class="badge ' + (pending ? 'b-pending' : request.status === "rejected" ? 'b-reject' : 'b-normal') + '">' + esc(resultName[request.status] || request.status) + '</span><span>' + esc(kindName[request.kind] || request.kind) + '</span><span>申请人：' + esc(personName(request.applicantId, request)) + '</span></span><span class="tiny muted">' + esc(when(request.createdAt)) + '</span></button>';
     }).join("") + '</div>';
   };
-  function approvalsView() {
+  function approvalsView(only) {
     const mine = filteredRequests("applicant").length;
     const waiting = filteredRequests("reviewer").length;
+    if (only === "applicant") {
+      return { title: "我的申请", body: '<div class="card-head"><h2>我提交的申请</h2><span class="hint">' + mine + ' 项</span></div>' + P.renderApprovalsHTML("applicant"), foot: withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>'), rebuild: function () { return approvalsView("applicant"); } };
+    }
     return { title: "任务申请", body: '<div class="choice-row"><button type="button" class="choice" data-action="p-approval-filter" data-filter="reviewer" aria-pressed="' + (approvalFilter === "reviewer") + '">待我审核 ' + waiting + '</button><button type="button" class="choice" data-action="p-approval-filter" data-filter="applicant" aria-pressed="' + (approvalFilter === "applicant") + '">我提交的申请 ' + mine + '</button></div>' + P.renderApprovalsHTML(approvalFilter), foot: withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>'), rebuild: approvalsView };
   }
-  P.openApprovals = function () { openSheet(approvalsView()); };
+  P.openApprovals = function (filter) {
+    if (filter === "applicant" || filter === "reviewer") approvalFilter = filter;
+    openSheet(approvalsView(filter === "applicant" ? "applicant" : null));
+  };
+  P.openMyApplications = function () { P.openApprovals("applicant"); };
 
   function snapshotHTML(snapshot, request) {
     if (!snapshot) return '<div class="empty">尚无有效版本</div>';
@@ -428,6 +436,19 @@
     if (request && reviewContexts.has(request.id)) return decisionForm(request.id, "reject");
     return { title: "查看审核申请", body: '<div class="callout info">请先打开申请快照后处理。</div>', foot: request ? '<button type="button" class="btn primary" data-action="p-open-approval" data-id="' + attr(request.id) + '">打开申请</button>' : '<button type="button" class="btn" data-action="sheet-close">关闭</button>' };
   };
+  function togglePin(id) {
+    const task = taskById(id);
+    if (!task) return;
+    const next = !task.pinned;
+    return P.busy(async function () {
+      await P.mutation("pin:" + id, next ? "PUT" : "DELETE", "/tasks/" + encodeURIComponent(id) + "/pin", null, null);
+      await P.reload();
+      const view = taskDetailView(id);
+      if (view) replaceTopSheet(view);
+      P.notice(next ? "已置顶到我的月视图。" : "已取消置顶。");
+    });
+  }
+
   window.runAction = function (element) {
     const action = element.dataset.action, id = element.dataset.id;
     if (action === "clear-parent" && drafts.task) drafts.task.parentTouched = true;
@@ -437,6 +458,7 @@
     if (action === "update-note") return openAction("progress", id);
     if (action === "submit-complete") return openAction("complete", id);
     if (action === "p-reopen-task") return openAction("reopen", id);
+    if (action === "p-toggle-task-pin") return togglePin(id);
     if (action === "p-confirm-reopen") return saveAction("reopen", id);
     if (action === "p-approve-request") return decide(id, "approve");
     if (action === "p-reject-request" || action === "p-withdraw-request") {

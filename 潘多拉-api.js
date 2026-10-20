@@ -199,7 +199,9 @@
       start: t.allDay ? parseISO(t.startDate) : new Date(t.startAt), due: t.allDay ? parseISO(t.dueDate) : new Date(t.dueAt),
       urgency: ({ urgent: "紧急", high: "高", medium: "中", low: "低" })[t.priority] || "中",
       status: t.executionState || "todo", progressNote: t.progressNote || "", reviewNote: "",
-      frozen: !!t.frozen || !!t.pending, rowVersion: t.rowVersion, acceptanceCriteria: t.acceptanceCriteria || "", raw: t };
+      frozen: !!t.frozen || !!t.pending, pinned: !!t.pinned, assignedAt: t.assignedAt || null,
+      pendingKind: t.pendingKind || null,
+      rowVersion: t.rowVersion, acceptanceCriteria: t.acceptanceCriteria || "", raw: t };
   };
   P.rememberPeople = function (rows) {
     (rows || []).forEach(u => { if (!personById(u.id)) PEOPLE.push(mapPerson(u)); });
