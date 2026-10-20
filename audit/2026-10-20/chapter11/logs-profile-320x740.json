@@ -1,0 +1,122 @@
+{
+  "viewport": {
+    "width": 320,
+    "height": 740
+  },
+  "checks": [
+    {
+      "check": "8.3 the browser reaches the login screen",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.3 the log page defaults to the current user",
+      "pass": true,
+      "evidence": {
+        "me": "70e9e7e5-f5bf-4f61-bb92-b67884d80898",
+        "author": "70e9e7e5-f5bf-4f61-bb92-b67884d80898",
+        "all": false
+      }
+    },
+    {
+      "check": "8.3 no review or application tabs remain",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.3 no task creation or consultation command remains",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.3 the author tree is permission scoped",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.3 the manager can choose all visible logs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.3 the author search keeps its input and filters the tree",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.3 selecting a direct report loads only that author's logs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.3 a subordinate log is read-only in the list",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.3 the search text and author survive page navigation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.3 return-to-top keeps the author search",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the profile shows company, department, position, team and manager",
+      "pass": true,
+      "evidence": "李李敏当前登录账号姓名李敏联系电话未填写邮箱未填写公司潘多拉演示公司部门产品部职位部门经理独立团队产品部直属上级王海编辑个人资料修改密码下属资料张涛赵蕾账号与数据账号middle身份中层刷新数据退出登录"
+    },
+    {
+      "check": "8.4 the direct manager sees only direct reports",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the subordinate card has no dispatch button",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the subordinate detail shows the authorized phone",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the subordinate detail offers a separate log entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the log entry opens the selected person's scope",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the selected person's logs are shown",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the executive sees indirect subordinates",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the executive log page includes the company tree and all-visible scope",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 an employee has no subordinate section",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 an employee has only the self log scope",
+      "pass": true,
+      "evidence": null
+    }
+  ]
+}

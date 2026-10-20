@@ -197,7 +197,7 @@ class Smoke:
         self.clients["middle"].call("PATCH", "/api/v1/notifications/" + nid,
                                      {"action": "hide"}, etag=self.tag(notice_detail, notice_headers))
         queue, _ = self.get("middle", "/approval-requests?mine=reviewer&limit=100")
-        self.check("hiding notification preserves approval queue", any(x["id"] == request_id for x in queue["items"]))
+        self.check("hiding notification preserves approval queue", any(x["requestId"] == request_id for x in queue["items"]))
         self.decide("middle", request_id, "approve")
         initial, initial_headers = self.task("employee", task_id)
         self.check("approved creation publishes todo", initial["executionState"] == "todo" and bool(initial["currentVersionId"]))
@@ -245,9 +245,17 @@ class Smoke:
 
         parent = self.create("middle", "parent-direct", ["employee"])
         parent_id = parent["taskId"]
+        parent_request, _ = self.approval("middle", parent["requestId"])
+        self.check("a creator who is also reviewer still receives an explicit request",
+                   parent_request["status"] == "pending"
+                   and parent_request["currentReviewerId"] == self.users["middle"]["id"])
+        self.decide("middle", parent["requestId"], "approve")
         parent_before, parent_headers = self.task("employee", parent_id)
-        self.check("creator who is reviewer publishes without waiting", parent_before["executionState"] == "todo" and not parent_before["frozen"])
+        self.check("self-reviewed creation publishes only after approval", parent_before["executionState"] == "todo" and not parent_before["frozen"])
         child = self.create("middle", "child-direct", ["employee"], parent_id)
+        child_request, _ = self.approval("middle", child["requestId"])
+        self.check("child creation uses the same explicit self-review rule", child_request["status"] == "pending")
+        self.decide("middle", child["requestId"], "approve")
         self.forbidden("middle", "/tasks/" + parent_id, "PATCH", {"command": "complete", "completionNote": "Creator is not an assignee"}, self.tag(parent_before, parent_headers))
         self.check("creator cannot execute without being an assignee", True)
         parent_completion = self.command("employee", parent_id, "complete", completionNote="Will withdraw from todo")
@@ -265,6 +273,9 @@ class Smoke:
         self.check("self-parent relation rejected", True)
 
         market = self.create("market", "market-private", ["marketing"])
+        market_request, _ = self.approval("market", market["requestId"])
+        self.check("department creator self-review remains explicit", market_request["status"] == "pending")
+        self.decide("market", market["requestId"], "approve")
         for actor in ("employee", "middle"):
             self.forbidden(actor, "/tasks/" + market["taskId"])
         self.task("upper", market["taskId"])
@@ -273,13 +284,13 @@ class Smoke:
         transfer = self.create("upper", "assignee-transfer", ["employee"])
         self.decide("middle", transfer["requestId"], "approve")
         transferred = self.command("upper", transfer["taskId"], "change",
-                                   assigneeIds=[self.users["marketing"]["id"]], reason="Review uses old route")
-        transfer_request, _ = self.approval("middle", transferred["requestId"])
-        self.check("assignee change retains old review route", transfer_request["currentReviewerId"] == self.users["middle"]["id"])
+                                   assigneeIds=[self.users["marketing"]["id"]], reason="Review uses proposed route")
+        transfer_request, _ = self.approval("market", transferred["requestId"])
+        self.check("assignee change recomputes the proposed review route", transfer_request["currentReviewerId"] == self.users["market"]["id"])
         self.forbidden("marketing", "/tasks/" + transfer["taskId"])
-        self.forbidden("market", "/approval-requests/" + transferred["requestId"])
+        self.forbidden("middle", "/approval-requests/" + transferred["requestId"])
         self.check("proposed assignee receives no early task access", True)
-        self.decide("middle", transferred["requestId"], "approve")
+        self.decide("market", transferred["requestId"], "approve")
         new_assignee_task, _ = self.task("marketing", transfer["taskId"])
         self.check("assignee change takes effect only after approval", new_assignee_task["assigneeIds"] == [self.users["marketing"]["id"]])
         self.forbidden("employee", "/tasks/" + transfer["taskId"])

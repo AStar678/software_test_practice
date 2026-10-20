@@ -10,8 +10,15 @@
 const { spawn } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
+const os = require("os");
+const path = require("path");
 
-const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+const CHROME = process.env.CHROME_BIN || [
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  "/usr/bin/google-chrome", "/usr/bin/google-chrome-stable",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+].find((candidate) => fs.existsSync(candidate));
 const results = [];
 const RUN = crypto.randomBytes(3).toString("hex");
 
@@ -41,7 +48,7 @@ async function openBrowser(url) {
   const port = 9700 + Math.floor(Math.random() * 200);
   const proc = spawn(CHROME, ["--headless", "--no-sandbox", "--disable-gpu", "--no-first-run",
     "--no-default-browser-check", "--disable-crash-reporter", "--hide-scrollbars", "--force-device-scale-factor=1",
-    "--remote-debugging-port=" + port, "--user-data-dir=/tmp/cdp-" + crypto.randomBytes(4).toString("hex"), url], { stdio: "ignore" });
+    "--remote-debugging-port=" + port, "--user-data-dir=" + path.join(os.tmpdir(), "pandora-cdp-" + crypto.randomBytes(4).toString("hex")), url], { stdio: "ignore" });
   let target = null;
   for (let i = 0; i < 80 && !target; i++) {
     try {
@@ -76,7 +83,7 @@ async function openBrowser(url) {
     setTimeout(() => { if (pending.delete(id)) reject(new Error("timeout: " + method)); }, 20000);
   });
   await send("Runtime.enable"); await send("Page.enable"); await send("Network.enable");
-  await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  await send("Emulation.setDeviceMetricsOverride", { width: Number(arg("width", "390")), height: Number(arg("height", "844")), deviceScaleFactor: 1, mobile: true });
   const evaluate = async (expression) => {
     const result = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true, userGesture: true });
     if (result.exceptionDetails) throw new Error(result.exceptionDetails.text + " in " + expression);
@@ -253,7 +260,8 @@ async function main() {
     browser.kill();
   }
 
-  const report = { success: results.every((row) => row.pass), checksPassed: results.filter((row) => row.pass).length,
+  const report = { success: results.every((row) => row.pass),
+    viewport: { width: Number(arg("width", "390")), height: Number(arg("height", "844")) }, checksPassed: results.filter((row) => row.pass).length,
     checksFailed: results.filter((row) => !row.pass).length, checks: results };
   if (output) {
     fs.mkdirSync(require("path").dirname(output), { recursive: true });

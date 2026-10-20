@@ -1,0 +1,471 @@
+{
+  "generatedAt": "2026-10-20T13:50:24.948Z",
+  "baseUrl": "http://127.0.0.1:18097",
+  "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "evidenceType": "headless desktop browser with CDP viewport emulation; not a real device",
+  "viewports": [
+    [
+      320,
+      740
+    ],
+    [
+      390,
+      844
+    ],
+    [
+      1440,
+      900
+    ]
+  ],
+  "passed": 45,
+  "total": 45,
+  "checks": [
+    {
+      "viewport": "320x740",
+      "check": "login reaches real workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "320x740",
+      "check": "task description and acceptance fields are at least 234px",
+      "pass": true,
+      "evidence": {
+        "desc": 234,
+        "acceptance": 234,
+        "descMin": "234px",
+        "acceptanceMin": "234px"
+      }
+    },
+    {
+      "viewport": "320x740",
+      "check": "log editor fills the application overlay with save, close and related-task controls",
+      "pass": true,
+      "evidence": {
+        "fullscreen": true,
+        "width": 320,
+        "height": 656.75,
+        "overlayWidth": 320,
+        "overlayHeight": 656.75,
+        "viewport": [
+          320,
+          740
+        ],
+        "save": true,
+        "picker": true,
+        "close": true
+      }
+    },
+    {
+      "viewport": "320x740",
+      "check": "log related-task picker opens and exposes back navigation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "320x740",
+      "check": "back returns to the fullscreen log editor",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "320x740",
+      "check": "AI auto-analysis shows scope, method, time and priority/pending counts",
+      "pass": true,
+      "evidence": {
+        "analyzed": true,
+        "overflow": false
+      }
+    },
+    {
+      "viewport": "320x740",
+      "check": "AI page has no horizontal viewport overflow",
+      "pass": true,
+      "evidence": {
+        "overflow": false
+      }
+    },
+    {
+      "viewport": "320x740",
+      "check": "no uncaught script or network errors",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "viewport": "320x740",
+      "check": "administrator console loads real organization data",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "320x740",
+      "check": "all management tabs are clickable",
+      "pass": true,
+      "evidence": [
+        {
+          "label": "员工",
+          "active": "tab-employees"
+        },
+        {
+          "label": "部门",
+          "active": "tab-departments"
+        },
+        {
+          "label": "职位",
+          "active": "tab-positions"
+        },
+        {
+          "label": "团队",
+          "active": "tab-teams"
+        },
+        {
+          "label": "角色与授权",
+          "active": "tab-roles"
+        },
+        {
+          "label": "公司信息",
+          "active": "tab-company"
+        },
+        {
+          "label": "组织完整性",
+          "active": "tab-health"
+        }
+      ]
+    },
+    {
+      "viewport": "320x740",
+      "check": "new employee management dialog is operable without SQL",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "320x740",
+      "check": "administrator console has no uncaught script or network errors",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "viewport": "320x740",
+      "check": "frozen-task actor reaches the real workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "320x740",
+      "check": "pending change shows the old effective frozen task and blocks business edits",
+      "pass": true,
+      "evidence": {
+        "opened": true,
+        "frozen": true,
+        "title": "改派事件任务",
+        "titleShown": true,
+        "callout": true,
+        "blocked": true
+      }
+    },
+    {
+      "viewport": "320x740",
+      "check": "frozen-task view has no uncaught script or network errors",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "viewport": "390x844",
+      "check": "login reaches real workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "390x844",
+      "check": "task description and acceptance fields are at least 234px",
+      "pass": true,
+      "evidence": {
+        "desc": 234,
+        "acceptance": 234,
+        "descMin": "234px",
+        "acceptanceMin": "234px"
+      }
+    },
+    {
+      "viewport": "390x844",
+      "check": "log editor fills the application overlay with save, close and related-task controls",
+      "pass": true,
+      "evidence": {
+        "fullscreen": true,
+        "width": 390,
+        "height": 760.75,
+        "overlayWidth": 390,
+        "overlayHeight": 760.75,
+        "viewport": [
+          390,
+          844
+        ],
+        "save": true,
+        "picker": true,
+        "close": true
+      }
+    },
+    {
+      "viewport": "390x844",
+      "check": "log related-task picker opens and exposes back navigation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "390x844",
+      "check": "back returns to the fullscreen log editor",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "390x844",
+      "check": "AI auto-analysis shows scope, method, time and priority/pending counts",
+      "pass": true,
+      "evidence": {
+        "analyzed": true,
+        "overflow": false
+      }
+    },
+    {
+      "viewport": "390x844",
+      "check": "AI page has no horizontal viewport overflow",
+      "pass": true,
+      "evidence": {
+        "overflow": false
+      }
+    },
+    {
+      "viewport": "390x844",
+      "check": "no uncaught script or network errors",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "viewport": "390x844",
+      "check": "administrator console loads real organization data",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "390x844",
+      "check": "all management tabs are clickable",
+      "pass": true,
+      "evidence": [
+        {
+          "label": "员工",
+          "active": "tab-employees"
+        },
+        {
+          "label": "部门",
+          "active": "tab-departments"
+        },
+        {
+          "label": "职位",
+          "active": "tab-positions"
+        },
+        {
+          "label": "团队",
+          "active": "tab-teams"
+        },
+        {
+          "label": "角色与授权",
+          "active": "tab-roles"
+        },
+        {
+          "label": "公司信息",
+          "active": "tab-company"
+        },
+        {
+          "label": "组织完整性",
+          "active": "tab-health"
+        }
+      ]
+    },
+    {
+      "viewport": "390x844",
+      "check": "new employee management dialog is operable without SQL",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "390x844",
+      "check": "administrator console has no uncaught script or network errors",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "viewport": "390x844",
+      "check": "frozen-task actor reaches the real workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "390x844",
+      "check": "pending change shows the old effective frozen task and blocks business edits",
+      "pass": true,
+      "evidence": {
+        "opened": true,
+        "frozen": true,
+        "title": "改派事件任务",
+        "titleShown": true,
+        "callout": true,
+        "blocked": true
+      }
+    },
+    {
+      "viewport": "390x844",
+      "check": "frozen-task view has no uncaught script or network errors",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "viewport": "1440x900",
+      "check": "login reaches real workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "1440x900",
+      "check": "task description and acceptance fields are at least 234px",
+      "pass": true,
+      "evidence": {
+        "desc": 234,
+        "acceptance": 234,
+        "descMin": "234px",
+        "acceptanceMin": "234px"
+      }
+    },
+    {
+      "viewport": "1440x900",
+      "check": "log editor fills the application overlay with save, close and related-task controls",
+      "pass": true,
+      "evidence": {
+        "fullscreen": true,
+        "width": 388,
+        "height": 802.5,
+        "overlayWidth": 388,
+        "overlayHeight": 802.5,
+        "viewport": [
+          1440,
+          900
+        ],
+        "save": true,
+        "picker": true,
+        "close": true
+      }
+    },
+    {
+      "viewport": "1440x900",
+      "check": "log related-task picker opens and exposes back navigation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "1440x900",
+      "check": "back returns to the fullscreen log editor",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "1440x900",
+      "check": "AI auto-analysis shows scope, method, time and priority/pending counts",
+      "pass": true,
+      "evidence": {
+        "analyzed": true,
+        "overflow": false
+      }
+    },
+    {
+      "viewport": "1440x900",
+      "check": "AI page has no horizontal viewport overflow",
+      "pass": true,
+      "evidence": {
+        "overflow": false
+      }
+    },
+    {
+      "viewport": "1440x900",
+      "check": "no uncaught script or network errors",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "viewport": "1440x900",
+      "check": "administrator console loads real organization data",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "1440x900",
+      "check": "all management tabs are clickable",
+      "pass": true,
+      "evidence": [
+        {
+          "label": "员工",
+          "active": "tab-employees"
+        },
+        {
+          "label": "部门",
+          "active": "tab-departments"
+        },
+        {
+          "label": "职位",
+          "active": "tab-positions"
+        },
+        {
+          "label": "团队",
+          "active": "tab-teams"
+        },
+        {
+          "label": "角色与授权",
+          "active": "tab-roles"
+        },
+        {
+          "label": "公司信息",
+          "active": "tab-company"
+        },
+        {
+          "label": "组织完整性",
+          "active": "tab-health"
+        }
+      ]
+    },
+    {
+      "viewport": "1440x900",
+      "check": "new employee management dialog is operable without SQL",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "1440x900",
+      "check": "administrator console has no uncaught script or network errors",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "viewport": "1440x900",
+      "check": "frozen-task actor reaches the real workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "viewport": "1440x900",
+      "check": "pending change shows the old effective frozen task and blocks business edits",
+      "pass": true,
+      "evidence": {
+        "opened": true,
+        "frozen": true,
+        "title": "改派事件任务",
+        "titleShown": true,
+        "callout": true,
+        "blocked": true
+      }
+    },
+    {
+      "viewport": "1440x900",
+      "check": "frozen-task view has no uncaught script or network errors",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

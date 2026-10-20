@@ -1,0 +1,545 @@
+{
+  "generatedAt": "2026-10-20T13:39:47.569550+00:00",
+  "baseUrl": "http://127.0.0.1:18095",
+  "passed": 48,
+  "total": 48,
+  "results": [
+    {
+      "check": "2.6 the administration page is served from the build with every maintenance area",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "missing": []
+      }
+    },
+    {
+      "check": "2.1 admin reads the organization structure",
+      "pass": true,
+      "evidence": {
+        "departments": [
+          "产品部",
+          "市场部",
+          "管理层"
+        ],
+        "positions": [
+          "专员",
+          "总经理",
+          "系统管理员",
+          "部门经理"
+        ],
+        "teams": [
+          "产品部",
+          "市场部",
+          "公司管理层"
+        ]
+      }
+    },
+    {
+      "check": "2.1 admin creates a department",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "rowVersion": 1,
+          "departmentId": "e408678c-10db-401a-bd26-51eec052fdb3"
+        }
+      }
+    },
+    {
+      "check": "2.1 a duplicate department name is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "DATA_CONFLICT",
+          "message": "部门名称已存在"
+        }
+      }
+    },
+    {
+      "check": "2.1 admin creates a position",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "rowVersion": 1,
+          "positionId": "e49d41a3-3f18-495f-ab33-f88b669bee90"
+        }
+      }
+    },
+    {
+      "check": "2.1 a department can be placed under another department",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "rowVersion": 1,
+          "departmentId": "4438ac46-6525-45ec-9c3c-f5d62d39dfe0"
+        }
+      }
+    },
+    {
+      "check": "2.1 a department hierarchy cycle is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "部门层级不能形成循环"
+        }
+      }
+    },
+    {
+      "check": "2.1 an employee without a department is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "departmentId须为有效UUID"
+        }
+      }
+    },
+    {
+      "check": "2.1 an employee without a position is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "positionId须为有效UUID"
+        }
+      }
+    },
+    {
+      "check": "2.1 an out-of-range organization level is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "组织层级须为0至100的整数，且必须显式设置"
+        }
+      }
+    },
+    {
+      "check": "2.1 a team outside the employee department is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "员工只能加入其所属部门下的团队"
+        }
+      }
+    },
+    {
+      "check": "2.1 a second administrator is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "SECOND_ADMINISTRATOR",
+          "message": "公司只能有一个管理员账号"
+        }
+      }
+    },
+    {
+      "check": "2.1 admin creates an employee through the interface",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "body": {
+          "userId": "3282527f-4497-4dca-8672-2553b3540d5a",
+          "username": "qa1-7dba70",
+          "mustChangePassword": true,
+          "rowVersion": 1,
+          "initialPassword": "CS@C78Sv7#QvnPsw"
+        }
+      }
+    },
+    {
+      "check": "2.1 a repeated request never re-displays the initial password",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "body": {
+          "userId": "3282527f-4497-4dca-8672-2553b3540d5a",
+          "username": "qa1-7dba70",
+          "rowVersion": 1,
+          "mustChangePassword": true
+        }
+      }
+    },
+    {
+      "check": "2.1 the generated initial password works and forces a change",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "mustChangePassword": true
+      }
+    },
+    {
+      "check": "2.1 a management cycle is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "上下级关系不能形成循环"
+        }
+      }
+    },
+    {
+      "check": "2.1 the employee directory reports contact presence without echoing the number",
+      "pass": true,
+      "evidence": {
+        "row": {
+          "id": "3282527f-4497-4dca-8672-2553b3540d5a",
+          "username": "qa1-7dba70",
+          "displayName": "质检一号",
+          "role": "lower",
+          "rankLevel": 3,
+          "active": true,
+          "departmentId": "e408678c-10db-401a-bd26-51eec052fdb3",
+          "departmentName": "质检部-7dba70",
+          "positionId": "e49d41a3-3f18-495f-ab33-f88b669bee90",
+          "positionName": "质检专员-7dba70",
+          "teamId": null,
+          "teamName": null,
+          "managerId": null,
+          "managerName": null,
+          "reviewerAvailable": true,
+          "mustChangePassword": true,
+          "createdAt": "2026-10-20T13:39:46.650811Z",
+          "rowVersion": 1,
+          "hasPhone": true,
+          "hasEmail": false,
+          "roles": [
+            "employee"
+          ],
+          "capabilities": [
+            "create_task",
+            "handover_own"
+          ],
+          "scopes": {
+            "log_read": "self",
+            "profile_read": "self",
+            "task_dispatch": "self",
+            "task_view": "self"
+          },
+          "editable": true
+        }
+      }
+    },
+    {
+      "check": "2.2 an employee may only dispatch to themselves",
+      "pass": true,
+      "evidence": {
+        "items": [
+          "employee"
+        ]
+      }
+    },
+    {
+      "check": "2.2 a department lead sees self and own-department staff only",
+      "pass": true,
+      "evidence": {
+        "items": [
+          "colleague",
+          "employee",
+          "middle"
+        ]
+      }
+    },
+    {
+      "check": "2.2 a business account has no administration access",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "2.2 a middle manager cannot write organization data",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "2.3 the log author filter is limited to self and direct reports",
+      "pass": true,
+      "evidence": {
+        "authors": [
+          "colleague",
+          "employee",
+          "middle"
+        ]
+      }
+    },
+    {
+      "check": "2.3 a same-department non-report is excluded from the log filter",
+      "pass": true,
+      "evidence": {
+        "authors": [
+          "colleague",
+          "employee",
+          "middle"
+        ]
+      }
+    },
+    {
+      "check": "2.3 the log list excludes the same-department non-report",
+      "pass": true,
+      "evidence": {
+        "authors": [
+          "202453a0-863b-4324-97c3-e3b8c358dee8",
+          "b9fa2e22-1a0a-4f1a-871a-41db74fdb158",
+          "f40c8b5f-36b9-43c8-acd2-e77f5c12967b"
+        ]
+      }
+    },
+    {
+      "check": "2.3 a direct author filter outside the log range is refused",
+      "pass": true,
+      "evidence": {
+        "status": 404
+      }
+    },
+    {
+      "check": "2.3 an author outside the log range is refused even with a visible scope",
+      "pass": true,
+      "evidence": {
+        "status": 404,
+        "body": {
+          "code": "NOT_FOUND",
+          "message": "内容不存在或无权查看"
+        }
+      }
+    },
+    {
+      "check": "2.4 a middle manager has no administration console access",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "2.4 an authorized department lead creates a team and becomes its lead",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "teamId": "4b287374-d588-4fed-ac82-ece8d0c85d18",
+          "leadUserId": "202453a0-863b-4324-97c3-e3b8c358dee8",
+          "rowVersion": 1
+        }
+      }
+    },
+    {
+      "check": "2.4 one department holds several independent teams",
+      "pass": true,
+      "evidence": {
+        "teams": [
+          "产品一组-7dba70",
+          "产品二组-7dba70",
+          "产品部"
+        ]
+      }
+    },
+    {
+      "check": "2.4 an unauthorized account cannot create a team",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "2.4 a department lead cannot create a team in another department",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "2.4 the team lead can be transferred and persists",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "teamId": "4b287374-d588-4fed-ac82-ece8d0c85d18",
+          "leadUserId": "f40c8b5f-36b9-43c8-acd2-e77f5c12967b",
+          "rowVersion": 2
+        }
+      }
+    },
+    {
+      "check": "2.4 the transferred lead is stored",
+      "pass": true,
+      "evidence": {
+        "leadUserId": "f40c8b5f-36b9-43c8-acd2-e77f5c12967b"
+      }
+    },
+    {
+      "check": "2.4 a team lead gains no dispatch authority from being lead",
+      "pass": true,
+      "evidence": {
+        "items": [
+          "employee"
+        ]
+      }
+    },
+    {
+      "check": "2.5 a transfer persists and reports invalidation",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "f042e818-49bf-4b09-ac56-ea589445dd1b",
+          "rowVersion": 2,
+          "transferred": true,
+          "authorizationInvalidated": true
+        }
+      }
+    },
+    {
+      "check": "2.5 the organization authorization version increased",
+      "pass": true,
+      "evidence": {
+        "before": 11,
+        "after": 12
+      }
+    },
+    {
+      "check": "2.5 the transfer removes the person from the old department range",
+      "pass": true,
+      "evidence": {
+        "items": [
+          "middle",
+          "employee",
+          "colleague"
+        ]
+      }
+    },
+    {
+      "check": "2.5 the moved person stays outside the old department log range",
+      "pass": true,
+      "evidence": {
+        "authors": [
+          "colleague",
+          "employee",
+          "middle"
+        ]
+      }
+    },
+    {
+      "check": "2.5 a structure change succeeds with the current version",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "rowVersion": 2,
+          "departmentId": "e408678c-10db-401a-bd26-51eec052fdb3"
+        }
+      }
+    },
+    {
+      "check": "2.5 a stale structure form cannot bypass the new state",
+      "pass": true,
+      "evidence": {
+        "status": 412,
+        "body": {
+          "code": "VERSION_CONFLICT",
+          "message": "内容已更新，请刷新后重试"
+        }
+      }
+    },
+    {
+      "check": "2.7 a freshly seeded company uses the 18:00 all-day cut-off",
+      "pass": true,
+      "evidence": {
+        "initial": "18:00:00",
+        "note": "a different value means this run reused a database an earlier run already changed"
+      }
+    },
+    {
+      "check": "2.7 the all-day cut-off can be set",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "offWorkTime": "17:30"
+        }
+      }
+    },
+    {
+      "check": "2.7 an invalid cut-off is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "下班时刻须为 HH:MM 或 HH:MM:SS"
+        }
+      }
+    },
+    {
+      "check": "2.7 the eleventh company item is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "HOME_ITEM_LIMIT",
+          "message": "公司信息最多10条，请先删除后再新增"
+        }
+      }
+    },
+    {
+      "check": "2.7 a business account cannot maintain company information",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "2.7 company information can be reordered manually",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "reordered": true,
+          "orderedIds": [
+            "654ae777-91d9-4f66-a656-55327f32ab05",
+            "8640d096-6486-4ca7-979c-0e8dea720183",
+            "a9d69f30-8529-4026-9654-fb8a5c41a5f5",
+            "b4bf261e-e79f-4751-b024-dd2b91513010",
+            "8d88f817-235b-47f2-b090-b9d275ecba29",
+            "d5e49988-261c-4d2d-a5e0-b70a263e54a5",
+            "be0fff73-7055-4efc-8255-2c9039133fab",
+            "e7a8c541-4521-4840-9313-75bde06bbb15",
+            "8055b8f9-af35-4eb7-b132-167dd1c57d89",
+            "92e0aab0-16a5-4af9-b58d-c4f50fce3167"
+          ]
+        }
+      }
+    },
+    {
+      "check": "2.7 the manual order is persisted",
+      "pass": true,
+      "evidence": {
+        "first": "654ae777-91d9-4f66-a656-55327f32ab05",
+        "expected": "654ae777-91d9-4f66-a656-55327f32ab05"
+      }
+    },
+    {
+      "check": "2.7 concurrent creation cannot exceed ten items",
+      "pass": true,
+      "evidence": {
+        "outcomes": [
+          409,
+          200
+        ]
+      }
+    }
+  ]
+}

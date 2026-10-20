@@ -10,8 +10,12 @@
 const { spawn } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
+const os = require("os");
+const path = require("path");
 
 const CHROME = process.env.CHROME_BIN || [
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "/usr/bin/google-chrome",
   "/usr/bin/google-chrome-stable",
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -45,7 +49,7 @@ async function openBrowser(url) {
   const port = 9900 + Math.floor(Math.random() * 90);
   const proc = spawn(CHROME, ["--headless", "--no-sandbox", "--disable-gpu", "--no-first-run",
     "--no-default-browser-check", "--disable-crash-reporter", "--hide-scrollbars", "--force-device-scale-factor=1",
-    "--remote-debugging-port=" + port, "--user-data-dir=/tmp/cdp-" + crypto.randomBytes(4).toString("hex"), url], { stdio: "ignore" });
+    "--remote-debugging-port=" + port, "--user-data-dir=" + path.join(os.tmpdir(), "pandora-cdp-" + crypto.randomBytes(4).toString("hex")), url], { stdio: "ignore" });
   let target = null;
   for (let i = 0; i < 100 && !target; i++) {
     try {
@@ -274,10 +278,10 @@ async function main() {
       Math.abs(dayAfter.t - dayBefore.t - 7 * 86400000) < 1000 && dayAfter.weekday === dayBefore.weekday, { before: dayBefore, after: dayAfter });
     await openView(browser, "week");
 
-    for (const width of [320, 390, 1440]) {
-      await browser.setViewport(width, 844);
+    for (const [width, height] of [[320, 740], [390, 844], [1440, 900]]) {
+      await browser.setViewport(width, height);
       await sleep(150);
-      check("9.6 layout " + width + " keeps the floating create button inside the viewport",
+      check("9.6 layout " + width + "x" + height + " keeps the floating create button inside the viewport",
         await browser.evaluate("(() => { const r = document.querySelector('.p-schedule-fab').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; })()"));
     }
   } finally {

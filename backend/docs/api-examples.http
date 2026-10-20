@@ -183,15 +183,20 @@ Content-Type: application/json
 GET {{baseUrl}}/api/v1/analytics/task-summary
 Authorization: Bearer {{employeeToken}}
 
-### Local rule-based analysis; no external model is called.
+### Local rule-based analysis; no external model is called. `auto` derives the
+### statistics/keyword scope and the (possibly narrower) suggestion scope from
+### the current role grants. A client may request `self`, but cannot broaden it.
 POST {{baseUrl}}/api/v1/ai-jobs
 Authorization: Bearer {{employeeToken}}
 Idempotency-Key: {{$guid}}
 Content-Type: application/json
 
-{"scopeType":"self"}
+{"scopeType":"auto"}
 
-### Owner-only result; sources are checked again.
+### Owner-only result. The response reports statisticsScope, keywordScope,
+### suggestionScope, method=rule_based_local, generatedAt, priority counts and
+### pendingComplete. Source tasks and the current authorization version are
+### checked again; a stale result returns 409 ANALYSIS_SCOPE_CHANGED.
 GET {{baseUrl}}/api/v1/ai-jobs/{{jobId}}
 Authorization: Bearer {{employeeToken}}
 

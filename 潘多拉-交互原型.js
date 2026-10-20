@@ -1317,24 +1317,35 @@ function refreshLogResults(){
 }
 
 /* ============================== 页面：AI地图 ============================== */
-const KEYWORDS = ["校徽", "产线", "打样", "客户反馈", "总结", "排期", "支付故障", "设计规范", "竞品", "协作流程",
-  "培训", "季度目标", "活动策划", "晨会", "视觉规范", "报价单", "新产品", "供应商", "预算", "物料", "样品种类", "验收"];
 function keywordStats(list){
-  const counts = KEYWORDS.map(function(k){
-    let n = 0;
-    list.forEach(function(t){ if (t.title.indexOf(k) !== -1 || (t.desc || "").indexOf(k) !== -1) n++; });
-    return { word: k, n: n };
-  }).filter(function(x){ return x.n > 0; });
-  counts.sort(function(x, y){ return y.n - x.n || x.word.localeCompare(y.word, "zh"); });
-  return counts.slice(0, 12);
+  const counts = new Map();
+  const stop = new Set(["任务", "项目", "工作", "进行", "完成", "需要", "以及", "一个", "我们", "相关", "当前", "the", "and", "for", "with", "from", "this", "that"]);
+  function add(word){
+    const value = String(word || "").trim().toLocaleLowerCase();
+    if (value.length < 2 || stop.has(value)) return;
+    counts.set(value, (counts.get(value) || 0) + 1);
+  }
+  list.forEach(function(t){
+    const text = String((t.title || "") + " " + (t.desc || "")).toLocaleLowerCase();
+    (text.match(/[\u3400-\u9fff]{2,}/g) || []).forEach(function(value){
+      if (value.length <= 12) add(value);
+      for (let size = 2; size <= Math.min(3, value.length); size++){
+        for (let start = 0; start + size <= value.length; start++) add(value.slice(start, start + size));
+      }
+    });
+    const other = text.replace(/[\u3400-\u9fff]+/g, " ").match(/[\p{L}\p{N}][\p{L}\p{N}_-]{1,31}/gu) || [];
+    other.forEach(add);
+  });
+  return Array.from(counts, function(entry){ return { word: entry[0], n: entry[1] }; })
+    .sort(function(x, y){ return y.n - x.n || y.word.length - x.word.length || x.word.localeCompare(y.word, "zh"); })
+    .slice(0, 24);
 }
 function renderAI(){
   const a = actor();
   const el = document.getElementById("page-ai");
   const scoped = viewTasks(a);
-  const deptTasks = TASKS.filter(function(t){ return taskInDept(t, a.dept); });
   const statBase = a.role === "upper" ? scoped : a.role === "middle" ? scoped : scoped;
-  const cloudBase = a.role === "upper" ? TASKS.slice() : deptTasks;
+  const cloudBase = scoped;
   const done = statBase.filter(function(t){ return t.status === "done"; }).length;
   const doing = statBase.filter(function(t){ return t.status === "doing"; }).length;
   const open = statBase.filter(function(t){ return t.status === "todo"; }).length;
@@ -1385,7 +1396,7 @@ function renderAI(){
         return '<div class="stat"><div class="v">' + s.v + '</div><div class="k">' + s.k + "</div></div>";
       }).join("") + "</div></section>" +
     '<section class="card"><div class="card-head"><h2>关键词词云</h2><span class="hint">' +
-      (a.role === "upper" ? "公司聚合" : "部门聚合（不含明细）") + "</span></div>" +
+      (a.role === "upper" ? "公司聚合" : a.role === "middle" ? "部门聚合" : "本人范围") + "</span></div>" +
       '<div class="wc">' + cloud + "</div></section>" +
     '<section class="card"><div class="card-head"><h2>AI 建议</h2><span class="hint">' +
       (a.role === "upper" ? "公司级" : "个人向") + "</span></div>" +
