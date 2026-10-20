@@ -3,18 +3,18 @@
 - Change: fix-pandora-formal-requirement-deviations
 - Schema: spec-driven
 - Store: local (no registered store)
-- Implementation roots: `/Users/watuji/MyGitDev/software_test_practice` (backend at `backend/`, loaded pages at the repository root)
-- Updated: 2026-10-19T20:00+08:00 (2026-10-19T12:00Z)
-- Implementation revision: `728885d` plus an uncommitted worktree (sections 3.5, 5-7, V11, notification UI and verification scripts)
-- Progress: **42/65 tasks checked complete** (sections 1-4 were already complete; 3.5, 5.1-5.4, 6.1-6.4 and 7.1-7.8 were completed in this run). Sections 8-11 remain pending.
+- Implementation roots: `/home/rmy/桌面/panDuola` (backend at `backend/`, loaded pages at the repository root)
+- Updated: 2026-10-20T16:41+08:00 (2026-10-20T08:41Z)
+- Implementation revision: `3c73aef` plus an uncommitted worktree (sections 8.1-8.4 and their verification scripts)
+- Progress: **46/65 tasks checked complete**. Sections 8.1-8.4 were completed in this run; sections 9-11 remain pending.
 - This is an apply handoff, not an independent e13 verification or archive authority.
 - File paths and links below are repository-relative (this file lives under `openspec/changes/fix-pandora-formal-requirement-deviations/`).
 
 ## How to continue
 
-1. Read current state from the CLI, not this file: `openspec instructions apply --change "fix-pandora-formal-requirement-deviations" --json`. The expected progress after this run is 42/65, `state=ready`.
-2. Sections 8-11 are still unimplemented. Do not treat 3.5/5/6/7 evidence as coverage of 8.1-11.7.
-3. The HTTP/browser suites need a **freshly created, freshly seeded** database. A reused database has an advanced controlled clock, expired pending requests and read notifications, which changes assertions.
+1. Read current state from the CLI, not this file: `openspec instructions apply --change "fix-pandora-formal-requirement-deviations" --json`. The expected progress after this run is 46/65, `state=ready`.
+2. Sections 9-11 are still unimplemented. Do not treat 8.1-8.4 evidence as coverage of 9.1-11.7, and do not run a full independent verification or archive yet.
+3. The HTTP/browser suites need a **freshly created, freshly seeded** database. A reused database has an advanced controlled clock, expired pending requests, read notifications and possibly existing logs for the test day, which changes assertions.
 4. Start the project MySQL first: `cd backend && ./scripts/start-db.sh`. Database credentials live in the git-ignored `backend/.runtime/database.env`; never copy them into reports.
 5. The 2026-10-19 runs used two scratch databases: `pandora_final` (HTTP checks, worker delay 60s, controlled clock) and `pandora_final_ui` (browser checks, initial/delay 1h so only the explicit `/admin/worker/run-once` scans run).
 6. The controlled clock and one-shot worker are verification facilities: `/api/v1/admin/clock`, `/api/v1/admin/clock/advance` and `/api/v1/admin/worker/run-once`. They require an administrator and work only when `pandora.clock.controllable=true` (the worker endpoint requires the worker bean). Do not enable the controlled clock in a normal deployment.
@@ -54,7 +54,26 @@
 | 7.8 history after message removal (DEV-016, 032) | [`TaskService.taskHistory`](backend/src/main/java/cn/pandora/task/TaskService.java), [`check_deadline_reminder_notification.py`](backend/scripts/check_deadline_reminder_notification.py) | After retention cleanup, admin task history still contains the original entries (the history set is a superset; an expired pending request can add one more entry), and the effective task remains readable. App has no full-history entry. |
 | V11 schema | [`V11__schedule_snapshots_reminder_nodes_and_notification_lifecycle.sql`](backend/src/main/resources/db/migration/V11__schedule_snapshots_reminder_nodes_and_notification_lifecycle.sql) | Adds version cut-off snapshots, reminder node/state/schedule/round/event columns, notification title/change-summary/relation-lost columns and scan indexes. Applied on fresh databases; V1-V8 checksums are unchanged. |
 
+### Completed in this run — 2026-10-20 (sections 8.1-8.4)
+
+| Task / requirement / scenario | Code and tests | Decisions / evidence |
+| --- | --- | --- |
+| 8.1 one log per author/day; existing today opens edit (DEV-025) | [`WorkspaceService.java`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java) `createLog`/`findLog`/`logExists`; [`ApiException.java`](backend/src/main/java/cn/pandora/common/ApiException.java), [`ApiAdvice.java`](backend/src/main/java/cn/pandora/common/ApiAdvice.java); [`潘多拉-工作区接入.js`](潘多拉-工作区接入.js), [`潘多拉-api.js`](潘多拉-api.js); [`check_work_logs.py`](backend/scripts/check_work_logs.py) | Create defaults to the company today; a different date is 400. A duplicate returns 409 `WORK_LOG_EXISTS` with the existing `logId`/`rowVersion`; the UI opens that record. The existing V8 `uq_log_day` remains the persistent guard. Concurrent distinct keys produced exactly one row. |
+| 8.2 midnight freeze, immutable date and server timezone (DEV-026) | [`WorkspaceService.java`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java) `changeLog`/`deleteLog`/`safeLog`/`today`; [`check_work_logs.py`](backend/scripts/check_work_logs.py) | The row is locked before the freeze check; old logs return 409 `WORK_LOG_FROZEN` for PATCH, DELETE and backdated create. A date change is 400. `editable` uses the same company-day rule. The clock was advanced from 23:59:59 to 00:00:00 in the application only. |
+| 8.3 default-self logs, permission tree/search, no mixed task tabs (DEV-005, 027) | [`WorkspaceService.java`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java) `logs`/`logAuthors`/`safeLog`; [`潘多拉-api.js`](潘多拉-api.js), [`潘多拉-工作区接入.js`](潘多拉-工作区接入.js), [`潘多拉-界面调整.css`](潘多拉-界面调整.css); [`check_work_logs.py`](backend/scripts/check_work_logs.py), [`check_logs_profile_browser.js`](backend/scripts/check_logs_profile_browser.js) | Initial reload requests `scope=self`. The page renders only the log workflow (no review/application/consult tabs or task-create commands), defaults to self, keeps the “all visible” option for upper/middle, and offers a permission-filtered author tree plus name search. The search input, selected author and scroll-to-top state survive navigation. A log whose linked task is not readable loses `taskId` in the service. |
+| 8.4 profile fields, management-chain subordinate intersection, independent log entry (DEV-028) | [`ProfileService.java`](backend/src/main/java/cn/pandora/profile/ProfileService.java); [`WorkspaceService.java`](backend/src/main/java/cn/pandora/workspace/WorkspaceService.java) `person`/`reports`; [`WorkspaceController.java`](backend/src/main/java/cn/pandora/workspace/WorkspaceController.java) `/me/reports`; [`潘多拉-api.js`](潘多拉-api.js), [`潘多拉-个人资料.js`](潘多拉-个人资料.js); [`check_profile_reports.py`](backend/scripts/check_profile_reports.py), [`check_logs_profile_browser.js`](backend/scripts/check_logs_profile_browser.js) | `/me/profile` now returns organization/department/position/team/manager names. `/me/reports` intersects `canSeePerson` with a cycle-safe manager-chain walk: `reports` stays direct-only, `company` can include indirect reports. Person details expose `canReadLogs`; the profile UI only shows the log entry when true and never offers dispatch. A temporary three-level transfer proved that the manager list and log scope do not expand together; the organization was restored in cleanup. |
+
 ## Checks Run
+
+### Current run — 2026-10-20
+
+| Command | Working directory / setup | Result / evidence | Run time |
+| --- | --- | --- | --- |
+| `mvn -B -ntp test` | `backend/`, Java 21 | **PASS, 55 tests**, 0 failures/errors/skips. Adds `WorkspaceLogAndReportsTest` (6 tests) and the `AccessTest` separate-profile/log-authority case. | 2026-10-20 |
+| `python3 scripts/check_work_logs.py --base-url http://127.0.0.1:18120 --output ../audit/2026-10-20/logs.json` | fresh `pandora_logs_test`, controlled clock fixed at 2026-10-20T15:59:30Z (23:59:30 Asia/Shanghai), worker disabled | **PASS, 17/17**. One row under concurrent distinct keys; duplicate 409 with existing id; date change 400; 23:59:59 editable, 00:00:00 frozen; PATCH/DELETE old day 409; backdated/UTC date 400; default self and permission-scoped author tree/search. Evidence: [`logs.json`](audit/2026-10-20/logs.json). | 2026-10-20 |
+| `python3 scripts/check_profile_reports.py --base-url http://127.0.0.1:18121 --output ../audit/2026-10-20/profile-reports.json` | fresh `pandora_profile_test`, seed, worker disabled | **PASS, 26/26**. Profile names present; executive sees indirect chain, manager direct-only; employee/admin no subordinate list; no phone/email in list rows; direct/indirect phone via person details; non-chain detail/log denied; temporary transfer restored. Evidence: [`profile-reports.json`](audit/2026-10-20/profile-reports.json). | 2026-10-20 |
+| `node scripts/check_logs_profile_browser.js --base-url http://127.0.0.1:18121 --output ../audit/2026-10-20/logs-profile-browser.json` | fresh `pandora_profile_test`, headless Chrome 390×844 | **PASS, 22/22**. Default self, no mixed tabs/commands, permission tree/search, input+author survive navigation, read-only subordinate logs, profile fields, direct/indirect subordinate list, no dispatch, separate log entry. Evidence: [`logs-profile-browser.json`](audit/2026-10-20/logs-profile-browser.json). | 2026-10-20 |
+| `python3 scripts/smoke_test.py --base-url http://127.0.0.1:18122 --report ../audit/2026-10-20/smoke-report.json` | fresh `pandora_smoke_test`, worker enabled | **FAIL at 17 checks**: `scripts/smoke_test.py:200` expects `x['id']` in `/approval-requests?mine=reviewer`, but the current DTO returns a different key. This is the known section 11.1 smoke reconciliation item, not an 8.1-8.4 behavior failure. The log section was updated to edit an existing today record instead of assuming create always succeeds. Evidence: [`smoke-report.json`](audit/2026-10-20/smoke-report.json). | 2026-10-20 |
 
 ### Current run — 2026-10-19
 
@@ -77,11 +96,15 @@ The earlier sections were verified at `5a8987e + dirty` with 40 Java tests, 48/4
 
 ## Verification Reminders
 
-- **Chapters 8-11 are still pending.** This handoff covers 3.5 and 5-7 only. Do not report the change as complete: 8.1-8.4, 9.1-9.8, 10.1-10.4 and 11.1-11.7 have no checkboxes.
+- **Chapters 9-11 are still pending.** This handoff now covers 3.5, 5-7 and 8.1-8.4. Do not report the change as complete: 9.1-9.8, 10.1-10.4 and 11.1-11.7 have no checkboxes.
+- **Log write semantics changed for task 8.1/8.2.** A create with a non-company-today date is 400; a second create for the same author/day is 409 `WORK_LOG_EXISTS` with `logId`/`rowVersion`; old-day PATCH/DELETE is 409 `WORK_LOG_FROZEN`; a date change is 400. Do not restore the old smoke assumption that every POST creates a new row.
+- **The log page is intentionally no longer a task workflow.** Review lives in notifications and applications will move to the view in section 9.3. Do not treat the removed review/self/consult tabs as a regression; do not re-add them to make older smoke/UI checks pass.
+- **`/me/reports` is a separate authority intersection.** `reports` profile scope remains direct-only; `company` scope may include indirect chain members. `canReadLogs`/the log entry is always checked independently, so a visible indirect profile must not grant its logs.
+- **The 8.4 integration test temporarily transfers `colleague` under `employee` and restores it.** If a run is interrupted, inspect and restore the `managerId` before reusing the database; do not treat the temporary chain as seed data.
 - **The 2026-10-16 V4 snapshot still has three open migration blockers** (`organization_mapping`, `team_department_mapping`, `expired_pending_request`). The 2026-10-19 runs used fresh empty/seed databases; they do not prove the staged V4 migration path. Verify both the staged and tightened states separately (task 11.3).
 - **Controlled clock / worker endpoints are test-only.** `/api/v1/admin/clock*` and `/api/v1/admin/worker/run-once` are administrator-only and the clock is controllable only with `pandora.clock.controllable=true`. Do not enable this in a normal deployment.
 - **The seed now uses future deadlines.** `DemoSeed` rounds a due date up to at least tomorrow because the real submission path rejects an already-expired schedule. Consequently the seed has no pre-existing overdue task; overdue behavior is exercised by advancing the controlled clock. A stale script that seeds a past due date will now get `DEADLINE_PASSED` (task 11.1 must reconcile smoke fixtures).
-- **The browser check is 390×844 only.** It covers 7.3/7.7 and the 3.5 subordinate phone card, not 320×740/1440×900, and it is viewport emulation rather than a real device. Task 11.4/11.7 still owns the multi-width and imported-UI regression.
+- **The browser checks are 390×844 only.** `check_notification_browser.js` covers 7.3/7.7 and the 3.5 subordinate phone card; `check_logs_profile_browser.js` covers 8.3/8.4. Neither covers 320×740/1440×900, and both are viewport emulation rather than a real device. Task 11.4/11.7 still owns the multi-width and imported-UI regression. The new script discovers Linux Chrome via `CHROME_BIN` or `/usr/bin/google-chrome`; the older two scripts still hardcode the macOS path.
 - **The exact-retention HTTP check advances one second past the instant** because the admin clock endpoint accepts whole seconds. The equality rule itself is `!now.isBefore(expiresAt)`; the pure month-end/leap rule is unit-tested. Do not describe the HTTP check as microsecond-exact.
 - **Reminder receipts use `state='sent'|'skipped'` and `event_id` now points at the delivered domain event.** A skipped node has no domain event; that is intentional. Check both tables if verifying “no stale node was sent”.
 - **Notification cleanup deletes message copies.** After `cleanupNotifications`, `GET /notifications/{id}` and historical DTO are expected to fail; task/request/audit/history must remain. Do not treat a missing notification row as lost business history.
