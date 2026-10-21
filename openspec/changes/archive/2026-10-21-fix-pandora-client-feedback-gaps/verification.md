@@ -2,26 +2,30 @@
 
 - Change: fix-pandora-client-feedback-gaps
 - Schema: spec-driven
-- Verdict: FAIL
-- Verified at: 2026-10-21T20:24:31.244280+08:00
+- Verdict: PASS
+- Verified at: 2026-10-21T20:39:02.010403+08:00
 - Implementation roots: `/Users/watuji/MyGitDev/software_test_practice` (frontend), `/Users/watuji/MyGitDev/software_test_practice/backend` (backend/build/checks)
-- Verified revision: `24e650a9acd128c514c8cfaad04a0359948a923a`; clean worktree at start. This run changes only this report.
+- Verified revision: `99ed264529657ab1714bb08af2fd7cc3cee758f7`; clean worktree at start. This run changes only this report.
 
 ## Summary
 
-One confirmed implementation deviation remains: returning to an already-open task table from another main page renders cached rows and counts without re-querying current authorization (V-001). Independent browser reproduction showed 13 retained rows and zero requests on return; manual refresh consumed the same simulated empty authorized response and removed all rows.
+Independent focused re-verification **PASS**. V-001 is `verified-resolved`: returning from another main page now starts a complete authorized-task reload, masks retained rows/counts before the first render, preserves conditions and usable position, removes revoked rows, and exposes retry on failure. No actionable findings remain.
 
-Strict OpenSpec validation, all 66 backend tests, packaging, the 82-check task-form suite, and all named regression suites passed after resolving the local Python proxy setup. Passing suites do not cover V-001. All eight delta requirements and 53 scenarios are mapped below; supplementary execution checked the four simultaneous filters, overlapping counts, and pin-independent sorting. No implementation, test, planning, task, or handoff files were edited.
+The user authorized concentrating on changed work. Git/content comparison with the previous independent run at `24e650a` proves that the only changed acceptance inputs are `潘多拉-任务表单.js` and `backend/scripts/check_task_form.js`; planning artifacts, backend, calendar, account, phone/privacy, logs, notifications, build configuration and other frontend modules are unchanged. Their earlier independent evidence remains applicable. Repair-stage PASS claims and audit files were not substituted for independent checks.
 
-Residual limits: browser evidence covers desktop and narrow layouts, not real devices, keyboards, or system push (explicitly deferred). Production-scale performance and cross-request transactional task snapshots are outside this change. Some retained calendar/admin behavior is supported by code inspection plus HTTP tests rather than a separate browser gesture for each alias scenario; this is identified below. The report does not approve archive.
+This run independently passed strict OpenSpec validation, Maven package including 66 tests, the updated 85-check task-form HTTP/browser suite, calendar browser 35/35, calendar HTTP 12/12 and calendar sort 4/4. A supplementary execution of the complete task-form module confirmed loading before render, preserved sort/filter/page, and no redundant queries on ordinary repaint or same-tab selection. All eight requirements and 53 scenarios retain the coverage matrix below; affected paths have fresh evidence and unaffected paths explicitly retain the previous independent evidence.
+
+Residual limits remain unchanged: desktop/narrow browser evidence does not establish deferred real-device/keyboard or system-push acceptance. Production-scale performance and cross-request transactional snapshots remain outside scope. Some unchanged calendar/admin variants use code tracing combined with executable HTTP/browser coverage rather than a distinct gesture test for every alias. These limits do not leave an actionable deviation or mandatory behavior without supporting evidence. This PASS applies only to the recorded basis; relevant edits require re-verification.
 
 ## Verification Basis
 
 | Path or scope | Revision / content fingerprint / file inventory |
 | --- | --- |
-| Both implementation roots and repository planning/context | Git HEAD `24e650a9acd128c514c8cfaad04a0359948a923a` |
-| Source/configuration/test/document/planning inventory | 166 paths; aggregate SHA-256 `77dd70fdfcd226e39c848431a88d0b7cd7cb40921490ee5a82c91fbf589e504e` |
-| Start versus final snapshot | Same 166 paths and same aggregate hash after all checks; no relevant input changes |
+| Both implementation roots and repository planning/context | Git HEAD `99ed264529657ab1714bb08af2fd7cc3cee758f7` |
+| Source/configuration/test/document/planning inventory | 166 paths; aggregate SHA-256 `eda5aa48d105adceea3bd181003ee4eaa64c008b6ea85e612f84b9c8ab22b82e` |
+| Start versus final snapshot | Same 166 paths and same current aggregate hash after all checks; no relevant input changes |
+| Prior independent basis, reproduced from Git | `24e650a9acd128c514c8cfaad04a0359948a923a`, 166 paths, SHA-256 `77dd70fdfcd226e39c848431a88d0b7cd7cb40921490ee5a82c91fbf589e504e` |
+| Inputs changed since prior basis | Only `潘多拉-任务表单.js` and `backend/scripts/check_task_form.js`; report and added repair audit evidence are excluded by the documented inventory rule |
 | Selected planning basis | `proposal.md`, `design.md`, `tasks.md`, `specs/pandora-requirements-aligned-prototype/spec.md`, `.openspec.yaml` in this change; main specs, V3, current project documentation included in inventory |
 | Exclusions | `audit/`, `.agents/`, `.codex/`, all `implementation-notes.md` and `verification.md`; ignored build/runtime output and disposable fixtures are not acceptance source |
 
@@ -40,13 +44,13 @@ rows = [p + '\0' + (hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
 print(len(paths), hashlib.sha256(''.join(rows).encode()).hexdigest())
 ```
 
-`openspec status` and `instructions apply` resolved repo-local `spec-driven` artifacts and reported 23/23 checked tasks. There is no external store. No applicable AGENTS.md was found in the project or ancestor directories. Checked tasks and apply-stage audit evidence were treated as claims, not independent proof.
+`openspec status` and `instructions apply` resolved repo-local `spec-driven` artifacts and reported 23/23 checked tasks. There is no external store. No applicable AGENTS.md was found in the project or ancestor directories. Checked tasks and apply/repair-stage audit evidence were treated as claims, not independent proof. The previous report is available in Git commit `99ed264`; its 2026-10-21T20:24:31+08:00 independent evidence is retained only for unchanged inputs.
 
 ## Apply Handoff Review
 
-Read `implementation-notes.md` in this change. It identifies the correct change and implementation roots. Its `a8b655f + dirty` revision label is stale: the implementation is now committed in child revision `24e650a`; code locations/claims were checked against that commit. The map also names nonexistent `潘多拉-任务集成.js`; the actual loaded file is `潘多拉-任务接入.js`. These are handoff metadata discrepancies, not application defects. No prior verification report or repair notes existed.
+Read `implementation-notes.md` in this change. It identifies the correct change and implementation roots. Its `a8b655f + dirty` revision label is stale: the implementation and repair are now committed through `99ed264`; current code was compared with the prior verified `24e650a` basis. The map also names nonexistent `潘多拉-任务集成.js`; the actual loaded file is `潘多拉-任务接入.js`. These are handoff metadata discrepancies, not application defects. The existing FAIL report and V-001 repair notes were read before this run. The repair notes are preserved verbatim below; their claimed results were independently rerun for affected coverage.
 
-Every reminder was reviewed:
+Every reminder was reviewed. TF and CAL below now refer to this run; unchanged LOG/NOT/PHONE/ACCOUNT/ORG/CH11 evidence is retained from the previous independent run after verifying input identity:
 
 | Handoff reminder | Disposition and independent evidence |
 | --- | --- |
@@ -59,44 +63,49 @@ Every reminder was reviewed:
 | Wait for seeded users, never use current database | Confirmed runner inspection; every service used a fresh `pandora_check_*` database and waited for users; original database was not a fixture |
 | Notification/historical fixtures need worker | Confirmed: `CHECK_WORKER=true`; notifications 21/21 and TF historical access checks passed |
 | Updated calendar tests should not restore old search/count assertions | Confirmed: calendar browser 35/35, HTTP 12/12, sort 4/4; own-only projection and absence of search/count UI checked |
-| Detail rechecks backend; 403/404 discards row | Confirmed TF old-detail 404 and row-discard/requery checks, plus `P.request` wrapper and normal detail trace. Navigation that avoids a detail/requery is V-001 |
+| Detail rechecks backend; 403/404 discards row | Confirmed TF old-detail 404 and row-discard/requery checks, plus `P.request` wrapper and normal detail trace. Main-navigation re-entry now re-queries too (V-001 verified-resolved) |
 | Push and real-device deferrals | Confirmed V3/delta/status documentation retains them; not claimed as passed |
-| Apply evidence is not an independent verdict | Confirmed: all relevant commands rerun; this report uses current-run outputs |
+| Apply evidence is not an independent verdict | Confirmed: affected checks rerun; unchanged prior independent evidence is explicitly identified and retained |
 
-The handoff's broader entry-refresh claim is incomplete: V-001 covers return via main navigation. `P.reload` and refresh hooks were inspected independently of the map.
+The handoff predates the repair and its task-form line numbers/count of 82 checks are stale; current module/check script were read. The repaired main-navigation transition, loading/error scroll retention, existing workspace setPage wrapper, load order, refresh sequence guards and reset hooks were traced independently. V-001 is now verified-resolved.
 
 ## Checks
 
-Commands below run from `backend` unless noted. Each `ISO` command means `CHECK_WORKER=true NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost ./scripts/run_check_isolated.sh`; `{base}` and `{db}` are runner substitutions. Initial comprehensive run used default port 18130; regression/reproduction runs used `PORT=18131`. Each invocation creates and removes its own scratch database. No check used production or user business data.
+Commands run from `backend` unless noted. `ISO` means `CHECK_WORKER=true NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost ./scripts/run_check_isolated.sh`; `{base}` and `{db}` are runner substitutions. The fresh task-form run used `PORT=18131`, calendar runs `PORT=18132`. Every integration run started a fresh packaged Java process after packaging and used its own disposable `pandora_check_*` database. The normal business database was not a fixture. Approved local MySQL/Chrome access was used; loopback proxy bypass was retained from the earlier environment diagnosis. No unresolved environment issue occurred.
 
 | Command or inspection | Result | Notes |
 | --- | --- | --- |
-| `openspec validate fix-pandora-client-feedback-gaps --type change --strict --json --no-interactive` (root) | PASS | Valid, zero issues |
-| `mvn -B -ntp -Dmaven.repo.local="$PWD/.runtime/m2" package` | PASS | Executes test phase: 66 tests, zero failures/errors/skips; BUILD SUCCESS. No redundant second test run needed |
-| `ISO node scripts/check_task_form.js --base-url {base} --output /tmp/pandora-e13-task-form.json --screenshot-dir /tmp/pandora-e13-shots` | PASS 82/82 | More than 200 effective tasks; real authenticated HTTP + Chrome, desktop/narrow screenshots reviewed |
-| `node scripts/check_calendar_sort.js` | PASS 4/4 | Time, ID ties, personal pins |
-| `ISO node scripts/check_home_calendar_browser.js --base-url {base}` | PASS 35/35 | Calendar layouts, own-only data, hidden counts, spans, concurrency, gestures, table entry/return |
-| `ISO python3 scripts/check_home_calendar.py --base-url {base}` | PASS 12/12 | Passed on proxy-corrected rerun |
-| `ISO node scripts/check_chapter11_browser.js --base-url {base} --output /tmp/pandora-e13-chapter11.json --screenshot-dir /tmp/pandora-e13-chapter11-shots` | PASS 36/36 | Three viewports; fullscreen logs, related-task return, PC management tabs/dialog, frozen effective data |
-| `ISO node scripts/check_notification_browser.js --base-url {base}` | PASS 21/21 | Empty/populated notifications, header close, business actions, historical readonly |
-| `ISO node scripts/check_logs_profile_browser.js --base-url {base}` | PASS 22/22 | Add/edit/save log, full editor and profiles |
-| `ISO python3 scripts/check_profile_phone_matrix.py --base-url {base}` | PASS 26/26 | Self/actual chain, forbidden roles, summary/analysis privacy, transfer reauthorization |
-| `ISO python3 scripts/check_phone_cycle.py --base-url {base} --database {db}` | PASS 5/5 | Invalid management cycle and restored chain |
-| `ISO python3 scripts/check_account_lifecycle.py --base-url {base} --database {db}` | PASS 47/47 | Admin-created credentials, first change, session invalidation, no registration |
-| `ISO node scripts/check_account_browser.js --base-url {base}` | PASS 15/15 | Actual login/change/reset screens |
-| `ISO python3 scripts/check_organization_admin.py --base-url {base}` | PASS 58/58 | Organizational validation, scopes, teams, transfer, company information, concurrency |
-| Supplementary in-memory execution of source pipeline | PASS | Four filters together retained only `good`; total=1, own=1, created=1, visible=0, pendingComplete=1, done=0, overdue=1. Pin flag did not change descending tie order `a,b` |
-| Supplementary source-module navigation execution | FAIL contract | Initial open issued one reload; log → view issued zero while preserving table/filter |
-| Supplementary authenticated Chrome navigation reproduction | FAIL contract (probe exited 0) | Return: requests=0, rows=13, rendered=13; manual refresh: requests=1, rows=0. V-001 |
-| Loading chain, stylesheet, pom, backend authorization/privacy traces | Supported | New assets included and exercised from packaged services; semantic table/sticky containers/escaping verified in source and screenshot/browser checks |
+| `openspec validate fix-pandora-client-feedback-gaps --type change --strict --json --no-interactive` (root) | PASS, current run | Valid; zero issues |
+| `node --check 潘多拉-任务表单.js` and `node --check backend/scripts/check_task_form.js` (root) | PASS, current run | Both changed scripts parse |
+| `mvn -B -ntp -Dmaven.repo.local="$PWD/.runtime/m2" package` | PASS, current run | 66 tests, zero failures/errors/skips; BUILD SUCCESS; rebuilt static resources |
+| `ISO node scripts/check_task_form.js --base-url {base} --output /tmp/pandora-e13-reverify-task-form.json --screenshot-dir /tmp/pandora-e13-reverify-shots` | PASS 85/85, current run | Entire affected suite rerun; 205 bulk tasks plus matrix; cross-timezone, global sorting/counts, pagination failure, permission/history, detail and session regressions; new return checks described below |
+| `ISO node scripts/check_home_calendar_browser.js --base-url {base}` | PASS 35/35, current run | Adjacent calendar/navigation, own-only projection, retained mode/date, overlap/spans/gestures and layouts |
+| `ISO python3 scripts/check_home_calendar.py --base-url {base}` | PASS 12/12, current run | Authenticated HTTP calendar/pin/pending behavior |
+| `node scripts/check_calendar_sort.js` | PASS 4/4, current run | Time/ID order and personal pins |
+| In-memory execution of full current task-form module with minimal DOM/navigation setup | PASS, current run | One initial reload and one return reload; loading set before first render; filter/status-desc sort/page retained; repaint and same-view setPage do not fetch; reset session does not fetch. This supplements the browser run; it does not replace it |
+| Reproduce previous inventory from Git; compare all acceptance paths with current Git/worktree | PASS, current run | Reproduced previous 166-path hash; only task-form module and its comprehensive checker changed; no dirty/untracked acceptance inputs |
+| CH11 `check_chapter11_browser.js` | RETAINED independent 36/36 at `24e650a`, not rerun | Unchanged logs/AI/admin UI modules, tests, dependencies/configuration; table change only retains loading/error scroll and wraps View re-entry, delegating other main navigation unchanged |
+| NOT `check_notification_browser.js` | RETAINED independent 21/21 at `24e650a`, not rerun | Notification/backend/worker inputs unchanged; current TF also rechecks historical readonly exclusion |
+| LOG `check_logs_profile_browser.js` | RETAINED independent 22/22 at `24e650a`, not rerun | Log/profile inputs unchanged; current TF drives Logs → View transitions |
+| PHONE `check_profile_phone_matrix.py`, `check_phone_cycle.py` | RETAINED independent 26/26 and 5/5 at `24e650a`, not rerun | Privacy service, management authorization, scripts and settings unchanged |
+| ACCOUNT `check_account_lifecycle.py`, `check_account_browser.js` | RETAINED independent 47/47 and 15/15 at `24e650a`, not rerun | Authentication/account inputs unchanged; current TF independently checks logout during navigation refresh |
+| ORG `check_organization_admin.py` | RETAINED independent 58/58 at `24e650a`, not rerun | Admin/organization/backend and check inputs unchanged |
+| Prior supplemental four-filter AND/one-task relation overlap/pin-independence execution | RETAINED independent PASS at `24e650a` | Relevant pure pipeline functions are byte-for-byte unchanged; current TF reruns relation/date/sort/count checks |
 
-Environment recovery: the sandbox denied the MySQL socket, so local integration checks ran with approved access. Outside the sandbox, Python detected system HTTP/HTTPS proxies with no loopback bypass and initially raised `RemoteDisconnected`. Setting both `NO_PROXY` and `no_proxy` to loopback fixed all five affected Python suites. Original failures remain in `/tmp/pandora-e13-*-log` files (actual names end `.log`); successful reruns are `/tmp/pandora-e13-*-retry.log`. No unresolved environment finding remains. An initial supplemental browser harness failed to parse a shebang in `new Function`; removing the shebang in memory allowed the successful reproduction. No repository test was altered.
+Fresh V-001 browser evidence:
 
-Current-run evidence is in `/tmp/pandora-e13-maven.log`, `/tmp/pandora-e13-task-form.{log,json}`, `/tmp/pandora-e13-shots/`, `/tmp/pandora-e13-chapter11.json`, `/tmp/pandora-e13-<suite>.log`, matching `-retry.log` files, and `/tmp/pandora-e13-navigation.log`. These temporary paths may be cleaned later; decisive results are preserved here. Historical `audit/2026-10-21/` evidence was not overwritten.
+- Success: retained page=2, query=`TFbulk`, 240 authorized rows, scroll=160. The first loading observation had zero rendered task rows and loading-only counters. After the three API page requests completed, page=2/query/scroll=160 were retained and 50 rows were rendered.
+- Empty current authorization: loading masked rows, one request completed, then rows=0/page=0/query=`TFbulk`, with the no-authorized-tasks empty state.
+- Failure/retry: one failed return request showed explicit error, no statistics and retry; retry restored 240 rows, the query and a usable 50-row page.
+- Navigation-started logout race: a slow return request was actually started (requests=1); logout cleared rows/filters and returned to login/calendar; its late response did not repopulate state.
+
+The empty/failure responses are deterministic browser fixtures; the same fresh TF suite separately performs real backend permission removal, old-detail denial and historical-readonly tests. Test assertions were inspected rather than trusting their labels. No code/test/planning/handoff file was edited by verification.
+
+Current-run evidence: `/tmp/pandora-e13-reverify-maven.log`, `/tmp/pandora-e13-reverify-task-form.log`, `/tmp/pandora-e13-reverify-task-form.json`, `/tmp/pandora-e13-reverify-shots/`, `/tmp/pandora-e13-reverify-calendar-browser.log`, `/tmp/pandora-e13-reverify-calendar-http.log`. Temporary evidence may later be cleaned; decisive outputs and dispositions are recorded here. Previous independent results and commands remain recoverable from this report at Git `99ed264`; repair audit files were not overwritten or treated as independent evidence.
 
 ## Requirement Coverage
 
-Evidence abbreviations: **TF** = current 82-check task-form run; **CAL** = calendar browser 35 + calendar HTTP 12 + calendar sort 4; **CH11** = chapter11 36; **LOG** = logs/profile 22; **NOT** = notifications 21; **PHONE** = matrix 26 + cycle 5; **ACCOUNT** = lifecycle 47 + browser 15; **ORG** = organization/admin HTTP 58. “Supported” combines observed executable evidence with the named code trace; it does not mean the overall change passes.
+Evidence abbreviations: **TF** = current 85-check task-form run; **CAL** = current calendar browser 35 + calendar HTTP 12 + calendar sort 4; **CH11** = retained independent chapter11 36; **LOG** = retained logs/profile 22; **NOT** = retained notifications 21; **PHONE** = retained matrix 26 + cycle 5; **ACCOUNT** = retained lifecycle 47 + browser 15; **ORG** = retained organization/admin HTTP 58. “Retained” always means the earlier independent run at the proven unchanged `24e650a` basis, not an apply/repair claim. “Supported” combines this executable evidence with the recorded code trace. The supplemental pure-pipeline probes are also retained for unchanged function bodies.
 
 | Requirement / scenario | Evidence | Result |
 | --- | --- | --- |
@@ -114,12 +123,12 @@ Evidence abbreviations: **TF** = current 82-check task-form run; **CAL** = calen
 | ↳ Count overlapping relationships without duplicate totals | Supplementary cross-day good task: total=1 own=1 created=1 visible=0; dedup at commitTaskRows plus TF distinct-ID counts | Supported (execution + trace) |
 | ↳ Recompute counts after all filters | Supplementary four-filter counts; TF counts invariant through every sort and paging; source computes before page slicing | Supported (execution + trace) |
 | ↳ Separate pending completion done and overdue | TF pure pending/done/all-day dueAt checks and live due-soon browser fixture; completed excluded from overdue | Supported (execution + trace) |
-| **Task table refresh and account isolation** | `潘多拉-api.js:22-33,223-285`; `潘多拉-任务表单.js:409-478,530-584`; TF failure/retry/revocation/races; navigation reproduction | FAIL — V-001 (main-navigation re-entry misses refresh) |
+| **Task table refresh and account isolation** | `潘多拉-api.js:22-33,223-285`; `潘多拉-任务表单.js:409-478,530-584`; TF failure/retry/revocation/races; navigation reproduction | Supported — V-001 verified-resolved; fresh return/masking/empty/error/retry/race checks |
 | ↳ Apply effective assignee changes | TF approved owner removal leaves calendar but remains created; month/week/day common viewTasks/dayTasks projection traced; effective-only pending owner semantics traced | Supported (execution + trace) |
 | ↳ Revoke all normal access | TF actual employee owner removal, normal row/count exclusion, old detail 404/discard, historical notification readonly without upsert; NOT historical readonly | Supported (execution + trace) |
 | ↳ Fail a later page and retry | TF offset=100 failure masks rows/counts, no partial commit, retry succeeds; distinct no-task/no-match states and clear filter controls | Supported (execution + trace) |
 | ↳ Ignore stale account and refresh responses | TF slower earlier refresh and logout during in-flight task read; epoch/shared sequence/reset traced. New-account-before-response and forced-expiry variants not separately injected | Supported with stated execution limits |
-| **Five-page navigation** | `潘多拉-交互原型.js:2420`; table dispatch `潘多拉-任务表单.js:567-584`; TF/CAL/CH11/ACCOUNT real identities and five nav buttons | Supported navigation shape; V-001 affects freshness |
+| **Five-page navigation** | `潘多拉-交互原型.js:2420`; table dispatch `潘多拉-任务表单.js:567-584`; TF/CAL/CH11/ACCOUNT real identities and five nav buttons | Supported — fresh main-navigation re-entry checks and retained unaffected identity coverage |
 | ↳ Navigate with an authenticated identity | TF/CAL/CH11/ACCOUNT authenticated navigation; actual five buttons; NOT opens review without a sixth tab; setPage does not change identity | Supported (execution + trace) |
 | ↳ Navigate across the prototype | Same authenticated navigation evidence as preceding scenario (identical acceptance text) | Supported (execution + trace) |
 | ↳ Enter the task table as a secondary view | TF/CAL entry, original detail, close, calendar context return; table dispatch remains page-view with five tabs | Supported (execution + trace) |
@@ -162,7 +171,7 @@ Evidence abbreviations: **TF** = current 82-check task-form run; **CAL** = calen
 | ↳ Maintain and reorder company information | ORG CRUD/order/concurrent ten-item cap/business 403; home read-only rendering and company query inspected | Supported (execution + trace) |
 | ↳ Use the independent PC administration interface | CH11 PC admin seven tabs/dialog; ORG/ACCOUNT admin APIs and persistence; TF prompt points to /admin.html, employee app lacks admin module. Full handover/history/notification browser workflows inspected, not all separately submitted | Supported with stated execution limits |
 
-Additional promised work: tasks 1.1–1.3 are covered by `/me` tests/TF and loader/session inspection; 2.1–2.7 by TF and supplementary probes except V-001; 3.1–3.4 by CAL/TF/shared projection inspection; 4.1–4.5 by package plus HTTP assets/browser/PHONE/ACCOUNT/ORG/CH11/LOG/NOT; 5.1–5.4 by current isolated scripts, updated calendar assertions, V3/status delivery docs and this handoff review. The design constraints of no new dependency/schema/storage, complete authorized TASKS, effective data only, company timezone, 50-row pages, no sixth nav and no direct cell editing were checked against the committed diff and loaded source. Existing privacy and account behavior is covered by the named regressions. No planning contradiction requiring a new product decision was found.
+Additional promised work: tasks 1.1–1.3 are covered by `/me` tests/TF and loader/session inspection; 2.1–2.7 by TF and supplementary probes, including newly verified V-001 return behavior; 3.1–3.4 by CAL/TF/shared projection inspection; 4.1–4.5 by fresh package/TF plus retained unaffected HTTP assets/browser/PHONE/ACCOUNT/ORG/CH11/LOG/NOT; 5.1–5.4 by isolated scripts with fresh affected checks and retained unchanged regressions, updated calendar assertions, V3/status delivery docs and this handoff review. The design constraints of no new dependency/schema/storage, complete authorized TASKS, effective data only, company timezone, 50-row pages, no sixth nav and no direct cell editing were checked against the committed diff and loaded source. Existing privacy and account behavior is covered by the named regressions. No planning contradiction requiring a new product decision was found.
 
 ## Findings
 
@@ -171,16 +180,16 @@ Additional promised work: tasks 1.1–1.3 are covered by `/me` tests/TF and load
 - Category: implementation
 - Severity: medium
 - Requirement: delta **Task table refresh and account isolation**, first paragraph: entering the table must retrieve current authorized normal tasks; **Authorized task table page** limits rows/search/counts to current normal access. Design decisions 2 and 5 combine retained conditions across main pages with entry re-query. Tasks 2.7/3.3 claim this behavior.
-- Evidence: `潘多拉-交互原型.js:2420` `setPage` only changes `state.page` and renders. `潘多拉-任务表单.js:567` dispatches `state.viewPage === 'table'` directly to rendering; the render wrapper at line 574 only changes classes. A complete query is triggered by `openTable` at line 429, manual refresh, lifecycle listeners and successful reloads, but none is triggered by main-navigation return. No session/lifecycle event fires for an in-document tab change.
+- Evidence (original defect at `24e650a`): `潘多拉-交互原型.js:2420` `setPage` only changes `state.page` and renders. `潘多拉-任务表单.js:567` dispatches `state.viewPage === 'table'` directly to rendering; the render wrapper at line 574 only changes classes. A complete query is triggered by `openTable` at line 429, manual refresh, lifecycle listeners and successful reloads, but none is triggered by main-navigation return. No session/lifecycle event fires for an in-document tab change.
 - Expected: when the user returns to the retained table through the View tab, preserve filters/sort/usable page/scroll while re-querying the full current authorized task set, showing loading/error states and recomputing rows/counts from the completed result.
-- Actual: current rows and counts remain visible without any query; changes made by another client while the user was on Logs are not discovered at this entry point. Ordinary detail still rechecks backend permission, so this is a list/search/count freshness failure, not evidence of a backend authorization bypass.
+- Actual (original defect at `24e650a`): current rows and counts remain visible without any query; changes made by another client while the user was on Logs are not discovered at this entry point. Ordinary detail still rechecks backend permission, so this is a list/search/count freshness failure, not evidence of a backend authorization bypass.
 - Repair guidance: make the transition from another main page into the retained task table invoke its normal complete refresh while preserving table state. Avoid querying on every internal render, sort, paint or ResizeObserver callback; preserve existing request/session race guards and loading/error masking.
 - Acceptance checks: authenticate on an isolated service; enter table and set filters/page; go to Logs; change the authorized task response (or actually revoke a fixture's access externally); return using View. Assert a new complete `/tasks` load, loading masks old rows/counts, removed tasks disappear, retained conditions/page remain usable, and failures show retry. Repeat with slow older queries and account reset. Rerun TF, CAL and backend package/tests.
-- Repair status: addressed-awaiting-verification
+- Repair status: verified-resolved
 - Repair notes: `潘多拉-任务表单.js` now wraps `setPage`: returning to a retained task table from another main page sets the loading state before the first render, then calls the existing complete `refreshTable`, so old rows/counters are masked and the full authorized set is re-queried; loading/error paints retain scroll memory, and internal renders/sorts/pages/ResizeObserver callbacks do not trigger queries. `backend/scripts/check_task_form.js` gained V-001 checks for (a) successful return with filter/page/scroll retained and 50 rows restored, (b) empty current authorization dropping old rows and clamping the page, (c) failed return showing retry with recovery, plus a navigation-started logout/in-flight-response race. Pre-repair Chrome probe: `requests=0`, retained 15 rows; post-repair: `requests=1`, empty result rows follow the new response. Checks: `mvn -B -ntp -Dmaven.repo.local="$PWD/.runtime/m2" package` (66 tests, BUILD SUCCESS); `CHECK_WORKER=true ./scripts/run_check_isolated.sh node scripts/check_task_form.js --base-url {base} --output ../audit/2026-10-21/task-form-fix/comprehensive.json --screenshot-dir ../audit/2026-10-21/task-form-fix` 85/85; `./scripts/run_check_isolated.sh node scripts/check_home_calendar_browser.js --base-url {base}` 35/35; `node scripts/check_calendar_sort.js` 4/4; `./scripts/run_check_isolated.sh python3 scripts/check_home_calendar.py --base-url {base}` 12/12. All browser/HTTP checks used fresh scratch databases; no planning, spec, task, verdict, or historical-evidence changes.
-- Reverification notes: first independent finding; reproduced both by executing the entire source module in a minimal navigation harness and by Chrome on a newly seeded packaged service. Chrome observed `RETURN {"requests":0,"rows":13,"rendered":13,"table":"table"} initialRows 13`; explicit refresh then observed `MANUAL_REFRESH {"requests":1,"rows":0}`. The browser probe replaced only `/tasks?` responses with an empty normal authorization set; it did not mutate backend authorization or user data. The source proves that real external permission changes are likewise not queried on this transition.
+- Reverification notes: independently rechecked at `99ed264` in the focused run described above. The wrapper at `潘多拉-任务表单.js:590` sets loading before delegating the first render and then calls complete refresh; loading/error paint retains scroll at lines 352/360. Fresh Chrome success: 3 page requests, 240 rows, page=2, query=TFbulk, scroll=160, 50 rendered rows. During loading: 0 rows rendered and counters masked. Empty authorization: 1 request, 0 rows, page clamped to 0, query retained. Failure/retry and logout during return refresh passed. Full affected TF 85/85, CAL 35/35 + HTTP 12/12 + sort 4/4 and package/tests 66/66 passed. Supplemental full-module execution established no reload on repaint/same-tab selection and retained sort. No new findings; V-001 is verified-resolved.
 
-Reproduce the decisive browser observation after a real login and opening the table on a scratch service (execute in the browser context; this only changes this page's test fetch):
+Original reproduction, retained for regression use after a real login and opening the table on a scratch service (only this page's fetch changes; the expected result below is updated for the repair):
 
 ```javascript
 setPage('log');
@@ -196,10 +205,10 @@ window.fetch = function (input, init) {
   return window.savedFetch(input, init);
 };
 setPage('view');
-// After settling: taskGets === 0, prior rows and counters are still rendered.
-// await window.Pandora.taskForm.refresh();
-// Then: taskGets === 1, taskForm.state.rows.length === 0.
+// Immediately: loading masks prior rows and counters.
+// After settling: taskGets === 1, taskForm.state.rows.length === 0.
+// Before the repair: taskGets stayed 0 and prior rows remained rendered.
 // Restore window.fetch = window.savedFetch, or close the disposable browser.
 ```
 
-Next action: `$openspec-e13-fix-change fix-pandora-client-feedback-gaps`, then independently verify again. Relevant edits invalidate this recorded basis; archive requires a fresh independent PASS.
+Next action: `$openspec-e13-archive-change fix-pandora-client-feedback-gaps`. Independent verification passed for the recorded basis; relevant edits require re-verification before archive.
