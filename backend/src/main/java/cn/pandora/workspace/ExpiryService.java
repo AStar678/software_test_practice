@@ -8,6 +8,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 
@@ -28,12 +29,14 @@ public class ExpiryService {
     private final Events events;
     private final ReminderService reminders;
     private final TransactionTemplate transaction;
+    private final Clock clock;
 
-    public ExpiryService(Db db, Events events, ReminderService reminders, PlatformTransactionManager tx) {
+    public ExpiryService(Db db, Events events, ReminderService reminders, PlatformTransactionManager tx, Clock clock) {
         this.db = db;
         this.events = events;
         this.reminders = reminders;
         this.transaction = new TransactionTemplate(tx);
+        this.clock = clock;
     }
 
     /**
@@ -41,11 +44,15 @@ public class ExpiryService {
      * stale page with 4xx, but the deadline terminal state (status, unfreeze, expiry/overdue events)
      * must survive that error, so it is written and committed in its own transaction first
      * (design §6, DEV-012). Call this only outside {@code Writes.run}.
+     *
+     * <p>The checked clock is sampled only after the organization lock has been acquired: a submission
+     * that waited on the lock may cross its deadline while waiting, and must then see the actual
+     * post-wait instant rather than the pre-lock time it queued at (V-002).
      */
-    public int expirePendingBeforeSubmit(String organizationId, String taskId, Instant now) {
+    public int expirePendingBeforeSubmit(String organizationId, String taskId) {
         Integer expired = transaction.execute(status -> {
             db.one("SELECT * FROM organizations WHERE id=? FOR UPDATE", organizationId);
-            return expirePendingForTask(organizationId, taskId, now);
+            return expirePendingForTask(organizationId, taskId, clock.instant());
         });
         return expired == null ? 0 : expired;
     }

@@ -7,359 +7,764 @@
 ## Requirements
 
 ### Requirement: Five-page navigation
-原型 SHALL 提供且仅提供“导图”“视图”“日志”“AI地图”“我的”五个业务页面，并允许用户通过固定导航在五页之间切换且保持当前演示身份。
+App SHALL 仅提供“导图”“视图”“日志”“AI地图”“我的”五个主业务页面，固定导航切换时保持真实认证身份；通知中心承接审核而非第六个主页面，创建/派发与本人申请入口属于视图，日志只写看日志。任务表单 SHALL 作为视图下的二级页面而非第六主导航，详情关闭后返回表单，表单返回保留日历模式与日期。演示身份选择 SHALL 经过实际认证且不得改变服务端权限。
+
+#### Scenario: Navigate with an authenticated identity
+- **WHEN** 用户依次切换五页或从通知进入审核
+- **THEN** 系统 SHALL 保持真实账号及组织权限，五页导航仅选中当前页，通知 SHALL 不成为第六页
 
 #### Scenario: Navigate across the prototype
-- **WHEN** 用户依次点击五个导航项
-- **THEN** 原型 SHALL 展示对应页面，并且导航中始终只有当前页面处于选中状态
+- **WHEN** 用户依次切换五页或从通知进入审核
+- **THEN** 系统 SHALL 保持真实账号及组织权限，五页导航仅选中当前页，通知 SHALL 不成为第六页
+
+#### Scenario: Enter the task table as a secondary view
+- **WHEN** 用户从日历打开任务表单、进入任务详情并依次返回
+- **THEN** 主导航 SHALL 始终仅有五项并选中视图，详情返回表单，表单返回此前日历模式与日期
 
 ### Requirement: Four-quadrant dashboard
-导图页 SHALL 在应用头部与底部导航之间的可用高度内固定展示公司统一信息、本人被派发且尚未完成的前十项任务、最多十条个人信息以及本人今天和前一天的日志四个象限，导图页整体 SHALL NOT 纵向或横向滚动，每个象限的内容区 SHALL 独立纵向滚动，且页面 SHALL NOT 展示四象限之外的“说明”板块。被派发任务项 SHALL 完整展示其任务名称、状态、紧急程度、截止信息和已有文字进展备注，不得显示百分比进度或进度条，也不得裁切、遮挡或以单行省略隐藏这些信息。公司统一信息 SHALL 最多包含十条，并仅允许上层新增、编辑和删除；个人信息 SHALL 最多包含十条并允许本人新增、编辑和删除，在尚未发生人工修改时由本人的日志内容生成初始摘录；近期日志 SHALL 按时间倒序展示原始日志，从而与个人摘录形成明确差异。
+导图页 SHALL 固定展示四象限，各象限独立纵向滚动，整体不横向或纵向滚动，也不增加说明区。公司信息最多十条，按管理端设置顺序只读展示，包括上层无维护入口。本人被他人派发且未完成的正常任务 SHALL 按实际派发给本人的时间倒序取最多十项，条目仅标题和右对齐紧急程度，点击详情查看其他信息。个人信息最多十条且由本人手动维护，先只读详情再编辑删除，列表不外显操作，不从日志生成。近期日志 SHALL 为公司时区包含今天及此前九个自然日的本人原文，按日志日期倒序最多十篇；未发布任务及历史通知访问例外 SHALL 不进入正常任务区。
+
+#### Scenario: Scroll independent quadrants
+- **WHEN** 任一象限超出可用高度
+- **THEN** 仅该象限 SHALL 滚动，其他象限、头部及底部导航保持原位
+
+#### Scenario: Rank a newly assigned old task
+- **WHEN** 旧任务今天新增本人为负责人，另一新任务昨天已派发给本人
+- **THEN** 今日派发的旧任务 SHALL 排在前面，刷新后顺序与后端前十项一致，不能改用创建时间、截止或紧急度排序
+
+#### Scenario: Show concise tasks and read only company information
+- **WHEN** 上层或普通员工进入导图
+- **THEN** 任务项 SHALL 仅展示标题和右侧紧急程度并可进入详情，公司信息 SHALL 无编辑删除入口
+
+#### Scenario: Maintain personal items through detail
+- **WHEN** 用户点击个人条目后编辑/删除或尝试新增第十一条
+- **THEN** 系统 SHALL 先展示只读详情且仅在详情提供维护，拒绝第十一条，日志原文 SHALL 不被改写
+
+#### Scenario: Use the ten day log window
+- **WHEN** 本人有今天、九天前及十天前的日志
+- **THEN** 首页 SHALL 包含今天与九天前而排除十天前，按业务日期倒序展示原文
 
 #### Scenario: View the four dashboard quadrants
-- **WHEN** 任一业务角色进入导图页
-- **THEN** 页面 SHALL 在可用内容区内同时呈现四个语义清晰的象限，导图页整体不发生滚动，且底部不出现“说明”板块
+- **WHEN** 任一象限超出可用高度
+- **THEN** 仅该象限 SHALL 滚动，其他象限、头部及底部导航保持原位
 
 #### Scenario: Scroll one dashboard quadrant
-- **WHEN** 某一象限的内容超过该象限可用高度
-- **THEN** 用户 SHALL 能仅滚动该象限的内容，其他象限、应用头部和底部导航保持原位
+- **WHEN** 任一象限超出可用高度
+- **THEN** 仅该象限 SHALL 滚动，其他象限、头部及底部导航保持原位
 
 #### Scenario: Read an assigned task without clipping
-- **WHEN** “我被派发未完成”象限展示包含较长名称、多个标签或文字进展备注的任务
-- **THEN** 该任务格 SHALL 自适应内容高度并完整显示规定信息，不得显示百分比进度或进度条，且不得与相邻任务重叠
+- **WHEN** 上层或普通员工进入导图
+- **THEN** 任务项 SHALL 仅展示标题和右侧紧急程度并可进入详情，公司信息 SHALL 无编辑删除入口
 
 #### Scenario: Executive maintains company information
-- **WHEN** 上层新增、编辑或删除一条公司统一信息
-- **THEN** 原型 SHALL 更新所有身份可见的公司信息且总数不得超过十条，中层和下层 SHALL 不显示这些维护操作
+- **WHEN** 上层或普通员工进入导图
+- **THEN** 任务项 SHALL 仅展示标题和右侧紧急程度并可进入详情，公司信息 SHALL 无编辑删除入口
 
 #### Scenario: Reject company information above the limit
-- **WHEN** 公司统一信息已有十条且上层尝试继续新增
-- **THEN** 原型 SHALL 阻止新增并清楚提示十条上限
+- **WHEN** 公司信息已十条且管理员新增，包括并发新增
+- **THEN** 系统 SHALL 拒绝第十一条且提示上限，App 上层也无公司信息维护权
 
 #### Scenario: Edit personal information
-- **WHEN** 用户新增、编辑或删除本人的一条个人信息
-- **THEN** 原型 SHALL 更新本人的个人信息且总数不得超过十条，并且不得改写任何原始日志
+- **WHEN** 用户点击个人条目后编辑/删除或尝试新增第十一条
+- **THEN** 系统 SHALL 先展示只读详情且仅在详情提供维护，拒绝第十一条，日志原文 SHALL 不被改写
 
 #### Scenario: Reject personal information above the limit
-- **WHEN** 本人的个人信息已有十条且用户尝试继续新增
-- **THEN** 原型 SHALL 阻止新增并清楚提示十条上限
+- **WHEN** 用户点击个人条目后编辑/删除或尝试新增第十一条
+- **THEN** 系统 SHALL 先展示只读详情且仅在详情提供维护，拒绝第十一条，日志原文 SHALL 不被改写
 
 ### Requirement: Calendar task views
-视图页 SHALL 提供无横向滚动的响应式月、周、日三种类甘特视图，并保留位于视图主体上方的当前时间范围、任务归属图例和排序说明板块。非全天任务 SHALL 以从任务开始日期时间连续延伸至截止日期时间的条形呈现；全天任务 SHALL 覆盖开始日期至截止日期的完整日期范围且首尾日期均包含在内。任务条 SHALL 在当前视图边界或月视图逐日容量边界处截断，并且可见文本 SHALL 仅包含任务关系 emoji 标记和任务名称，不得显示任务描述、状态、截止日期或其他元数据；完整信息仍 SHALL 可从任务详情查看。任务的纵向排列 SHALL 先按时间跨度从长到短，其次按紧急程度从高到低，最后按截止日期从近到远。
+视图页 SHALL 提供月、周、日模式，所有月格、周/日时间轴、全天区、跨日条及当日完整列表 SHALL 仅展示本人当前为有效负责人的正常任务，包含本人创建且负责及已完成任务；本人仅创建或仅凭组织授权可见但非负责的任务 SHALL 不进入日历。该展示限制 SHALL 不收窄任务表单、详情、导图、日志关联及 AI 的既有授权。顶部 SHALL 提供左侧展开、中央可点年月及任务表单入口；侧面板提供模式切换及独立本人申请入口，右下悬浮创建按钮不遮挡导航和任务。周/日偏离本周/今天时 SHALL 提供相应返回快捷键，日期确认后定位相应月、周或日。普通任务名称搜索及关系/状态统计 SHALL 迁到任务表单，日历不保留搜索框、按钮、结果或统计区；日期导航和月格真实隐藏数量 SHALL 保留。待创建及历史通知只读例外 SHALL 不进入任何日历区域。
 
-视图页 SHALL 从低饱和色板按任务标识稳定分配填充色，在同屏可用颜色尚未耗尽时 SHALL 尽量不为不同任务重复用色，色板耗尽后 MAY 重复颜色。颜色 SHALL 仅用于区分不同任务，不得单独承担任务关系含义。每个任务条 SHALL 使用互斥的关系标记：当前用户是负责人时标记“我负责”，否则当前用户是创建者时标记“我分配”，两者皆非但任务可见时标记“仅可见”；三类关系 SHALL 分别使用带文字图例和无障碍名称的不同 emoji 前缀。
+月视图 SHALL 为默认模式，周一至周日排列、日期格固定、相邻月日期弱化但可读，跨日跨周跨度可辨；默认按开始时间升序，同时间按任务标识稳定排序。每格最多五条、空间不足可更少，超长标题直接裁切不追加省略号；有隐藏任务则显示实际隐藏数量，点击日期格 SHALL 打开当天全部本人负责的正常任务列表。本人置顶 SHALL 持久化且仅改变本人月格及当日列表顺序，不改紧急程度；相同置顶状态仍按时间排序。
 
-月视图 SHALL 为默认视图，并提供可直接选择年份和月份的选择器。月视图 SHALL 按完整自然周显示目标月所覆盖的全部日期，包括网格首尾属于相邻月份的日期及落在这些日期上的可见任务；相邻月份日期 SHALL 保持可读并与目标月日期有非颜色唯一的弱化差异。每个日期单元 SHALL 先显示独立、可操作的日期数字标题，其视觉高度约为一条任务行的 1.5 倍，标题下方 SHALL 提供五条等高任务行。某日期最多有五项任务时 SHALL 显示排序最靠前的至多五项；超过五项时 SHALL 在前四行显示任务，并在第五行显示可操作的 `+N`，其中 N 为该日期未直接显示的任务数。跨日任务在连续可展示日期上 SHALL 保持连续条形，在因逐日容量溢出而隐藏的日期边界处 MAY 分段。
+周/日 SHALL 有周一至周日日期行、全天区及可纵向滚动的 00:00—24:00 时间轴，不将一天压进首屏。全天按完整日期范围显示，非全天跨日逐日显示真实覆盖时段；重叠任务 SHALL 在当天按完整并发列数横向并列，全天及定时任务均逐项可见、可点，不用折叠或 +N 代替。标题可裁切但不得互相覆盖阻止点击，最小点击区域与置顶标识 SHALL 不改真实时间位置。
 
-用户点击月视图任一日期标题 SHALL 进入包含该日期的周视图；点击日期标题之外的空白任务区域 SHALL NOT 切换视图。周视图的七个星期/日期标题 SHALL 分别为可操作的下钻入口，用户只有点击该标题块时才进入对应日视图；周视图任务区空白、任务条和其他控件 SHALL NOT 触发日视图下钻。周视图 SHALL 提供上一周、下一周和返回月视图操作；日视图 SHALL 提供前一天、后一天和返回周视图操作。全天任务在日视图 SHALL 出现在独立的全天区域，非全天任务 SHALL 继续按时刻轴呈现。
+日期区域左右滑动 SHALL 每次切完整一周并对齐，日视图保持所选星期，任务区竖滚不误切周。每块 SHALL 有“我负责”的可见非纯色关系标记与无障碍名称，保留稳定低饱和配色且颜色非唯一含义；多重关系与数量 SHALL 在任务表单按独立规则展示，日历不再按关系计数。时间轴置顶仅强调，不移动时段。
+
+#### Scenario: Use the required calendar entry points
+- **WHEN** 用户展开面板、选日期、进入任务表单、打开本人申请或点右下加号
+- **THEN** 系统 SHALL 分别提供模式切换、相应日期定位、任务表单二级页面、隔离的本人申请及创建表单，日历无普通名称搜索或统计区，收起后日历 SHALL 占主体
+
+#### Scenario: Read a month and open a complete day list
+- **WHEN** 跨月跨周任务与超过月格容量的任务同时存在
+- **THEN** 系统 SHALL 绘制可辨跨度、固定格和真实隐藏数，最多显示五条，标题直接裁切；点日期格 SHALL 展示该日全部本人负责的正常任务而非直接下钻周视图
+
+#### Scenario: Pin only one's own ordering
+- **WHEN** 用户置顶并刷新，而另一用户读取同一任务
+- **THEN** 本人的月格及完整日列表 SHALL 置顶优先，同组时间升序；他人顺序、任务紧急程度及时间轴位置 SHALL 不变
+
+#### Scenario: Split a timed cross day task
+- **WHEN** 非全天任务从周二 20:00 到周三 10:00
+- **THEN** 周视图 SHALL 在周二 20:00—24:00 和周三 00:00—10:00 绘制对应时段，全天区 SHALL 无该任务；截止恰为午夜 SHALL 不增加次日零长度副本
+
+#### Scenario: Display every overlapping and all day task
+- **WHEN** 周/日某天有四个同时间任务及多项全天任务
+- **THEN** 所有定时任务 SHALL 在当天各自分栏且逐个可点击，所有全天任务 SHALL 独立展示，时间轴可竖滚至 24:00，不能用 +4、+3 或全天 +N 隐藏任务
+
+#### Scenario: Switch a whole week while preserving weekday
+- **WHEN** 日视图选中周三，用户在日期区向前/后滑动一周或在时间轴竖滚
+- **THEN** 切周 SHALL 选中前/后周三且对齐完整周，竖滚 SHALL 不改变日期；点日期可直接选择当天，点任务 SHALL 只打开详情
+
+#### Scenario: Count mutually exclusive relationships
+- **WHEN** 同任务兼有创建者/负责人身份并跨越多天，且有本人仅创建、仅组织可见、待创建及仅历史访问任务
+- **THEN** 日历所有区域及当日列表 SHALL 只显示有效负责人含本人的正常任务并标记我负责，不显示统计区；原互斥计数 SHALL 由表单独立判断的负责/创建关系计数替代，本人仅创建、仅组织可见、未发布及历史例外任务 SHALL 不进入日历
 
 #### Scenario: Open the default month view
-- **WHEN** 用户进入视图页且尚未在本次会话中下钻
-- **THEN** 原型 SHALL 展示当前月份覆盖的完整自然周网格及其上方说明板块，所有日期均带日期数字，且页面与视图主体均不存在横向滚动
+- **WHEN** 用户展开面板、选日期、进入任务表单、打开本人申请或点右下加号
+- **THEN** 系统 SHALL 分别提供模式切换、相应日期定位、任务表单二级页面、隔离的本人申请及创建表单，日历无普通名称搜索或统计区，收起后日历 SHALL 占主体
 
 #### Scenario: Select a year and month
-- **WHEN** 用户打开年月选择器并选择目标年份和月份
-- **THEN** 月视图 SHALL 直接切换到所选月份、更新范围标签，并展示该月网格包含的本月与相邻月份日期及任务
+- **WHEN** 用户展开面板、选日期、进入任务表单、打开本人申请或点右下加号
+- **THEN** 系统 SHALL 分别提供模式切换、相应日期定位、任务表单二级页面、隔离的本人申请及创建表单，日历无普通名称搜索或统计区，收起后日历 SHALL 占主体
 
 #### Scenario: Drill from month to week
-- **WHEN** 用户点击月视图某个日期数字标题
-- **THEN** 原型 SHALL 切换到包含该日期的周视图
+- **WHEN** 用户点击月视图日期格
+- **THEN** 系统 SHALL 按 V3 打开当天完整任务列表，替代旧下钻周视图；周模式从面板切换
 
 #### Scenario: Ignore blank month task space
-- **WHEN** 用户点击月视图日期标题、任务条和 `+N` 之外的空白任务区域
-- **THEN** 原型 SHALL 保持当前月视图且不打开其他内容
+- **WHEN** 用户点击月视图日期格内无任务条的区域
+- **THEN** 系统 SHALL 按 V3 打开当天完整列表；点击独立任务条仅开该任务详情
 
 #### Scenario: Drill from week to day
-- **WHEN** 用户点击周视图某一天的星期/日期标题块
-- **THEN** 原型 SHALL 切换到该日期的日视图
+- **WHEN** 用户选择周视图某日期的日程入口
+- **THEN** 系统 SHALL 定位该日视图，任务点击不同时触发日期导航
 
 #### Scenario: Ignore blank week task space
-- **WHEN** 用户点击周视图任务条和其他控件之外的任务区空白位置
-- **THEN** 原型 SHALL 保持当前周视图且不打开其他内容
+- **WHEN** 用户点击周时间轴空白或竖滚
+- **THEN** 系统 SHALL 不误开任务或切换模式，日期区手势与任务区竖滚分别处理
 
 #### Scenario: Switch time granularity
-- **WHEN** 用户通过月视图日期标题、周视图星期/日期标题或逐级返回操作切换时间粒度
-- **THEN** 原型 SHALL 按所选日期范围展示对应的月、周或日类甘特视图，且周、日视图包含时刻信息
+- **WHEN** 用户展开面板、选日期、进入任务表单、打开本人申请或点右下加号
+- **THEN** 系统 SHALL 分别提供模式切换、相应日期定位、任务表单二级页面、隔离的本人申请及创建表单，日历无普通名称搜索或统计区，收起后日历 SHALL 占主体
 
 #### Scenario: Keep task clicks distinct from drill-down
-- **WHEN** 用户在月视图或周视图点击任务条
-- **THEN** 原型 SHALL 打开该任务详情，且不得同时切换时间粒度
+- **WHEN** 日视图选中周三，用户在日期区向前/后滑动一周或在时间轴竖滚
+- **THEN** 切周 SHALL 选中前/后周三且对齐完整周，竖滚 SHALL 不改变日期；点日期可直接选择当天，点任务 SHALL 只打开详情
 
 #### Scenario: Navigate and return from a week
-- **WHEN** 用户在周视图选择上一周、下一周或返回月视图
-- **THEN** 原型 SHALL 分别移动一个自然周或返回包含当前周锚点的月视图
+- **WHEN** 日视图选中周三，用户在日期区向前/后滑动一周或在时间轴竖滚
+- **THEN** 切周 SHALL 选中前/后周三且对齐完整周，竖滚 SHALL 不改变日期；点日期可直接选择当天，点任务 SHALL 只打开详情
 
 #### Scenario: Navigate and return from a day
-- **WHEN** 用户在日视图选择前一天、后一天或返回周视图
-- **THEN** 原型 SHALL 分别移动一个自然日或返回包含当前日期的周视图
+- **WHEN** 日视图选中周三，用户在日期区向前/后滑动一周或在时间轴竖滚
+- **THEN** 切周 SHALL 选中前/后周三且对齐完整周，竖滚 SHALL 不改变日期；点日期可直接选择当天，点任务 SHALL 只打开详情
 
 #### Scenario: Render a spanning task bar
-- **WHEN** 可见非全天任务的开始日期时间和截止日期时间与当前视图范围相交
-- **THEN** 原型 SHALL 按可展示的相交范围绘制任务条、仅显示关系标记和可读任务名称，并将超出当前范围或逐日容量的部分截断
+- **WHEN** 非全天任务从周二 20:00 到周三 10:00
+- **THEN** 周视图 SHALL 在周二 20:00—24:00 和周三 00:00—10:00 绘制对应时段，全天区 SHALL 无该任务；截止恰为午夜 SHALL 不增加次日零长度副本
 
 #### Scenario: Render an all-day task
-- **WHEN** 全天任务覆盖当前月、周或日视图中的一个或多个日期
-- **THEN** 月视图和周视图 SHALL 按完整日期列展示该任务，日视图 SHALL 在全天区域展示该任务且不得伪造开始或截止时刻
+- **WHEN** 周/日某天有四个同时间任务及多项全天任务
+- **THEN** 所有定时任务 SHALL 在当天各自分栏且逐个可点击，所有全天任务 SHALL 独立展示，时间轴可竖滚至 24:00，不能用 +4、+3 或全天 +N 隐藏任务
 
 #### Scenario: Distinguish visible tasks
-- **WHEN** 当前视图显示多个不同任务且低饱和色板仍有未使用颜色
-- **THEN** 原型 SHALL 为不同任务显示不同填充色，并在重新渲染同一任务时保持其颜色稳定
+- **WHEN** 同屏显示多个不同任务
+- **THEN** 系统 SHALL 保持稳定低饱和任务色、尽量区分，色板耗尽可复用；关系 SHALL 有可见非纯色标记
 
 #### Scenario: Identify the current user's task relationship
-- **WHEN** 当前视图同时包含本人负责、本人创建但不负责、以及仅因权限而可见的任务
-- **THEN** 每个任务条 SHALL 分别显示“我负责”“我分配”或“仅可见”对应的 emoji，且图例与无障碍名称 SHALL 说明三者含义
+- **WHEN** 同任务兼有创建者/负责人身份并跨越多天，且有本人仅创建、仅组织可见、待创建及仅历史访问任务
+- **THEN** 日历所有区域及当日列表 SHALL 只显示有效负责人含本人的正常任务并标记我负责，不显示统计区；本人仅创建、仅组织可见、未发布及历史例外任务 SHALL 不显示，完整关系及状态数量迁入任务表单
 
 #### Scenario: Show only task names in bars
-- **WHEN** 任一任务条出现在月、周或日视图
-- **THEN** 条内 SHALL NOT 显示任务描述或其他任务元数据，用户点击后 SHALL 能在详情中查看完整信息
+- **WHEN** 日历绘制任务块
+- **THEN** 系统 SHALL 显示标题及必要关系标记，不塞入描述/进展等详情，裁切后仍可点击详情读全文
 
 #### Scenario: Order visible task lanes
-- **WHEN** 当前时间范围内存在多个可见任务
-- **THEN** 原型 SHALL 先展示时间跨度更长的任务，跨度相同时优先展示更紧急的任务，跨度和紧急程度均相同时优先展示截止日期更早的任务
+- **WHEN** 用户置顶并刷新，而另一用户读取同一任务
+- **THEN** 本人的月格及完整日列表 SHALL 置顶优先，同组时间升序；他人顺序、任务紧急程度及时间轴位置 SHALL 不变
 
 #### Scenario: Fill five monthly task rows
-- **WHEN** 月视图某日期包含五项或更少的可见任务
-- **THEN** 该日期 SHALL 按规定顺序在日期标题下直接显示至多五项任务且不显示 `+N`
+- **WHEN** 跨月跨周任务与超过月格容量的任务同时存在
+- **THEN** 系统 SHALL 绘制可辨跨度、固定格和真实隐藏数，最多显示五条，标题直接裁切；点日期格 SHALL 展示该日全部本人负责的正常任务而非直接下钻周视图
 
 #### Scenario: Handle crowded time slots
-- **WHEN** 月视图某日期包含六项或更多可见任务
-- **THEN** 该日期 SHALL 在前四行显示排序最靠前的任务，并在第五行显示代表其余任务数量的可操作 `+N`
+- **WHEN** 跨月跨周任务与超过月格容量的任务同时存在
+- **THEN** 系统 SHALL 绘制可辨跨度、固定格和真实隐藏数，最多显示五条，标题直接裁切；点日期格 SHALL 展示该日全部本人负责的正常任务而非直接下钻周视图
 
 #### Scenario: Open overflow tasks for one date
-- **WHEN** 用户点击某日期第五行的 `+N`
-- **THEN** 原型 SHALL 展示该日期未直接显示且当前身份有权查看的任务列表，并允许从列表打开任务详情
+- **WHEN** 跨月跨周任务与超过月格容量的任务同时存在
+- **THEN** 系统 SHALL 绘制可辨跨度、固定格和真实隐藏数，最多显示五条，标题直接裁切；点日期格 SHALL 展示该日全部本人负责的正常任务而非直接下钻周视图
+
+#### Scenario: Preserve calendar navigation after table return
+- **WHEN** 用户从非本周或非今天的日历进入表单再返回
+- **THEN** 系统 SHALL 恢复原模式和日期，并保留回到本周/今天、日期选择、创建和独立本人申请入口，月格隐藏数 SHALL 仅由本人负责任务计算
+
+### Requirement: Authorized task table page
+系统 SHALL 从视图提供“任务表单”二级页面，使用一行一项任务、表头与网格对齐的表格展示本人当前全部授权正常任务。表格 SHALL 支持纵向及窄屏横向滚动，并使表头、任务名称、返回和分页操作可定位及操作。每项 SHALL 显示任务名称、本人关系、有序负责人、原创建者、创建时间、说明、完成标准、开始/截止日期时间、全天标记、执行状态、是否完成、紧急程度、进展备注、当前待审类型/冻结、逾期标记及有权查看的上级任务；长文本可预览并从详情查看全文，全天 SHALL 不伪造时刻，无权父任务 SHALL 不泄露标识或标题。
+
+列表、搜索及计数 SHALL 只纳入当前有正常查看权且已有有效版本的任务，按任务标识去重。已生效任务待审 SHALL 展示旧有效版及待审标记，不泄露提议或专用 diff；待创建及其他未发布申请、仅有历史通知只读访问权的任务 SHALL 不纳入。任务操作 SHALL 进入原鉴权详情及审核流程，不提供单元格直接改写。返回日历 SHALL 保留此前模式和日期；关闭详情 SHALL 保留表单条件及当前位置。
+
+#### Scenario: Browse the authorized spreadsheet on a narrow screen
+- **WHEN** 用户从任一日历模式进入任务表单并滚动表格
+- **THEN** 页面 SHALL 展示全部规定字段，表头和名称可定位、所有行可访问，底部仍只有五个主导航，返回 SHALL 恢复原模式和日期
+
+#### Scenario: Inspect effective data while review is pending
+- **WHEN** 当前范围中同时存在已生效修改待审、完成待审、待创建及仅历史通知可读任务
+- **THEN** 表格 SHALL 仅展示前两类的有效资料和待审类型/冻结，后两类 SHALL 不进入列表、搜索及计数，普通查看者 SHALL 不获得提议或 diff
+
+#### Scenario: Open detail and return without losing context
+- **WHEN** 用户在表单筛选并翻页后打开任务详情，关闭或完成一次允许的业务操作
+- **THEN** 系统 SHALL 保留条件及可用页码，普通关闭保持浏览位置，成功写入后按当前有效数据重算；受限父任务 SHALL 不因表格展示而泄露
+
+### Requirement: Combined task table filters and search
+任务表单 SHALL 提供“全部/我负责/我创建/仅可见”关系、“全部/未完成/已完成”完成、任务名称及可选起止日期条件，全部条件同时生效。本人为有效负责人即“我负责”，本人为原创建者即“我创建”（包括同时负责），两者均否才属“仅可见”；行 SHALL 可同时标记负责和创建但不重复。完成 SHALL 仅由有效执行状态判断，待完成审核仍属未完成。
+
+名称搜索 SHALL 对整个当前授权正常任务集做去首尾空格、不区分大小写的包含匹配，最多 200 字符；日历 SHALL 不保留普通任务搜索。日期默认全部，不继承日历月份，支持只填一端，按公司时区任务首尾日期与所选闭合日期范围相交筛选；全天首尾日期均包含，定时任务用实际开始及截止所属公司日期。结束早于开始 SHALL 提示错误且不发布错误结果。人员、日志及编辑中的关联任务查找 SHALL 保持原有用途及权限。
+
+#### Scenario: Find a task created and assigned to oneself
+- **WHEN** 本人同时为一个任务的创建者和负责人，分别选择我负责、我创建或仅可见
+- **THEN** 前两个筛选 SHALL 各包含该任务一次，仅可见 SHALL 排除该任务，关系标记 SHALL 可同时显示负责和创建
+
+#### Scenario: Apply relation completion title and date together
+- **WHEN** 用户选择我创建、未完成，输入名称片段并设置与任务排期相交的日期
+- **THEN** 系统 SHALL 返回同时满足所有条件的完整授权结果，完成待审 SHALL 仍包含于未完成，已完成或任一条件不符的任务 SHALL 排除
+
+#### Scenario: Search beyond the first API page
+- **WHEN** 名称匹配任务位于 API 第二页之后或原日历所选月份之外
+- **THEN** 默认全部日期的任务表单 SHALL 找到任务，不能仅搜索首 20 条或当前显示页
+
+#### Scenario: Use company dates independently of device timezone
+- **WHEN** 设备时区与公司时区不同，用户输入单端或双端日期，或输入结束早于开始的范围
+- **THEN** 正常筛选 SHALL 使用公司日期、全天首尾均包含，非法范围 SHALL 显示校验错误并保留上次有效结果
+
+### Requirement: Global task table sorting and counts
+表单 SHALL 至少支持按名称、创建时间、开始、截止、紧急程度和执行状态的列头升降序排序并显示方向；默认开始升序，切换新列先升序，同列再次切换降序，同值始终按任务标识升序稳定排列。紧急程度升序 SHALL 为紧急/高/中/低，执行状态升序 SHALL 为待开始/进行中/已完成，个人置顶 SHALL 不影响表格排序。筛选和排序 SHALL 在整个结果集完成后再分页，每页默认 50 条，改变条件/排序回第一页。
+
+表单 SHALL 展示完整组合筛选结果的总数、我负责、我创建、仅可见、待完成审核、已完成、逾期未完成数量，跨日及跨分页按任务标识去重，不随页大小或排序改变。负责和创建 SHALL 分别判断并允许重叠，关系数相加 SHALL 不作为总数。完成待审 SHALL 单列且不当作已完成；逾期未完成 SHALL 由当前时刻已超过有效截止且执行状态非已完成判断，可与未完成状态及待审重叠，全天使用真实有效截止时刻。
+
+#### Scenario: Sort all filtered rows before paging
+- **WHEN** 超过两页 API 的授权任务分布着不同开始时间、同名、不同紧急程度及状态，用户分别切换六列排序并翻表格页
+- **THEN** 各页连起来 SHALL 等于完整筛选结果的全局排序，同值按任务标识稳定排序，方向可辨识，置顶 SHALL 不改变该序列
+
+#### Scenario: Count overlapping relationships without duplicate totals
+- **WHEN** 唯一筛选结果是一个跨日、本人创建且负责的任务
+- **THEN** 总数 SHALL 为 1，我负责 SHALL 为 1，我创建 SHALL 为 1，仅可见 SHALL 为 0，不因跨日或关系重叠增加总行数
+
+#### Scenario: Recompute counts after all filters
+- **WHEN** 用户在超过一显示页的结果中叠加名称、关系、完成和日期条件，随后翻页或改排序
+- **THEN** 所有计数 SHALL 基于同时满足条件的完整去重结果，翻页及排序 SHALL 不改变数量
+
+#### Scenario: Separate pending completion done and overdue
+- **WHEN** 范围包含完成待审且逾期、已完成但过截止、全天未到有效截止及全天已过截止的任务
+- **THEN** 完成待审 SHALL 计未完成并单独计待完成审核，已完成 SHALL 不计逾期，全天逾期 SHALL 依有效截止时刻准确判断
+
+### Requirement: Task table refresh and account isolation
+进入表单、主动刷新、应用恢复及成功任务变更后的查询 SHALL 重新取得当前授权正常任务，返回日历 SHALL 按最新有效负责人重建投影；移除负责人但仍有其他权限的任务 SHALL 可留在表单而不留在日历。加载 SHALL 有明确状态，完整加载前不得显示部分结果为完整统计；失败 SHALL 显示错误与重试，无任务与无筛选结果 SHALL 有可区分空态并允许清空条件。
+
+详情及写入 SHALL 使用当前后端权限，失权后的旧详情 SHALL 不能靠缓存继续访问。账号退出、失效或切换 SHALL 清除旧账号表单数据和状态，迟到响应 SHALL 不得覆盖当前会话。未送达/已删除/已撤回/到期消息及历史通知只读入口 SHALL 不向普通表单授予范围。
+
+#### Scenario: Apply effective assignee changes
+- **WHEN** 本人被移出已生效负责人但仍为创建者，随后进入表单或刷新并返回日历
+- **THEN** 任务 SHALL 仍可在我创建范围找到，且从月/周/日、全天、跨日条及当日列表全部消失，未批准的负责人提议 SHALL 不提前改变结果
+
+#### Scenario: Revoke all normal access
+- **WHEN** 本人正常任务授权被收回但仍保有历史通知，随后刷新或打开旧详情
+- **THEN** 普通表单、搜索和计数 SHALL 不含该任务，普通详情 SHALL 拒绝；通知专用只读详情 SHALL 不把任务重新加入列表
+
+#### Scenario: Fail a later page and retry
+- **WHEN** 完整任务读取第二页失败，或首次读取结果为空，或条件过滤结果为空
+- **THEN** 第二页失败 SHALL 显示可重试错误且不声明部分统计；后两种 SHALL 分别显示无任务和无筛选结果，清空条件 SHALL 可用
+
+#### Scenario: Ignore stale account and refresh responses
+- **WHEN** 旧账号或较早刷新尚未完成时切换账号或开始新刷新，旧响应随后返回
+- **THEN** 系统 SHALL 只展示当前账号最新有效查询结果，旧行、条件、返回上下文及迟到响应 SHALL 不污染新会话
 
 ### Requirement: Role-scoped visibility
-原型 SHALL 按角色限制业务数据：上层可查看全公司任务与日志；中层可查看本部门任务与日志；下层仅可查看本人负责的任务和本人日志。管理员属于独立管理端角色，本次业务端原型 SHALL 不提供文档未定义的管理员操作。
+系统 SHALL 基于真实账号当前组织与配置授权分别检查任务、日志、分析和人员查询。上层按授权看公司任务，中层按负责人所属部门看本部门及涉及本部门的跨部门任务，下层看本人创建或负责的正常任务。日志 SHALL 上层本人及公司、中层本人及直属下属、下层本人；同团队或同任务不自动授予日志权。管理员不自动取得业务权限。列表、详情、搜索、关联、人员筛选、通知跳转及统计明细 SHALL 执行同类权限，待创建隔离优先；历史消息只读例外仅依独立要求生效。
+
+#### Scenario: Read a task crossing departments
+- **WHEN** 两部门人员共同负责一个已发布任务
+- **THEN** 两部门获授权管理者 SHALL 可见，创建者部门 SHALL 不决定任务部门归属；查看权 SHALL 不自动授予派发、修改或审核权
+
+#### Scenario: Separate direct reports from teammates
+- **WHEN** 中层与甲同团队但无直属关系，乙为直属下属但不同团队
+- **THEN** 日志列表、详情、组织树及姓名搜索 SHALL 排除甲并包含乙；任务权限 SHALL 按独立部门和授权规则计算
+
+#### Scenario: Deny unauthorized detail and privacy leakage
+- **WHEN** 无权用户直接访问任务、日志、关联、统计明细或他人资料
+- **THEN** 系统 SHALL 拒绝或裁剪受限数据；手机号仅本人资料及具备当前资料查看权、组织层级更高的实际管理链上级所读人员详情 SHALL 可返回，其他 DTO SHALL 不含号码；知晓 ID 或前端角色按钮 SHALL 不授予权限
 
 #### Scenario: Compare role visibility
-- **WHEN** 预览者通过原型外层身份控件分别选择上层、中层和下层示例身份
-- **THEN** 五个业务页面中的任务、日志和汇总数据 SHALL 随角色切换到对应可见范围
+- **WHEN** 两部门人员共同负责一个已发布任务
+- **THEN** 两部门获授权管理者 SHALL 可见，创建者部门 SHALL 不决定任务部门归属；查看权 SHALL 不自动授予派发、修改或审核权
 
 #### Scenario: Prevent unauthorized detail access
-- **WHEN** 当前身份尝试打开超出其可见范围的任务或日志
-- **THEN** 原型 SHALL 不展示该记录的详情或修改入口
+- **WHEN** 无权用户直接访问任务、日志、关联、统计明细或他人资料
+- **THEN** 系统 SHALL 拒绝或裁剪受限数据；手机号仅本人资料及具备当前资料查看权、组织层级更高的实际管理链上级所读人员详情 SHALL 可返回，其他 DTO SHALL 不含号码；知晓 ID 或前端角色按钮 SHALL 不授予权限
 
 ### Requirement: Role-scoped task creation and assignment
-上层 SHALL 能给自己创建任务，并能向中层或下层派发任务；中层 SHALL 能向本部门下层派发任务，也能给自己创建任务；下层 SHALL 只能给自己创建任务。具有多个可选负责人的用户 SHALL 从任务表单进入独立的负责人选择界面，该界面 SHALL 先选择当前身份有权派发的部门，再在所选部门内按姓名片段搜索并多选人员；切换部门 SHALL 保留已选人员，确认后才 SHALL 更新任务表单，取消 SHALL 放弃本次选择。中层和下层的自建任务 SHALL 先进入待直属上级审核状态，审核通过后才成为执行中的任务；上层自建任务因没有更高审批角色而直接生效。
+系统 SHALL 根据独立派发授权生成负责人候选并在提交和批准时重新检查；上层可按授权派给自己、中下层，中层可按授权派给自己及本部门下属，下层仅本人。创建默认负责人 SHALL 包含本人，列表可在权限内调整并明确展示保存顺序。负责人选择 SHALL 支持按授权部门及姓名搜索、多选、跨部门保留、确认保存和取消还原。所有创建 SHALL 使用统一审核算法，不按“自建/派发”或角色免审；批准后进入待开始。
+
+#### Scenario: Select and order authorized assignees
+- **WHEN** 有跨部门派发权的用户打开创建并选人、换序、跨部门追加
+- **THEN** 本人 SHALL 默认入选，表单及回读 SHALL 保留确认后的顺序；取消 SHALL 还原选择，无匹配 SHALL 有空状态且不暴露权限外人员
+
+#### Scenario: Enforce dispatch independently from viewing
+- **WHEN** 用户可见某部门任务但无该部门派发权，或员工尝试给同事创建任务
+- **THEN** 候选 SHALL 不提供该人，直接提交及权限变更后的批准 SHALL 拒绝越权派发
+
+#### Scenario: Isolate an unpublished creation
+- **WHEN** 有审核人的创建提交后尚未批准、被拒绝、撤销或失效
+- **THEN** 任务 SHALL 不在普通列表、日历、搜索、首页、计数和分析，仅创建者从视图独立申请入口跟踪及当前审核人从通知处理；批准后 SHALL 发布为待开始
 
 #### Scenario: Executive selects assignees across departments
-- **WHEN** 上层在负责人选择界面选择一个部门、按姓名筛选并勾选人员，再切换到另一部门继续选择
-- **THEN** 原型 SHALL 保留跨部门的已选人员并在确认后将其汇总显示于任务表单
+- **WHEN** 有跨部门派发权的用户打开创建并选人、换序、跨部门追加
+- **THEN** 本人 SHALL 默认入选，表单及回读 SHALL 保留确认后的顺序；取消 SHALL 还原选择，无匹配 SHALL 有空状态且不暴露权限外人员
 
 #### Scenario: Manager assigns a departmental task
-- **WHEN** 中层打开负责人选择界面并为任务选择负责人
-- **THEN** 部门 SHALL 固定为中层所属部门，候选人 SHALL 只包含本人和本部门下层，且不得显示其他部门或上层人员
+- **WHEN** 用户可见某部门任务但无该部门派发权，或员工尝试给同事创建任务
+- **THEN** 候选 SHALL 不提供该人，直接提交及权限变更后的批准 SHALL 拒绝越权派发
 
 #### Scenario: Cancel assignee selection
-- **WHEN** 用户在负责人选择界面改变选择后取消返回
-- **THEN** 任务表单 SHALL 保留进入该界面前的负责人选择
+- **WHEN** 有跨部门派发权的用户打开创建并选人、换序、跨部门追加
+- **THEN** 本人 SHALL 默认入选，表单及回读 SHALL 保留确认后的顺序；取消 SHALL 还原选择，无匹配 SHALL 有空状态且不暴露权限外人员
 
 #### Scenario: Search for an unavailable assignee
-- **WHEN** 用户输入的姓名在当前部门和权限范围内没有匹配人员
-- **THEN** 负责人选择界面 SHALL 显示无匹配结果且不得泄露范围外人员
+- **WHEN** 有跨部门派发权的用户打开创建并选人、换序、跨部门追加
+- **THEN** 本人 SHALL 默认入选，表单及回读 SHALL 保留确认后的顺序；取消 SHALL 还原选择，无匹配 SHALL 有空状态且不暴露权限外人员
 
 #### Scenario: Employee submits a self-created task
-- **WHEN** 下层为自己提交任务
-- **THEN** 负责人 SHALL 固定为本人且无需显示冗余人员选择界面，任务 SHALL 进入待直属中层审核状态，并在审核前与已生效任务明确区分
+- **WHEN** 下层给自己创建任务
+- **THEN** 本人 SHALL 默认负责并按统一算法提审，有审核人时隔离至批准，确实无审核人才留因直接生效
 
 #### Scenario: Superior reviews a self-created task
-- **WHEN** 直属上级批准或拒绝一项自建任务
-- **THEN** 批准时任务 SHALL 进入可执行状态，拒绝时 SHALL 保留拒绝结果且不进入执行任务列表
+- **WHEN** 指定审核人批准或拒绝创建
+- **THEN** 批准 SHALL 发布为待开始，拒绝 SHALL 保留结果并允许创建者调整重提，不发布执行任务
 
 ### Requirement: Task structure and attributes
-每项任务 SHALL 使用统一的可执行任务模型，并展示名称、创建时间、开始时间、截止时间、全天标记、紧急程度、完成状态、文字进展备注、创建者和一个或多个负责人。原型 SHALL NOT 提供“抽象任务”类型、任务类型选择器、百分比进度或进度条。任务 SHALL 支持可选父子关系；父任务与子任务均为普通可执行任务，父任务详情 MAY 按状态数量汇总当前身份可见的子任务，但不得由子任务计算百分比或替代父任务自身状态。
+任务 SHALL 展示标题、说明、原创建者、独立创建时间、有序多负责人、起止排期、全天、紧急/高/中/低紧急程度、离散执行状态、文字进展、可选父任务、审核人及意见。系统 SHALL 不提供抽象任务类型、百分比进度或进度条；父子任务独立执行，父状态不由子任务自动改变或计算百分比。父任务搜索 SHALL 按名称在当前正常可见且无环候选中匹配、允许清空，并独立检查关联详情权限。定时任务 SHALL 使用精确时刻，全天只填写日期且首尾均包含，截止不得早于开始；转交、排期修改与重开 SHALL 不改变原创建者或创建时间。
 
-创建和编辑任务时 SHALL 提供按任务名称进行不区分大小写包含匹配的上级任务搜索。候选范围 SHALL 限于当前身份可见且不会形成自引用或任意深度循环的任务；清空选择 SHALL 表示无上级任务。非全天任务 SHALL 要求开始日期与时刻、截止日期与时刻；全天任务 SHALL 只要求开始日期与截止日期并隐藏或禁用两个时刻输入。截止值 SHALL 不早于开始值，全天日期范围 SHALL 同时包含开始日和截止日。创建时间 SHALL 在新建时独立记录，编辑排期不得改变创建时间，并 SHALL 在任务详情中只读展示。
+任务表单的说明与完成标准输入区 SHALL 各具有至少 234px 的最小高度，并在窄屏内可滚动访问其他字段及提交操作。
+
+#### Scenario: Edit task text in expanded fields
+- **WHEN** 用户在构建后的实际页面创建或编辑任务
+- **THEN** 说明与完成标准输入区 SHALL 各至少 234px 高，内容和原有校验 SHALL 保留，窄屏下其他字段及保存/提交操作 SHALL 可达
+
+#### Scenario: Validate schedules and preserve provenance
+- **WHEN** 用户提交定时或全天任务，之后交接、改排期或重开
+- **THEN** 系统 SHALL 保存相应时间/日期并拒绝倒置范围，详情只读展示不变的原创建者和创建时间
+
+#### Scenario: Search, clear or reject a parent relation
+- **WHEN** 用户搜索父任务、清空或尝试关联自身/任意深度循环/无权任务
+- **THEN** 搜索 SHALL 仅返回名称匹配的授权无环候选并提供空状态，清空 SHALL 去除关联，非法关联 SHALL 被拒绝且不可经其详情扩权
+
+#### Scenario: Keep parents independently executable
+- **WHEN** 子任务完成或用户打开父子详情
+- **THEN** 父任务 SHALL 保持自身状态，可显示有权子任务状态数量但无百分比，任何父/子详情 SHALL 独立授权
 
 #### Scenario: Create a timed task
-- **WHEN** 用户关闭“全天”并提交有效的开始日期时间与截止日期时间
-- **THEN** 原型 SHALL 保存精确起止时间，记录独立创建时间，并在详情和时间视图中按该时间范围展示任务
+- **WHEN** 用户提交定时或全天任务，之后交接、改排期或重开
+- **THEN** 系统 SHALL 保存相应时间/日期并拒绝倒置范围，详情只读展示不变的原创建者和创建时间
 
 #### Scenario: Create an all-day task
-- **WHEN** 用户开启“全天”并提交有效的开始日期与截止日期
-- **THEN** 原型 SHALL 不要求时刻输入，将首尾日期都视为任务范围，并在详情中以日期范围和“全天”标记展示
+- **WHEN** 用户提交定时或全天任务，之后交接、改排期或重开
+- **THEN** 系统 SHALL 保存相应时间/日期并拒绝倒置范围，详情只读展示不变的原创建者和创建时间
 
 #### Scenario: Reject an inverted task range
-- **WHEN** 用户提交的截止日期时间早于开始日期时间，或全天截止日期早于全天开始日期
-- **THEN** 原型 SHALL 阻止保存并在任务表单中说明日期范围错误
+- **WHEN** 用户提交定时或全天任务，之后交接、改排期或重开
+- **THEN** 系统 SHALL 保存相应时间/日期并拒绝倒置范围，详情只读展示不变的原创建者和创建时间
 
 #### Scenario: Preserve task creation time
-- **WHEN** 创建者编辑已有任务的开始时间、截止时间或全天标记
-- **THEN** 原型 SHALL 更新任务排期但保持创建时间不变，并在详情中分别展示创建时间与任务排期
+- **WHEN** 用户提交定时或全天任务，之后交接、改排期或重开
+- **THEN** 系统 SHALL 保存相应时间/日期并拒绝倒置范围，详情只读展示不变的原创建者和创建时间
 
 #### Scenario: Search and select a parent task
-- **WHEN** 用户在上级任务选择界面输入任务名称片段
-- **THEN** 结果 SHALL 只显示名称匹配、当前身份可见且不会与当前任务形成循环的候选任务，并允许选择一个或清空选择
+- **WHEN** 用户搜索父任务、清空或尝试关联自身/任意深度循环/无权任务
+- **THEN** 搜索 SHALL 仅返回名称匹配的授权无环候选并提供空状态，清空 SHALL 去除关联，非法关联 SHALL 被拒绝且不可经其详情扩权
 
 #### Scenario: Show no matching parent tasks
-- **WHEN** 上级任务搜索在允许范围内没有结果
-- **THEN** 原型 SHALL 显示无匹配状态并保留搜索输入以供修改
+- **WHEN** 用户搜索父任务、清空或尝试关联自身/任意深度循环/无权任务
+- **THEN** 搜索 SHALL 仅返回名称匹配的授权无环候选并提供空状态，清空 SHALL 去除关联，非法关联 SHALL 被拒绝且不可经其详情扩权
 
 #### Scenario: Inspect a child task
-- **WHEN** 用户打开具有上级任务的任务
-- **THEN** 详情 SHALL 展示其上级任务，并允许返回查看当前身份可见的上级任务及同级关系
+- **WHEN** 子任务完成或用户打开父子详情
+- **THEN** 父任务 SHALL 保持自身状态，可显示有权子任务状态数量但无百分比，任何父/子详情 SHALL 独立授权
 
 #### Scenario: Inspect a parent task
-- **WHEN** 用户打开具有子任务的任务
-- **THEN** 详情 SHALL 展示当前身份可见子任务各自的状态，并 MAY 展示“已完成数/可见子任务数”汇总，但 SHALL NOT 显示汇总百分比或把父任务标记为不可直接执行
+- **WHEN** 子任务完成或用户打开父子详情
+- **THEN** 父任务 SHALL 保持自身状态，可显示有权子任务状态数量但无百分比，任何父/子详情 SHALL 独立授权
 
 #### Scenario: Inspect an abstract task
-- **WHEN** 预览者检查原任务创建表单、任务详情和曾作为抽象任务展示的示例
-- **THEN** 原型 SHALL 不再提供或标记抽象任务，原示例若保留 SHALL 作为具有负责人、自身状态和执行操作的普通父任务出现
+- **WHEN** 用户检查任务创建及旧样例
+- **THEN** 系统 SHALL 不提供抽象任务类型，旧样例如保留 SHALL 是普通独立可执行任务
 
 ### Requirement: Task editing and completion review
-任务创建者 SHALL 能修改任务信息。任务负责人 SHALL 只能更新文字进展备注和提交完成状态，不能修改任务定义字段。原型 SHALL 以 `待创建审核`、`待开始`、`进行中`、`待完成审核`、`已完成` 和 `已拒绝` 等离散状态表达完成情况，不得收集、计算或展示百分比进度。负责人首次保存文字进展备注时，处于 `待开始` 的任务 SHALL 进入 `进行中`；任一负责人提交完成后，任务 SHALL 进入 `待完成审核`。派发任务由创建者审核，自建任务由直属上级审核；审核通过后任务才 SHALL 标记为 `已完成`，审核退回后 SHALL 恢复为 `进行中`。上层为自己创建且不存在审核人的任务提交完成后 SHALL 直接完成。
+仅原创建者 SHALL 可申请修改基础信息及重开已完成任务；当前负责人仅可申请每次新增/修改文字进展与完成；专用交接仅依交接要求开放。有审核人的创建、修改、每次进展、完成、重开及交接 SHALL 先待审，同任务唯一待审并冻结其他业务操作，只有申请人能撤销；修改提议须先撤销再重提。普通区域 SHALL 保留原有效版本，申请人可看自己提交的内容/状态/结果，只有本次审核人可获得原版与提议的专用 diff，不能靠前端隐藏代替字段裁剪。
+
+执行状态 SHALL 为待开始/进行中/已完成，与待审/通过/拒绝或退回/撤销/失效分开。首次进展批准后待开始变进行中；完成通过变已完成、退回变进行中且须意见、撤销恢复提交前状态；创建者重开可一并提出完整有效排期，通过回到进行中并增加轮次，拒绝/撤销保留已完成。普通修改或进展拒绝/撤销 SHALL 保留原版；待审到期按失效要求保留提交前状态并解冻。
+
+#### Scenario: Freeze and cancel an application
+- **WHEN** 多名负责人同时提交进展/完成，或非申请人尝试撤销
+- **THEN** 系统 SHALL 最多产生一个待审并冻结其他操作，只有申请人可撤销，原创建者或审核人 SHALL 不能替他撤销
+
+#### Scenario: Restrict comparison data to the reviewer
+- **WHEN** 申请人、审核人及普通任务查看者分别读取同一变更
+- **THEN** 审核人 SHALL 可看逐项 diff，申请人仅看提交内容及结果而无专用原版对比字段，普通人 SHALL 只见旧有效版和冻结；兼任审核人的申请人 SHALL 按审核身份可看 diff
+
+#### Scenario: Distinguish completion outcomes
+- **WHEN** 负责人提交完成后分别发生通过、退回或撤销
+- **THEN** 系统 SHALL 分别进入已完成、进行中或恢复提交前执行状态，退回 SHALL 要求意见，所有路径 SHALL 解除待审冻结并保留结果
+
+#### Scenario: Reopen with a new schedule
+- **WHEN** 原创建者对已完成任务提出重开及新排期并得到批准
+- **THEN** 系统 SHALL 同时发布新排期、进入进行中及下一轮次；拒绝/撤销 SHALL 保持原完成状态；其他人 SHALL 无重开权
 
 #### Scenario: Assignee updates progress
-- **WHEN** 负责人保存文字进展备注
-- **THEN** 原型 SHALL 更新备注，并在任务原为 `待开始` 时将其改为 `进行中`，但不得要求百分比或允许其改写名称、排期、紧急程度或负责人
+- **WHEN** 负责人每次新增或修改文字进展
+- **THEN** 系统 SHALL 提审且待审冻结，有审核人不直接生效；首次批准才从待开始变进行中，负责人无基础字段修改权
 
 #### Scenario: Show status without numeric progress
-- **WHEN** 用户在导图、任务列表、审核列表或任务详情中查看任务完成情况
-- **THEN** 原型 SHALL 展示适用的离散状态和已有文字备注，且不得显示百分比、数值进度输入或进度条
+- **WHEN** 查看任务状态和进展
+- **THEN** 系统 SHALL 展示独立执行/申请状态及文字备注，不提供百分比或进度条
 
 #### Scenario: Creator approves completion
-- **WHEN** 派发任务的任一负责人提交完成且创建者批准
-- **THEN** 任务 SHALL 从 `待完成审核` 变为 `已完成`
+- **WHEN** 创建者尝试批准完成
+- **THEN** 系统 SHALL 只允许本次指定审核人处理，创建者身份不自动授予审核权；指定审核人批准才完成
 
 #### Scenario: Superior rejects completion
-- **WHEN** 审核人退回完成申请
-- **THEN** 任务 SHALL 恢复为 `进行中` 并保留新的审核结果供负责人查看
+- **WHEN** 指定审核人填写意见退回完成申请
+- **THEN** 系统 SHALL 进入进行中并保留意见，不能只因上层身份审核所有任务
 
 ### Requirement: Required notifications
-原型 SHALL 提供最小化的站内通知列表，以代表性样例纠正和演示通知范围，而不要求实现真实通知触发、调度或推送机制。任务通知语义 SHALL 覆盖任务创建、一般信息修改、紧急程度修改、状态或完成结果变化以及临近截止；任务相关人员 SHALL 包含创建者和当前全部负责人，负责人发生变化时新加入与被移除的人员也 SHALL 被视为该次变更的相关人员。新的创建审核、完成审核或其他待审核事项 SHALL 通知对应审核人，审核结果 SHALL 通知申请人和适用的任务相关人员；新的请示 SHALL 通知接收人，请示回复 SHALL 通知发起人。通知记录 SHALL 清楚显示事件类型、目标名称和发生时间，并在当前身份有权查看时进入对应任务、审核事项或请示。
+系统 SHALL 由真实业务事件产生站内通知，覆盖审核提交/结果、创建生效、基础信息/紧急程度/进展/状态/完成/重开/交接生效、改派、临期、逾期及失效，不用静态样例代替。待创建及未发布结果 SHALL 仅向申请人和对应审核人；已发布任务申请提交 SHALL 只通知本次审核人，申请人可跟踪，不提前告知其他任务人员或提议负责人。已发布结果 SHALL 面向申请人、审核人及相关任务人员，生效通知 SHALL 向创建者与当前全体负责人；负责人变更还 SHALL 包含新增及被移除人。提醒 SHALL 向创建者与当前负责人。同次多字段更改 SHALL 一条消息汇总实际变化，保留任务标题、事件、时间及原申请绑定；同事件多身份去重且不排除本人。系统推送属于正式要求但本次延期，不得将站内投递声明为系统推送通过。
 
-紧急性 SHALL 仅作为任务的紧急程度属性；原型 SHALL NOT 把“临时紧急”作为独立通知业务类型、任务类型或机械添加到任务标题中的前缀。紧急程度被创建者改为或改出“紧急”时，SHALL 由“紧急程度修改”通知样例表达该变动。
+#### Scenario: Deliver the submission and result matrix
+- **WHEN** 分别提交待创建和已发布修改申请并处理结果
+- **THEN** 未发布 SHALL 仅申请人与审核人收到，已发布提交 SHALL 仅本次审核人收到且申请人可跟踪，通过后才通知适用任务人员；他人 SHALL 不获提议内容
+
+#### Scenario: Summarize multiple changes and preserve removed recipients
+- **WHEN** 一次批准修改标题、紧急程度和负责人
+- **THEN** 同接收人 SHALL 只收到该事件一条含任务标题及实际变动摘要的消息，新旧负责人 SHALL 按事件矩阵接收，被移除人 SHALL 按历史例外查看
+
+#### Scenario: Use actual events without synthetic urgency
+- **WHEN** 任务从普通改为紧急或首次发布并产生通知
+- **THEN** 系统 SHALL 使用真实标题及实际事件，不添加“临时紧急”类型/标题前缀，站内事件去重 SHALL 不遗漏自通知
 
 #### Scenario: Inspect task change notification coverage
-- **WHEN** 预览者查看站内通知列表及其示例数据
-- **THEN** 原型 SHALL 至少包含任务创建、信息修改、紧急程度修改、状态或完成变化和临近截止的代表性记录，并清楚面向适用的任务相关人员
+- **WHEN** 分别提交待创建和已发布修改申请并处理结果
+- **THEN** 未发布 SHALL 仅申请人与审核人收到，已发布提交 SHALL 仅本次审核人收到且申请人可跟踪，通过后才通知适用任务人员；他人 SHALL 不获提议内容
 
 #### Scenario: Notify on task creation
-- **WHEN** 预览者查看一项已发布任务或自建任务审核通过的创建通知样例
-- **THEN** 记录 SHALL 面向创建者与全部负责人，并清楚展示任务名称和发生时间
+- **WHEN** 分别提交待创建和已发布修改申请并处理结果
+- **THEN** 未发布 SHALL 仅申请人与审核人收到，已发布提交 SHALL 仅本次审核人收到且申请人可跟踪，通过后才通知适用任务人员；他人 SHALL 不获提议内容
 
 #### Scenario: Surface due and emergency notices
-- **WHEN** 预览者查看临近截止任务和紧急程度发生变化的通知样例
-- **THEN** 任务相关人员 SHALL 看到临期提醒和“紧急程度修改”记录，且原型 SHALL NOT 显示“临时紧急”通知类别
+- **WHEN** 比例节点到点或紧急程度更改生效
+- **THEN** 系统 SHALL 发真实比例临期或实际紧急变更通知，不使用三天重复或临时紧急业务类别
 
 #### Scenario: Notify people affected by assignment changes
-- **WHEN** 代表性通知展示一次负责人新增或移除
-- **THEN** 创建者、变更后的负责人以及该次被移除的负责人 SHALL 属于该变更的通知范围
+- **WHEN** 一次批准修改标题、紧急程度和负责人
+- **THEN** 同接收人 SHALL 只收到该事件一条含任务标题及实际变动摘要的消息，新旧负责人 SHALL 按事件矩阵接收，被移除人 SHALL 按历史例外查看
 
 #### Scenario: Surface review and consultation requests
-- **WHEN** 预览者查看新的待审核事项、请示或对应处理结果的通知样例
-- **THEN** 通知 SHALL 指向负责处理或接收结果的相关人员，并可在其有权查看时进入对应内容
+- **WHEN** 产生审核提交或结果
+- **THEN** 系统 SHALL 按本次审核人与结果矩阵通知；请示回复按 V2 暂缓，不新增其样例或入口
 
 #### Scenario: Represent urgent work without a synthetic title
-- **WHEN** 示例任务具有“紧急”紧急程度或其紧急程度发生变化
-- **THEN** 任务 SHALL 使用真实业务标题并通过紧急程度属性及“紧急程度修改”通知表达紧急性，不得使用“临时紧急”标题前缀或通知类别
+- **WHEN** 任务从普通改为紧急或首次发布并产生通知
+- **THEN** 系统 SHALL 使用真实标题及实际事件，不添加“临时紧急”类型/标题前缀，站内事件去重 SHALL 不遗漏自通知
 
 ### Requirement: Personal work logs
-日志 SHALL 归属于唯一作者；作者 SHALL 能创建和编辑自己的日志，并可选择是否关联其可见任务。写日志和编辑日志时 SHALL 提供按任务名称进行不区分大小写包含匹配的关联任务搜索，结果 SHALL 仅来自当前身份可见任务，并允许选择一个任务或清空关联。上层 SHALL 能查看全公司日志，中层 SHALL 能查看本部门日志，下层 SHALL 只能查看自己的日志；查看权限不得赋予非作者编辑权。
+日志 SHALL 归属于作者，按公司时区每人每天唯一，当天可反复修改；午夜及以后冻结，冻结后不得编辑、改日期、删除或重新创建旧日记录绕过。新建仅允许当天，已有今日记录 SHALL 打开编辑。日志可选关联一项作者当前有权正常查看的任务，支持名称搜索、无结果和清空；日志权限与关联任务分别检查，不因参与同任务取得他人日志权。上层可看公司，中层仅本人及直属下属，下层仅本人；上级读取 SHALL 只读，关联任务失权 SHALL 裁剪跳转但保留有权日志正文。
+
+日志新建和编辑 SHALL 使用占满可用容器的全屏弹层，正文区伸展；保存、返回、关闭及关联任务操作 SHALL 可用，退出或切换其他弹层后 SHALL 恢复相应布局与页脚。
+
+#### Scenario: Write and edit a log in a full-screen sheet
+- **WHEN** 作者打开新建或编辑日志，关联/清空任务后保存，或返回其他弹层
+- **THEN** 日志表单 SHALL 占满可用容器且正文可编辑，保存和关闭入口 SHALL 可达，返回后的非全屏弹层 SHALL 不残留全屏样式或错误页脚状态
+
+#### Scenario: Enforce one log under concurrent distinct keys
+- **WHEN** 同一作者同一公司自然日使用不同幂等键并发创建
+- **THEN** 系统 SHALL 仅有一篇持久化日志，重复请求 SHALL 返回已有记录指引或明确冲突，不新增第二篇
+
+#### Scenario: Freeze across the midnight boundary
+- **WHEN** 日志日期当晚午夜到来，作者尝试改正文/日期、删除或补建该日记录
+- **THEN** 读取 SHALL 标为冻结且所有绕过请求 SHALL 拒绝，不采信客户端时区/日期；午夜前合法当日编辑 SHALL 可用
+
+#### Scenario: Link, clear or redact tasks independently
+- **WHEN** 作者搜索关联任务、选择无关联，或读者可见日志但无其任务权限
+- **THEN** 系统 SHALL 仅搜索正常可见任务并提供无匹配状态，允许无关联；读者 SHALL 可读有权正文但看不到无权任务跳转或明细
 
 #### Scenario: Search and link a visible task
-- **WHEN** 日志作者在关联任务选择界面输入任务名称片段并选择一个结果
-- **THEN** 原型 SHALL 仅搜索作者当前可见的任务，并在确认后将所选任务显示于日志表单
+- **WHEN** 作者搜索关联任务、选择无关联，或读者可见日志但无其任务权限
+- **THEN** 系统 SHALL 仅搜索正常可见任务并提供无匹配状态，允许无关联；读者 SHALL 可读有权正文但看不到无权任务跳转或明细
 
 #### Scenario: Clear a linked task
-- **WHEN** 日志作者清空已选关联任务并保存日志
-- **THEN** 原型 SHALL 保存为未关联日志且不影响原任务
+- **WHEN** 作者搜索关联任务、选择无关联，或读者可见日志但无其任务权限
+- **THEN** 系统 SHALL 仅搜索正常可见任务并提供无匹配状态，允许无关联；读者 SHALL 可读有权正文但看不到无权任务跳转或明细
 
 #### Scenario: Show no matching linked tasks
-- **WHEN** 关联任务搜索在作者可见范围内没有匹配结果
-- **THEN** 原型 SHALL 显示无匹配状态且不得暴露不可见任务
+- **WHEN** 作者搜索关联任务、选择无关联，或读者可见日志但无其任务权限
+- **THEN** 系统 SHALL 仅搜索正常可见任务并提供无匹配状态，允许无关联；读者 SHALL 可读有权正文但看不到无权任务跳转或明细
 
 #### Scenario: Write an unlinked log
-- **WHEN** 用户填写日志内容但不选择所属任务并保存
-- **THEN** 原型 SHALL 保存个人日志，且不强制建立任务关联
+- **WHEN** 作者当天填写日志而不关联任务
+- **THEN** 系统 SHALL 保存唯一当日个人日志，不强制任务关联
 
 #### Scenario: Superior reads a subordinate log
-- **WHEN** 中层打开本部门下层的日志
-- **THEN** 原型 SHALL 展示日志内容，但不显示编辑操作
-
-### Requirement: Manager consultation
-中层 SHALL 能向直属上层发起请示并查看示例处理结果；下层 SHALL 不显示发起请示的入口。请示仅演示需求中明确的上下级沟通，不扩展为通用审批或任务字段变更系统。
-
-#### Scenario: Manager submits a consultation
-- **WHEN** 中层填写请示内容并提交给直属上层
-- **THEN** 原型 SHALL 显示该请示处于待回复状态，并向对应上层展示待处理记录
-
-#### Scenario: Employee cannot submit a consultation
-- **WHEN** 当前身份为下层
-- **THEN** 日志页及任务详情 SHALL 不显示发起请示入口
+- **WHEN** 中层读取直属下属日志
+- **THEN** 系统 SHALL 允许只读，不用同部门/团队代替直属关系，关联任务仍独立鉴权
 
 ### Requirement: Log page single-content filtering and scroll return
-日志页 SHALL 将写日志、创建或派发任务、发起请示等即时命令与内容筛选明确区分。页面 SHALL 提供当前身份可用的“日志”“待我审核”“我提交的自建任务”“我的请示”或“待处理请示”等内容筛选项，筛选状态 SHALL 为单选；首次进入日志页以及切换演示身份后 SHALL 默认选中“日志”，内容区 SHALL 只展示当前筛选对应的列表而不依次堆叠其他列表。日志页 SHALL 在内容区离开顶部后提供一键回到顶部的操作。
+日志页 SHALL 只承担写日志和查看历史，进入及切换账号后默认本人；人员筛选 SHALL 结合权限过滤后的组织树与姓名包含搜索，保留当前输入并在明确变更时更新，不因重绘清空。上层可查公司，中层仅本人及直属下属，下层仅本人，不得混入任务创建、审核、申请或请示入口。内容离开顶部 SHALL 可一键回顶且保留筛选。
 
-当上层或中层选择“日志”内容时，页面 SHALL 在快捷操作、内容筛选和日志结果之外提供独立的“日志查找”板块，其中包含可重复点击以开启或关闭的“只看自己”按钮，以及按作者姓名进行不区分大小写、包含匹配的搜索输入。两个条件同时启用时 SHALL 取交集，空搜索 SHALL 不限制作者；筛选结果 SHALL 始终受当前身份的日志查看权限约束。日志查找条件 SHALL NOT 影响其他内容筛选的列表，并 SHALL 在切换演示身份时重置。下层因只能查看本人日志 SHALL NOT 显示该冗余板块。
+#### Scenario: Enter with self and filter a direct report
+- **WHEN** 上层/中层首次进入日志，再选择组织树人员并搜索姓名
+- **THEN** 默认 SHALL 仅本人，搜索及树 SHALL 同时受日志权限过滤，空结果明确提示并保留输入，选择人员 SHALL 不授予编辑权
+
+#### Scenario: Return to the top without mixing workflows
+- **WHEN** 用户滚动后回顶或寻找任务申请/审核
+- **THEN** 回顶 SHALL 保留筛选，任务申请 SHALL 位于视图，审核 SHALL 位于通知，日志中 SHALL 无对应混合标签
 
 #### Scenario: Enter the log page
-- **WHEN** 用户首次进入日志页或切换演示身份后进入日志页
-- **THEN** “日志”筛选 SHALL 处于唯一选中状态，内容区 SHALL 只展示当前身份可见的日志列表，且上层和中层的日志查找条件均处于未启用状态
+- **WHEN** 上层/中层首次进入日志，再选择组织树人员并搜索姓名
+- **THEN** 默认 SHALL 仅本人，搜索及树 SHALL 同时受日志权限过滤，空结果明确提示并保留输入，选择人员 SHALL 不授予编辑权
 
 #### Scenario: Select pending reviews
-- **WHEN** 具有审核权限的用户选择“待我审核”
-- **THEN** “待我审核” SHALL 成为唯一选中项，内容区 SHALL 只展示待该用户审核的项目或明确的空状态
+- **WHEN** 用户寻找待我审核事项
+- **THEN** 系统 SHALL 从通知中心提供审核，日志 SHALL 无待我审核混合标签
 
 #### Scenario: Switch between role-specific content filters
-- **WHEN** 用户选择当前身份可用的另一个内容筛选项
-- **THEN** 原型 SHALL 取消先前筛选并仅展示新筛选对应的内容，不得同时堆叠两个筛选列表
+- **WHEN** 上层/中层首次进入日志，再选择组织树人员并搜索姓名
+- **THEN** 默认 SHALL 仅本人，搜索及树 SHALL 同时受日志权限过滤，空结果明确提示并保留输入，选择人员 SHALL 不授予编辑权
 
 #### Scenario: Invoke a log-page command
-- **WHEN** 用户选择写日志、创建或派发任务、发起请示等即时命令
-- **THEN** 原型 SHALL 打开相应操作界面，且不得将该命令作为可与内容筛选叠加的选中状态
+- **WHEN** 用户在日志页选择写日志
+- **THEN** 系统 SHALL 打开今日已有编辑或创建唯一当日记录，不提供任务创建/申请/审核/请示命令
 
 #### Scenario: Toggle own logs
-- **WHEN** 上层或中层在“日志”内容中首次点击“只看自己”
-- **THEN** 按钮 SHALL 显示启用状态，日志结果 SHALL 仅保留当前用户作为作者且同时满足作者搜索的可见日志
+- **WHEN** 上层/中层首次进入日志，再选择组织树人员并搜索姓名
+- **THEN** 默认 SHALL 仅本人，搜索及树 SHALL 同时受日志权限过滤，空结果明确提示并保留输入，选择人员 SHALL 不授予编辑权
 
 #### Scenario: Restore the visible log scope
-- **WHEN** 上层或中层再次点击已启用的“只看自己”
-- **THEN** 按钮 SHALL 恢复未启用状态，日志结果 SHALL 恢复为当前权限范围内满足作者搜索的日志
+- **WHEN** 上层/中层首次进入日志，再选择组织树人员并搜索姓名
+- **THEN** 默认 SHALL 仅本人，搜索及树 SHALL 同时受日志权限过滤，空结果明确提示并保留输入，选择人员 SHALL 不授予编辑权
 
 #### Scenario: Search logs by author
-- **WHEN** 上层或中层在作者搜索中输入姓名片段
-- **THEN** 日志结果 SHALL 仅显示当前权限范围内作者姓名包含该片段且同时满足“只看自己”状态的日志
+- **WHEN** 上层/中层首次进入日志，再选择组织树人员并搜索姓名
+- **THEN** 默认 SHALL 仅本人，搜索及树 SHALL 同时受日志权限过滤，空结果明确提示并保留输入，选择人员 SHALL 不授予编辑权
 
 #### Scenario: Show no matching authors
-- **WHEN** 启用的日志查找条件在当前权限范围内没有匹配日志
-- **THEN** 日志结果区 SHALL 展示清楚的无匹配状态且保留当前查找条件以供修改
+- **WHEN** 上层/中层首次进入日志，再选择组织树人员并搜索姓名
+- **THEN** 默认 SHALL 仅本人，搜索及树 SHALL 同时受日志权限过滤，空结果明确提示并保留输入，选择人员 SHALL 不授予编辑权
 
 #### Scenario: Keep log finding separate and scoped
-- **WHEN** 上层或中层切换到“待我审核”或其他非日志内容筛选
-- **THEN** 日志查找控件 SHALL 不与该内容列表混排，其条件 SHALL NOT 改变该列表的项目或计数
+- **WHEN** 用户滚动后回顶或寻找任务申请/审核
+- **THEN** 回顶 SHALL 保留筛选，任务申请 SHALL 位于视图，审核 SHALL 位于通知，日志中 SHALL 无对应混合标签
 
 #### Scenario: Return to the top of log content
-- **WHEN** 用户在日志页向下滚动使内容区顶部离开视口并触发回到顶部操作
-- **THEN** 原型 SHALL 将当前日志页内容区恢复到顶部，同时保留当前选中的内容筛选和当前身份下的日志查找条件
+- **WHEN** 用户滚动后回顶或寻找任务申请/审核
+- **THEN** 回顶 SHALL 保留筛选，任务申请 SHALL 位于视图，审核 SHALL 位于通知，日志中 SHALL 无对应混合标签
 
 ### Requirement: Role-scoped AI map
-AI地图页 SHALL 集成任务数据统计、关键词词云和 AI 建议。下层的任务统计和 AI 建议 SHALL 仅基于本人数据；中层的任务统计 SHALL 基于本部门数据且 AI 建议仅面向本人；上层的任务统计和 AI 建议 SHALL 基于全公司数据。词云范围 SHALL 为上层查看公司、中层查看部门、下层查看所在部门的聚合词云，且不得暴露无权查看的单条任务或日志。
+AI 地图 SHALL 使用当前权限内的真实任务统计、关键词词云和规则建议。上层公司统计/词云/建议，中层部门统计/词云但个人建议，下层本人统计/词云/建议；管理员无默认业务分析权。统计 SHALL 包含任务总数、执行状态、独立待完成审核、逾期未完成及四档紧急程度分布，排除待创建及历史例外。词云 SHALL 从该范围任务标题/说明实际提取，不能固定词表或默认读取私人日志；建议 SHALL 包括与比例临期一致的临期/逾期、排期冲突及高紧急任务，进入或主动刷新 SHALL 更新并标明范围、方法和时间。明细及旧分析读取 SHALL 再检查当前权限。
+
+#### Scenario: Generate personal and department results separately
+- **WHEN** 中层进入或刷新 AI 地图，员工查看同页
+- **THEN** 中层 SHALL 得到部门统计/词云与个人建议，员工 SHALL 仅本人数据；均展示真实范围、生成方法及更新时间
+
+#### Scenario: Extract new words and required metrics
+- **WHEN** 权限内任务标题出现原固定字典不存在的中文文本，并有待完成、已完成、逾期及不同紧急程度任务
+- **THEN** 词云 SHALL 反映真实文本，统计 SHALL 分开待完成与已完成，已完成不算逾期，并展示四档紧急程度分布，日志 SHALL 不作为默认来源
+
+#### Scenario: Refresh suggestions and deny stale details
+- **WHEN** 临期/冲突/高紧急任务变化或来源任务授权撤销
+- **THEN** 进入或刷新 SHALL 重算相应规则，旧结果明细 SHALL 不泄露撤权任务，历史通知例外 SHALL 不加入分析
 
 #### Scenario: View employee AI map
-- **WHEN** 下层进入 AI地图页
-- **THEN** 页面 SHALL 展示本人的任务统计与个人建议，以及不包含个人明细的部门聚合词云
+- **WHEN** 下层进入 AI 地图
+- **THEN** 系统 SHALL 使用本人统计、本人词云与个人建议，不再提供部门聚合词云
 
 #### Scenario: View executive AI map
-- **WHEN** 上层进入 AI地图页
-- **THEN** 页面 SHALL 展示全公司的任务统计、公司词云和公司级建议
+- **WHEN** 上层进入 AI 地图
+- **THEN** 系统 SHALL 从当前公司授权真实任务生成统计、词云及公司建议并标明范围/方法/时间
 
 ### Requirement: Minimal profile page
-我的页面 SHALL 仅展示当前用户的常规个人身份信息，包括姓名、部门和角色。角色切换 SHALL 仅存在于包裹原型的预览控件中，不得伪装为正式产品设置。
+“我的” SHALL 展示本人公司、姓名、部门、职位、独立团队、直属上级和手机号，并提供编辑本人姓名/邮箱/手机号、修改密码、退出。组织及授权字段 SHALL 只能通过管理流程维护。管理层下属资料入口 SHALL 取当前资料可见人员与实际管理链下属的交集，可包含权限内间接下属，不扩大资料范围或开放公司通讯录、资料卡派发按钮。人员详情 SHALL 按账户与联系方式规则独立检查手机号权限。日志 SHALL 继续独立鉴权，中层仅本人及直属下属，上层公司日志仍从日志页查找。
+
+#### Scenario: Read and edit the required profile
+- **WHEN** 本人打开“我的”并修改联系方式
+- **THEN** 系统 SHALL 显示独立公司/部门/职位/团队字段并保存允许的本人字段，组织/权限修改 SHALL 被拒绝，改密及退出 SHALL 可用
+
+#### Scenario: Open a subordinate within both profile scope and the management chain
+- **WHEN** 管理层从“我的”查看直属或间接下属资料和日志
+- **THEN** 列表 SHALL 仅含当前资料权限与实际管理链同时允许的下属；详情 SHALL 重新检查资料权和手机号权，不提供派发按钮；间接下属资料可见 SHALL 不授予日志权，非管理链人员 SHALL 不出现在该入口
 
 #### Scenario: View profile
-- **WHEN** 用户进入我的页面
-- **THEN** 页面 SHALL 展示姓名、部门和角色，且不显示资料编辑、通知偏好、账号管理、指南或数据重置功能
+- **WHEN** 本人打开“我的”并修改联系方式
+- **THEN** 系统 SHALL 显示独立公司/部门/职位/团队字段并保存允许的本人字段，组织/权限修改 SHALL 被拒绝，改密及退出 SHALL 可用
 
 ### Requirement: Strict prototype scope
-业务界面 SHALL 不提供需求文档未提出的全局搜索、任务草稿、个人重点或排序、日志转待办、任务取消、任务关键字段变更申请、排期冲突检查、工作空间切换或账号启停功能。日志作者查找 SHALL 仅存在于日志页并仅筛选当前身份有权查看的日志；任务名称搜索 SHALL 仅用于日志关联任务和上级任务选择，人员姓名搜索 SHALL 仅用于负责人选择，三者均不得扩展为跨业务对象的全局搜索。原型 SHALL 保持由一个 HTML 入口及其同目录 CSS、JavaScript 资源组成的静态示例、支持直接打开和适度可交互的验证用途，不要求构建步骤、第三方运行时、网络请求、真实后端持久化或通知触发引擎。
+交付系统 SHALL 以 V3 修订版第 1—7 章及本次确认作为业务基线（版本名不改变产品 V1 交付范围），实际服务入口 SHALL 使用真实认证、后端持久化及事件调度，不再以静态示例或直接打开文件替代验收。五页、任务表单二级页、独立 PC Web 管理端、表单名称搜索、个人置顶、审核申请、冲突建议与账户维护 SHALL 按本规格提供；请示回复、完整账号启停、一人多团队、任务私人草稿、任务取消、公司草稿/定时发布、日志转待办、外部模型与 MBTI SHALL 不纳入本轮。DEV-029 系统推送和 A-25 真机专项验收经用户授权延期，浏览器证据 SHALL 不冒充真机或全量正式验收。
+
+#### Scenario: Validate the real service and declared scope
+- **WHEN** 检查交付页面、API、测试与修复记录
+- **THEN** 已纳入功能 SHALL 通过实际服务验证，不以演示数据或旧规则断言作为通过依据；延期推送和真机项 SHALL 单独标注且不计已修复
 
 #### Scenario: Inspect available actions
-- **WHEN** 预览者遍历五个页面、任务详情、任务选择、负责人选择、日志详情、日志查找和审核入口
-- **THEN** 可见操作 SHALL 仅覆盖本规格定义的页面与业务流程，各搜索入口 SHALL NOT 返回其权限或用途范围外的数据
+- **WHEN** 检查交付页面、API、测试与修复记录
+- **THEN** 已纳入功能 SHALL 通过实际服务验证，不以演示数据或旧规则断言作为通过依据；延期推送和真机项 SHALL 单独标注且不计已修复
 
 #### Scenario: Open the split static prototype
-- **WHEN** 预览者从文件系统直接打开 HTML 入口且同目录样式和脚本资源存在
-- **THEN** 原型 SHALL 正常加载样式、示例数据和交互，无需构建、安装依赖、启动服务器或发起网络请求
+- **WHEN** 从文件系统直接打开无后端会话的旧 HTML
+- **THEN** 系统 SHALL 不将该方式作为业务验收通过；正式链路 SHALL 通过构建服务、真实认证、持久化及事件验证
+
+### Requirement: Organization and administration
+系统 SHALL 提供独立 PC 浏览器 Web 管理端（`/admin.html`）维护员工、部门、职位、团队、上下级、角色及分别配置的任务查看/派发权限，并查询全量任务操作历史、管理通知。员工部门和职位必填，一人一个主部门、至多一个团队、一位直属上级，组织顶层除外。部门与团队独立；获授权的部门负责人可创建团队，创建者默认负责且可转交。组织关系 SHALL 无环且不跨公司引用，组织位置不得由职位名称或负责人保存顺序推断。公司仅有一个管理员账号，管理员身份不自动取得员工派发、审核、日志或分析权。
+
+员工 App SHALL 保持五个主导航且不嵌入完整管理员维护模块，管理员入口提示 SHALL 指向真实 PC 管理端。管理端能在窄屏打开不改变其 PC Web 交付定位；管理员身份 SHALL 不自动授予员工业务权限，业务账号直连管理 API SHALL 仍被拒绝。
+
+#### Scenario: Maintain an employee through the administrator interface
+- **WHEN** 管理员新增员工并设置部门、职位、团队、上级和授权
+- **THEN** 系统 SHALL 持久化并在重新登录后展示对应资料与能力；缺部门/职位、第二管理员、跨组织引用或管理关系环 SHALL 被拒绝
+
+#### Scenario: Maintain teams independently of departments
+- **WHEN** 获授权的部门负责人在同部门创建两个团队并转交其中一个团队负责人
+- **THEN** 系统 SHALL 保存独立团队及负责人，员工只归属至多一个团队，团队负责人身份 SHALL NOT 自动扩展业务权限
+
+#### Scenario: Transfer updates independent scopes
+- **WHEN** 管理员通过转岗流程更改员工部门、团队、上级或授权
+- **THEN** 资料、任务范围、派发候选与日志范围 SHALL 按各自规则重新计算，旧页面及旧幂等请求 SHALL NOT 绕过新权限
+
+#### Scenario: Maintain and reorder company information
+- **WHEN** 管理员增改删公司信息或调整展示顺序
+- **THEN** App SHALL 只读展示管理顺序，默认按创建时间排序；并发新增也 SHALL NOT 超过十条，业务账号的维护请求 SHALL 被拒绝
+
+#### Scenario: Use the independent PC administration interface
+- **WHEN** 管理员在电脑浏览器建号并完成组织、公司信息、交接、任务历史和通知管理，员工从 App 使用业务或直连管理 API
+- **THEN** 管理端 SHALL 承接已授权管理流程，App SHALL 不出现完整管理模块，员工 SHALL 无法越权调用管理 API，管理员误入业务页提示 SHALL 指向 /admin.html
+
+### Requirement: Account password lifecycle
+账号 SHALL 由管理员手动创建，沿用用户名登录，不开放自助注册。系统 SHALL 生成随机初始密码并强制首次改密；管理员重置密码 SHALL 再次强制改密。新密码 SHALL 至少 10 个字符、含字母与数字且 UTF-8 长度不超过 72 字节。强制改密会话 SHALL 仅可办理本人改密及退出，不能读取或修改业务数据；日常改密 SHALL 校验旧密码，成功后撤销包括当前会话在内的全部会话并要求重新登录。管理员 SHALL 可录入/覆盖员工手机号，但不得通过管理响应、目录或审计回显他人手机号；本人继续可编辑姓名、邮箱、手机号。
+
+按 2026-10-19 调整，手机号 SHALL 仅本人及实际管理链上的上级可见；他人读取 SHALL 同时满足当前资料查看权、同组织有效人员关系及更高组织层级，且仅通过鉴权人员详情返回。邮箱 SHALL 仍仅本人可见。同级、下属、其他管理链、仅有管理员身份或仅有公司/部门资料范围 SHALL 不因此取得手机号权。目录、任务人员摘要、日志筛选、通知、分析、审计、outbox 及普通人员缓存 SHALL 不含号码；历史通知只读例外 SHALL 不授予手机号权。
+
+#### Scenario: Initial login cannot enter business pages
+- **WHEN** 新员工用生成的初始密码登录并尝试直接访问业务接口
+- **THEN** 系统 SHALL 提示必须改密并拒绝业务访问，改密成功后旧会话失效，使用新密码重新登录后方可进入
+
+#### Scenario: Password validation and reset
+- **WHEN** 本人提交错误旧密码、少于 10 字符、缺字母/数字或超过 72 UTF-8 字节的新密码
+- **THEN** 系统 SHALL 拒绝修改；管理员重置后 SHALL 生成新初始密码、撤销旧会话并恢复首次改密门禁
+
+#### Scenario: Edit contacts without exposing another employee phone
+- **WHEN** 管理员录入员工号码或其他用户读取目录、人员摘要、日志筛选、通知及分析
+- **THEN** 系统 SHALL 允许授权的写入并仅回执成功状态，上述读取结果 SHALL 不含号码；本人资料接口 SHALL 可读取及编辑自己的姓名、邮箱、手机号
+
+#### Scenario: Read phones only through authorized person details
+- **WHEN** 本人、直属上级、间接上级、同级、下属、其他管理链上级及管理员读取人员详情
+- **THEN** 本人 SHALL 可读自己的手机号；直属或间接上级 SHALL 仅在具有当前资料权且组织层级更高时可读下属号码；其余人 SHALL 不获得号码，资料权不足 SHALL 拒绝整个详情，任何他人详情 SHALL 不返回邮箱
+
+#### Scenario: Recheck the management chain after an organization change
+- **WHEN** 员工转岗、管理关系变化、链上中间账号失效，或管理链出现环/跨公司引用
+- **THEN** 后续人员详情请求 SHALL 按当前有效关系鉴权，旧上级及无法证明有效上级关系者 SHALL 不再获得号码；旧页面或缓存 SHALL 不构成继续读取的凭据
+
+### Requirement: Ordered reviewer routing and reassignment
+系统 SHALL 从有序负责人中选组织位置最高层，同层取保存顺序第一位作为依据人，并沿其唯一管理链寻找有效直属上级；不可承接者继续上溯。无可用上级时以可承接的原创建者兜底，确实无审核人时记录原因直接生效；组织循环等损坏数据 SHALL 阻断，不得解释为免审。有审核人 SHALL 一律产生待审，即使申请人、创建者及审核人相同。创建、负责人变更及交接 SHALL 按提议负责人计算，其余申请按有效负责人计算。提交前及详情 SHALL 展示实际审核人；组织变化引发的改派 SHALL 可追溯，旧审核人失去决定权并更新通知。
+
+#### Scenario: Persist order and route the first highest peer
+- **WHEN** 两名同级最高负责人分属不同管理链，保存后交换其顺序
+- **THEN** 回读顺序 SHALL 与提交一致，本次审核人 SHALL 分别沿交换前后首位最高者的管理链计算；较低层人员排在首位 SHALL 不越过最高组织层级
+
+#### Scenario: Review one's own application explicitly
+- **WHEN** 申请人恰为审核人，提交创建、修改、进展、完成或重开
+- **THEN** 系统 SHALL 产生唯一待审，直到本人在审核入口明确决定才生效
+
+#### Scenario: Change assignees using the proposed route
+- **WHEN** 当前负责人属于甲链，提议负责人属于乙链
+- **THEN** 预览、提交、详情、通知与决定 SHALL 一致指定乙链审核人；甲链审核人不得批准；拒绝、撤销或失效 SHALL 保持原负责人及其路线
+
+#### Scenario: Fall back or apply with a documented reason
+- **WHEN** 依据人管理链无有效审核人
+- **THEN** 可承接的原创建者 SHALL 成为审核人并须显式审核；原创建者也不可承接时 SHALL 留存无需审核原因后直接生效；组织关系损坏 SHALL 返回可识别错误
+
+#### Scenario: Reassign after organization changes
+- **WHEN** 待审审核人离职、调岗或不可承接
+- **THEN** 系统 SHALL 按同一依据链继续上溯，记录前后审核人、原因和时间，更新对应审核通知；原页面 SHALL 不能使用旧权限决定
+
+### Requirement: Dedicated task handover
+本人或其直属领导 SHALL 可预设交接对象并为其当前负责的任务发起专用交接申请；该权限 SHALL 仅改变负责人及其有序列表，不得用于修改任意基础字段。交接 SHALL 按新负责人路由，审核通过后生效，保留原创建者、创建时间、交接来源和全部历史。
+
+#### Scenario: A direct manager hands over a subordinate task
+- **WHEN** 非原创建者的直属领导为下属的有效任务提交交接
+- **THEN** 系统 SHALL 接受负责人交接并交给新路线审核，夹带标题、排期等字段 SHALL 被拒绝；非直属领导 SHALL 无此专用权限
+
+#### Scenario: Handover approval preserves provenance
+- **WHEN** 新路线审核人批准交接
+- **THEN** 系统 SHALL 切换负责人及权限并通知新旧相关人员，原创建者、创建时间及交接来源 SHALL 保留；未通过时 SHALL 保持原有效版本
+
+### Requirement: Deadline expiration of pending applications
+系统 SHALL 在提交、决定及定时扫描入口检查适用截止。创建及含排期变更的修改/重开使用提议截止，其他申请使用有效截止；服务端当前时刻达到或超过适用截止 SHALL 不再允许旧申请生效，也不得提交已到期排期。待审跨截止 SHALL 原子地变为已失效、解除冻结、保留原有效内容及提交前状态；未发布任务仍不发布，已完成任务的重开失效仍保持已完成。失效 SHALL 通知申请人与审核人调整后重提；已生效且未完成任务解冻时若超过有效截止 SHALL 补一次逾期提醒。失效、人工决定、撤销与重试 SHALL 只能产生一个终态。
+
+#### Scenario: Reject expired submission and approval before the scan
+- **WHEN** 用户提交已到期排期，或在截止后、扫描前批准待审
+- **THEN** 系统 SHALL 拒绝过期提交，旧待审 SHALL 失效且不能批准；该终态和解冻 SHALL 持久化，不因错误响应回滚
+
+#### Scenario: Use the applicable deadline and preserve the effective version
+- **WHEN** 修改/重开提议更晚截止，或无排期变更的进展申请跨过有效截止
+- **THEN** 系统 SHALL 分别使用提议/有效截止，不以原来更早截止提前使改期申请失效；失效 SHALL 不发布提议，保留原版及状态
+
+#### Scenario: Expire and backfill overdue once
+- **WHEN** 已发布未完成任务的申请失效且原有效任务已逾期，随后扫描重复执行
+- **THEN** 系统 SHALL 分别留存失效与逾期事件，逾期每轮次/排期仅一次；未发布创建 SHALL 仅有失效及重提通知
+
+#### Scenario: Resolve the deadline race once
+- **WHEN** 批准、撤销与截止扫描并发处理同一待审
+- **THEN** 系统 SHALL 按事务实际检查的服务端时刻只提交一个终态，截止后批准 SHALL 永不生效，旧页面和同键重试 SHALL 不再次改变业务
+
+### Requirement: Proportional schedule reminders
+系统 SHALL 按公司时区的计划开始 S、截止 D 和自然经过总工期 T=D-S，在剩余 20%、10%、5% 时各提醒一次，逾期一次；T=0 不发比例提醒，D<S 拒绝。全天开始为开始日 00:00，截止为公司可配置下班时刻，默认 18:00，日历仍含完整首尾日期。完成或待审期间 SHALL 不发常规提醒；生效较晚、解冻或晚扫描跨多个节点 SHALL 只补最近一个已到节点并跳过更早节点，后续节点正常发送；逾期只按逾期处理。去重 SHALL 区分任务、接收人、执行轮次和生效排期，改变开始或截止、全天语义及重开 SHALL 重新计算。公司下班时刻设置 SHALL 用于之后的新排期或排期修订，既有/在审排期沿用提交时快照，设置页 SHALL 明示该生效范围。
+
+#### Scenario: Remind a ten hour task
+- **WHEN** 09:00—19:00 的任务持续有效、未完成且无待审
+- **THEN** 系统 SHALL 分别在 17:00、18:00、18:30 到点后通知创建者和当前负责人各一次，不在剩余 90% 时发临期提醒
+
+#### Scenario: Skip stale nodes after a late scan
+- **WHEN** 首次扫描该十小时任务发生于 18:10，随后 18:20 再扫描并于 18:30 扫描
+- **THEN** 系统 SHALL 只补 10% 节点，不在第二次补 20%，并于 18:30 发送 5% 节点
+
+#### Scenario: Reset the schedule identity and handle zero duration
+- **WHEN** 仅开始时间调整生效、重开生效，或任务起止相等
+- **THEN** 新轮次/排期 SHALL 独立去重；零工期 SHALL 仅在超过截止且未完成时发一次逾期；全天截止配置 SHALL 生效并保持日历完整日期
+
+### Requirement: Notification lifecycle and historical access
+通知 SHALL 绑定自己的事件、任务及原申请，打开即已读并同步未读数；原申请办结 SHALL 置灰展示其结果且无有效审核按钮，不得转向同任务后续申请。本人删除仅影响本人副本。通知 SHALL 自事件产生时刻起保留三个公司时区日历月，月末截到目标月最后一天，到期时不再可用。业务发起人及有通知管理权的管理员 SHALL 仅在事件产生后严格少于 180 秒时撤回，自动提醒仅管理员可管理；撤回保留提示但移除正文与跳转，不改变业务、申请或审计。
+
+已送达、未删除、未撤回且未到期通知的原接收人，在失去当前任务权限后 SHALL 仍可读取保留标题/摘要并从该通知进入当前已生效任务的专用只读详情，展示关系/授权撤销提示。此例外 SHALL 不开放提议、diff、受限关联、手机号、他人日志或任何业务操作，不加入正常列表、搜索、计数、首页或分析。未送达消息 SHALL 不因候选接收人记录而授予例外。
+
+通知列表 SHALL 不显示底部刷新/关闭操作栏，并保留头部关闭入口；键盘 Tab 焦点范围 SHALL 包含头部关闭按钮，空列表也 SHALL 可关闭。此列表布局 SHALL 不改变消息详情的业务操作及自动已读要求。
+
+#### Scenario: Close a notification list without footer actions
+- **WHEN** 用户打开有消息或空状态的通知列表，并用鼠标或键盘退出
+- **THEN** 列表 SHALL 无底部刷新/关闭按钮且无空白操作栏，头部关闭按钮 SHALL 可聚焦及触发，之后其他弹层的页脚 SHALL 正常恢复
+
+#### Scenario: Open an old review notification
+- **WHEN** 原申请已完成而同任务产生新的待审，用户打开原消息
+- **THEN** 消息 SHALL 标为已读、未读数减少，展示原申请结果并置灰，不能借旧消息办理新申请
+
+#### Scenario: Enforce withdrawal and calendar month boundaries
+- **WHEN** 发起人在 179.999 秒或 180 秒撤回，或接收人访问已过三个月期限的消息
+- **THEN** 前者 SHALL 可撤回，180 秒及以后 SHALL 拒绝；10 月 31 日产生的消息 SHALL 于次年 1 月 31 日同一公司本地时刻到期，1 月 31 日加三个月 SHALL 截到 4 月 30 日
+
+#### Scenario: Distinguish hide and withdraw
+- **WHEN** 接收人删除自己的副本，或发起人在时限内撤回该事件通知
+- **THEN** 删除 SHALL 不影响他人副本；撤回 SHALL 对所有副本移除正文和跳转并保留提示；两者 SHALL 不修改任务结果、申请状态及管理历史
+
+#### Scenario: Retain access solely through a delivered notification
+- **WHEN** 原接收人被移出负责人/收回授权但仍保有送达消息
+- **THEN** 消息标题及实际变更摘要 SHALL 保留，专用入口 SHALL 仅展示有效任务且提示只读；普通详情及所有当前范围查询 SHALL 继续拒绝或排除该任务
+
+#### Scenario: End the exception and block undelivered access
+- **WHEN** 消息被个人删除、全事件撤回或到期，或普通事件的任务授权在通知送达前已被撤销
+- **THEN** 系统 SHALL 拒绝通过该消息取得历史详情，不因知晓消息/任务/事件 ID 扩权，也不阻止拥有正常权限者从正常入口查看
+
+### Requirement: Complete task operation history
+管理端 SHALL 可按任务追溯具体字段前后值、有序负责人变化、申请/版本、申请人与审核人、决定意见、改派、失效、交接、完成、重开和无需审核原因。App SHALL 仅展示当前有效资料、有效进展、相关申请及审核意见，不开放完整历史。通知删除/撤回/清理 SHALL 不删除业务历史，历史 SHALL 不包含密码或他人手机号。
+
+#### Scenario: Inspect an ordered assignee change and reassignment
+- **WHEN** 管理员查询一个发生负责人换序、改派、失效和交接的任务
+- **THEN** 系统 SHALL 展示每次实际变动、前后人选、时间、原因及结果，而非仅事件类型和 ID；App 用户 SHALL 不能查询完整历史
+
+#### Scenario: Retain history after message removal
+- **WHEN** 关联消息删除、撤回或到期清理
+- **THEN** 全部任务操作记录 SHALL 继续可查，已生效状态 SHALL 保持

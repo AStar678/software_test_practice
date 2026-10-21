@@ -140,6 +140,9 @@ public class TaskService {
             participantIds.add(s(proposed, "createdBy"));
             participantIds.add(s(result, "reviewerId"));
             result.put("participants", participantSummaries(actor, participantIds));
+            result.put("canHandover", false);
+            result.put("handoverSources", List.of());
+            result.put("handoverPresets", Map.of());
             return result;
         }
         Map<String, Object> version = version(actor, current);
@@ -151,6 +154,17 @@ public class TaskService {
         Map<String, Object> pendingRequest = pending(actor, id, false);
         result.put("pendingRoute", pendingRequest != null && canSeeRequest(actor, pendingRequest, task)
                 ? routeView(actor, storedRoute(actor, pendingRequest)) : new LinkedHashMap<String, Object>());
+        List<String> handoverSources = pendingRequest == null
+                ? owners.stream().filter(owner -> access.canHandover(actor, owner, owners)).toList()
+                : List.of();
+        Map<String, Object> handoverPresets = new LinkedHashMap<>();
+        for (String source : handoverSources) {
+            String preset = presetTarget(actor, source);
+            if (preset != null) handoverPresets.put(source, preset);
+        }
+        result.put("canHandover", !handoverSources.isEmpty());
+        result.put("handoverSources", handoverSources);
+        result.put("handoverPresets", handoverPresets);
         result.put("records", db.list("SELECT id,author_id,body,kind,effective_at,created_at FROM task_records WHERE organization_id=? AND task_id=? AND effective_at IS NOT NULL ORDER BY created_at,id", actor.organizationId(), id));
         List<Map<String, Object>> children = new ArrayList<>();
         for (Map<String, Object> child : db.list("SELECT t.* FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id WHERE t.organization_id=? AND v.parent_task_id=? ORDER BY t.created_at,t.id", actor.organizationId(), id)) {
@@ -186,7 +200,7 @@ public class TaskService {
      * back the expiry/unfreeze terminal state (design §6, DEV-012).
      */
     public void expireBeforeSubmit(Actor actor, String taskId) {
-        expiry.expirePendingBeforeSubmit(actor.organizationId(), taskId, clock.instant());
+        expiry.expirePendingBeforeSubmit(actor.organizationId(), taskId);
     }
 
     public Map<String, Object> change(Actor actor, String id, String ifMatch, Map<String, Object> input) {
@@ -426,14 +440,7 @@ public class TaskService {
         String status = switch (decision) { case "approve" -> "approved"; case "reject" -> "rejected"; default -> "withdrawn"; };
         Timestamp now = now();
         if ("approve".equals(decision)) {
-            validateActiveOwners(actor, newOwners);
-            Actor applicant = activeActor(actor, s(request, "applicantId"));
-            if (Set.of("create", "change").contains(kind)) validateAssignable(applicant, newOwners);
-            // A handover is re-checked at approval: the setter must still hold the dedicated authority and
-            // the source must still be the current owner (DEV-004).
-            if ("handover".equals(kind)) validateHandoverAtApproval(actor, taskId, id, base);
-            validateParent(applicant, taskId, s(proposed, "parentTaskId"), base == null || !Objects.equals(s(base, "parentTaskId"), s(proposed, "parentTaskId")));
-            validateRequestActor(applicant, task, base, kind);
+            validateApplicationEffect(actor, task, request, proposed, base, kind);
         }
         int changed = db.update("UPDATE approval_requests SET status=?,comment=?,current_reviewer_id=?,decided_at=?,decided_by=?,row_version=row_version+1 WHERE organization_id=? AND id=? AND status='pending' AND row_version=?", status, comment, reviewer, now, actor.id(), actor.organizationId(), id, n(request, "rowVersion"));
         if (changed != 1) throw conflict("REQUEST_RESOLVED", "该申请已处理，请刷新");
@@ -525,6 +532,110 @@ public class TaskService {
     }
 
     /**
+     * Dedicated handover preset (V-010 / DEV-004): the person themself or their direct manager chooses
+     * the successor for that person's current tasks. The setting is persisted and revalidated when a
+     * handover is actually submitted, so an organization change or an inactive target cannot keep
+     * working silently.
+     */
+    public Map<String, Object> handoverTargets(Actor actor, String subjectId, String query) {
+        requireBusiness(actor);
+        Map<String, Object> subject = handoverPresetSubject(actor, subjectId);
+        if (query != null && query.length() > 100) throw bad("搜索内容最多100字");
+        List<Map<String, Object>> items = access.handoverTargets(access.actor(subject), query).stream()
+                .map(row -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    for (String key : List.of("id", "username", "displayName", "departmentId", "departmentName",
+                            "positionId", "positionName")) item.put(key, row.get(key));
+                    return item;
+                }).toList();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("items", items);
+        result.put("empty", items.isEmpty());
+        result.put("subjectId", subjectId);
+        return result;
+    }
+
+    public Map<String, Object> handoverPreset(Actor actor, String subjectId) {
+        requireBusiness(actor);
+        handoverPresetSubject(actor, subjectId);
+        return handoverPresetView(actor, subjectId);
+    }
+
+    public Map<String, Object> saveHandoverPreset(Actor actor, String subjectId, Map<String, Object> input) {
+        requireBusiness(actor);
+        allowed(input, Set.of("targetUserId"));
+        Map<String, Object> subject = handoverPresetSubject(actor, subjectId);
+        String targetId = requiredId(input.get("targetUserId"), "targetUserId");
+        if (subjectId.equals(targetId)) throw bad("交接对象不能是本人");
+        Map<String, Object> target = access.activeUser(actor, targetId);
+        if (target == null || !access.canBeHandoverTarget(access.actor(subject), target)) {
+            throw bad("交接对象须为本公司有效业务账号且在合法交接范围内");
+        }
+        if (db.find("SELECT * FROM handover_presets WHERE organization_id=? AND user_id=? FOR UPDATE",
+                actor.organizationId(), subjectId) == null) {
+            db.update("INSERT INTO handover_presets(organization_id,user_id,target_user_id,set_by_user_id,row_version,updated_at) "
+                            + "VALUES(?,?,?,?,1,UTC_TIMESTAMP(6))",
+                    actor.organizationId(), subjectId, targetId, actor.id());
+        } else {
+            db.update("UPDATE handover_presets SET target_user_id=?,set_by_user_id=?,row_version=row_version+1,"
+                            + "updated_at=UTC_TIMESTAMP(6) WHERE organization_id=? AND user_id=?",
+                    targetId, actor.id(), actor.organizationId(), subjectId);
+        }
+        events.record(actor, null, "handover.preset.updated", List.of(),
+                Map.of("userId", subjectId, "targetUserId", targetId));
+        return handoverPresetView(actor, subjectId);
+    }
+
+    public Map<String, Object> clearHandoverPreset(Actor actor, String subjectId) {
+        requireBusiness(actor);
+        handoverPresetSubject(actor, subjectId);
+        int deleted = db.update("DELETE FROM handover_presets WHERE organization_id=? AND user_id=?",
+                actor.organizationId(), subjectId);
+        if (deleted > 0) {
+            events.record(actor, null, "handover.preset.cleared", List.of(), Map.of("userId", subjectId));
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("userId", subjectId);
+        result.put("cleared", deleted > 0);
+        return result;
+    }
+
+    private Map<String, Object> handoverPresetSubject(Actor actor, String subjectId) {
+        String id = requiredId(subjectId, "userId");
+        Map<String, Object> subject = access.activeUser(actor, id);
+        if (subject == null) throw ApiException.notFound();
+        if (!access.canSetHandoverPreset(actor, subject)) throw forbidden("仅本人或直属领导可设置交接对象");
+        return subject;
+    }
+
+    private Map<String, Object> handoverPresetView(Actor actor, String subjectId) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("userId", subjectId);
+        result.put("targetUserId", null);
+        result.put("target", null);
+        result.put("rowVersion", 0);
+        Map<String, Object> row = db.find("SELECT p.*,u.display_name AS target_name,u.username AS target_username "
+                        + "FROM handover_presets p LEFT JOIN users u ON u.organization_id=p.organization_id AND u.id=p.target_user_id "
+                        + "WHERE p.organization_id=? AND p.user_id=?",
+                actor.organizationId(), subjectId);
+        if (row == null) return result;
+        result.put("targetUserId", s(row, "targetUserId"));
+        result.put("target", Map.of("id", s(row, "targetUserId"),
+                "displayName", Objects.toString(row.get("targetName"), ""),
+                "username", Objects.toString(row.get("targetUsername"), "")));
+        result.put("setByUserId", s(row, "setByUserId"));
+        result.put("rowVersion", n(row, "rowVersion"));
+        result.put("updatedAt", row.get("updatedAt"));
+        return result;
+    }
+
+    private String presetTarget(Actor actor, String subjectId) {
+        Map<String, Object> row = db.find("SELECT target_user_id FROM handover_presets WHERE organization_id=? AND user_id=?",
+                actor.organizationId(), subjectId);
+        return row == null ? null : s(row, "targetUserId");
+    }
+
+    /**
      * Dedicated handover (DEV-004): the owner of a task, or that person's direct manager, replaces one
      * assignee position with another person. It can never carry a base field, and the relative order of
      * the remaining assignees is preserved.
@@ -542,11 +653,16 @@ public class TaskService {
         if (pending(actor, taskId, true) != null) throw conflict("TASK_FROZEN", "任务有待审核申请，请先处理或撤销");
 
         String source = requiredId(input.get("sourceUserId"), "sourceUserId");
-        String target = requiredId(input.get("targetUserId"), "targetUserId");
+        String target = input.get("targetUserId") == null ? presetTarget(actor, source)
+                : requiredId(input.get("targetUserId"), "targetUserId");
+        if (target == null) throw bad("请选择交接对象，或先保存交接预设");
         if (source.equals(target)) throw bad("交接目标不能与被交接人相同");
         if (!access.canHandover(actor, source, currentOwners)) throw forbidden("仅本人或直属领导可交接该任务");
         Map<String, Object> targetUser = access.activeUser(actor, target);
-        if (targetUser == null || "admin".equals(s(targetUser, "role"))) throw bad("交接目标须为本公司有效业务账号");
+        Actor sourceActor = access.actor(access.user(actor, source));
+        if (targetUser == null || !access.canBeHandoverTarget(sourceActor, targetUser)) {
+            throw bad("交接目标须为本公司有效业务账号且在合法交接范围内");
+        }
         String reason = input.containsKey("reason") ? requiredText(input, "reason", 500) : "专用交接";
 
         List<String> newOwners = new ArrayList<>(currentOwners);
@@ -574,10 +690,16 @@ public class TaskService {
         String source = s(handover, "sourceUserId");
         String setBy = s(handover, "setByUserId");
         if (!baseOwners.contains(source)) throw conflict("HANDOVER_SOURCE_CHANGED", "被交接人已不是当前负责人，请重新提交交接");
+        Map<String, Object> sourceUser = access.activeUser(reviewer, source);
+        if (sourceUser == null) throw conflict("HANDOVER_SOURCE_INACTIVE", "被交接人已不可用，请重新提交交接");
         Map<String, Object> setter = access.activeUser(reviewer, setBy);
         if (setter == null) throw conflict("HANDOVER_SETTER_INACTIVE", "交接设定人已不可用，请重新提交交接");
         if (!access.canHandover(access.actor(setter), source, baseOwners)) {
             throw conflict("HANDOVER_NOT_ALLOWED", "交接设定人已不具备该任务的交接权限，请重新提交交接");
+        }
+        Map<String, Object> targetUser = access.activeUser(reviewer, s(handover, "targetUserId"));
+        if (targetUser == null || !access.canBeHandoverTarget(access.actor(sourceUser), targetUser)) {
+            throw conflict("HANDOVER_TARGET_INVALID", "交接对象已失效或不在合法范围内，请重新提交交接");
         }
     }
 
@@ -690,6 +812,27 @@ public class TaskService {
                 now, organizationId, requestId, requestRowVersion};
     }
 
+    /**
+     * Re-checks the current effects of an approval against live authority. Explicit decisions and the
+     * reviewer-less automatic path share this so a revoked dispatch range, a stale participant/parent or a
+     * losing handover setter cannot be bypassed just because no reviewer remains (V-008).
+     */
+    private void validateApplicationEffect(Actor context, Map<String, Object> task, Map<String, Object> request,
+                                           Map<String, Object> proposed, Map<String, Object> base, String kind) {
+        String taskId = s(task, "id");
+        String requestId = s(request, "id");
+        List<String> newOwners = assignees(context, s(proposed, "id"));
+        validateActiveOwners(context, newOwners);
+        Actor applicant = activeActor(context, s(request, "applicantId"));
+        if (Set.of("create", "change").contains(kind)) validateAssignable(applicant, newOwners);
+        // A handover is re-checked at approval: the setter must still hold the dedicated authority and
+        // the source must still be the current owner (DEV-004).
+        if ("handover".equals(kind)) validateHandoverAtApproval(context, taskId, requestId, base);
+        validateParent(applicant, taskId, s(proposed, "parentTaskId"),
+                base == null || !Objects.equals(s(base, "parentTaskId"), s(proposed, "parentTaskId")));
+        validateRequestActor(applicant, task, base, kind);
+    }
+
     /** Applies a request whose refreshed route has no reviewer at all, with the reason persisted. */
     private void applyWithoutReviewer(Actor actor, Map<String, Object> task, Map<String, Object> request, Route route) {
         String taskId = s(task, "id");
@@ -697,6 +840,14 @@ public class TaskService {
         String kind = s(request, "kind");
         Map<String, Object> proposed = version(actor, s(request, "proposedVersionId"));
         Map<String, Object> base = s(request, "baseVersionId") == null ? null : version(actor, s(request, "baseVersionId"));
+        try {
+            validateApplicationEffect(actor, task, request, proposed, base, kind);
+        } catch (ApiException blocked) {
+            // The organization change itself must still complete. The old proposal stays pending and
+            // frozen; it can never be published with authority the applicant no longer holds, and it is
+            // ended by the documented deadline/withdrawal paths instead of a fabricated approval.
+            return;
+        }
         Timestamp now = now();
         int changed = db.update(NO_REVIEWER_APPLY_SQL,
                 noReviewerApplyArgs(route, now, actor.organizationId(), requestId, n(request, "rowVersion")));

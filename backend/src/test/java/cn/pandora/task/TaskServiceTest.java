@@ -192,6 +192,29 @@ class TaskServiceTest {
     }
 
     @Test
+    void automaticApplicationReusesTheExplicitDispatchAuthorityCheck() {
+        // V-008: a reviewer-less route must not bypass the applicant's current dispatch range.
+        Db db = mock(Db.class);
+        Access access = mock(Access.class);
+        when(db.list(startsWith("SELECT user_id FROM task_version_assignees"), eq("org"), eq("version")))
+                .thenReturn(List.of(Map.of("userId", "owner")));
+        when(access.activeUser(any(), eq("owner"))).thenReturn(user("owner", "lower", 3, null, true));
+        when(access.user(any(), eq("applicant"))).thenReturn(user("applicant", "upper", 0, null, true));
+        when(access.actor(any())).thenReturn(new Actor("applicant", "org", "upper", null, null, 0));
+        doThrow(new ApiException(403, "DISPATCH_NOT_ALLOWED", "越权派发"))
+                .when(access).requireDispatchable(any(), eq("owner"));
+        TaskService service = new TaskService(db, access, mock(Events.class),
+                java.time.Clock.systemUTC(), mock(ExpiryService.class));
+        Map<String, Object> task = Map.of("id", "task", "originalCreatorId", "applicant");
+        Map<String, Object> request = Map.of("id", "request", "applicantId", "applicant",
+                "kind", "create", "proposedVersionId", "version");
+        Map<String, Object> proposed = Map.of("id", "version");
+
+        assertThrows(ApiException.class, () -> ReflectionTestUtils.invokeMethod(service,
+                "validateApplicationEffect", ACTOR, task, request, proposed, null, "create"));
+    }
+
+    @Test
     void noReviewerApplicationBindsEveryPlaceholderToExactlyOneArgument() {
         // V-003: the update used to pass a duplicated argument while the SQL had one fewer placeholder.
         TaskService.Route route = new TaskService.Route(null, "basis", List.of(), "no-reviewer",

@@ -8,7 +8,10 @@
     logEtags: new Map(), notificationEtags: new Map()
   };
   const retries = new Map();
-  let working = false, reloadSequence = 0;
+  let working = false, reloadSequence = 0, taskSequence = 0;
+  /* Per-module session teardown hooks: pages that cache authorized data register here so logout,
+     expiry and account switches invalidate their state together with the shared workspace. */
+  P.sessionReset = [];
   const cancelled = () => Object.assign(new Error("账号已切换，请重新操作。"), { name: "AbortError" });
   const version = row => '"' + row.rowVersion + '"';
   const note = document.querySelector(".preview-note");
@@ -18,6 +21,7 @@
 
   function clearData() {
     P.ready = false; P.data = {};
+    reloadSequence++; taskSequence++;
     [PEOPLE, TASKS, LOGS, NOTIFICATIONS, CONSULTATIONS, COMPANY_ITEMS].forEach(a => a.splice(0));
     Object.keys(PERSONAL_STATE).forEach(k => delete PERSONAL_STATE[k]);
     [P.taskEtags, P.approvalEtags, P.logEtags, P.notificationEtags].forEach(m => m.clear());
@@ -26,6 +30,7 @@
     document.querySelectorAll(".page").forEach(el => { el.innerHTML = ""; });
     document.getElementById("bellDot").hidden = true;
     document.getElementById("whoami").textContent = "未登录";
+    P.sessionReset.forEach(fn => { try { fn(); } catch (_) { /* a page reset must never block logout */ } });
   }
   function gate() {
     document.querySelectorAll("#tabbar button, #bellBtn").forEach(el => { el.disabled = !P.ready; });
@@ -213,31 +218,66 @@
     if (index < 0) TASKS.push(t); else TASKS.splice(index, 1, t);
     P.taskEtags.set(t.id, version(raw)); return t;
   };
+  /* Complete authorized task snapshot. A page failure rejects the whole snapshot, so callers never
+     publish a partial page set as "complete"; the counters and the table must not see half the data. */
+  async function loadTaskRows() {
+    const epoch = P.epoch, sequence = ++taskSequence;
+    const rows = await all("/tasks");
+    if (epoch !== P.epoch || sequence !== taskSequence) throw cancelled();
+    return { epoch, sequence, rows };
+  }
+  function taskSnapshotIsCurrent(snapshot) {
+    return snapshot.epoch === P.epoch && snapshot.sequence === taskSequence;
+  }
+  /* One atomic replacement of the shared task set: dedupe by task id, keep the complete raw rows,
+     rebuild the mapped TASKS and task ETags, and only add safe participant summaries. */
+  function commitTaskRows(rows) {
+    const unique = new Map();
+    rows.forEach(raw => { if (raw && (raw.id || raw.taskId)) unique.set(raw.id || raw.taskId, raw); });
+    const list = Array.from(unique.values());
+    P.data.rawTasks = list;
+    TASKS.splice(0, TASKS.length, ...list.map(P.mapTask));
+    P.taskEtags.clear();
+    list.forEach(raw => {
+      P.taskEtags.set(raw.id || raw.taskId, version(raw));
+      P.rememberPeople(raw.participants);
+    });
+    return list;
+  }
+  /* Independent refresh for the task form and calendar re-queries. It shares the epoch and the task
+     request sequence with the initial load, so an older response can never replace a newer one. */
+  P.refreshTasks = async function () {
+    const snapshot = await loadTaskRows();
+    if (!taskSnapshotIsCurrent(snapshot)) throw cancelled();
+    return commitTaskRows(snapshot.rows);
+  };
   P.reload = async function () {
     const epoch = P.epoch, sequence = ++reloadSequence;
     const me = await P.request("/me");
-    if (me.role === "admin") throw new Error("此页面供业务账号使用。管理员请使用 /debug.html 管理查询页。");
-    const [users, tasks, logs, logAuthors, reports, approvals, notifications, home, analytics] = await Promise.all([
-      all("/users"), all("/tasks"), all("/work-logs?scope=self"), P.request("/work-log-authors"), P.request("/me/reports"),
-      all("/approval-requests?mine=all"), all("/notifications"), P.request("/home"), P.request("/analytics/task-summary?scope=visible")
+    if (me.role === "admin") throw new Error("此页面供业务账号使用。管理员请使用 /admin.html 管理端。");
+    const tasks = loadTaskRows();
+    const [users, logs, logAuthors, reports, approvals, notifications, home, analytics, snapshot] = await Promise.all([
+      all("/users"), all("/work-logs?scope=self"), P.request("/work-log-authors"), P.request("/me/reports"),
+      all("/approval-requests?mine=all"), all("/notifications"), P.request("/home"), P.request("/analytics/task-summary?scope=visible"), tasks
     ]);
     if (epoch !== P.epoch || sequence !== reloadSequence) throw cancelled();
-    P.data = { me, users, rawTasks: tasks, approvals, home, analytics, logAuthors, reports };
+    if (!taskSnapshotIsCurrent(snapshot)) throw cancelled();
+    P.data = { me, users, rawTasks: snapshot.rows, approvals, home, analytics, logAuthors, reports };
     // A data reload starts the log page on the default self scope; the page itself preserves
     // the user's search text and author selection until the next explicit reload.
     state.logAll = false;
     state.logAuthorId = me.id;
     const people = new Map(users.map(u => [u.id, mapPerson(u)])); people.set(me.id, mapPerson(me));
-    tasks.concat(approvals).forEach(t => (t.participants || []).forEach(u => { if (!people.has(u.id)) people.set(u.id, mapPerson(u)); }));
+    approvals.forEach(t => (t.participants || []).forEach(u => { if (!people.has(u.id)) people.set(u.id, mapPerson(u)); }));
     logs.forEach(l => { if (!people.has(l.authorId)) people.set(l.authorId, mapPerson({ id: l.authorId, displayName: l.authorName })); });
     PEOPLE.splice(0, PEOPLE.length, ...people.values());
     state.actorId = me.id; ROLE_ACCOUNT[me.role] = me.id;
-    TASKS.splice(0, TASKS.length, ...tasks.map(P.mapTask));
+    commitTaskRows(snapshot.rows);
     LOGS.splice(0, LOGS.length, ...logs.map(l => ({ id: l.id, authorId: l.authorId, time: new Date(l.createdAt), content: l.body, taskId: l.taskId || null, rowVersion: l.rowVersion, editable: l.editable, raw: l })));
     NOTIFICATIONS.splice(0, NOTIFICATIONS.length, ...notifications.map(n => ({ id: n.id, time: new Date(n.createdAt), summary: n.summary, type: n.eventType, recipients: [me.id], read: n.readAt ? [me.id] : [], targetType: "task", targetId: n.taskId, raw: n })));
     COMPANY_ITEMS.splice(0, COMPANY_ITEMS.length, ...home.companyItems.map(i => ({ id: i.id, text: i.body || i.title, raw: i })));
     PERSONAL_STATE[me.id] = { edited: true, items: home.personalItems.map(i => ({ id: i.id, text: i.body || i.title, raw: i })) };
-    [[tasks, P.taskEtags], [approvals, P.approvalEtags], [logs, P.logEtags], [notifications, P.notificationEtags]].forEach(([rows, map]) => { map.clear(); rows.forEach(row => map.set(row.id || row.taskId, version(row))); });
+    [[approvals, P.approvalEtags], [logs, P.logEtags], [notifications, P.notificationEtags]].forEach(([rows, map]) => { map.clear(); rows.forEach(row => map.set(row.id || row.taskId, version(row))); });
     retries.clear(); P.ready = true; gate(); renderAll();
     P.notice("已连接本地数据库 · " + me.displayName);
     return P.data;

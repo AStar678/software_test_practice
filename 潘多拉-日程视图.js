@@ -7,8 +7,16 @@
   const MIN_EVENT_HEIGHT = 20;
   const MONTH_ROWS = 5;
   let monthRows = 5, fitRequest = 0;
-  let panelOpen = true, scheduleSearchQuery = "", scheduleSearchRows = [], scheduleSearchTimer = 0, scheduleSearchSeq = 0;
+  let panelOpen = true;
   let swipeStart = null, suppressDateClickUntil = 0;
+  /* 日历只投影本人当前有效负责的正常任务；全局授权数据（TASKS/visibleTasks）保持不变，
+     任务表单、详情、日志关联、导图与 AI 仍使用完整授权集。 */
+  const allNormalTasks = viewTasks;
+  viewTasks = function (account) {
+    return allNormalTasks(account).filter(function (task) {
+      return (task.assigneeIds || []).indexOf(account.id) !== -1;
+    });
+  };
   let lunarFormatter;
   try { lunarFormatter = new Intl.DateTimeFormat('zh-CN-u-ca-chinese', { month:'long', day:'numeric' }); } catch (_) {}
   const previousAction = runAction;
@@ -62,21 +70,6 @@
       return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
     });
   }
-  function rangeSummary(account) {
-    const range = viewRange(state.viewMode, state.viewAnchor);
-    const unique = new Map();
-    tasksInRange(viewTasks(account), range).forEach(task => unique.set(task.id, task));
-    const rows = Array.from(unique.values());
-    const summary = { total: rows.length, own: 0, assigned: 0, other: 0, pendingComplete: 0, done: 0, overdue: 0 };
-    rows.forEach(task => {
-      summary[taskKind(task, account)] += 1;
-      if (task.pendingKind === "complete") summary.pendingComplete += 1;
-      if (task.status === "done") summary.done += 1;
-      if (task.status !== "done" && isOverdue(task)) summary.overdue += 1;
-    });
-    return summary;
-  }
-  function relationLabel(kind) { return KIND_LABEL[kind] + " " + KIND_EMOJI[kind]; }
   function taskButton(t, d, kind) {
     return '<button type="button" class="p-agenda-item ' + (kind || '') + '" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '">' +
       '<span class="p-agenda-marker" aria-hidden="true"></span><span class="p-agenda-copy"><strong>' + esc(t.title) + '</strong><span>' + esc(scheduleText(t, d)) + '</span>' +
@@ -89,41 +82,6 @@
       (!compact ? '<button type="button" class="p-text-button" data-action="schedule-open-day" data-date="' + dateKey(d) + '">查看日程 ' + icons.right + '</button>' : '') + '</div>' +
       (tasks.length ? tasks.map(t => taskButton(t, d)).join('') : '<div class="p-calendar-empty">这一天还没有任务。<button type="button" class="p-text-button" data-action="schedule-create">创建任务</button></div>') + '</aside>';
   }
-  function scheduleSearchHTML() {
-    return '<div class="p-schedule-search"><input id="p-schedule-search" type="search" autocomplete="off" placeholder="搜索任务名称" value="' + esc(scheduleSearchQuery) + '" aria-label="按任务名称搜索" />' +
-      '<button type="button" class="p-search-clear" data-action="schedule-clear-search"' + (scheduleSearchQuery ? '' : ' disabled') + ' aria-label="清除搜索">清除</button>' +
-      '<div id="p-search-results" class="p-search-results">' + searchResultsHTML() + '</div></div>';
-  }
-  function searchResultsHTML() {
-    if (!scheduleSearchQuery) return '';
-    if (!scheduleSearchRows.length) return '<div class="p-search-empty">没有匹配的可见任务</div>';
-    return scheduleSearchRows.map(task => '<button type="button" class="p-search-row" data-task="' + esc(task.id || task.taskId) + '"><span>' +
-      esc(task.title || "任务") + '</span><small>' + esc(task.allDay ? (task.startDate + ' 至 ' + task.dueDate) : fmtSchedule(P.mapTask(task))) + '</small></button>').join('');
-  }
-  function scheduleSearch() {
-    clearTimeout(scheduleSearchTimer);
-    const query = scheduleSearchQuery.trim();
-    const seq = ++scheduleSearchSeq;
-    if (!query) { scheduleSearchRows = []; refreshScheduleSearch(); return; }
-    scheduleSearchTimer = setTimeout(async function () {
-      try {
-        const response = await P.request("/tasks?q=" + encodeURIComponent(query) + "&limit=20");
-        if (seq !== scheduleSearchSeq || !P.ready) return;
-        scheduleSearchRows = response.items || [];
-      } catch (_) {
-        if (seq === scheduleSearchSeq) scheduleSearchRows = [];
-      }
-      refreshScheduleSearch();
-    }, 220);
-  }
-  function refreshScheduleSearch() {
-    const box = document.getElementById("p-search-results");
-    if (box) box.innerHTML = searchResultsHTML();
-    const input = document.getElementById("p-schedule-search");
-    if (input && input.value !== scheduleSearchQuery) input.value = scheduleSearchQuery;
-    const clear = document.querySelector("[data-action='schedule-clear-search']");
-    if (clear) clear.disabled = !scheduleSearchQuery;
-  }
   function returnTargetLabel() {
     if (state.viewMode === "day") return sameDay(state.viewAnchor, new Date()) ? "" : "回到今天";
     if (state.viewMode === "week") {
@@ -134,16 +92,12 @@
   }
   function panelHTML() {
     if (!panelOpen) return "";
-    const a = actor(), summary = rangeSummary(a);
     return '<aside class="p-schedule-panel" aria-label="日历侧面板">' +
       '<div class="p-panel-heading"><div><span class="p-caption">视图</span><h2>' + ({month:"月",week:"周",day:"日"})[state.viewMode] + '视图</h2></div>' +
         '<button type="button" class="p-icon-button" data-action="schedule-panel" aria-label="收起侧面板">' + icons.left + '</button></div>' +
       '<div class="p-schedule-modes" role="group" aria-label="日历视图">' + [['month','月'],['week','周'],['day','日']].map(([mode,label]) =>
         '<button type="button" data-action="schedule-mode" data-mode="' + mode + '" aria-pressed="' + (state.viewMode === mode) + '">' + label + '</button>').join('') + '</div>' +
-      '<section class="p-panel-section"><h3>当前范围</h3><div class="p-range-counts">' +
-        '<span data-count="own"><b>' + summary.own + '</b> 我负责</span><span data-count="assigned"><b>' + summary.assigned + '</b> 我分配</span><span data-count="other"><b>' + summary.other + '</b> 仅可见</span></div>' +
-        '<div class="p-range-counts p-range-status"><span data-count="pendingComplete"><b>' + summary.pendingComplete + '</b> 待完成审核</span><span data-count="done"><b>' + summary.done + '</b> 已完成</span><span data-count="overdue"><b>' + summary.overdue + '</b> 逾期未完成</span></div>' +
-        '<div class="p-kind-legend">' + ["own","assigned","other"].map(kind => '<span class="kind ' + kind + '"><span class="kind-emoji" aria-hidden="true">' + KIND_EMOJI[kind] + '</span>' + KIND_LABEL[kind] + '</span>').join('') + '</div></section>' +
+      '<section class="p-panel-section"><button type="button" class="p-panel-command" data-action="task-table-open">任务表单</button></section>' +
       '<section class="p-panel-section"><button type="button" class="p-panel-command" data-action="schedule-my-applications">我的申请</button></section>' +
       '</aside>';
   }
@@ -157,7 +111,7 @@
       '<div class="p-schedule-nav"><button type="button" class="p-icon-button" data-action="schedule-prev" aria-label="上一' + ({month:'月',week:'周',day:'天'})[state.viewMode] + '">' + icons.left + '</button>' +
         '<button type="button" class="p-today-button" data-action="schedule-today">今天</button><button type="button" class="p-icon-button" data-action="schedule-next" aria-label="下一' + ({month:'月',week:'周',day:'天'})[state.viewMode] + '">' + icons.right + '</button></div>' +
       (back ? '<button type="button" class="p-text-button p-return-current" data-action="schedule-return-current">' + back + '</button>' : '') +
-      scheduleSearchHTML() + '</div>' + (state.viewMode === 'day' ? dayStrip() : '') + '</header>';
+      '<button type="button" class="p-text-button p-table-entry" data-action="task-table-open">任务表单' + icons.right + '</button></div>' + (state.viewMode === 'day' ? dayStrip() : '') + '</header>';
   }
   function dayStrip() {
     const start = viewRange('week', state.viewAnchor).start, today = startOfDay(new Date());
@@ -298,7 +252,7 @@
       '<div class="p-week-time" style="height:'+DAY_HEIGHT+'px;--hour-height:'+HOUR_HEIGHT+'px">'+axis()+'<div class="p-week-event-columns">'+days.map(d=>'<div class="p-week-event-day" data-date="'+dateKey(d)+'">'+timedEvents(d)+nowLine(d)+'</div>').join('')+'</div></div></div></div></section>';
   }
   function fitSchedule() {
-    if (!P.ready || state.page!=='view' || state.viewMode!=='month') return;
+    if (!P.ready || state.page!=='view' || state.viewPage==='table' || state.viewMode!=='month') return;
     const content=document.querySelector('.p-schedule-content');
     if (!content || content.clientHeight<1) return;
     const week=content.querySelector('.p-month-week'), layout=content.querySelector('.p-month-layout');
@@ -349,7 +303,6 @@
     if(action==='schedule-mode'){state.viewMode=el.dataset.mode;updateView();return;}
     if(action==='schedule-panel'){panelOpen=!panelOpen;renderAll();return;}
     if(action==='schedule-return-current'){state.viewAnchor=startOfDay(new Date());updateView();return;}
-    if(action==='schedule-clear-search'){scheduleSearchQuery="";scheduleSearchRows=[];scheduleSearchSeq++;refreshScheduleSearch();const input=document.getElementById("p-schedule-search");if(input){input.value="";input.focus();}return;}
     if(action==='schedule-my-applications'){if(P.openMyApplications)P.openMyApplications();else P.openApprovals("applicant");return;}
     if(action==='schedule-prev'||action==='schedule-next'){shift(action==='schedule-prev'?-1:1);return;}
     if(action==='schedule-today'){state.viewAnchor=startOfDay(new Date());updateView();return;}
@@ -375,20 +328,6 @@
     }
     previousAction(el);
   };
-  document.addEventListener("input", function (event) {
-    if (!event.target || event.target.id !== "p-schedule-search") return;
-    scheduleSearchQuery = event.target.value;
-    scheduleSearch();
-  });
-  document.addEventListener("click", function (event) {
-    const clear = event.target.closest("[data-action='schedule-clear-search']");
-    if (!clear) return;
-    event.preventDefault();
-    scheduleSearchQuery = ""; scheduleSearchRows = []; scheduleSearchSeq++;
-    refreshScheduleSearch();
-    const input = document.getElementById("p-schedule-search");
-    if (input) { input.value = ""; input.focus(); }
-  }, true);
   document.addEventListener("pointerdown", function (event) {
     const area = event.target.closest(".p-week-heading, .p-day-strip");
     if (!area || event.target.closest("[data-task]")) return;
@@ -411,5 +350,5 @@
     event.stopImmediatePropagation();
   }, true);
 
-  P.calendar={dayTasks,groupsFor,monthWeek,rangeSummary,monthSortTasks,dayListSort};
+  P.calendar={dayTasks,groupsFor,monthWeek,monthSortTasks,dayListSort};
 })();

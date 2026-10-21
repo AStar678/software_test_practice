@@ -275,4 +275,41 @@ class AccessTest {
         assertFalse(access.canReadPhone(employee("peer", "d1", "middle"), employeeRow),
                 "a viewer outside the chain is still refused");
     }
+
+    @Test
+    void handoverPresetIsLimitedToThePersonAndTheirDirectManager() {
+        Access access = access(managers(Map.of("report", "lead", "stranger", "other")));
+        Map<String, Object> report = person("report", "d1", "lead", 3);
+        assertTrue(access.canSetHandoverPreset(employee("report", "d1", "lead"), report),
+                "the person can set their own preset");
+        assertTrue(access.canSetHandoverPreset(departmentLead("lead", "d1"), report),
+                "the direct manager can set the subordinate preset");
+        assertFalse(access.canSetHandoverPreset(executive("exec"), report),
+                "a non-direct manager cannot set the preset");
+        assertFalse(access.canSetHandoverPreset(employee("stranger", "d1", "other"), report),
+                "an unrelated colleague cannot set the preset");
+    }
+
+    @Test
+    void handoverTargetsStayInsideThePersonWorkingCircleAndActiveBusinessAccounts() {
+        Access access = access(mock(Db.class));
+        Actor employee = employee("report", "d1", "lead");
+        assertTrue(access.canBeHandoverTarget(employee, person("colleague", "d1", "lead", 3)),
+                "a department colleague is legal");
+        assertTrue(access.canBeHandoverTarget(employee, person("lead", "d1", "exec", 2)),
+                "the direct manager is legal");
+        assertFalse(access.canBeHandoverTarget(employee, person("report", "d1", "lead", 3)),
+                "the person themself is not a target");
+        assertFalse(access.canBeHandoverTarget(employee, person("outside", "d2", "exec", 3)),
+                "another department is outside the handover circle");
+        Map<String, Object> inactive = person("inactive", "d1", "lead", 3);
+        inactive.put("active", false);
+        assertFalse(access.canBeHandoverTarget(employee, inactive), "an inactive target is refused");
+        Map<String, Object> administrator = person("admin", "d1", null, 0);
+        administrator.put("role", "admin");
+        assertFalse(access.canBeHandoverTarget(employee, administrator),
+                "an administrator is not a business handover target");
+        assertTrue(access.canBeHandoverTarget(executive("exec"), person("outside", "d2", "lead", 3)),
+                "a company-range person may use a company-wide target");
+    }
 }

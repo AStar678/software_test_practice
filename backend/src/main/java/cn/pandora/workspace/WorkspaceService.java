@@ -32,7 +32,7 @@ public class WorkspaceService {
     }
 
     public Map<String,Object> me(Actor a) {
-        var row=db.one("SELECT u.*,o.name AS organization_name,d.name AS department_name,p.name AS position_name,t.name team_name,m.display_name manager_name "
+        var row=db.one("SELECT u.*,o.name AS organization_name,o.time_zone AS organization_time_zone,d.name AS department_name,p.name AS position_name,t.name team_name,m.display_name manager_name "
             + "FROM users u LEFT JOIN organizations o ON o.id=u.organization_id "
             + "LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
             + "LEFT JOIN positions p ON p.organization_id=u.organization_id AND p.id=u.position_id "
@@ -40,7 +40,7 @@ public class WorkspaceService {
             + "LEFT JOIN users m ON m.id=u.manager_id AND m.organization_id=u.organization_id "
             + "WHERE u.id=? AND u.organization_id=? AND u.active=1", a.id(), a.organizationId());
         var result=safeUser(row);
-        for(String key:List.of("phone","email","profileVersion","managerName","organizationName","departmentName","positionName")) result.put(key,row.get(key));
+        for(String key:List.of("phone","email","profileVersion","managerName","organizationName","departmentName","positionName","organizationTimeZone")) result.put(key,row.get(key));
         return result;
     }
 
@@ -70,6 +70,7 @@ public class WorkspaceService {
             result.put(key, row.get(key));
         }
         result.put("canReadLogs", access.canReadLogAuthor(a, userId));
+        result.put("canSetHandoverPreset", access.canSetHandoverPreset(a, row));
         if (access.canReadPhone(a, row)) result.put("phone", row.get("phone"));
         return result;
     }

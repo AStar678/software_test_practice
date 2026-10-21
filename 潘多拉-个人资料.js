@@ -46,9 +46,10 @@
         (person.teamName ? row("独立团队", person.teamName) : "") +
         row("直属上级", person.managerName || superior(person)) +
         (Object.prototype.hasOwnProperty.call(person, "phone") ? row("手机号", person.phone) : "");
-      const foot = person.canReadLogs
-        ? withBack(button("p-open-person-logs", "查看日志", "primary", id) + button("sheet-close", "关闭"))
-        : withBack(button("sheet-close", "关闭"));
+      const foot = withBack((person.canReadLogs ? button("p-open-person-logs", "查看日志", "primary", id) : "") +
+        (person.canSetHandoverPreset ? '<button type="button" class="btn" data-action="p-open-handover-preset" data-id="' + esc(id) +
+          '" data-name="' + esc(person.displayName) + '">设置交接预设</button>' : '') +
+        button("sheet-close", "关闭"));
       openSheet({ title: "人员资料", body: detail, foot: foot });
     });
   }
@@ -68,7 +69,8 @@
     document.getElementById("page-me").innerHTML = '<section class="card profile-card"><div class="profile-row"><div class="avatar">' +
       esc(Array.from(user.displayName || "")[0] || "") + '</div><div style="min-width:0;overflow-wrap:anywhere"><div class="v">' + esc(user.displayName) + '</div><div class="tiny muted">当前登录账号</div></div></div>' +
       row("姓名", user.displayName) + row("联系电话", user.phone) + row("邮箱", user.email) + readonlyRows(user) +
-      '<div class="action-grid" style="margin-top:12px">' + button("p-edit-profile", "编辑个人资料", "primary") + button("p-change-password", "修改密码") + '</div></section>' +
+      '<div class="action-grid" style="margin-top:12px">' + button("p-edit-profile", "编辑个人资料", "primary") + button("p-change-password", "修改密码") +
+      '<button type="button" class="btn" data-action="p-open-handover-preset" data-id="' + esc(user.id) + '" data-name="' + esc(user.displayName) + '">交接预设</button></div></section>' +
       reportsSection() + '<section class="card"><div class="card-head"><h2>账号与数据</h2></div><div class="action-grid">' + row("账号", user.username) + row("身份", ROLE_LABEL[user.role] || user.role) + button("p-refresh-workspace", "刷新数据") + button("p-logout", "退出登录") + '</div></section>';
   };
 

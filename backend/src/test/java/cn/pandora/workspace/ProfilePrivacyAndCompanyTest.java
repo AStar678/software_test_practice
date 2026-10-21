@@ -92,4 +92,25 @@ class ProfilePrivacyAndCompanyTest {
         Actor admin = new Actor("admin", "org", "admin", null, null, 0);
         assertEquals(403, assertThrows(ApiException.class, () -> service.person(admin, "report")).status);
     }
+
+    @Test
+    void meAddsTheReadOnlyCompanyTimeZoneWithoutWideningContactFields() {
+        Db db = mock(Db.class);
+        Access access = mock(Access.class);
+        Map<String, Object> row = new LinkedHashMap<>(Map.of("id", "upper", "username", "upper", "displayName", "本人",
+                "role", "upper", "active", true, "organizationName", "潘多拉", "organizationTimeZone", "Asia/Shanghai"));
+        when(db.one(anyString(), eq("upper"), eq("org"))).thenReturn(row);
+        when(db.list(anyString(), eq("org"))).thenReturn(List.of(row));
+        WorkspaceService service = new WorkspaceService(db, access, mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
+        Map<String, Object> me = service.me(UPPER);
+        assertEquals("Asia/Shanghai", me.get("organizationTimeZone"));
+        assertEquals("潘多拉", me.get("organizationName"));
+        assertNull(me.get("phone"));
+        assertNull(me.get("email"));
+        // A summary list keeps its previous shape: no new contact or timezone fields.
+        Map<String, Object> summary = ((List<Map<String, Object>>) service.users(UPPER, Map.of(), true).get("items")).getFirst();
+        assertFalse(summary.containsKey("organizationTimeZone"));
+        assertFalse(summary.containsKey("phone"));
+        assertFalse(summary.containsKey("email"));
+    }
 }
