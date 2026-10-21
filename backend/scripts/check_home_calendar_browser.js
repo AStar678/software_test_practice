@@ -180,21 +180,28 @@ async function main() {
     await browser.evaluate("document.getElementById('sheetClose').click()");
 
     await openView(browser, "month");
-    check("9.3 the calendar has panel, date, search and floating create entries",
-      await browser.evaluate("!!document.querySelector('.p-schedule-panel') && !!document.querySelector('[data-action=\"schedule-pick-date\"]') && !!document.getElementById('p-schedule-search') && !!document.querySelector('.p-schedule-fab')"));
-    check("9.3 the side panel exposes modes, range counts and my applications",
-      await browser.evaluate("(() => { const text = document.querySelector('.p-schedule-panel').textContent; return ['月','周','日','我负责','我分配','仅可见','待完成审核','已完成','逾期未完成','我的申请'].every(v => text.includes(v)); })()"));
+    check("9.3 the calendar has panel, date, table and floating create entries",
+      await browser.evaluate("!!document.querySelector('.p-schedule-panel') && !!document.querySelector('[data-action=\"schedule-pick-date\"]') && !!document.querySelector('[data-action=\"task-table-open\"]') && !!document.querySelector('.p-schedule-fab')"));
+    check("9.3 the calendar has no ordinary task search, search results or count region",
+      await browser.evaluate("!document.getElementById('p-schedule-search') && !document.querySelector('.p-search-results') && !document.querySelector('.p-range-counts') && !document.querySelector('.p-kind-legend')"));
+    check("9.3 the side panel exposes modes, the task table entry and my applications",
+      await browser.evaluate("(() => { const text = document.querySelector('.p-schedule-panel').textContent; return ['月','周','日','任务表单','我的申请'].every(v => text.includes(v)); })()"));
     await browser.evaluate(`document.querySelector('[data-action="schedule-my-applications"]').click()`);
     await waitFor(browser, "document.getElementById('sheetTitle').textContent === '我的申请'");
     check("9.3 the independent application entry opens only my applications",
       await browser.evaluate("document.getElementById('sheetTitle').textContent === '我的申请' && /我提交的申请/.test(document.getElementById('sheetBody').textContent)"));
     await browser.evaluate("document.getElementById('sheetClose').click()");
 
-    await browser.evaluate(setValue("p-schedule-search", "S9 cross-day"));
-    await waitFor(browser, "!!document.querySelector('#p-search-results .p-search-row')");
-    check("9.3 name search returns the visible task for the current user",
-      await browser.evaluate("Array.from(document.querySelectorAll('#p-search-results .p-search-row')).some(row => row.textContent.includes('S9 cross-day'))"));
-    await browser.evaluate("document.querySelector('[data-action=\"schedule-clear-search\"]').click()");
+    const returnContext = await browser.evaluate("({ mode: state.viewMode, anchor: toDateInput(state.viewAnchor), pages: document.querySelectorAll('#tabbar button').length })");
+    await browser.evaluate("document.querySelector('[data-action=\"task-table-open\"]').click()");
+    await waitFor(browser, "!!document.querySelector('.p-task-table-card') && window.Pandora.taskForm && window.Pandora.taskForm.state.loaded");
+    check("9.3 the task table opens as a secondary page under the unchanged five-page navigation",
+      await browser.evaluate("state.viewPage === 'table' && document.querySelectorAll('#tabbar button').length === 5 && document.querySelector('#tabbar button[data-page=\"view\"]').getAttribute('aria-selected') === 'true' && document.querySelectorAll('#p-table-head th').length === 17"));
+    await browser.evaluate("document.querySelector('[data-action=\"task-table-close\"]').click()");
+    await waitFor(browser, "!!document.querySelector('.p-schedule-card')");
+    const backContext = await browser.evaluate("({ mode: state.viewMode, anchor: toDateInput(state.viewAnchor), pages: document.querySelectorAll('#tabbar button').length, page: state.viewPage })");
+    check("9.3 returning from the table restores the calendar mode and date",
+      JSON.stringify(backContext) === JSON.stringify(Object.assign({}, returnContext, { page: 'calendar' })), { before: returnContext, after: backContext });
 
     const monthState = await browser.evaluate("({ rows: Number(getComputedStyle(document.querySelector('.p-month-layout')).getPropertyValue('--month-rows')), clip: getComputedStyle(document.querySelector('.p-month-event span')).textOverflow })");
     check("9.4 month capacity never exceeds five and title uses direct clip",
@@ -223,8 +230,8 @@ async function main() {
     check("9.4 the detail pin toggle clears the month pin",
       await browser.evaluate(`!document.querySelector('.p-month-event[data-task="${pinTask}"] .p-pin')`));
     await browser.evaluate("document.getElementById('sheetClose').click()");
-    const countMatch = await browser.evaluate(`(() => { const s = window.Pandora.calendar.rangeSummary(actor()); return ['own','assigned','other','pendingComplete','done','overdue'].every(key => { const el = document.querySelector('[data-count="' + key + '"] b'); return el && Number(el.textContent) === s[key]; }); })()`);
-    check("9.8 the visible range counts match the deduplicated task set", countMatch, countMatch);
+    check("9.8 every calendar event belongs to a task whose effective assignees include the current user",
+      await browser.evaluate("(() => { const me = window.Pandora.data.me.id; const byId = new Map(window.Pandora.data.rawTasks.map(t => [t.id || t.taskId, t])); const events = Array.from(document.querySelectorAll('.p-month-event,.p-time-event,.p-all-day-event')); return events.length > 0 && events.every(el => { const task = byId.get(el.dataset.task); return task && (task.assigneeIds || []).includes(me); }); })()"));
 
     await openView(browser, "week");
     await browser.evaluate("state.viewAnchor = new Date(" + target.getTime() + "); renderAll()");

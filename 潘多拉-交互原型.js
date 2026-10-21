@@ -360,6 +360,7 @@ function ensurePersonal(pid){
 const state = {
   actorId: ROLE_ACCOUNT.upper,
   page: "map",
+  viewPage: "calendar",   // calendar | table：视图内部二级页面分派
   viewMode: "month",      // month | week | day
   viewAnchor: startOfDay(BASE_DAY),
   pickerOpen: false,      // 月视图年月选择面板

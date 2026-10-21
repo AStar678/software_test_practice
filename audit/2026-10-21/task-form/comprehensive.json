@@ -1,0 +1,834 @@
+{
+  "run": "fa127c",
+  "base": "http://127.0.0.1:18130",
+  "total": 82,
+  "failures": 0,
+  "results": [
+    {
+      "check": "A-26 own+created overlaps in both relation filters and only-visible excludes it",
+      "pass": true,
+      "evidence": {
+        "own": [
+          "a-both",
+          "c-allday"
+        ],
+        "created": [
+          "a-both",
+          "c-allday"
+        ],
+        "visible": [
+          "b-visible"
+        ]
+      }
+    },
+    {
+      "check": "A-26 pending completion stays unfinished while done is finished",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 counts dedupe relations: total 3, own 2, created 2, only-visible 1, pending complete 1, done 1",
+      "pass": true,
+      "evidence": {
+        "total": 3,
+        "own": 2,
+        "created": 2,
+        "visible": 1,
+        "pendingComplete": 1,
+        "done": 1,
+        "overdue": 2
+      }
+    },
+    {
+      "check": "A-26 all-day dates use the company start/due dates without fake times",
+      "pass": true,
+      "evidence": {
+        "company": {
+          "start": "2026-10-10",
+          "due": "2026-10-12"
+        }
+      }
+    },
+    {
+      "check": "A-26 closed date intersection includes both all-day boundaries, supports single ends",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 done is never overdue and an all-day open task uses the effective dueAt instant",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 equal primary values always use the ascending task id in both directions",
+      "pass": true,
+      "evidence": {
+        "asc": [
+          "y-twin",
+          "z-same"
+        ],
+        "desc": [
+          "y-twin",
+          "z-same"
+        ]
+      }
+    },
+    {
+      "check": "A-26 50-row paging clamps an out-of-range page and searches the whole set, not one page",
+      "pass": true,
+      "evidence": {
+        "page": 2,
+        "found": 11
+      }
+    },
+    {
+      "check": "A-26 the fixture prepares more than two API pages of effective authorized tasks",
+      "pass": true,
+      "evidence": {
+        "created": 205
+      }
+    },
+    {
+      "check": "A-26 fixture covers relation, completion, date, permission and unpublished rows",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 the authorized set exceeds two pages and excludes the unpublished request",
+      "pass": true,
+      "evidence": {
+        "middle": 238,
+        "employee": 17
+      }
+    },
+    {
+      "check": "A-26 the served page authenticates and exposes the read-only company timezone",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 视图 opens 任务表单 as a secondary page with the five main navs unchanged",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-27 日历 has no ordinary search, result list or relation/status statistics",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 the table renders every required field as one row per task",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 table header and task name stay sticky while the table scrolls both ways",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 header counts match the complete authorized set and keep relation overlap",
+      "pass": true,
+      "evidence": {
+        "displayed": {
+          "total": 238,
+          "own": 220,
+          "created": 27,
+          "visible": 3,
+          "pendingComplete": 2,
+          "done": 1,
+          "overdue": 0
+        },
+        "expected": {
+          "total": 238,
+          "own": 220,
+          "created": 27,
+          "visible": 3,
+          "pendingComplete": 2,
+          "done": 1,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 every visible row's date uses the company timezone, not the America/New_York device zone",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 an effectively changed pending row keeps the old title and shows the pending/frozen mark",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 an unauthorized parent task shows no identifier or title",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 relation filter own uses effective owners/creator, can overlap and does not duplicate",
+      "pass": true,
+      "evidence": {
+        "total": 220,
+        "expected": 220,
+        "label": "我负责"
+      }
+    },
+    {
+      "check": "A-26 relation filter created uses effective owners/creator, can overlap and does not duplicate",
+      "pass": true,
+      "evidence": {
+        "total": 27,
+        "expected": 27,
+        "label": "我创建"
+      }
+    },
+    {
+      "check": "A-26 relation filter visible uses effective owners/creator, can overlap and does not duplicate",
+      "pass": true,
+      "evidence": {
+        "total": 3,
+        "expected": 3,
+        "label": "仅可见"
+      }
+    },
+    {
+      "check": "A-26 completion filter open only uses the effective execution state",
+      "pass": true,
+      "evidence": {
+        "total": 237,
+        "expected": 237
+      }
+    },
+    {
+      "check": "A-26 completion filter done only uses the effective execution state",
+      "pass": true,
+      "evidence": {
+        "total": 1,
+        "expected": 1
+      }
+    },
+    {
+      "check": "A-27 name search is trimmed and case-insensitive across the whole authorized set, including older pages",
+      "pass": true,
+      "evidence": {
+        "total": 1
+      }
+    },
+    {
+      "check": "A-26 task detail opens from the table and reads the full description/acceptance text",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-27 a filtered-empty result is distinct from no tasks, offers clear-filters and restores rows",
+      "pass": true,
+      "evidence": {
+        "body": "没有符合筛选条件的任务。\n清空筛选",
+        "clear": true,
+        "counts": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "check": "A-26 closed date intersection includes an all-day range touching 2026-11-01 and a timed midnight due",
+      "pass": true,
+      "evidence": {
+        "total": 3,
+        "expected": 3
+      }
+    },
+    {
+      "check": "A-26 a single date end still filters by intersection",
+      "pass": true,
+      "evidence": {
+        "total": 213
+      }
+    },
+    {
+      "check": "A-26 an end before start shows a validation message and keeps the previous valid result",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "text": "结束日期不能早于开始日期，仍显示上一次有效结果。",
+        "counts": {
+          "total": 3
+        }
+      }
+    },
+    {
+      "check": "A-26 sort title asc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "a5248952-4e53-4887-b443-2f0eb749a86c",
+          "4de05c26-3467-47e0-998d-5b35025c4ecc",
+          "d63e5226-028b-4886-a526-0e2ff483af9f"
+        ],
+        "aria": "ascending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort title asc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 sort title desc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "046068f8-673c-4f56-a2e7-454cafcd8de8",
+          "3b437028-de54-455f-9d3f-05fedf6da032",
+          "a8cef3d6-f95f-4904-9881-b8776ffd4fe5"
+        ],
+        "aria": "descending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort title desc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 sort createdAt asc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "a5248952-4e53-4887-b443-2f0eb749a86c",
+          "4de05c26-3467-47e0-998d-5b35025c4ecc",
+          "d63e5226-028b-4886-a526-0e2ff483af9f"
+        ],
+        "aria": "ascending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort createdAt asc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 sort createdAt desc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "046068f8-673c-4f56-a2e7-454cafcd8de8",
+          "3b437028-de54-455f-9d3f-05fedf6da032",
+          "a8cef3d6-f95f-4904-9881-b8776ffd4fe5"
+        ],
+        "aria": "descending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort createdAt desc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 sort start asc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "a5248952-4e53-4887-b443-2f0eb749a86c",
+          "4de05c26-3467-47e0-998d-5b35025c4ecc",
+          "d63e5226-028b-4886-a526-0e2ff483af9f"
+        ],
+        "aria": "ascending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort start asc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 sort start desc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "046068f8-673c-4f56-a2e7-454cafcd8de8",
+          "3b437028-de54-455f-9d3f-05fedf6da032",
+          "a8cef3d6-f95f-4904-9881-b8776ffd4fe5"
+        ],
+        "aria": "descending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort start desc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 sort due asc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "a5248952-4e53-4887-b443-2f0eb749a86c",
+          "4de05c26-3467-47e0-998d-5b35025c4ecc",
+          "d63e5226-028b-4886-a526-0e2ff483af9f"
+        ],
+        "aria": "ascending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort due asc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 sort due desc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "046068f8-673c-4f56-a2e7-454cafcd8de8",
+          "3b437028-de54-455f-9d3f-05fedf6da032",
+          "a8cef3d6-f95f-4904-9881-b8776ffd4fe5"
+        ],
+        "aria": "descending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort due desc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 sort urgency asc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "050239b9-d443-4de7-aa58-9c3cfb2f9f19",
+          "0520bbab-0173-42e1-81cd-c7abdd240378",
+          "08e93091-2faf-4587-b3f8-656750282adc"
+        ],
+        "aria": "ascending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort urgency asc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 sort urgency desc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "00fffd33-6bf7-4b7d-b186-654cc3529ab5",
+          "0124cbf4-dedf-4db5-9f24-82dd7a5757a1",
+          "064c2146-f930-4db4-b1c6-d1cb4d655f93"
+        ],
+        "aria": "descending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort urgency desc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 sort status asc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "007474c7-2cc2-48b1-8732-71aec6d25b95",
+          "00fffd33-6bf7-4b7d-b186-654cc3529ab5",
+          "0124cbf4-dedf-4db5-9f24-82dd7a5757a1"
+        ],
+        "aria": "ascending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort status asc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 sort status desc orders the complete filtered set with an ascending id tiebreak and visible direction",
+      "pass": true,
+      "evidence": {
+        "first": [
+          "007474c7-2cc2-48b1-8732-71aec6d25b95",
+          "00fffd33-6bf7-4b7d-b186-654cc3529ab5",
+          "0124cbf4-dedf-4db5-9f24-82dd7a5757a1"
+        ],
+        "aria": "descending",
+        "size": 205
+      }
+    },
+    {
+      "check": "A-26 counts stay unchanged after sort status desc",
+      "pass": true,
+      "evidence": {
+        "counts": {
+          "total": 205,
+          "own": 205,
+          "created": 0,
+          "visible": 0,
+          "pendingComplete": 0,
+          "done": 0,
+          "overdue": 0
+        }
+      }
+    },
+    {
+      "check": "A-26 default paging shows 50 rows per page with the range, keeps counts per page and pages the sorted set",
+      "pass": true,
+      "evidence": {
+        "page1": 50,
+        "pager1": "第 1–50 条，共 238 条 · 第 1/5 页上一页下一页"
+      }
+    },
+    {
+      "check": "A-26 an out-of-range page is clamped to a valid page after an explicit refresh",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 closing detail and a successful write keep the table filters, page and usable scroll position",
+      "pass": true,
+      "evidence": {
+        "hadPin": true,
+        "beforeDetail": {
+          "page": 1,
+          "q": "",
+          "scroll": 160
+        },
+        "afterDetail": {
+          "page": 1,
+          "q": "",
+          "scroll": 160
+        }
+      }
+    },
+    {
+      "check": "A-26 overdue is computed from the effective dueAt instant, can overlap unfinished state and is not limited by paging",
+      "pass": true,
+      "evidence": {
+        "before": 0,
+        "after": 1,
+        "row": "已逾期"
+      }
+    },
+    {
+      "check": "A-27 a later page failure shows a retry error, never partial rows or counts, and leaves the committed set intact",
+      "pass": true,
+      "evidence": {
+        "error": "测试分页失败",
+        "rows": 239,
+        "body": "任务加载失败：测试分页失败\n重试",
+        "counts": "加载失败，未显示统计"
+      }
+    },
+    {
+      "check": "A-27 retry after the failed page loads the complete set again",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-27 returning from the background re-queries the authorized task set",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-27 a slower earlier refresh cannot overwrite the newer complete result and ids stay deduplicated",
+      "pass": true,
+      "evidence": {
+        "hasRace": true,
+        "rows": 240,
+        "ids": 240
+      }
+    },
+    {
+      "check": "A-13 month calendar only draws tasks whose effective assignees include the current user",
+      "pass": true,
+      "evidence": {
+        "events": 11,
+        "visibleEvent": false,
+        "notOwn": [],
+        "hidden": [
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "check": "A-13 week calendar only draws tasks whose effective assignees include the current user",
+      "pass": true,
+      "evidence": {
+        "events": 21,
+        "visibleEvent": false,
+        "notOwn": [],
+        "hidden": []
+      }
+    },
+    {
+      "check": "A-13 day calendar only draws tasks whose effective assignees include the current user",
+      "pass": true,
+      "evidence": {
+        "events": 6,
+        "visibleEvent": false,
+        "notOwn": [],
+        "hidden": []
+      }
+    },
+    {
+      "check": "A-27 the month hidden count is computed from own tasks only, not the full authorized set",
+      "pass": true,
+      "evidence": {
+        "day": 6,
+        "events": 3,
+        "hidden": 3
+      }
+    },
+    {
+      "check": "A-13 the same visible-only task stays available in the table's 仅可见 range and opens its detail",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-13 以组织授权可见的任务仍在任务表单且可打开原详情（日历收窄不扩大为全站收窄）",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-13 after an effective assignee removal the task leaves the calendar but remains in 我创建",
+      "pass": true,
+      "evidence": {
+        "goneFromCalendar": true,
+        "stillInCreated": true
+      }
+    },
+    {
+      "check": "A-26 narrow screen keeps the five main navs, the scrollable table, rows and the back/filter controls reachable",
+      "pass": true,
+      "evidence": {
+        "nav": 5,
+        "horizontal": true,
+        "vertical": true,
+        "back": true,
+        "rows": 50
+      }
+    },
+    {
+      "check": "A-27 no authorized task shows its own empty state with a reload action and zero counts",
+      "pass": true,
+      "evidence": {
+        "body": "当前没有可查看的任务。\n重新加载",
+        "refresh": true,
+        "counts": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "check": "A-27 no uncaught script or console errors on the task-form page",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "A-27 unpublished 待创建审核 never enters the employee table or search",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-26 the employee table contains the effective task that will be revoked",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "A-27 after normal access is revoked the row leaves the table and counts on refresh",
+      "pass": true,
+      "evidence": {
+        "has": false,
+        "rows": 17
+      }
+    },
+    {
+      "check": "A-27 a historical read-only notification does not add the task back to the table",
+      "pass": true,
+      "evidence": {
+        "historical": true,
+        "historicalReadable": true
+      }
+    },
+    {
+      "check": "A-27 an old detail after access loss is refused by the backend instead of served from cache",
+      "pass": true,
+      "evidence": {
+        "status": 404
+      }
+    },
+    {
+      "check": "A-27 a 403/404 detail discards the old row and re-queries instead of keeping it in the table",
+      "pass": true,
+      "evidence": {
+        "rows": false,
+        "dom": false
+      }
+    },
+    {
+      "check": "A-28 the administrator prompt points at the real /admin.html PC entry and the app has no full management module",
+      "pass": true,
+      "evidence": {
+        "prompt": true
+      }
+    },
+    {
+      "check": "A-27 logout during an in-flight task refresh clears rows/filters and a late response cannot repopulate the table",
+      "pass": true,
+      "evidence": {
+        "login": true,
+        "page": "calendar",
+        "rows": 0,
+        "filters": {
+          "relation": "all",
+          "completion": "all",
+          "query": "",
+          "from": "",
+          "to": ""
+        },
+        "ready": false
+      }
+    },
+    {
+      "check": "A-27 no uncaught script errors after the login switch and late response",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}
