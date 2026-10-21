@@ -3,36 +3,35 @@
 - Change: `fix-pandora-formal-requirement-deviations`
 - Schema: `spec-driven`
 - Verdict: **FAIL**
-- Verified at: 2026-10-21T18:48:43+08:00
+- Verified at: 2026-10-21T19:05:52+08:00
 - Implementation roots: `/Users/watuji/MyGitDev/software_test_practice`（根目录前端与 `backend/`）
 - OpenSpec root: 同仓库 `openspec/`，repo-local，未使用独立 store。
-- Verified revision: `a5c29eed1f0b522769d2c57f33f98ccf828e485b`；开始工作树干净，结束仅本报告修改。
+- Verified revision: `87f272bb155c28ccffd5d0e6ba5c7db5d053d536`；开始工作树干净，结束仅本报告修改。
 
 ## Summary
 
-按用户允许采用增量复验：完整清单与内容指纹确认，相对前次独立基线 `cb1bfc3`，只有十个交接相关文件改变，全部规划及其他实施文件未变。重新检查全部差异并运行受影响的构建、HTTP、浏览器及迁移检查；未受影响场景保留明确归属 `cb1bfc3` 的独立证据，不冒充本轮重跑。
+按用户允许采用增量复验。完整路径清单及SHA-256逐文件比较确认，相对前次独立基线a5c29ee，仅 `潘多拉-任务接入.js` 与 `backend/scripts/check_handover_browser.js` 两个实施/测试文件改变。全部规划、后端、迁移及其他代码未变；重查全部差异，保留明确归属前轮的未受影响独立证据及完整147场景矩阵。
 
-**V-010 部分修复，仍为 pending / medium**：预设持久化、本人/非原创建者直属领导的真实页面入口、保存/清除、交接提交/新路线审批均已独立确认；剩余缺口为专用交接表单在提交前不展示实际新路线审核人。规格 `Ordered reviewer routing and reassignment` 正文明确要求提交前展示，且该项已在 V-010 原 Acceptance checks 中列出。沿用 V-010，收窄到该未满足条件；不重复新增编号。V-001—V-009 保持 `verified-resolved`。
+**V-010仍为pending / medium，但缺口已收窄**：专用交接普通预览现已正确显示并随目标更新；保存预设与预览请求并发时，表单重绘恢复旧审核人，响应完成只更新脱离页面的旧元素。真实页面仍显示李敏，而真实预览API及提交的pending均为王海。沿用V-010的提交前实际审核人条件，不新增编号。V-001—V-009维持verified-resolved。
 
-本轮：strict 无问题，Java **65/65** + package；handover **29/29**、O **58/58**、R **64/64**、P **26/26**、PC **5/5**、E **91/91**、S **53/53**；六个 fresh 库完整性各 **18/18**；独立交接负向/有效版/来源补充 **8/8**；V4 副本至 V14 并恢复正式写 **10/10**；交接浏览器三视口各 **18/18**。独立 UI 补充 **23/24**，唯一失败即审核预览（本人刷新持久化、领导人员详情保存/清除均通过）。通过套件没有断言该预览，不能覆盖此缺口。
+本轮strict通过，Java **65/65** + package；交接浏览器 **22/22×3**（320×740、390×844、1440×900）；数据库完整性 **18/18**。独立异步补充 **6/7**，唯一失败即上述可见预览过时；快速切换的乱序响应隔离及实际提交路线通过。320首次Chrome启动失败，重试22/22，未作为产品缺陷或未验证场景。
 
-只修改本报告；未修复代码、添加仓库测试、修改规划/任务/implementation-notes、同步规格或归档。DEV-029 系统推送及 A-25/真机相关部分继续按授权延期，桌面 Chrome 视口模拟不计真机证据。
+仅更新本报告，保留所有Repair notes原文。DEV-029系统推送及A-25/真机相关部分继续授权延期；Chrome视口模拟不计真机证据。
 
 ## Verification Basis
 
 | Path or scope | Revision / content fingerprint / file inventory |
 | --- | --- |
-| 当前实施、规划、配置、测试、非忽略新增文件 | Git `a5c29eed1f0b522769d2c57f33f98ccf828e485b`；220 个唯一路径；清单+内容 SHA-256 `e371dc602c1ac20392f9eacb582431ff1a1794a07014363dabe1a2c228f6685a` |
-| 保留独立证据的上轮基线 | `cb1bfc3cbbd1f8980f45371580d9283f2fa968e3`；217 路径；SHA-256 `4f1af0ab5b0657ef7e0812029e2bffa95e1ef86acbd4fd46fd6a7b7bc7104a1b`；上轮报告提交 `ddfa318` |
-| 差异（10 路径） | 新增 `backend/scripts/check_handover_preset.py`、`check_handover_browser.js`、`V14__handover_presets.sql`；修改 `Access.java`、`AccessTest.java`、`TaskController.java`、`TaskService.java`、`WorkspaceService.java`、`潘多拉-任务接入.js`、`潘多拉-个人资料.js` |
-| 当前规划 / 追踪 | OpenSpec 返回全部 contextFiles 全文重读；proposal/design/tasks/delta spec 与前次指纹完全一致；35 DEV / 150 AUD / 25 A 追踪源不变 |
-| 增量影响范围 | Access 新增独立交接方法，既有权限方法无修改；TaskService 有效任务详情新增交接能力、预设 CRUD、交接提交/批准重新校验；WorkspaceService 仅新增人员详情能力标记；前端增加按钮/交接表单及 action 路由；原导航/日历/日志/分析/认证/调度等方法未改变。O/R/P/PC/E/S 和实际页面检查覆盖共享入口回归 |
-| 迁移 | V1—V13 与前次完全一致，V1—V4 相对 `4252451` 未改；新空库与独立 V4 副本均运行至 V14；V4 预检前后内容指纹相同，旧日志仍为18正常+4归档 |
-| 本轮运行产物 | `/tmp/pandora-e13-verify-a5c29ee/`：basis、maven.log、各套件 JSON/日志、shots、ui-extra.json、handover-pre-submit-text.txt、supplement.json、v14-upgrade.json 及临时只用于验证的辅助脚本 |
-| 保留证据产物 | `/tmp/pandora-e13-verify-cb1bfc3/`：前轮独立 JSON、截图及开始/结束清单；矩阵中 A/H/I/L、BA/BL/BN/BH/BC、AU/LK/PX/CT/NB/PR/CS/UI 仍指该轮，不是 apply 声明 |
-| 排除项 | basename `verification.md`、`implementation-notes.md`；Git 忽略 runtime/构建产物。当前 jar 由本轮源码 package |
+| 当前实施/规划/配置/测试/非忽略新增文件 | Git `87f272bb155c28ccffd5d0e6ba5c7db5d053d536`；220路径；完整清单+内容SHA-256 `03739c589626358296853b62c45432f5adb1e6e7f3ab3d83ddd0e095cdfa53b8` |
+| 最近独立基线 | `a5c29eed1f0b522769d2c57f33f98ccf828e485b`；220路径；SHA-256 `e371dc602c1ac20392f9eacb582431ff1a1794a07014363dabe1a2c228f6685a`；对应报告在当前HEAD历史中 |
+| 更早保留独立基线 | `cb1bfc3cbbd1f8980f45371580d9283f2fa968e3`；217路径；SHA-256 `4f1af0ab5b0657ef7e0812029e2bffa95e1ef86acbd4fd46fd6a7b7bc7104a1b`；报告提交ddfa318 |
+| 本轮差异（2路径） | `潘多拉-任务接入.js`：完整有序负责人替换后调用既有reviewer-preview、初始化/目标change预览及序列隔离；`backend/scripts/check_handover_browser.js`：增加4个正常预览断言并改用change事件 |
+| 不变范围 | 全部contextFiles与proposal/design/tasks/delta spec、后端代码/测试/配置、V1—V14、其他页面均与a5c29ee一致；35DEV/150AUD/25A追踪源不变 |
+| 本轮产物 | `/tmp/pandora-e13-verify-87f272b/`：basis-start/end.json、maven.log、handover-{390,1440}.json、handover-320-retry.json、browser-database.json、preview-extra.json/js/log、preview-after-save.png |
+| 保留产物 | `/tmp/pandora-e13-verify-a5c29ee/`、`/tmp/pandora-e13-verify-cb1bfc3/`；证据归属见Checks，均为独立verify结果，不使用apply自报JSON代替 |
+| 排除项 | basename `verification.md`、`implementation-notes.md`及Git忽略runtime/构建产物；当前jar由本轮源码package |
 
-本轮开始/结束完整路径+内容映射相同（`basis-start.json` 与 `basis-end.json` 的 `files`、`digest`），没有验证期间输入变化。与前轮原始清单逐路径比较确认上述十项差异；不是只比较 commit 或抽样场景。复算方式如下；临时产物不是永久证据库，后续相关修改须重新验证受影响覆盖。
+开始/结束完整清单的revision、files、digest完全一致；没有验证期间输入变化。逐路径比较而非仅commit比较，确认只有上述两文件改变。复算方式如下；临时产物不是永久证据库，相关后续修改须重新核查受影响覆盖。
 
 ```python
 import subprocess, hashlib, json, pathlib
@@ -49,59 +48,50 @@ print(hashlib.sha256(json.dumps(files, sort_keys=True, separators=(',',':')).enc
 
 ## Apply Handoff Review
 
-已重读 `implementation-notes.md` 及全部 contextFiles/原报告；本地 spec-driven，65/65 勾选仍只是实施声明。handoff 变更名/schema 正确，但 Windows 路径、`29e3f99`+dirty、60测试及V12均过时；当前实际为 Mac、`a5c29ee`、65测试及V14。V-010 Repair notes 是待核实的最新修复声明，已保持原文。
+重读全部contextFiles、implementation-notes及现有报告。65/65勾选是实施声明。handoff变更名/schema正确，但Windows路径、29e3f99+dirty、60测试及V12过时；当前为Mac、87f272b、65测试及V14。全部Repair notes原文保留。
 
 | Handoff claim / reminder | 独立处置 |
 | --- | --- |
-| 专用交接全部已交付 | 部分确认：本轮 NH/NBH/NP/NBX 验证保存/重读/清除/用户入口及审批；NBX确认提交前实际审核人缺失，V-010 pending |
-| Java 21 test/package、构建资源白名单 | 本轮 package 含65/65；真实服务加载新增表单，打包资源确认 |
-| 隔离库、套件顺序、时钟与worker | 本轮六独立fresh库；V4/浏览器/补充库分离；未连接用户数据库，显式worker及独立受控时钟 |
-| HTTP/数据库/秘密字段与日志边界 | 本轮 O/R/P/PC/E/S/D 重跑；未变 A/L 日志午夜/密码证据保留 cb1bfc3，不引用 apply JSON作通过依据 |
-| 通知打开重放、原申请、自动已读 | 本轮E91/91；未变BN及PX精确边界保留前轮独立证据 |
-| 新空库及V4历史映射阻断 | 本轮至V14、M14 10/10，未映射写409、管理员补齐后写恢复；旧日志18+4；另一映射顺序沿用前轮已验证且未变代码 |
-| 顺序/派发估计/无法绑定旧通知 | 迁移未改；保留前轮来源及只读限制证据，不伪造缺失历史 |
-| 234px/全屏日志/冻结/管理端/日历 | 修改按钮的实际页面本轮检查；其余CSS/算法/处理函数及配置未变，保留前轮BC/BL/BN/BH/UI/CT/NB等证据 |
-| strict 两个 >500字警告 | 已过时，本轮strict `valid:true, issues:[]` |
-| 推送/真机延期，不自宣归档 | DEFERRED保留，本轮FAIL，不归档 |
+| 专用交接及提交前预览已交付 | NBH22×3确认普通预览；NBP确认保存期间重绘竞争，V-010 pending；a5的NH/NP及NBX成功项保留预设/入口/权限覆盖 |
+| Java21/package、资源白名单 | 本轮package65/65；实际构建服务加载当前新预览 |
+| 隔离库、时钟/worker与套件顺序 | 本轮2个fresh隔离库，13426临时MySQL，18560/18561服务；worker暂停自动运行，未连接用户库 |
+| HTTP/数据库/秘密与日志边界 | 本轮D18；未变O/R/P/PC/E/S及A/L证据按下表归属保留 |
+| 通知重放/原申请/自动已读 | 未变E/BN/PX保留独立证据；本轮NBP只确认实际pending路线，不把无断言的worker请求称通知验证 |
+| 新空库/V4映射阻断、顺序/派发估计、无法绑定旧通知 | V1—V14及所有相关代码未改；保留a5的V14映射10/10、18+4旧日志，以及cb两映射顺序/来源只读证据 |
+| 234px/全屏日志/冻结/管理端/日历 | 两文件影响追踪完成；交接/搜索入口本轮实跑，其余保留对应未变的浏览器/真实指针证据 |
+| strict两个长描述警告 | 过时，本轮valid:true、issues:[] |
+| 推送/真机延期，不自宣归档 | DEFERRED保留；本轮FAIL，不归档 |
 
 ## Checks
 
-本轮环境：macOS、Java21、离线Maven、MySQL9.3.0、Node24、本机headless Chrome。复用前轮**隔离MySQL数据目录**及端口13426，创建新数据库名（碰撞时随机后缀）；所有业务服务使用本轮重建jar。端口18540—18549；正常seed=true，V4副本seed=false。smoke worker1000ms，其他worker delay/initial-delay3600000ms并显式驱动；`pandora.clock.controllable=true`仅用于隔离验证。结束停止临时服务及MySQL。
+本轮macOS、Java21、离线Maven、MySQL9.3、Node24、headless Chrome。复用临时隔离MySQL数据目录及端口13426，两个新库 `e13c_preview_browser`、`e13c_preview_supplement`；服务18560/18561，正常seed，受控时钟开关仅用于验证，自动worker延迟3600000ms。检查结束关闭临时服务/MySQL。
 
-从 `backend/` 构建：
+构建在backend运行：
 
 ```sh
 JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
   mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 package
 ```
 
-以下脚本相对 `backend/`；均使用对应本地 `--base-url`、本轮临时目录的 `--output`（smoke为`--report`）；SQL工具提供临时`--defaults-file`及对应独立库。临时编排 `/tmp/pandora-e13-verify-cb1bfc3/incremental.py`（由run.py exec执行）把新结果写入本轮目录；共享编排stdout日志曾被并行调用覆盖，**不将它作为结果证据**，采用各独立套件JSON/日志及summary。
-
-| 本轮 Command or inspection | Result | Notes |
+| 本轮命令/检查 | Result | Notes |
 | --- | --- | --- |
-| OpenSpec status / instructions apply / contextFiles | 完整 | 65/65 all_done；全文及前轮指纹一致 |
-| `openspec validate fix-pandora-formal-requirement-deviations --type change --strict --json --no-interactive` | PASS | valid:true，issues:[] |
-| Java21 Maven package含test | PASS65/65 | 0 failures/errors/skipped；maven.log |
-| NH `python3 scripts/check_handover_preset.py` /18540 | PASS29/29 | handover.json；真实持久化、自身/直属/非直属、目标、审批/拒绝/撤销/有序负责人 |
-| O `check_organization_admin.py` /18541 | PASS58/58 | organization.json |
-| R `check_review_routing.py` /18542 | PASS64/64 | routing.json；来源/时间/新路线及普通审核回归 |
-| P `check_profile_phone_matrix.py` /18543；PC `check_phone_cycle.py` | PASS26/26、5/5 | phone.json、phone-cycle.json；新增人员能力字段无号码扩权 |
-| E `check_deadline_reminder_notification.py` /18544 | PASS91/91 | event.json；通知矩阵/脱敏/历史/交接失效 |
-| S `smoke_test.py` /18545 | PASS53/53 | smoke.json |
-| D `check_database.py` 六fresh库 | PASS18/18×6 | *-database.json；正式约束/事件/幂等/秘密 |
-| NBH `node scripts/check_handover_browser.js` /18546 | PASS18/18×3 | 320×740、390×844、1440×900；handover-{width}.json与shots；DOM操作/真实HTTP持久化，不称物理触摸证据 |
-| M14 `check_mapping_write_gate.py --order employees-first` /18548 | PASS10/10 | v14-mapping.json、v14-upgrade.json；V4只读预检不变，V1—V14，18+4旧日志 |
-| NP 临时supplement.py /18547 | PASS8/8，最终 | supplement.json；真实外组织目标400；非直属读取/清除/候选403；存后失效提交400；组织变化使目标越界后批准409 HANDOVER_TARGET_INVALID，旧有序有效版/frozen保留；恢复后批准替换位置且来源/时间不变 |
-| NBX 临时ui-extra.js /18549（390×844） | **23/24；FAIL V-010** | ui-extra.json及extra-shots；刷新后的预设预选、人员详情入口/保存/清除均通过；唯一失败为提交前审核人未展示 |
-| T 完整差异追踪、全部规范矩阵影响分析 | 部分FAIL V-010 | handoverFormView/open/confirm没有路线预览调用、目标change刷新或审核人显示；普通表单预览不覆盖此新表单 |
+| OpenSpec status/instructions apply及全文重读 | 完整 | spec-driven；all_done，65/65 |
+| `openspec validate fix-pandora-formal-requirement-deviations --type change --strict --json --no-interactive` | PASS | valid:true、issues:[] |
+| Java21 Maven package含test | PASS65/65 | 无failure/error/skip；BUILD SUCCESS |
+| NBH `node scripts/check_handover_browser.js`，分别 `--width 320 --height 740`、390/844、1440/900 | PASS22/22×3 | 本人/非创建者直属领导、保存/使用预设、目标切换实际审核人及pending一致；真实页面/HTTP，不称真机 |
+| D `python3 scripts/check_database.py`，临时client.cnf及浏览器库 | PASS18/18 | browser-database.json，read_only |
+| NBP `node /tmp/pandora-e13-verify-87f272b/preview-extra.js --base-url http://127.0.0.1:18561 --width 390 --height 844 --output /tmp/pandora-e13-verify-87f272b/preview-extra.json` | **6/7；FAIL V-010** | 真实响应只延迟/乱序交付；最新选择隔离通过，保存后重绘只更新脱离DOM的旧元素，截图证实可见旧审核人；后端预览与实际pending一致 |
+| 全差异/完整清单/全部规范矩阵影响检查 | 部分FAIL V-010 | 初始化预览、完整有序负责人、上下文/序列隔离正确；保存重绘与pending回调衔接错误 |
 
-NP首次断言错误地查`error.code`，实际API为顶层`code`；实际返回已是预期409 HANDOVER_TARGET_INVALID。只修正临时验证脚本后在另一fresh库重跑8/8，不作为产品缺陷。sandbox本地MySQL连接受限，按工具授权在同一临时隔离服务执行成功；没有环境阻断。
+临时编排为 `/tmp/pandora-e13-verify-cb1bfc3/preview-verify.py`（通过run.py exec），产物输出本轮目录；各套件独立JSON/日志为依据，共享编排stdout会被覆盖，不作结果证据。320首次启动Chrome时`no page target`，同一当前jar的补充库重试22/22；本地连接受sandbox限制后按工具授权执行成功，无环境阻断。NBP没有伪造后端路由，也没有改仓库测试或产品。
 
-保留的前轮独立检查（**没有在本轮重新执行**）：cb1bfc3的A47、L17、H12、I18；BA15×3、BL22×3、BN21×3、BH33、BC45、AU11、LK5、M另一顺序10、UI4、CS4、CT42真实指针、NB空通知键盘3、PX精确时间/三方竞争8、PR26。其对应实现、测试、配置和规划在完整指纹中未变；本轮共享任务/人员入口额外由O/R/P/PC/E/S/NBH/NBX验证，因而可保留未受影响覆盖。前轮BL桌面夹具不足和早期辅助脚本错误的处置见`ddfa318`报告；不把那些探针失败当作当前产品finding。
+保留且**本轮未重跑**的a5c29ee独立证据：NH29、O58、R64、P26、PC5、E91、S53、D18×6、NP8、M14映射10及V4升级/旧日志18+4；NBX23个成功项（本人刷新预设、人员详情保存/清除等）。旧NBX预览完全缺失的失败由本轮NBH/NBP取代；旧NBH18×3由本轮22×3取代。
+
+保留且**本轮未重跑**的cb1bfc3独立证据：A47、L17、H12、I18、BA15×3、BL22×3、BN21×3、BH33、BC45、AU11、LK5、另一V4映射顺序10、UI4、CS4、CT42真实指针、NB空通知键盘3、PX精确时间/三方竞争8、PR26。它们对应实现/测试/配置/规划均无变化；完整差异影响分析表明可保留未受影响覆盖。前次探针夹具/断言错误不当作产品finding。
 
 ## Requirement Coverage
 
-编号按delta顺序，完整保留21条有效要求、147个场景及1条移除要求。S/O/R/P/PC/E/D指本轮重跑；NH/NBH/NP/NBX/M14指本轮新增检查；A/H/I/L及旧浏览器/专项别名指cb1bfc3保留的独立证据。X仅为前轮AU/LK/M/PX/CT/NB等保留证据。每条正文/场景均检查差异影响，不抽样替代覆盖；`PASS`不抵消V-010未满足的交接预览条件。Java路径前缀为`backend/src/main/java/cn/pandora/`。
+完整保留21条有效要求、147场景及1移除要求，不以抽样替代覆盖。NBH、NBP及本轮D指87f272b；NH/NP/M14与S/O/R/P/PC/E和历史D指a5c29ee；A/H/I/L及旧浏览器/专项别名指cb1bfc3；X为AU/LK/M/PX/CT/NB等保留证据。T为完整差异影响检查。所有证据归属以上述Checks为准；旧finding中的“本轮cb1bfc3”是该历史复验，不表示本次重跑。Java路径前缀backend/src/main/java/cn/pandora/。
 
 | Requirement / scenario | Evidence | Result |
 | --- | --- | --- |
@@ -230,9 +220,9 @@ NP首次断言错误地查`error.code`，实际API为顶层`code`；实际返回
 | R12.S01 Read and edit the required profile | auth/Access.java、profile/ProfileService.java、workspace/WorkspaceService.java、资料前端；A、P、BL、BN、T | PASS（所列执行证据及 T） |
 | R12.S02 Open a subordinate within both profile scope and the management chain | P/PC/BL/BN；循环链不返回他人号码、恢复有效链后上级可读 | PASS（V-004 verified-resolved） |
 | R12.S03 View profile | auth/Access.java、profile/ProfileService.java、workspace/WorkspaceService.java、资料前端；A、P、BL、BN、T | PASS（所列执行证据及 T） |
-| **R13 Strict prototype scope（要求正文）** | S/NBH/NBX；真实交接已可操作，但提交前实际审核人未展示 | **FAIL V-010（交接预览缺口）** |
-| R13.S01 Validate the real service and declared scope | S/NBH/NBX；保存/提交通过，交接审核预览缺失 | FAIL V-010 |
-| R13.S02 Inspect available actions | NBH/NBX；本人/直属领导入口已补，提交前实际审核人缺失 | FAIL V-010 |
+| **R13 Strict prototype scope（要求正文）** | S/NBH/NBP；真实交接可操作，保存预设重绘时预览可过时 | **FAIL V-010（交接预览缺口）** |
+| R13.S01 Validate the real service and declared scope | S/NBH/NBP；保存/提交通过，异步预览重绘失败 | FAIL V-010 |
+| R13.S02 Inspect available actions | NBH/NBP；本人/直属领导入口及普通预览通过，重绘后预览过时 | FAIL V-010 |
 | R13.S03 Open the split static prototype | 当前打包服务、auth/AuthFilter.java、README、历史追踪；S、BC、全部 HTTP/浏览器检查、T | PASS（所列执行证据及 T） |
 | **R14 Organization and administration（要求正文）** | OrganizationService/Constraints/AdminController/RoleCatalog/admin.html；O/M/AU/UI/D/T | **PASS（V-008/V-009 已解决）** |
 | R14.S01 Maintain an employee through the administrator interface | O/UI；M两独立V4库补齐、约束收紧、写恢复，各10/10 | PASS |
@@ -245,13 +235,13 @@ NP首次断言错误地查`error.code`，实际API为顶层`code`；实际返回
 | R15.S03 Edit contacts without exposing another employee phone | auth/Access.java、auth/AuthService.java、admin/Credentials.java、profile/ProfileService.java；A、P、BA、BN、D、T | PASS（所列执行证据及 T） |
 | R15.S04 Read phones only through authorized person details | auth/Access.java、auth/AuthService.java、admin/Credentials.java、profile/ProfileService.java；A、P、BA、BN、D、T | PASS（所列执行证据及 T） |
 | R15.S05 Recheck the management chain after an organization change | P/PC 当前有效全链验证、循环裁剪、自读及恢复对照；AccessTest/T | PASS（V-004 verified-resolved） |
-| **R16 Ordered reviewer routing and reassignment（要求正文）** | TaskService/OrganizationService；R/E/D/NBX及保留AU | **FAIL V-010（交接提交前预览）；V-008仍已解决** |
+| **R16 Ordered reviewer routing and reassignment（要求正文）** | TaskService/OrganizationService；R/E/D/NBH/NBP及保留AU | **FAIL V-010（交接提交前预览）；V-008仍已解决** |
 | R16.S01 Persist order and route the first highest peer | task/TaskService.java、admin/OrganizationService.java；R、E、D、TaskServiceTest、T | PASS（所列执行证据及 T） |
 | R16.S02 Review one's own application explicitly | task/TaskService.java、admin/OrganizationService.java；R、E、D、TaskServiceTest、T | PASS（所列执行证据及 T） |
 | R16.S03 Change assignees using the proposed route | task/TaskService.java、admin/OrganizationService.java；R、E、D、TaskServiceTest、T | PASS（所列执行证据及 T） |
 | R16.S04 Fall back or apply with a documented reason | R合法无审核人direct；AU失权负向不发布且合法对照通过 | PASS |
 | R16.S05 Reassign after organization changes | R/E持久化改派；AU失权旧申请不自动发布 | PASS |
-| **R17 Dedicated task handover（要求正文）** | NH/NBH/NP通过预设、入口和交接；NBX确认缺少提交前审核人 | **FAIL V-010（原验收条件中的提交前预览；R16正文/design§4）** |
+| **R17 Dedicated task handover（要求正文）** | NH/NBH/NP通过预设、入口和交接；NBP确认保存期间异步预览过时 | **FAIL V-010（原验收条件中的提交前预览；R16正文/design§4）** |
 | R17.S01 A direct manager hands over a subordinate task | NH/NBH/NP/R：非创建者直属领导预设/提交、越权/夹带字段拒绝；预览缺口另见V-010 | PASS（HTTP命令子场景） |
 | R17.S02 Handover approval preserves provenance | NH/NP/R/E/D：新路线批准、旧有序有效版、原创建者/时间/来源保留 | PASS（HTTP命令子场景） |
 | **R18 Deadline expiration of pending applications（要求正文）** | ExpiryService/TaskService/Writes；E/S/D/LK/PX/T | **PASS（V-002 已解决，三方竞争已补）** |
@@ -276,7 +266,7 @@ NP首次断言错误地查`error.code`，实际API为顶层`code`；实际返回
 
 移除要求 `Manager consultation`：PASS。当前业务页面/日志/通知不再提供请示回复入口（BL、S、T）；没有新增请示样例来满足已移除要求，历史数据不作破坏性删除。
 
-正文/设计额外约束检查：V1—V4 未重写；V4 预检只读、两种映射顺序恢复正式写；旧日志18+4保留原文；旧负责人顺序/通知/派发估计保持有来源兼容，不声称恢复缺失历史。密码一次交付、缓存无秘密由A/D验证；234px表单、全屏日志、通知无footer、旧有效版冻结、资料/日志分权均已执行。本轮预设/真实用户入口已验证；剩余为R16正文要求及V-010原验收条件的交接提交前实际审核人展示，不是新增需求。
+正文/设计额外约束检查：V1—V4 未重写；V4 预检只读、两种映射顺序恢复正式写；旧日志18+4保留原文；旧负责人顺序/通知/派发估计保持有来源兼容，不声称恢复缺失历史。密码一次交付、缓存无秘密由A/D验证；234px表单、全屏日志、通知无footer、旧有效版冻结、资料/日志分权均已执行。预设/真实用户入口及普通预览已验证；剩余为R16正文及V-010原验收条件的保存预设与异步预览竞争：可见审核人过时。未新增验收需求。
 
 ## Findings
 
@@ -410,28 +400,25 @@ NP首次断言错误地查`error.code`，实际API为顶层`code`；实际返回
 - Repair notes: 修复：PATCH /admin/teams/{id} 提交后也调用 tightenOrganizationConstraints，与员工 create/update/transfer 同源、幂等、事务外收紧；最后补齐团队即可清 blocker、收紧 NOT NULL 并恢复正式写，无需再次编辑员工或重启。回归：check_mapping_write_gate.py 增加 --order employees-first|teams-first；两个独立 V4 副本分别员工优先/团队优先均 10/10，mappingBlockers=0、tighteningApplied=true、task 201，未补齐时 task/home 仍 409 且管理通路可用。
 - Reverification notes: **本轮 cb1bfc3**：M两独立V4副本员工优先/团队优先各10/10：所有映射API200；最后一步即mappingBlockers=0、tighteningApplied=true、formalWritesReady=true，task201/home200，无额外编辑/重启。当前AdminController.updateTeam在写事务提交后同源收紧。标记 verified-resolved。
 
-### V-010: 专用交接用户流程不完整（预设/入口已修复，剩余提交前审核预览）
+### V-010: 专用交接保存预设期间，异步审核预览留在旧审核人
 
 - Category: implementation
 - Severity: medium
-- Requirement: delta `Dedicated task handover` 正文“本人或其直属领导 SHALL 可预设交接对象并为其当前负责的任务发起专用交接申请”；`Ordered reviewer routing and reassignment` 正文“提交前及详情 SHALL 展示实际审核人”；`Strict prototype scope` 实际交付链路；design §4/§5；tasks 4.3/4.6；DEV-004/010、AUD-ORG-009/REV-008、A-06/08。
-- Evidence: **cb1bfc3历史缺口，当前预设/入口已修复**：`backend/src/main/java/cn/pandora/task/TaskController.java:41` 仅提供单任务 `POST /tasks/{id}/handover`；`TaskService.java:525`—559 要求每次命令携带 sourceUserId/targetUserId，只在提交申请后写 handover_requests；V6:94—109 的表强制 request_id/task_id，无独立预设记录。全域检查当前 Java controller/service、V1—V13 schema、admin.html及实际加载前端脚本，没有预设交接对象的读/写设置或调用 handover 的前端命令。`潘多拉-任务接入.js:253`—260 的有效任务按钮只有原创建者修改、进展、完成、重开、置顶和申请；资料页面也无交接设置。
-- Reproduction: **cb1bfc3历史复现**：jar /18415，middle经真实API创建并批准employee负责的任务；分别以employee（本人）与middle（直属领导、原创建者）登录构建后页面，打开该任务详情及“我的”。`handover-inspection.json`、`handover-ui.json`及两身份截图记录实际按钮。本人任务只有“更新进展”“提交完成”“置顶到我的月视图”；领导可见普通修改等按钮，但两身份均没有专用交接入口或预设对象设置。本人无法借普通基础字段编辑完成交接，规格也禁止以普通字段权限替代专用权限。
-- Expected: 本人及直属领导有受权、可持久保存/重读的预设交接对象设置，并可从实际交付界面提交只改变有序负责人的专用交接申请；新路线批准后生效，其他权限/来源保持现有约束。
-- Actual: **cb1bfc3历史**：手工构造HTTP的handover命令及审核可用（R64/64），但预设对象与真实用户流程缺失。R脚本逐次传targetUserId，没有保存/重读预设，也没有操作交接界面，因此不能覆盖该要求正文或证明task4.6全部完成。
-- Repair guidance: 补齐专用交接设置的受权持久化和实际用户入口，并接入现有handover/新路线审核；不得通过放宽基础字段编辑或普通派发权补洞。不限定新endpoint或存储形状。
-- Acceptance checks: 在构建后页面，以本人和非原创建者的直属领导分别保存预设、刷新/重新登录仍可读取并用于交接；非直属/越组织/失效目标拒绝；不能夹带基础字段；提交冻结、预览/通知/新路线批准一致，拒绝/撤销保留旧有效版与有序负责人，原创建者/时间/历史保留。覆盖三视口可达性，重跑R/E/O及新增流程的独立HTTP/浏览器证据。
+- Requirement: delta `Dedicated task handover`；`Ordered reviewer routing and reassignment` 正文“提交前及详情 SHALL 展示实际审核人”；`Strict prototype scope`；design §4/§5；tasks 4.3/4.6；DEV-004/010、AUD-ORG-009/REV-008、A-06/08。沿用原V-010，原预设/入口及普通预览已补齐，剩余为同一预览验收条件。
+- Evidence: `潘多拉-任务接入.js:483` 在请求前捕获预览DOM元素；`:490`—499的成功/失败回调只更新该捕获元素。`:566`保存预设后 `replaceTopSheet(handoverFormView())` 重建DOM，同时`:518`读取尚未更新的 `ctx.previews[source]`。请求完成后缓存虽正确，回调更新的是已脱离页面的旧元素，可见表单仍显示旧审核人。当前仓库浏览器22项等待预览完成后才保存，不覆盖这一顺序。
+- Reproduction: 本轮隔离服务18561、真实构建页面390×844；upper创建employee负责的任务，middle批准；employee保存colleague预设并从搜索打开专用交接，初始审核人李敏。目标切为middle（李敏）后，临时浏览器探针仅延迟返回真实 `/tasks/reviewer-preview` 响应给应用，不伪造响应或修改产品；在预览待完成时点击“保存为预设”，等待保存及表单重绘，再释放真实响应。JSON、截图和临时可重放脚本见本轮目录的 `preview-extra.json`、`preview-after-save.png`、`preview-extra.js`。
+- Expected: 保存/重绘后可见预览应对应当前选中的完整有序负责人；待请求完成后显示王海，与同源预览API和实际提交的审核人一致；不能把旧目标的审核人当作当前结果展示。
+- Actual: 目标为李敏，预设已真实持久化；请求完成后可见文字仍为“审核人：李敏（提交后由该审核人处理）”。旧元素 `isConnected:false`，其文字已更新为“审核人：王海…”。直接真实预览API和随后实际UI提交的pending申请均为王海。task `ab7e4611-ef46-4249-8596-694c68769c30`，request `b426915b-dcaa-4a2c-87eb-d9ff7c788db0`，actual reviewer `6d533bec-53e5-4632-a4a7-9aeb90f1a6b5`。因此是可见预览错误，不是后端路由错误。
+- Repair guidance: 使预览状态与目标及当前表单DOM保持一致，保存预设重绘不能恢复旧预览；异步成功/错误及加载状态均应作用于当前有效表单。保留已有序列/上下文隔离和事务内重新计算，不扩大预设/权限修复范围。
+- Acceptance checks: 普通本人/非创建者直属领导初始及目标切换预览仍正确；延迟真实预览响应→保存预设→重绘→释放响应后，可见审核人与实际预览/提交/通知路线一致。覆盖快速切换乱序响应、成功/失败、关闭重开及三视口；保留已验证的保存/重读/清除、授权、有序有效版和来源约束。
 - Repair status: addressed-awaiting-verification
-- Repair notes: 修复：新增 V14__handover_presets.sql（user_id→target_user_id、set_by_user_id、row_version）；TaskService 增加 handoverTargets / handoverPreset / saveHandoverPreset / clearHandoverPreset，本人或直属领导可保存、重读和清除，目标按被交接人的部门/直属上级/直属下属/公司范围校验并排除本人、管理员、失效与越界账号；handover 命令在未提供 target 时使用持久化预设，并在提交及批准时重新校验目标有效性与范围。TaskController 增加 /handover-targets 与 /users/{id}/handover-preset（GET/PUT/DELETE），任务详情返回 canHandover/handoverSources/handoverPresets，人员详情返回 canSetHandoverPreset。前端在“我的”、人员资料和任务详情接入“交接预设”和“专用交接”表单，支持预设预选、保存、清除、原因与提交；交接表单打开及目标变更时调用现有 reviewer-preview 显示实际新路线审核人（确无审核人时显示原因），提交事务仍重算路线。回归：新增 check_handover_preset.py 29/29（本人/非原创建者直属领导保存与使用预设、非直属/无直接关系/本人/管理员/越界/失效目标拒绝、夹带基础字段 400、提交冻结保留有效有序负责人、新路线批准、拒绝/撤销恢复旧有序负责人与来源历史）；新增 check_handover_browser.js 在 320×740、390×844、1440×900 各 22/22（“我的”保存预设、任务搜索入口、预设预选、提交前审核人在同级同事与直属领导间由 middle 切换为 upper 且与实际 pending 审核人一致、领导保存与提交）；AccessTest 新增 2 项；O 58/58、R 64/64、E 91/91、smoke 53/53、D 18/18；V4 副本升级至 V14 后 gate 10/10；mvn test 65/65。
-- Reverification notes: **a5c29ee本轮增量复验**：NH29/29、NBH18/18×3、NP8/8以及NBX的23项成功确认V14持久预设、本人刷新回读、本人/非原创建者直属领导真实页面保存/清除/提交、合法范围、批准时重新鉴权、冻结/有序有效版/拒绝撤销及来源不变。原设置与入口缺失已修复；仍未满足原Acceptance checks的“预览/通知/新路线批准一致”中的提交前实际审核人展示，故保留同一ID为pending，剩余修复范围仅该预览。
-- Current evidence: `潘多拉-任务接入.js:459`的handoverFormView只渲染源人员/目标下拉/原因/动作及“新路线审核通过后生效”泛化说明；`:485`的openHandoverSheet仅GET task与handover-targets，`:516`的confirmHandover直接POST，没有调用现有reviewer-preview、显示审核人或随目标变化更新。实际390×844页面NBX选择employee→middle（张涛→李敏）；`handover-pre-submit-text.txt`记录完整sheet仅有上述内容，没有“审核人”或实际新审核人王海。随后真实UI提交request `08b1dc96-9d01-4c53-994e-3625c9305827`，返回currentReviewerId为upper（王海），证明有确定的新路线审核人但未提前展示；三视口NBH截图同样没有预览。`ui-extra.json`唯一失败为 `Independent handover shows actual proposed reviewer before submit`；现有仓库浏览器18项均未断言预览。
-- Remaining expected / repair guidance: 按delta `Ordered reviewer routing and reassignment` 正文“提交前及详情 SHALL 展示实际审核人”及design§4，让专用交接对将要提交的完整有序负责人显示同源真实审核人（确无审核人时显示原因），随源/目标选择更新；提交时仍在事务内重算。原任务详情的旧路线不能替代提议路线。无需扩大其他交接设置/权限的修复范围。
-- Remaining acceptance checks: 从真实任务入口将交接目标在同级同事与直属领导间切换；提交前展示的审核人应从middle变upper，并与实际pending申请/审核通知一致。覆盖本人、非创建者直属领导及三个视口；保留本轮已通过的保存/重读/清除/授权/有效版/来源回归。
+- Repair notes: 修复：新增 V14__handover_presets.sql（user_id→target_user_id、set_by_user_id、row_version）；TaskService 增加 handoverTargets / handoverPreset / saveHandoverPreset / clearHandoverPreset，本人或直属领导可保存、重读和清除，目标按被交接人的部门/直属上级/直属下属/公司范围校验并排除本人、管理员、失效与越界账号；handover 命令在未提供 target 时使用持久化预设，并在提交及批准时重新校验目标有效性与范围。TaskController 增加 /handover-targets 与 /users/{id}/handover-preset（GET/PUT/DELETE），任务详情返回 canHandover/handoverSources/handoverPresets，人员详情返回 canSetHandoverPreset。前端在“我的”、人员资料和任务详情接入“交接预设”和“专用交接”表单，支持预设预选、保存、清除、原因与提交；交接表单打开及目标变更时调用现有 reviewer-preview 显示实际新路线审核人（确无审核人时显示原因），预览缓存按目标绑定，异步成功/失败均重新读取当前表单元素，保存预设重绘期间不会把旧目标审核人当作当前结果。提交事务仍重算路线。回归：新增 check_handover_preset.py 29/29（本人/非原创建者直属领导保存与使用预设、非直属/无直接关系/本人/管理员/越界/失效目标拒绝、夹带基础字段 400、提交冻结保留有效有序负责人、新路线批准、拒绝/撤销恢复旧有序负责人与来源历史）；新增 check_handover_browser.js 在 320×740、390×844、1440×900 各 23/23（“我的”保存预设、任务搜索入口、预设预选、提交前审核人在同级同事与直属领导间由 middle 切换为 upper 且与实际 pending 审核人一致、保存预设期间延迟真实预览并重绘后可见审核人仍为当前目标、领导保存与提交）；AccessTest 新增 2 项；O 58/58、R 64/64、E 91/91、smoke 53/53、D 18/18；V4 副本升级至 V14 后 gate 10/10；mvn test 65/65。
+- Reverification notes: **87f272b本轮**：NBH三视口各22/22，已确认初始预览、目标colleague→middle→colleague时审核人middle→upper→middle、本人/领导及实际pending一致。NBP独立补充6/7：乱序响应隔离、保存及实际提交通过，唯一失败为保存重绘后可见预览过时。V-010普通预览缺失已修复，但原预览正确性验收仍未完整满足，维持pending/medium。前轮a5c29ee的NH29/29、NP8/8、NBX23项成功继续支持预设与实际用户入口；旧NBX“完全不显示预览”的失败已被本轮证据取代。V-001—V-009不受两文件差异影响。
 
 ## Historical Traceability Cross-check
 
 
-以下为增量复验结论索引；证据归属按Checks说明（本轮重跑或cb1bfc3保留），保持原 `traceability.md` 及原始审计不变。以本次 delta 为验收准绳；旧审计“他人手机号一律不可见”“仅直属下属”等表述已被 2026-10-19 规则替代，不据旧规则制造新缺陷。`PASS` 仅指对应本轮范围与证据；有子条件缺证的行保留 UNVERIFIED，延期不折算完成率。
+以下为增量复验结论索引；证据归属按Checks说明（87f272b重跑、a5c29ee或cb1bfc3保留），保持原 `traceability.md` 及原始审计不变。以本次 delta 为验收准绳；旧审计“他人手机号一律不可见”“仅直属下属”等表述已被 2026-10-19 规则替代，不据旧规则制造新缺陷。`PASS` 仅指对应本轮范围与证据；有子条件缺证的行保留 UNVERIFIED，延期不折算完成率。
 
 ### DEV 35 项
 
@@ -440,13 +427,13 @@ NP首次断言错误地查`error.code`，实际API为顶层`code`；实际返回
 | DEV-001 | O/A/BC/M；R14；AU/LK/M/PX当前复验 | PASS（原V-002/V-008/V-009均verified-resolved，按相关项） |
 | DEV-002 | O/UI/P/AccessTest/X；R05/R14；AU/LK/M/PX当前复验 | PASS（原V-002/V-008/V-009均verified-resolved，按相关项） |
 | DEV-003 | A/BA/D；R15 | PASS |
-| DEV-004 | NH/NBH/NP通过预设/交接；NBX预览失败；R16/R17 | FAIL V-010（预设/入口已修复，剩余预览） |
+| DEV-004 | NH/NBH/NP通过预设/交接；NBP异步预览重绘失败；R16/R17 | FAIL V-010（预设/入口/普通预览已修复，剩余重绘竞争） |
 | DEV-005 | O/L/BL/AccessTest；R09/R10 | PASS |
 | DEV-006 | R/TaskServiceTest；R16 | PASS 顺序/最高层 |
 | DEV-007 | R/S；R16 | PASS 显式自审 |
 | DEV-008 | R；R16 | PASS 新路线 |
 | DEV-009 | R/X；R16；AU/LK/M/PX当前复验 | PASS（原V-002/V-008/V-009均verified-resolved，按相关项） |
-| DEV-010 | R/E及保留改派证据；NBX交接提交前预览 | FAIL V-010（后端路由/改派通过，交接预览缺失） |
+| DEV-010 | R/E及保留改派证据；NBH普通预览通过；NBP重绘过时 | FAIL V-010（后端路由/改派通过，重绘后预览过时） |
 | DEV-011 | R/S/BC；R07 | PASS |
 | DEV-012 | E/S/X；R18；AU/LK/M/PX当前复验 | PASS（原V-002/V-008/V-009均verified-resolved，按相关项） |
 | DEV-013 | R/E；R07 | PASS |
@@ -471,11 +458,11 @@ NP首次断言错误地查`error.code`，实际API为顶层`code`；实际返回
 | DEV-032 | E/BN/EventsRetentionTest；R20；PX8/8、NB3/3 | PASS（精确撤回/空列表路径已补） |
 | DEV-033 | E/BN/X；R20 | PASS（V-001 已解决；E） |
 | DEV-034 | I/BC/WorkspaceAnalysisTest；R11 | PASS |
-| DEV-035 | NH/NBH/NP通过预设/交接；NBX预览失败；R16/R17 | FAIL V-010（预设/入口已修复，剩余预览） |
+| DEV-035 | NH/NBH/NP通过预设/交接；NBP异步预览重绘失败；R16/R17 | FAIL V-010（预设/入口/普通预览已修复，剩余重绘竞争） |
 
 ### AUD 150 项
 
-每个历史编号保留独立行；本轮与保留证据归属见Checks，不引用apply JSON替代独立证据。V-001—V-009仍已解决；V-010的预设/入口已补齐，剩余为交接提交前实际审核人预览。
+每个历史编号保留独立行；本轮与保留证据归属见Checks，不引用apply JSON替代独立证据。V-001—V-009仍已解决；V-010的预设/入口已补齐，普通预览已修复，剩余为保存期间重绘后的过时审核人。
 
 | AUD | 本轮证据/当前规则 | 独立结论 |
 | --- | --- | --- |
@@ -490,7 +477,7 @@ NP首次断言错误地查`error.code`，实际API为顶层`code`；实际返回
 | AUD-ORG-006 | O/R/P/D/BC/T；R14/R16/R17 | PASS |
 | AUD-ORG-007 | O/R/P/D/BC/T；R14/R16/R17 | PASS |
 | AUD-ORG-008 | O/R/P/D/BC/T；R14/R16/R17 | PASS |
-| AUD-ORG-009 | NH/NBH/NP通过预设/交接；NBX预览失败；R16/R17 | FAIL V-010（预设/入口已修复，剩余预览） |
+| AUD-ORG-009 | NH/NBH/NP通过预设/交接；NBP异步预览重绘失败；R16/R17 | FAIL V-010（预设/入口/普通预览已修复，剩余重绘竞争） |
 | AUD-ORG-010 | R/X；R16/R17；AU/LK/M/PX当前复验 | PASS（原V-002/V-008/V-009均verified-resolved，按相关项） |
 | AUD-ACC-001 | A/BA/O/D/T；R15 | PASS |
 | AUD-ACC-002 | A/BA/O/D/T；R15 | PASS |
@@ -529,7 +516,7 @@ NP首次断言错误地查`error.code`，实际API为顶层`code`；实际返回
 | AUD-REV-005 | R/E/TaskServiceTest/T；R16 | PASS |
 | AUD-REV-006 | R/E/TaskServiceTest/T；R16 | PASS |
 | AUD-REV-007 | R/E/TaskServiceTest/T；R16 | PASS |
-| AUD-REV-008 | R/E及保留改派证据；NBX交接提交前预览 | FAIL V-010（后端路由/改派通过，交接预览缺失） |
+| AUD-REV-008 | R/E及保留改派证据；NBH普通预览通过；NBP重绘过时 | FAIL V-010（后端路由/改派通过，重绘后预览过时） |
 | AUD-FLW-001 | R/S/E/BC/D/T；R05/R07/R18 | PASS |
 | AUD-FLW-002 | R/S/E/BC/D/T；R05/R07/R18 | PASS |
 | AUD-FLW-003 | R/S/E/BC/D/T；R05/R07/R18 | PASS |
@@ -639,9 +626,9 @@ NP首次断言错误地查`error.code`，实际API为顶层`code`；实际返回
 | A-03 | O/R/AccessTest；AU/LK/M/PX当前复验 | PASS（原V-002/V-008/V-009均verified-resolved，按相关项） |
 | A-04 | P/L/BL/X | PASS（V-004 已解决；P/PC） |
 | A-05 | O/H/BH | PASS |
-| A-06 | R/E及保留改派证据；NBX交接提交前预览 | FAIL V-010（后端路由/改派通过，交接预览缺失） |
+| A-06 | R/E及保留改派证据；NBH普通预览通过；NBP重绘过时 | FAIL V-010（后端路由/改派通过，重绘后预览过时） |
 | A-07 | R/S | PASS |
-| A-08 | NH/NBH/NP通过预设/交接；NBX预览失败；R16/R17 | FAIL V-010（预设/入口已修复，剩余预览） |
+| A-08 | NH/NBH/NP通过预设/交接；NBP异步预览重绘失败；R16/R17 | FAIL V-010（预设/入口/普通预览已修复，剩余重绘竞争） |
 | A-09 | S/E/H/I/BC/T | PASS 已执行隔离矩阵 |
 | A-10 | R/S/BC | PASS |
 | A-11 | R/E/D/T | PASS 已执行历史 |
@@ -663,4 +650,4 @@ NP首次断言错误地查`error.code`，实际API为顶层`code`；实际返回
 
 ## Next Action
 
-执行 `$openspec-e13-fix-change fix-pandora-formal-requirement-deviations`，仅修复V-010剩余的专用交接提交前实际审核人预览，并补与提交/通知路线一致的浏览器验证。预设持久化及真实入口本轮已确认，不再报告为缺失。保留V-001—V-009的verified-resolved及所有Repair notes；修复后重新独立verify，相关差异之外可继续按完整指纹保留充分的未受影响证据。当前FAIL，不能归档。
+执行 `$openspec-e13-fix-change fix-pandora-formal-requirement-deviations`，仅修复V-010保存预设与异步预览重绘竞争，补延迟真实响应的浏览器验证；保留普通预览的序列/上下文隔离和事务重算。预设/入口与正常预览已确认，不再报告为缺失。保持V-001—V-009及全部Repair notes；修复后可按完整指纹继续增量独立verify。当前FAIL，不能归档。

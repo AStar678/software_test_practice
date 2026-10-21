@@ -474,28 +474,41 @@
     const reason = preview.route && preview.route.reasonText ? preview.route.reasonText : "无可用审核人";
     return "无需审核人：" + reason + "；提交后直接生效。";
   }
+  function handoverPreviewFor(ctx, source) {
+    const chosen = ctx.selected[source];
+    const entry = ctx.previews[source];
+    return entry && entry.target === chosen ? entry.data : null;
+  }
   function refreshHandoverPreview(source) {
     const ctx = handoverContext;
     if (!ctx) return;
     const target = selectedHandoverTarget(source);
     ctx.selected[source] = target;
-    const element = document.getElementById("ho-preview-" + source);
     const seq = (ctx.previewSeq[source] || 0) + 1;
     ctx.previewSeq[source] = seq;
+    const current = function () {
+      return handoverContext === ctx ? document.getElementById("ho-preview-" + source) : null;
+    };
+    const loading = current();
     if (!target) {
-      if (element) element.textContent = "没有可用的交接对象";
+      ctx.previews[source] = { target: "", data: { error: "没有可用的交接对象" } };
+      if (loading) loading.textContent = "没有可用的交接对象";
       return;
     }
-    if (element) element.textContent = "正在计算审核人…";
+    if (loading) loading.textContent = "正在计算审核人…";
     requestHandoverPreview(ctx.taskId, handoverOwners(ctx.raw, source, target)).then(function (preview) {
       if (handoverContext !== ctx || ctx.previewSeq[source] !== seq) return;
-      ctx.previews[source] = preview;
-      if (element) element.textContent = handoverPreviewText(preview);
+      ctx.previews[source] = { target: target, data: preview };
+      // Re-read the live element: saving the preset re-renders the form while this request is in
+      // flight, so updating the pre-save element would leave the visible form on the old reviewer.
+      const live = current();
+      if (live) live.textContent = handoverPreviewText(preview);
     }).catch(function (error) {
       if (handoverContext !== ctx || ctx.previewSeq[source] !== seq) return;
       const failed = { error: error.message };
-      ctx.previews[source] = failed;
-      if (element) element.textContent = handoverPreviewText(failed);
+      ctx.previews[source] = { target: target, data: failed };
+      const live = current();
+      if (live) live.textContent = handoverPreviewText(failed);
     });
   }
   function handoverFormView() {
@@ -515,7 +528,7 @@
         '<div class="field"><label for="ho-target-' + attr(source) + '">交接对象</label><select id="ho-target-' + attr(source) +
         '" data-handover-target="' + attr(source) + '">' + options + '</select></div>' +
         '<div class="callout info" id="ho-preview-' + attr(source) + '" aria-live="polite">' +
-        esc(handoverPreviewText(ctx.previews[source])) + '</div>' +
+        esc(handoverPreviewText(handoverPreviewFor(ctx, source))) + '</div>' +
         '<div class="row wrap"><button type="button" class="btn ghost" data-action="p-save-handover-preset" data-id="' + attr(source) + '">保存为预设</button>' +
         '<button type="button" class="btn primary" data-action="p-confirm-handover" data-id="' + attr(source) + '">发起专用交接</button></div></section>';
     }).join("");
@@ -543,9 +556,12 @@
         const preset = presets[source];
         selected[source] = targets[source].some(function (person) { return person.id === preset; })
           ? preset : (targets[source][0] ? targets[source][0].id : "");
-        previews[source] = selected[source]
-          ? await requestHandoverPreview(taskId, handoverOwners(raw, source, selected[source]))
-          : { error: "没有可用的交接对象" };
+        previews[source] = {
+          target: selected[source],
+          data: selected[source]
+            ? await requestHandoverPreview(taskId, handoverOwners(raw, source, selected[source]))
+            : { error: "没有可用的交接对象" }
+        };
         if (!stillHere(mark)) return;
       }
       handoverContext = { taskId: taskId, raw: raw, etag: taskTag(raw), sources: sources,

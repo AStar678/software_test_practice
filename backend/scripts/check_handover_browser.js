@@ -200,6 +200,39 @@ async function main() {
       { preview: upperPreview });
     await browser.evaluate(setSelect("ho-target-" + employeeMe.id, colleagueMe.id));
     await waitFor(browser, `(document.getElementById('ho-preview-${employeeMe.id}') || {}).textContent.includes('李敏')`, 10000);
+    // Save the preset while the real preview response for the newly selected target is still pending.
+    // The form re-renders during the request; the visible preview must still update to the current
+    // target once the response arrives, instead of keeping the pre-save reviewer.
+    await browser.evaluate(`(() => {
+      window.__previewOriginalFetch = window.fetch;
+      window.__previewRelease = null;
+      window.fetch = function (input, init) {
+        const url = typeof input === "string" ? input : (input && input.url) || "";
+        if (url.indexOf("/tasks/reviewer-preview") >= 0) {
+          return new Promise(function (resolve, reject) {
+            window.__previewRelease = function () {
+              window.__previewOriginalFetch(input, init).then(resolve, reject);
+            };
+          });
+        }
+        return window.__previewOriginalFetch(input, init);
+      };
+      return true;
+    })()`);
+    await browser.evaluate(setSelect("ho-target-" + employeeMe.id, middleMe.id));
+    const previewHeld = await waitFor(browser, "typeof window.__previewRelease === 'function'", 10000);
+    await browser.evaluate(clickText("保存为预设"));
+    await waitFor(browser, "window.Pandora.idle()");
+    await sleep(200);
+    await browser.evaluate("window.__previewRelease && window.__previewRelease()");
+    const previewAfterSave = await waitFor(browser, `(document.getElementById('ho-preview-${employeeMe.id}') || {}).textContent.includes('王海')`, 10000);
+    const previewAfterSaveText = await browser.evaluate(`(() => { const el = document.getElementById('ho-preview-${employeeMe.id}'); return el ? {text: el.textContent, connected: el.isConnected} : null; })()`);
+    check("V-010 saving the preset during a pending preview still shows the current reviewer",
+      previewHeld && previewAfterSave && previewAfterSaveText && previewAfterSaveText.connected
+      && previewAfterSaveText.text.includes("王海"), { held: previewHeld, preview: previewAfterSaveText });
+    await browser.evaluate("window.fetch = window.__previewOriginalFetch; delete window.__previewOriginalFetch; delete window.__previewRelease;");
+    await browser.evaluate(setSelect("ho-target-" + employeeMe.id, colleagueMe.id));
+    await waitFor(browser, `(document.getElementById('ho-preview-${employeeMe.id}') || {}).textContent.includes('李敏')`, 10000);
     await browser.evaluate(clickText("发起专用交接"));
     const requestPending = await waitFor(browser, "document.getElementById('overlay').hidden === true");
     check("V-010 submitting the handover closes the sheet after the pending request", requestPending);
