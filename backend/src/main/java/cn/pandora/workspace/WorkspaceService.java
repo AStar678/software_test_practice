@@ -70,6 +70,7 @@ public class WorkspaceService {
             result.put(key, row.get(key));
         }
         result.put("canReadLogs", access.canReadLogAuthor(a, userId));
+        result.put("canSetHandoverPreset", access.canSetHandoverPreset(a, row));
         if (access.canReadPhone(a, row)) result.put("phone", row.get("phone"));
         return result;
     }

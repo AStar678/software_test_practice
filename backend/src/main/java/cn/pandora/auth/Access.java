@@ -215,6 +215,50 @@ public class Access {
         return a.can("handover_reports") && isDirectReport(a, sourceUserId);
     }
 
+    /** Preset authority: the person themself or that person's direct manager (DEV-004, V-010). */
+    public boolean canSetHandoverPreset(Actor a, Map<String, Object> subject) {
+        if (subject == null || !a.organizationId().equals(s(subject, "organizationId"))
+                || !enabled(subject) || "admin".equals(s(subject, "role"))) return false;
+        if (a.id().equals(s(subject, "id"))) return a.can("handover_own");
+        return a.can("handover_reports") && isDirectReport(a, s(subject, "id"));
+    }
+
+    /**
+     * Legal handover target range, derived from the person being handed over rather than from the
+     * operator's dispatch range. A target must be an active, non-administrator member of the same
+     * company and belong to that person's working circle: their department, direct manager, direct
+     * reports, or the whole company when their own view range is company. This deliberately does not
+     * grant dispatch authority or expose the company directory beyond that circle.
+     */
+    public boolean canBeHandoverTarget(Actor subject, Map<String, Object> target) {
+        if (subject == null || target == null
+                || !subject.organizationId().equals(s(target, "organizationId"))
+                || !enabled(target) || "admin".equals(s(target, "role"))
+                || subject.administrator() || subject.id().equals(s(target, "id"))) return false;
+        if ("company".equals(subject.scope("task_view")) || "company".equals(subject.scope("profile_read"))) return true;
+        String department = subject.departmentId();
+        if (department != null && department.equals(s(target, "departmentId"))) return true;
+        if (subject.managerId() != null && subject.managerId().equals(s(target, "id"))) return true;
+        return subject.id().equals(s(target, "managerId"));
+    }
+
+    /** Search the legal handover targets for one person, returning only display fields. */
+    public List<Map<String, Object>> handoverTargets(Actor subject, String query) {
+        String like = query == null ? "" : query.strip().toLowerCase(Locale.ROOT);
+        return db.list("SELECT u.organization_id,u.id,u.username,u.display_name,u.department_id,u.position_id,"
+                        + "u.manager_id,u.role,u.active,d.name AS department_name,p.name AS position_name "
+                        + "FROM users u LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
+                        + "LEFT JOIN positions p ON p.organization_id=u.organization_id AND p.id=u.position_id "
+                        + "WHERE u.organization_id=? AND u.active=1 AND u.role<>'admin' ORDER BY u.display_name,u.id",
+                subject.organizationId())
+                .stream()
+                .filter(person -> canBeHandoverTarget(subject, person))
+                .filter(person -> like.isEmpty()
+                        || s(person, "displayName").toLowerCase(Locale.ROOT).contains(like)
+                        || s(person, "username").toLowerCase(Locale.ROOT).contains(like))
+                .toList();
+    }
+
     public void requireCapability(Actor a, String capability) {
         if (!a.can(capability)) throw new ApiException(403, "FORBIDDEN", "当前账号没有执行该操作的授权");
     }

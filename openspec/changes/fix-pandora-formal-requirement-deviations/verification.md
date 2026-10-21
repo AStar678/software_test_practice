@@ -431,8 +431,8 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 - Actual: 手工构造HTTP的handover命令及审核可用（R64/64），但预设对象与真实用户流程缺失。R脚本逐次传targetUserId，没有保存/重读预设，也没有操作交接界面，因此不能覆盖该要求正文或证明task4.6全部完成。
 - Repair guidance: 补齐专用交接设置的受权持久化和实际用户入口，并接入现有handover/新路线审核；不得通过放宽基础字段编辑或普通派发权补洞。不限定新endpoint或存储形状。
 - Acceptance checks: 在构建后页面，以本人和非原创建者的直属领导分别保存预设、刷新/重新登录仍可读取并用于交接；非直属/越组织/失效目标拒绝；不能夹带基础字段；提交冻结、预览/通知/新路线批准一致，拒绝/撤销保留旧有效版与有序负责人，原创建者/时间/历史保留。覆盖三视口可达性，重跑R/E/O及新增流程的独立HTTP/浏览器证据。
-- Repair status: pending
-- Repair notes: 尚无。
+- Repair status: addressed-awaiting-verification
+- Repair notes: 修复：新增 V14__handover_presets.sql（user_id→target_user_id、set_by_user_id、row_version）；TaskService 增加 handoverTargets / handoverPreset / saveHandoverPreset / clearHandoverPreset，本人或直属领导可保存、重读和清除，目标按被交接人的部门/直属上级/直属下属/公司范围校验并排除本人、管理员、失效与越界账号；handover 命令在未提供 target 时使用持久化预设，并在提交及批准时重新校验目标有效性与范围。TaskController 增加 /handover-targets 与 /users/{id}/handover-preset（GET/PUT/DELETE），任务详情返回 canHandover/handoverSources/handoverPresets，人员详情返回 canSetHandoverPreset。前端在“我的”、人员资料和任务详情接入“交接预设”和“专用交接”表单，支持预设预选、保存、清除、原因与提交，并复用现有新路线审核。回归：新增 check_handover_preset.py 29/29（本人/非原创建者直属领导保存与使用预设、非直属/无直接关系/本人/管理员/越界/失效目标拒绝、夹带基础字段 400、提交冻结保留有效有序负责人、新路线批准、拒绝/撤销恢复旧有序负责人与来源历史）；新增 check_handover_browser.js 在 320×740、390×844、1440×900 各 18/18（“我的”保存预设、任务搜索入口、预设预选、提交待审、领导保存与提交）；AccessTest 新增 2 项；O 58/58、R 64/64、E 91/91、smoke 53/53、D 18/18；V4 副本升级至 V14 后 gate 10/10；mvn test 65/65。
 - Reverification notes: 本轮首次确认；原报告将该部分列为缺证，本轮全域追踪和真实身份页面检查将其确认为实现缺口。仅报告，未修复。
 
 ## Historical Traceability Cross-check

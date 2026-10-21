@@ -48,6 +48,34 @@ public class TaskController {
         return ResponseEntity.ok().eTag("\"" + result.get("rowVersion") + "\"").body(result);
     }
 
+    /** Legal handover targets for one person (self or that person's direct manager only). */
+    @GetMapping("/handover-targets")
+    public Map<String, Object> handoverTargets(@RequestAttribute("actor") Actor actor,
+            @RequestParam String subjectId, @RequestParam(value = "q", required = false) String query) {
+        return tasks.handoverTargets(actor, subjectId, query);
+    }
+
+    /** Preset successor for one person's current tasks (V-010). */
+    @GetMapping("/users/{id}/handover-preset")
+    public Map<String, Object> handoverPreset(@RequestAttribute("actor") Actor actor, @PathVariable String id) {
+        return tasks.handoverPreset(actor, id);
+    }
+
+    @PutMapping("/users/{id}/handover-preset")
+    public Map<String, Object> saveHandoverPreset(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @RequestBody Map<String, Object> input) {
+        return writes.run(actor, key, "PUT /users/" + id + "/handover-preset", input, null,
+                () -> tasks.saveHandoverPreset(actor, id, input));
+    }
+
+    @DeleteMapping("/users/{id}/handover-preset")
+    public Map<String, Object> clearHandoverPreset(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key) {
+        return writes.run(actor, key, "DELETE /users/" + id + "/handover-preset", Map.of(), null,
+                () -> tasks.clearHandoverPreset(actor, id));
+    }
+
     /** Personal month-view pin; never changes task data or another user's order. */
     @PutMapping("/tasks/{id}/pin")
     public Map<String, Object> pin(@RequestAttribute("actor") Actor actor, @PathVariable String id,
