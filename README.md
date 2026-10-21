@@ -2,7 +2,7 @@
 
 原型前端、Java 后端及当前数据库备份的完整项目。前端保留导图、视图、日志、AI 地图和我的五个栏目，并连接本地 MySQL 后端。
 
-正式需求以 [潘多拉产品需求文档（V2 正式版）](潘多拉-产品需求文档-V2正式版.md) 为准，产品交付范围仍为 V1；文档内列有当前代码与正式需求的差异，历史草案保留供追溯。
+正式需求以 [潘多拉产品需求文档（V2 正式版）](docs/requirements/潘多拉-产品需求文档-V2正式版.md) 为准，产品交付范围仍为 V1；文档内列有当前代码与正式需求的差异，历史草案保留供追溯。
 
 ## 启动
 
@@ -22,6 +22,12 @@ cd backend
 - `backend/scripts`：启动、停止、数据库导出及集成检查。
 - `backend/database/pandora.sql`：数据库结构及当前业务数据快照。
 - `backend/docs`：API 示例和实施说明。
-- `openspec` 与根目录需求文档：需求与设计记录。
+- `docs/requirements`：PRD、历史草案及需求来源。
+- `docs/reviews`：需求审计、偏差分析；历史结论仅适用于其注明的代码基线。
+- `docs/guides`、`docs/references`：调试指南与界面参考截图。
+- `openspec`：规格与变更记录；已完成变更位于 `openspec/changes/archive`。
+- `audit`：按日期保存的检查结果和截图。
+
+文档入口见 [文档导航](docs/README.md)。
 
 演示账号、运行环境和配置详见 [后端说明](backend/README.md)。本机数据库密码、登录会话、构建缓存和临时产物不提交到 Git。

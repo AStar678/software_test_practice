@@ -13,7 +13,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-CHANGE = ROOT / "openspec/changes/fix-pandora-formal-requirement-deviations"
+CHANGE = ROOT / "openspec/changes/archive/2026-10-21-fix-pandora-formal-requirement-deviations"
 AUDIT = ROOT / "audit/2026-10-20/chapter11"
 
 
@@ -35,9 +35,9 @@ def parse_rows(text: str, id_pattern: str) -> dict[str, list[str]]:
     return rows
 
 
-checklist = read("潘多拉-正式需求审计清单.md")
-deviations = read("潘多拉-正式需求偏差报告.md")
-prd = read("潘多拉-产品需求文档-V2正式版.md")
+checklist = read("docs/reviews/潘多拉-正式需求审计清单.md")
+deviations = read("docs/reviews/潘多拉-正式需求偏差报告.md")
+prd = read("docs/requirements/潘多拉-产品需求文档-V2正式版.md")
 tasks_text = (CHANGE / "tasks.md").read_text(encoding="utf-8")
 
 dev_matches = list(
