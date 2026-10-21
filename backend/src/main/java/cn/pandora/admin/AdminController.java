@@ -202,6 +202,9 @@ public class AdminController {
             @RequestBody Map<String, Object> input) {
         Map<String, Object> result = writes.run(actor, key, "PATCH /admin/teams/" + id, input, ifMatch,
                 () -> organization.updateTeam(actor, id, ifMatch, input));
+        // Mapping every legacy team can be the final step; retighten here too so the write gate opens
+        // without requiring an unrelated employee edit or a restart (V-009).
+        tightenOrganizationConstraints();
         return ResponseEntity.ok().eTag("\"" + result.get("rowVersion") + "\"").body(result);
     }
 

@@ -82,6 +82,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--base-url', default='http://127.0.0.1:18220')
     parser.add_argument('--password', default='Demo@123456')
+    parser.add_argument('--order', choices=('teams-first', 'employees-first'), default='teams-first',
+                        help='Which mapping completes last; both orders must release the gate (V-009)')
     parser.add_argument('--output', type=Path, default=None)
     args = parser.parse_args()
     api = Api(args.base_url, args.password)
@@ -126,58 +128,70 @@ def main() -> int:
           status == 200 and status_pos == 200 and department_id and position_id,
           {'department': department, 'position': position})
 
-    # Teams are mapped first: an employee keeps their existing team, and updateEmployee requires that
-    # team to belong to the employee's department. Each legacy team is explicitly assigned by the
-    # administrator; the script never derives a department from a team's old name.
-    _, structure, _ = api.call('GET', '/api/v1/admin/organization', admin)
-    for team in structure.get('teams', []):
-        if team.get('departmentId'):
-            continue
-        version = team.get('rowVersion', 1)
-        patch_status, patch_body, _ = api.call('PATCH', f"/api/v1/admin/teams/{team['id']}", admin,
-                                               {'departmentId': department_id}, Api.key(), f'"{version}"')
-        if patch_status != 200:
-            check('V-005 the console can map every team', False,
-                  {'teamId': team['id'], 'status': patch_status, 'body': patch_body})
-            break
+    # Every legacy relation is mapped by an explicit administrator choice; the script never derives a
+    # department from a team's old name. Both completion orders must release the gate: when employees
+    # are mapped first their legacy team may still be unmapped, so they are explicitly detached from it
+    # before the teams are mapped (V-009).
+    def map_teams() -> None:
+        _, current, _ = api.call('GET', '/api/v1/admin/organization', admin)
+        for team in current.get('teams', []):
+            if team.get('departmentId'):
+                continue
+            version = team.get('rowVersion', 1)
+            patch_status, patch_body, _ = api.call('PATCH', f"/api/v1/admin/teams/{team['id']}", admin,
+                                                   {'departmentId': department_id}, Api.key(), f'"{version}"')
+            if patch_status != 200:
+                check('V-005 the console can map every team', False,
+                      {'teamId': team['id'], 'status': patch_status, 'body': patch_body})
+                break
+
+    def map_employees(detach_teams: bool) -> None:
+        _, employees, _ = api.call('GET', '/api/v1/admin/employees?limit=200', admin)
+        mapped = 0
+        for row in employees.get('items', []):
+            need_department = not row.get('departmentId')
+            need_position = not row.get('positionId')
+            if not (need_department or need_position):
+                continue
+            _, _, headers = api.call('GET', f"/api/v1/admin/employees/{row['id']}", admin)
+            body = {}
+            if need_department:
+                body['departmentId'] = department_id
+            if need_position:
+                body['positionId'] = position_id
+            if detach_teams and row.get('teamId'):
+                body['teamId'] = None
+            patch_status, patch_body, _ = api.call('PATCH', f"/api/v1/admin/employees/{row['id']}", admin,
+                                                   body, Api.key(), headers.get('ETag'))
+            if patch_status == 200:
+                mapped += 1
+            else:
+                check('V-005 the console can map every employee', False,
+                      {'userId': row['id'], 'status': patch_status, 'body': patch_body})
+        check('V-005 the console maps the unmapped employees without SQL', mapped > 0, {'mapped': mapped})
+
+    if args.order == 'teams-first':
+        map_teams()
+        map_employees(detach_teams=False)
+    else:
+        map_employees(detach_teams=True)
+        map_teams()
     _, team_structure, _ = api.call('GET', '/api/v1/admin/organization', admin)
     check('V-005 every team receives a real department through the console',
           all(team.get('departmentId') for team in team_structure.get('teams', [])),
           {'teams': team_structure.get('teams', [])})
 
-    status, employees, _ = api.call('GET', '/api/v1/admin/employees?limit=200', admin)
-    mapped = 0
-    for row in employees.get('items', []):
-        need_department = not row.get('departmentId')
-        need_position = not row.get('positionId')
-        if not (need_department or need_position):
-            continue
-        _, _, headers = api.call('GET', f"/api/v1/admin/employees/{row['id']}", admin)
-        body = {}
-        if need_department:
-            body['departmentId'] = department_id
-        if need_position:
-            body['positionId'] = position_id
-        patch_status, patch_body, _ = api.call('PATCH', f"/api/v1/admin/employees/{row['id']}", admin,
-                                               body, Api.key(), headers.get('ETag'))
-        if patch_status == 200:
-            mapped += 1
-        else:
-            check('V-005 the console can map every employee', False,
-                  {'userId': row['id'], 'status': patch_status, 'body': patch_body})
-    check('V-005 the console maps the unmapped employees without SQL', mapped > 0, {'mapped': mapped})
-
     _, final_structure, _ = api.call('GET', '/api/v1/admin/organization', admin)
     final = final_structure.get('constraints', {})
-    check('V-005 completing the mapping resolves blockers and tightens the schema',
+    check('V-009 both mapping completion orders resolve blockers and tighten without another edit',
           final.get('formalWritesReady') is True and final.get('usersMissingDepartment') == 0
           and final.get('teamsMissingDepartment') == 0 and final.get('mappingBlockers') == 0
           and final.get('tighteningApplied') is True,
-          final)
+          {'order': args.order, **final})
 
     status, created, _ = api.call('POST', '/api/v1/tasks', employee,
                                   {**task_payload(), 'assigneeIds': [me['id']]}, Api.key())
-    check('V-005 the same formal task write succeeds after the mapping is cleared',
+    check('V-005/V-009 the same formal task write succeeds after the mapping is cleared',
           status == 201 and created.get('taskId'), {'status': status, 'body': created})
     status, home_allowed, _ = api.call('POST', '/api/v1/home/items', employee,
                                        {'kind': 'personal', 'body': '映射完成后的业务写'}, Api.key())

@@ -318,8 +318,8 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 - Actual: PATCH `409 TASK_FROZEN`；随后 GET 旧申请仍 `pending`、任务 `frozen:true`。原修复把失效放在独立事务，确已消除原 412 回滚；但锁等待时使用过时的时间，仍违反同一提交截止验收要求。
 - Repair guidance: 保留独立提交终态机制，在获得相关锁之后采样受控服务时钟并完成到期判定；保持 ETag、授权、幂等、锁序及终态唯一性，不以忽略过时 ETag 消除症状。
 - Acceptance checks: 重跑 E；新增可重复的组织锁阻塞→跨截止→释放场景，创建及已发布任务/交接共享入口均验证终态落库、解冻、有效版保持、未发布不发布、事件去重；同键重试/扫描不能重复改变业务。批准+撤销+扫描三方竞争仍需独立证据。
-- Repair status: pending
-- Repair notes: 修复：ExpiryService.expirePendingBeforeSubmit 在独立事务先取组织锁并提交 expirePendingForTask；TaskService.change/handover 移除命令事务内的先失效逻辑；TaskController 在 writes.run 之前调用 tasks.expireBeforeSubmit，使后续 412/409 不回滚 expired、解冻及失效/逾期事件。回归：E 新增未发布创建、已发布交接跨截止后用旧 ETag 重提，均收到 412 但申请已 expired、任务解冻且不发布/保持 todo，旧申请不能再批准；E 91/91。
+- Repair status: addressed-awaiting-verification
+- Repair notes: 修复：ExpiryService 注入统一 Clock，expirePendingBeforeSubmit 在 organizations 行锁获取成功后才采样 clock.instant() 并完成到期判定/失效提交；TaskService.expireBeforeSubmit 不再在锁前传入旧时刻。回归：新增 backend/scripts/check_submit_lock_deadline.py，用独立 MySQL 会话持有组织行锁、并发 PATCH 在锁上排队、推进受控时钟后释放；连续两次 5/5，PATCH 等待后被拒，旧申请 expired、未发布任务不发布且解冻。E 91/91 复验创建/交接 412 后终态持久化。
 - Reverification notes: 本轮 E 91/91 已实际验证原创建与交接 412 后失效持久化；因此不再声称原回滚仍存在。独立组织锁竞争确认相同验收目标仍失败，沿用 V-002 并重新打开 pending。未将该单个竞争探测概括为三方竞争已验证。
 
 ### V-003: 失去最后审核人的待审改派存在 SQL 参数错误并回滚组织维护
@@ -403,8 +403,8 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 - Actual: 组织维护返回 200，旧申请变为 `direct`，原因“依据人管理链与原创建者均不可承接，记录原因后直接生效”；任务 `published:true`，upper 与 employee 均成为有效负责人。同一提议显式批准被拒，自动处理却绕过相同授权。
 - Repair guidance: 对无审核人的自动生效重用与显式生效相同的当前申请人、负责人、父任务、专用交接等适用资格校验；不能借管理员的管理能力代替申请人的业务权。保持合法组织维护可完成，越权提议不能生效；具体无效申请处置服从现有规格。
 - Acceptance checks: 本轮步骤中显式批准与自动生效均不能越权发布；覆盖范围收回、转岗、失效参与人及专用交接资格，核对原有效版/来源/历史/事件；合法未失权的无审核人路径继续成功，重跑 O/R/E。
-- Repair status: pending
-- Repair notes: 首次发现，尚无修复记录。
+- Repair status: addressed-awaiting-verification
+- Repair notes: 修复：提取 validateApplicationEffect，显式批准与 applyWithoutReviewer 共用当前申请人有效、负责人有效、create/change 派发权、handover 专用资格、父任务及申请人参与资格校验；自动路径校验失败时保持申请 pending/frozen、不发布、不写 no_reviewer 历史，组织维护本身仍提交成功。回归：新增 check_auto_apply_authorization.py 复现报告场景（upper 建 upper+employee 待审→收回 executive 派发→显式批准 403→撤销最后审核人），确认自动路径不 direct/不发布，合法本人无审核人路径仍 direct；11/11。TaskServiceTest 新增自动路径复用派发校验单测；O 58/58、R 64/64、E 91/91、mvn test 63/63。
 - Reverification notes: 当前新独立库真实接口已确认；探测后在一次性库恢复 reviewerAvailable 与 executive 正常范围。此缺陷与已解决的 V-003 SQL 参数错误分开编号：V-003 原先因 SQL 异常无法走到这条成功发布路径。
 
 ### V-009: V4 最后补齐团队映射后，业务写门禁仍持续关闭
@@ -418,8 +418,8 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 - Actual: usersMissingDepartment=0、usersMissingPosition=0、teamsMissingDepartment=0（独立 SQL 同样为 0/0），但 mappingBlockers=2、tighteningApplied=false、formalWritesReady=false；POST task `409 ORGANIZATION_MAPPING_INCOMPLETE`。原 M 脚本先团队后员工，10/10，遗漏最后保存团队的顺序。
 - Repair guidance: 所有可能完成映射的受权管理路径（含团队更新）在适当的提交后阶段触发同源、幂等的复核/收紧及 blocker 清理；保留真实缺映射时的门禁与管理修复通路，避免把 DDL 混入原业务事务。
 - Acceptance checks: 两个独立 V4 副本分别员工优先/团队优先，最后一步后无需额外编辑或重启即 mappingBlockers=0、约束收紧、业务写恢复；覆盖无团队员工/空团队和新空库；未补齐时 task/home 仍 409，原预检保持只读。
-- Repair status: pending
-- Repair notes: 首次发现，尚无修复记录。
+- Repair status: addressed-awaiting-verification
+- Repair notes: 修复：PATCH /admin/teams/{id} 提交后也调用 tightenOrganizationConstraints，与员工 create/update/transfer 同源、幂等、事务外收紧；最后补齐团队即可清 blocker、收紧 NOT NULL 并恢复正式写，无需再次编辑员工或重启。回归：check_mapping_write_gate.py 增加 --order employees-first|teams-first；两个独立 V4 副本分别员工优先/团队优先均 10/10，mappingBlockers=0、tighteningApplied=true、task 201，未补齐时 task/home 仍 409 且管理通路可用。
 - Reverification notes: 已通过独立副本及真实 HTTP 确认。原 V-005“尚未补齐却允许写”已解决；本项是新增门禁的解除遗漏，作为单独修复点避免重复统计。
 
 ## Historical Traceability Cross-check

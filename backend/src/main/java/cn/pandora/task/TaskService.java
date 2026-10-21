@@ -186,7 +186,7 @@ public class TaskService {
      * back the expiry/unfreeze terminal state (design §6, DEV-012).
      */
     public void expireBeforeSubmit(Actor actor, String taskId) {
-        expiry.expirePendingBeforeSubmit(actor.organizationId(), taskId, clock.instant());
+        expiry.expirePendingBeforeSubmit(actor.organizationId(), taskId);
     }
 
     public Map<String, Object> change(Actor actor, String id, String ifMatch, Map<String, Object> input) {
@@ -426,14 +426,7 @@ public class TaskService {
         String status = switch (decision) { case "approve" -> "approved"; case "reject" -> "rejected"; default -> "withdrawn"; };
         Timestamp now = now();
         if ("approve".equals(decision)) {
-            validateActiveOwners(actor, newOwners);
-            Actor applicant = activeActor(actor, s(request, "applicantId"));
-            if (Set.of("create", "change").contains(kind)) validateAssignable(applicant, newOwners);
-            // A handover is re-checked at approval: the setter must still hold the dedicated authority and
-            // the source must still be the current owner (DEV-004).
-            if ("handover".equals(kind)) validateHandoverAtApproval(actor, taskId, id, base);
-            validateParent(applicant, taskId, s(proposed, "parentTaskId"), base == null || !Objects.equals(s(base, "parentTaskId"), s(proposed, "parentTaskId")));
-            validateRequestActor(applicant, task, base, kind);
+            validateApplicationEffect(actor, task, request, proposed, base, kind);
         }
         int changed = db.update("UPDATE approval_requests SET status=?,comment=?,current_reviewer_id=?,decided_at=?,decided_by=?,row_version=row_version+1 WHERE organization_id=? AND id=? AND status='pending' AND row_version=?", status, comment, reviewer, now, actor.id(), actor.organizationId(), id, n(request, "rowVersion"));
         if (changed != 1) throw conflict("REQUEST_RESOLVED", "该申请已处理，请刷新");
@@ -690,6 +683,27 @@ public class TaskService {
                 now, organizationId, requestId, requestRowVersion};
     }
 
+    /**
+     * Re-checks the current effects of an approval against live authority. Explicit decisions and the
+     * reviewer-less automatic path share this so a revoked dispatch range, a stale participant/parent or a
+     * losing handover setter cannot be bypassed just because no reviewer remains (V-008).
+     */
+    private void validateApplicationEffect(Actor context, Map<String, Object> task, Map<String, Object> request,
+                                           Map<String, Object> proposed, Map<String, Object> base, String kind) {
+        String taskId = s(task, "id");
+        String requestId = s(request, "id");
+        List<String> newOwners = assignees(context, s(proposed, "id"));
+        validateActiveOwners(context, newOwners);
+        Actor applicant = activeActor(context, s(request, "applicantId"));
+        if (Set.of("create", "change").contains(kind)) validateAssignable(applicant, newOwners);
+        // A handover is re-checked at approval: the setter must still hold the dedicated authority and
+        // the source must still be the current owner (DEV-004).
+        if ("handover".equals(kind)) validateHandoverAtApproval(context, taskId, requestId, base);
+        validateParent(applicant, taskId, s(proposed, "parentTaskId"),
+                base == null || !Objects.equals(s(base, "parentTaskId"), s(proposed, "parentTaskId")));
+        validateRequestActor(applicant, task, base, kind);
+    }
+
     /** Applies a request whose refreshed route has no reviewer at all, with the reason persisted. */
     private void applyWithoutReviewer(Actor actor, Map<String, Object> task, Map<String, Object> request, Route route) {
         String taskId = s(task, "id");
@@ -697,6 +711,14 @@ public class TaskService {
         String kind = s(request, "kind");
         Map<String, Object> proposed = version(actor, s(request, "proposedVersionId"));
         Map<String, Object> base = s(request, "baseVersionId") == null ? null : version(actor, s(request, "baseVersionId"));
+        try {
+            validateApplicationEffect(actor, task, request, proposed, base, kind);
+        } catch (ApiException blocked) {
+            // The organization change itself must still complete. The old proposal stays pending and
+            // frozen; it can never be published with authority the applicant no longer holds, and it is
+            // ended by the documented deadline/withdrawal paths instead of a fabricated approval.
+            return;
+        }
         Timestamp now = now();
         int changed = db.update(NO_REVIEWER_APPLY_SQL,
                 noReviewerApplyArgs(route, now, actor.organizationId(), requestId, n(request, "rowVersion")));
