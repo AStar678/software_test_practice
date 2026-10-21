@@ -788,6 +788,81 @@ async function main() {
     if (shots) await browser.screenshot(path.join(shots, "task-form-narrow.png"), 390, 844);
     await browser.setViewport(1440, 900);
     await sleep(200);
+
+    // V-001: returning to the retained table from another main page must re-query the full current
+    // authorization set while preserving filters/sort/page/scroll and masking the old rows/counts.
+    await browser.evaluate(setValue("p-filter-query", "TFbulk"));
+    await sleep(400);
+    await resetPage(browser);
+    await browser.evaluate("document.querySelector('[data-action=\"task-table-next\"]').click()");
+    await sleep(150);
+    await browser.evaluate("document.querySelector('[data-action=\"task-table-next\"]').click()");
+    await sleep(150);
+    await browser.evaluate("document.getElementById('p-table-scroll').scrollTop = 160");
+    const retainedTable = await browser.evaluate("({ page: window.Pandora.taskForm.state.page, query: window.Pandora.taskForm.state.filters.query, rows: window.Pandora.taskForm.state.rows.length, scroll: document.getElementById('p-table-scroll').scrollTop })");
+    await browser.evaluate("setPage('log')");
+    await waitFor(browser, "state.page === 'log' && !!document.querySelector('.p-log-header')");
+    await browser.evaluate(`(() => {
+      window.__tfNavSavedFetch = window.fetch;
+      window.__tfNavMode = 'delay';
+      window.__tfNavGets = 0;
+      window.fetch = function (input, init) {
+        const url = String(input);
+        if (!url.includes('/tasks?')) return window.__tfNavSavedFetch(input, init);
+        window.__tfNavGets += 1;
+        const empty = () => new Response(JSON.stringify({ items: [], total: 0, nextCursor: null }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        if (window.__tfNavMode === 'empty') return new Promise((resolve) => setTimeout(() => resolve(empty()), 400));
+        if (window.__tfNavMode === 'fail') return new Promise((resolve) => setTimeout(() => resolve(new Response(JSON.stringify({ message: '返回刷新失败' }), { status: 500, headers: { 'Content-Type': 'application/json' } })), 300));
+        return new Promise((resolve) => setTimeout(() => resolve(window.__tfNavSavedFetch(input, init)), 300));
+      };
+    })()`);
+    await browser.evaluate("setPage('view')");
+    await sleep(80);
+    const returnMasked = await browser.evaluate("({ loading: window.Pandora.taskForm.state.loading, body: document.getElementById('p-table-body').innerText, counts: document.getElementById('p-table-counts').innerText, rendered: document.querySelectorAll('#p-table-body tr[data-task-row]').length })");
+    await waitFor(browser, "window.Pandora.taskForm.state.loaded && !window.Pandora.taskForm.state.loading");
+    await sleep(150);
+    const returnFresh = await browser.evaluate("({ requests: window.__tfNavGets, page: window.Pandora.taskForm.state.page, query: window.Pandora.taskForm.state.filters.query, rows: window.Pandora.taskForm.state.rows.length, rendered: document.querySelectorAll('#p-table-body tr[data-task-row]').length, scroll: document.getElementById('p-table-scroll').scrollTop })");
+    check("A-27 returning from another main page re-queries the retained table, masks old rows/counts and keeps filters/page/scroll",
+      returnMasked.loading && /正在加载当前授权任务/.test(returnMasked.body) && /正在加载/.test(returnMasked.counts) && returnMasked.rendered === 0
+      && returnFresh.requests > 0 && returnFresh.page === retainedTable.page && returnFresh.query === retainedTable.query
+      && returnFresh.rows === retainedTable.rows && returnFresh.rendered === 50 && Math.abs(returnFresh.scroll - retainedTable.scroll) <= 4,
+      { retainedTable, returnMasked, returnFresh });
+
+    // Same transition with the current authorization now empty: old rows must disappear and the
+    // retained page must clamp while the conditions stay usable.
+    await browser.evaluate("setPage('log')");
+    await waitFor(browser, "state.page === 'log'");
+    await browser.evaluate("window.__tfNavMode = 'empty'; window.__tfNavGets = 0");
+    await browser.evaluate("setPage('view')");
+    await sleep(80);
+    const emptyMasked = await browser.evaluate("({ loading: window.Pandora.taskForm.state.loading, rendered: document.querySelectorAll('#p-table-body tr[data-task-row]').length })");
+    await waitFor(browser, "window.Pandora.taskForm.state.loaded && !window.Pandora.taskForm.state.loading");
+    await sleep(120);
+    const emptyReturn = await browser.evaluate("({ requests: window.__tfNavGets, rows: window.Pandora.taskForm.state.rows.length, page: window.Pandora.taskForm.state.page, query: window.Pandora.taskForm.state.filters.query, body: document.getElementById('p-table-body').innerText })");
+    check("A-27 a return refresh with removed authorization drops old rows, clamps the page and keeps the conditions",
+      emptyMasked.loading && emptyMasked.rendered === 0 && emptyReturn.requests > 0 && emptyReturn.rows === 0 && emptyReturn.page === 0
+      && emptyReturn.query === "TFbulk" && /当前没有可查看的任务/.test(emptyReturn.body),
+      { emptyMasked, emptyReturn });
+
+    // A failed return query must expose retry instead of the retained result.
+    await browser.evaluate("setPage('log')");
+    await waitFor(browser, "state.page === 'log'");
+    await browser.evaluate("window.__tfNavMode = 'fail'; window.__tfNavGets = 0");
+    await browser.evaluate("setPage('view')");
+    await waitFor(browser, "!!window.Pandora.taskForm.state.error");
+    const failedReturn = await browser.evaluate("({ requests: window.__tfNavGets, error: window.Pandora.taskForm.state.error, body: document.getElementById('p-table-body').innerText, counts: document.getElementById('p-table-counts').innerText, retry: !!document.querySelector('[data-action=\"task-table-retry\"]') })");
+    await browser.evaluate("window.__tfNavMode = 'delay'; document.querySelector('[data-action=\"task-table-retry\"]').click()");
+    await waitFor(browser, "window.Pandora.taskForm.state.loaded && !window.Pandora.taskForm.state.loading");
+    await sleep(100);
+    const retriedReturn = await browser.evaluate("({ rows: window.Pandora.taskForm.state.rows.length, query: window.Pandora.taskForm.state.filters.query, rendered: document.querySelectorAll('#p-table-body tr[data-task-row]').length })");
+    check("A-27 a failed return refresh shows retry and the retry restores current rows without losing conditions",
+      failedReturn.requests > 0 && failedReturn.error && /任务加载失败/.test(failedReturn.body) && /加载失败/.test(failedReturn.counts) && failedReturn.retry
+      && retriedReturn.rows > 0 && retriedReturn.query === "TFbulk" && retriedReturn.rendered > 0,
+      { failedReturn, retriedReturn });
+    await browser.evaluate("window.fetch = window.__tfNavSavedFetch; window.__tfNavMode = 'delay';");
+    await browser.evaluate(setValue("p-filter-query", ""));
+    await sleep(400);
+
     await browser.evaluate("TASKS.splice(0); window.Pandora.data.rawTasks = []; window.Pandora.taskForm.state.rows = []; window.Pandora.taskForm.state.loaded = true; window.Pandora.taskForm.paint();");
     await sleep(120);
     const noTasks = await browser.evaluate("({ body: document.getElementById('p-table-body').innerText, refresh: !!document.querySelector('[data-action=\"task-table-refresh\"]'), counts: Array.from(document.querySelectorAll('#p-table-counts [data-count] b')).map(el => Number(el.textContent)) })");
@@ -862,23 +937,27 @@ async function main() {
   try {
     await login(switchBrowser, "middle", password);
     await openTable(switchBrowser);
+    await switchBrowser.evaluate("setPage('log')");
+    await waitFor(switchBrowser, "state.page === 'log'");
     await switchBrowser.evaluate(`(() => {
       window.__tfOriginalFetch = window.__tfOriginalFetch || window.fetch;
       window.__tfSlowTasks = true;
+      window.__tfSlowGets = 0;
       window.fetch = function (input, init) {
         const url = String(input);
+        if (url.includes('/tasks?')) window.__tfSlowGets += 1;
         if (window.__tfSlowTasks && url.includes('/tasks?')) return new Promise((resolve) => setTimeout(() => resolve(window.__tfOriginalFetch(input, init)), 1200));
         return window.__tfOriginalFetch(input, init);
       };
-      window.Pandora.taskForm.refresh();
+      setPage('view');
     })()`);
     await sleep(100);
     await switchBrowser.evaluate("window.Pandora.busy(() => window.Pandora.logout())");
     await waitFor(switchBrowser, "!!document.getElementById('backend-login')");
     await sleep(1500);
-    const afterLogout = await switchBrowser.evaluate("({ login: !!document.getElementById('backend-login'), page: state.viewPage, rows: window.Pandora.taskForm.state.rows.length, filters: window.Pandora.taskForm.state.filters, ready: window.Pandora.ready })");
-    check("A-27 logout during an in-flight task refresh clears rows/filters and a late response cannot repopulate the table",
-      afterLogout.login && !afterLogout.ready && afterLogout.page === "calendar" && afterLogout.rows === 0
+    const afterLogout = await switchBrowser.evaluate("({ login: !!document.getElementById('backend-login'), page: state.viewPage, rows: window.Pandora.taskForm.state.rows.length, filters: window.Pandora.taskForm.state.filters, ready: window.Pandora.ready, requests: window.__tfSlowGets })");
+    check("A-27 logout during the in-flight refresh started by a main-page return clears rows/filters and a late response cannot repopulate the table",
+      afterLogout.requests > 0 && afterLogout.login && !afterLogout.ready && afterLogout.page === "calendar" && afterLogout.rows === 0
       && Object.values(afterLogout.filters).every((value) => value === "" || value === "all"), afterLogout);
     check("A-27 no uncaught script errors after the login switch and late response", switchBrowser.errors.length === 0, switchBrowser.errors.slice(0, 5));
   } finally {

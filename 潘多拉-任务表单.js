@@ -348,6 +348,8 @@
       body.innerHTML = emptyRow("正在加载当前授权任务…");
       if (countsEl) countsEl.innerHTML = '<span class="p-table-count is-muted">正在加载…</span>';
       if (pager) pager.innerHTML = "";
+      // Keep the reader's place across the masked refresh and restore it with the new rows.
+      if (scroller) T.scrollMemory = keepScroll;
       return;
     }
     if (T.error) {
@@ -355,6 +357,7 @@
       body.innerHTML = emptyRow("任务加载失败：" + esc(T.error), '<button type="button" class="btn tiny-btn primary" data-action="task-table-retry">重试</button>');
       if (countsEl) countsEl.innerHTML = '<span class="p-table-count is-muted">加载失败，未显示统计</span>';
       if (pager) pager.innerHTML = "";
+      if (scroller) T.scrollMemory = keepScroll;
       return;
     }
     if (!companyZone()) {
@@ -577,6 +580,18 @@
     if (phone) phone.classList.toggle("is-task-table", table);
     if (main) main.classList.toggle("is-task-table", table);
     previousRenderAll();
+  };
+
+  /* Main-navigation return into an already-open task table must re-query the full current
+     authorization set. Only that transition triggers a load; internal paints, sorting, paging and
+     ResizeObserver callbacks do not. Loading is set before the first render so retained rows and
+     counts never appear as current results while the query is in flight. */
+  const previousSetPage = setPage;
+  setPage = function (page) {
+    const returningToTable = page === "view" && state.page !== "view" && state.viewPage === "table" && !!P.ready;
+    if (returningToTable) { T.loading = true; T.error = null; }
+    previousSetPage(page);
+    if (returningToTable) refreshTable();
   };
 
   /* Test/automation surface: the same pure pipeline the page uses. */
