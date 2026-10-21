@@ -456,14 +456,57 @@
     const node = document.querySelector('[data-handover-target="' + source + '"]');
     return node ? node.value : "";
   }
+  function handoverOwners(raw, source, target) {
+    const owners = (raw.assigneeIds || []).slice();
+    const index = owners.indexOf(source);
+    if (index >= 0) owners[index] = target;
+    return owners;
+  }
+  function requestHandoverPreview(taskId, owners) {
+    return P.request("/tasks/reviewer-preview", { method: "POST", body: { taskId: taskId, assigneeIds: owners } });
+  }
+  function handoverPreviewText(preview) {
+    if (!preview) return "正在计算审核人…";
+    if (preview.error) return "暂时无法计算审核人：" + preview.error;
+    if (preview.requiresApproval) {
+      return "审核人：" + personName(preview.reviewerId, preview.route || {}) + "（提交后由该审核人处理）";
+    }
+    const reason = preview.route && preview.route.reasonText ? preview.route.reasonText : "无可用审核人";
+    return "无需审核人：" + reason + "；提交后直接生效。";
+  }
+  function refreshHandoverPreview(source) {
+    const ctx = handoverContext;
+    if (!ctx) return;
+    const target = selectedHandoverTarget(source);
+    ctx.selected[source] = target;
+    const element = document.getElementById("ho-preview-" + source);
+    const seq = (ctx.previewSeq[source] || 0) + 1;
+    ctx.previewSeq[source] = seq;
+    if (!target) {
+      if (element) element.textContent = "没有可用的交接对象";
+      return;
+    }
+    if (element) element.textContent = "正在计算审核人…";
+    requestHandoverPreview(ctx.taskId, handoverOwners(ctx.raw, source, target)).then(function (preview) {
+      if (handoverContext !== ctx || ctx.previewSeq[source] !== seq) return;
+      ctx.previews[source] = preview;
+      if (element) element.textContent = handoverPreviewText(preview);
+    }).catch(function (error) {
+      if (handoverContext !== ctx || ctx.previewSeq[source] !== seq) return;
+      const failed = { error: error.message };
+      ctx.previews[source] = failed;
+      if (element) element.textContent = handoverPreviewText(failed);
+    });
+  }
   function handoverFormView() {
     const ctx = handoverContext;
     if (!ctx) return null;
     const cards = ctx.sources.map(function (source) {
       const preset = ctx.presets[source];
+      const chosen = ctx.selected[source] || preset;
       const targets = ctx.targets[source] || [];
       let options = targets.map(function (person) {
-        return '<option value="' + attr(person.id) + '"' + (person.id === preset ? ' selected' : '') + '>' +
+        return '<option value="' + attr(person.id) + '"' + (person.id === chosen ? ' selected' : '') + '>' +
           esc(person.displayName) + (person.departmentName ? ' · ' + esc(person.departmentName) : '') + '</option>';
       }).join("");
       if (!options) options = '<option value="">没有可用的交接对象</option>';
@@ -471,6 +514,8 @@
         (preset ? '已保存预设' : '专用交接') + '</span></div>' +
         '<div class="field"><label for="ho-target-' + attr(source) + '">交接对象</label><select id="ho-target-' + attr(source) +
         '" data-handover-target="' + attr(source) + '">' + options + '</select></div>' +
+        '<div class="callout info" id="ho-preview-' + attr(source) + '" aria-live="polite">' +
+        esc(handoverPreviewText(ctx.previews[source])) + '</div>' +
         '<div class="row wrap"><button type="button" class="btn ghost" data-action="p-save-handover-preset" data-id="' + attr(source) + '">保存为预设</button>' +
         '<button type="button" class="btn primary" data-action="p-confirm-handover" data-id="' + attr(source) + '">发起专用交接</button></div></section>';
     }).join("");
@@ -489,14 +534,22 @@
       if (!stillHere(mark)) return;
       const sources = (raw.handoverSources || []).slice();
       if (!sources.length) { P.notice("当前账号没有该任务的专用交接权限。"); return; }
-      const targets = {};
+      const targets = {}, selected = {}, previews = {};
+      const presets = raw.handoverPresets || {};
       for (const source of sources) {
         const data = await P.request("/handover-targets?subjectId=" + encodeURIComponent(source));
         if (!stillHere(mark)) return;
         targets[source] = data.items || [];
+        const preset = presets[source];
+        selected[source] = targets[source].some(function (person) { return person.id === preset; })
+          ? preset : (targets[source][0] ? targets[source][0].id : "");
+        previews[source] = selected[source]
+          ? await requestHandoverPreview(taskId, handoverOwners(raw, source, selected[source]))
+          : { error: "没有可用的交接对象" };
+        if (!stillHere(mark)) return;
       }
       handoverContext = { taskId: taskId, raw: raw, etag: taskTag(raw), sources: sources,
-        targets: targets, presets: raw.handoverPresets || {}, mark: mark };
+        targets: targets, presets: presets, selected: selected, previews: previews, previewSeq: {}, mark: mark };
       openSheet(handoverFormView());
     });
   }
@@ -509,6 +562,7 @@
       await P.mutation("handover-preset:" + ctx.taskId + ":" + source, "PUT",
         "/users/" + encodeURIComponent(source) + "/handover-preset", { targetUserId: target }, null);
       ctx.presets[source] = target;
+      ctx.selected[source] = target;
       replaceTopSheet(handoverFormView());
       P.notice("交接预设已保存。");
     }, "handover-error");
@@ -614,4 +668,13 @@
     if (action === "p-resubmit-create") return resubmitCreate(id);
     return originalRunAction(element);
   };
+
+  // Target changes must refresh the actual proposed reviewer before submission; the preview is only a
+  // display, the submit transaction still recomputes the route.
+  document.addEventListener("change", function (event) {
+    const target = event.target;
+    if (!target || typeof target.closest !== "function") return;
+    const select = target.closest("[data-handover-target]");
+    if (select) refreshHandoverPreview(select.dataset.handoverTarget);
+  });
 })();

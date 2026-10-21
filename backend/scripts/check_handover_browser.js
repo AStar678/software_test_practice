@@ -97,6 +97,7 @@ async function waitFor(browser, expression, timeout = 10000) {
 }
 const text = (selector) => `((document.querySelector(${JSON.stringify(selector)}) || {}).textContent || "")`;
 const setValue = (id, value) => `(() => { const el = document.getElementById(${JSON.stringify(id)}); if (!el) return false; el.value = ${JSON.stringify(value)}; el.dispatchEvent(new Event("input", {bubbles:true})); return true; })()`;
+const setSelect = (id, value) => `(() => { const el = document.getElementById(${JSON.stringify(id)}); if (!el) return false; el.value = ${JSON.stringify(value)}; el.dispatchEvent(new Event("change", {bubbles:true})); return true; })()`;
 const submit = (id) => `(() => { const el = document.getElementById(${JSON.stringify(id)}); if (!el) return false; el.requestSubmit(); return true; })()`;
 const clickText = (label) => `(() => { const el = Array.from(document.querySelectorAll("button")).find(b => (b.textContent || "").trim() === ${JSON.stringify(label)}); if (!el) return false; el.click(); return true; })()`;
 const visible = (label) => `(() => { const el = Array.from(document.querySelectorAll("button")).find(b => (b.textContent || "").trim() === ${JSON.stringify(label)}); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.right <= innerWidth + 1 && r.left >= -1 && r.top >= -1 && r.bottom <= innerHeight + 1; })()`;
@@ -188,6 +189,17 @@ async function main() {
     check("V-010 the handover sheet opens", await waitFor(browser, text("#sheetTitle") + " === '专用交接'"));
     const presetSelected = await browser.evaluate(`(document.querySelector('[data-handover-target="${employeeMe.id}"]') || {}).value === ${JSON.stringify(colleagueMe.id)}`);
     check("V-010 the saved preset is preselected in the handover sheet", presetSelected);
+    await waitFor(browser, `(document.getElementById('ho-preview-${employeeMe.id}') || {}).textContent.includes('审核人')`);
+    const colleaguePreview = await browser.evaluate(`(document.getElementById('ho-preview-${employeeMe.id}') || {}).textContent || ""`);
+    check("V-010 the form shows the actual new reviewer for the selected colleague", colleaguePreview.includes("李敏"),
+      { preview: colleaguePreview });
+    await browser.evaluate(setSelect("ho-target-" + employeeMe.id, middleMe.id));
+    const upperPreview = await waitFor(browser, `(document.getElementById('ho-preview-${employeeMe.id}') || {}).textContent.includes('王海')`, 10000)
+      ? await browser.evaluate(`(document.getElementById('ho-preview-${employeeMe.id}') || {}).textContent || ""`) : "";
+    check("V-010 changing the target updates the proposed reviewer before submit", upperPreview.includes("王海"),
+      { preview: upperPreview });
+    await browser.evaluate(setSelect("ho-target-" + employeeMe.id, colleagueMe.id));
+    await waitFor(browser, `(document.getElementById('ho-preview-${employeeMe.id}') || {}).textContent.includes('李敏')`, 10000);
     await browser.evaluate(clickText("发起专用交接"));
     const requestPending = await waitFor(browser, "document.getElementById('overlay').hidden === true");
     check("V-010 submitting the handover closes the sheet after the pending request", requestPending);
@@ -195,6 +207,9 @@ async function main() {
     const pendingHandover = (requests.body.items || []).find((row) => row.taskId === employeeTask && row.kind === "handover" && row.status === "pending");
     check("V-010 the page submission creates a pending handover", !!pendingHandover,
       pendingHandover || requests.body);
+    check("V-010 the pre-submit reviewer matches the pending request reviewer",
+      !!pendingHandover && pendingHandover.currentReviewerId === middleMe.id,
+      pendingHandover && pendingHandover.currentReviewerId);
     if (pendingHandover) {
       const current = await api(base, "GET", "/api/v1/approval-requests/" + pendingHandover.id, { token: middle });
       await api(base, "PATCH", "/api/v1/approval-requests/" + pendingHandover.id, { token: middle, key: key(),
@@ -210,7 +225,11 @@ async function main() {
       await waitFor(browser, `Array.from(document.querySelectorAll('#sheetFoot button')).some(b => b.textContent.trim() === '专用交接')`));
     await browser.evaluate(clickText("专用交接"));
     check("V-010 the manager handover sheet opens", await waitFor(browser, text("#sheetTitle") + " === '专用交接'"));
-    await browser.evaluate(setValue("ho-target-" + employeeMe.id, middleMe.id));
+    await browser.evaluate(setSelect("ho-target-" + employeeMe.id, middleMe.id));
+    await waitFor(browser, `(document.getElementById('ho-preview-${employeeMe.id}') || {}).textContent.includes('王海')`, 10000);
+    const managerPreview = await browser.evaluate(`(document.getElementById('ho-preview-${employeeMe.id}') || {}).textContent || ""`);
+    check("V-010 the manager sees the actual new reviewer before submit", managerPreview.includes("王海"),
+      { preview: managerPreview });
     await browser.evaluate(clickText("保存为预设"));
     await waitFor(browser, "window.Pandora.idle()");
     await sleep(300);
