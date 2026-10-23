@@ -1,0 +1,5 @@
+.build/
+*.idsig
+*.jks
+*.keystore
+__pycache__/

@@ -1,0 +1,22 @@
+/* Load after the website styles. Keep the website's theme and scroll regions.
+   The website owns body height through --app-height / visualViewport so that
+   forms still resize when the keyboard opens. */
+.android-native .stage {
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+}
+
+.android-native .phone {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  min-height: 0;
+}
+
+/* The existing Android chrome supplies these two navigation regions. */
+.android-native .app-header,
+.android-native #tabbar {
+  display: none !important;
+}

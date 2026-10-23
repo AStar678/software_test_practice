@@ -413,9 +413,6 @@ public final class MainActivity extends Activity {
     TextView date = u.text(today.getMonthValue() + "月" + today.getDayOfMonth() + "日", 26, Ui.INK);
     heading.addView(date, new LinearLayout.LayoutParams(0, u.dp(80), 1));
     date.setGravity(Gravity.CENTER_VERTICAL);
-    LinearLayout create = u.column();
-    u.button(create, "＋ 新建任务", true, () -> tasksUi.form(null, false));
-    heading.addView(create, new LinearLayout.LayoutParams(u.dp(132), -2));
     box.addView(heading);
     LinearLayout shortcuts = u.card(box);
     long pending =
