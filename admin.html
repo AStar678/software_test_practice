@@ -2,42 +2,99 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>潘多拉 · 管理端</title>
 <style>
-  :root { color-scheme: light; --line:#d8dbe2; --ink:#1f2430; --muted:#69707d; --brand:#3f6ad8; --danger:#c0392b; }
+  :root { color-scheme: light; --line:#dce5e5; --ink:#193130; --muted:#627674; --brand:#14766e; --danger:#b43232; --surface:#f4f7f8; }
   * { box-sizing: border-box; }
-  body { margin:0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; color:var(--ink); background:#f5f6f8; }
-  header { background:#fff; border-bottom:1px solid var(--line); padding:12px 20px; display:flex; align-items:center; gap:16px; }
-  header h1 { font-size:17px; margin:0; }
+  [hidden] { display:none !important; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; font-family:-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; color:var(--ink); background:var(--surface); font-size:15px; line-height:1.6; overflow-wrap:anywhere; }
+  button, input, select, textarea { font:inherit; color:inherit; }
+  button { min-height:44px; touch-action:manipulation; }
+  button:disabled { cursor:default; opacity:.5; }
+  :focus-visible { outline:3px solid #69b9ad; outline-offset:3px; }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:16px max(24px, env(safe-area-inset-right)) 16px max(24px, env(safe-area-inset-left)); display:flex; align-items:center; gap:16px; }
+  header h1 { font-size:19px; letter-spacing:-.5px; margin:0; }
   header .who { margin-left:auto; color:var(--muted); font-size:13px; }
-  main { padding:16px 20px 60px; max-width:1180px; margin:0 auto; }
-  nav { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
-  nav button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 14px; cursor:pointer; font-size:13px; }
+  #scope { font-size:12px; }
+  main { padding:24px max(20px, env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); max-width:1240px; margin:0 auto; }
+  nav { display:flex; gap:8px; flex-wrap:nowrap; overflow-x:auto; padding:3px 2px 10px; margin:0 -2px 14px; scrollbar-width:thin; overscroll-behavior-x:contain; }
+  nav button { flex:0 0 auto; border:1px solid var(--line); background:#fff; border-radius:10px; padding:9px 16px; cursor:pointer; font-size:14px; white-space:nowrap; }
   nav button[aria-selected="true"] { background:var(--brand); border-color:var(--brand); color:#fff; }
-  section { display:none; background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px; }
+  section { display:none; background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px; min-width:0; overflow-x:auto; }
   section.active { display:block; }
-  h2 { font-size:15px; margin:0 0 12px; }
+  h2 { font-size:20px; margin:0 0 18px; letter-spacing:-.4px; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
-  th, td { text-align:left; padding:7px 8px; border-bottom:1px solid #eceef2; vertical-align:top; }
-  th { color:var(--muted); font-weight:600; }
-  input, select, textarea { font:inherit; font-size:13px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:#fff; }
-  button.primary { background:var(--brand); border:1px solid var(--brand); color:#fff; border-radius:6px; padding:7px 14px; cursor:pointer; font-size:13px; }
-  button.ghost { background:#fff; border:1px solid var(--line); border-radius:6px; padding:5px 10px; cursor:pointer; font-size:12px; }
-  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
-  .card { border:1px solid var(--line); border-radius:8px; padding:10px; margin-bottom:10px; font-size:13px; background:#fafbfc; }
+  th, td { text-align:left; padding:12px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:500; white-space:nowrap; font-size:12px; }
+  td:first-child { font-weight:600; }
+  td .cell-value { min-width:0; }
+  td[data-label="操作"] .cell-value { display:flex; flex-wrap:wrap; gap:6px; }
+  input, select, textarea { font-size:16px; min-height:44px; min-width:0; max-width:100%; padding:9px 11px; border:1px solid #cbd8d6; border-radius:10px; background:#fff; }
+  input::placeholder, textarea::placeholder { color:#788986; }
+  button.primary { background:var(--brand); border:1px solid var(--brand); color:#fff; border-radius:10px; padding:9px 16px; cursor:pointer; font-size:14px; font-weight:600; }
+  button.ghost { background:#fff; border:1px solid #cfddda; border-radius:10px; padding:9px 13px; cursor:pointer; font-size:14px; }
+  button.primary:hover { background:#10665f; }
+  button.ghost:hover { background:#edf5f3; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .row > input, .row > select { flex:1 1 180px; }
+  .card { border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:12px; font-size:14px; background:#f8faf9; }
+  #login { max-width:440px; margin:clamp(16px, 8vh, 90px) auto 0; padding:30px; background:#fff; }
+  #login h2 { font-size:26px; margin-bottom:6px; }
+  #login .row { display:grid; gap:12px; }
+  #login .row input, #login .row button { width:100%; }
+  #login .muted { font-size:13px; margin:0 0 22px; }
+  #login .login-note { margin:16px 0 0; }
   .muted { color:var(--muted); }
-  .error { color:var(--danger); font-size:13px; min-height:18px; }
-  .ok { color:#1e7f4f; font-size:13px; min-height:18px; }
-  .secret { font-family: ui-monospace, Menlo, monospace; background:#fff7e6; border:1px dashed #d9a300; padding:8px; border-radius:6px; display:inline-block; }
-  .tag { display:inline-block; background:#eef1f7; border-radius:4px; padding:1px 6px; margin-right:4px; font-size:12px; }
-  dialog { border:1px solid var(--line); border-radius:10px; padding:18px; width:min(560px, 92vw); }
-  dialog::backdrop { background:rgba(20,24,33,.45); }
-  label { display:block; font-size:12px; color:var(--muted); margin:8px 0 3px; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+  .error { color:var(--danger); font-size:14px; }
+  .ok { color:#196c51; font-size:14px; }
+  .error:not(:empty), .ok:not(:empty) { margin-top:12px; padding:12px; border-radius:10px; background:#fff0ee; }
+  .ok:not(:empty) { background:#e8f4ee; }
+  .secret { font-family:ui-monospace, Menlo, monospace; background:#fff7e6; border:1px dashed #d9a300; padding:8px; border-radius:6px; display:inline-block; max-width:100%; overflow-wrap:anywhere; }
+  .tag { display:inline-block; background:#edf4f2; color:#3c6861; border-radius:5px; padding:2px 6px; margin:2px 4px 2px 0; font-size:12px; max-width:100%; overflow-wrap:anywhere; }
+  dialog { border:1px solid var(--line); border-radius:18px; padding:24px; width:min(600px, calc(100vw - 24px)); max-width:calc(100vw - 24px); max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow-y:auto; overscroll-behavior:contain; }
+  dialog::backdrop { background:rgba(18,39,36,.48); }
+  dialog input, dialog select, dialog textarea { width:100%; }
+  dialog .row { margin-bottom:0; }
+  label { display:block; font-size:13px; color:var(--muted); margin:12px 0 6px; }
+  .grid2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0 16px; }
+  .grid2 > div { min-width:0; }
+  @media(max-width:760px) {
+    header { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 12px; padding:14px max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left)); }
+    header h1 { font-size:18px; }
+    #scope, header .who { grid-column:1; margin:0; font-size:12px; }
+    #scope:empty, header .who:empty { display:none; }
+    #logout { grid-column:2; grid-row:1 / 4; align-self:center; }
+    main { padding:16px max(12px, env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+    section { padding:16px 12px; border-radius:14px; overflow:visible; }
+    h2 { font-size:20px; }
+    .row { gap:8px; }
+    .row > input, .row > select { flex-basis:100%; width:100%; }
+    .row > button { flex:1 1 auto; }
+    nav { margin-bottom:10px; }
+    table, tbody { display:block; }
+    thead { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+    tbody { display:grid; gap:12px; }
+    tbody tr { display:block; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff; }
+    td { display:grid; grid-template-columns:76px minmax(0,1fr); gap:12px; padding:9px 12px; font-size:14px; border-bottom:0; }
+    td::before { content:attr(data-label); color:var(--muted); font-weight:400; font-size:12px; padding-top:2px; }
+    td:first-child { padding-top:12px; padding-bottom:10px; border-bottom:1px solid #edf2f1; margin-bottom:4px; }
+    td:first-child .cell-value { font-size:16px; }
+    td:last-child { padding-bottom:12px; }
+    td[data-label="操作"] { border-top:1px solid #edf2f1; margin-top:4px; padding-top:12px; }
+    td[data-label="操作"] .cell-value > select { flex-basis:100%; width:100%; }
+    td[data-label="操作"] .cell-value > button { flex:1 1 auto; }
+    .grid2 { grid-template-columns:minmax(0,1fr); }
+    dialog { padding:20px 18px; }
+    #login { margin-top:24px; padding:24px 20px; }
+  }
+  @media(prefers-reduced-motion:reduce) { *, *::before, *::after { scroll-behavior:auto !important; } }
 </style>
+<link rel="stylesheet" href="潘多拉-手账主题.css?v=20261021-kawaii">
+<link rel="icon" type="image/svg+xml" href="潘多拉-手账标记.svg">
 </head>
-<body>
+<body class="pandora-admin">
 <header>
   <h1>潘多拉 · 管理端</h1>
   <span class="muted" id="scope"></span>
@@ -540,6 +597,35 @@ function logout() {
     state.user = { displayName: me.displayName, username: me.username, role: me.role };
     enterConsole();
   } catch (error) { localStorage.removeItem('pandora.admin.token'); }
+})();
+
+// Adapt all current management tables without changing their data or actions.
+(function labelManagementTables() {
+  const observer = new MutationObserver(label);
+  function label() {
+    observer.disconnect();
+    document.querySelectorAll('table').forEach(table => {
+      table.setAttribute('role','table');
+      const headings = Array.from(table.querySelectorAll('thead th'), heading => {
+        heading.scope = 'col';
+        heading.setAttribute('role','columnheader');
+        if (!heading.textContent.trim()) heading.textContent = '操作';
+        return heading.textContent.trim();
+      });
+      table.querySelectorAll('tbody tr').forEach(row => {
+        row.setAttribute('role','row');
+        Array.from(row.cells).forEach((cell,index) => {
+          cell.setAttribute('role','cell');
+          cell.dataset.label = headings[index] || '内容';
+          if (cell.querySelector(':scope > .cell-value')) return;
+          const value = document.createElement('div'); value.className = 'cell-value';
+          value.append(...Array.from(cell.childNodes)); cell.appendChild(value);
+        });
+      });
+    });
+    observer.observe(document.body,{childList:true,subtree:true});
+  }
+  label();
 })();
 </script>
 </body>

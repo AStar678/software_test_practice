@@ -1,0 +1,80 @@
+import groovy.json.JsonOutput
+
+plugins {
+    id 'com.android.application'
+}
+
+def website = new Properties()
+rootProject.file('website.properties').withInputStream { website.load(it) }
+def webUrl = providers.gradleProperty('pandora.webUrl').getOrElse(website.getProperty('webUrl', '')).trim()
+def allowHttp = providers.gradleProperty('pandora.allowHttp').getOrElse(website.getProperty('allowHttp', 'false')).toBoolean()
+def webHost = ''
+if (webUrl) {
+    def uri = new URI(webUrl).parseServerAuthority()
+    if (!(uri.scheme in ['https', 'http']) || !uri.host || uri.userInfo || uri.port > 65535 || uri.port == 0) {
+        throw new GradleException('pandora.webUrl must be an absolute HTTP(S) URL without credentials.')
+    }
+    if (uri.scheme == 'http' && !allowHttp) {
+        throw new GradleException('HTTP website requires pandora.allowHttp=true.')
+    }
+    webHost = uri.host
+} else if (allowHttp) {
+    throw new GradleException('HTTP requires a fixed website host; set webUrl or disable allowHttp.')
+}
+
+def generatedNetworkResources = layout.buildDirectory.dir('generated/networkSecurity/res')
+def generateNetworkSecurity = tasks.register('generateNetworkSecurity') {
+    inputs.property('allowHttp', allowHttp)
+    inputs.property('webHost', webHost)
+    outputs.dir(generatedNetworkResources)
+    doLast {
+        def xml = generatedNetworkResources.get().file('xml/network_security_config.xml').asFile
+        xml.parentFile.mkdirs()
+        def domain = allowHttp ? "<domain-config cleartextTrafficPermitted=\"true\"><domain includeSubdomains=\"false\">${webHost}</domain></domain-config>" : ''
+        xml.text = """<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    ${domain}
+</network-security-config>
+"""
+    }
+}
+
+android {
+    namespace 'cn.pandora.mobile'
+    compileSdk 36
+    buildToolsVersion '35.0.0'
+
+    defaultConfig {
+        applicationId 'cn.pandora.workspace'
+        minSdk 26
+        targetSdk 36
+        versionCode 4
+        versionName '1.0.0-native'
+        buildConfigField 'String', 'START_URL', JsonOutput.toJson(webUrl)
+        buildConfigField 'boolean', 'ALLOW_HTTP', allowHttp.toString()
+    }
+
+    buildFeatures { buildConfig true }
+    buildTypes {
+        debug { applicationIdSuffix '.debug' }
+        release {
+            minifyEnabled false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets.main.res.srcDir generatedNetworkResources
+    lint {
+        abortOnError true
+        checkReleaseBuilds true
+    }
+}
+
+tasks.named('preBuild').configure { dependsOn generateNetworkSecurity }
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}

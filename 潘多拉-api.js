@@ -14,10 +14,15 @@
   P.sessionReset = [];
   const cancelled = () => Object.assign(new Error("账号已切换，请重新操作。"), { name: "AbortError" });
   const version = row => '"' + row.rowVersion + '"';
-  const note = document.querySelector(".preview-note");
-  note.setAttribute("role", "status");
-  note.setAttribute("aria-live", "polite");
-  P.notice = message => { note.textContent = message; };
+  const note = document.getElementById("appNotice");
+  let noticeTimer;
+  P.notice = message => {
+    if (!note) return;
+    clearTimeout(noticeTimer);
+    note.textContent = message || "";
+    note.hidden = !message;
+    if (message) noticeTimer = setTimeout(() => { note.hidden = true; }, 5000);
+  };
 
   function clearData() {
     P.ready = false; P.data = {};
@@ -33,6 +38,7 @@
     P.sessionReset.forEach(fn => { try { fn(); } catch (_) { /* a page reset must never block logout */ } });
   }
   function gate() {
+    document.querySelector(".app").classList.toggle("is-auth", !P.ready);
     document.querySelectorAll("#tabbar button, #bellBtn").forEach(el => { el.disabled = !P.ready; });
     if (!P.ready) {
       document.querySelector(".phone").classList.remove("is-schedule");
@@ -45,12 +51,13 @@
     document.getElementById("appMain").classList.remove("is-map");
     document.getElementById("pageTitle").textContent = "登录";
     document.querySelectorAll(".role-switch button").forEach(b => b.setAttribute("aria-pressed", "false"));
-    document.getElementById("page-map").innerHTML = '<section class="card"><div class="card-head"><h2>登录潘多拉</h2></div>' +
-      '<form id="backend-login"><div class="field"><label for="login-user">账号</label><input id="login-user" type="text" name="username" autocomplete="username" required value="' + esc(username || "upper") + '"></div>' +
-      '<div class="field"><label for="login-password">密码</label><input id="login-password" name="password" type="password" autocomplete="current-password" required></div>' +
-      '<p class="tiny muted">演示账号：upper / middle / employee<br>初始密码：Demo@123456</p>' +
-      '<div class="callout" id="login-error"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
-      '<button type="submit" class="btn primary">登录</button></form></section>';
+    document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div>' +
+      '<div class="auth-copy"><p class="eyebrow">PANDORA WORKSPACE</p><h2>让每一天，<br>有序向前。</h2><p>登录你的工作台，查看任务与团队动态。</p></div>' +
+      '<form id="backend-login"><div class="field"><label for="login-user">工作账号</label><input id="login-user" type="text" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="请输入账号" required value="' + esc(username || "") + '"></div>' +
+      '<div class="field"><label for="login-password">密码</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required></div>' +
+      '<div class="callout" id="login-error" role="alert"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
+      '<button type="submit" class="btn primary auth-submit">登录工作台</button></form>' +
+      '<p class="auth-help">账号与密码由公司管理员提供。忘记密码请联系管理员。</p><a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
     gate();
     document.getElementById("backend-login").addEventListener("submit", event => {
       event.preventDefault();
@@ -74,14 +81,14 @@
     document.getElementById("appMain").classList.remove("is-map");
     document.getElementById("pageTitle").textContent = "修改密码";
     document.querySelectorAll(".role-switch button").forEach(b => b.setAttribute("aria-pressed", "false"));
-    document.getElementById("page-map").innerHTML = '<section class="card"><div class="card-head"><h2>首次登录必须修改密码</h2></div>' +
-      '<p class="tiny muted">当前会话仅可修改密码或退出，业务数据在改密前不会加载。</p>' +
+    document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div><div class="auth-copy"><h2>设置你的新密码</h2>' +
+      '<p>首次登录请先修改初始密码，完成后即可进入工作台。</p></div>' +
       '<form id="backend-password">' +
       '<div class="field"><label for="pw-current">当前密码</label><input id="pw-current" name="currentPassword" type="password" autocomplete="current-password" required></div>' +
       '<div class="field"><label for="pw-new">新密码</label><input id="pw-new" name="newPassword" type="password" autocomplete="new-password" required></div>' +
       '<div class="field"><label for="pw-confirm">确认新密码</label><input id="pw-confirm" type="password" autocomplete="new-password" required></div>' +
-      '<p class="tiny muted">至少10个字符，须同时含字母和数字，UTF-8 长度不超过72字节。改密成功后所有会话失效，需重新登录。</p>' +
-      '<div class="callout" id="password-error"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
+      '<p class="tiny muted">至少10个字符，须同时包含字母和数字，UTF-8 长度不超过72字节。修改成功后，请使用新密码重新登录。</p>' +
+      '<div class="callout" id="password-error" role="alert"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
       '<div class="row"><button type="submit" class="btn primary">修改密码</button>' +
       '<button type="button" class="btn" id="password-logout">退出登录</button></div></form></section>';
     gate();
@@ -116,8 +123,9 @@
     document.getElementById("appMain").classList.remove("is-map");
     document.querySelectorAll(".page").forEach(el => { el.classList.toggle("is-active", el.id === "page-map"); el.innerHTML = ""; });
     document.getElementById("pageTitle").textContent = "连接后端";
-    document.getElementById("page-map").innerHTML = '<section class="card"><div class="callout">' + esc(error.message) +
-      '</div><div class="row"><button class="btn primary" data-backend-retry>重新加载</button><button class="btn" data-backend-logout>切换账号</button></div></section>';
+    document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div>' +
+      '<div class="auth-copy"><h2>暂时无法打开工作台</h2><p>请检查网络连接后重试。</p></div><div class="callout" role="alert">' + esc(error.message) +
+      '</div><div class="action-grid"><button class="btn primary" data-backend-retry>重新加载</button><button class="btn" data-backend-logout>退出登录</button></div><a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
     P.notice("数据加载失败，请检查后端服务后重试。");
   }
   P.request = async function (path, options) {
@@ -262,9 +270,10 @@
     ]);
     if (epoch !== P.epoch || sequence !== reloadSequence) throw cancelled();
     if (!taskSnapshotIsCurrent(snapshot)) throw cancelled();
-    P.data = { me, users, rawTasks: snapshot.rows, approvals, home, analytics, logAuthors, reports };
+    P.data = { me, users, rawTasks: snapshot.rows, approvals, home, analytics, logAuthors, reports, calendarLogs: logs.slice() };
     // A data reload starts the log page on the default self scope; the page itself preserves
     // the user's search text and author selection until the next explicit reload.
+    state.logDepartmentId = "__all__";
     state.logAll = false;
     state.logAuthorId = me.id;
     const people = new Map(users.map(u => [u.id, mapPerson(u)])); people.set(me.id, mapPerson(me));
@@ -279,13 +288,13 @@
     PERSONAL_STATE[me.id] = { edited: true, items: home.personalItems.map(i => ({ id: i.id, text: i.body || i.title, raw: i })) };
     [[approvals, P.approvalEtags], [logs, P.logEtags], [notifications, P.notificationEtags]].forEach(([rows, map]) => { map.clear(); rows.forEach(row => map.set(row.id || row.taskId, version(row))); });
     retries.clear(); P.ready = true; gate(); renderAll();
-    P.notice("已连接本地数据库 · " + me.displayName);
     return P.data;
   };
   P.logout = async function (username) {
     if (P.token) await P.request("/auth/sessions/current", { method: "DELETE" });
     P.epoch++; P.token = ""; sessionStorage.removeItem(SESSION_KEY);
     clearData(); state.logFilter = "logs"; state.logsMineOnly = false; state.logAuthorQuery = "";
+    state.logDepartmentId = "__all__";
     state.logAll = false; state.logAuthorId = null; state.pickerOpen = false;
     loginPage(typeof username === "string" ? username : "upper"); P.notice("请使用真实账号登录。");
   };

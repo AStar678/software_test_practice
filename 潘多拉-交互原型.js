@@ -1429,25 +1429,37 @@ function renderSheet(){
   if (!sheetStack.length){
     sheet.classList.remove("is-fullscreen");
     overlayEl.hidden = true;
+    document.querySelector(".app").inert = false;
     document.getElementById("sheetFoot").hidden = false;
     if (lastFocused && document.contains(lastFocused)) lastFocused.focus();
     lastFocused = null;
     return;
   }
   const view = sheetStack[sheetStack.length - 1];
+  document.getElementById("sheetClose").hidden = !!view.notification;
+  document.getElementById("sheetBack").hidden = !view.notification;
   sheet.classList.toggle("is-fullscreen", !!view.fullscreen);
   sheetTitleEl.textContent = view.title;
   sheetBodyEl.innerHTML = view.body;
   sheetFootEl.innerHTML = view.foot || "";
-  sheetFootEl.hidden = !view.foot;
+  if (view.notification) {
+    sheetFootEl.querySelectorAll('[data-action="sheet-close"], [data-action="sheet-back"]').forEach(button => button.remove());
+  }
+  sheetFootEl.hidden = !sheetFootEl.children.length;
   overlayEl.hidden = false;
+  document.querySelector(".app").inert = true;
   sheetBodyEl.scrollTop = 0;
   const target = sheetBodyEl.querySelector("[data-autofocus]") ||
     sheetFootEl.querySelector("button") ||
     sheetBodyEl.querySelector("button, input, select, textarea") || document.getElementById("sheetClose");
-  if (target) target.focus();
+  const headerTarget = document.getElementById(view.notification ? "sheetBack" : "sheetClose");
+  if (target) (matchMedia("(max-width: 600px)").matches ? headerTarget : target).focus({ preventScroll: true });
 }
 function openSheet(view){
+  // 从通知进入的任务、申请详情继续使用同一套返回导航。
+  if (sheetStack.some(item => item.notification)) {
+    view = { ...view, notification: true };
+  }
   if (!lastFocused) lastFocused = document.activeElement;
   sheetStack.push(view);
   renderSheet();
@@ -1623,7 +1635,7 @@ function notificationsView(){
               esc(fmtDateTime(n.time)) + (isRead ? "" : " · 未读") + "</span></span></button>";
       }).join("")
     : '<div class="empty">暂无通知</div>';
-  return { title: "通知", body: body };
+  return { title: "通知", notification: true, body: body };
 }
 
 /* ---------- 请示详情：通知里 targetType=consult 的跳转目标 ---------- */
@@ -2376,7 +2388,7 @@ function openNotifications(){
 }
 
 /* ============================== 事件与渲染调度 ============================== */
-const PAGE_TITLE = { map: "导图", view: "视图", log: "日志", ai: "AI地图", me: "我的" };
+const PAGE_TITLE = { map: "工作台", view: "日程", log: "记录", ai: "统计", me: "我的" };
 const RENDER = { map: renderMap, view: renderView, log: renderLog, ai: renderAI, me: renderMe };
 
 function updateToTop(){
@@ -2391,6 +2403,7 @@ function renderAll(){
   document.getElementById("pageTitle").textContent = PAGE_TITLE[state.page];
   document.querySelectorAll("#tabbar button").forEach(function(b){
     b.setAttribute("aria-selected", String(b.dataset.page === state.page));
+    b.tabIndex = b.dataset.page === state.page ? 0 : -1;
   });
   document.querySelectorAll(".page").forEach(function(p){
     p.classList.toggle("is-active", p.id === "page-" + state.page);
@@ -2708,6 +2721,9 @@ document.addEventListener("click", function(ev){
 
 document.getElementById("bellBtn").addEventListener("click", openNotifications);
 document.getElementById("sheetClose").addEventListener("click", closeSheet);
+document.getElementById("sheetBack").addEventListener("click", function(){
+  if (sheetStack.length > 1) backSheet(); else closeSheet();
+});
 
 /* 日志页回到顶部：仅在内容区离开顶部后出现 */
 document.getElementById("appMain").addEventListener("scroll", updateToTop);
@@ -2726,7 +2742,7 @@ document.addEventListener("keydown", function(ev){
   if (ev.key === "Tab"){
     const focusables = sheetBodyEl.querySelectorAll("button, input, select, textarea, [href]");
     const footFocusables = sheetFootEl.querySelectorAll("button");
-    const list = [document.getElementById("sheetClose")].concat(Array.prototype.slice.call(focusables), Array.prototype.slice.call(footFocusables))
+    const list = [document.getElementById("sheetBack"), document.getElementById("sheetClose")].concat(Array.prototype.slice.call(focusables), Array.prototype.slice.call(footFocusables))
       .filter(function(el){ return !el.disabled && el.offsetParent !== null; });
     if (!list.length) return;
     const first = list[0], last = list[list.length - 1];
@@ -2736,3 +2752,23 @@ document.addEventListener("keydown", function(ev){
 });
 
 /* 由后端接入脚本在登录并读取数据后首次渲染。 */
+
+(function trackViewport(){
+  function update(){
+    const viewport = window.visualViewport;
+    document.documentElement.style.setProperty("--app-height", (viewport ? viewport.height : window.innerHeight) + "px");
+  }
+  update();
+  window.addEventListener("resize", update);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", update);
+})();
+
+document.getElementById("tabbar").addEventListener("keydown", function(event){
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  const tabs = Array.from(this.querySelectorAll("button"));
+  const index = tabs.indexOf(document.activeElement);
+  if (index < 0) return;
+  event.preventDefault();
+  const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+  tabs[next].click(); tabs[next].focus();
+});

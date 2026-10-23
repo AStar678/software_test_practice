@@ -220,6 +220,11 @@ class AccessTest {
                 .thenReturn(person("lead", "d1", "exec", 2));
         Access access = access(db);
         Map<String, Object> report = person("report", "d1", "lead", 3);
+        when(db.find(startsWith("SELECT * FROM users WHERE id=?"), eq("report"), eq("org"))).thenReturn(report);
+        assertTrue(access.isManagerOf(departmentLead("lead", "d1"), "report"));
+        assertTrue(access.isManagerOf(executive("exec"), "report"));
+        assertFalse(access.isManagerOf(employee("report", "d1", "lead"), "report"));
+        assertFalse(access.isManagerOf(executive("other-exec"), "report"));
         assertTrue(access.canReadPhone(employee("report", "d1", "lead"), report));
         assertTrue(access.canReadPhone(departmentLead("lead", "d1"), report));
         assertTrue(access.canReadPhone(executive("exec"), report), "indirect superior");

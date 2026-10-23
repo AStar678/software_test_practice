@@ -11,6 +11,7 @@
 @password = Demo@123456
 @employeeToken = PASTE_EMPLOYEE_TOKEN
 @managerToken = PASTE_MIDDLE_TOKEN
+@profileVersion = PASTE_PROFILE_ROW_VERSION
 @employeeId = PASTE_EMPLOYEE_USER_ID
 @taskId = PASTE_TASK_ID
 @requestId = PASTE_APPROVAL_REQUEST_ID
@@ -340,3 +341,17 @@ Authorization: Bearer {{managerToken}}
 ### Log author filter (list + tree) limited to self and direct reports.
 GET {{baseUrl}}/api/v1/work-log-authors
 Authorization: Bearer {{managerToken}}
+
+### Personal profile, including the saved avatar and current rowVersion.
+GET {{baseUrl}}/api/v1/me/profile
+Authorization: Bearer {{managerToken}}
+
+### Replace profileVersion with the rowVersion from the preceding read.
+### avatar: rabbit/cat/bear/panda, null to clear, or a validated PNG/JPEG data URI.
+PATCH {{baseUrl}}/api/v1/me/profile
+Authorization: Bearer {{managerToken}}
+Idempotency-Key: {{$guid}}
+If-Match: "{{profileVersion}}"
+Content-Type: application/json
+
+{"avatar":"rabbit"}

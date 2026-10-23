@@ -31,6 +31,11 @@
     return saved.etag;
   }
   function putLog(raw) {
+    if (raw.authorId === (P.data.me || {}).id) {
+      const own = P.data.calendarLogs || (P.data.calendarLogs = []);
+      const saved = own.findIndex(log => log.id === raw.id);
+      if (saved < 0) own.push(raw); else own.splice(saved, 1, raw);
+    }
     const value = { id: raw.id, authorId: raw.authorId, time: new Date(raw.createdAt), content: raw.body,
       taskId: raw.taskId || null, rowVersion: raw.rowVersion, editable: raw.editable, raw };
     const index = LOGS.findIndex(l => l.id === raw.id);
@@ -86,20 +91,24 @@
     const company = home.companyItems || [];
     const personal = home.personalItems || [];
     const assigned = home.assignedTasks || [];
+    const today = new Date();
+    const weekday = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][today.getDay()];
     document.getElementById("page-map").innerHTML =
+      '<section class="workday"><div class="workday-copy"><h2>' + esc(fmtDate(today)) + '</h2><p>' + esc(weekday) + '</p></div>' +
+      '<button type="button" class="btn primary create-task" data-action="new-task"><span aria-hidden="true">＋</span>新建任务</button></section>' +
       '<div class="map-grid">' +
-        '<section class="quad" aria-labelledby="q1"><div class="card-head"><h2 id="q1">公司统一信息</h2><span class="hint">统一发布</span></div>' +
-          '<div class="q-body">' + (company.length ? company.map((item, index) =>
-            '<div class="item-line"><span class="idx">' + (index + 1) + '</span><span class="txt">' + esc(item.body || item.title) + '</span></div>'
+        '<section class="quad company-quad" aria-labelledby="q1"><div class="card-head"><h2 id="q1">公司事项</h2><span class="hint">统一发布</span></div>' +
+          '<div class="q-body" tabindex="0" role="region" aria-labelledby="q1">' + (company.length ? company.map((item, index) =>
+            '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt">' + esc(item.body || item.title) + '</span></div></div>'
           ).join("") : '<div class="empty">暂无公司信息</div>') + '</div></section>' +
-        '<section class="quad" aria-labelledby="q2"><div class="card-head"><h2 id="q2">我被派发未完成</h2><span class="hint">' +
-          assigned.length + '/10</span></div><div class="q-body">' + homeAssignedBody() + '</div></section>' +
-        '<section class="quad" aria-labelledby="q3"><div class="card-head has-actions"><h2 id="q3">个人信息</h2><span class="hint">' +
+        '<section class="quad tasks-quad" aria-labelledby="q2"><div class="card-head"><h2 id="q2">我的待办</h2><span class="hint">' +
+          assigned.length + '/10</span></div><div class="q-body" tabindex="0" role="region" aria-labelledby="q2">' + homeAssignedBody() + '</div></section>' +
+        '<section class="quad personal-quad" aria-labelledby="q3"><div class="card-head has-actions"><h2 id="q3">个人事项</h2><span class="hint">' +
           personal.length + '/10 · 本人维护</span><button type="button" class="btn tiny-btn" data-action="new-personal"' +
           (personal.length >= 10 ? ' disabled' : '') + ' aria-label="新增个人信息">新增</button></div>' +
-          '<div class="q-body">' + homePersonalBody() + '</div></section>' +
-        '<section class="quad" aria-labelledby="q4"><div class="card-head"><h2 id="q4">近十天日志</h2><span class="hint">最近10条</span></div>' +
-          '<div class="q-body">' + homeLogsBody() + '</div></section>' +
+          '<div class="q-body" tabindex="0" role="region" aria-labelledby="q3">' + homePersonalBody() + '</div></section>' +
+        '<section class="quad logs-quad" aria-labelledby="q4"><div class="card-head"><h2 id="q4">工作记录</h2><span class="hint">最近10条</span></div>' +
+          '<div class="q-body" tabindex="0" role="region" aria-labelledby="q4">' + homeLogsBody() + '</div></section>' +
       '</div>';
   };
 
@@ -113,22 +122,27 @@
 
   LOG_FILTER_LABEL.logs = "工作日志";
   function logAuthors() { return (P.data.logAuthors || {}).items || []; }
-  function logTree() { return (P.data.logAuthors || {}).tree || []; }
+  function logDepartmentKey(person) { return person.departmentId || person.departmentName || '__none__'; }
+  function logDepartment() { return state.logDepartmentId || '__all__'; }
+  function departmentAuthors() {
+    return logAuthors().filter(person => logDepartment() === '__all__' || logDepartmentKey(person) === logDepartment());
+  }
   function logAuthorId() {
     if (state.logAll) return null;
     return state.logAuthorId || (P.data.me || {}).id || null;
   }
   function logScopeLabel(a) {
-    if (state.logAll) return "权限内全部 · " + visibleLogs(a).length + " 条";
+    if (state.logAll) return (logDepartment() === "__all__" ? "权限内全部" : "所选部门") + " · " + filteredLogs(a).length + " 条";
     const id = logAuthorId();
-    if (id && id === (P.data.me || {}).id) return "本人日志 · " + visibleLogs(a).length + " 条";
+    if (id && id === (P.data.me || {}).id) return "本人日志 · " + filteredLogs(a).length + " 条";
     const person = logAuthors().find(row => row.id === id);
-    return (person ? person.displayName : "所选人员") + " 的日志 · " + visibleLogs(a).length + " 条";
+    return (person ? person.displayName : "所选人员") + " 的日志 · " + filteredLogs(a).length + " 条";
   }
   filteredLogs = function (a) {
     const authorId = logAuthorId();
     return visibleLogs(a)
       .filter(l => !authorId || l.authorId === authorId)
+      .filter(l => logDepartment() === '__all__' || departmentAuthors().some(person => person.id === l.authorId))
       .slice().sort((x, y) => y.time.getTime() - x.time.getTime());
   };
   function replaceLogs(items) {
@@ -168,43 +182,23 @@
     });
   }
   P.openLogsFor = async function (id) {
+    state.logDepartmentId = "__all__";
     await applyLogAuthor(id, false);
     setPage("log");
   };
-  function filterAuthorTree(nodes, query) {
-    if (!query) return nodes;
-    return nodes.map(node => {
-      const children = filterAuthorTree(node.children || [], query);
-      const match = String(node.displayName || "").toLowerCase().indexOf(query) !== -1;
-      if (!match && !children.length) return null;
-      return Object.assign({}, node, { children: children });
-    }).filter(Boolean);
-  }
-  function authorTreeHTML(nodes) {
-    if (!nodes.length) return '<div class="empty">没有符合当前查找条件的日志人员</div>';
-    return '<ul class="log-author-tree">' + nodes.map(node => {
-      const active = !state.logAll && node.id === logAuthorId();
-      return '<li><button type="button" class="log-author" data-log-author="' + esc(node.id) +
-        '" aria-pressed="' + active + '"><span class="log-author-name">' + esc(node.displayName) +
-        '</span>' + (node.departmentName ? '<span class="tiny muted">' + esc(node.departmentName) + '</span>' : '') +
-        '</button>' + ((node.children || []).length ? authorTreeHTML(node.children) : '') + '</li>';
-    }).join("") + '</ul>';
-  }
   function logFindingHTML(a) {
-    const query = String(state.logAuthorQuery || "").trim().toLowerCase();
-    const authors = logAuthors();
-    const tree = filterAuthorTree(logTree(), query);
-    return '<section class="card" id="logFindingCard"><div class="card-head"><h2>日志人员</h2>' +
-      '<span class="hint">仅限日志权限范围</span></div>' +
-      (authors.length > 1 ? '<button type="button" class="filter-chip" data-log-all="true" aria-pressed="' +
-        String(!!state.logAll) + '">全部可见</button>' : '') +
-      '<div class="field" style="margin-top:8px"><label for="logAuthorInput">按作者姓名查找</label>' +
-        '<div class="row"><input id="logAuthorInput" type="search" autocomplete="off" placeholder="输入作者姓名片段" value="' +
-          esc(state.logAuthorQuery || '') + '" />' +
-          '<button type="button" class="btn tiny-btn" id="clearLogAuthor" data-action="clear-log-author"' +
-          (state.logAuthorQuery ? '' : ' disabled') + ' aria-label="清除作者查找">清除</button></div></div>' +
-      '<div id="logAuthorList">' + authorTreeHTML(tree) + '</div></section>';
+    const authors = departmentAuthors(), departments = new Map();
+    logAuthors().forEach(person => departments.set(logDepartmentKey(person), person.departmentName || '未分配部门'));
+    return '<details class="card log-author-filter" id="logFindingCard"' + (state.logFilterOpen ? ' open' : '') + '><summary>人员筛选<span class="tiny muted">先选部门，再选人员</span></summary><div class="log-filter-fields"><div class="field"><label for="logDepartmentSelect">部门</label>' +
+      '<select id="logDepartmentSelect"><option value="__all__">全部可见部门</option>' + Array.from(departments, ([id,name]) => '<option value="' + esc(id) + '"' + (id === logDepartment() ? ' selected' : '') + '>' + esc(name) + '</option>').join('') +
+      '</select></div><div class="field"><label for="logAuthorSelect">人员</label><select id="logAuthorSelect">' +
+      '<option value="__all__"' + (state.logAll ? ' selected' : '') + '>' + (logDepartment() === '__all__' ? '全部可见人员' : '该部门全部可见人员') + '</option>' +
+      authors.map(person => '<option value="' + esc(person.id) + '"' + (!state.logAll && person.id === logAuthorId() ? ' selected' : '') + '>' + esc(person.displayName + (person.id === (P.data.me || {}).id ? '（我）' : '')) + '</option>').join('') +
+      '</select></div></div><p class="tiny muted">仅显示你有权限查看日志的部门和人员</p></details>';
   }
+  document.addEventListener('toggle', event => {
+    if (event.target.id === 'logFindingCard') state.logFilterOpen = event.target.open;
+  }, true);
   renderLog = function () {
     const a = actor();
     document.getElementById("page-log").innerHTML =
@@ -220,26 +214,29 @@
     if (results) results.innerHTML = logsListHTML(a);
     const count = document.getElementById("logResultsCount");
     if (count) count.textContent = logScopeLabel(a);
-    const list = document.getElementById("logAuthorList");
-    if (list) list.innerHTML = authorTreeHTML(filterAuthorTree(logTree(), String(state.logAuthorQuery || "").trim().toLowerCase()));
-    const all = document.querySelector("[data-log-all]");
-    if (all) all.setAttribute("aria-pressed", String(!!state.logAll));
-    const clear = document.getElementById("clearLogAuthor");
-    if (clear) clear.disabled = !state.logAuthorQuery;
+    const select = document.getElementById("logAuthorSelect");
+    if (select) select.value = state.logAll ? "__all__" : logAuthorId();
   };
-  document.addEventListener("click", function (event) {
-    if (!P.ready || state.page !== "log") return;
-    const author = event.target.closest("[data-log-author]");
-    if (author) {
-      event.preventDefault();
-      selectLogAuthor(author.dataset.logAuthor, false);
-      return;
-    }
-    const all = event.target.closest("[data-log-all]");
-    if (all) {
-      event.preventDefault();
-      selectLogAuthor(null, true);
-    }
+  document.addEventListener("change", function (event) {
+    if (!P.ready || state.page !== "log" || !['logAuthorSelect', 'logDepartmentSelect'].includes(event.target.id)) return;
+    const departmentChanged = event.target.id === 'logDepartmentSelect';
+    const nextDepartment = departmentChanged ? event.target.value : logDepartment();
+    const oldDepartment = logDepartment(), oldAuthor = logAuthorId(), oldAll = state.logAll;
+    const value = departmentChanged ? '__all__' : event.target.value;
+    document.querySelectorAll('#logFindingCard select').forEach(select => { select.disabled = true; });
+    P.busy(async () => {
+      try {
+        await applyLogAuthor(value === '__all__' ? null : value, value === '__all__');
+        state.logDepartmentId = nextDepartment;
+      } catch (error) {
+        state.logDepartmentId = oldDepartment;
+        state.logAuthorId = oldAuthor; state.logAll = oldAll;
+        throw error;
+      } finally {
+        state.logFilterOpen = true;
+        if (state.page === 'log') renderLog();
+      }
+    });
   });
 
   logDetailView = function (id) {
@@ -403,7 +400,7 @@
   unreadCount = () => NOTIFICATIONS.filter(n => !n.raw.readAt).length;
   notificationsView = function () {
     const list = notificationsFor();
-    return { title: "通知", body: list.length ? list.map(n => {
+    return { title: "通知", notification: true, body: list.length ? list.map(n => {
       const raw = n.raw, title = raw.title || raw.summary || "通知";
       const state = raw.revoked ? "已撤回" : raw.relationLost ? "权限已变化" : raw.readAt ? "已读" : "未读";
       return '<button type="button" class="notif' + (raw.readAt ? ' is-read' : '') + (raw.revoked ? ' is-withdrawn' : '') +
@@ -424,9 +421,10 @@
     const revoked = !!raw.revoked;
     let body = '<div class="kv"><span class="k">时间</span><span class="v">' + esc(timeText(raw.createdAt)) +
       '</span><span class="k">状态</span><span class="v">' + (revoked ? "已撤回" : raw.readAt ? "已读" : "未读") + '</span></div>';
-    if (revoked) {
+    if (revoked && !raw.canReadWithdrawnDetails) {
       body += '<div class="divider"></div><p>该通知已被撤回。</p>';
     } else {
+      if (revoked) body += '<div class="callout info">该通知已撤回。你作为发起人的上级，可查看原通知内容；此页仅供只读查看。</div>';
       if (raw.title) body += '<div class="card-head"><h2>' + esc(raw.title) + '</h2></div>';
       body += '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(raw.summary || "") + '</p>';
       if (raw.changeSummary && raw.changeSummary !== raw.summary) body += '<p class="tiny muted" style="white-space:pre-wrap">' + esc(raw.changeSummary) + '</p>';
@@ -441,8 +439,7 @@
       : button("p-open-notification-task", "查看相关任务", raw.id));
     if (!revoked && raw.canWithdraw) buttons.push(button("p-withdraw-notification", "撤回通知", raw.id));
     if (!revoked) buttons.push(button("p-hide-notification", "删除此消息", raw.id));
-    buttons.push(button("sheet-close", "关闭"));
-    return { title: "通知详情", body: body, foot: withBack(buttons.join(""), actor()) };
+    return { title: "通知详情", notification: true, body: body, foot: buttons.join("") };
   }
   function historicalTaskView(raw) {
     const rows = [["标题", raw.title], ["说明", raw.description], ["完成标准", raw.acceptanceCriteria],

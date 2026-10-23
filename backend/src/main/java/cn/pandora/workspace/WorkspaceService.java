@@ -40,7 +40,7 @@ public class WorkspaceService {
             + "LEFT JOIN users m ON m.id=u.manager_id AND m.organization_id=u.organization_id "
             + "WHERE u.id=? AND u.organization_id=? AND u.active=1", a.id(), a.organizationId());
         var result=safeUser(row);
-        for(String key:List.of("phone","email","profileVersion","managerName","organizationName","departmentName","positionName","organizationTimeZone")) result.put(key,row.get(key));
+        for(String key:List.of("phone","email","avatar","profileVersion","managerName","organizationName","departmentName","positionName","organizationTimeZone")) result.put(key,row.get(key));
         return result;
     }
 
@@ -407,6 +407,8 @@ public class WorkspaceService {
         // Copies masked at delivery must never regain the restricted title/summary from the event row.
         boolean contentMasked = Boolean.TRUE.equals(row.get("contentMasked"))
                 || row.get("contentMasked") instanceof Number masked && masked.intValue() == 1;
+        boolean canReadWithdrawnDetails = revoked && !contentMasked
+                && access.isManagerOf(a, s(event,"initiatorId"));
         Map<String,Object> details = event == null || event.get("detailsJson")==null ? Map.of() : db.parse(s(event,"detailsJson"));
         Instant occurred = event == null || event.get("occurredAt")==null ? null : Instant.parse(String.valueOf(event.get("occurredAt")));
         boolean manager = a.can("manage_notifications");
@@ -417,9 +419,9 @@ public class WorkspaceService {
         view.put("taskId",contentMasked||revoked?null:row.get("taskId"));
         view.put("requestId",contentMasked||revoked?null:row.get("requestId"));
         if (revoked) {
-            view.put("title",null);
-            view.put("summary","该通知已被撤回。");
-            view.put("changeSummary",null);
+            view.put("title",canReadWithdrawnDetails ? event.get("title") : null);
+            view.put("summary",canReadWithdrawnDetails ? event.get("changeSummary") : "该通知已被撤回。");
+            view.put("changeSummary",canReadWithdrawnDetails ? event.get("changeSummary") : null);
             view.put("readonly",true);
         } else if (contentMasked) {
             // Ordinary event whose recipient lost task authority before delivery: keep only the generic
@@ -435,6 +437,7 @@ public class WorkspaceService {
         }
         view.put("revoked",revoked);
         view.put("withdrawn",revoked);
+        view.put("canReadWithdrawnDetails",canReadWithdrawnDetails);
         view.put("expiresAt",row.get("expiresAt")!=null?row.get("expiresAt"):event==null?null:event.get("expiresAt"));
         view.put("rowVersion",notificationVersion(row));
         view.put("canWithdraw",!revoked && withinWithdrawal && (manager || (!automatic && event!=null && a.id().equals(s(event,"initiatorId")))));

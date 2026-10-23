@@ -51,11 +51,11 @@ class ProfileServiceTest {
         Db db = mock(Db.class);
         Events events = mock(Events.class);
         when(db.one(anyString(), eq("org"), eq("self"))).thenReturn(Map.of("displayName", "原姓名", "phone", "13800000000", "email", "old@example.test", "profileVersion", 2L));
-        when(db.update(anyString(), any(), any(), any(), any(), any(), any())).thenReturn(1);
+        when(db.update(anyString(), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
         ProfileService service = new ProfileService(db, events);
         Map<String, Object> result = service.update(SELF, "\"2\"", Map.of("phone", ""));
         assertEquals(Map.of("id", "self", "rowVersion", 3L, "profileVersion", 3L), result);
-        verify(db).update(anyString(), eq("原姓名"), isNull(), eq("old@example.test"), eq("org"), eq("self"), eq(2L));
+        verify(db).update(anyString(), eq("原姓名"), isNull(), eq("old@example.test"), isNull(), eq("org"), eq("self"), eq(2L));
         verify(events).record(eq(SELF), isNull(), eq("profile.updated"), eq(List.of()), eq(Map.of("userId", "self", "fields", Set.of("phone"))));
     }
 
@@ -67,5 +67,33 @@ class ProfileServiceTest {
         assertEquals(412, assertThrows(ApiException.class, () -> service.update(SELF, "\"1\"", Map.of("displayName", "新姓名"))).status);
         assertEquals(428, assertThrows(ApiException.class, () -> service.update(SELF, null, Map.of("displayName", "新姓名"))).status);
         verify(db, never()).update(anyString(), any(Object[].class));
+    }
+
+    @Test
+    void avatarsAllowPresetsOrBoundedImagesAndRejectUrlsSvgAndInvalidData() throws Exception {
+        assertEquals("rabbit", ProfileService.validate(Map.of("avatar", "rabbit")).get("avatar"));
+        assertNull(ProfileService.validate(Collections.singletonMap("avatar", null)).get("avatar"));
+        var image = new java.awt.image.BufferedImage(32, 32, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        var output = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(image, "png", output);
+        String valid = "data:image/png;base64," + Base64.getEncoder().encodeToString(output.toByteArray());
+        assertEquals(valid, ProfileService.validate(Map.of("avatar", valid)).get("avatar"));
+        for (String invalid : List.of("https://example.test/avatar.jpg", "data:image/svg+xml;base64,PHN2Zy8+", "data:image/png;base64,invalid", "data:image/png;base64," + "A".repeat(400_000)))
+            assertThrows(ApiException.class, () -> ProfileService.validate(Map.of("avatar", invalid)));
+        output.reset();
+        javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(513, 1, java.awt.image.BufferedImage.TYPE_INT_RGB), "png", output);
+        String tooWide = "data:image/png;base64," + Base64.getEncoder().encodeToString(output.toByteArray());
+        assertThrows(ApiException.class, () -> ProfileService.validate(Map.of("avatar", tooWide)));
+    }
+
+    @Test
+    void updatingAnAvatarPreservesContactsAndUsesTheProfileVersion() {
+        Db db = mock(Db.class);
+        Events events = mock(Events.class);
+        when(db.one(anyString(), eq("org"), eq("self"))).thenReturn(Map.of("displayName", "姓名", "phone", "13800000000", "email", "old@example.test", "avatar", "cat", "profileVersion", 4L));
+        when(db.update(anyString(), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
+        new ProfileService(db, events).update(SELF, "\"4\"", Map.of("avatar", "bear"));
+        verify(db).update(anyString(), eq("姓名"), eq("13800000000"), eq("old@example.test"), eq("bear"), eq("org"), eq("self"), eq(4L));
+        verify(events).record(eq(SELF), isNull(), eq("profile.updated"), eq(List.of()), eq(Map.of("userId", "self", "fields", Set.of("avatar"))));
     }
 }

@@ -180,6 +180,16 @@ public class Access {
     public boolean canReadPhone(Actor a, Map<String, Object> user) {
         if (user == null || !a.organizationId().equals(s(user, "organizationId")) || !enabled(user)) return false;
         if (a.id().equals(s(user, "id"))) return true;
+        return isManagerOf(a, user);
+    }
+
+    /** A current ancestor in the actual management chain, excluding the person themself. */
+    public boolean isManagerOf(Actor a, String userId) {
+        return userId != null && isManagerOf(a, activeUser(a, userId));
+    }
+
+    private boolean isManagerOf(Actor a, Map<String, Object> user) {
+        if (user == null || !a.organizationId().equals(s(user, "organizationId")) || !enabled(user)) return false;
         if (a.administrator() || "admin".equals(s(user, "role")) || user.get("rankLevel") == null
                 || a.rank() >= n(user, "rankLevel")) return false;
         // Walk the whole chain to its root before granting: finding the viewer is not enough because a
