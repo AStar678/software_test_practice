@@ -116,13 +116,82 @@ final class CalendarUi {
       for (JSONObject task : visible()) if (hits(task, date)) a.tasksUi.taskItem(box, task);
       dayLogs(box, date);
     } else {
-      u.note(box, "月历事件行数 · " + capacity + "行（拖动调节）");
-      SeekBar density = new SeekBar(a);
-      density.setMax(7);
-      density.setProgress(capacity - 1);
-      density.setContentDescription("月历事件行数");
-      box.addView(density);
+      TextView rowsLabel = u.text("月历事件行数 · " + capacity + "行", 14, Ui.MUTED);
+      rowsLabel.setId(R.id.month_capacity_label);
+      box.addView(rowsLabel);
       MonthCanvas month = new MonthCanvas();
+      TextView handle = u.text("━\n上下拖动调整事件行数", 13, Ui.PRIMARY);
+      handle.setId(R.id.month_resize_handle);
+      handle.setTextIsSelectable(false);
+      handle.setGravity(Gravity.CENTER);
+      handle.setMinHeight(u.dp(56));
+      handle.setBackground(u.shape(0xffeef3ed, 16));
+      handle.setFocusable(true);
+      Runnable announceCapacity =
+          () -> {
+            rowsLabel.setText("月历事件行数 · " + capacity + "行");
+            handle.setContentDescription("月历事件行数 " + capacity + " 行，上下拖动调整，点击选择");
+            month.requestLayout();
+            month.invalidate();
+          };
+      handle.setOnClickListener(
+          v ->
+              new AlertDialog.Builder(a)
+                  .setTitle("月历事件行数")
+                  .setSingleChoiceItems(
+                      new String[] {"1行", "2行", "3行", "4行", "5行", "6行", "7行", "8行"},
+                      capacity - 1,
+                      (dialog, selected) -> {
+                        capacity = selected + 1;
+                        announceCapacity.run();
+                        dialog.dismiss();
+                      })
+                  .setNegativeButton("取消", null)
+                  .show());
+      handle.setOnTouchListener(
+          new View.OnTouchListener() {
+            private float startY;
+            private int initial;
+            private boolean dragged;
+
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+              switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN -> {
+                  startY = event.getRawY();
+                  initial = capacity;
+                  dragged = false;
+                  view.getParent().requestDisallowInterceptTouchEvent(true);
+                  return true;
+                }
+                case MotionEvent.ACTION_MOVE -> {
+                  float distance = event.getRawY() - startY;
+                  if (Math.abs(distance) > ViewConfiguration.get(a).getScaledTouchSlop())
+                    dragged = true;
+                  int next = Math.max(1, Math.min(8, initial + Math.round(distance / u.dp(32))));
+                  if (next != capacity) {
+                    capacity = next;
+                    announceCapacity.run();
+                  }
+                  return true;
+                }
+                case MotionEvent.ACTION_UP -> {
+                  view.getParent().requestDisallowInterceptTouchEvent(false);
+                  if (!dragged) view.performClick();
+                  return true;
+                }
+                case MotionEvent.ACTION_CANCEL -> {
+                  view.getParent().requestDisallowInterceptTouchEvent(false);
+                  return true;
+                }
+                default -> {
+                  return true;
+                }
+              }
+            }
+          });
+      announceCapacity.run();
+      box.addView(handle, new LinearLayout.LayoutParams(-1, u.dp(56)));
       box.addView(month);
       u.heading(box, "本月任务列表");
       for (JSONObject task : visible())
@@ -132,20 +201,6 @@ final class CalendarUi {
             date.withDayOfMonth(1).atStartOfDay(ZONE).toInstant(),
             date.withDayOfMonth(1).plusMonths(1).atStartOfDay(ZONE).toInstant()))
           a.tasksUi.taskItem(box, task);
-      density.setOnSeekBarChangeListener(
-          new SeekBar.OnSeekBarChangeListener() {
-            public void onStartTrackingTouch(SeekBar s) {}
-
-            public void onStopTrackingTouch(SeekBar s) {}
-
-            public void onProgressChanged(SeekBar s, int value, boolean user) {
-              if (user) {
-                capacity = value + 1;
-                month.requestLayout();
-                month.invalidate();
-              }
-            }
-          });
     }
   }
 

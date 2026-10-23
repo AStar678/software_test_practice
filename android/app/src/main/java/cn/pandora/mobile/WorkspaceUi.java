@@ -299,6 +299,12 @@ final class WorkspaceUi {
     MainActivity.Panel p = a.panel("写日志");
     u.note(p.body, "公司日期：" + s(a.home, "businessDate") + " · 每天一条，历史日志只读");
     EditText body = u.field(p.body, "日志内容（必填）", s(log, "body"), 10000, true);
+    body.setId(R.id.log_content);
+    body.setMinLines(12);
+    body.setMaxLines(16);
+    body.setMinHeight(u.dp(320));
+    body.setGravity(android.view.Gravity.TOP | android.view.Gravity.START);
+    body.setVerticalScrollBarEnabled(true);
     String[] task = {s(log, "taskId")};
     boolean[] changed = {false};
     TextView selected =

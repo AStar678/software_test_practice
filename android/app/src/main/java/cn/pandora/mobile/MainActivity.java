@@ -432,40 +432,48 @@ public final class MainActivity extends Activity {
     u.button(one, "待我审核 · " + pending, false, () -> tasksUi.approvals("reviewer"));
     u.button(two, "我的申请", false, () -> tasksUi.approvals("applicant"));
     u.button(three, "全部授权任务", false, tasksUi::list);
-    LinearLayout left = box, right = box;
-    if (getResources().getConfiguration().screenWidthDp >= 600) {
-      LinearLayout columns = u.row();
-      columns.setGravity(Gravity.TOP);
-      left = u.column();
-      right = u.column();
-      LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1);
-      lp.setMarginEnd(u.dp(8));
-      columns.addView(left, lp);
-      LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(0, -2, 1);
-      rp.setMarginStart(u.dp(8));
-      columns.addView(right, rp);
-      box.addView(columns);
-    }
-    LinearLayout company = u.card(left);
-    u.heading(company, "公司事项");
+    GridLayout modules = new GridLayout(this);
+    modules.setColumnCount(2);
+    box.addView(modules, new LinearLayout.LayoutParams(-1, -2));
+    LinearLayout company = dashboardModule(modules, 0, R.id.dashboard_company, "公司事项");
     if (arr(home, "companyItems").length() == 0) u.note(company, "暂无公司信息");
     for (JSONObject item : rows(arr(home, "companyItems")))
       u.item(company, s(item, "body"), "统一发布", null);
-    LinearLayout assigned = u.card(right);
-    u.heading(assigned, "我的待办");
+    LinearLayout assigned = dashboardModule(modules, 1, R.id.dashboard_tasks, "我的待办");
     for (JSONObject t : rows(arr(home, "assignedTasks")))
       u.item(assigned, s(t, "title"), priority(t), () -> tasksUi.detail(s(t, "taskId")));
     if (arr(home, "assignedTasks").length() == 0) u.note(assigned, "暂无被派发的未完成任务");
-    LinearLayout personal = u.card(left);
-    u.heading(personal, "个人事项");
+    LinearLayout personal = dashboardModule(modules, 2, R.id.dashboard_personal, "个人事项");
     u.button(personal, "新增", false, () -> workspaceUi.personal(null));
     for (JSONObject item : rows(arr(home, "personalItems")))
       u.item(personal, s(item, "body"), "点击查看或编辑", () -> workspaceUi.personalDetail(id(item)));
-    LinearLayout recent = u.card(right);
-    u.heading(recent, "工作记录");
+    LinearLayout recent = dashboardModule(modules, 3, R.id.dashboard_logs, "工作记录");
     for (JSONObject log : rows(arr(home, "recentLogs")))
       u.item(recent, s(log, "body"), s(log, "businessDate"), () -> workspaceUi.logDetail(id(log)));
     if (arr(home, "recentLogs").length() == 0) u.note(recent, "近十天暂无日志");
+  }
+
+  /** Uniform tiles; long module contents scroll inside their own fixed-size body. */
+  private LinearLayout dashboardModule(GridLayout grid, int index, int resourceId, String label) {
+    LinearLayout tile = u.column();
+    tile.setId(resourceId);
+    tile.setPadding(u.dp(12), 0, u.dp(12), u.dp(12));
+    android.graphics.drawable.GradientDrawable background = u.shape(Ui.SURFACE, 16);
+    background.setStroke(u.dp(1), Ui.LINE);
+    tile.setBackground(background);
+    GridLayout.LayoutParams size =
+        new GridLayout.LayoutParams(GridLayout.spec(index / 2), GridLayout.spec(index % 2, 1f));
+    size.width = 0;
+    size.height = Math.max(u.dp(180), (content.getHeight() - u.dp(216)) / 2);
+    size.setMargins(u.dp(4), u.dp(4), u.dp(4), u.dp(4));
+    grid.addView(tile, size);
+    u.heading(tile, label);
+    ScrollView scroll = new ScrollView(this);
+    scroll.setNestedScrollingEnabled(true);
+    LinearLayout contents = u.column();
+    scroll.addView(contents, new ScrollView.LayoutParams(-1, -2));
+    tile.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+    return contents;
   }
 
   String uid() {
