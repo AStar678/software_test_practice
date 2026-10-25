@@ -91,7 +91,7 @@
   }
   @media(prefers-reduced-motion:reduce) { *, *::before, *::after { scroll-behavior:auto !important; } }
 </style>
-<link rel="stylesheet" href="潘多拉-手账主题.css?v=20261021-kawaii">
+<link rel="stylesheet" href="潘多拉-手账主题.css?v=b4589be924c4">
 <link rel="icon" type="image/svg+xml" href="潘多拉-手账标记.svg">
 </head>
 <body class="pandora-admin">
@@ -109,7 +109,7 @@
       <button class="primary" id="loginButton">登录</button>
     </div>
     <div class="error" id="loginError"></div>
-    <p class="muted">仅管理员账号可进入；业务账号在此处会被服务端拒绝。</p>
+    <p class="muted">仅管理员账号可进入；业务账号在此处会被服务端拒绝。员工使用本人手机号登录员工 Web，管理员保留此账号登录。</p>
   </div>
 
   <div id="console" hidden>
@@ -157,6 +157,39 @@
       <p class="muted">查看范围与派发范围分别配置：可见某部门不等于可向该部门派发。管理员不取得员工业务权限。</p>
     </section>
 
+    <section id="tab-history">
+      <h2>任务历史</h2>
+      <div class="row">
+        <input id="historyQuery" placeholder="搜索任务名称" aria-label="搜索任务名称">
+        <select id="historyState" aria-label="任务状态">
+          <option value="">全部状态</option><option value="todo">待办</option><option value="doing">进行中</option><option value="done">已完成</option>
+        </select>
+        <select id="historyRequest" aria-label="申请状态">
+          <option value="">全部申请</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option><option value="withdrawn">已撤回</option><option value="direct">无需审核</option>
+        </select>
+        <button class="ghost" id="historySearch">查询</button>
+        <button class="ghost" id="historyReset">清空条件</button>
+      </div>
+      <p class="muted" id="historyHint">按真实管理接口分页查找任务；打开一条任务查看字段前后值、有序负责人、申请决定意见、改派、失效、交接、重开与免审原因。通知删除或撤回不会删除这里的记录。</p>
+      <table><thead><tr><th>任务</th><th>状态</th><th>负责人（按顺序）</th><th>创建人</th><th>创建时间</th><th>申请</th><th></th></tr></thead><tbody id="historyRows"></tbody></table>
+      <div class="row" id="historyPager"></div>
+      <div id="historyDetail" hidden></div>
+    </section>
+
+    <section id="tab-notifications">
+      <h2>通知管理</h2>
+      <div class="row">
+        <input id="notificationQuery" placeholder="筛选接收人、标题或摘要" aria-label="筛选通知">
+        <select id="notificationState" aria-label="通知状态">
+          <option value="">全部状态</option><option value="unread">未读</option><option value="read">已读</option><option value="withdrawn">已撤回</option><option value="expired">已过期</option><option value="hidden">已删除</option>
+        </select>
+        <button class="ghost" id="notificationRefresh">刷新</button>
+      </div>
+      <p class="muted">显示真实接收、送达、已读、撤回和保留状态。严格少于 180 秒才能撤回；撤回只移除通知跳转与正文并保留提示，不撤销任务申请、不改变业务结果、不删除任务历史与审计。</p>
+      <table><thead><tr><th>接收人</th><th>通知</th><th>状态</th><th>时间</th><th>到期</th><th></th></tr></thead><tbody id="notificationRows"></tbody></table>
+      <div class="row" id="notificationPager"></div>
+    </section>
+
     <section id="tab-company">
       <h2>公司信息</h2>
       <div class="row">
@@ -183,7 +216,6 @@
   <h2 id="employeeDialogTitle">员工</h2>
   <input type="hidden" id="employeeId">
   <div class="grid2">
-    <div><label>用户名</label><input id="fUsername"></div>
     <div><label>姓名</label><input id="fDisplayName"></div>
     <div><label>部门</label><select id="fDepartment"></select></div>
     <div><label>职位</label><select id="fPosition"></select></div>
@@ -191,7 +223,7 @@
     <div><label>直属上级（可空）</label><select id="fManager"></select></div>
     <div><label>组织层级 0–100（顶层为0，必须显式设置）</label><input id="fLevel" type="number" min="0" max="100"></div>
     <div><label>角色</label><select id="fRoles" multiple size="4"></select></div>
-    <div><label>手机号（仅写入，不回显）</label><input id="fPhone" placeholder="留空表示不修改"></div>
+    <div><label>手机号（员工登录用；仅写入，不回显。新增必填，编辑留空表示不修改）</label><input id="fPhone" inputmode="tel" placeholder="如 13800000007"></div>
   </div>
   <div class="row" style="margin-top:14px">
     <button class="primary" id="employeeSave">保存</button>
@@ -218,12 +250,14 @@
 </dialog>
 
 <script>
-const state = { token: null, user: null, structure: null, employees: [], editing: null, transferring: null, tabs: [
+const state = { token: null, user: null, structure: null, employees: [], editing: null, transferring: null, history: { offset: 0, total: 0 }, notifications: { offset: 0, total: 0 }, tabs: [
   ['employees','员工'], ['departments','部门'], ['positions','职位'], ['teams','团队'],
-  ['roles','角色与授权'], ['company','公司信息'], ['health','组织完整性']
+  ['roles','角色与授权'], ['company','公司信息'], ['health','组织完整性'],
+  ['history','任务历史'], ['notifications','通知管理']
 ] };
 
 const $ = (id) => document.getElementById(id);
+const esc = (value) => String(value == null ? '' : value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 async function api(method, path, body, options = {}) {
   const headers = { 'Content-Type': 'application/json' };
@@ -282,6 +316,8 @@ function selectTab(id, button) {
   if (button) button.setAttribute('aria-selected', 'true');
   document.querySelectorAll('section').forEach((s) => s.classList.remove('active'));
   $('tab-' + id).classList.add('active');
+  if (id === 'history') loadHistory(0);
+  if (id === 'notifications') loadNotifications(0);
 }
 
 async function reloadAll() {
@@ -456,13 +492,210 @@ async function reorder(moveUpId) {
   catch (error) { fail(error.message); }
 }
 
+const ENTRY_LABELS = {
+  request_submitted: '提交申请', request_decided: '审核决定', reviewer_reassigned: '改派审核人',
+  route_blocked: '路线阻断', no_reviewer: '无需审核', version_created: '创建版本', version_applied: '版本生效',
+  field_change: '字段变更', assignee_order: '负责人顺序', handover: '交接生效', handover_requested: '申请交接',
+  reopen: '重开新轮次', completion_returned: '完成退回'
+};
+const FIELD_LABELS = {
+  title: '标题', description: '说明', acceptanceCriteria: '完成标准', priority: '紧急度', allDay: '全天',
+  startAt: '开始时刻', dueAt: '截止时刻', startDate: '开始日期', dueDate: '截止日期', assigneeIds: '负责人',
+  parentTaskId: '上级任务', tagId: '标签', status: '申请状态', versionId: '版本', executionRound: '执行轮次',
+  exemptionReason: '免审原因', reviewerId: '审核人', executionState: '执行状态'
+};
+const STATE_LABELS = { todo: '待办', doing: '进行中', done: '已完成' };
+const REQUEST_LABELS = { pending: '待审核', approved: '已通过', rejected: '已拒绝', withdrawn: '已撤回', direct: '无需审核' };
+const KIND_LABELS = { create: '创建', change: '修改', progress: '进展', complete: '完成', reopen: '重开', handover: '交接' };
+const formatTime = (value) => value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—';
+const personName = (people, id) => (id && people && people[id]) || id || '—';
+
+function historySearchParams(offset) {
+  const params = new URLSearchParams();
+  params.set('limit', '20');
+  params.set('offset', String(offset));
+  const query = $('historyQuery').value.trim();
+  if (query) params.set('q', query);
+  if ($('historyState').value) params.set('state', $('historyState').value);
+  if ($('historyRequest').value) params.set('requestStatus', $('historyRequest').value);
+  return params.toString();
+}
+
+async function loadHistory(offset) {
+  state.history.offset = offset;
+  try {
+    const result = (await api('GET', '/api/v1/admin/tasks?' + historySearchParams(offset))).body;
+    state.history.total = result.total || 0;
+    $('historyHint').textContent = `共 ${result.total || 0} 条任务，按创建时间倒序。当前显示第 ${result.items.length ? offset + 1 : 0}—${offset + result.items.length} 条。`;
+    $('historyRows').innerHTML = result.items.map((task) => `<tr>
+      <td>${esc(task.title || '（尚未发布）')}<div class="muted">${esc(task.taskId)}</div></td>
+      <td>${esc(STATE_LABELS[task.executionState] || (task.published ? task.executionState : '未发布'))}</td>
+      <td>${esc((task.ownerNames || []).join(' → ') || '—')}</td>
+      <td>${esc(task.creatorName || task.creatorId || '—')}</td>
+      <td>${esc(formatTime(task.createdAt))}</td>
+      <td>${esc(REQUEST_LABELS[task.latestRequestStatus] || task.latestRequestStatus || '—')}${task.pendingKind ? '<div class="muted">' + esc(KIND_LABELS[task.pendingKind] || task.pendingKind) + '待审</div>' : ''}</td>
+      <td><button class="ghost" data-history-task="${esc(task.taskId)}">查看历史</button></td></tr>`).join('')
+      || '<tr><td colspan="7">没有符合条件的任务。</td></tr>';
+    document.querySelectorAll('[data-history-task]').forEach((button) => button.onclick = () => openTaskHistory(button.dataset.historyTask));
+    const pages = Math.ceil((result.total || 0) / 20) || 1;
+    const page = Math.floor(offset / 20) + 1;
+    $('historyPager').innerHTML = `<button class="ghost" id="historyPrev" ${offset <= 0 ? 'disabled' : ''}>上一页</button>
+      <span class="muted">第 ${page} / ${pages} 页</span>
+      <button class="ghost" id="historyNext" ${result.nextOffset == null ? 'disabled' : ''}>下一页</button>`;
+    $('historyPrev').onclick = () => loadHistory(Math.max(0, offset - 20));
+    $('historyNext').onclick = () => { if (result.nextOffset != null) loadHistory(result.nextOffset); };
+  } catch (error) { fail(error.message); }
+}
+
+function entryDetailText(entry, people) {
+  const detail = entry.detail || {};
+  switch (entry.entryType) {
+    case 'request_decided':
+      return `${KIND_LABELS[detail.kind] || detail.kind || '申请'} · ${REQUEST_LABELS[detail.status] || detail.status || ''}${detail.comment ? ' · 决定意见：' + detail.comment : ''}`;
+    case 'no_reviewer':
+      return entry.afterValue || detail.reason || detail.exemptionReason || '免审原因已记录';
+    case 'reviewer_reassigned':
+      return `${personName(people, entry.beforeValue)} → ${personName(people, entry.afterValue)}${detail.reason ? ' · ' + detail.reason : ''}`;
+    case 'route_blocked':
+      return detail.reason || '当前直属关系不可用，等待管理员修复';
+    case 'handover':
+    case 'handover_requested':
+      return `${personName(people, detail.sourceUserId)} → ${personName(people, detail.targetUserId)}`;
+    case 'reopen':
+      return `第 ${entry.beforeValue} 轮 → 第 ${entry.afterValue} 轮${detail.reason ? ' · 原因：' + detail.reason : ''}`;
+    case 'completion_returned':
+      return detail.comment || '完成申请被退回，恢复进行中';
+    case 'version_applied':
+      return `${KIND_LABELS[detail.kind] || detail.kind || '版本'}生效${detail.executionState ? ' · ' + (STATE_LABELS[detail.executionState] || detail.executionState) : ''}`;
+    default:
+      return '';
+  }
+}
+
+function entryValues(entry, people) {
+  const detail = entry.detail || {};
+  if (entry.entryType === 'assignee_order') {
+    return {
+      before: (detail.beforeOrder || []).map((id) => personName(people, id)).join(' → ') || '—',
+      after: (detail.afterOrder || []).map((id) => personName(people, id)).join(' → ') || '—'
+    };
+  }
+  if (entry.entryType === 'handover' || entry.entryType === 'handover_requested') {
+    return { before: personName(people, detail.sourceUserId), after: personName(people, detail.targetUserId) };
+  }
+  if (entry.entryType === 'request_submitted') {
+    return { before: '—', after: `${KIND_LABELS[detail.kind] || '申请'} · ${REQUEST_LABELS[detail.status] || ''}` };
+  }
+  if (entry.entryType === 'no_reviewer' || entry.entryType === 'route_blocked') {
+    return { before: '需要审核', after: entry.afterValue || detail.reason || '免审' };
+  }
+  if (entry.entryType === 'request_decided') {
+    return { before: '待审核', after: REQUEST_LABELS[entry.afterValue] || entry.afterValue || '—' };
+  }
+  const before = entry.entryType === 'reviewer_reassigned' ? personName(people, entry.beforeValue) : entry.beforeValue;
+  const after = entry.entryType === 'reviewer_reassigned' ? personName(people, entry.afterValue) : entry.afterValue;
+  return { before: before == null || before === '' ? '—' : String(before), after: after == null || after === '' ? '—' : String(after) };
+}
+
+async function openTaskHistory(taskId) {
+  try {
+    const history = (await api('GET', '/api/v1/admin/tasks/' + encodeURIComponent(taskId) + '/history')).body;
+    const people = history.people || {};
+    const exemptions = (history.entries || []).filter((entry) => entry.entryType === 'no_reviewer').map((entry) => entry.afterValue).filter(Boolean);
+    const versions = (history.versions || []).map((version) => `<tr>
+      <td>v${esc(version.versionNo)}</td><td>${esc(version.status)}</td><td>${esc(version.title || '—')}</td>
+      <td>${esc((version.assigneeIds || []).map((id) => personName(people, id)).join(' → ') || '—')}</td>
+      <td>${esc(version.allDay ? (version.startDate || '') + ' 至 ' + (version.dueDate || '') : formatTime(version.startAt) + ' — ' + formatTime(version.dueAt))}</td>
+      <td>${esc(version.executionState || '—')}</td><td>${esc(formatTime(version.createdAt))}</td></tr>`).join('');
+    const entries = (history.entries || []).map((entry) => {
+      const values = entryValues(entry, people);
+      const note = entryDetailText(entry, people);
+      return `<tr>
+        <td>${esc(formatTime(entry.occurredAt))}</td><td>${esc(entry.actorName || personName(people, entry.actorId))}</td>
+        <td>${esc(ENTRY_LABELS[entry.entryType] || entry.entryType)}${entry.fieldName ? '<div class="muted">' + esc(FIELD_LABELS[entry.fieldName] || entry.fieldName) + '</div>' : ''}</td>
+        <td>${esc(values.before)}</td><td>${esc(values.after)}</td><td>${esc(note)}</td></tr>`;
+    }).join('');
+    const reassignments = (history.reassignments || []).map((row) => `<tr>
+      <td>${esc(formatTime(row.createdAt))}</td><td>${esc(personName(people, row.previousReviewerId))}</td>
+      <td>${esc(personName(people, row.newReviewerId))}</td><td>${esc(row.reason || '—')}</td><td>${esc(row.source || '—')}</td></tr>`).join('');
+    const handovers = (history.handovers || []).map((row) => `<tr>
+      <td>${esc(formatTime(row.createdAt))}</td><td>${esc(personName(people, row.sourceUserId))}</td>
+      <td>${esc(personName(people, row.targetUserId))}</td><td>${esc(personName(people, row.setByUserId))}</td></tr>`).join('');
+    $('historyDetail').hidden = false;
+    $('historyDetail').innerHTML = `<div class="card"><div class="row" style="margin-bottom:8px">
+        <h3 style="margin:0">任务 ${esc(taskId)}</h3>
+        <span class="muted">创建人：${esc(history.originalCreatorName || history.originalCreatorId || '—')} · 状态：${esc(STATE_LABELS[history.executionState] || history.executionState || '—')} · 创建于 ${esc(formatTime(history.createdAt))}</span>
+        <button class="ghost" id="historyClose">关闭</button></div>
+      ${exemptions.length ? '<div class="card"><b>无需审核原因</b><div class="muted">' + exemptions.map(esc).join('<br>') + '</div></div>' : ''}
+      <h3>版本与负责人顺序</h3>
+      <table><thead><tr><th>版本</th><th>状态</th><th>标题</th><th>负责人（有序）</th><th>排期</th><th>执行状态</th><th>创建时间</th></tr></thead><tbody>${versions || '<tr><td colspan="7">暂无版本。</td></tr>'}</tbody></table>
+      <h3 style="margin-top:18px">操作记录</h3>
+      <table><thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>前值</th><th>后值</th><th>说明</th></tr></thead><tbody>${entries || '<tr><td colspan="6">暂无操作记录。</td></tr>'}</tbody></table>
+      <h3 style="margin-top:18px">改派（审核人变化）</h3>
+      <table><thead><tr><th>时间</th><th>原审核人</th><th>新审核人</th><th>原因</th><th>来源</th></tr></thead><tbody>${reassignments || '<tr><td colspan="5">无改派记录。</td></tr>'}</tbody></table>
+      <h3 style="margin-top:18px">交接</h3>
+      <table><thead><tr><th>时间</th><th>原负责人</th><th>新负责人</th><th>经办人</th></tr></thead><tbody>${handovers || '<tr><td colspan="4">无交接记录。</td></tr>'}</tbody></table>
+    </div>`;
+    $('historyClose').onclick = () => { $('historyDetail').hidden = true; $('historyDetail').innerHTML = ''; };
+    $('historyDetail').scrollIntoView({ block: 'nearest' });
+  } catch (error) { fail(error.message); }
+}
+
+function notificationStatus(row) {
+  if (row.revokedAt) return '已撤回';
+  if (row.hiddenAt) return '接收人已删除';
+  if (row.expired) return '已过期';
+  if (!row.deliveredAt) return '未送达';
+  return row.readAt ? '已读' : '未读';
+}
+
+async function loadNotifications(offset) {
+  state.notifications.offset = offset;
+  try {
+    const result = (await api('GET', '/api/v1/admin/notifications?limit=20&offset=' + offset)).body;
+    state.notifications.total = result.total || 0;
+    const query = $('notificationQuery').value.trim().toLowerCase();
+    const wanted = $('notificationState').value;
+    const rows = (result.items || []).filter((row) => {
+      const status = notificationStatus(row);
+      if (wanted && ((wanted === 'withdrawn' && status !== '已撤回') || (wanted === 'read' && status !== '已读')
+        || (wanted === 'unread' && status !== '未读') || (wanted === 'expired' && status !== '已过期')
+        || (wanted === 'hidden' && status !== '接收人已删除'))) return false;
+      if (!query) return true;
+      return [row.recipientName, row.title, row.summary, row.eventType].some((value) => String(value || '').toLowerCase().includes(query));
+    });
+    $('notificationRows').innerHTML = rows.map((row) => `<tr>
+      <td>${esc(row.recipientName || row.recipientId)}</td>
+      <td>${esc(row.title || row.summary || row.eventType || '—')}<div class="muted">${esc(row.eventType || '')}</div></td>
+      <td>${esc(notificationStatus(row))}</td><td>${esc(formatTime(row.createdAt))}</td><td>${esc(formatTime(row.expiresAt))}</td>
+      <td>${row.revokedAt || row.expired ? '' : `<button class="ghost" data-withdraw-event="${esc(row.eventId)}">撤回</button>`}</td></tr>`).join('')
+      || '<tr><td colspan="6">没有符合条件的通知。</td></tr>';
+    document.querySelectorAll('[data-withdraw-event]').forEach((button) => button.onclick = () => withdrawEvent(button.dataset.withdrawEvent));
+    const pages = Math.ceil((result.total || 0) / 20) || 1;
+    const page = Math.floor(offset / 20) + 1;
+    $('notificationPager').innerHTML = `<button class="ghost" id="notificationPrev" ${offset <= 0 ? 'disabled' : ''}>上一页</button>
+      <span class="muted">第 ${page} / ${pages} 页（共 ${result.total || 0} 条）</span>
+      <button class="ghost" id="notificationNext" ${result.nextOffset == null ? 'disabled' : ''}>下一页</button>`;
+    $('notificationPrev').onclick = () => loadNotifications(Math.max(0, offset - 20));
+    $('notificationNext').onclick = () => { if (result.nextOffset != null) loadNotifications(result.nextOffset); };
+  } catch (error) { fail(error.message); }
+}
+
+async function withdrawEvent(eventId) {
+  const reason = prompt('撤回原因（会写入审计，不影响任务申请与业务历史）', '管理员撤回测试');
+  if (reason === null) return;
+  try {
+    await api('POST', '/api/v1/admin/notifications/' + encodeURIComponent(eventId) + '/withdraw', { reason: reason.trim() || '管理员撤回' }, { key: newKey() });
+    ok('通知已撤回：跳转与正文已移除，任务申请、业务结果和历史记录保持不变。');
+    await loadNotifications(state.notifications.offset);
+  } catch (error) { fail(error.message); }
+}
+
 function openEmployee(id) {
   const employee = id ? state.employees.find((e) => e.id === id) : null;
   state.editing = employee;
   $('employeeDialogTitle').textContent = employee ? '编辑员工' : '新增员工';
   $('employeeId').value = employee ? employee.id : '';
-  $('fUsername').value = employee ? employee.username : '';
-  $('fUsername').disabled = !!employee;
   $('fDisplayName').value = employee ? employee.displayName : '';
   $('fDepartment').value = employee ? employee.departmentId : ($('fDepartment').options[0] || {}).value;
   $('fPosition').value = employee ? employee.positionId : ($('fPosition').options[0] || {}).value;
@@ -492,7 +725,10 @@ async function saveEmployee() {
       await api('PATCH', '/api/v1/admin/employees/' + id, common, { key: newKey(), ifMatch: detail.headers.get('ETag') });
       ok('员工已更新');
     } else {
-      const created = await api('POST', '/api/v1/admin/employees', Object.assign({ username: $('fUsername').value.trim() }, common), { key: newKey() });
+      /* The employee authenticates with this number, so it is required at creation. The server
+         generates an internal, non-identifying username; the administrator never invents one. */
+      if (!phone) { $('employeeError').textContent = '请填写员工手机号，员工将使用该号码登录。'; return; }
+      const created = await api('POST', '/api/v1/admin/employees', common, { key: newKey() });
       if (created.body.initialPassword) {
         $('employeeSecret').innerHTML = '<div class="card">初始密码仅显示一次，请立即交付本人：<span class="secret">' + created.body.initialPassword + '</span><div class="muted">刷新或重试都不会再次显示；忘记时请重置密码。</div></div>';
       }
@@ -540,6 +776,14 @@ $('password').addEventListener('keydown', (event) => { if (event.key === 'Enter'
 $('logout').onclick = logout;
 $('employeeQuery').oninput = renderEmployees;
 $('employeeRefresh').onclick = reloadAll;
+$('historySearch').onclick = () => loadHistory(0);
+$('historyQuery').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadHistory(0); });
+$('historyState').onchange = () => loadHistory(0);
+$('historyRequest').onchange = () => loadHistory(0);
+$('historyReset').onclick = () => { $('historyQuery').value = ''; $('historyState').value = ''; $('historyRequest').value = ''; loadHistory(0); };
+$('notificationRefresh').onclick = () => loadNotifications(0);
+$('notificationQuery').oninput = () => loadNotifications(0);
+$('notificationState').onchange = () => loadNotifications(0);
 $('employeeNew').onclick = () => openEmployee(null);
 $('employeeSave').onclick = saveEmployee;
 $('employeeTransfer').onclick = openTransfer;

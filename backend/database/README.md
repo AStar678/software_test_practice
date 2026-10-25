@@ -19,6 +19,20 @@ mysql --defaults-file="$PWD/.runtime/mysql-admin.cnf" --database=pandora < datab
 
 打开 http://127.0.0.1:8080。导入快照后已有数据会保留，启动不会重复灌入模拟数据。
 
+## 迁移预检、演练与恢复
+
+本次变更新增 V16—V19 迁移（日志日位置保留、标签与任务审计快照、平铺评论、员工手机号登录键）。升级前请先读
+[V16—V19 迁移、预检与恢复说明](../docs/migration-v16-20261025.md)，并按其中的隔离演练步骤执行：
+
+```sh
+cd backend
+python3 scripts/migration_precheck.py --database pandora precheck
+python3 scripts/check_migration_foundation.py --output ../audit/2026-10-25/chapter1-migration.json
+```
+
+旧快照（V4）可直接前向迁移到 V19；缺少手机号、规范化重复号和组织树异常的账号会登记为阻断项，需要管理员通过
+既有员工维护流程补齐，迁移不会生成号码或重建账号。恢复演练只在隔离数据库进行，不能直接覆盖正在使用的库。
+
 ## 更新备份
 
 在后端数据库运行时执行：

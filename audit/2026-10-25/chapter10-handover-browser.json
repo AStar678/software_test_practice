@@ -1,0 +1,314 @@
+{
+  "success": true,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "checksPassed": 23,
+  "checksFailed": 0,
+  "checks": [
+    {
+      "check": "V-010 the served page loads the real employee workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 我的 personal settings exposes a handover preset entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the preset entry is reachable at this viewport",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the preset sheet opens from 我的",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the employee saves the preset through the actual page",
+      "pass": true,
+      "evidence": {
+        "userId": "7c14df1d-dd7d-4452-a185-f0ada02d55d0",
+        "targetUserId": "c21dd5f1-b26f-4640-92cd-0e447b2b89e7",
+        "target": {
+          "displayName": "赵蕾",
+          "id": "c21dd5f1-b26f-4640-92cd-0e447b2b89e7",
+          "username": "colleague"
+        },
+        "rowVersion": 1,
+        "setByUserId": "7c14df1d-dd7d-4452-a185-f0ada02d55d0",
+        "updatedAt": "2026-10-25T07:38:14.951901Z"
+      }
+    },
+    {
+      "check": "V-010 the employee opens the task from the served search",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the task detail exposes the dedicated handover entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the handover entry is reachable at this viewport",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the handover sheet opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the saved preset is preselected in the handover sheet",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the form shows the actual new reviewer for the selected colleague",
+      "pass": true,
+      "evidence": {
+        "preview": "审核人：李敏（提交后由该审核人处理）"
+      }
+    },
+    {
+      "check": "V-010 changing the target updates the proposed reviewer before submit",
+      "pass": true,
+      "evidence": {
+        "preview": "审核人：王海（提交后由该审核人处理）"
+      }
+    },
+    {
+      "check": "V-010 saving the preset during a pending preview still shows the current reviewer",
+      "pass": true,
+      "evidence": {
+        "held": true,
+        "preview": {
+          "text": "审核人：王海（提交后由该审核人处理）",
+          "connected": true
+        }
+      }
+    },
+    {
+      "check": "V-010 submitting the handover closes the sheet after the pending request",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the page submission creates a pending handover",
+      "pass": true,
+      "evidence": {
+        "requestId": "22054e5d-7420-4f9a-bb9f-6ff6b2912a7c",
+        "taskId": "a982ce11-43d4-4762-8fa0-22947fceaebf",
+        "kind": "handover",
+        "status": "pending",
+        "comment": null,
+        "applicantId": "7c14df1d-dd7d-4452-a185-f0ada02d55d0",
+        "currentReviewerId": "63832853-0df6-44c0-b4f4-5690ecb75927",
+        "rowVersion": 1,
+        "previousState": "todo",
+        "exemptionReason": null,
+        "createdAt": "2026-10-25T07:38:16.926366Z",
+        "decidedAt": null,
+        "applicableDeadline": "2026-10-27T07:38:13.916Z",
+        "expiredAt": null,
+        "title": "交接UI员工任务 8365f4",
+        "versionNo": 2,
+        "route": {
+          "reviewerId": "63832853-0df6-44c0-b4f4-5690ecb75927",
+          "basisAssigneeId": "c21dd5f1-b26f-4640-92cd-0e447b2b89e7",
+          "path": [],
+          "reason": "manager-chain",
+          "reasonText": "按最高组织层级负责人的管理链上溯",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "displayName": "李敏",
+              "id": "63832853-0df6-44c0-b4f4-5690ecb75927"
+            },
+            {
+              "displayName": "赵蕾",
+              "id": "c21dd5f1-b26f-4640-92cd-0e447b2b89e7"
+            }
+          ]
+        },
+        "proposedVersion": {
+          "id": "9f7d71f3-49cb-41d7-ac33-001b2e78294e",
+          "taskId": "a982ce11-43d4-4762-8fa0-22947fceaebf",
+          "versionNo": 2,
+          "title": "交接UI员工任务 8365f4",
+          "description": "交接界面核验",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-10-25T08:38:13.916Z",
+          "dueAt": "2026-10-27T07:38:13.916Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "proposed",
+          "createdBy": "7c14df1d-dd7d-4452-a185-f0ada02d55d0",
+          "createdAt": "2026-10-25T07:38:16.926604Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "c21dd5f1-b26f-4640-92cd-0e447b2b89e7"
+          ],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "participants": [
+          {
+            "displayName": "李敏",
+            "id": "63832853-0df6-44c0-b4f4-5690ecb75927"
+          },
+          {
+            "displayName": "张涛",
+            "id": "7c14df1d-dd7d-4452-a185-f0ada02d55d0"
+          },
+          {
+            "displayName": "赵蕾",
+            "id": "c21dd5f1-b26f-4640-92cd-0e447b2b89e7"
+          }
+        ]
+      }
+    },
+    {
+      "check": "V-010 the pre-submit reviewer matches the pending request reviewer",
+      "pass": true,
+      "evidence": "63832853-0df6-44c0-b4f4-5690ecb75927"
+    },
+    {
+      "check": "V-010 the served page loads the real manager workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the direct manager opens the subordinate task from search",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the manager sees the dedicated handover entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the manager handover sheet opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-010 the manager sees the actual new reviewer before submit",
+      "pass": true,
+      "evidence": {
+        "preview": "审核人：王海（提交后由该审核人处理）"
+      }
+    },
+    {
+      "check": "V-010 the manager saves the preset for the subordinate through the page",
+      "pass": true,
+      "evidence": {
+        "userId": "7c14df1d-dd7d-4452-a185-f0ada02d55d0",
+        "targetUserId": "63832853-0df6-44c0-b4f4-5690ecb75927",
+        "target": {
+          "displayName": "李敏",
+          "id": "63832853-0df6-44c0-b4f4-5690ecb75927",
+          "username": "middle"
+        },
+        "rowVersion": 3,
+        "setByUserId": "63832853-0df6-44c0-b4f4-5690ecb75927",
+        "updatedAt": "2026-10-25T07:38:18.034266Z"
+      }
+    },
+    {
+      "check": "V-010 the manager submits a handover using the saved preset",
+      "pass": true,
+      "evidence": {
+        "requestId": "cc25f296-a7a8-4b7c-922d-da6b72d37304",
+        "taskId": "91b1cb5c-4c6f-4bcf-9761-fb9c1e6a6eba",
+        "kind": "handover",
+        "status": "pending",
+        "comment": null,
+        "applicantId": "63832853-0df6-44c0-b4f4-5690ecb75927",
+        "currentReviewerId": "1459e2ca-7bea-49d2-878f-28f519ae1704",
+        "rowVersion": 1,
+        "previousState": "todo",
+        "exemptionReason": null,
+        "createdAt": "2026-10-25T07:38:18.531370Z",
+        "decidedAt": null,
+        "applicableDeadline": "2026-10-27T07:38:13.916Z",
+        "expiredAt": null,
+        "title": "交接UI领导任务 8365f4",
+        "versionNo": 2,
+        "route": {
+          "reviewerId": "1459e2ca-7bea-49d2-878f-28f519ae1704",
+          "basisAssigneeId": "63832853-0df6-44c0-b4f4-5690ecb75927",
+          "path": [],
+          "reason": "manager-chain",
+          "reasonText": "按最高组织层级负责人的管理链上溯",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "displayName": "王海",
+              "id": "1459e2ca-7bea-49d2-878f-28f519ae1704"
+            },
+            {
+              "displayName": "李敏",
+              "id": "63832853-0df6-44c0-b4f4-5690ecb75927"
+            }
+          ]
+        },
+        "proposedVersion": {
+          "id": "0650d267-65aa-4b66-bf01-49d80926c9c8",
+          "taskId": "91b1cb5c-4c6f-4bcf-9761-fb9c1e6a6eba",
+          "versionNo": 2,
+          "title": "交接UI领导任务 8365f4",
+          "description": "交接界面核验",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-10-25T08:38:13.916Z",
+          "dueAt": "2026-10-27T07:38:13.916Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "proposed",
+          "createdBy": "63832853-0df6-44c0-b4f4-5690ecb75927",
+          "createdAt": "2026-10-25T07:38:18.531638Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "63832853-0df6-44c0-b4f4-5690ecb75927"
+          ],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "participants": [
+          {
+            "displayName": "王海",
+            "id": "1459e2ca-7bea-49d2-878f-28f519ae1704"
+          },
+          {
+            "displayName": "李敏",
+            "id": "63832853-0df6-44c0-b4f4-5690ecb75927"
+          }
+        ]
+      }
+    }
+  ]
+}

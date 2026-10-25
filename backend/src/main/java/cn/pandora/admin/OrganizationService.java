@@ -3,6 +3,7 @@ package cn.pandora.admin;
 import cn.pandora.auth.Access;
 import cn.pandora.auth.Actor;
 import cn.pandora.auth.AuthService;
+import cn.pandora.auth.PhoneNumbers;
 import cn.pandora.common.*;
 import org.springframework.stereotype.Service;
 
@@ -256,9 +257,6 @@ public class OrganizationService {
         access.requireCapability(actor, "manage_accounts");
         allowed(input, Set.of("username", "displayName", "departmentId", "positionId", "teamId",
                 "managerId", "level", "roleCodes", "phone", "email"));
-        String username = text(input.get("username"), "用户名", 80).toLowerCase(Locale.ROOT);
-        if (!USERNAME.matcher(username).matches()) throw bad("用户名须为3至80位小写字母、数字、点、下划线或短横线");
-        requireUnique("SELECT 1 FROM users WHERE username=?", "用户名已被占用", username);
         String displayName = text(input.get("displayName"), "姓名", 100);
         String departmentId = requiredUuid(input.get("departmentId"), "departmentId");
         requireDepartment(actor, departmentId);
@@ -270,15 +268,32 @@ public class OrganizationService {
         int level = requiredLevel(input.get("level"));
         List<String> codes = roleCodes(input.get("roleCodes"), false);
         validateAdministrator(actor, null, codes);
+        boolean administratorAccount = codes.contains(RoleCatalog.ADMIN);
+        // The administrator no longer has to invent a public login name for an employee: the account
+        // authenticates by phone and the username is only an internal, non-identifying handle.
+        String username = input.get("username") == null || "".equals(input.get("username"))
+                ? generatedUsername(actor) : text(input.get("username"), "用户名", 80).toLowerCase(Locale.ROOT);
+        if (!USERNAME.matcher(username).matches()) throw bad("用户名须为3至80位小写字母、数字、点、下划线或短横线");
+        requireUnique("SELECT 1 FROM users WHERE username=?", "用户名已被占用", username);
+        String phone = optionalPhone(input.get("phone"));
+        String loginPhone = null;
+        if (administratorAccount) {
+            if (phone == null) throw bad("管理员账号须保留用户名登录，手机号不得作为员工登录键");
+        } else {
+            if (phone == null) throw bad("员工登录手机号为必填项，请录入本人真实手机号");
+            loginPhone = PhoneNumbers.normalize(phone);
+            if (loginPhone == null) throw bad("员工登录手机号须为3至20位有效号码");
+            requireUnique("SELECT 1 FROM users WHERE login_phone=?", "该手机号已被其他员工账号使用", loginPhone);
+        }
 
         String userId = Db.id();
         String password = Credentials.generate();
         String hash = AuthService.PASSWORDS.encode(password);
-        String legacyRole = RoleCatalog.legacyRoleFor(codes.contains(RoleCatalog.ADMIN) ? RoleCatalog.ADMIN
+        String legacyRole = RoleCatalog.legacyRoleFor(administratorAccount ? RoleCatalog.ADMIN
                 : codes.isEmpty() ? RoleCatalog.EMPLOYEE : codes.getFirst());
-        db.update("INSERT INTO users(id,organization_id,team_id,department_id,position_id,manager_id,username,password_hash,display_name,role,rank_level,active,must_change_password,credential_version,phone,email) VALUES(?,?,?,?,?,?,?,?,?,?,?,TRUE,TRUE,1,?,?)",
+        db.update("INSERT INTO users(id,organization_id,team_id,department_id,position_id,manager_id,username,password_hash,display_name,role,rank_level,active,must_change_password,credential_version,phone,email,login_phone) VALUES(?,?,?,?,?,?,?,?,?,?,?,TRUE,TRUE,1,?,?,?)",
                 userId, actor.organizationId(), teamId, departmentId, positionId, managerId, username, hash,
-                displayName, legacyRole, level, optionalPhone(input.get("phone")), optionalEmail(input.get("email")));
+                displayName, legacyRole, level, phone, optionalEmail(input.get("email")), loginPhone);
         if (managerId != null) validateManagerChain(actor, userId, managerId);
         roles.revokeAll(actor.organizationId(), userId);
         for (String code : codes.isEmpty() ? List.of(RoleCatalog.EMPLOYEE) : codes) {
@@ -325,9 +340,24 @@ public class OrganizationService {
         for (String field : List.of("displayName", "departmentId", "positionId", "teamId", "managerId", "phone", "email")) {
             if (input.containsKey(field)) changed.add(field);
         }
-        db.update("UPDATE users SET display_name=?,department_id=?,position_id=?,team_id=?,manager_id=?,rank_level=?,active=?,reviewer_available=?,role=?,phone=COALESCE(?,phone),email=COALESCE(?,email),org_version=org_version+1 WHERE organization_id=? AND id=?",
+        String loginPhone = s(row, "loginPhone");
+        if (input.containsKey("phone")) {
+            String supplied = optionalPhone(input.get("phone"));
+            if (RoleCatalog.ADMIN.equals(legacyRole)) {
+                // The administrator keeps the username login; an employee login key is never attached.
+                loginPhone = null;
+            } else {
+                String normalized = PhoneNumbers.normalize(supplied);
+                if (normalized == null) throw bad("员工登录手机号不能清空，请录入3至20位有效号码");
+                requireUniqueExceptLoginKey(actor, id, normalized);
+                loginPhone = normalized;
+            }
+        } else if (!RoleCatalog.ADMIN.equals(legacyRole) && loginPhone == null) {
+            throw bad("员工登录手机号为必填项，请录入本人真实手机号");
+        }
+        db.update("UPDATE users SET display_name=?,department_id=?,position_id=?,team_id=?,manager_id=?,rank_level=?,active=?,reviewer_available=?,role=?,phone=COALESCE(?,phone),email=COALESCE(?,email),login_phone=?,org_version=org_version+1 WHERE organization_id=? AND id=?",
                 displayName, departmentId, positionId, teamId, managerId, level, active, reviewerAvailable,
-                legacyRole, optionalPhone(input.get("phone")), optionalEmail(input.get("email")),
+                legacyRole, optionalPhone(input.get("phone")), optionalEmail(input.get("email")), loginPhone,
                 actor.organizationId(), id);
         roles.revokeAll(actor.organizationId(), id);
         for (String code : codes) roles.grant(actor.organizationId(), id, code, actor.id());
@@ -597,6 +627,44 @@ public class OrganizationService {
             .toList();
     }
 
+    /**
+     * Restricted team-management read for an authorized department lead (chapter 9.4).
+     *
+     * <p>It returns only the lead's own department, the teams inside it and that department's active
+     * members as legal lead candidates. It is deliberately not the administration organization read:
+     * there is no company-wide department list, no employee contact field and no administrator data.
+     * Writes continue to use the existing team create/transfer commands, which re-check the same grant
+     * and department on every call.
+     */
+    public Map<String, Object> teamManagement(Actor actor) {
+        access.requireCapability(actor, "manage_team");
+        String departmentId = actor.departmentId();
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (departmentId == null) {
+            result.put("departments", List.of());
+            result.put("teams", List.of());
+            result.put("members", List.of());
+            return result;
+        }
+        Map<String, Object> department = db.find("SELECT id,name FROM departments WHERE organization_id=? AND id=?", actor.organizationId(), departmentId);
+        if (department == null) throw bad("本人所属部门不存在，请联系管理员修复组织关系");
+        result.put("departments", List.of(Map.of("id", s(department, "id"), "name", s(department, "name"))));
+        result.put("teams", db.list("SELECT t.id,t.name,t.department_id,t.lead_user_id,t.row_version,u.display_name AS lead_name,"
+                        + "(SELECT COUNT(*) FROM users m WHERE m.organization_id=t.organization_id AND m.team_id=t.id AND m.active=1) AS member_count "
+                        + "FROM teams t LEFT JOIN users u ON u.organization_id=t.organization_id AND u.id=t.lead_user_id "
+                        + "WHERE t.organization_id=? AND t.department_id=? ORDER BY t.name,t.id", actor.organizationId(), departmentId));
+        result.put("members", departmentMembersForLead(actor, departmentId));
+        return result;
+    }
+
+    /** Active department members as lead candidates: display fields only, no contact data. */
+    private List<Map<String, Object>> departmentMembersForLead(Actor actor, String departmentId) {
+        return db.list("SELECT id,display_name FROM users WHERE organization_id=? AND department_id=? AND active=1 ORDER BY rank_level,display_name,id",
+                actor.organizationId(), departmentId).stream()
+            .map(row -> Map.<String, Object>of("id", s(row, "id"), "displayName", s(row, "displayName")))
+            .toList();
+    }
+
     private void validateManagerChain(Actor actor, String userId, String managerId) {
         Set<String> seen = new HashSet<>();
         String cursor = managerId;
@@ -649,6 +717,21 @@ public class OrganizationService {
     }
 
     /** The referenced row must not exist yet (name uniqueness). */
+    private void requireUniqueExceptLoginKey(Actor actor, String userId, String loginPhone) {
+        if (db.find("SELECT 1 FROM users WHERE login_phone=? AND NOT (organization_id=? AND id=?)", loginPhone, actor.organizationId(), userId) != null) {
+            throw new ApiException(409, "PHONE_TAKEN", "该手机号已被其他员工账号使用");
+        }
+    }
+
+    /** An internal, non-identifying handle: it never contains the phone number the person logs in with. */
+    private String generatedUsername(Actor actor) {
+        for (int attempt = 0; attempt < 20; attempt++) {
+            String candidate = "u" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+            if (db.find("SELECT 1 FROM users WHERE username=?", candidate) == null) return candidate;
+        }
+        throw new ApiException(409, "DATA_CONFLICT", "无法生成账号标识，请重试");
+    }
+
     private void requireUnique(String sql, String message, Object... args) {
         if (db.find(sql, args) != null) throw new ApiException(409, "DATA_CONFLICT", message);
     }

@@ -23,7 +23,7 @@
         <includes>
           <include>index.html</include><include>admin.html</include><include>潘多拉-交互原型.html</include><include>潘多拉-交互原型.css</include>
           <include>潘多拉-交互原型.js</include><include>潘多拉-api.js</include><include>潘多拉-任务接入.js</include><include>潘多拉-工作区接入.js</include>
-          <include>潘多拉-日程视图.js</include><include>潘多拉-任务表单.js</include><include>潘多拉-个人资料.js</include><include>潘多拉-界面调整.css</include><include>潘多拉-任务表单.css</include><include>潘多拉-正式版.css</include><include>潘多拉-日历.css</include><include>潘多拉-手账主题.css</include><include>潘多拉-手账标记.svg</include>
+          <include>潘多拉-日程视图.js</include><include>潘多拉-任务表单.js</include><include>潘多拉-个人资料.js</include><include>潘多拉-标签评论.js</include><include>潘多拉-界面调整.css</include><include>潘多拉-任务表单.css</include><include>潘多拉-正式版.css</include><include>潘多拉-日历.css</include><include>潘多拉-手账主题.css</include><include>潘多拉-手账标记.svg</include>
         </includes>
       </resource>
     </resources>

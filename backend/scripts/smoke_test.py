@@ -21,6 +21,16 @@ import urllib.request
 import uuid
 
 
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 class Failure(AssertionError):
     pass
 
@@ -97,7 +107,6 @@ class Smoke:
         body = {
             "title": self.prefix + " " + suffix,
             "description": "HTTP integration verification; safe to retain as demo data.",
-            "acceptanceCriteria": "Verify authorization and transactional task lifecycle.",
             "assigneeIds": [self.users[x]["id"] for x in assignees],
             "priority": "medium", "allDay": False,
             "startAt": (now - dt.timedelta(hours=1)).isoformat(),
@@ -155,7 +164,7 @@ class Smoke:
         self.check("running API reports healthy MySQL connection", health.get("status") == "UP" and health.get("database") == "MySQL")
         for name in ("admin", "upper", "middle", "market", "employee", "colleague", "marketing"):
             _, login, _ = public.call("POST", "/api/v1/auth/sessions",
-                                      {"username": name, "password": self.password})
+                                      {"username": login_identity(name), "password": self.password})
             self.clients[name] = Client(self.base_url, login["token"])
             me, _ = self.get(name, "/me")
             self.users[name] = me

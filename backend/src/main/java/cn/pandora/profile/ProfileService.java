@@ -1,6 +1,7 @@
 package cn.pandora.profile;
 
 import cn.pandora.auth.Actor;
+import cn.pandora.auth.PhoneNumbers;
 import cn.pandora.common.ApiException;
 import cn.pandora.common.Db;
 import cn.pandora.common.Events;
@@ -41,18 +42,39 @@ public class ProfileService {
     /** Called exclusively inside Writes.run; client IDs and organization fields are never accepted. */
     public Map<String, Object> update(Actor actor, String ifMatch, Map<String, Object> input) {
         Map<String, Object> values = validate(input);
-        Map<String, Object> current = db.one("SELECT display_name,phone,email,avatar,profile_version FROM users WHERE organization_id=? AND id=? AND active=1 FOR UPDATE", actor.organizationId(), actor.id());
+        Map<String, Object> current = db.one("SELECT display_name,phone,email,avatar,profile_version,role,login_phone FROM users WHERE organization_id=? AND id=? AND active=1 FOR UPDATE", actor.organizationId(), actor.id());
         long version = n(current, "profileVersion");
         Writes.checkVersion(ifMatch, version);
         String name = values.containsKey("displayName") ? (String) values.get("displayName") : s(current, "displayName");
         String phone = values.containsKey("phone") ? (String) values.get("phone") : s(current, "phone");
         String email = values.containsKey("email") ? (String) values.get("email") : s(current, "email");
         String avatar = values.containsKey("avatar") ? (String) values.get("avatar") : s(current, "avatar");
-        int changed = db.update("UPDATE users SET display_name=?,phone=?,email=?,avatar=?,profile_version=profile_version+1 WHERE organization_id=? AND id=? AND active=1 AND profile_version=?", name, phone, email, avatar, actor.organizationId(), actor.id(), version);
+        String loginPhone = s(current, "loginPhone");
+        if (values.containsKey("phone") && !"admin".equals(s(current, "role"))) {
+            // The contact number is the employee's authentication key: it may not be cleared, and the
+            // stored key is always the normalized form of the number the person just entered.
+            String normalized = PhoneNumbers.normalize(phone);
+            if (normalized == null) throw bad("员工登录手机号不能为空，请输入3至20位有效号码");
+            requireFreePhone(actor, normalized);
+            loginPhone = normalized;
+        }
+        int changed;
+        try {
+            changed = db.update("UPDATE users SET display_name=?,phone=?,email=?,avatar=?,login_phone=?,profile_version=profile_version+1 WHERE organization_id=? AND id=? AND active=1 AND profile_version=?", name, phone, email, avatar, loginPhone, actor.organizationId(), actor.id(), version);
+        } catch (org.springframework.dao.DuplicateKeyException duplicate) {
+            throw conflict("该手机号已被其他员工账号使用");
+        }
         if (changed != 1) throw new ApiException(412, "VERSION_CONFLICT", "个人资料已更新，请重新读取后再保存");
         // Audit only which fields changed. Contact values are not copied into audit/outbox/idempotency payloads.
         events.record(actor, null, "profile.updated", List.of(), Map.of("userId", actor.id(), "fields", values.keySet()));
         return Map.of("id", actor.id(), "rowVersion", version + 1, "profileVersion", version + 1);
+    }
+
+    /** Another employee may not share this login key; the message never echoes the number itself. */
+    private void requireFreePhone(Actor actor, String normalized) {
+        Map<String, Object> clash = db.find("SELECT id FROM users WHERE login_phone=? AND NOT (organization_id=? AND id=?)",
+                normalized, actor.organizationId(), actor.id());
+        if (clash != null && !clash.isEmpty()) throw conflict("该手机号已被其他员工账号使用");
     }
 
     static Map<String, Object> validate(Map<String, Object> input) {
@@ -123,4 +145,5 @@ public class ProfileService {
     }
 
     private static ApiException bad(String message) { return new ApiException(400, "INVALID_INPUT", message); }
+    private static ApiException conflict(String message) { return new ApiException(409, "PHONE_TAKEN", message); }
 }

@@ -1,0 +1,226 @@
+{
+  "generatedAt": "2026-10-25T07:28:22.544Z",
+  "baseUrl": "http://127.0.0.1:18130",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "scenario": {
+    "tokens": {
+      "admin": "CzufMOVWO9hkDkSddV42n1BQBtKVP0E10yDOcRDQslM",
+      "middle": "Yt74fy59vfIDKCVjGgBsqZzUphfL3vzvZn3fQ6uJ8pk",
+      "upper": "eAeHMAzX69jdlxuHni5LZCpSJS4FN3vC712ZsG8P_hg",
+      "employee": "bn4WVfzggpSpPjy-0w32Hbz89ISo1xn2_WHBU2ncsDY",
+      "colleague": "QPCLyiLAgN4czXTmRRsGzK1UXnRzzVb-IFWh-IOP8Vk"
+    },
+    "ids": {
+      "admin": "24555715-0d2f-413f-809b-0dcdde237205",
+      "upper": "19f2c961-3fb8-4737-b273-00fd9d65d440",
+      "middle": "fc89e375-181d-45b4-a9a7-d4b14db43076",
+      "market": "51ab7edc-3f24-4a82-8ee1-78d2186cb359",
+      "marketing": "a12c4577-95cc-46dc-aa4b-3dcc1507177c",
+      "employee": "002b32b6-8b1f-42c4-a81b-667c4c0b32ce",
+      "colleague": "26de18e6-ca50-4743-8bdf-1ace56f79ef4"
+    },
+    "taskId": "cc437192-0e55-4487-b6f6-522a9fbef25e",
+    "exemptTaskId": "e6025210-309c-440e-96c8-251251248a20"
+  },
+  "passed": 28,
+  "total": 28,
+  "checks": [
+    {
+      "check": "9.2 the administrator console loads from the formal PC page",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.5 the formal console exposes the task-history and notification-management tabs",
+      "pass": true,
+      "evidence": {
+        "tabs": [
+          "员工",
+          "部门",
+          "职位",
+          "团队",
+          "角色与授权",
+          "公司信息",
+          "组织完整性",
+          "任务历史",
+          "通知管理"
+        ]
+      }
+    },
+    {
+      "check": "9.2 the history tab lists real company tasks with their state and ordered assignees",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2 the name search locates the scenario task without the debug page",
+      "pass": true,
+      "evidence": {
+        "rows": 1,
+        "text": "\n      浏览器历史-3a8e2d-改序cc437192-0e55-4487-b6f6-522a9fbef25e\n      进行中\n      赵蕾 → 李敏\n      李敏\n      2026/10/25 12:00:00\n      已通过\n      查看历史"
+      }
+    },
+    {
+      "check": "9.2 the opened history shows time, actor, before/after values and ordered assignees",
+      "pass": true,
+      "evidence": {
+        "head": "\n        任务 cc437192-0e55-4487-b6f6-522a9fbef25e\n        创建人：李敏 · 状态：进行中 · 创建于 2026/10/25 12:00:00\n        关闭\n      \n      版本与负责人顺序\n      版本状态标题负责人（有序）排期执行状态创建时间\n      v1applied浏览器历史-3a8e2d\n      张涛\n      2026/10/26 15:28:03 — 2026/10/28 15:28:03\n      todo2026/10/25 12:00:00\n      v2applied浏览器历史-3a8e2d-改序\n      赵蕾 → 张涛\n      2026/10/26 15:28:03 — 2026/10/28 15:28:03\n      todo2026/10/25 12:00:00\n"
+      }
+    },
+    {
+      "check": "9.2 the history shows the decision opinion",
+      "pass": true,
+      "evidence": {
+        "found": true
+      }
+    },
+    {
+      "check": "9.2 the history shows a recorded reassignment with both people",
+      "pass": true,
+      "evidence": {
+        "table": "时间原审核人新审核人原因来源\n      2026/10/25 15:28:03李敏\n      王海按最高组织层级负责人的管理链上溯organization_change"
+      }
+    },
+    {
+      "check": "9.2 the history shows the handover from the employee to the manager",
+      "pass": true,
+      "evidence": {
+        "table": "时间原负责人新负责人经办人\n      2026/10/25 15:28:03张涛\n      李敏李敏"
+      }
+    },
+    {
+      "check": "9.2 the history shows the reopen round and its reason",
+      "pass": true,
+      "evidence": {
+        "text": "\n        任务 cc437192-0e55-4487-b6f6-522a9fbef25e\n        创建人：李敏 · 状态：进行中 · 创建于 2026/10/25 12:00:00\n        关闭\n      \n      版本与负责人顺序\n      版本状态标题负责人（有序）排期执行状态创建时间\n      v1applied浏览器历史-3a8e2d\n      张涛\n      2026/10/26 15:28:03 — 2026/10/28 15:28:03\n      todo2026/10/25 12:00:00\n      v2applied浏览器历史-3a8e2d-改序\n      赵蕾 → 张涛\n      2026/10/26 15:28:03 — 2026/10/28 15:28:03\n      todo2026/10/25 12:00:00\n      v3rejected浏览器历史-3a8e2d-改派前\n      赵蕾 → 张涛\n      2026/10/26 15:28:03 — 2026/10/28 15:28:03\n      todo2026/10/25 12:00:00\n      v4applied浏览器历史-3a8e2d-改序\n      赵蕾 → 李敏\n      2026/10/26 15:28:03 — 2026/10/28 15:28:03\n      todo2026/10/25 12:00:00\n      v5applied浏览器历史-3a8e2d-改序\n      赵蕾 → 李敏\n      2026/10/26 15:28:03 — 2026/10/28 15:28:03\n      done2026/10/25 12:00:00\n      v6applied浏览器历史-3a8e2d-改序\n      赵蕾 → 李敏\n      2026/10/30 15:28:03 — 2026/11/1 15:28:03\n      doing2026/10/25 12:00:00\n      操作记录\n      时间操作人操作前值后值说明\n        2026/10/25 15:28:03李敏\n        提交申请\n        —创建 · 待审核\n        2026/10/25 15:28:03李敏\n        创建版本\n        ——\n        2026/10/25 15:28:03王海\n        版本生效版本\n        —bb5b432e-c62a-4f6a-aad0-3b690cca1388创建生效 · 待办\n        2026/10/25 15:28:03王海\n        审核决定申请状态\n        待审核已通"
+      }
+    },
+    {
+      "check": "9.2 the history shows the earlier field change with before and after values",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2 a genuinely exempt creation shows its recorded no-review reason",
+      "pass": true,
+      "evidence": {
+        "text": "\n        任务 e6025210-309c-440e-96c8-251251248a20\n        创建人：王海 · 状态：待办 · 创建于 2026/10/25 12:00:00\n        关闭\n      无需审核原因创建人为员工组织树唯一根节点（创始人），记录原因后免审生效\n      版本与负责人顺序\n      版本状态标题负责人（有序）排期执行状态创建时间\n      v1applied浏览器免审-3a8e2d\n      张涛\n      2026/10/27 15:28:03 — 2026/10/29 15:28:03\n      todo2026/10/2"
+      }
+    },
+    {
+      "check": "9.3 the notification tab shows real receive, read and retention state",
+      "pass": true,
+      "evidence": {
+        "rows": 20
+      }
+    },
+    {
+      "check": "9.3 the notification page states the 180-second and business-boundary rules",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 an event inside 180 seconds is withdrawn from the console",
+      "pass": true,
+      "evidence": {
+        "before": 20,
+        "ok": "通知已撤回：跳转与正文已移除，任务申请、业务结果和历史记录保持不变。"
+      }
+    },
+    {
+      "check": "9.3 withdrawn copies show the retained placeholder state",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 withdrawal at or after 180 seconds is refused with a clear message",
+      "pass": true,
+      "evidence": {
+        "error": "通知发出已满3分钟，不能撤回"
+      }
+    },
+    {
+      "check": "9.3 the console keeps working after the refusal",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2/9.3 the console produced no uncaught script or network errors",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "9.4 the department lead reaches the employee web workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.4 the authorized department lead sees the restricted team entry in My",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.4 the entry reads only the lead's own department and its teams",
+      "pass": true,
+      "evidence": {
+        "text": "仅可管理本人所属部门：产品部。写入继续使用现有团队创建/转交能力，服务端每次重新校验授权与部门。产品部3 人 · 负责人 李敏转交负责人李敏张涛赵蕾转交负责人新团队名称负责人（创建者默认负责）李敏张涛赵蕾创建团队"
+      }
+    },
+    {
+      "check": "9.4 creating a team from the restricted entry succeeds and refreshes the list",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.4 the created team persists and the creator is the default lead",
+      "pass": true,
+      "evidence": {
+        "team": {
+          "id": "c44f702d-4cf8-46f9-bc3f-d5ad584b67b2",
+          "name": "浏览器团队-3a8e2d",
+          "departmentId": "cd3e6935-276c-470f-8452-d05fee28e3e2",
+          "leadUserId": "fc89e375-181d-45b4-a9a7-d4b14db43076",
+          "rowVersion": 1,
+          "leadName": "李敏",
+          "memberCount": 0
+        }
+      }
+    },
+    {
+      "check": "9.4 transferring the lead to a department member persists and refreshes the sheet",
+      "pass": true,
+      "evidence": {
+        "transferred": true,
+        "lead": "002b32b6-8b1f-42c4-a81b-667c4c0b32ce"
+      }
+    },
+    {
+      "check": "9.4 an ordinary employee sees no restricted team entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.4 the employee team entry produced no uncaught script or network errors",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "9.5 a business account cannot enter the formal console and is rejected by the server",
+      "pass": true,
+      "evidence": {
+        "consoleHidden": true,
+        "token": null,
+        "employeeRows": 0,
+        "loginVisible": true
+      }
+    },
+    {
+      "check": "9.5 the console page uses no debug console to answer the query",
+      "pass": true,
+      "evidence": null
+    }
+  ]
+}

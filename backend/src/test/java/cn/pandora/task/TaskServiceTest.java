@@ -192,8 +192,10 @@ class TaskServiceTest {
     }
 
     @Test
-    void automaticApplicationReusesTheExplicitDispatchAuthorityCheck() {
-        // V-008: a reviewer-less route must not bypass the applicant's current dispatch range.
+    void automaticApplicationReusesTheExplicitCreationCandidateCheck() {
+        // V-008 (adapted by 3.1): a reviewer-less creation path must not bypass the applicant's current
+        // creation-candidate rule. A creation now accepts any active business member, so the authority
+        // re-check is the creation candidate check rather than the narrower dispatch range.
         Db db = mock(Db.class);
         Access access = mock(Access.class);
         when(db.list(startsWith("SELECT user_id FROM task_version_assignees"), eq("org"), eq("version")))
@@ -201,8 +203,8 @@ class TaskServiceTest {
         when(access.activeUser(any(), eq("owner"))).thenReturn(user("owner", "lower", 3, null, true));
         when(access.user(any(), eq("applicant"))).thenReturn(user("applicant", "upper", 0, null, true));
         when(access.actor(any())).thenReturn(new Actor("applicant", "org", "upper", null, null, 0));
-        doThrow(new ApiException(403, "DISPATCH_NOT_ALLOWED", "越权派发"))
-                .when(access).requireDispatchable(any(), eq("owner"));
+        doThrow(new ApiException(400, "INVALID_INPUT", "负责人不可用"))
+                .when(access).requireCreationCandidate(any(), eq("owner"));
         TaskService service = new TaskService(db, access, mock(Events.class),
                 java.time.Clock.systemUTC(), mock(ExpiryService.class));
         Map<String, Object> task = Map.of("id", "task", "originalCreatorId", "applicant");
@@ -215,10 +217,25 @@ class TaskServiceTest {
     }
 
     @Test
+    void creationHasNoCompletionCriterionButHistoricalValuesRemainValid() {
+        // Chapter 4.1: absent or blank is a valid (empty) value for a new creation; an existing value
+        // still passes through edits. Only over-long text is rejected.
+        assertEquals("", TaskService.optionalTextValue(null, "acceptanceCriteria", 2000));
+        assertEquals("", TaskService.optionalTextValue("   ", "acceptanceCriteria", 2000));
+        assertEquals("材料完整", TaskService.optionalTextValue(" 材料完整 ", "acceptanceCriteria", 2000));
+        assertThrows(cn.pandora.common.ApiException.class,
+                () -> TaskService.optionalTextValue("x".repeat(2001), "acceptanceCriteria", 2000));
+        assertEquals("创建按创建人的直属上级审核", TaskService.routeReasonText("direct-manager"));
+        assertEquals("创建人为员工组织树唯一根节点（创始人），记录原因后免审生效",
+                TaskService.routeReasonText("founder-exempt"));
+        assertTrue(TaskService.routeReasonText("manager-unavailable").contains("阻断"));
+    }
+
+    @Test
     void noReviewerApplicationBindsEveryPlaceholderToExactlyOneArgument() {
         // V-003: the update used to pass a duplicated argument while the SQL had one fewer placeholder.
         TaskService.Route route = new TaskService.Route(null, "basis", List.of(), "no-reviewer",
-                TaskService.routeReasonText("no-reviewer"), 3L);
+                TaskService.routeReasonText("no-reviewer"), 3L, false, false);
         Object[] args = TaskService.noReviewerApplyArgs(route, java.sql.Timestamp.from(Instant.EPOCH),
                 "org", "request", 7L);
         long placeholders = TaskService.NO_REVIEWER_APPLY_SQL.chars().filter(c -> c == '?').count();

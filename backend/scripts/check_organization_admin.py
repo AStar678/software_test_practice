@@ -21,6 +21,17 @@ RESULTS: list[dict] = []
 RUN = uuid.uuid4().hex[:6]
 
 
+
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 class Api:
     def __init__(self, base: str, password: str):
         self.base = base.rstrip('/')
@@ -54,7 +65,7 @@ class Api:
 
     def login(self, username: str, password: str | None = None):
         status, body, _ = self.call('POST', '/api/v1/auth/sessions',
-                                    body={'username': username, 'password': password or self.password})
+                                    body={'username': login_identity(username), 'password': password or self.password})
         if status != 200:
             raise SystemExit(f'login failed for {username}: {status} {body}')
         self.tokens[username] = body['token']
@@ -163,8 +174,9 @@ def main() -> int:
           status == 409 and body.get('code') == 'SECOND_ADMINISTRATOR', {'status': status, 'body': body})
 
     key = Api.key()
+    qa1_phone = '134' + str(uuid.uuid4().int)[:8]
     payload = {'username': f'qa1-{RUN}', 'displayName': '质检一号', 'departmentId': new_department,
-               'positionId': new_position, 'level': 3, 'roleCodes': ['employee'], 'phone': '13800000001'}
+               'positionId': new_position, 'level': 3, 'roleCodes': ['employee'], 'phone': qa1_phone}
     status, created, _ = api.call('POST', '/api/v1/admin/employees', api.token('admin'), payload, key)
     new_user = created.get('userId')
     initial_password = created.get('initialPassword')
@@ -177,14 +189,15 @@ def main() -> int:
           {'status': status, 'body': replay})
 
     status, session, _ = api.call('POST', '/api/v1/auth/sessions',
-                                  body={'username': f'qa1-{RUN}', 'password': initial_password})
+                                  body={'username': qa1_phone, 'password': initial_password})
     check('2.1 the generated initial password works and forces a change',
           status == 200 and session['user']['mustChangePassword'] is True,
           {'status': status, 'mustChangePassword': session.get('user', {}).get('mustChangePassword')})
 
     status, body, _ = api.call('POST', '/api/v1/admin/employees', api.token('admin'),
                                {'username': f'qa2-{RUN}', 'displayName': '质检二号', 'departmentId': new_department,
-                                'positionId': new_position, 'level': 3, 'managerId': new_user}, Api.key())
+                                'positionId': new_position, 'level': 3, 'managerId': new_user,
+                                'phone': '131' + str(uuid.uuid4().int)[:8]}, Api.key())
     qa2 = body.get('userId')
     _, qa2_detail, headers = api.call('GET', f'/api/v1/admin/employees/{qa2}', api.token('admin'))
     status, body, _ = api.call('PATCH', f'/api/v1/admin/employees/{new_user}', api.token('admin'),
@@ -197,12 +210,12 @@ def main() -> int:
           qa1_row.get('hasPhone') is True and 'phone' not in qa1_row, {'row': qa1_row})
 
     # ---------------- 2.2 independent view / dispatch ranges ----------------
-    _, candidates, _ = api.call('GET', '/api/v1/assignee-candidates', api.token('employee'))
+    _, candidates, _ = api.call('GET', '/api/v1/assignee-candidates?purpose=edit', api.token('employee'))
     check('2.2 an employee may only dispatch to themselves',
           [item['username'] for item in candidates.get('items', [])] == ['employee'],
           {'items': [item['username'] for item in candidates.get('items', [])]})
 
-    _, candidates, _ = api.call('GET', '/api/v1/assignee-candidates', api.token('middle'))
+    _, candidates, _ = api.call('GET', '/api/v1/assignee-candidates?purpose=edit', api.token('middle'))
     names = {item['username'] for item in candidates.get('items', [])}
     check('2.2 a department lead sees self and own-department staff only',
           'middle' in names and 'employee' in names and 'colleague' in names
@@ -242,7 +255,7 @@ def main() -> int:
     check('2.2 an idempotent replay from before the scope change is rejected',
           status == 409 and replay_body.get('code') == 'AUTHORIZATION_CHANGED',
           {'status': status, 'body': replay_body})
-    _, limited_candidates, _ = api.call('GET', '/api/v1/assignee-candidates', api.token('upper'))
+    _, limited_candidates, _ = api.call('GET', '/api/v1/assignee-candidates?purpose=edit', api.token('upper'))
     check('2.2 the executive can now see company tasks but only dispatch to themselves',
           [row['username'] for row in limited_candidates.get('items', [])] == ['upper'],
           {'items': [row['username'] for row in limited_candidates.get('items', [])]})
@@ -251,15 +264,25 @@ def main() -> int:
           visible_tasks.get('total', 0) > 0, {'total': visible_tasks.get('total')})
     now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
     _, employee_me, _ = api.call('GET', '/api/v1/me', api.token('employee'))
-    status, forbidden_create, _ = api.call('POST', '/api/v1/tasks', api.token('upper'),
-                                           {'title': f'越权派发-{RUN}', 'description': '核验',
-                                            'acceptanceCriteria': '核验', 'priority': 'medium', 'allDay': False,
-                                            'startAt': now.isoformat().replace('+00:00', 'Z'),
-                                            'dueAt': (now + dt.timedelta(days=1)).isoformat().replace('+00:00', 'Z'),
-                                            'assigneeIds': [employee_me['id']]}, Api.key())
-    check('2.2 a dispatch outside the configured range is refused',
-          status == 403 and forbidden_create.get('code') == 'DISPATCH_NOT_ALLOWED',
-          {'status': status, 'body': forbidden_create})
+    # Chapter 3.1: a creation may now assign any active business member, so this attempt is accepted
+    # and becomes the published task used to check that the narrower dispatch rule still guards the
+    # modification of an existing task.
+    status, allowed_create, _ = api.call('POST', '/api/v1/tasks', api.token('upper'),
+                                         {'title': f'创建派发-{RUN}', 'description': '核验',
+                                          'priority': 'medium', 'allDay': False,
+                                          'startAt': now.isoformat().replace('+00:00', 'Z'),
+                                          'dueAt': (now + dt.timedelta(days=1)).isoformat().replace('+00:00', 'Z'),
+                                          'assigneeIds': [employee_me['id']]}, Api.key())
+    check('3.1 a creation may assign an employee outside the old dispatch range',
+          status == 201, {'status': status, 'body': allowed_create})
+    dispatch_task = allowed_create.get('taskId')
+    _, dispatch_detail, dispatch_headers = api.call('GET', f'/api/v1/tasks/{dispatch_task}', api.token('upper'))
+    status, forbidden_change, _ = api.call('PATCH', f'/api/v1/tasks/{dispatch_task}', api.token('upper'),
+                                           {'command': 'change', 'assigneeIds': [employee_me['id']],
+                                            'reason': '越权修改派发'}, Api.key(), dispatch_headers.get('ETag'))
+    check('2.2 modifying a published task stays inside the configured dispatch range',
+          status == 403 and forbidden_change.get('code') == 'DISPATCH_NOT_ALLOWED',
+          {'status': status, 'body': forbidden_change})
     status, admin_scope_body, _ = api.call('PATCH', '/api/v1/admin/roles/admin/scopes', api.token('admin'),
                                            {'scopes': {'task_view': 'self'}}, Api.key())
     check('2.2 the administrator role cannot be given employee business ranges', status == 400,
@@ -267,7 +290,7 @@ def main() -> int:
     status, restored, _ = api.call('PATCH', '/api/v1/admin/roles/executive/scopes', api.token('admin'),
                                    {'scopes': {'task_view': 'company', 'task_dispatch': 'company',
                                                'log_read': 'company', 'profile_read': 'company'}}, Api.key())
-    _, restored_candidates, _ = api.call('GET', '/api/v1/assignee-candidates', api.token('upper'))
+    _, restored_candidates, _ = api.call('GET', '/api/v1/assignee-candidates?purpose=edit', api.token('upper'))
     restored_names = {row['username'] for row in restored_candidates.get('items', [])}
     check('2.2 restoring the dispatch range restores the candidate set',
           status == 200 and 'employee' in restored_names,
@@ -282,7 +305,8 @@ def main() -> int:
 
     status, peer_body, _ = api.call('POST', '/api/v1/admin/employees', api.token('admin'),
                                     {'username': f'peer-{RUN}', 'displayName': '同部门他人', 'departmentId': product['id'],
-                                     'positionId': new_position, 'level': 3}, Api.key())
+                                     'positionId': new_position, 'level': 3,
+                                     'phone': '139' + str(uuid.uuid4().int)[:8]}, Api.key())
     peer = peer_body.get('userId')
     _, authors, _ = api.call('GET', '/api/v1/work-log-authors', api.token('middle'))
     check('2.3 a same-department non-report is excluded from the log filter',
@@ -337,7 +361,7 @@ def main() -> int:
     check('2.4 the transferred lead is stored', team_row['leadUserId'] == employee_id,
           {'leadUserId': team_row['leadUserId']})
 
-    _, candidates, _ = api.call('GET', '/api/v1/assignee-candidates', api.token('employee'))
+    _, candidates, _ = api.call('GET', '/api/v1/assignee-candidates?purpose=edit', api.token('employee'))
     check('2.4 a team lead gains no dispatch authority from being lead',
           [item['username'] for item in candidates.get('items', [])] == ['employee'],
           {'items': [item['username'] for item in candidates.get('items', [])]})
@@ -356,7 +380,7 @@ def main() -> int:
     check('2.5 the organization authorization version increased',
           version_after > version_before, {'before': version_before, 'after': version_after})
 
-    _, candidates_after, _ = api.call('GET', '/api/v1/assignee-candidates', api.token('middle'))
+    _, candidates_after, _ = api.call('GET', '/api/v1/assignee-candidates?purpose=edit', api.token('middle'))
     check('2.5 the transfer removes the person from the old department range',
           f'peer-{RUN}' not in {item['username'] for item in candidates_after.get('items', [])},
           {'items': [item['username'] for item in candidates_after.get('items', [])]})

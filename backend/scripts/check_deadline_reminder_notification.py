@@ -25,6 +25,17 @@ RESULTS: list[dict] = []
 PASSWORD = "Demo@123456"
 
 
+
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 class Api:
     def __init__(self, base: str):
         self.base = base.rstrip("/")
@@ -55,7 +66,7 @@ class Api:
 
     def login(self, username):
         status, body, _ = self.call("POST", "/api/v1/auth/sessions",
-                                    body={"username": username, "password": PASSWORD})
+                                    body={'username': login_identity(username), 'password': PASSWORD})
         if status != 200:
             raise SystemExit(f"login failed for {username}: {status} {body}")
         token = body["token"]
@@ -155,11 +166,39 @@ def submit(api: Api, token: str, task_id: str, body: dict, prefix="submit"):
 
 def create_task(api: Api, token: str, title: str, assignees: list[str], start: dt.datetime,
                 due: dt.datetime, priority="medium", all_day=False) -> tuple[int, dict]:
-    body = {"title": title, "description": "核验任务", "acceptanceCriteria": "核验标准",
-            "priority": priority, "allDay": all_day, "assigneeIds": assignees,
+    body = {"title": title, "description": "核验任务", "priority": priority, "allDay": all_day, "assigneeIds": assignees,
             "startAt": iso(start), "dueAt": iso(due)}
     status, payload, _ = api.call("POST", "/api/v1/tasks", token, body, api.key("create"))
     return status, payload
+
+
+def reviewer_token(api: Api, request_id: str) -> str:
+    """The account that currently owns this request's decision, resolved from the recorded reviewer.
+
+    Chapter 3.2 routes a creation by the creator's direct manager instead of the creator, so a fixture
+    must not assume a fixed role approves it. The reviewer of record is the authority either way.
+    """
+    candidates = ("upper", "middle", "employee", "colleague", "market", "admin")
+    ids = {}
+    for name in candidates:
+        if name not in api.tokens:
+            continue
+        status, me_row, _ = api.call("GET", "/api/v1/me", api.tokens[name])
+        if status == 200:
+            ids[me_row["id"]] = name
+    for name in candidates:
+        if name not in api.tokens:
+            continue
+        status, view, _ = api.call("GET", f"/api/v1/approval-requests/{request_id}", api.tokens[name])
+        if status == 200:
+            reviewer = view.get("currentReviewerId")
+            if reviewer in ids:
+                return api.tokens[ids[reviewer]]
+    return api.tokens["upper"]
+
+
+def approve_by_reviewer(api: Api, request_id: str, comment="核验通过"):
+    return decide(api, reviewer_token(api, request_id), request_id, "approve", comment)
 
 
 def main() -> int:
@@ -194,7 +233,7 @@ def main() -> int:
                                   base + dt.timedelta(minutes=10), base + dt.timedelta(minutes=70))
     deadline_task = created["taskId"]
     deadline_request = created["requestId"]
-    status, approved, _ = decide(api, api.tokens["middle"], deadline_request)
+    status, approved, _ = approve_by_reviewer(api, deadline_request)
     check("5.1 a valid creation is approved before its deadline", status == 200 and approved.get("outcome") == "approved",
           approved)
     status, progress, _ = submit(api, api.tokens["employee"], deadline_task,
@@ -204,7 +243,7 @@ def main() -> int:
     check("5.1 the request stores an applicable deadline", status == 200 and request_view.get("applicableDeadline"),
           request_view.get("applicableDeadline"))
     advance(api, 71 * 60)
-    status, refusal, _ = decide(api, api.tokens["middle"], progress["requestId"])
+    status, refusal, _ = approve_by_reviewer(api, progress["requestId"])
     check("5.2 decide after the deadline is refused", status == 409 and refusal.get("code") == "REQUEST_EXPIRED", refusal)
     status, expired_request, _ = approval(api, api.tokens["middle"], progress["requestId"])
     check("5.2 the expiry terminal state survives the error response", status == 200
@@ -239,7 +278,7 @@ def main() -> int:
           and stale_after.get("frozen") is False
           and (stale_after.get("proposedVersion") or {}).get("executionState") == "todo",
           {key: stale_after.get(key) for key in ("published", "pending", "frozen", "proposedVersion")})
-    status, stale_decision, _ = decide(api, api.tokens["middle"], stale_request)
+    status, stale_decision, _ = approve_by_reviewer(api, stale_request)
     check("5.2 the expired submission can no longer be approved", status == 409,
           {"status": status, "code": stale_decision.get("code")})
 
@@ -247,7 +286,7 @@ def main() -> int:
     status, created = create_task(api, api.tokens["middle"], "交接入口失效落库", [employee],
                                   base + dt.timedelta(seconds=25), base + dt.timedelta(seconds=45))
     handover_task = created["taskId"]
-    decide(api, api.tokens["middle"], created["requestId"])
+    approve_by_reviewer(api, created["requestId"])
     _, handover_detail, handover_headers = task(api, api.tokens["employee"], handover_task)
     status, first_handover, _ = api.call(
         "POST", "/api/v1/tasks/" + handover_task + "/handover", api.tokens["employee"],
@@ -280,7 +319,7 @@ def main() -> int:
     status, created = create_task(api, api.tokens["middle"], "扫描失效任务", [employee],
                                   base + dt.timedelta(minutes=1), base + dt.timedelta(seconds=65))
     worker_task = created["taskId"]
-    decide(api, api.tokens["middle"], created["requestId"])
+    approve_by_reviewer(api, created["requestId"])
     submit(api, api.tokens["employee"], worker_task, {"command": "progress", "progressNote": "扫描前进展"})
     advance(api, 66)
     run_worker(api)
@@ -303,19 +342,19 @@ def main() -> int:
     status, race = create_task(api, api.tokens["middle"], "截止竞争任务", [employee],
                                base + dt.timedelta(seconds=30), base + dt.timedelta(seconds=60))
     race_task = race["taskId"]
-    decide(api, api.tokens["middle"], race["requestId"])
+    approve_by_reviewer(api, race["requestId"])
     status, race_progress, _ = submit(api, api.tokens["employee"], race_task, {"command": "progress", "progressNote": "竞争前进展"})
     race_progress_request = race_progress["requestId"]
     advance(api, 61)
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(lambda _: decide(api, api.tokens["middle"], race_progress_request), range(2)))
+        outcomes = list(pool.map(lambda _: approve_by_reviewer(api, race_progress_request), range(2)))
     statuses = [status for status, _, _ in outcomes]
     check("5.4 concurrent decisions after the deadline never approve the old request",
           all(status in (409, 412) for status in statuses) and 409 in statuses, statuses)
     status, race_request, _ = approval(api, api.tokens["middle"], race_progress_request)
     check("5.4 the race ends in exactly one expired terminal state", status == 200
           and race_request.get("status") == "expired", race_request.get("status"))
-    status, retry, _ = decide(api, api.tokens["middle"], race_progress_request)
+    status, retry, _ = approve_by_reviewer(api, race_progress_request)
     check("5.4 a later retry cannot revive the expired request", status == 409, retry.get("code"))
 
     # ---------------- 6.1: schedule version and all-day cut-off snapshot ----------------
@@ -324,11 +363,10 @@ def main() -> int:
     check("6.1 the administrator can set the company cut-off", status == 200, status)
     tomorrow = today + dt.timedelta(days=1)
     status, all_day, _ = api.call("POST", "/api/v1/tasks", api.tokens["middle"], {
-        "title": "全天快照任务", "description": "全天核验", "acceptanceCriteria": "完整日期",
-        "priority": "medium", "allDay": True, "assigneeIds": [employee],
+        "title": "全天快照任务", "description": "全天核验", "priority": "medium", "allDay": True, "assigneeIds": [employee],
         "startDate": tomorrow.isoformat(), "dueDate": tomorrow.isoformat()}, api.key("allday"))
     all_day_task = all_day["taskId"]
-    decide(api, api.tokens["middle"], all_day["requestId"])
+    approve_by_reviewer(api, all_day["requestId"])
     status, all_day_detail, _ = task(api, api.tokens["middle"], all_day_task)
     cutoff = all_day_detail.get("allDayCutoffTime")
     check("6.1 the new all-day schedule snapshots the configured cut-off", status == 200 and str(cutoff).startswith("23:59"),
@@ -337,14 +375,14 @@ def main() -> int:
           and all_day_detail.get("dueDate") == tomorrow.isoformat())
     before_schedule = all_day_detail.get("scheduleVersion")
     status, change, _ = submit(api, api.tokens["middle"], all_day_task, {"command": "change", "title": "全天快照任务 改名", "reason": "标题核验"})
-    decide(api, api.tokens["middle"], change["requestId"])
+    approve_by_reviewer(api, change["requestId"])
     status, named, _ = task(api, api.tokens["middle"], all_day_task)
     check("6.1 a non-schedule edit keeps the schedule and cut-off snapshot", named.get("scheduleVersion") == before_schedule
           and str(named.get("allDayCutoffTime")).startswith("23:59"), (before_schedule, named.get("scheduleVersion")))
     status, rescheduled, _ = submit(api, api.tokens["middle"], all_day_task, {
         "command": "change", "startDate": (tomorrow + dt.timedelta(days=1)).isoformat(),
         "dueDate": (tomorrow + dt.timedelta(days=1)).isoformat(), "reason": "排期核验"})
-    decide(api, api.tokens["middle"], rescheduled["requestId"])
+    approve_by_reviewer(api, rescheduled["requestId"])
     status, revised, _ = task(api, api.tokens["middle"], all_day_task)
     check("6.1 a real schedule change increments the schedule version", revised.get("scheduleVersion") == before_schedule + 1,
           (before_schedule, revised.get("scheduleVersion")))
@@ -355,11 +393,11 @@ def main() -> int:
     only_due = only_start + dt.timedelta(hours=10)
     status, start_only = create_task(api, api.tokens["middle"], "仅改开始时间任务", [employee], only_start, only_due)
     start_only_task = start_only["taskId"]
-    decide(api, api.tokens["middle"], start_only["requestId"])
+    approve_by_reviewer(api, start_only["requestId"])
     status, start_before, _ = task(api, api.tokens["middle"], start_only_task)
     status, start_change, _ = submit(api, api.tokens["middle"], start_only_task, {
         "command": "change", "startAt": iso(only_start + dt.timedelta(hours=1)), "reason": "仅开始时间核验"})
-    decide(api, api.tokens["middle"], start_change["requestId"])
+    approve_by_reviewer(api, start_change["requestId"])
     status, start_after, _ = task(api, api.tokens["middle"], start_only_task)
     check("6.1 changing only the start time recalculates the schedule version",
           start_after.get("scheduleVersion") == start_before.get("scheduleVersion") + 1
@@ -372,7 +410,7 @@ def main() -> int:
     due = start + dt.timedelta(hours=10)
     status, ten = create_task(api, api.tokens["middle"], "十小时比例提醒", [employee], start, due)
     ten_task = ten["taskId"]
-    decide(api, api.tokens["middle"], ten["requestId"])
+    approve_by_reviewer(api, ten["requestId"])
     run_worker(api)
     check("6.2 no reminder is sent before the first reached node", notification_count(api, "employee", ten_task, "task.reminder_20") == 0)
     advance(api, int((start + dt.timedelta(hours=8) - server_now(api)).total_seconds()) + 2)
@@ -410,7 +448,7 @@ def main() -> int:
     late_due = late_start + dt.timedelta(hours=10)
     status, late = create_task(api, api.tokens["middle"], "晚扫描跳节点任务", [employee], late_start, late_due)
     late_task = late["taskId"]
-    decide(api, api.tokens["middle"], late["requestId"])
+    approve_by_reviewer(api, late["requestId"])
     # First scan at 18:10 local-shaped offset: start + 9h10m.
     advance(api, int((late_start + dt.timedelta(hours=9, minutes=10) - server_now(api)).total_seconds()) + 2)
     run_worker(api)
@@ -432,7 +470,7 @@ def main() -> int:
     zero_start = base + dt.timedelta(minutes=5)
     status, zero = create_task(api, api.tokens["middle"], "零工期提醒任务", [employee], zero_start, zero_start)
     zero_task = zero["taskId"]
-    decide(api, api.tokens["middle"], zero["requestId"])
+    approve_by_reviewer(api, zero["requestId"])
     advance(api, 6 * 60)
     run_worker(api)
     check("6.3 a zero-duration task sends only one overdue notice",
@@ -445,7 +483,7 @@ def main() -> int:
     pending_due = pending_start + dt.timedelta(hours=10)
     status, pending_reminder = create_task(api, api.tokens["middle"], "待审暂停提醒任务", [employee], pending_start, pending_due)
     pending_task = pending_reminder["taskId"]
-    decide(api, api.tokens["middle"], pending_reminder["requestId"])
+    approve_by_reviewer(api, pending_reminder["requestId"])
     advance(api, int((pending_start + dt.timedelta(hours=8) - server_now(api)).total_seconds()) + 2)
     status, pending_progress, _ = submit(api, api.tokens["employee"], pending_task, {"command": "progress", "progressNote": "待审期间"})
     run_worker(api)
@@ -461,9 +499,9 @@ def main() -> int:
     done_due = done_start + dt.timedelta(hours=10)
     status, done_reminder = create_task(api, api.tokens["middle"], "完成后不提醒任务", [employee], done_start, done_due)
     done_task = done_reminder["taskId"]
-    decide(api, api.tokens["middle"], done_reminder["requestId"])
+    approve_by_reviewer(api, done_reminder["requestId"])
     status, done_change, _ = submit(api, api.tokens["employee"], done_task, {"command": "complete", "completionNote": "提前完成"})
-    decide(api, api.tokens["middle"], done_change["requestId"])
+    approve_by_reviewer(api, done_change["requestId"])
     advance(api, int((done_start + dt.timedelta(hours=8) - server_now(api)).total_seconds()) + 2)
     run_worker(api)
     check("6.4 a completed task gets no proportional reminder",
@@ -474,9 +512,9 @@ def main() -> int:
     removed_due = removed_start + dt.timedelta(hours=10)
     status, sharing = create_task(api, api.tokens["middle"], "移除后不提醒任务", [employee, colleague], removed_start, removed_due)
     sharing_task = sharing["taskId"]
-    decide(api, api.tokens["middle"], sharing["requestId"])
+    approve_by_reviewer(api, sharing["requestId"])
     status, remove_assignee, _ = submit(api, api.tokens["middle"], sharing_task, {"command": "change", "assigneeIds": [employee], "reason": "撤权提醒核验"})
-    decide(api, api.tokens["middle"], remove_assignee["requestId"])
+    approve_by_reviewer(api, remove_assignee["requestId"])
     advance(api, int((removed_start + dt.timedelta(hours=8) - server_now(api)).total_seconds()) + 2)
     run_worker(api)
     check("6.4 a removed recipient does not receive a new reminder",
@@ -488,7 +526,7 @@ def main() -> int:
     schedule_due = schedule_start + dt.timedelta(hours=10)
     status, reschedule_reminder = create_task(api, api.tokens["middle"], "新排期重新去重任务", [employee], schedule_start, schedule_due)
     reschedule_task = reschedule_reminder["taskId"]
-    decide(api, api.tokens["middle"], reschedule_reminder["requestId"])
+    approve_by_reviewer(api, reschedule_reminder["requestId"])
     advance(api, int((schedule_start + dt.timedelta(hours=8) - server_now(api)).total_seconds()) + 2)
     run_worker(api)
     first_schedule_count = notification_count(api, "employee", reschedule_task, "task.reminder_20")
@@ -497,7 +535,7 @@ def main() -> int:
     new_due = new_start + dt.timedelta(hours=10)
     status, reschedule, _ = submit(api, api.tokens["middle"], reschedule_task, {
         "command": "change", "startAt": iso(new_start), "dueAt": iso(new_due), "reason": "新排期去重"})
-    decide(api, api.tokens["middle"], reschedule["requestId"])
+    approve_by_reviewer(api, reschedule["requestId"])
     advance(api, int((new_start + dt.timedelta(hours=8) - server_now(api)).total_seconds()) + 2)
     run_worker(api)
     check("6.4 a new effective schedule gets its own reminder identity",
@@ -509,16 +547,16 @@ def main() -> int:
     reopen_due = reopen_start + dt.timedelta(hours=10)
     status, reopen_fixture = create_task(api, api.tokens["middle"], "重开轮次提醒去重任务", [employee], reopen_start, reopen_due)
     reopen_task = reopen_fixture["taskId"]
-    decide(api, api.tokens["middle"], reopen_fixture["requestId"])
+    approve_by_reviewer(api, reopen_fixture["requestId"])
     advance(api, int((reopen_start + dt.timedelta(hours=8) - server_now(api)).total_seconds()) + 2)
     run_worker(api)
     first_round = notification_count(api, "employee", reopen_task, "task.reminder_20")
     status, completion, _ = submit(api, api.tokens["employee"], reopen_task, {"command": "complete", "completionNote": "第一轮完成"})
-    decide(api, api.tokens["middle"], completion["requestId"])
+    approve_by_reviewer(api, completion["requestId"])
     status, reopened, _ = submit(api, api.tokens["middle"], reopen_task, {
         "command": "reopen", "reason": "第二轮核验", "allDay": False,
         "startAt": iso(reopen_start), "dueAt": iso(reopen_due)})
-    status, reopened_result, _ = decide(api, api.tokens["middle"], reopened["requestId"])
+    status, reopened_result, _ = approve_by_reviewer(api, reopened["requestId"])
     run_worker(api)
     check("6.4 a reopen creates a new round with its own reminder identity",
           first_round == 1 and status == 200 and notification_count(api, "employee", reopen_task, "task.reminder_20") == 2,
@@ -534,21 +572,21 @@ def main() -> int:
     check("7.1 an unpublished creation notifies the applicant and reviewer only",
           notification_count(api, "middle", matrix_task, "task.create.submitted") >= 1
           and notification_count(api, "employee", matrix_task, "task.create.submitted") == 0)
-    decide(api, api.tokens["middle"], create_request)
+    approve_by_reviewer(api, create_request)
     run_worker(api)
     check("7.1 creation approval notifies the task people", notification_count(api, "employee", matrix_task,
                                                                                "task.create.approved") >= 1)
     status, self_dedupe = create_task(api, api.tokens["middle"], "自通知去重任务", [employee],
                                       server_now(api) + dt.timedelta(hours=1), server_now(api) + dt.timedelta(days=2))
     self_task = self_dedupe["taskId"]
-    decide(api, api.tokens["middle"], self_dedupe["requestId"])
+    approve_by_reviewer(api, self_dedupe["requestId"])
     status, self_change, _ = submit(api, api.tokens["middle"], self_task, {
         "command": "change", "description": "自通知去重核验", "reason": "自通知"})
     run_worker(api)
     check("7.1 one event delivers once even when applicant and reviewer are the same identity",
           notification_count(api, "middle", self_task, "task.change.submitted") == 1
           and notification_count(api, "employee", self_task, "task.change.submitted") == 0)
-    decide(api, api.tokens["middle"], self_change["requestId"])
+    approve_by_reviewer(api, self_change["requestId"])
 
     status, change, _ = submit(api, api.tokens["middle"], matrix_task, {
         "command": "change", "title": "通知矩阵任务 已更新", "priority": "urgent",
@@ -558,7 +596,7 @@ def main() -> int:
     check("7.1 a published submission notifies only the reviewer", notification_count(api, "middle", matrix_task,
                                                                                     "task.change.submitted") >= 1
           and notification_count(api, "employee", matrix_task, "task.change.submitted") == 0)
-    decide(api, api.tokens["middle"], change_request)
+    approve_by_reviewer(api, change_request)
     run_worker(api)
     approved_rows = notification_matches(api, "employee", matrix_task, "task.change.approved")
     check("7.1 one event carries one actual multi-field summary", len(approved_rows) == 1
@@ -571,7 +609,7 @@ def main() -> int:
     # Removing an assignee keeps a delivered read-only historical entry for that person.
     status, removal, _ = submit(api, api.tokens["middle"], matrix_task, {
         "command": "change", "assigneeIds": [employee], "reason": "移除负责人核验"})
-    decide(api, api.tokens["middle"], removal["requestId"])
+    approve_by_reviewer(api, removal["requestId"])
     run_worker(api)
     removed_rows = notification_matches(api, "colleague", matrix_task, "task.change.approved")
     removed_row = next((row for row in removed_rows if row.get("relationLost")), None)
@@ -683,7 +721,7 @@ def main() -> int:
     status, reassign_fixture = create_task(api, api.tokens["middle"], "改派事件任务", [employee],
                                            base + dt.timedelta(hours=1), base + dt.timedelta(days=2))
     reassign_task = reassign_fixture["taskId"]
-    decide(api, api.tokens["middle"], reassign_fixture["requestId"])
+    approve_by_reviewer(api, reassign_fixture["requestId"])
     status, reassign_pending, _ = submit(api, api.tokens["middle"], reassign_task, {
         "command": "change", "title": "改派事件任务 待审", "reason": "改派核验"})
     status, employee_row, employee_headers = api.call("GET", "/api/v1/admin/employees/" + employee, api.tokens["admin"])
@@ -727,7 +765,7 @@ def main() -> int:
                                  "assigneeIds": [colleague], "reason": "改派后失权"})
     check("7.2 the ordinary create notification is still queued when the owner changes",
           status == 200 and changed.get("outcome") == "pending", changed)
-    decide(api, api.tokens["middle"], changed["requestId"])
+    approve_by_reviewer(api, changed["requestId"])
     status, _after_removal, _ = task(api, api.tokens["employee"], undelivered_task)
     check("7.2 the removed owner can no longer read the task", status == 404, status)
     run_worker(api)

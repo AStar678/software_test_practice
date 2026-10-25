@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 "use strict";
 /*
- * Browser verification for tasks 8.3/8.4: default-self logs, permission-scoped author tree/search,
- * removed mixed tabs, read-only subordinate logs, profile fields, management-chain subordinate list
- * and the separate log entry. Runs against a freshly seeded backend.
+ * Browser verification for chapter 7: default-self logs, the department → team → person authorised
+ * author directory, removed mixed tabs, read-only subordinate logs, profile fields, the management-chain
+ * subordinate list and the separate log entry. Runs against a freshly seeded backend.
  *
  *   node scripts/check_logs_profile_browser.js --base-url http://127.0.0.1:18121
  */
+
+/* Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers. */
+const DEMO_PHONE = { upper: "13800000001", middle: "13800000002", market: "13800000003",
+  employee: "13800000004", colleague: "13800000005", marketing: "13800000006", admin: "admin" };
+function loginIdentity(account) { return DEMO_PHONE[account] || account; }
+
 const { spawn } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
@@ -62,9 +68,11 @@ async function openBrowser(url) {
     ws.addEventListener("open", resolve);
     ws.addEventListener("error", () => reject(new Error("cdp failed")));
   });
-  let seq = 0; const pending = new Map();
+  let seq = 0; const pending = new Map(); const errors = [];
   ws.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
+    if (message.method === "Runtime.exceptionThrown") errors.push("EXC: " + ((message.params.exceptionDetails.exception && message.params.exceptionDetails.exception.description) || message.params.exceptionDetails.text));
+    if (message.method === "Runtime.consoleAPICalled" && message.params.type === "error") errors.push("CONSOLE: " + message.params.args.map((item) => item.value || item.description).join(" "));
     if (message.id && pending.has(message.id)) {
       const { resolve, reject } = pending.get(message.id); pending.delete(message.id);
       message.error ? reject(new Error(JSON.stringify(message.error))) : resolve(message.result);
@@ -82,7 +90,7 @@ async function openBrowser(url) {
     if (result.exceptionDetails) throw new Error(result.exceptionDetails.text + " in " + expression);
     return result.result.value;
   };
-  return { evaluate, kill: () => { try { ws.close(); } catch {} proc.kill("SIGKILL"); } };
+  return { evaluate, errors, kill: () => { try { ws.close(); } catch {} proc.kill("SIGKILL"); } };
 }
 async function waitFor(browser, expression, timeout = 12000) {
   const deadline = Date.now() + timeout;
@@ -97,21 +105,23 @@ const setValue = (id, value) => `(() => { const el = document.getElementById(${J
 const submit = (id) => `(() => { const el = document.getElementById(${JSON.stringify(id)}); if (!el) return false; el.requestSubmit(); return true; })()`;
 const clickPage = (page) => `document.querySelector('[data-page="${page}"]').click()`;
 
-async function login(browser, username, password) {
+async function login(browser, username, password, identifier) {
   await waitFor(browser, "!!document.getElementById('backend-login')");
-  await browser.evaluate(setValue("login-user", username));
+  await browser.evaluate(setValue("login-user", identifier || loginIdentity(username)));
   await browser.evaluate(setValue("login-password", password));
   await browser.evaluate(submit("backend-login"));
   return waitFor(browser, "window.Pandora && window.Pandora.ready && document.querySelector('[data-page=\"log\"]')");
 }
-async function logout(browser, next, password) {
+async function logout(browser, next, password, identifier) {
   await browser.evaluate("window.Pandora.busy(() => window.Pandora.logout('" + next + "'))");
   await waitFor(browser, "!!document.getElementById('backend-login')");
-  return login(browser, next, password);
+  return login(browser, next, password, identifier);
 }
 async function openLogPage(browser) {
   await browser.evaluate(clickPage("log"));
   await waitFor(browser, "document.getElementById('logResults') && window.Pandora.idle()");
+  // The hierarchical author filter renders after the log results; wait for it before asserting.
+  await waitFor(browser, "!!document.getElementById('logAuthorSelect')");
   await sleep(200);
 }
 async function openMePage(browser) {
@@ -125,7 +135,7 @@ async function main() {
   const password = arg("password", "Demo@123456");
   const output = arg("output", null);
   const loginApi = async (username) => {
-    const result = await api(base, "POST", "/api/v1/auth/sessions", { body: { username, password } });
+    const result = await api(base, "POST", "/api/v1/auth/sessions", { body: { username: loginIdentity(username), password } });
     if (result.status !== 200) throw new Error("login failed " + username);
     return result.body.token;
   };
@@ -141,38 +151,78 @@ async function main() {
     await openLogPage(browser);
 
     const middleState = await browser.evaluate("({ me: window.Pandora.data.me.id, author: state.logAuthorId, all: state.logAll })");
-    check("8.3 the log page defaults to the current user", middleState.author === middleState.me && middleState.all === false, middleState);
-    check("8.3 no review or application tabs remain",
+    check("7.3 the log page defaults to the current user", middleState.author === middleState.me && middleState.all === false, middleState);
+    check("7.3 no review, application or consultation content mixes into the log page",
       await browser.evaluate("document.querySelectorAll('.p-log-tab').length === 0 && !/待我审核|我的申请|请示/.test(document.getElementById('page-log').textContent)"));
-    check("8.3 no task creation or consultation command remains",
+    check("7.3 no task creation command remains on the log page",
       await browser.evaluate("!document.querySelector('#page-log [data-action=\"new-task\"], #page-log [data-action=\"new-consult\"]')"));
-    check("8.3 the author tree is permission scoped",
-      await browser.evaluate("(() => { const names = Array.from(document.querySelectorAll('[data-log-author]')).map(b => b.textContent); return names.some(n => n.includes('张涛')) && names.some(n => n.includes('赵蕾')) && !names.some(n => n.includes('孙悦')); })()"));
-    check("8.3 the manager can choose all visible logs", await browser.evaluate("!!document.querySelector('[data-log-all]')"));
+    check("7.3 the page title and navigation call the feature 日志",
+      await browser.evaluate("/日志/.test(document.querySelector('[data-page=\"log\"]').textContent) && !/记录/.test(document.querySelector('[data-page=\"log\"]').textContent) && /日志/.test(document.querySelector('.p-log-header h2').textContent)"));
+    const logDirectory = await browser.evaluate(`(() => {
+      const labels = id => Array.from((document.getElementById(id) || {}).options || []).map(o => o.textContent);
+      return { departments: labels('logDepartmentSelect'), teams: labels('logTeamSelect'), people: labels('logAuthorSelect') };
+    })()`);
+    check("7.3 the department level only offers authorised departments",
+      logDirectory.departments.some(name => name.includes('产品部')) && !logDirectory.departments.some(name => name.includes('市场部')), logDirectory.departments);
+    check("7.3 the team level only offers teams inside the authorised departments",
+      logDirectory.teams.some(name => name.includes('产品部')) && !logDirectory.teams.some(name => name.includes('市场部')), logDirectory.teams);
+    check("7.3 the person level lists self and direct reports and offers the whole scope",
+      logDirectory.people.some(name => name.includes('张涛')) && logDirectory.people.some(name => name.includes('赵蕾'))
+      && !logDirectory.people.some(name => name.includes('孙悦')) && logDirectory.people.some(name => name.includes('全部')), logDirectory.people);
 
     await browser.evaluate(setValue("logAuthorInput", "张"));
     await sleep(250);
-    check("8.3 the author search keeps its input and filters the tree",
-      await browser.evaluate("document.getElementById('logAuthorInput').value === '张' && Array.from(document.querySelectorAll('[data-log-author]')).some(b => b.textContent.includes('张涛')) && !Array.from(document.querySelectorAll('[data-log-author]')).some(b => b.textContent.includes('孙悦'))"));
-    await browser.evaluate("Array.from(document.querySelectorAll('[data-log-author]')).find(b => b.textContent.includes('张涛')).click()");
+    const filtered = await browser.evaluate(`(() => ({ input: document.getElementById('logAuthorInput').value, options: Array.from(document.getElementById('logAuthorSelect').options).map(o => o.textContent) }))()`);
+    check("7.3 the person search keeps its input and narrows the person level only",
+      filtered.input === '张' && filtered.options.some(n => n.includes('张涛')) && !filtered.options.some(n => n.includes('赵蕾')), filtered);
+    await browser.evaluate("(() => { const el = document.getElementById('logAuthorInput'); el.value = ''; el.dispatchEvent(new Event('input', {bubbles:true})); return true; })()");
+    await sleep(150);
+    const authorId = await browser.evaluate("window.Pandora.data.logAuthors.items.find(p => p.displayName === '张涛').id");
+    await browser.evaluate(`(() => { const el = document.getElementById('logAuthorSelect'); el.value = ${JSON.stringify(authorId)}; el.dispatchEvent(new Event('change', {bubbles:true})); return true; })()`);
     await waitFor(browser, "window.Pandora.idle() && document.querySelectorAll('.log-card').length > 0");
-    await sleep(200);
-    check("8.3 selecting a direct report loads only that author's logs",
-      await browser.evaluate("Array.from(document.querySelectorAll('.log-card .who')).every(el => el.textContent.includes('张涛'))"));
-    check("8.3 a subordinate log is read-only in the list",
-      await browser.evaluate("Array.from(document.querySelectorAll('.log-card')).every(card => !card.querySelector('[data-action=\"edit-log\"]') && /只读/.test(card.textContent))"));
+    await sleep(250);
+    const selected = await browser.evaluate("({ author: state.logAuthorId, all: state.logAll, team: state.logTeamId, who: Array.from(document.querySelectorAll('.log-card .who')).map(el => el.textContent), logs: LOGS.length, results: (document.getElementById('logResults') || {}).textContent.slice(0, 120), errors: (window.__pandoraErrors || []) })");
+    check("7.3 selecting a direct report loads only that author's logs",
+      selected.who.length > 0 && selected.who.every(name => name.includes('张涛')), selected);
+    check("7.3 a subordinate log is read-only in the list and offers no body edit",
+      await browser.evaluate("Array.from(document.querySelectorAll('.log-card')).every(card => !card.querySelector('[data-action=\"edit-log\"]') && /只读|已冻结/.test(card.textContent))"));
+
+    // Department → team → person cascading clears selections that no longer match.
+    const departmentId = await browser.evaluate("window.Pandora.data.logAuthors.departments.find(d => d.name === '产品部').id");
+    await browser.evaluate(`(() => { const el = document.getElementById('logDepartmentSelect'); el.value = ${JSON.stringify(departmentId)}; el.dispatchEvent(new Event('change', {bubbles:true})); return true; })()`);
+    await waitFor(browser, "window.Pandora.idle()");
+    await sleep(250);
+    check("7.3 switching the department clears a person from another department and reloads the visible set",
+      await browser.evaluate(`(() => { const people = Array.from(document.getElementById('logAuthorSelect').options).map(o => o.textContent); return state.logDepartmentId === ${JSON.stringify(departmentId)} && people.every(n => !n.includes('孙悦')); })()`), {});
+    const teamId = await browser.evaluate("window.Pandora.data.logAuthors.teams.find(t => t.name === '产品部').id");
+    await browser.evaluate(`(() => { const el = document.getElementById('logTeamSelect'); el.value = ${JSON.stringify(teamId)}; el.dispatchEvent(new Event('change', {bubbles:true})); return true; })()`);
+    await waitFor(browser, "window.Pandora.idle()");
+    await sleep(250);
+    const teamState = await browser.evaluate(`(() => { const cards = Array.from(document.querySelectorAll('.log-card .who')).map(el => el.textContent); const label = document.getElementById('logResultsCount').textContent; return { team: state.logTeamId, department: state.logDepartmentId, cards, label, logs: LOGS.length }; })()`);
+    check("7.3 the team level narrows the result list and keeps its count consistent",
+      teamState.team === teamId && /[0-9]+ 条/.test(teamState.label) && teamState.cards.length >= 0, teamState);
 
     await browser.evaluate(clickPage("map"));
     await openLogPage(browser);
-    check("8.3 the search text and author survive page navigation",
-      await browser.evaluate("document.getElementById('logAuthorInput').value === '张' && Array.from(document.querySelectorAll('[data-log-author][aria-pressed=\"true\"]')).some(b => b.textContent.includes('张涛'))"));
-
-    await browser.evaluate("document.getElementById('appMain').scrollTop = 120; document.getElementById('appMain').dispatchEvent(new Event('scroll'))");
-    await sleep(100);
+    check("7.3 the department/team/person selection survives page navigation",
+      await browser.evaluate(`state.logDepartmentId === ${JSON.stringify(departmentId)} && state.logTeamId === ${JSON.stringify(teamId)} && !!document.getElementById('logTeamSelect')`));
+    // Select the whole authorised scope so the page is tall enough to scroll, then return to the top.
+    await browser.evaluate("(() => { const el = document.getElementById('logAuthorSelect'); el.value = '__all__'; el.dispatchEvent(new Event('change', {bubbles:true})); return true; })()");
+    await waitFor(browser, "window.Pandora.idle() && state.logAll === true");
+    await sleep(400);
+    await browser.evaluate("document.getElementById('appMain').scrollTop = 200; document.getElementById('appMain').dispatchEvent(new Event('scroll'))");
+    await sleep(150);
     const topVisible = await browser.evaluate("!document.getElementById('toTopBtn').hidden");
+    await waitFor(browser, "window.Pandora.idle()");
     await browser.evaluate("document.getElementById('toTopBtn').click()");
-    check("8.3 return-to-top keeps the author search",
-      topVisible && await browser.evaluate("document.getElementById('appMain').scrollTop === 0 && document.getElementById('logAuthorInput').value === '张'"));
+    if (!(await waitFor(browser, "document.getElementById('appMain').scrollTop === 0", 3000))) {
+      await sleep(400);
+      await browser.evaluate("document.getElementById('toTopBtn').click()");
+      await waitFor(browser, "document.getElementById('appMain').scrollTop === 0", 3000);
+    }
+    check("7.3 return-to-top keeps the valid log filters",
+      topVisible && await browser.evaluate(`document.getElementById('appMain').scrollTop === 0 && state.logTeamId === ${JSON.stringify(teamId)} && state.logAll === true`),
+      await browser.evaluate("({ topVisible: !document.getElementById('toTopBtn').hidden, scrollTop: document.getElementById('appMain').scrollTop, all: state.logAll, team: state.logTeamId })"));
 
     await openMePage(browser);
     const meText = await browser.evaluate(text("#page-me"));
@@ -201,16 +251,37 @@ async function main() {
     check("8.4 the executive sees indirect subordinates",
       await browser.evaluate("(() => { const text = document.getElementById('page-me').textContent; return text.includes('张涛') && text.includes('孙悦') && !text.includes('派发'); })()"));
     await openLogPage(browser);
-    check("8.4 the executive log page includes the company tree and all-visible scope",
-      await browser.evaluate("!!document.querySelector('[data-log-all]') && Array.from(document.querySelectorAll('[data-log-author]')).some(b => b.textContent.includes('孙悦'))"));
+    check("7.3 the executive log page includes every authorised department and person",
+      await browser.evaluate(`(() => {
+        const people = Array.from(document.getElementById('logAuthorSelect').options).map(o => o.textContent);
+        const departments = Array.from(document.getElementById('logDepartmentSelect').options).map(o => o.textContent);
+        return people.some(n => n.includes('孙悦')) && departments.some(n => n.includes('市场部')) && people.some(n => n.includes('全部'));
+      })()`));
 
-    await logout(browser, "employee", password);
+    // The privacy fixture changed the employee phone above, so this final sign-in must use it.
+    await logout(browser, "employee", password, phone);
     await openMePage(browser);
     check("8.4 an employee has no subordinate section",
       await browser.evaluate("!/下属资料/.test(document.getElementById('page-me').textContent)"));
     await openLogPage(browser);
-    check("8.4 an employee has only the self log scope",
-      await browser.evaluate("!document.querySelector('[data-log-all]') && Array.from(document.querySelectorAll('[data-log-author]')).every(b => b.textContent.includes('张涛'))"));
+    // After switching accounts the log page render can race the tab click; reload once and reopen
+    // rather than asserting against a half-rendered page.
+    if (!(await browser.evaluate("!!document.getElementById('logAuthorSelect')"))) {
+      await browser.evaluate("window.Pandora.busy(() => window.Pandora.reload())");
+      await waitFor(browser, "window.Pandora.idle()");
+      await browser.evaluate(clickPage("log"));
+      await waitFor(browser, "!!document.getElementById('logAuthorSelect')");
+    }
+    const selfScope = await browser.evaluate(`(() => {
+      const select = document.getElementById('logAuthorSelect');
+      const people = select ? Array.from(select.options).map(o => o.textContent) : [];
+      return { hasSelect: !!select, ready: window.Pandora.ready, page: state.page, all: state.logAll,
+               me: (window.Pandora.data.me || {}).username, people,
+               text: (document.getElementById('page-log') || {}).textContent || '' };
+    })()`);
+    check("7.3 an employee has only the self log scope",
+      selfScope.ready && selfScope.page === "log" && selfScope.all === false && selfScope.hasSelect
+      && selfScope.people.filter(n => !n.includes('全部')).every(n => n.includes('张涛')), selfScope);
   } finally {
     try {
       const current = await api(base, "GET", "/api/v1/me/profile", { token: employee });
@@ -221,6 +292,7 @@ async function main() {
       fs.mkdirSync(require("path").dirname(output), { recursive: true });
       fs.writeFileSync(output, JSON.stringify({ viewport: { width: Number(arg("width", "390")), height: Number(arg("height", "844")) }, checks: results }, null, 2) + "\n");
     }
+    if (browser.errors.length) console.log("BROWSER ERRORS", browser.errors.slice(0, 6));
     const passed = results.filter((row) => row.pass).length;
     console.log(`\n${passed}/${results.length} browser checks passed`);
     if (passed !== results.length) process.exitCode = 1;

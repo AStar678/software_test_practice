@@ -7,6 +7,12 @@
  *
  *   node scripts/check_notification_browser.js --base-url http://127.0.0.1:18102
  */
+
+/* Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers. */
+const DEMO_PHONE = { upper: "13800000001", middle: "13800000002", market: "13800000003",
+  employee: "13800000004", colleague: "13800000005", marketing: "13800000006", admin: "admin" };
+function loginIdentity(account) { return DEMO_PHONE[account] || account; }
+
 const { spawn } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
@@ -116,7 +122,7 @@ async function main() {
   const output = arg("output", null);
 
   const login = async (username) => {
-    const result = await api(base, "POST", "/api/v1/auth/sessions", { body: { username, password } });
+    const result = await api(base, "POST", "/api/v1/auth/sessions", { body: { username: loginIdentity(username), password } });
     if (result.status !== 200) throw new Error("login failed " + username);
     return result.body.token;
   };
@@ -126,22 +132,30 @@ async function main() {
   const colleague = await login("colleague");
   const me = async (token) => (await api(base, "GET", "/api/v1/me", { token })).body;
   const middleMe = await me(middle), employeeMe = await me(employee), colleagueMe = await me(colleague);
+  const upper = await login("upper"), upperMe = await me(upper);
+  const ACCOUNT_BY_ID = { [middleMe.id]: middle, [employeeMe.id]: employee, [colleagueMe.id]: colleague, [upperMe.id]: upper };
 
   // Set a phone so the person-detail boundary has an observable value.
   const profile = await api(base, "GET", "/api/v1/me/profile", { token: employee });
   await api(base, "PATCH", "/api/v1/me/profile", { token: employee, body: { phone: "13900002222" }, key: key(), etag: etag(profile.body, profile.headers) });
+  // The phone is also the employee login identifier (chapter 2), so the browser must use the new one.
+  DEMO_PHONE.employee = "13900002222";
 
   const now = new Date();
   const create = async (token, title, assignees) => {
     const response = await api(base, "POST", "/api/v1/tasks", { token, key: key(), body: {
-      title, description: "浏览器核验", acceptanceCriteria: "可复核", priority: "medium", allDay: false,
+      title, description: "浏览器核验", priority: "medium", allDay: false,
       assigneeIds: assignees, startAt: iso(new Date(now.getTime() + 3600_000)), dueAt: iso(new Date(now.getTime() + 172800_000)) } });
     if (response.status !== 201) throw new Error("create failed " + title + " " + JSON.stringify(response.body));
     return response.body;
   };
+  /* The real reviewer of record decides; the applicant's own token may not be the reviewer (chapter 3). */
   const decide = async (token, requestId, decision = "approve") => {
     const current = await api(base, "GET", "/api/v1/approval-requests/" + requestId, { token });
-    return api(base, "PATCH", "/api/v1/approval-requests/" + requestId, { token, key: key(), etag: etag(current.body, current.headers),
+    if (current.status !== 200) return current;
+    const reviewerToken = ACCOUNT_BY_ID[current.body.currentReviewerId];
+    if (!reviewerToken) throw new Error("unknown reviewer " + current.body.currentReviewerId);
+    return api(base, "PATCH", "/api/v1/approval-requests/" + requestId, { token: reviewerToken, key: key(), etag: etag(current.body, current.headers),
       body: { decision, comment: "浏览器核验" } });
   };
   const change = async (token, taskId, body) => {
@@ -173,7 +187,7 @@ async function main() {
   try {
     // Employee login.
     await waitFor(browser, "document.getElementById('backend-login')");
-    await browser.evaluate(setValue("login-user", "employee"));
+    await browser.evaluate(setValue("login-user", loginIdentity("employee")));
     await browser.evaluate(setValue("login-password", password));
     await browser.evaluate(submit("backend-login"));
     const ready = await waitFor(browser, "window.Pandora && window.Pandora.ready");
@@ -185,6 +199,15 @@ async function main() {
     check("7.7 the header close button exists in the focus order",
       await browser.evaluate("!!document.getElementById('sheetClose') && document.getElementById('sheetClose').tabIndex >= 0"));
     check("7.3 the list shows real event titles", await browser.evaluate(text("#sheetBody") + ".includes(" + JSON.stringify("通知UI已办结 " + RUN) + ")"));
+
+    // 8.6: every row separates purpose, object name and the real summary; a long title truncates
+    // without hiding the purpose.
+    const layout = await browser.evaluate("(() => Array.from(document.querySelectorAll('.notif')).map(row => ({ purpose: (row.querySelector('.npurpose') || {}).textContent || '', title: (row.querySelector('.ntitle') || {}).textContent || '', summary: (row.querySelector('.nsummary') || {}).textContent || '' })))()");
+    check("8.6 the list separates purpose, object name and the real summary",
+      layout.length > 0 && layout.every(row => row.purpose.length > 0)
+      && layout.some(row => row.title.length > 0 && row.summary.length > 0), layout.slice(0, 3));
+    const truncated = await browser.evaluate("(() => { const title = document.querySelector('.notif .ntitle'); if (!title) return false; const style = getComputedStyle(title); return style.textOverflow === 'ellipsis' && style.whiteSpace === 'nowrap'; })()");
+    check("8.6 a long object name truncates inside its own line and never hides the purpose", truncated);
 
     // Open the resolved notification: auto-read, original result, no approve button.
     const clickId = (id) => `(() => { const b = document.querySelector('.notif[data-id="${id}"]'); if (!b) return false; b.click(); return true; })()`;
@@ -226,7 +249,7 @@ async function main() {
     // Middle manager: subordinate entry and phone detail, no dispatch button.
     await browser.evaluate("window.Pandora.busy(() => window.Pandora.logout('middle'))");
     await waitFor(browser, "document.getElementById('backend-login')");
-    await browser.evaluate(setValue("login-user", "middle"));
+    await browser.evaluate(setValue("login-user", loginIdentity("middle")));
     await browser.evaluate(setValue("login-password", password));
     await browser.evaluate(submit("backend-login"));
     await waitFor(browser, "window.Pandora && window.Pandora.ready");
@@ -242,7 +265,7 @@ async function main() {
     await browser.evaluate("document.getElementById('sheetClose').click()");
     await browser.evaluate("window.Pandora.busy(() => window.Pandora.logout('colleague'))");
     await waitFor(browser, "document.getElementById('backend-login')");
-    await browser.evaluate(setValue("login-user", "colleague"));
+    await browser.evaluate(setValue("login-user", loginIdentity("colleague")));
     await browser.evaluate(setValue("login-password", password));
     await browser.evaluate(submit("backend-login"));
     await waitFor(browser, "window.Pandora && window.Pandora.ready");

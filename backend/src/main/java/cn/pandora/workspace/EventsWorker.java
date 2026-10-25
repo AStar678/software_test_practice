@@ -90,13 +90,20 @@ public class EventsWorker {
             if (details.get("removedUserIds") instanceof Collection<?> ids) for (Object id:ids) removed.add(String.valueOf(id));
             boolean revoked=event.get("revokedAt")!=null;
             String taskId=s(event,"taskId");
+            String objectType=s(event,"objectType");
+            String objectId=s(event,"objectId");
+            boolean comment= s(event,"eventType")!=null && s(event,"eventType").startsWith("comment.");
             String summary=s(event,"changeSummary")==null?s(event,"eventType"):s(event,"changeSummary");
             String title=s(event,"title");
             for(String recipient:new LinkedHashSet<>(recipients)) {
                 Actor actor=activeActor(org,recipient);
                 if(actor==null) continue;
-                boolean canRead=taskId!=null && workspace.canReadTask(actor,taskId,true);
+                // Non-task objects (a log comment) are re-verified at delivery through their own
+                // authority; a deleted comment must not deliver an excerpt (chapter 8.5).
+                boolean canRead=taskId!=null ? workspace.canReadTask(actor,taskId,true)
+                        : objectType==null || workspace.canReadEventObject(actor,objectType,objectId,details);
                 boolean relationLost=!canRead && removed.contains(recipient);
+                boolean commentDeleted=comment && workspace.eventObjectDeleted(actor,objectType,objectId,details);
                 boolean keepTask=!revoked && (canRead||relationLost);
                 // An ordinary candidate who lost task authority before delivery gets no restricted
                 // content and no historical entry. Only a recipient that can still read the task, or a
@@ -114,15 +121,17 @@ public class EventsWorker {
                     copySummary="你已不再是该任务负责人；此消息保留只读摘要，请查看当前有效任务。";
                     copyTitle=title;readonly=true;
                 } else {
-                    copySummary="你的工作关系或访问范围已变化，请查看当前工作安排。";copyTitle=null;readonly=true;
+                    copySummary=commentDeleted?"该评论已删除，正文不再展示。":"你的工作关系或访问范围已变化，请查看当前工作安排。";
+                    copyTitle=null;readonly=true;
                 }
                 db.update("INSERT IGNORE INTO notifications(id,organization_id,event_id,recipient_id,event_type,task_id,summary,"
-                                + "request_id,task_version_id,delivered_at,expires_at,source,readonly,title,change_summary,relation_lost,content_masked) "
-                                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,'event',?,?,?,?,?)",
+                                + "request_id,task_version_id,delivered_at,expires_at,source,readonly,title,change_summary,relation_lost,content_masked,object_type,object_id) "
+                                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,'event',?,?,?,?,?,?,?)",
                         id(),org,s(event,"id"),recipient,s(event,"eventType"),keepTask?taskId:null,copySummary,
                         contentMasked?null:s(event,"requestId"),contentMasked?null:s(event,"taskVersionId"),Timestamp.from(now),
                         event.get("expiresAt"),readonly,copyTitle,
-                        contentMasked||revoked?null:s(event,"changeSummary"),relationLost,contentMasked);
+                        contentMasked||revoked?null:s(event,"changeSummary"),relationLost,contentMasked,
+                        contentMasked?null:objectType,contentMasked?null:objectId);
             }
             db.update("UPDATE domain_events SET status='delivered',delivered_at=? WHERE organization_id=? AND id=? AND status='pending'",
                     Timestamp.from(now),org,s(event,"id"));

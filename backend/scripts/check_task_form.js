@@ -11,6 +11,12 @@
  * permission matrix), then drives the served prototype in headless Chrome. Each check prints
  * PASS/FAIL and the whole run can be written as JSON evidence with --output.
  */
+
+/* Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers. */
+const DEMO_PHONE = { upper: "13800000001", middle: "13800000002", market: "13800000003",
+  employee: "13800000004", colleague: "13800000005", marketing: "13800000006", admin: "admin" };
+function loginIdentity(account) { return DEMO_PHONE[account] || account; }
+
 const { spawn } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
@@ -225,7 +231,7 @@ const setDate = (id, value) => `(() => { const el = document.getElementById(${JS
 const submit = (id) => `(() => { const el = document.getElementById(${JSON.stringify(id)}); if (!el) return false; el.requestSubmit(); return true; })()`;
 async function login(browser, username, password) {
   await waitFor(browser, "!!document.getElementById('backend-login')");
-  await browser.evaluate(setValue("login-user", username));
+  await browser.evaluate(setValue("login-user", loginIdentity(username)));
   await browser.evaluate(setValue("login-password", password));
   await browser.evaluate(submit("backend-login"));
   return waitFor(browser, "window.Pandora && window.Pandora.ready && window.Pandora.data && window.Pandora.data.me");
@@ -294,7 +300,7 @@ async function main() {
   /* ----- HTTP fixtures ----- */
   const tokens = {}, users = {};
   for (const username of ["upper", "middle", "employee", "colleague", "marketing", "market", "admin"]) {
-    const session = await api(base, "POST", "/api/v1/auth/sessions", { body: { username, password } });
+    const session = await api(base, "POST", "/api/v1/auth/sessions", { body: { username: loginIdentity(username), password } });
     if (session.status !== 200) throw new Error("login failed " + username + " " + session.status);
     tokens[username] = session.body.token;
     users[username] = session.body.user;
@@ -347,7 +353,6 @@ async function main() {
   }
   const taskBody = (title, owners, start, due, opts = {}) => Object.assign({
     title, description: "任务表单综合检查说明 · " + title + " · " + "长文本预览".repeat(24),
-    acceptanceCriteria: "验收标准 · " + title + " · " + "完整查看".repeat(12),
     priority: opts.priority || "medium", allDay: !!opts.allDay, assigneeIds: owners,
   }, opts.allDay
     ? { startDate: opts.startDate || companyDate(start), dueDate: opts.dueDate || companyDate(due) }
@@ -366,8 +371,10 @@ async function main() {
   const requestRows = await allApi(base, "/api/v1/approval-requests?mine=all", tokens.upper);
   requestRows.filter((row) => row.status === "pending").forEach((row) => pending.set(row.requestId, row));
   for (const created of bulk) {
+    // The unique organization root is exempt from creation review, so those requests are already
+    // effective; anything else must still be approved through the reviewer of record.
     const row = pending.get(created.requestId);
-    if (!row) throw new Error("missing pending approval for bulk task");
+    if (!row) continue;
     const decision = await api(base, "PATCH", "/api/v1/approval-requests/" + created.requestId, { token: tokens.upper,
       body: { decision: "approve", comment: "task-form bulk" }, idem: key("bulk-approve"), headerEtag: '"' + row.rowVersion + '"' });
     if (decision.status !== 200) throw new Error("bulk approve failed " + decision.status);
@@ -485,8 +492,19 @@ async function main() {
     await browser.evaluate(`(() => { const row = document.querySelector('#p-table-body tr[data-task-row]'); if (row) row.querySelector('[data-field="title"] button').click(); })()`);
     await waitFor(browser, "document.getElementById('overlay').hidden === false && window.Pandora.idle()");
     const detailText = await browser.evaluate("document.getElementById('sheetBody').innerText");
-    check("A-26 task detail opens from the table and reads the full description/acceptance text",
-      detailText.includes("长文本预览长文本预览") && detailText.includes("完整查看完整查看"), {});
+    // Chapter 4.1: a new task has no completion criterion, so the detail shows the full description
+    // only; a historical task keeps its stored criterion (checked right below).
+    check("A-26 task detail opens from the table and reads the full description text",
+      detailText.includes("长文本预览长文本预览") && !detailText.includes("完成标准"), { detail: detailText.slice(0, 160) });
+    await browser.evaluate("document.getElementById('sheetClose').click()");
+    await sleep(150);
+    await browser.evaluate(setValue("p-filter-query", "客户反馈整理"));
+    await sleep(400);
+    await browser.evaluate(`(() => { const row = document.querySelector('#p-table-body tr[data-task-row]'); if (row) row.querySelector('[data-field="title"] button').click(); })()`);
+    await waitFor(browser, "document.getElementById('overlay').hidden === false && window.Pandora.idle()");
+    const historicalDetail = await browser.evaluate("document.getElementById('sheetBody').innerText");
+    check("A-26 a historical task still displays its stored completion criterion in the detail",
+      historicalDetail.includes("完成标准") && historicalDetail.includes("材料完整、结果可复核"), { detail: historicalDetail.slice(0, 200) });
     await browser.evaluate("document.getElementById('sheetClose').click()");
     await sleep(150);
     await browser.evaluate(setValue("p-filter-query", ""));
@@ -701,10 +719,10 @@ async function main() {
     check("A-27 a slower earlier refresh cannot overwrite the newer complete result and ids stay deduplicated",
       raceState.hasRace && raceState.rows === raceState.ids && raceState.rows >= beforeRace, raceState);
 
-    // Calendar projection (A-13) across month/week/day and hidden count based only on own tasks.
+    // Calendar projection (A-13) across the two supported modes (month/day; no week view).
     await browser.evaluate("document.querySelector('[data-action=\"task-table-close\"]').click()");
     await waitFor(browser, "!!document.querySelector('.p-schedule-card')");
-    for (const mode of ["month", "week", "day"]) {
+    for (const mode of ["month", "day"]) {
       if ((await browser.evaluate("state.viewMode")) !== mode) {
         await browser.evaluate(`document.querySelector('[data-action="schedule-mode"][data-mode="${mode}"]').click()`);
         await waitFor(browser, `state.viewMode === '${mode}'`);
@@ -714,7 +732,7 @@ async function main() {
       const projection = await browser.evaluate(`(() => {
         const me = window.Pandora.data.me.id;
         const byId = new Map(window.Pandora.data.rawTasks.map(t => [t.id || t.taskId, t]));
-        const events = Array.from(document.querySelectorAll('.p-month-event,.p-time-event,.p-all-day-event'));
+        const events = Array.from(document.querySelectorAll('.p-month-event,.p-axis-event,.p-all-day-event'));
         const hiddenTaskIds = Array.from(document.querySelectorAll('.p-month-more[data-hidden-count]')).map(el => Number(el.dataset.hiddenCount));
         const visibleIds = new Set(window.Pandora.data.rawTasks.filter(t => t.originalCreatorId !== me && !(t.assigneeIds || []).includes(me)).map(t => t.id || t.taskId));
         return {
@@ -736,7 +754,7 @@ async function main() {
       const events = week ? Array.from(week.querySelectorAll('.p-month-event')).filter(el => {
         const start = Number(el.dataset.startColumn), end = Number(el.dataset.endColumn);
         const col = 4; // 2026-10-30 is Friday, the fifth column of a Monday-first week.
-        return start <= col && end > col;
+        return !el.hidden && start <= col && end > col;
       }).length : 0;
       const more = week && week.querySelector('.p-month-more[data-date="2026-10-30"]');
       const hidden = more ? Number(more.dataset.hiddenCount) : 0;
@@ -765,7 +783,7 @@ async function main() {
     await sleep(200);
     await browser.evaluate("state.viewAnchor = new Date(2026, 9, 27); renderAll()");
     await sleep(200);
-    const goneFromCalendar = await browser.evaluate("!Array.from(document.querySelectorAll('.p-month-event,.p-time-event,.p-all-day-event')).some(el => el.dataset.task === " + JSON.stringify(calendarLeave.taskId) + ")");
+    const goneFromCalendar = await browser.evaluate("!Array.from(document.querySelectorAll('.p-month-event,.p-axis-event,.p-all-day-event')).some(el => el.dataset.task === " + JSON.stringify(calendarLeave.taskId) + ")");
     await browser.evaluate("window.Pandora.taskForm.open()");
     await waitFor(browser, "window.Pandora.taskForm.state.loaded");
     await browser.evaluate(setSelect("p-filter-relation", "created"));

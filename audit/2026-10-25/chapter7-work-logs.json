@@ -1,0 +1,573 @@
+{
+  "checks": [
+    {
+      "check": "7.1 the seeded author already has today's log",
+      "pass": true,
+      "evidence": {
+        "id": "3cb39c11-aa68-46e0-b5cb-052b86231d68",
+        "authorId": "5503b71b-0970-4d94-a0c1-247965dd0742",
+        "businessDate": "2026-10-25",
+        "body": "完成本日工作整理，记录待办与协作问题。",
+        "taskId": "fe206814-1771-4607-bd58-ba02c6236019",
+        "rowVersion": 1,
+        "createdAt": "2026-10-25T06:12:38.810985Z",
+        "updatedAt": "2026-10-25T06:12:38.810985Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "tagId": "f02e4a3c-e918-4122-aaa4-ca26f6623f60",
+        "authorName": "张涛",
+        "tag": {
+          "id": "f02e4a3c-e918-4122-aaa4-ca26f6623f60",
+          "name": "例行",
+          "color": "#D8EAF4",
+          "border": "#4C87A3",
+          "deleted": false,
+          "rowVersion": 1
+        },
+        "frozen": false,
+        "frozenAt": "2026-10-26T06:12:38.810985Z",
+        "editable": true,
+        "deletable": true
+      }
+    },
+    {
+      "check": "7.1 an existing unfrozen log for the day is edited rather than duplicated",
+      "pass": true,
+      "evidence": {
+        "businessDate": "2026-10-25",
+        "rowVersion": 2,
+        "logId": "3cb39c11-aa68-46e0-b5cb-052b86231d68"
+      }
+    },
+    {
+      "check": "7.1 the detail publishes the real freeze instant and the current editability",
+      "pass": true,
+      "evidence": {
+        "editable": true,
+        "frozen": false,
+        "frozenAt": "2026-10-26T06:12:38.810985Z",
+        "createdAt": "2026-10-25T06:12:38.810985Z"
+      }
+    },
+    {
+      "check": "7.1 a second live create for the same day returns the existing id",
+      "pass": true,
+      "evidence": {
+        "code": "WORK_LOG_EXISTS",
+        "message": "今天已有日志，请打开已有记录编辑",
+        "businessDate": "2026-10-25",
+        "rowVersion": 2,
+        "logId": "3cb39c11-aa68-46e0-b5cb-052b86231d68"
+      }
+    },
+    {
+      "check": "7.2 deleting an editable log keeps the day slot (logical delete)",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 2,
+        "deleted": true,
+        "logId": "b0918612-be22-4b7d-ab24-64d9b232281f"
+      }
+    },
+    {
+      "check": "7.2 the deleted slot is no longer listed",
+      "pass": true,
+      "evidence": {
+        "items": [],
+        "total": 0,
+        "nextOffset": null
+      }
+    },
+    {
+      "check": "7.2 rewriting the same day restores that row instead of creating a new one",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 3,
+        "logId": "b0918612-be22-4b7d-ab24-64d9b232281f",
+        "businessDate": "2026-10-24",
+        "restored": true
+      }
+    },
+    {
+      "check": "7.2 recreating keeps the original first creation time (the freeze clock is not reset)",
+      "pass": true,
+      "evidence": {
+        "before": "2026-10-25T06:12:38.811067Z",
+        "after": "2026-10-25T06:12:38.811067Z"
+      }
+    },
+    {
+      "check": "7.1 a date older than the three-day window is rejected",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "只能补写公司今天、昨天和前天的日志"
+      }
+    },
+    {
+      "check": "7.1 a future business date is rejected",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "不能新建未来日期的日志"
+      }
+    },
+    {
+      "check": "7.1 a log created in the morning is still editable at 23:59:59",
+      "pass": true,
+      "evidence": {
+        "id": "3cb39c11-aa68-46e0-b5cb-052b86231d68",
+        "authorId": "5503b71b-0970-4d94-a0c1-247965dd0742",
+        "businessDate": "2026-10-25",
+        "body": "7.x-7565834d edited today",
+        "taskId": "fe206814-1771-4607-bd58-ba02c6236019",
+        "rowVersion": 2,
+        "createdAt": "2026-10-25T06:12:38.810985Z",
+        "updatedAt": "2026-10-25T06:12:41.902005Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "tagId": "f02e4a3c-e918-4122-aaa4-ca26f6623f60",
+        "authorName": "张涛",
+        "tag": {
+          "id": "f02e4a3c-e918-4122-aaa4-ca26f6623f60",
+          "name": "例行",
+          "color": "#D8EAF4",
+          "border": "#4C87A3",
+          "deleted": false,
+          "rowVersion": 1
+        },
+        "frozen": false,
+        "frozenAt": "2026-10-26T06:12:38.810985Z",
+        "editable": true,
+        "deletable": true
+      }
+    },
+    {
+      "check": "7.1 crossing midnight does not freeze a log that is younger than 24 hours",
+      "pass": true,
+      "evidence": {
+        "id": "3cb39c11-aa68-46e0-b5cb-052b86231d68",
+        "authorId": "5503b71b-0970-4d94-a0c1-247965dd0742",
+        "businessDate": "2026-10-25",
+        "body": "7.x-7565834d edited today",
+        "taskId": "fe206814-1771-4607-bd58-ba02c6236019",
+        "rowVersion": 2,
+        "createdAt": "2026-10-25T06:12:38.810985Z",
+        "updatedAt": "2026-10-25T06:12:41.902005Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "tagId": "f02e4a3c-e918-4122-aaa4-ca26f6623f60",
+        "authorName": "张涛",
+        "tag": {
+          "id": "f02e4a3c-e918-4122-aaa4-ca26f6623f60",
+          "name": "例行",
+          "color": "#D8EAF4",
+          "border": "#4C87A3",
+          "deleted": false,
+          "rowVersion": 1
+        },
+        "frozen": false,
+        "frozenAt": "2026-10-26T06:12:38.810985Z",
+        "editable": true,
+        "deletable": true
+      }
+    },
+    {
+      "check": "7.1 one second before its own 24-hour boundary the log is still editable",
+      "pass": true,
+      "evidence": {
+        "id": "3cb39c11-aa68-46e0-b5cb-052b86231d68",
+        "authorId": "5503b71b-0970-4d94-a0c1-247965dd0742",
+        "businessDate": "2026-10-25",
+        "body": "7.x-7565834d edited today",
+        "taskId": "fe206814-1771-4607-bd58-ba02c6236019",
+        "rowVersion": 2,
+        "createdAt": "2026-10-25T06:12:38.810985Z",
+        "updatedAt": "2026-10-25T06:12:41.902005Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "tagId": "f02e4a3c-e918-4122-aaa4-ca26f6623f60",
+        "authorName": "张涛",
+        "tag": {
+          "id": "f02e4a3c-e918-4122-aaa4-ca26f6623f60",
+          "name": "例行",
+          "color": "#D8EAF4",
+          "border": "#4C87A3",
+          "deleted": false,
+          "rowVersion": 1
+        },
+        "frozen": false,
+        "frozenAt": "2026-10-26T06:12:38.810985Z",
+        "editable": true,
+        "deletable": true
+      }
+    },
+    {
+      "check": "7.2 the author can delete the log while still inside the window",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 3,
+        "deleted": true,
+        "logId": "3cb39c11-aa68-46e0-b5cb-052b86231d68"
+      }
+    },
+    {
+      "check": "7.1 at the 24-hour boundary the restored log becomes read-only",
+      "pass": true,
+      "evidence": {
+        "id": "b0918612-be22-4b7d-ab24-64d9b232281f",
+        "authorId": "5503b71b-0970-4d94-a0c1-247965dd0742",
+        "businessDate": "2026-10-24",
+        "body": "7.x-7565834d restored",
+        "taskId": null,
+        "rowVersion": 3,
+        "createdAt": "2026-10-25T06:12:38.811067Z",
+        "updatedAt": "2026-10-25T06:12:41.927684Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "tagId": null,
+        "authorName": "张涛",
+        "tag": null,
+        "frozen": true,
+        "frozenAt": "2026-10-26T06:12:38.811067Z",
+        "editable": false,
+        "deletable": false
+      }
+    },
+    {
+      "check": "7.1 a frozen log rejects edits with WORK_LOG_FROZEN",
+      "pass": true,
+      "evidence": {
+        "code": "WORK_LOG_FROZEN",
+        "message": "该日志自首次创建已满24小时，只能查看"
+      }
+    },
+    {
+      "check": "7.1 a frozen log rejects deletes with WORK_LOG_FROZEN",
+      "pass": true,
+      "evidence": {
+        "code": "WORK_LOG_FROZEN",
+        "message": "该日志自首次创建已满24小时，只能查看"
+      }
+    },
+    {
+      "check": "7.2 a deleted slot whose original window is over cannot be recreated",
+      "pass": true,
+      "evidence": {
+        "code": "WORK_LOG_FROZEN",
+        "message": "该日志自首次创建已满24小时，只能查看"
+      }
+    },
+    {
+      "check": "7.1 another author's log is frozen at the same real boundary",
+      "pass": true,
+      "evidence": {
+        "id": "22791074-5a8b-4401-b853-795b5b776e52",
+        "authorId": "311e4968-1d7c-4491-9bd1-4b3ad70fe866",
+        "businessDate": "2026-10-25",
+        "body": "完成本日工作整理，记录待办与协作问题。",
+        "taskId": null,
+        "rowVersion": 1,
+        "createdAt": "2026-10-25T06:12:38.811329Z",
+        "updatedAt": "2026-10-25T06:12:38.811329Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "tagId": null,
+        "authorName": "赵蕾",
+        "tag": null,
+        "frozen": true,
+        "frozenAt": "2026-10-26T06:12:38.811329Z",
+        "editable": false,
+        "deletable": false
+      }
+    },
+    {
+      "check": "7.2 the new company day starts empty for this author",
+      "pass": true,
+      "evidence": {
+        "items": [],
+        "total": 0,
+        "nextOffset": null
+      }
+    },
+    {
+      "check": "7.2 concurrent creates with distinct idempotency keys persist exactly one log",
+      "pass": true,
+      "evidence": {
+        "statuses": [
+          200,
+          409
+        ],
+        "bodies": [
+          {
+            "code": "WORK_LOG_EXISTS",
+            "message": "今天已有日志，请打开已有记录编辑",
+            "businessDate": "2026-10-26",
+            "rowVersion": 1,
+            "logId": "35a997a7-67df-4ddf-a06a-424095eeb2f4"
+          },
+          {
+            "businessDate": "2026-10-26",
+            "rowVersion": 1,
+            "logId": "35a997a7-67df-4ddf-a06a-424095eeb2f4"
+          }
+        ]
+      }
+    },
+    {
+      "check": "7.2 only one active log exists for the new day",
+      "pass": true,
+      "evidence": {
+        "items": [
+          {
+            "id": "35a997a7-67df-4ddf-a06a-424095eeb2f4",
+            "authorId": "5503b71b-0970-4d94-a0c1-247965dd0742",
+            "businessDate": "2026-10-26",
+            "body": "7.x-7565834d concurrent",
+            "taskId": null,
+            "rowVersion": 1,
+            "createdAt": "2026-10-25T06:12:41.982845Z",
+            "updatedAt": "2026-10-25T06:12:41.982845Z",
+            "deletedAt": null,
+            "recoveredFrom": "log-row",
+            "tagId": null,
+            "authorName": "张涛",
+            "tag": null,
+            "frozen": false,
+            "frozenAt": "2026-10-26T06:12:41.982845Z",
+            "editable": true,
+            "deletable": true
+          }
+        ],
+        "total": 1,
+        "nextOffset": null
+      }
+    },
+    {
+      "check": "7.3 the author directory keeps self and direct reports only",
+      "pass": true,
+      "evidence": [
+        "colleague",
+        "employee",
+        "middle"
+      ]
+    },
+    {
+      "check": "7.3 departments and teams with real names and permission-filtered counts",
+      "pass": true,
+      "evidence": {
+        "departments": [
+          {
+            "id": "c95a0c0e-9a0c-4884-8d25-09aeed04de79",
+            "name": "产品部",
+            "count": 3
+          }
+        ],
+        "teams": [
+          {
+            "id": "07028109-a41c-4279-a6c3-8ca966720df8",
+            "name": "产品部",
+            "departmentId": "c95a0c0e-9a0c-4884-8d25-09aeed04de79",
+            "count": 3
+          }
+        ]
+      }
+    },
+    {
+      "check": "7.3 no unauthorized author or department leaks through the directory",
+      "pass": true,
+      "evidence": {
+        "departments": [
+          {
+            "id": "c95a0c0e-9a0c-4884-8d25-09aeed04de79",
+            "name": "产品部",
+            "count": 3
+          }
+        ]
+      }
+    },
+    {
+      "check": "7.3 person search keeps only matches inside the log range",
+      "pass": true,
+      "evidence": {
+        "items": [
+          {
+            "id": "5503b71b-0970-4d94-a0c1-247965dd0742",
+            "username": "employee",
+            "displayName": "张涛",
+            "managerId": "87a14a30-d799-4597-b875-1b5b3c874be7",
+            "departmentId": "c95a0c0e-9a0c-4884-8d25-09aeed04de79",
+            "departmentName": "产品部",
+            "teamId": "07028109-a41c-4279-a6c3-8ca966720df8",
+            "teamName": "产品部",
+            "self": false
+          }
+        ],
+        "tree": [
+          {
+            "id": "87a14a30-d799-4597-b875-1b5b3c874be7",
+            "displayName": "李敏",
+            "departmentName": "产品部",
+            "children": [
+              {
+                "id": "5503b71b-0970-4d94-a0c1-247965dd0742",
+                "displayName": "张涛",
+                "departmentName": "产品部",
+                "children": []
+              },
+              {
+                "id": "311e4968-1d7c-4491-9bd1-4b3ad70fe866",
+                "displayName": "赵蕾",
+                "departmentName": "产品部",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "departments": [
+          {
+            "id": "c95a0c0e-9a0c-4884-8d25-09aeed04de79",
+            "name": "产品部",
+            "count": 3
+          }
+        ],
+        "teams": [
+          {
+            "id": "07028109-a41c-4279-a6c3-8ca966720df8",
+            "name": "产品部",
+            "departmentId": "c95a0c0e-9a0c-4884-8d25-09aeed04de79",
+            "count": 3
+          }
+        ],
+        "total": 3,
+        "matched": 1,
+        "empty": false
+      }
+    },
+    {
+      "check": "7.3 a person search with no authorized match returns an explicit empty state",
+      "pass": true,
+      "evidence": {
+        "items": [],
+        "tree": [
+          {
+            "id": "87a14a30-d799-4597-b875-1b5b3c874be7",
+            "displayName": "李敏",
+            "departmentName": "产品部",
+            "children": [
+              {
+                "id": "5503b71b-0970-4d94-a0c1-247965dd0742",
+                "displayName": "张涛",
+                "departmentName": "产品部",
+                "children": []
+              },
+              {
+                "id": "311e4968-1d7c-4491-9bd1-4b3ad70fe866",
+                "displayName": "赵蕾",
+                "departmentName": "产品部",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "departments": [
+          {
+            "id": "c95a0c0e-9a0c-4884-8d25-09aeed04de79",
+            "name": "产品部",
+            "count": 3
+          }
+        ],
+        "teams": [
+          {
+            "id": "07028109-a41c-4279-a6c3-8ca966720df8",
+            "name": "产品部",
+            "departmentId": "c95a0c0e-9a0c-4884-8d25-09aeed04de79",
+            "count": 3
+          }
+        ],
+        "total": 3,
+        "matched": 0,
+        "empty": true
+      }
+    },
+    {
+      "check": "7.3 the department level can be searched independently",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "c95a0c0e-9a0c-4884-8d25-09aeed04de79",
+          "name": "产品部",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "check": "7.3 the team level can be searched independently",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "07028109-a41c-4279-a6c3-8ca966720df8",
+          "name": "产品部",
+          "departmentId": "c95a0c0e-9a0c-4884-8d25-09aeed04de79",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "check": "7.3 an author outside the log range is refused",
+      "pass": true,
+      "evidence": {
+        "code": "NOT_FOUND",
+        "message": "内容不存在或无权查看"
+      }
+    },
+    {
+      "check": "8.1 the founder creates a log tag from the predefined palette",
+      "pass": true,
+      "evidence": {
+        "tag": {
+          "id": "887ce4ae-77c9-4492-9b31-719e65372b0d",
+          "name": "日志标签 336a",
+          "color": "#F6D5D2",
+          "border": "#C05B52",
+          "deleted": false,
+          "rowVersion": 1
+        },
+        "rowVersion": 1,
+        "tagId": "887ce4ae-77c9-4492-9b31-719e65372b0d"
+      }
+    },
+    {
+      "check": "8.1 a log keeps one selected tag and exposes it on read",
+      "pass": true,
+      "evidence": {
+        "id": "887ce4ae-77c9-4492-9b31-719e65372b0d",
+        "name": "日志标签 336a",
+        "color": "#F6D5D2",
+        "border": "#C05B52",
+        "deleted": false,
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "8.3 renaming the tag updates the current log reference immediately",
+      "pass": true,
+      "evidence": {
+        "id": "887ce4ae-77c9-4492-9b31-719e65372b0d",
+        "name": "日志标签 336a 改",
+        "color": "#F6D5D2",
+        "border": "#C05B52",
+        "deleted": false,
+        "rowVersion": 2
+      }
+    },
+    {
+      "check": "8.3 a frozen log cannot change its tag",
+      "pass": true,
+      "evidence": {
+        "code": "WORK_LOG_FROZEN",
+        "message": "该日志自首次创建已满24小时，只能查看"
+      }
+    }
+  ]
+}

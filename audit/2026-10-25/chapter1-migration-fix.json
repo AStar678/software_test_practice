@@ -1,0 +1,439 @@
+{
+  "generatedAt": "2026-10-25T09:29:02.753743+00:00",
+  "snapshot": "/Users/watuji/MyGitDev/software_test_practice/backend/database/pandora.sql",
+  "scratchDatabase": "pandora_precheck_foundation_20261025092902",
+  "snapshotDigest": "afd3542f6e7506b41b599d3938d42f735112fb02b0d95e07329b9c0023ccc703",
+  "simulatedDeletion": {
+    "logId": "0f48a171-43c0-49dc-9389-06c3ef94c011",
+    "businessDate": "2026-10-12"
+  },
+  "schema": {
+    "versions": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
+      "20"
+    ],
+    "logDeletedAt": true,
+    "logRecoveredFrom": true,
+    "logDayUnique": true,
+    "logOrgIdUnique": true,
+    "tagTable": true,
+    "taskTagColumn": true,
+    "taskTagSnapshot": true,
+    "logTagColumn": true,
+    "commentTable": true,
+    "loginPhoneColumn": true,
+    "loginPhoneUnique": true,
+    "expectedMigrations": true,
+    "crossCompanyTags": 0,
+    "multiObjectComments": 0,
+    "normalizedLoginDuplicates": 0
+  },
+  "before": {
+    "users": 7,
+    "tasks": 43,
+    "versions": 84,
+    "assignees": 88,
+    "logs": 22
+  },
+  "after": {
+    "users": 7,
+    "tasks": 43,
+    "versions": 84,
+    "assignees": 88,
+    "logRows": 18
+  },
+  "logMerge": {
+    "before": 22,
+    "after": 18,
+    "archived": 4,
+    "unexplained": []
+  },
+  "legacyPendingCreationRoutes": 0,
+  "findings": [
+    [
+      "V16",
+      "work_log_delete_event_pending",
+      "limitation"
+    ],
+    [
+      "V16",
+      "work_log_slot_already_occupied",
+      "limitation"
+    ],
+    [
+      "V16",
+      "work_log_slot_recovered",
+      "limitation"
+    ],
+    [
+      "V17",
+      "tag_catalogue_empty",
+      "limitation"
+    ],
+    [
+      "V19",
+      "admin_login_unchanged",
+      "limitation"
+    ],
+    [
+      "V19",
+      "employee_login_phone_missing",
+      "blocker"
+    ],
+    [
+      "V19",
+      "employee_login_phone_missing",
+      "blocker"
+    ],
+    [
+      "V19",
+      "employee_login_phone_missing",
+      "blocker"
+    ],
+    [
+      "V19",
+      "employee_login_phone_missing",
+      "blocker"
+    ],
+    [
+      "V19",
+      "employee_login_phone_missing",
+      "blocker"
+    ],
+    [
+      "V19",
+      "employee_login_phone_missing",
+      "blocker"
+    ]
+  ],
+  "precheckBeforeRepair": {
+    "missingPhone": 6,
+    "blockers": [
+      "7 user(s) lack a department and 7 lack a position; the NOT NULL tightening and the formal organization write flow stay disabled until an administrator supplies the mapping.",
+      "7 pending request(s) are past their applicable deadline and must be expired, not approved.",
+      "6 active employee(s) have no phone number, so they cannot log in until an administrator records a real one; the migration never invents a number."
+    ]
+  },
+  "precheckAfterRepair": {
+    "blockers": [
+      "6 user(s) lack a department and 6 lack a position; the NOT NULL tightening and the formal organization write flow stay disabled until an administrator supplies the mapping.",
+      "7 pending request(s) are past their applicable deadline and must be expired, not approved.",
+      "5 active employee(s) have no phone number, so they cannot log in until an administrator records a real one; the migration never invents a number."
+    ],
+    "loginIdentity": {
+      "activeEmployees": 6,
+      "missingPhone": 5,
+      "invalidPhone": 0,
+      "missingPhoneUserIds": [
+        "18630b79-6a3e-4ccf-aa95-86e892bcb9d2",
+        "1b86fe11-7976-46a4-acb2-dc399e70729f",
+        "a31de58a-7ff2-4f2c-b92b-a36a30aba21f",
+        "cff45fa8-4e61-43f4-8a10-24dbf56d2e17",
+        "ffde562c-40db-473c-aedd-13f21c90f317"
+      ],
+      "invalidPhoneUserIds": [],
+      "distinctLoginKeys": 1,
+      "duplicateGroups": 0,
+      "duplicates": [],
+      "administratorsKeepUsernameLogin": 1,
+      "note": "The employee login key is the normalized contact number. A missing or colliding number is a blocker: the migration never generates a number, creates another account, or lets an ambiguous key authenticate. The administrator keeps its original username login and has no employee key."
+    }
+  },
+  "passed": 18,
+  "total": 18,
+  "checks": [
+    {
+      "check": "1.2 the rehearsal simulates one provable historical log deletion",
+      "pass": true,
+      "evidence": {
+        "logId": "0f48a171-43c0-49dc-9389-06c3ef94c011",
+        "businessDate": "2026-10-12"
+      }
+    },
+    {
+      "check": "1.1 V16..V19 applied forward on the isolated copy",
+      "pass": true,
+      "evidence": [
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20"
+      ]
+    },
+    {
+      "check": "1.1 the original employee identities are unchanged",
+      "pass": true,
+      "evidence": {
+        "before": 7,
+        "after": 7
+      }
+    },
+    {
+      "check": "1.1 the original task and relation rows are unchanged",
+      "pass": true,
+      "evidence": {
+        "versions": [
+          84,
+          84
+        ],
+        "assignees": [
+          88,
+          88
+        ]
+      }
+    },
+    {
+      "check": "1.2 every surviving log keeps its real created_at",
+      "pass": true,
+      "evidence": {
+        "survivors": 18,
+        "disappeared": 4,
+        "unexplained": []
+      }
+    },
+    {
+      "check": "1.2 the deleted day slot is restored from provable events with the original creation time",
+      "pass": true,
+      "evidence": {
+        "row": [
+          "",
+          "2026-10-12 07:24:38.587725",
+          "deleted-event",
+          "2026-10-12 07:24:37.587725",
+          "036feb69-d795-4929-81d5-a55a78a272f4",
+          "2026-10-12"
+        ],
+        "createdAt": "2026-10-12 07:24:37.587725"
+      }
+    },
+    {
+      "check": "1.2 one author/day row remains unique after the restore",
+      "pass": true,
+      "evidence": {
+        "duplicates": []
+      }
+    },
+    {
+      "check": "1.3 the tag catalogue, single tag columns and audit snapshots exist",
+      "pass": true,
+      "evidence": {
+        "versions": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20"
+        ],
+        "logDeletedAt": true,
+        "logRecoveredFrom": true,
+        "logDayUnique": true,
+        "logOrgIdUnique": true,
+        "tagTable": true,
+        "taskTagColumn": true,
+        "taskTagSnapshot": true,
+        "logTagColumn": true,
+        "commentTable": true,
+        "loginPhoneColumn": true,
+        "loginPhoneUnique": true,
+        "expectedMigrations": true,
+        "crossCompanyTags": 0,
+        "multiObjectComments": 0,
+        "normalizedLoginDuplicates": 0
+      }
+    },
+    {
+      "check": "1.3 no tag reference crosses companies",
+      "pass": true,
+      "evidence": 0
+    },
+    {
+      "check": "1.4 comments exist with exactly one object reference",
+      "pass": true,
+      "evidence": 0
+    },
+    {
+      "check": "2.1 the normalized login key is present and unique",
+      "pass": true,
+      "evidence": {
+        "versions": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20"
+        ],
+        "logDeletedAt": true,
+        "logRecoveredFrom": true,
+        "logDayUnique": true,
+        "logOrgIdUnique": true,
+        "tagTable": true,
+        "taskTagColumn": true,
+        "taskTagSnapshot": true,
+        "logTagColumn": true,
+        "commentTable": true,
+        "loginPhoneColumn": true,
+        "loginPhoneUnique": true,
+        "expectedMigrations": true,
+        "crossCompanyTags": 0,
+        "multiObjectComments": 0,
+        "normalizedLoginDuplicates": 0
+      }
+    },
+    {
+      "check": "3.4 every legacy pending creation was re-decided to the new creation route",
+      "pass": true,
+      "evidence": {
+        "remainingLegacy": 0
+      }
+    },
+    {
+      "check": "1.1/1.2 migration findings record what could not be proven",
+      "pass": true,
+      "evidence": [
+        [
+          "V16",
+          "work_log_delete_event_pending",
+          "limitation"
+        ],
+        [
+          "V16",
+          "work_log_slot_already_occupied",
+          "limitation"
+        ],
+        [
+          "V16",
+          "work_log_slot_recovered",
+          "limitation"
+        ],
+        [
+          "V17",
+          "tag_catalogue_empty",
+          "limitation"
+        ],
+        [
+          "V19",
+          "admin_login_unchanged",
+          "limitation"
+        ],
+        [
+          "V19",
+          "employee_login_phone_missing",
+          "blocker"
+        ]
+      ]
+    },
+    {
+      "check": "1.3/1.4 no existing task or version row was dropped, and every merged log row is archived",
+      "pass": true,
+      "evidence": {
+        "versions": 84,
+        "logs": 18,
+        "archived": 4
+      }
+    },
+    {
+      "check": "1.1 the administrator can still sign in after the migration",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "1.1 the administrator repairs a missing login number through the existing flow",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "036feb69-d795-4929-81d5-a55a78a272f4",
+          "rowVersion": 2,
+          "changed": [
+            "departmentId",
+            "positionId",
+            "teamId",
+            "phone"
+          ],
+          "phoneUpdated": true
+        },
+        "department": "c010edcc-b0b9-4a51-9d0f-3038d7d03a30",
+        "position": "4ded472e-3f00-427d-94c0-d8a7b0dd344e",
+        "masked": "135***0285"
+      }
+    },
+    {
+      "check": "1.1 the precheck names every missing login number and the repair reduces the blocker",
+      "pass": true,
+      "evidence": {
+        "before": 6,
+        "after": 5
+      }
+    },
+    {
+      "check": "1.5 a restart neither repeats the migration nor duplicates the backfill",
+      "pass": true,
+      "evidence": {
+        "first": {
+          "findings": 28,
+          "logs": 18,
+          "recovered": 1,
+          "history": 20
+        },
+        "second": {
+          "findings": 28,
+          "logs": 18,
+          "recovered": 1,
+          "history": 20
+        }
+      }
+    }
+  ]
+}

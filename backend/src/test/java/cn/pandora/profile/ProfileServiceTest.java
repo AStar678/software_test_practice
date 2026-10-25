@@ -47,16 +47,37 @@ class ProfileServiceTest {
     }
 
     @Test
-    void usesActorIdentityAndVersionAndReturnsNoPrivateContactValues() {
+    void usesActorIdentityAndVersionAndSyncsTheNormalizedLoginKey() {
         Db db = mock(Db.class);
         Events events = mock(Events.class);
-        when(db.one(anyString(), eq("org"), eq("self"))).thenReturn(Map.of("displayName", "原姓名", "phone", "13800000000", "email", "old@example.test", "profileVersion", 2L));
-        when(db.update(anyString(), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
+        when(db.one(anyString(), eq("org"), eq("self"))).thenReturn(Map.of("displayName", "原姓名", "phone", "13800000000",
+                "email", "old@example.test", "role", "lower", "loginPhone", "13800000000", "profileVersion", 2L));
+        when(db.find(anyString(), any(), any(), any())).thenReturn(null);
+        when(db.update(anyString(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
         ProfileService service = new ProfileService(db, events);
-        Map<String, Object> result = service.update(SELF, "\"2\"", Map.of("phone", ""));
+        Map<String, Object> result = service.update(SELF, "\"2\"", Map.of("phone", "139 0000 1111"));
         assertEquals(Map.of("id", "self", "rowVersion", 3L, "profileVersion", 3L), result);
-        verify(db).update(anyString(), eq("原姓名"), isNull(), eq("old@example.test"), isNull(), eq("org"), eq("self"), eq(2L));
+        // The contact number keeps the entered formatting; the authentication key is normalized.
+        verify(db).update(anyString(), eq("原姓名"), eq("139 0000 1111"), eq("old@example.test"), isNull(),
+                eq("13900001111"), eq("org"), eq("self"), eq(2L));
         verify(events).record(eq(SELF), isNull(), eq("profile.updated"), eq(List.of()), eq(Map.of("userId", "self", "fields", Set.of("phone"))));
+    }
+
+    @Test
+    void employeeCannotClearTheLoginNumberAndADuplicateIsRejected() {
+        Db db = mock(Db.class);
+        when(db.one(anyString(), eq("org"), eq("self"))).thenReturn(Map.of("displayName", "姓名", "phone", "13800000000",
+                "role", "lower", "loginPhone", "13800000000", "profileVersion", 2L));
+        ProfileService service = new ProfileService(db, mock(Events.class));
+        assertEquals(400, assertThrows(ApiException.class,
+                () -> service.update(SELF, "\"2\"", Map.of("phone", ""))).status);
+
+        when(db.find(anyString(), any(), any(), any())).thenReturn(Map.of("id", "other"));
+        ApiException duplicate = assertThrows(ApiException.class,
+                () -> service.update(SELF, "\"2\"", Map.of("phone", "13900001111")));
+        assertEquals(409, duplicate.status);
+        assertEquals("PHONE_TAKEN", duplicate.code);
+        verify(db, never()).update(anyString(), any(Object[].class));
     }
 
     @Test
@@ -90,10 +111,11 @@ class ProfileServiceTest {
     void updatingAnAvatarPreservesContactsAndUsesTheProfileVersion() {
         Db db = mock(Db.class);
         Events events = mock(Events.class);
-        when(db.one(anyString(), eq("org"), eq("self"))).thenReturn(Map.of("displayName", "姓名", "phone", "13800000000", "email", "old@example.test", "avatar", "cat", "profileVersion", 4L));
-        when(db.update(anyString(), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
+        when(db.one(anyString(), eq("org"), eq("self"))).thenReturn(Map.of("displayName", "姓名", "phone", "13800000000", "email", "old@example.test", "avatar", "cat", "role", "lower", "loginPhone", "13800000000", "profileVersion", 4L));
+        when(db.update(anyString(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
         new ProfileService(db, events).update(SELF, "\"4\"", Map.of("avatar", "bear"));
-        verify(db).update(anyString(), eq("姓名"), eq("13800000000"), eq("old@example.test"), eq("bear"), eq("org"), eq("self"), eq(4L));
+        verify(db).update(anyString(), eq("姓名"), eq("13800000000"), eq("old@example.test"), eq("bear"),
+                eq("13800000000"), eq("org"), eq("self"), eq(4L));
         verify(events).record(eq(SELF), isNull(), eq("profile.updated"), eq(List.of()), eq(Map.of("userId", "self", "fields", Set.of("avatar"))));
     }
 }

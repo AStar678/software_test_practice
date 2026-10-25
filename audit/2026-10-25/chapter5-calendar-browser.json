@@ -1,0 +1,163 @@
+{
+  "checks": [
+    {
+      "check": "9.2 the home has four independent quadrants",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2 assigned tasks are title + priority rows",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2 personal items do not expose edit/delete in the list",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2 personal detail has edit and delete commands",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the calendar exposes a side toggle, a year-month picker, the task table and a floating create",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the calendar has no person switch, no week mode, no ordinary search and no statistics",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the side panel starts collapsed",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 opening the side panel exposes month/day and my applications",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 my applications opens only my submitted requests",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 closing the side panel returns the calendar as the main body",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the month stream mounts adjacent months around the anchor",
+      "pass": true,
+      "evidence": {
+        "keys": [
+          "2026-08",
+          "2026-09",
+          "2026-10",
+          "2026-11",
+          "2026-12"
+        ],
+        "count": 5
+      }
+    },
+    {
+      "check": "9.3 every business day appears exactly once across the mounted months (no duplicated boundary content)",
+      "pass": true,
+      "evidence": {
+        "total": 153,
+        "unique": 153
+      }
+    },
+    {
+      "check": "9.4 the pinned task sorts first in its week and only gets an emphasis marker",
+      "pass": true,
+      "evidence": {
+        "found": true,
+        "first": true,
+        "marker": true
+      }
+    },
+    {
+      "check": "9.4 month overflow shows the real hidden count and not an aggregate substitute",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "text": "+1",
+        "date": "2026-10-23"
+      }
+    },
+    {
+      "check": "9.4 opening the month overflow lists the complete day list",
+      "pass": true,
+      "evidence": {
+        "listed": {
+          "mode": "day",
+          "items": 4,
+          "detail": "我的申请"
+        },
+        "totalOnDay": 4
+      }
+    },
+    {
+      "check": "9.3 scrolling down mounts the next months without jumping the reader",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 3186,
+          "stream": 5
+        },
+        "after": {
+          "top": 5555,
+          "stream": 6,
+          "lastMonth": 6
+        }
+      }
+    },
+    {
+      "check": "9.3 a far year/month can be selected from the picker and is mounted",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the far month contains the real task created for it",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 returning today rebuilds the stream around the current month",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.4 the keyboard raises the month density while keeping the visible business-day anchor",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "height": 220,
+          "week": "2026-10-12"
+        },
+        "after": {
+          "height": 228,
+          "week": "2026-10-12"
+        }
+      }
+    },
+    {
+      "check": "9.4 dragging the handle raises the month density",
+      "pass": true,
+      "evidence": {
+        "before": 228,
+        "after": 268
+      }
+    },
+    {
+      "check": "9.4 tapping a month bar opens the task detail and keeps the month mode",
+      "pass": true,
+      "evidence": null
+    }
+  ]
+}

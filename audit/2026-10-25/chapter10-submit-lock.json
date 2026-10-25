@@ -1,0 +1,55 @@
+{
+  "success": true,
+  "checksPassed": 5,
+  "checksFailed": 0,
+  "checks": [
+    {
+      "check": "V-002 the deadline fixture is a pending creation",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "body": {
+          "taskId": "6ead03de-d4c4-4104-b24a-3e65aa2689d2",
+          "requestId": "c328bff9-0742-4300-b3c3-cc8731703765",
+          "outcome": "pending",
+          "rowVersion": 1
+        }
+      }
+    },
+    {
+      "check": "V-002 the submission waited on the organization lock before deciding",
+      "pass": true,
+      "evidence": {
+        "elapsedSeconds": 3.63
+      }
+    },
+    {
+      "check": "V-002 the stale submission is refused after the wait",
+      "pass": true,
+      "evidence": {
+        "status": 412,
+        "body": {
+          "code": "VERSION_CONFLICT",
+          "message": "内容已更新，请刷新后重试"
+        }
+      }
+    },
+    {
+      "check": "V-002 the waiting submission expires the old request after the lock is released",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "requestStatus": "expired"
+      }
+    },
+    {
+      "check": "V-002 the unpublished task stays unpublished and unfrozen",
+      "pass": true,
+      "evidence": {
+        "published": false,
+        "pending": false,
+        "frozen": false
+      }
+    }
+  ]
+}

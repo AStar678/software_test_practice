@@ -366,7 +366,10 @@ const state = {
   pickerOpen: false,      // 月视图年月选择面板
   logFilter: "logs",      // 日志页单选内容筛选
   logsMineOnly: false,    // 日志查找：只看自己
-  logAuthorQuery: ""      // 日志查找：规范化（trim + 小写）的作者姓名片段
+  logDepartmentQuery: "", // 日志筛选：部门名称片段
+  logTeamQuery: "",       // 日志筛选：团队名称片段
+  logTeamId: "__all__",   // 日志筛选：所选团队
+  logAuthorQuery: ""      // 日志查找：规范化（trim + 小写）的人员姓名/登录名片段
 };
 
 /* =====================================================================
@@ -692,10 +695,17 @@ function paletteIndexOf(t){
   }
   return taskColorIndex[id];
 }
-/* 任务填充色：以 CSS 变量形式落到任务条上，色板耗尽后按取模重复 */
+/* 无标签任务的统一默认粉色：只在未标记时使用，且刻意不进入标签色板 */
+const DEFAULT_TASK_COLOR = { bg: "#ffe1ea", bd: "#e39ab4" };
+const TAG_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
+/* 任务或日志的填充色来自唯一标签；无标签时使用默认粉色。删除的标签保留删除时颜色。 */
 function taskColorVars(t){
-  const c = TASK_PALETTE[paletteIndexOf(t)];
-  return "--tc-bg:" + c.bg + ";--tc-bd:" + c.bd + ";";
+  const tag = t && t.tag;
+  if (tag && TAG_COLOR_PATTERN.test(String(tag.color || ""))) {
+    const border = TAG_COLOR_PATTERN.test(String(tag.border || "")) ? tag.border : "#8a8f98";
+    return "--tc-bg:" + tag.color + ";--tc-bd:" + border + ";";
+  }
+  return "--tc-bg:" + DEFAULT_TASK_COLOR.bg + ";--tc-bd:" + DEFAULT_TASK_COLOR.bd + ";";
 }
 /* 种子任务先入册，保证会话内任何渲染顺序下颜色都稳定 */
 TASKS.forEach(function(t){ paletteIndexOf(t); });
@@ -1676,6 +1686,9 @@ function normalizeQuery(q){ return String(q == null ? "" : q).trim().toLowerCase
 function unique(list){
   return list.filter(function(x, i){ return x && list.indexOf(x) === i; });
 }
+/* 时分使用 Web 自有时分控件（api.js 定义），不使用系统时间弹窗。 */
+function timeControl(prefix, value){ return window.Pandora && Pandora.timeControl ? Pandora.timeControl(prefix, value) : ""; }
+function readTimeValue(prefix){ return window.Pandora && Pandora.readTimeControl ? Pandora.readTimeControl(prefix) : ""; }
 function defaultTimedTimes(t){
   if (t && !t.allDay) return { start: toTimeInput(t.start), end: toTimeInput(t.due) };
   return { start: "09:00", end: "18:00" };
@@ -1712,9 +1725,9 @@ function syncTaskDraft(){
   const title = read("tf-title"); if (title !== null) d.title = title;
   const desc = read("tf-desc"); if (desc !== null) d.desc = desc;
   const sd = read("tf-start-date"); if (sd) d.startDate = sd;
-  const st = read("tf-start-time"); if (st) d.startTime = st;
+  const st = readTimeValue("tf-start-time"); if (st) d.startTime = st;
   const ed = read("tf-end-date"); if (ed) d.endDate = ed;
-  const et = read("tf-end-time"); if (et) d.endTime = et;
+  const et = readTimeValue("tf-end-time"); if (et) d.endTime = et;
   const urgencyEl = document.querySelector('#tf-urgency [aria-pressed="true"]');
   if (urgencyEl) d.urgency = urgencyEl.dataset.urgency;
 }
@@ -1744,7 +1757,7 @@ function taskFormView(){
   const a = actor();
   const d = drafts.task;
   if (!d) return null;
-  const canPickAssignees = a.role !== "lower";
+  const canPickAssignees = a.role !== "admin";
 
   let body = '<div class="field"><label for="tf-title">任务名称</label>' +
     '<input id="tf-title" type="text" value="' + esc(d.title) + '" data-autofocus /></div>';
@@ -1765,14 +1778,14 @@ function taskFormView(){
     '<div class="row" style="margin-top:6px">' +
       '<div class="field" style="flex:1"><label for="tf-start-date">开始日期</label>' +
         '<input id="tf-start-date" type="date" value="' + esc(d.startDate) + '" /></div>' +
-      '<div class="field" style="flex:1" id="tf-start-time-field"' + (d.allDay ? " hidden" : "") + '><label for="tf-start-time">开始时刻</label>' +
-        '<input id="tf-start-time" type="time" value="' + esc(d.startTime) + '" /></div>' +
+      '<div class="field" style="flex:1" id="tf-start-time-field"' + (d.allDay ? " hidden" : "") + '><label for="tf-start-time-hour">开始时刻</label>' +
+        timeControl("tf-start-time", d.startTime) + '</div>' +
     "</div>" +
     '<div class="row" style="margin-top:6px">' +
       '<div class="field" style="flex:1"><label for="tf-end-date">截止日期</label>' +
         '<input id="tf-end-date" type="date" value="' + esc(d.endDate) + '" /></div>' +
-      '<div class="field" style="flex:1" id="tf-end-time-field"' + (d.allDay ? " hidden" : "") + '><label for="tf-end-time">截止时刻</label>' +
-        '<input id="tf-end-time" type="time" value="' + esc(d.endTime) + '" /></div>' +
+      '<div class="field" style="flex:1" id="tf-end-time-field"' + (d.allDay ? " hidden" : "") + '><label for="tf-end-time-hour">截止时刻</label>' +
+        timeControl("tf-end-time", d.endTime) + '</div>' +
     "</div>" +
     '<span class="tiny muted">创建时间在保存时单独记录，编辑排期不会改变创建时间。</span></div>';
 
@@ -1783,8 +1796,7 @@ function taskFormView(){
 
   body += '<div class="field"><label>负责人（可多选）</label>' + assigneeSummaryHTML(d.assigneeIds) +
     (canPickAssignees ? '<button type="button" class="btn tiny-btn" data-action="pick-assignees" style="align-self:flex-start">选择负责人</button>' : "") +
-    (a.role === "lower" ? '<div class="tiny muted">下层只能给自己创建任务，需直属上级审核后生效。</div>' : "") +
-    (a.role === "middle" ? '<div class="tiny muted">中层只能派发给本部门下层或自己，部门固定为本部门。</div>' : "") +
+    '<div class="tiny muted">负责人可选本公司全部有效员工（含其他部门、直属上级与创始人）；至少保留一位，本人可移除且不会自动加回。创建审核只按创建人的直属上级，与负责人选择无关。</div>' +
     "</div>";
 
   body += '<div class="callout" id="tf-error" hidden></div>';
@@ -1923,7 +1935,6 @@ function peopleInDept(dept, a){
   return assignablePeople(a).filter(function(p){ return p.dept === dept; });
 }
 function assigneeDeptHTML(a){
-  if (a.role === "middle") return '<div class="summary-line">部门固定为本部门：' + esc(a.dept) + "</div>";
   return '<div class="chip-row">' + assignableDepartments(a).map(function(d){
     return '<button type="button" class="chip-choice" data-pick-dept="' + esc(d) + '" aria-pressed="' +
       (assigneePicker.dept === d) + '">' + esc(d) + "</button>";
@@ -1978,13 +1989,11 @@ function refreshAssigneePicker(){
 }
 function openAssigneePicker(){
   const a = actor();
-  /* 下层负责人固定为本人，不打开冗余选择界面 */
-  if (a.role === "lower" || !drafts.task) return;
+  if (!drafts.task) return;
   syncTaskDraft();
   const depts = assignableDepartments(a);
   const firstSelected = drafts.task.assigneeIds.map(personById).filter(Boolean)[0];
-  assigneePicker.dept = a.role === "middle" ? a.dept
-    : (firstSelected && depts.indexOf(firstSelected.dept) !== -1 ? firstSelected.dept : (depts[0] || ""));
+  assigneePicker.dept = firstSelected && depts.indexOf(firstSelected.dept) !== -1 ? firstSelected.dept : (depts[0] || "");
   assigneePicker.query = "";
   /* 工作副本从草稿复制：切换部门不清空，取消则整体丢弃 */
   assigneePicker.selected = drafts.task.assigneeIds.slice();
@@ -2388,7 +2397,7 @@ function openNotifications(){
 }
 
 /* ============================== 事件与渲染调度 ============================== */
-const PAGE_TITLE = { map: "工作台", view: "日程", log: "记录", ai: "统计", me: "我的" };
+const PAGE_TITLE = { map: "工作台", view: "日程", log: "日志", ai: "统计", me: "我的" };
 const RENDER = { map: renderMap, view: renderView, log: renderLog, ai: renderAI, me: renderMe };
 
 function updateToTop(){

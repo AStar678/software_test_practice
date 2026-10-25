@@ -24,15 +24,17 @@ public class AdminController {
     private final Access access;
     private final java.time.Clock clock;
     private final ObjectProvider<EventsWorker> worker;
+    private final LoginKeyConstraints loginKeys;
 
     public AdminController(OrganizationService organization, Writes writes, TaskService tasks, Access access,
-                           java.time.Clock clock, ObjectProvider<EventsWorker> worker) {
+                           java.time.Clock clock, ObjectProvider<EventsWorker> worker, LoginKeyConstraints loginKeys) {
         this.organization = organization;
         this.writes = writes;
         this.tasks = tasks;
         this.access = access;
         this.clock = clock;
         this.worker = worker;
+        this.loginKeys = loginKeys;
     }
 
     /**
@@ -74,6 +76,15 @@ public class AdminController {
     @GetMapping("/tasks/{id}/history")
     public Map<String, Object> taskHistory(@RequestAttribute("actor") Actor actor, @PathVariable String id) {
         return tasks.taskHistory(actor, id);
+    }
+
+    /**
+     * Administrator-only task locator for the formal console (chapter 9.1). A business account is
+     * rejected by the capability check inside the service, and the projection carries no contact data.
+     */
+    @GetMapping("/tasks")
+    public Map<String, Object> adminTasks(@RequestAttribute("actor") Actor actor, @RequestParam Map<String, String> filters) {
+        return tasks.adminTasks(actor, filters);
     }
 
     @GetMapping("/organization")
@@ -273,6 +284,13 @@ public class AdminController {
             organization.applyOrganizationConstraints();
         } catch (RuntimeException ignored) {
             // The mapping stays staged and reported in the administration console; never fail the write.
+        }
+        try {
+            // An administrator repair of a missing/duplicate phone can now re-establish the unique
+            // login key immediately, without waiting for a restart.
+            loginKeys.tighten();
+        } catch (RuntimeException ignored) {
+            // The staged login key remains reported and the login path itself rejects ambiguity.
         }
     }
 }

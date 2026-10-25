@@ -1,0 +1,729 @@
+{
+  "generatedAt": "2026-10-25T07:28:30.790455+00:00",
+  "baseUrl": "http://127.0.0.1:18130",
+  "passed": 53,
+  "total": 53,
+  "results": [
+    {
+      "check": "9.1 the administrator locates company tasks through the dedicated paged interface",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "total": 17
+      }
+    },
+    {
+      "check": "9.1 the locator returns a minimum projection with ordered assignee and creator names",
+      "pass": true,
+      "evidence": {
+        "sample": {
+          "taskId": "08a327b6-8497-4488-a0c8-8c7186947cc5",
+          "title": "今日排期事项 4",
+          "ownerNames": [
+            "张涛"
+          ],
+          "creatorName": "李敏"
+        }
+      }
+    },
+    {
+      "check": "9.1 the task locator exposes no phone, e-mail or password field",
+      "pass": true,
+      "evidence": {
+        "bytes": 12915
+      }
+    },
+    {
+      "check": "9.1 a business account (employee) is refused by the task locator",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "当前账号没有执行该操作的授权"
+        }
+      }
+    },
+    {
+      "check": "9.1 a business account (upper) is refused by the task locator",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "当前账号没有执行该操作的授权"
+        }
+      }
+    },
+    {
+      "check": "9.1 a business account (middle) is refused by the task locator",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "当前账号没有执行该操作的授权"
+        }
+      }
+    },
+    {
+      "check": "9.1 pagination is stable and does not repeat a task across pages",
+      "pass": true,
+      "evidence": {
+        "pageOne": [
+          "08a327b6-8497-4488-a0c8-8c7186947cc5",
+          "1eebc024-1bfe-4ae5-8988-7224cc5fcdfa",
+          "2ae725e5-39ed-4a75-a0c0-f6aa687fdf88",
+          "300affbf-21e7-47df-aaf1-8cb22afa1482",
+          "47b14a51-caa4-4b2c-8b7b-692b5c4995d6"
+        ],
+        "pageTwo": [
+          "50890951-2bee-4cb0-9e23-259b7caf0e1e",
+          "69800e42-8735-4f8a-9a50-f092edf023d2",
+          "837ae805-6290-427b-af1e-1e38edda03e6",
+          "89734511-171a-417f-9d22-6c62d0badfa2",
+          "9569bb57-e6ee-41d5-ab09-0498216f4003"
+        ],
+        "nextOffset": 10
+      }
+    },
+    {
+      "check": "9.1 the name filter narrows the result without hiding the matching row",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "total": 1
+      }
+    },
+    {
+      "check": "9.1 the execution-state filter only returns doing tasks",
+      "pass": true,
+      "evidence": {
+        "states": [
+          "doing"
+        ]
+      }
+    },
+    {
+      "check": "9.1 an unpublished creation can be located with its pending request",
+      "pass": true,
+      "evidence": {
+        "row": {
+          "taskId": "69800e42-8735-4f8a-9a50-f092edf023d2",
+          "id": "69800e42-8735-4f8a-9a50-f092edf023d2",
+          "title": "个人研究计划 待创建审核",
+          "published": false,
+          "currentVersionId": null,
+          "executionState": "todo",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-10-25T01:00:00Z",
+          "dueAt": "2026-10-30T10:00:00Z",
+          "startDate": null,
+          "dueDate": null,
+          "ownerIds": [
+            "e3038ccc-89f4-44b4-a705-eb51dc84759b"
+          ],
+          "ownerNames": [
+            "张涛"
+          ],
+          "creatorId": "e3038ccc-89f4-44b4-a705-eb51dc84759b",
+          "creatorName": "张涛",
+          "createdAt": "2026-10-25T04:00:00Z",
+          "updatedAt": "2026-10-25T04:00:00Z",
+          "rowVersion": 1,
+          "latestRequestId": "80272af3-98a0-45e3-b58e-b48a0e07b3f7",
+          "latestRequestStatus": "pending",
+          "pendingRequestId": "80272af3-98a0-45e3-b58e-b48a0e07b3f7",
+          "pendingKind": "create"
+        }
+      }
+    },
+    {
+      "check": "9.1 the locator finds a task outside the employee visible set without widening that set",
+      "pass": true,
+      "evidence": {
+        "employeeHasMarket": false,
+        "total": 1
+      }
+    },
+    {
+      "check": "9.2 a task for the history scenario is created (its creation may need review)",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "body": {
+          "taskId": "3abcf81e-abb5-4fcb-ae7b-0d385766a8da",
+          "requestId": "cc60c29c-54f0-4cd1-96f0-8a8909807fd9",
+          "outcome": "pending",
+          "rowVersion": 1
+        }
+      }
+    },
+    {
+      "check": "9.2 an ordered assignee change is accepted for review",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "3abcf81e-abb5-4fcb-ae7b-0d385766a8da",
+          "requestId": "5129f8a1-5946-40dc-b644-b146a8d8997a",
+          "outcome": "pending",
+          "rowVersion": 3
+        }
+      }
+    },
+    {
+      "check": "9.2 the history records field values and the ordered assignee change",
+      "pass": true,
+      "evidence": {
+        "entryTypes": [
+          "assignee_order",
+          "field_change",
+          "request_decided",
+          "request_submitted",
+          "version_applied",
+          "version_created"
+        ]
+      }
+    },
+    {
+      "check": "9.2 the ordered change keeps both orders and resolves the real names",
+      "pass": true,
+      "evidence": {
+        "entry": {
+          "id": "58e90eb8-65a9-4883-b713-907dcfcc783b",
+          "entryType": "assignee_order",
+          "fieldName": "assigneeIds",
+          "beforeValue": "e3038ccc-89f4-44b4-a705-eb51dc84759b",
+          "afterValue": "5edfbd47-365e-4b09-9fa0-23926be87cc8,e3038ccc-89f4-44b4-a705-eb51dc84759b",
+          "actorId": "a5490245-80e9-40db-b47e-33a2e8225429",
+          "actorName": "李敏",
+          "requestId": "5129f8a1-5946-40dc-b644-b146a8d8997a",
+          "occurredAt": "2026-10-25T07:28:30.478846Z",
+          "detail": {
+            "afterOrder": [
+              "5edfbd47-365e-4b09-9fa0-23926be87cc8",
+              "e3038ccc-89f4-44b4-a705-eb51dc84759b"
+            ],
+            "beforeOrder": [
+              "e3038ccc-89f4-44b4-a705-eb51dc84759b"
+            ]
+          }
+        },
+        "people": {
+          "e3038ccc-89f4-44b4-a705-eb51dc84759b": "张涛",
+          "5edfbd47-365e-4b09-9fa0-23926be87cc8": "赵蕾"
+        }
+      }
+    },
+    {
+      "check": "9.2 the decision entry keeps the opinion text",
+      "pass": true,
+      "evidence": {
+        "entry": {
+          "id": "9b405cf6-7b52-4b26-b211-5105b00c936f",
+          "entryType": "request_decided",
+          "fieldName": "status",
+          "beforeValue": "pending",
+          "afterValue": "approved",
+          "actorId": "a5490245-80e9-40db-b47e-33a2e8225429",
+          "actorName": "李敏",
+          "requestId": "5129f8a1-5946-40dc-b644-b146a8d8997a",
+          "occurredAt": "2026-10-25T07:28:30.490599Z",
+          "detail": {
+            "kind": "change",
+            "status": "approved",
+            "comment": "历史场景改序审核-b9d835",
+            "decision": "approve"
+          }
+        }
+      }
+    },
+    {
+      "check": "9.2 the version rows keep the submitted assignee order",
+      "pass": true,
+      "evidence": {
+        "order": [
+          "5edfbd47-365e-4b09-9fa0-23926be87cc8",
+          "e3038ccc-89f4-44b4-a705-eb51dc84759b"
+        ]
+      }
+    },
+    {
+      "check": "9.2 a legal no-review route is shown with its recorded reason",
+      "pass": true,
+      "evidence": {
+        "entry": {
+          "id": "3a51724b-86ed-4dd4-b00f-256b1a85ca4d",
+          "entryType": "no_reviewer",
+          "fieldName": "exemptionReason",
+          "beforeValue": null,
+          "afterValue": "创建人为员工组织树唯一根节点（创始人），记录原因后免审生效",
+          "actorId": "ad9571b5-19ef-4192-aa9a-e9b0d2d8f116",
+          "actorName": "王海",
+          "requestId": "a445b308-7b1d-4811-8764-df69ebc9038a",
+          "occurredAt": "2026-10-25T07:28:30.501327Z",
+          "detail": {
+            "basisAssigneeId": "ad9571b5-19ef-4192-aa9a-e9b0d2d8f116"
+          }
+        },
+        "entryTypes": [
+          "no_reviewer",
+          "request_submitted",
+          "version_created"
+        ]
+      }
+    },
+    {
+      "check": "9.2 a pending request exists before the organization change",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "requestId": "65caed0a-939d-4c14-af56-d14a3e0a63dd"
+      }
+    },
+    {
+      "check": "9.2 a reviewer reassignment is recorded with both people and the reason",
+      "pass": true,
+      "evidence": {
+        "entry": {
+          "id": "1af82de5-baa5-47a3-9c6e-0ad56e0879bd",
+          "entryType": "reviewer_reassigned",
+          "fieldName": "reviewerId",
+          "beforeValue": "a5490245-80e9-40db-b47e-33a2e8225429",
+          "afterValue": "ad9571b5-19ef-4192-aa9a-e9b0d2d8f116",
+          "actorId": "9064629f-37ef-451b-a45b-e61f65786240",
+          "actorName": "系统管理员",
+          "requestId": "65caed0a-939d-4c14-af56-d14a3e0a63dd",
+          "occurredAt": "2026-10-25T07:28:30.524163Z",
+          "detail": {
+            "reason": "manager-chain",
+            "source": "organization_change"
+          }
+        },
+        "row": {
+          "id": "c0bba597-be70-42ea-8189-17cb44674dd8",
+          "organizationId": "10000000-0000-0000-0000-000000000001",
+          "requestId": "65caed0a-939d-4c14-af56-d14a3e0a63dd",
+          "taskId": "3abcf81e-abb5-4fcb-ae7b-0d385766a8da",
+          "previousReviewerId": "a5490245-80e9-40db-b47e-33a2e8225429",
+          "newReviewerId": "ad9571b5-19ef-4192-aa9a-e9b0d2d8f116",
+          "basisAssigneeId": "5edfbd47-365e-4b09-9fa0-23926be87cc8",
+          "reason": "按最高组织层级负责人的管理链上溯",
+          "source": "organization_change",
+          "createdAt": "2026-10-25T07:28:30.524025Z"
+        }
+      }
+    },
+    {
+      "check": "9.2 a legal handover is accepted",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "3abcf81e-abb5-4fcb-ae7b-0d385766a8da",
+          "requestId": "dec3bd0f-b46f-4bea-8390-75cee60a7330",
+          "outcome": "pending",
+          "rowVersion": 7
+        }
+      }
+    },
+    {
+      "check": "9.2 handover, completion and reopen are all traceable in the operation history",
+      "pass": true,
+      "evidence": {
+        "entryTypes": [
+          "assignee_order",
+          "field_change",
+          "handover",
+          "handover_requested",
+          "reopen",
+          "request_decided",
+          "request_submitted",
+          "reviewer_reassigned",
+          "version_applied",
+          "version_created"
+        ]
+      }
+    },
+    {
+      "check": "9.2 the reopen entry keeps the round change and its recorded reason",
+      "pass": true,
+      "evidence": {
+        "entry": {
+          "id": "3e92007c-f52f-4787-9075-77fced4a7bbc",
+          "entryType": "reopen",
+          "fieldName": "executionRound",
+          "beforeValue": "1",
+          "afterValue": "2",
+          "actorId": "ad9571b5-19ef-4192-aa9a-e9b0d2d8f116",
+          "actorName": "王海",
+          "requestId": "b90f5220-f711-43be-9c87-810e7e7d2860",
+          "occurredAt": "2026-10-25T07:28:30.609252Z",
+          "detail": {
+            "reason": "重开审核-b9d835"
+          }
+        }
+      }
+    },
+    {
+      "check": "9.2 the history payload exposes no contact or credential field",
+      "pass": true,
+      "evidence": {
+        "bytes": 17473
+      }
+    },
+    {
+      "check": "9.2 an employee cannot read the complete operation history",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "当前账号没有执行该操作的授权"
+        }
+      }
+    },
+    {
+      "check": "9.2 deleting a message copy keeps the complete task history",
+      "pass": true,
+      "evidence": {
+        "before": 28,
+        "after": 28
+      }
+    },
+    {
+      "check": "9.3 the administrator reads receive, read, withdraw and retention state",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "total": 136,
+        "keys": [
+          "changeSummary",
+          "createdAt",
+          "deliveredAt",
+          "eventId",
+          "eventType",
+          "expired",
+          "expiresAt",
+          "hiddenAt",
+          "id",
+          "readAt",
+          "recipientId",
+          "recipientName",
+          "requestId",
+          "revokedAt",
+          "summary",
+          "taskId",
+          "title"
+        ]
+      }
+    },
+    {
+      "check": "9.3 an employee cannot use notification management",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "当前账号没有执行该操作的授权"
+        }
+      }
+    },
+    {
+      "check": "9.3 an event inside 180 seconds is withdrawn by the administrator",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "eventId": "3be46175-4ef0-42f8-9d53-1bf4c21cb4c9",
+          "withdrawn": true,
+          "copies": 3
+        }
+      }
+    },
+    {
+      "check": "9.3 withdrawn copies keep a placeholder, lose the jump and record the state",
+      "pass": true,
+      "evidence": {
+        "copies": [
+          {
+            "id": "c3fd28d8-cf9a-4034-a7d0-72f6eb698f5d",
+            "eventId": "3be46175-4ef0-42f8-9d53-1bf4c21cb4c9",
+            "eventType": "task.reopen.approved",
+            "recipientId": "5edfbd47-365e-4b09-9fa0-23926be87cc8",
+            "recipientName": "赵蕾",
+            "title": null,
+            "summary": "该通知已被撤回。",
+            "changeSummary": null,
+            "taskId": null,
+            "requestId": "b90f5220-f711-43be-9c87-810e7e7d2860",
+            "createdAt": "2026-10-25T07:28:30.655707Z",
+            "deliveredAt": "2026-10-25T04:00:00Z",
+            "readAt": null,
+            "hiddenAt": null,
+            "revokedAt": "2026-10-25T04:00:00Z",
+            "expiresAt": "2027-01-25T04:00:00Z",
+            "expired": false
+          },
+          {
+            "id": "1e4c6791-d8f7-43c9-b9d6-9987b6bcca24",
+            "eventId": "3be46175-4ef0-42f8-9d53-1bf4c21cb4c9",
+            "eventType": "task.reopen.approved",
+            "recipientId": "ad9571b5-19ef-4192-aa9a-e9b0d2d8f116",
+            "recipientName": "王海",
+            "title": null,
+            "summary": "该通知已被撤回。",
+            "changeSummary": null,
+            "taskId": null,
+            "requestId": "b90f5220-f711-43be-9c87-810e7e7d2860",
+            "createdAt": "2026-10-25T07:28:30.655188Z",
+            "deliveredAt": "2026-10-25T04:00:00Z",
+            "readAt": null,
+            "hiddenAt": null,
+            "revokedAt": "2026-10-25T04:00:00Z",
+            "expiresAt": "2027-01-25T04:00:00Z",
+            "expired": false
+          }
+        ]
+      }
+    },
+    {
+      "check": "9.3 withdrawal does not change the task application or the operation history",
+      "pass": true,
+      "evidence": {
+        "before": 28,
+        "after": 28
+      }
+    },
+    {
+      "check": "9.3 the withdrawal keeps an audit record with its reason",
+      "pass": true,
+      "evidence": {
+        "audit": [
+          {
+            "id": "2a603239-e36e-46de-a122-4351e6f51b0e",
+            "organizationId": "10000000-0000-0000-0000-000000000001",
+            "actorId": "9064629f-37ef-451b-a45b-e61f65786240",
+            "objectId": "3be46175-4ef0-42f8-9d53-1bf4c21cb4c9",
+            "action": "notification.withdrawn",
+            "createdAt": "2026-10-25T07:28:30.697525Z",
+            "actorName": "系统管理员",
+            "details": {
+              "copies": 3,
+              "reason": "管理端撤回-b9d835"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "check": "9.3 withdrawal at or after 180 seconds is refused",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "WITHDRAW_WINDOW_CLOSED",
+          "message": "通知发出已满3分钟，不能撤回"
+        }
+      }
+    },
+    {
+      "check": "9.4 an authorized department lead reads only the own department, its teams and lead candidates",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "departments": [
+          "产品部"
+        ],
+        "teams": 1,
+        "members": 3
+      }
+    },
+    {
+      "check": "9.4 the restricted read exposes no contact or full organization data",
+      "pass": true,
+      "evidence": {
+        "found": []
+      }
+    },
+    {
+      "check": "9.4 an unauthorized business account (employee) cannot read or manage teams",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "当前账号没有执行该操作的授权"
+        }
+      }
+    },
+    {
+      "check": "9.4 an unauthorized business account (upper) cannot read or manage teams",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "当前账号没有执行该操作的授权"
+        }
+      }
+    },
+    {
+      "check": "9.4 the administrator identity does not gain the restricted employee team entry",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "当前账号没有执行该操作的授权"
+        }
+      }
+    },
+    {
+      "check": "9.4 the department lead creates a team and becomes its default lead",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "teamId": "0192e11a-fb23-4519-aebe-d2d979fdfa24",
+          "leadUserId": "a5490245-80e9-40db-b47e-33a2e8225429",
+          "rowVersion": 1
+        }
+      }
+    },
+    {
+      "check": "9.4 the new team appears in the restricted read with its row version",
+      "pass": true,
+      "evidence": {
+        "team": {
+          "id": "0192e11a-fb23-4519-aebe-d2d979fdfa24",
+          "name": "控制台团队-b9d835",
+          "departmentId": "9e05fd38-e7f7-4b57-b06f-b3b450e12f0c",
+          "leadUserId": "a5490245-80e9-40db-b47e-33a2e8225429",
+          "rowVersion": 1,
+          "leadName": "李敏",
+          "memberCount": 0
+        }
+      }
+    },
+    {
+      "check": "9.4 a legal transfer to a department member persists and refreshes the read",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "lead": "e3038ccc-89f4-44b4-a705-eb51dc84759b"
+      }
+    },
+    {
+      "check": "9.4 a transfer to a person outside the department is refused",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "团队负责人必须属于该部门"
+        }
+      }
+    },
+    {
+      "check": "9.4 an ordinary employee cannot create a team",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "当前账号没有团队管理授权"
+        }
+      }
+    },
+    {
+      "check": "9.4 a department lead cannot create a team in another department",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "仅可维护本人所属部门的团队"
+        }
+      }
+    },
+    {
+      "check": "9.4 being a team lead adds no team-management or dispatch authority",
+      "pass": true,
+      "evidence": {
+        "canManageTeam": false,
+        "candidates": [
+          "employee"
+        ]
+      }
+    },
+    {
+      "check": "9.4 a role change refreshes the restricted entry and its scope",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "canManageTeam": true,
+        "manageStatus": 200
+      }
+    },
+    {
+      "check": "9.5 the administrator session gains no employee task data",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "total": 0
+      }
+    },
+    {
+      "check": "9.5 the administrator session cannot use the employee log API",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "BUSINESS_ROLE_REQUIRED"
+      }
+    },
+    {
+      "check": "9.5 a business session is refused by the management API /api/v1/admin/organization",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "FORBIDDEN"
+      }
+    },
+    {
+      "check": "9.5 a business session is refused by the management API /api/v1/admin/tasks?limit=5",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "FORBIDDEN"
+      }
+    },
+    {
+      "check": "9.5 a business session is refused by the management API /api/v1/admin/notifications?limit=5",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "FORBIDDEN"
+      }
+    },
+    {
+      "check": "9.5 a business session is refused by the management API /api/v1/me/team-management",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "FORBIDDEN"
+      }
+    },
+    {
+      "check": "9.5 the organization, notification and history management surfaces stay separate from the employee entry",
+      "pass": true,
+      "evidence": {
+        "departments": [
+          "产品部"
+        ]
+      }
+    }
+  ]
+}

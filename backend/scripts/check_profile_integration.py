@@ -21,6 +21,16 @@ from smoke_test import Client, Failure
 FIELDS = ("displayName", "phone", "email")
 
 
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 def tag(body, headers):
     return next((value for key, value in headers.items() if key.lower() == "etag"), '"' + str(body["rowVersion"]) + '"')
 
@@ -47,7 +57,7 @@ def main():
         print("PASS", name, flush=True)
 
     def login(username):
-        _, result, _ = public.call("POST", "/api/v1/auth/sessions", {"username": username, "password": password})
+        _, result, _ = public.call("POST", "/api/v1/auth/sessions", {"username": login_identity(username), "password": password})
         client = Client(args.base_url, result["token"])
         clients[username + ":" + str(len(clients))] = client
         return client

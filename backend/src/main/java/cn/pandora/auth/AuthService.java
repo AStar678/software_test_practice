@@ -52,10 +52,26 @@ public class AuthService {
         return result;
     }
 
+    /**
+     * Employee login is by normalized phone number (chapter 2.1). The public username is deliberately
+     * not a fallback for employees, so a number that became the authentication key never leaks through
+     * the username column. The single administrator identity keeps its original username login.
+     */
     @Transactional
-    public Map<String,Object> login(String username,String password) {
-        if(username==null || password==null || username.length()>80 || password.getBytes(StandardCharsets.UTF_8).length>72) throw new ApiException(401,"BAD_CREDENTIALS","账号或密码不正确");
-        var u=db.find("SELECT * FROM users WHERE username=? AND active=1",username);
+    public Map<String,Object> login(String identifier,String password) {
+        if(identifier==null || password==null || identifier.length()>80 || password.getBytes(StandardCharsets.UTF_8).length>72) throw new ApiException(401,"BAD_CREDENTIALS","账号或密码不正确");
+        String loginPhone=PhoneNumbers.normalize(identifier);
+        Map<String,Object> u=null;
+        if(loginPhone!=null) {
+            // The login contract has no company selector, so an employee key must be unambiguous across
+            // every active business account. Migration may intentionally leave duplicate keys in place
+            // (V19 only adds the unique index when the data is clean); such data must fail closed here
+            // instead of authenticating whichever row the database happens to return first.
+            List<Map<String,Object>> matches=db.list("SELECT * FROM users WHERE login_phone=? AND role<>'admin' AND active=1",loginPhone);
+            if(matches.size()>1) throw new ApiException(409,"LOGIN_KEY_AMBIGUOUS","该手机号在多个员工账号中重复，无法安全登录；请联系管理员修复手机号后重试");
+            u=matches.isEmpty()?null:matches.get(0);
+        }
+        if(u==null) u=db.find("SELECT * FROM users WHERE username=? AND role='admin' AND active=1",identifier);
         boolean valid=PASSWORDS.matches(password,u==null?dummyHash:s(u,"passwordHash"));
         if(u==null || !valid) throw new ApiException(401,"BAD_CREDENTIALS","账号或密码不正确");
         return issue(u);

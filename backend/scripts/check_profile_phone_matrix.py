@@ -22,8 +22,20 @@ RESULTS: list[dict] = []
 PASSWORD = "Demo@123456"
 
 
+
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 class Api:
     def __init__(self, base: str):
+        self.identifiers = {}
         self.base = base.rstrip("/")
         self.tokens: dict[str, str] = {}
 
@@ -51,8 +63,9 @@ class Api:
             return error.code, parsed, dict(error.headers)
 
     def login(self, username):
+        identity = self.identifiers.get(username, login_identity(username))
         status, body, _ = self.call("POST", "/api/v1/auth/sessions",
-                                    body={"username": username, "password": PASSWORD})
+                                    body={'username': identity, 'password': PASSWORD})
         if status != 200:
             raise SystemExit(f"login failed for {username}: {status} {body}")
         self.tokens[username] = body["token"]
@@ -99,6 +112,8 @@ def main() -> int:
         status, saved, _ = api.call("PATCH", "/api/v1/me/profile", api.tokens["employee"],
                                     {"phone": phone}, api.key("profile"), profile_etag)
         check("3.5 the owner can save their own phone", status == 200, saved)
+        if status == 200:
+            api.identifiers["employee"] = phone
         status, own, _ = api.call("GET", "/api/v1/users/" + employee, api.tokens["employee"])
         check("3.5 the owner reads their own phone from person details", status == 200 and own.get("phone") == phone,
               own.get("phone"))

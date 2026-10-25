@@ -45,7 +45,7 @@
       document.getElementById("appMain").classList.remove("is-schedule");
     }
   }
-  function loginPage(username, message) {
+  function loginPage(identifier, message) {
     state.page = "map";
     document.querySelectorAll(".page").forEach(el => el.classList.toggle("is-active", el.id === "page-map"));
     document.getElementById("appMain").classList.remove("is-map");
@@ -53,11 +53,13 @@
     document.querySelectorAll(".role-switch button").forEach(b => b.setAttribute("aria-pressed", "false"));
     document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div>' +
       '<div class="auth-copy"><p class="eyebrow">PANDORA WORKSPACE</p><h2>让每一天，<br>有序向前。</h2><p>登录你的工作台，查看任务与团队动态。</p></div>' +
-      '<form id="backend-login"><div class="field"><label for="login-user">工作账号</label><input id="login-user" type="text" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="请输入账号" required value="' + esc(username || "") + '"></div>' +
+      '<form id="backend-login"><div class="field"><label for="login-user">手机号</label><input id="login-user" type="text" name="username" inputmode="tel" autocomplete="tel" autocapitalize="none" spellcheck="false" placeholder="请输入本人手机号" required value="' + esc(identifier || "") + '"></div>' +
       '<div class="field"><label for="login-password">密码</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required></div>' +
       '<div class="callout" id="login-error" role="alert"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
       '<button type="submit" class="btn primary auth-submit">登录工作台</button></form>' +
-      '<p class="auth-help">账号与密码由公司管理员提供。忘记密码请联系管理员。</p><a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
+      '<p class="auth-help">员工使用本人手机号登录，初始密码由公司管理员提供；忘记密码请联系管理员。管理员仍使用管理账号登录。</p>' +
+      '<p class="auth-help auth-demo">演示员工手机号 13800000001—13800000006；管理员账号 admin。</p>' +
+      '<a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
     gate();
     document.getElementById("backend-login").addEventListener("submit", event => {
       event.preventDefault();
@@ -128,6 +130,40 @@
       '</div><div class="action-grid"><button class="btn primary" data-backend-retry>重新加载</button><button class="btn" data-backend-logout>退出登录</button></div><a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
     P.notice("数据加载失败，请检查后端服务后重试。");
   }
+  /* ------------------------------------------------------------------ *
+   * Web-owned hour/minute control (chapter 4.2)
+   *
+   * Native input[type=time] opens the operating system's large clock dial on
+   * mobile. This control is two ordinary selects, so it never hands the choice
+   * to a platform dialog, keeps its value in the form draft, and is shared by
+   * creation, modification and reopen. Values are still "HH:MM".
+   * ------------------------------------------------------------------ */
+  function timeParts(value) {
+    const match = /^(\d{2}):(\d{2})$/.exec(String(value || ""));
+    return match ? { hour: match[1], minute: match[2] } : { hour: "09", minute: "00" };
+  }
+  function options(list, selected) {
+    return list.map(function (item) {
+      return '<option value="' + item + '"' + (item === selected ? " selected" : "") + ">" + item + "</option>";
+    }).join("");
+  }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  const HOURS = Array.from({ length: 24 }, function (_, i) { return pad2(i); });
+  const MINUTES = Array.from({ length: 60 }, function (_, i) { return pad2(i); });
+  P.timeControl = function (prefix, value) {
+    const parts = timeParts(value);
+    return '<div class="p-time" role="group" aria-label="时刻">' +
+      '<select id="' + esc(prefix) + '-hour" data-time-part="hour" aria-label="小时">' + options(HOURS, parts.hour) + "</select>" +
+      '<span class="p-time-sep" aria-hidden="true">:</span>' +
+      '<select id="' + esc(prefix) + '-minute" data-time-part="minute" aria-label="分钟">' + options(MINUTES, parts.minute) + "</select>" +
+      "</div>";
+  };
+  P.readTimeControl = function (prefix) {
+    const hour = document.getElementById(prefix + "-hour");
+    const minute = document.getElementById(prefix + "-minute");
+    if (!hour || !minute) return "";
+    return hour.value + ":" + minute.value;
+  };
   P.request = async function (path, options) {
     const epoch = P.epoch;
     const opts = Object.assign({}, options || {});
@@ -203,7 +239,10 @@
     }
   }
   function mapPerson(u) {
-    return { id: u.id, name: u.displayName || "相关人员", role: u.role || "lower", dept: u.teamName || "", superiorId: u.managerId || null, raw: u };
+    /* departmentName is the real department; teamName is an independent team and must never stand in
+       for it (a candidate list grouped by team would hide cross-department choices). */
+    return { id: u.id, name: u.displayName || "相关人员", role: u.role || "lower",
+      dept: u.departmentName || u.department || "未分配部门", superiorId: u.managerId || null, raw: u };
   }
   P.mapTask = function (t) {
     return { id: t.id || t.taskId, parentId: t.parentTaskId || null, title: t.title || "", desc: t.description || "",
@@ -213,7 +252,7 @@
       urgency: ({ urgent: "紧急", high: "高", medium: "中", low: "低" })[t.priority] || "中",
       status: t.executionState || "todo", progressNote: t.progressNote || "", reviewNote: "",
       frozen: !!t.frozen || !!t.pending, pinned: !!t.pinned, assignedAt: t.assignedAt || null,
-      pendingKind: t.pendingKind || null,
+      pendingKind: t.pendingKind || null, tag: t.tag || null, tagId: t.tagId || null,
       rowVersion: t.rowVersion, acceptanceCriteria: t.acceptanceCriteria || "", raw: t };
   };
   P.rememberPeople = function (rows) {
@@ -264,18 +303,22 @@
     const me = await P.request("/me");
     if (me.role === "admin") throw new Error("此页面供业务账号使用。管理员请使用 /admin.html 管理端。");
     const tasks = loadTaskRows();
-    const [users, logs, logAuthors, reports, approvals, notifications, home, analytics, snapshot] = await Promise.all([
+    const [users, logs, logAuthors, reports, approvals, notifications, home, analytics, tags, snapshot] = await Promise.all([
       all("/users"), all("/work-logs?scope=self"), P.request("/work-log-authors"), P.request("/me/reports"),
-      all("/approval-requests?mine=all"), all("/notifications"), P.request("/home"), P.request("/analytics/task-summary?scope=visible"), tasks
+      all("/approval-requests?mine=all"), all("/notifications"), P.request("/home"), P.request("/analytics/task-summary?scope=visible"),
+      P.request("/tags"), tasks
     ]);
     if (epoch !== P.epoch || sequence !== reloadSequence) throw cancelled();
     if (!taskSnapshotIsCurrent(snapshot)) throw cancelled();
-    P.data = { me, users, rawTasks: snapshot.rows, approvals, home, analytics, logAuthors, reports, calendarLogs: logs.slice() };
+    P.data = { me, users, rawTasks: snapshot.rows, approvals, home, analytics, logAuthors, reports, tags,
+      calendarLogs: logs.slice() };
     // A data reload starts the log page on the default self scope; the page itself preserves
     // the user's search text and author selection until the next explicit reload.
     state.logDepartmentId = "__all__";
+    state.logTeamId = "__all__";
     state.logAll = false;
     state.logAuthorId = me.id;
+    state.logDepartmentQuery = ""; state.logTeamQuery = ""; state.logAuthorQuery = "";
     const people = new Map(users.map(u => [u.id, mapPerson(u)])); people.set(me.id, mapPerson(me));
     approvals.forEach(t => (t.participants || []).forEach(u => { if (!people.has(u.id)) people.set(u.id, mapPerson(u)); }));
     logs.forEach(l => { if (!people.has(l.authorId)) people.set(l.authorId, mapPerson({ id: l.authorId, displayName: l.authorName })); });
@@ -296,7 +339,7 @@
     clearData(); state.logFilter = "logs"; state.logsMineOnly = false; state.logAuthorQuery = "";
     state.logDepartmentId = "__all__";
     state.logAll = false; state.logAuthorId = null; state.pickerOpen = false;
-    loginPage(typeof username === "string" ? username : "upper"); P.notice("请使用真实账号登录。");
+    loginPage(""); P.notice("请使用本人手机号登录。");
   };
   visibleTasks = () => TASKS.slice();
   visibleLogs = () => LOGS.slice();

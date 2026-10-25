@@ -239,25 +239,27 @@
     if (!parent) return '<td data-field="parent">—</td>';
     return '<td data-field="parent"><button type="button" class="p-table-link" data-task="' + esc(parent.id) + '">' + esc(parent.title) + '</button></td>';
   }
+  /* 手机首屏优先任务识别与处理信息；低优先级资料仍完整保留在右侧。
+     表头与单元格顺序逐列一致，筛选/排序/计数管线不变（第六章 6.2）。 */
   function rowHTML(task, zone) {
     const raw = taskRaw(task);
     const overdue = taskIsOverdue(task);
     return '<tr data-task-row="' + esc(task.id) + '">' +
       '<th scope="row" data-field="title"><button type="button" class="p-table-title" data-task="' + esc(task.id) + '">' + esc(task.title || "任务") + '</button></th>' +
       '<td data-field="relation">' + relationTags(task) + '</td>' +
+      '<td data-field="status">' + statusBadge(task) + '</td>' +
+      pendingCell(task) +
+      '<td data-field="due">' + esc(scheduleCell(task, zone, "due")) + '</td>' +
+      '<td data-field="urgency">' + urgencyBadge(task.urgency) + '</td>' +
       '<td data-field="assignees">' + esc(namesText(task.assigneeIds, raw)) + '</td>' +
+      '<td data-field="start">' + esc(scheduleCell(task, zone, "start")) + '</td>' +
       '<td data-field="creator">' + esc(personLabel(task.creatorId, raw)) + '</td>' +
       '<td data-field="createdAt">' + esc(companyDateTime(raw.createdAt, zone)) + '</td>' +
       previewCell(task.desc, "description") +
       previewCell(task.acceptanceCriteria || raw.acceptanceCriteria, "acceptance") +
-      '<td data-field="start">' + esc(scheduleCell(task, zone, "start")) + '</td>' +
-      '<td data-field="due">' + esc(scheduleCell(task, zone, "due")) + '</td>' +
       '<td data-field="allDay">' + (task.allDay ? "全天" : "定时") + '</td>' +
-      '<td data-field="status">' + statusBadge(task) + '</td>' +
       '<td data-field="done">' + (taskIsDone(task) ? "是" : "否") + '</td>' +
-      '<td data-field="urgency">' + urgencyBadge(task.urgency) + '</td>' +
       previewCell(task.progressNote, "progress") +
-      pendingCell(task) +
       '<td data-field="overdue">' + (overdue ? '<span class="badge b-urgent">已逾期</span>' : "—") + '</td>' +
       parentCell(task) +
       '</tr>';
@@ -272,11 +274,12 @@
       '<span class="p-table-arrow" aria-hidden="true">' + arrow + '</span></button></th>';
   }
   function headHTML() {
-    return '<tr>' + sortHeader("title") + '<th scope="col">本人关系</th><th scope="col">负责人</th><th scope="col">创建者</th>' +
+    return '<tr>' + sortHeader("title") + '<th scope="col">本人关系</th>' + sortHeader("status") +
+      '<th scope="col">待审/冻结</th>' + sortHeader("due") + sortHeader("urgency") +
+      '<th scope="col">负责人</th>' + sortHeader("start") + '<th scope="col">创建者</th>' +
       sortHeader("createdAt") + '<th scope="col">任务说明</th><th scope="col">完成标准</th>' +
-      sortHeader("start") + sortHeader("due") + '<th scope="col">排期类型</th>' +
-      sortHeader("status") + '<th scope="col">是否完成</th>' + sortHeader("urgency") +
-      '<th scope="col">进展备注</th><th scope="col">待审/冻结</th><th scope="col">逾期</th><th scope="col">上级任务</th></tr>';
+      '<th scope="col">排期类型</th>' + '<th scope="col">是否完成</th>' +
+      '<th scope="col">进展备注</th><th scope="col">逾期</th><th scope="col">上级任务</th></tr>';
   }
   function countsHTML(result) {
     const counts = result ? result.counts : { total: 0, own: 0, created: 0, visible: 0, pendingComplete: 0, done: 0, overdue: 0 };
@@ -433,7 +436,11 @@
   function openTable() {
     if (!P.ready || state.page !== "view") return;
     if (state.viewPage !== "table") {
-      T.returnContext = { mode: state.viewMode, anchor: new Date(state.viewAnchor) };
+      // Save the calendar context, including the continuous-month anchor, so returning from the
+      // table or a task detail reopens the same month stream and date (chapter 6.1).
+      T.returnContext = { mode: state.viewMode, anchor: new Date(state.viewAnchor),
+        stream: P.calendar && P.calendar.currentStream ? P.calendar.currentStream() : [],
+        anchorKey: companyDateKey(state.viewAnchor, companyZone() || "UTC") };
       resetFormState();
     }
     state.viewPage = "table";
@@ -443,9 +450,11 @@
   }
   function closeTable() {
     if (state.viewPage !== "table") return;
+    const context = T.returnContext;
     state.viewPage = "calendar";
     T.active = false; T.loadId += 1;
     T.returnContext = null;
+    restoreCalendarContext(context);
     resetFormState();
     T.rows = []; T.loaded = false; T.loading = false; T.error = null;
     renderAll();
@@ -455,6 +464,20 @@
     }).catch(function (error) {
       if (error.name !== "AbortError") P.notice("刷新任务失败：" + error.message);
     });
+  }
+
+  /* 返回日历：模式与日期恢复，连续月份锚点在账号重置后按保存的月份序列重建。 */
+  function restoreCalendarContext(context) {
+    if (!context) return;
+    if (context.mode === "day" || context.mode === "month") state.viewMode = context.mode;
+    if (context.anchor instanceof Date && !Number.isNaN(context.anchor.getTime())) state.viewAnchor = new Date(context.anchor);
+    if (!P.calendar || state.viewMode !== "month") return;
+    const current = P.calendar.currentStream ? P.calendar.currentStream() : [];
+    const saved = Array.isArray(context.stream) ? context.stream : [];
+    if (saved.length && JSON.stringify(current) !== JSON.stringify(saved)) {
+      if (P.calendar.restoreStream) P.calendar.restoreStream(saved);
+      else P.calendar.resetStream(state.viewAnchor);
+    }
   }
 
   /* ---------- actions and inputs ---------- */

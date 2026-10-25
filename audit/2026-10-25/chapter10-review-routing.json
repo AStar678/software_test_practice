@@ -1,0 +1,902 @@
+{
+  "generatedAt": "2026-10-25T07:30:16.530766+00:00",
+  "baseUrl": "http://127.0.0.1:18130",
+  "passed": 79,
+  "total": 79,
+  "results": [
+    {
+      "check": "4.1 a creation routes to the creator's direct manager, never the assignees",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "reviewer": "6619aa5f-99e1-4d3c-a0fc-ceb34327db62"
+      }
+    },
+    {
+      "check": "4.1 the submitted order is returned unchanged",
+      "pass": true,
+      "evidence": {
+        "assigneeIds": [
+          "eb39627e-94a2-4db0-a738-2f924d0fd47d",
+          "f394d705-a9cd-4d16-9296-56bb97e616e2"
+        ]
+      }
+    },
+    {
+      "check": "4.1 a refresh returns the same order",
+      "pass": true,
+      "evidence": {
+        "assigneeIds": [
+          "eb39627e-94a2-4db0-a738-2f924d0fd47d",
+          "f394d705-a9cd-4d16-9296-56bb97e616e2"
+        ]
+      }
+    },
+    {
+      "check": "4.1 a same-level reorder across chains changes the request reviewer",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "6cc712ea-ab90-49f5-bfc2-961093d0a18a",
+          "requestId": "d91ad80a-e931-4074-9eba-0e32ddc45a2c",
+          "outcome": "pending",
+          "rowVersion": 3
+        }
+      }
+    },
+    {
+      "check": "4.1 the new reviewer follows the new first assignee",
+      "pass": true,
+      "evidence": {
+        "reviewer": "b39d6cbd-9389-492f-b4a9-39dcfb29151b"
+      }
+    },
+    {
+      "check": "4.6 a pure assignee reorder stays visible in the reviewer's authorized diff",
+      "pass": true,
+      "evidence": {
+        "diff": [
+          {
+            "field": "assigneeIds",
+            "before": "eb39627e-94a2-4db0-a738-2f924d0fd47d,f394d705-a9cd-4d16-9296-56bb97e616e2",
+            "after": "f394d705-a9cd-4d16-9296-56bb97e616e2,eb39627e-94a2-4db0-a738-2f924d0fd47d"
+          }
+        ]
+      }
+    },
+    {
+      "check": "4.1 the swapped order persists after approval",
+      "pass": true,
+      "evidence": {
+        "assigneeIds": [
+          "f394d705-a9cd-4d16-9296-56bb97e616e2",
+          "eb39627e-94a2-4db0-a738-2f924d0fd47d"
+        ]
+      }
+    },
+    {
+      "check": "4.1 the unique employee organization root is exempt with a recorded reason",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "request": "direct",
+        "reason": "创建人确无直属上级，记录原因后免审生效"
+      }
+    },
+    {
+      "check": "4.2 a founder creation publishes without a self-review request",
+      "pass": true,
+      "evidence": {
+        "executionState": "todo"
+      }
+    },
+    {
+      "check": "4.2 a task with a reviewer is never applied automatically",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "request": "pending"
+      }
+    },
+    {
+      "check": "4.2 the creation reviewer is the creator's direct manager",
+      "pass": true,
+      "evidence": {
+        "reviewer": "6619aa5f-99e1-4d3c-a0fc-ceb34327db62"
+      }
+    },
+    {
+      "check": "4.2 a frozen task refuses another business command",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "TASK_FROZEN",
+          "message": "任务有待审核申请，请先处理或撤销"
+        }
+      }
+    },
+    {
+      "check": "4.2 every progress also requires approval",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "d6057103-869c-4746-a3da-6a10872cdeb4",
+          "requestId": "d381add7-5b03-4657-8f52-78e1a7b1475e",
+          "outcome": "pending",
+          "rowVersion": 3
+        }
+      }
+    },
+    {
+      "check": "4.2 the first approved progress moves the task to doing",
+      "pass": true,
+      "evidence": {
+        "executionState": "doing"
+      }
+    },
+    {
+      "check": "4.2 completion requires approval too",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "d6057103-869c-4746-a3da-6a10872cdeb4",
+          "requestId": "d03a3116-f709-4346-9434-d2050bd4a708",
+          "outcome": "pending",
+          "rowVersion": 5
+        }
+      }
+    },
+    {
+      "check": "4.9 a rejected completion returns to doing, never done",
+      "pass": true,
+      "evidence": {
+        "executionState": "doing"
+      }
+    },
+    {
+      "check": "4.9 the rejection keeps its comment for the applicant",
+      "pass": true,
+      "evidence": {
+        "status": "rejected"
+      }
+    },
+    {
+      "check": "4.9 a withdrawal restores the state from before the submission",
+      "pass": true,
+      "evidence": {
+        "executionState": "doing"
+      }
+    },
+    {
+      "check": "4.3 the creation preview reports the creator's direct manager",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "operation": "create",
+          "mode": "creation",
+          "route": {
+            "reviewerId": "6619aa5f-99e1-4d3c-a0fc-ceb34327db62",
+            "basisAssigneeId": "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+            "path": [
+              "6619aa5f-99e1-4d3c-a0fc-ceb34327db62"
+            ],
+            "reason": "direct-manager",
+            "reasonText": "创建按创建人的直属上级审核",
+            "authzVersion": 8,
+            "reviewerAvailable": true,
+            "blocked": false,
+            "creation": true,
+            "participants": [
+              {
+                "id": "6619aa5f-99e1-4d3c-a0fc-ceb34327db62",
+                "displayName": "boss-fca51d"
+              },
+              {
+                "id": "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+                "displayName": "leada-fca51d"
+              }
+            ]
+          },
+          "reviewerId": "6619aa5f-99e1-4d3c-a0fc-ceb34327db62",
+          "requiresApproval": true,
+          "blocked": false,
+          "exemptionReason": null,
+          "blockedReason": null,
+          "reviewerBasis": "creator",
+          "previewOnly": true
+        }
+      }
+    },
+    {
+      "check": "4.3 a non-creation preview follows the effective assignee chain",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "operation": "progress",
+          "mode": "non-creation",
+          "route": {
+            "reviewerId": "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+            "basisAssigneeId": "eb39627e-94a2-4db0-a738-2f924d0fd47d",
+            "path": [
+              "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+              "6619aa5f-99e1-4d3c-a0fc-ceb34327db62"
+            ],
+            "reason": "manager-chain",
+            "reasonText": "按最高组织层级负责人的管理链上溯",
+            "authzVersion": 8,
+            "reviewerAvailable": true,
+            "blocked": false,
+            "creation": false,
+            "participants": [
+              {
+                "id": "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+                "displayName": "leada-fca51d"
+              },
+              {
+                "id": "eb39627e-94a2-4db0-a738-2f924d0fd47d",
+                "displayName": "w1-fca51d"
+              }
+            ]
+          },
+          "reviewerId": "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+          "requiresApproval": true,
+          "blocked": false,
+          "exemptionReason": null,
+          "blockedReason": null,
+          "reviewerBasis": "assignees",
+          "previewOnly": true
+        }
+      }
+    },
+    {
+      "check": "4.3 the preview creates no request",
+      "pass": true,
+      "evidence": {
+        "before": 6,
+        "after": 6
+      }
+    },
+    {
+      "check": "4.3 the modification preview follows the proposed order",
+      "pass": true,
+      "evidence": {
+        "reviewer": "b39d6cbd-9389-492f-b4a9-39dcfb29151b"
+      }
+    },
+    {
+      "check": "4.3 changing the assignee produces a pending request",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "af4af5b3-b5eb-4064-aea8-9562c4cec8fa",
+          "requestId": "18f94166-1562-4c6d-aee2-bd5d1055fb1e",
+          "outcome": "pending",
+          "rowVersion": 3
+        }
+      }
+    },
+    {
+      "check": "4.3 the previous reviewer cannot decide the new route",
+      "pass": true,
+      "evidence": {
+        "status": 404,
+        "stillPending": "pending"
+      }
+    },
+    {
+      "check": "4.3 the request names the new reviewer",
+      "pass": true,
+      "evidence": {
+        "reviewer": "b39d6cbd-9389-492f-b4a9-39dcfb29151b"
+      }
+    },
+    {
+      "check": "4.3 the detail exposes the request route separately from the effective route",
+      "pass": true,
+      "evidence": {
+        "pending": "b39d6cbd-9389-492f-b4a9-39dcfb29151b",
+        "effective": "6ccef3c2-9309-406c-aee7-193cfaa4c166"
+      }
+    },
+    {
+      "check": "4.3 a rejection keeps the original assignees",
+      "pass": true,
+      "evidence": {
+        "assigneeIds": [
+          "eb39627e-94a2-4db0-a738-2f924d0fd47d"
+        ]
+      }
+    },
+    {
+      "check": "4.5 the applicant sees the submitted content but no comparison fields",
+      "pass": true,
+      "evidence": {
+        "keys": [
+          "applicableDeadline",
+          "applicantId",
+          "comment",
+          "createdAt",
+          "currentReviewerId",
+          "decidedAt",
+          "exemptionReason",
+          "expiredAt",
+          "kind",
+          "participants",
+          "previousState",
+          "proposedVersion",
+          "records",
+          "requestId",
+          "route",
+          "rowVersion",
+          "status",
+          "taskId",
+          "title",
+          "versionNo"
+        ]
+      }
+    },
+    {
+      "check": "4.5 only the reviewer receives the base snapshot and the diff",
+      "pass": true,
+      "evidence": {
+        "diff": [
+          {
+            "field": "title",
+            "before": "换负责人改路线",
+            "after": "提议中的新标题"
+          }
+        ]
+      }
+    },
+    {
+      "check": "4.5 an ordinary viewer cannot read the request at all",
+      "pass": true,
+      "evidence": {
+        "status": 404
+      }
+    },
+    {
+      "check": "4.5 the ordinary task area keeps the effective version while frozen",
+      "pass": true,
+      "evidence": {
+        "title": "换负责人改路线",
+        "frozen": true
+      }
+    },
+    {
+      "check": "4.4 the creation request starts with the creator's direct manager",
+      "pass": true,
+      "evidence": {
+        "reviewer": "6ccef3c2-9309-406c-aee7-193cfaa4c166"
+      }
+    },
+    {
+      "check": "4.4 the transfer succeeds and reports invalidation",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "29f21112-7e14-4a7d-a45e-19bdccd976db",
+          "rowVersion": 2,
+          "transferred": true,
+          "authorizationInvalidated": true
+        }
+      }
+    },
+    {
+      "check": "4.4 the pending creation follows the creator's new direct manager",
+      "pass": true,
+      "evidence": {
+        "reviewer": "b39d6cbd-9389-492f-b4a9-39dcfb29151b"
+      }
+    },
+    {
+      "check": "4.4 the reassignment is persisted with both reviewers and a reason",
+      "pass": true,
+      "evidence": {
+        "reassignments": [
+          {
+            "id": "0daba99b-056a-4fa4-ae3e-76138c8d52d1",
+            "organizationId": "10000000-0000-0000-0000-000000000001",
+            "requestId": "ac818522-f982-4d91-bf05-288fca89bdd9",
+            "taskId": "3410df07-985e-42af-ab6c-7ad7e03d03f0",
+            "previousReviewerId": "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+            "newReviewerId": "b39d6cbd-9389-492f-b4a9-39dcfb29151b",
+            "basisAssigneeId": "29f21112-7e14-4a7d-a45e-19bdccd976db",
+            "reason": "创建按创建人的直属上级审核",
+            "source": "organization_change",
+            "createdAt": "2026-10-25T07:30:15.974520Z"
+          }
+        ]
+      }
+    },
+    {
+      "check": "4.4 the previous reviewer can no longer decide",
+      "pass": true,
+      "evidence": {
+        "status": 404
+      }
+    },
+    {
+      "check": "4.4 the new reviewer can decide",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "3410df07-985e-42af-ab6c-7ad7e03d03f0",
+          "requestId": "ac818522-f982-4d91-bf05-288fca89bdd9",
+          "outcome": "approved",
+          "rowVersion": 2,
+          "requestRowVersion": 3
+        },
+        "lead_b": "b39d6cbd-9389-492f-b4a9-39dcfb29151b"
+      }
+    },
+    {
+      "check": "4.6 a handover cannot smuggle a base field",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "不支持的字段：title"
+        }
+      }
+    },
+    {
+      "check": "4.6 a non-direct manager has no handover authority",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "仅本人或直属领导可交接该任务"
+        }
+      }
+    },
+    {
+      "check": "4.6 the direct manager can hand the task over",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "9d417ca1-647e-4a4e-ab63-7c49c9f8a4d2",
+          "requestId": "dfbd41d5-67ac-43c8-a8cd-1f3a4d68c1ef",
+          "outcome": "pending",
+          "rowVersion": 3
+        }
+      }
+    },
+    {
+      "check": "4.6 the handover routes by the new owner",
+      "pass": true,
+      "evidence": {
+        "reviewer": "b39d6cbd-9389-492f-b4a9-39dcfb29151b"
+      }
+    },
+    {
+      "check": "4.6 the new route approves the handover",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "4.6 the target now owns the task and the source does not",
+      "pass": true,
+      "evidence": {
+        "assigneeIds": [
+          "f394d705-a9cd-4d16-9296-56bb97e616e2"
+        ]
+      }
+    },
+    {
+      "check": "4.6 provenance is preserved and recorded",
+      "pass": true,
+      "evidence": {
+        "creator": "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+        "entries": [
+          "request_submitted",
+          "version_created",
+          "version_applied",
+          "request_decided",
+          "request_submitted",
+          "assignee_order",
+          "handover_requested",
+          "version_applied",
+          "handover",
+          "request_decided"
+        ]
+      }
+    },
+    {
+      "check": "4.7 the task is done before the reopen",
+      "pass": true,
+      "evidence": {
+        "executionState": "done"
+      }
+    },
+    {
+      "check": "4.7 only the creator may reopen",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "仅原创建者可重开任务"
+        }
+      }
+    },
+    {
+      "check": "4.7 a reopen accepts a complete schedule",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "c8e72b90-6b56-4686-a57b-fc02dd999d17",
+          "requestId": "c4c0b803-761d-4db7-ac81-4aed44505e31",
+          "outcome": "pending",
+          "rowVersion": 5
+        }
+      }
+    },
+    {
+      "check": "4.7 a rejected reopen keeps the task done and the round unchanged",
+      "pass": true,
+      "evidence": {
+        "executionState": "done",
+        "round": 1
+      }
+    },
+    {
+      "check": "4.7 an approved reopen atomically applies doing, the new round and the schedule",
+      "pass": true,
+      "evidence": {
+        "executionState": "doing",
+        "round": 2,
+        "startAt": "2026-11-02T07:30:16Z"
+      }
+    },
+    {
+      "check": "4.8 the App cannot read the complete history",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "4.8 the App task projection carries no history payload",
+      "pass": true,
+      "evidence": {
+        "keys": [
+          "code",
+          "message"
+        ]
+      }
+    },
+    {
+      "check": "4.8 the history records fields, order, reviewer, decisions and the handover",
+      "pass": true,
+      "evidence": {
+        "entryTypes": [
+          "assignee_order",
+          "handover",
+          "handover_requested",
+          "request_decided",
+          "request_submitted",
+          "version_applied",
+          "version_created"
+        ]
+      }
+    },
+    {
+      "check": "4.8 the ordered assignee change keeps before and after values",
+      "pass": true,
+      "evidence": {
+        "entry": {
+          "id": "bea16710-e4a0-46cf-b28d-81f50e3913d9",
+          "entryType": "assignee_order",
+          "fieldName": "assigneeIds",
+          "beforeValue": "eb39627e-94a2-4db0-a738-2f924d0fd47d",
+          "afterValue": "f394d705-a9cd-4d16-9296-56bb97e616e2",
+          "actorId": "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+          "actorName": "leada-fca51d",
+          "requestId": "dfbd41d5-67ac-43c8-a8cd-1f3a4d68c1ef",
+          "occurredAt": "2026-10-25T07:30:16.032166Z",
+          "detail": {
+            "afterOrder": [
+              "f394d705-a9cd-4d16-9296-56bb97e616e2"
+            ],
+            "beforeOrder": [
+              "eb39627e-94a2-4db0-a738-2f924d0fd47d"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "check": "4.8 a reassignment is traceable entry by entry",
+      "pass": true,
+      "evidence": {
+        "entryTypes": [
+          "request_decided",
+          "request_submitted",
+          "reviewer_reassigned",
+          "version_applied",
+          "version_created"
+        ]
+      }
+    },
+    {
+      "check": "4.8 the history exposes no contact fields",
+      "pass": true,
+      "evidence": {
+        "bytes": 9584
+      }
+    },
+    {
+      "check": "4.2 a creator with no direct manager is exempt",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "body": {
+          "taskId": "8b0b2245-50ae-42a8-ae84-a8c4f7c1a168",
+          "requestId": "ade3dd59-5fd1-4e4f-826c-c0d5c560480d",
+          "outcome": "direct",
+          "rowVersion": 2
+        }
+      }
+    },
+    {
+      "check": "4.2 the exemption is recorded with the creator as the route basis",
+      "pass": true,
+      "evidence": {
+        "status": "direct",
+        "reason": "创建人确无直属上级，记录原因后免审生效"
+      }
+    },
+    {
+      "check": "4.2 the direct application publishes the task",
+      "pass": true,
+      "evidence": {
+        "published": true
+      }
+    },
+    {
+      "check": "4.2 an unavailable direct manager blocks the creation instead of exempting it",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "ROUTE_BLOCKED",
+          "message": "直属上级当前不可审核，创建审核被阻断，请管理员恢复其审核资格"
+        }
+      }
+    },
+    {
+      "check": "4.2 the blocked creation preview names no fallback reviewer and requires no approval",
+      "pass": true,
+      "evidence": {
+        "preview": {
+          "operation": "create",
+          "mode": "creation",
+          "route": {
+            "reviewerId": null,
+            "basisAssigneeId": "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+            "path": [],
+            "reason": "manager-unavailable",
+            "reasonText": "直属上级当前不可审核，创建审核被阻断，请管理员恢复其审核资格",
+            "authzVersion": 11,
+            "reviewerAvailable": false,
+            "blocked": true,
+            "creation": true,
+            "participants": [
+              {
+                "id": "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+                "displayName": "leada-fca51d"
+              }
+            ]
+          },
+          "reviewerId": null,
+          "requiresApproval": false,
+          "blocked": true,
+          "exemptionReason": null,
+          "blockedReason": "直属上级当前不可审核，创建审核被阻断，请管理员恢复其审核资格",
+          "reviewerBasis": "creator",
+          "previewOnly": true
+        }
+      }
+    },
+    {
+      "check": "4.4 the pending creation starts at the direct manager",
+      "pass": true,
+      "evidence": {
+        "status": 201
+      }
+    },
+    {
+      "check": "4.4 the reviewer of record is the creator's direct manager",
+      "pass": true,
+      "evidence": "6619aa5f-99e1-4d3c-a0fc-ceb34327db62"
+    },
+    {
+      "check": "4.4 making the creation reviewer unusable completes the organization change",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "6619aa5f-99e1-4d3c-a0fc-ceb34327db62",
+          "rowVersion": 4,
+          "changed": [],
+          "phoneUpdated": false
+        }
+      }
+    },
+    {
+      "check": "4.4 the creation stays pending and is marked blocked instead of applying itself",
+      "pass": true,
+      "evidence": {
+        "status": "pending",
+        "reviewer": "6619aa5f-99e1-4d3c-a0fc-ceb34327db62",
+        "reason": "manager-unavailable"
+      }
+    },
+    {
+      "check": "4.4 the blocked creation is not published",
+      "pass": true,
+      "evidence": {
+        "published": false
+      }
+    },
+    {
+      "check": "4.4 the blocked reviewer cannot approve the creation",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "ROUTE_BLOCKED",
+          "message": "直属上级当前不可审核，创建审核被阻断，请管理员恢复其审核资格"
+        }
+      }
+    },
+    {
+      "check": "4.9 concurrent submissions produce exactly one pending request",
+      "pass": true,
+      "evidence": {
+        "outcomes": [
+          200,
+          412
+        ]
+      }
+    },
+    {
+      "check": "4.9 the task stays frozen with a single pending request",
+      "pass": true,
+      "evidence": {
+        "frozen": true,
+        "pending": "c20c7dc5-dfdc-4c74-b1e0-b108de524f43"
+      }
+    },
+    {
+      "check": "4.9 a child state change leaves the parent untouched",
+      "pass": true,
+      "evidence": {
+        "parent": "todo",
+        "child": "todo"
+      }
+    },
+    {
+      "check": "3.1 the administrator cannot create a business task",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "管理员不参与普通业务操作"
+        }
+      }
+    },
+    {
+      "check": "3.1 an employee may assign a peer, an upper level and the founder",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "assigneeIds": [
+          "eb39627e-94a2-4db0-a738-2f924d0fd47d",
+          "6ccef3c2-9309-406c-aee7-193cfaa4c166",
+          "6619aa5f-99e1-4d3c-a0fc-ceb34327db62"
+        ]
+      }
+    },
+    {
+      "check": "3.1 the creation still routes by the creator, not by the founder in the list",
+      "pass": true,
+      "evidence": {
+        "reviewer": "b39d6cbd-9389-492f-b4a9-39dcfb29151b"
+      }
+    },
+    {
+      "check": "3.1 a non-company assignee identifier is refused",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "负责人须为本公司有效业务账号"
+        }
+      }
+    },
+    {
+      "check": "3.2 reordering or replacing assignees never moves the creation reviewer",
+      "pass": true,
+      "evidence": {
+        "first": "b39d6cbd-9389-492f-b4a9-39dcfb29151b",
+        "second": "b39d6cbd-9389-492f-b4a9-39dcfb29151b"
+      }
+    },
+    {
+      "check": "3.2 an inactive direct manager blocks the creation instead of escalating",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "ROUTE_BLOCKED",
+          "message": "已配置的直属上级账号已失效，创建审核被阻断，请管理员恢复或调整直属关系"
+        }
+      }
+    },
+    {
+      "check": "3.2 the organization interface refuses a manager cycle",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "上下级关系不能形成循环"
+        }
+      }
+    },
+    {
+      "check": "3.2 a second isolated upper account is created as a second root",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "body": {
+          "userId": "d65ffb3a-b908-4efb-b576-8c3ed0d6af30",
+          "username": "u489a810804",
+          "mustChangePassword": true,
+          "rowVersion": 1,
+          "initialPassword": "WG2^DQptxL7FBKB&"
+        }
+      }
+    },
+    {
+      "check": "3.2 with multiple roots a root creation is exempt as \"no manager\", never as the founder",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "reason": "创建人确无直属上级，记录原因后免审生效"
+      }
+    },
+    {
+      "check": "3.2 a provable direct manager still routes normally with multiple roots",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "body": {
+          "taskId": "48e824b4-78c7-4bdc-93b9-b95af072f2d9",
+          "requestId": "3951cd01-df65-4c90-9c05-7527e7041cbd",
+          "outcome": "pending",
+          "rowVersion": 1
+        }
+      }
+    }
+  ]
+}

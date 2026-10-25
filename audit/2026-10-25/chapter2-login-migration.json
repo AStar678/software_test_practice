@@ -1,0 +1,116 @@
+{
+  "generatedAt": "2026-10-25T09:31:51.152528+00:00",
+  "snapshot": "/Users/watuji/MyGitDev/software_test_practice/backend/database/pandora.sql",
+  "passed": 10,
+  "total": 10,
+  "results": [
+    {
+      "check": "V-001 the pre-V19 fixture contains two format-equivalent numbers",
+      "pass": true,
+      "evidence": {
+        "first": "036feb69-d795-4929-81d5-a55a78a272f4",
+        "second": "18630b79-6a3e-4ccf-aa95-86e892bcb9d2",
+        "maskedKey": "138***"
+      }
+    },
+    {
+      "check": "V-001 V19 migrates with duplicate keys but withholds the unique index",
+      "pass": true,
+      "evidence": {
+        "duplicates": 1,
+        "uniqueIndex": 0,
+        "findings": 1
+      }
+    },
+    {
+      "check": "V-001 the administrator still signs in after the migration",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "V-001 neither duplicate key can issue a session after migration",
+      "pass": true,
+      "evidence": {
+        "raw": 409,
+        "formatted": 409,
+        "body": {
+          "code": "LOGIN_KEY_AMBIGUOUS",
+          "message": "该手机号在多个员工账号中重复，无法安全登录；请联系管理员修复手机号后重试"
+        }
+      }
+    },
+    {
+      "check": "V-001 a differing password for the other duplicate is also rejected",
+      "pass": true,
+      "evidence": {
+        "reset": 200,
+        "status": 409,
+        "body": {
+          "code": "LOGIN_KEY_AMBIGUOUS",
+          "message": "该手机号在多个员工账号中重复，无法安全登录；请联系管理员修复手机号后重试"
+        }
+      }
+    },
+    {
+      "check": "V-001 the administrator repairs the duplicate through the employee flow",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "18630b79-6a3e-4ccf-aa95-86e892bcb9d2",
+          "rowVersion": 2,
+          "changed": [
+            "departmentId",
+            "positionId",
+            "teamId",
+            "phone"
+          ],
+          "phoneUpdated": true
+        }
+      }
+    },
+    {
+      "check": "V-001 the unique login key is established once the duplicate is repaired",
+      "pass": true,
+      "evidence": {
+        "uniqueIndex": 1
+      }
+    },
+    {
+      "check": "V-001 the repaired number keeps the original employee identity",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "userId": "18630b79-6a3e-4ccf-aa95-86e892bcb9d2"
+      }
+    },
+    {
+      "check": "V-001 the original key now belongs unambiguously to the other employee",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "userId": "036feb69-d795-4929-81d5-a55a78a272f4"
+      }
+    },
+    {
+      "check": "V-001 original IDs, tasks, versions, assignees and logs survive the migration/repair",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "users": 7,
+          "tasks": 43,
+          "logs": 22
+        },
+        "after": {
+          "users": 7,
+          "tasks": 43,
+          "logs": 18
+        },
+        "archivedDuplicates": 4,
+        "unexplained": []
+      }
+    }
+  ]
+}

@@ -26,6 +26,17 @@ EXECUTIVE_SCOPES = {"task_view": "company", "task_dispatch": "company",
                     "log_read": "company", "profile_read": "company"}
 
 
+
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 class Api:
     def __init__(self, base: str):
         self.base = base.rstrip('/')
@@ -57,7 +68,7 @@ class Api:
 
     def login(self, username: str) -> str:
         status, body, _ = self.call('POST', '/api/v1/auth/sessions',
-                                    body={'username': username, 'password': PASSWORD})
+                                    body={'username': login_identity(username), 'password': PASSWORD})
         if status != 200:
             raise SystemExit(f'login failed for {username}: {status} {body}')
         self.tokens[username] = body['token']
@@ -79,8 +90,7 @@ def check(name: str, condition: bool, evidence) -> None:
 
 def task_payload(title: str, assignees: list[str]) -> dict:
     start = dt.datetime.now(dt.timezone.utc).replace(microsecond=0) + dt.timedelta(days=1)
-    return {'title': title, 'description': '自动生效授权核验', 'acceptanceCriteria': '可复核',
-            'priority': 'medium', 'allDay': False,
+    return {'title': title, 'description': '自动生效授权核验', 'priority': 'medium', 'allDay': False,
             'startAt': start.isoformat().replace('+00:00', 'Z'),
             'dueAt': (start + dt.timedelta(days=2)).isoformat().replace('+00:00', 'Z'),
             'assigneeIds': assignees}
@@ -95,8 +105,10 @@ def main() -> int:
     admin = api.login('admin')
     upper = api.login('upper')
     api.login('employee')
+    api.login('middle')
     upper_id = api.me('upper')['id']
     employee_id = api.me('employee')['id']
+    middle_id = api.me('middle')['id']
 
     def set_scopes(scopes: dict) -> tuple[int, dict]:
         status, body, _ = api.call('PATCH', '/api/v1/admin/roles/executive/scopes', admin,
@@ -115,16 +127,24 @@ def main() -> int:
         return body
 
     try:
-        # 1) A valid pending proposal created while the executive still has company dispatch.
+        # 1) A published task owned by the employee, modified by the executive: the ordered-owner route
+        #    makes the executive the reviewer, so the non-creation automatic path can be exercised.
         status, created, _ = api.call('POST', '/api/v1/tasks', upper,
-                                      task_payload(f'越权自动生效-{RUN}', [upper_id, employee_id]),
+                                      task_payload(f'越权自动生效-{RUN}', [middle_id]),
                                       Api.key('create'))
-        check('V-008 the executive creates a pending task with an employee assignee', status == 201,
+        check('V-008 the executive publishes a task owned by the employee', status == 201,
               {'status': status, 'body': created})
-        task_id, request_id = created['taskId'], created['requestId']
+        task_id = created['taskId']
+        _, detail, headers = api.call('GET', f'/api/v1/tasks/{task_id}', upper)
+        status, changed, _ = api.call('PATCH', f'/api/v1/tasks/{task_id}', upper,
+                                      {'command': 'change', 'title': f'越权自动生效-{RUN}-修改',
+                                       'reason': 'V-008 核验'}, Api.key('change'), headers.get('ETag'))
+        check('V-008 the modification waits for its explicit reviewer', status == 200
+              and changed.get('outcome') == 'pending', {'status': status, 'body': changed})
+        request_id = changed['requestId']
         view = request_view(request_id)
-        check('V-008 the creator is the reviewer of record', view.get('currentReviewerId') == upper_id,
-              {'reviewer': view.get('currentReviewerId')})
+        check('V-008 the creator is the reviewer of record on the ordered-owner route',
+              view.get('currentReviewerId') == upper_id, {'reviewer': view.get('currentReviewerId')})
 
         # 2) Withdraw the dispatch range. Explicit approval must be refused.
         status, configured = set_scopes({'task_view': 'company', 'task_dispatch': 'self',
@@ -138,7 +158,7 @@ def main() -> int:
               status == 403 and explicit.get('code') == 'DISPATCH_NOT_ALLOWED',
               {'status': status, 'body': explicit})
 
-        # 3) Remove the last reviewer. The automatic path must not publish the same proposal.
+        # 3) Remove the last reviewer. The automatic path must not apply the revoked proposal.
         status, updated = set_reviewer_available(False)
         check('V-008 the organization change itself still succeeds', status == 200,
               {'status': status, 'body': updated})
@@ -146,33 +166,37 @@ def main() -> int:
         check('V-008 the reviewer-less automatic path does not apply the revoked proposal',
               after.get('status') == 'pending', {'status': after.get('status'), 'body': after})
         _, detail, _ = api.call('GET', f'/api/v1/tasks/{task_id}', upper)
-        check('V-008 the unpublished task is not published by the automatic path',
-              detail.get('published') is False, {'published': detail.get('published')})
+        check('V-008 the proposal is not published by the automatic path',
+              detail.get('title') != f'越权自动生效-{RUN}-修改', {'title': detail.get('title')})
         _, history, _ = api.call('GET', f'/api/v1/admin/tasks/{task_id}/history', admin)
         check('V-008 no direct-application history was recorded',
-              not any(entry.get('entryType') == 'no_reviewer' for entry in history.get('entries', [])),
+              not any(entry.get('entryType') == 'no_reviewer' and entry.get('requestId') == request_id
+                      for entry in history.get('entries', [])),
               {'entries': [entry.get('entryType') for entry in history.get('entries', [])]})
 
         # 4) Restore authority; a genuinely valid reviewer-less application still applies directly.
-        set_reviewer_available(True)
         set_scopes(EXECUTIVE_SCOPES)
         status, valid, _ = api.call('POST', '/api/v1/tasks', upper,
-                                    task_payload(f'合法无审核人-{RUN}', [upper_id]),
-                                    Api.key('valid-create'))
-        check('V-008 a valid self-assigned proposal stays pending with its creator reviewer',
-              status == 201, {'status': status, 'body': valid})
-        valid_view = request_view(valid['requestId'])
-        check('V-008 the valid proposal still waits for its explicit reviewer',
-              valid_view.get('status') == 'pending', valid_view.get('status'))
+                                 task_payload(f'合法无审核人-{RUN}', [middle_id]),
+                                 Api.key('valid-create'))
+        check('V-008 a valid modification proposal can be submitted', status == 201,
+              {'status': status, 'body': valid})
+        _, valid_detail, valid_headers = api.call('GET', f"/api/v1/tasks/{valid['taskId']}", upper)
+        status, valid_change, _ = api.call('PATCH', f"/api/v1/tasks/{valid['taskId']}", upper,
+                                           {'command': 'change', 'title': f'合法无审核人-{RUN}-修改',
+                                            'reason': 'V-008 合法免审'}, Api.key('valid-change'),
+                                           valid_headers.get('ETag'))
+        check('V-008 a valid proposal still waits for its explicit reviewer', status == 200,
+              {'status': status, 'body': valid_change})
         status, updated = set_reviewer_available(False)
-        valid_after = request_view(valid['requestId'])
+        valid_after = request_view(valid_change['requestId'])
         _, valid_task, _ = api.call('GET', f"/api/v1/tasks/{valid['taskId']}", upper)
         check('V-008 a legitimate reviewer-less application applies directly with a reason',
               status == 200 and valid_after.get('status') == 'direct'
               and valid_after.get('currentReviewerId') is None and bool(valid_after.get('exemptionReason'))
-              and valid_task.get('published') is True,
+              and valid_task.get('title') == f'合法无审核人-{RUN}-修改',
               {'status': status, 'request': valid_after.get('status'),
-               'published': valid_task.get('published')})
+               'title': valid_task.get('title')})
     finally:
         set_reviewer_available(True)
         set_scopes(EXECUTIVE_SCOPES)

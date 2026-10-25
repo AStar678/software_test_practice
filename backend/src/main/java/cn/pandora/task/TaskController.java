@@ -12,11 +12,41 @@ import java.util.Map;
 @RequestMapping("/api/v1")
 public class TaskController {
     private final TaskService tasks;
+    private final Tags tags;
     private final Writes writes;
 
-    public TaskController(TaskService tasks, Writes writes) {
+    public TaskController(TaskService tasks, Tags tags, Writes writes) {
         this.tasks = tasks;
+        this.tags = tags;
         this.writes = writes;
+    }
+
+    /** Company tag catalogue. Reading is available to every business account; maintenance is root-only. */
+    @GetMapping("/tags")
+    public Map<String, Object> tags(@RequestAttribute("actor") Actor actor, @RequestParam Map<String, String> filters) {
+        return tags.list(actor, filters);
+    }
+
+    @PostMapping("/tags")
+    public Map<String, Object> createTag(@RequestAttribute("actor") Actor actor,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @RequestBody Map<String, Object> input) {
+        return writes.run(actor, key, "POST /tags", input, null, () -> tags.create(actor, input));
+    }
+
+    @PatchMapping("/tags/{id}")
+    public Map<String, Object> changeTag(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
+            @RequestBody Map<String, Object> input) {
+        return writes.run(actor, key, "PATCH /tags/" + id, input, ifMatch, () -> tags.change(actor, id, ifMatch, input));
+    }
+
+    @DeleteMapping("/tags/{id}")
+    public Map<String, Object> deleteTag(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch) {
+        return writes.run(actor, key, "DELETE /tags/" + id, Map.of(), ifMatch, () -> tags.delete(actor, id, ifMatch));
     }
 
     @GetMapping("/tasks")
@@ -27,8 +57,11 @@ public class TaskController {
     /** Authorized assignee candidates; reading a department never puts its people in this list. */
     @GetMapping("/assignee-candidates")
     public Map<String, Object> assigneeCandidates(@RequestAttribute("actor") Actor actor,
-            @RequestParam(value = "q", required = false) String query) {
-        return tasks.assigneeCandidates(actor, query);
+            @RequestParam(value = "q", required = false) String query,
+            @RequestParam(value = "purpose", required = false) String purpose) {
+        // purpose=create (default) is the company-wide creation candidate list; purpose=edit keeps the
+        // historical dispatch range for modifications of an already published task.
+        return tasks.assigneeCandidates(actor, query, purpose);
     }
 
     /** Read-only reviewer preview; it creates no request and is not an authorization token. */

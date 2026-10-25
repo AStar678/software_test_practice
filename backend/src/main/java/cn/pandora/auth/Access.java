@@ -133,6 +133,41 @@ public class Access {
                 .toList();
     }
 
+    /**
+     * Creation candidates (chapter 3.1): every active business member of the company, across
+     * departments and up to the founder. This is deliberately NOT the dispatch range: expanding who a
+     * person may assign work to never grants viewing, log, handover or administration authority, and
+     * the dedicated handover target range keeps its own rule.
+     */
+    public List<Map<String, Object>> creationCandidates(Actor a, String query) {
+        String like = query == null ? "" : query.strip().toLowerCase(Locale.ROOT);
+        return db.list("SELECT u.organization_id,u.id,u.username,u.display_name,u.role,u.rank_level,u.active,"
+                        + "u.department_id,u.position_id,u.team_id,d.name AS department_name,p.name AS position_name "
+                        + "FROM users u "
+                        + "LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
+                        + "LEFT JOIN positions p ON p.organization_id=u.organization_id AND p.id=u.position_id "
+                        + "WHERE u.organization_id=? AND u.active=1 AND u.role<>'admin' "
+                        + "ORDER BY u.rank_level,u.display_name,u.id",
+                a.organizationId())
+                .stream()
+                .filter(u -> like.isEmpty()
+                        || s(u, "displayName").toLowerCase(Locale.ROOT).contains(like)
+                        || s(u, "username").toLowerCase(Locale.ROOT).contains(like))
+                .toList();
+    }
+
+    /** A creation assignee must be an active business member of the same company. */
+    public boolean isCreationCandidate(Actor a, String id) {
+        Map<String, Object> person = activeUser(a, id);
+        return person != null && !"admin".equals(s(person, "role"));
+    }
+
+    public void requireCreationCandidate(Actor a, String id) {
+        if (!isCreationCandidate(a, id)) {
+            throw new ApiException(400, "INVALID_INPUT", "负责人须为本公司有效业务账号");
+        }
+    }
+
     // --------------------------------------------------------------------- //
     // Log author range (direct reports, never teammates)
     // --------------------------------------------------------------------- //

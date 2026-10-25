@@ -3,6 +3,7 @@ package cn.pandora.workspace;
 import cn.pandora.auth.Access;
 import cn.pandora.auth.Actor;
 import cn.pandora.common.*;
+import cn.pandora.task.Tags;
 import cn.pandora.task.TaskService;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -26,9 +27,22 @@ public class WorkspaceService {
     private final TaskService tasks;
     private final Events events;
     private final Clock clock;
+    private final Tags tags;
 
+    /** Logs may be written for the company's today plus the previous two business days (chapter 7.1). */
+    private static final int LOG_BACKFILL_DAYS = 2;
+    /** Editing and deleting share one real freeze instant: first creation plus 24 hours. */
+    private static final Duration LOG_FREEZE_WINDOW = Duration.ofHours(24);
+
+    /** Test seam: the tag catalogue is derived from the same Db when constructed directly. */
     public WorkspaceService(Db db, Access access, TaskService tasks, Events events, Clock clock) {
+        this(db, access, tasks, events, clock, new Tags(db, access, new cn.pandora.auth.CompanyTree(db)));
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public WorkspaceService(Db db, Access access, TaskService tasks, Events events, Clock clock, Tags tags) {
         this.db = db; this.access = access; this.tasks = tasks; this.events = events; this.clock = clock;
+        this.tags = tags;
     }
 
     public Map<String,Object> me(Actor a) {
@@ -41,6 +55,8 @@ public class WorkspaceService {
             + "WHERE u.id=? AND u.organization_id=? AND u.active=1", a.id(), a.organizationId());
         var result=safeUser(row);
         for(String key:List.of("phone","email","avatar","profileVersion","managerName","organizationName","departmentName","positionName","organizationTimeZone")) result.put(key,row.get(key));
+        // Entry visibility only; every team write re-checks the same grant on the server (chapter 9.4).
+        result.put("canManageTeam", a.can("manage_team") && !a.administrator());
         return result;
     }
 
@@ -128,27 +144,60 @@ public class WorkspaceService {
         if (author != null) allowedIds.retainAll(Set.of(author));
         LocalDate from = optionalDate(filters.get("from")), to = optionalDate(filters.get("to"));
         if (from != null && to != null && from.isAfter(to)) throw bad("开始日期不得晚于结束日期");
-        LocalDate today = today(a);
-        var result = db.list("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? ORDER BY w.business_date DESC,w.created_at DESC,w.id",a.organizationId()).stream()
+        var result = db.list("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.deleted_at IS NULL ORDER BY w.business_date DESC,w.created_at DESC,w.id",a.organizationId()).stream()
             .filter(row -> allowedIds.contains(s(row,"authorId")))
             .filter(row -> from == null || !LocalDate.parse(s(row,"businessDate")).isBefore(from))
             .filter(row -> to == null || !LocalDate.parse(s(row,"businessDate")).isAfter(to))
-            .map(row -> safeLog(a,row,today)).toList();
+            .map(row -> safeLog(a,row)).toList();
         return page(result,filters);
     }
 
-    /** Author filter for the log page: only people inside the reader's own log range. */
+    /**
+     * Author directory for the log page (chapter 7.3): only people inside the reader's own log range,
+     * carrying their real department and team. Each level can be searched independently — department,
+     * then team, then person — and every count is computed after the log-authority filter, so an
+     * unauthorized colleague can never be inferred from a candidate, a count or a tree edge.
+     */
     public Map<String,Object> logAuthors(Actor a, Map<String,String> filters) {
         business(a);
         String query = filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
+        String departmentQuery = filters.getOrDefault("departmentQ","").strip().toLowerCase(Locale.ROOT);
+        String teamQuery = filters.getOrDefault("teamQ","").strip().toLowerCase(Locale.ROOT);
+        String department = optionalId(filters.get("departmentId"), "departmentId");
+        String team = optionalId(filters.get("teamId"), "teamId");
         var allowed = new LinkedHashSet<>(access.logAuthorIds(a));
         var rows = db.list("SELECT u.id,u.username,u.display_name,u.manager_id,u.department_id,u.team_id,"
-                + "d.name AS department_name,t.name AS team_name FROM users u "
+                + "d.name AS department_name,t.name AS team_name,t.department_id AS team_department_id "
+                + "FROM users u "
                 + "LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
                 + "LEFT JOIN teams t ON t.organization_id=u.organization_id AND t.id=u.team_id "
                 + "WHERE u.organization_id=? AND u.active=1 ORDER BY u.rank_level,u.display_name,u.id",a.organizationId())
             .stream().filter(u -> allowed.contains(s(u,"id"))).toList();
+        // The department/team levels themselves are derived from the authorized authors only.
+        Map<String,String> departments = new LinkedHashMap<>();
+        Map<String,Map<String,Object>> teams = new LinkedHashMap<>();
+        Map<String,Integer> departmentCounts = new LinkedHashMap<>();
+        Map<String,Integer> teamCounts = new LinkedHashMap<>();
+        for (var u : rows) {
+            String departmentId = s(u,"departmentId");
+            String departmentName = s(u,"departmentName") == null ? "未分配部门" : s(u,"departmentName");
+            String key = departmentId == null ? "__none__" : departmentId;
+            departments.putIfAbsent(key, departmentName);
+            departmentCounts.merge(key, 1, Integer::sum);
+            String teamId = s(u,"teamId");
+            if (teamId != null && !teams.containsKey(teamId)) {
+                Map<String,Object> node = new LinkedHashMap<>();
+                node.put("id", teamId);
+                node.put("name", s(u,"teamName"));
+                node.put("departmentId", s(u,"teamDepartmentId"));
+                teams.put(teamId, node);
+                teamCounts.put(teamId, 0);
+            }
+            if (teamId != null) teamCounts.merge(teamId, 1, Integer::sum);
+        }
         var items = rows.stream()
+            .filter(u -> department == null || department.equals(departmentKey(u)))
+            .filter(u -> team == null || team.equals(s(u,"teamId")))
             .filter(u -> query.isEmpty()
                 || s(u,"displayName").toLowerCase(Locale.ROOT).contains(query)
                 || s(u,"username").toLowerCase(Locale.ROOT).contains(query))
@@ -156,6 +205,23 @@ public class WorkspaceService {
                 Map<String,Object> item = new LinkedHashMap<>();
                 for (String key : List.of("id","username","displayName","managerId","departmentId","departmentName","teamId","teamName")) item.put(key,u.get(key));
                 item.put("self", a.id().equals(s(u,"id")));
+                return item;
+            }).toList();
+        var departmentItems = departments.entrySet().stream()
+            .filter(entry -> departmentQuery.isEmpty() || entry.getValue().toLowerCase(Locale.ROOT).contains(departmentQuery))
+            .map(entry -> {
+                Map<String,Object> node = new LinkedHashMap<>();
+                node.put("id", entry.getKey());
+                node.put("name", entry.getValue());
+                node.put("count", departmentCounts.getOrDefault(entry.getKey(), 0));
+                return node;
+            }).toList();
+        var teamItems = teams.values().stream()
+            .filter(node -> department == null || department.equals(node.get("departmentId")))
+            .filter(node -> teamQuery.isEmpty() || Objects.toString(node.get("name"),"").toLowerCase(Locale.ROOT).contains(teamQuery))
+            .map(node -> {
+                Map<String,Object> item = new LinkedHashMap<>(node);
+                item.put("count", teamCounts.getOrDefault(s(node,"id"), 0));
                 return item;
             }).toList();
         // Tree edges only ever point at people the reader may already read.
@@ -178,34 +244,68 @@ public class WorkspaceService {
         Map<String,Object> result = new LinkedHashMap<>();
         result.put("items", items);
         result.put("tree", roots);
+        result.put("departments", departmentItems);
+        result.put("teams", teamItems);
+        result.put("total", rows.size());
+        result.put("matched", items.size());
         result.put("empty", items.isEmpty());
         return result;
     }
 
+    private static String optionalId(String value,String name) {
+        if(value==null||value.isBlank())return null;
+        String id=value.trim();
+        if(id.length()>64||!id.matches("[A-Za-z0-9_-]+"))throw bad(name+" 无效");
+        return id;
+    }
+
+    private static String departmentKey(Map<String,Object> row) {
+        String departmentId = s(row,"departmentId");
+        return departmentId == null ? "__none__" : departmentId;
+    }
+
     public Map<String,Object> log(Actor a, String logId) {
         business(a);
-        var row = db.one("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.id=?",a.organizationId(),logId);
+        var row = db.one("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.id=? AND w.deleted_at IS NULL",a.organizationId(),logId);
         if (!access.canReadLogAuthor(a, s(row,"authorId"))) throw ApiException.notFound();
-        return safeLog(a,row,today(a));
+        return safeLog(a,row);
     }
 
     public Map<String,Object> createLog(Actor a, Map<String,Object> body) {
         business(a);
-        allowed(body,Set.of("body","businessDate","taskId"));
+        allowed(body,Set.of("body","businessDate","taskId","tagId"));
         String text = required(body,"body",10000);
         LocalDate today = today(a);
         LocalDate date = body.containsKey("businessDate") ? dateFor(a,body,"businessDate") : today;
-        if (!date.equals(today)) throw bad("只能新建公司当天的日志");
-        var existing = findLog(a, date);
-        if (existing != null) throw logExists(existing);
+        if (date.isAfter(today)) throw bad("不能新建未来日期的日志");
+        if (date.isBefore(today.minusDays(LOG_BACKFILL_DAYS))) throw bad("只能补写公司今天、昨天和前天的日志");
         String taskId = nullable(body,"taskId");
         if (taskId != null) tasks.detail(a,taskId);
+        // A tag belongs to the company catalogue and may be left unset; only one tag per log.
+        Map<String,Object> tag = tags.resolveForWrite(a, nullable(body,"tagId"), null);
+        String tagId = tag == null ? null : s(tag,"id");
+        var existing = findLog(a, date);
+        if (existing != null && s(existing, "id") != null) {
+            // The day slot survives a delete (chapter 1.2): writing again restores that same row,
+            // keeps the real first-creation time and gives the writer a new row version instead of a
+            // fresh freeze window. A live row is still a real conflict.
+            if (existing.get("deletedAt") == null) throw logExists(existing);
+            // Recreating a deleted day is a write like any other: the original first-creation instant
+            // is the only freeze base, so a slot whose 24 hours are over stays closed (chapter 7.2).
+            requireWritable(existing);
+            int restored = db.update("UPDATE work_logs SET body=?,task_id=?,tag_id=?,deleted_at=NULL,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) "
+                    + "WHERE organization_id=? AND author_id=? AND id=? AND deleted_at IS NOT NULL",
+                    text, taskId, tagId, a.organizationId(), a.id(), s(existing, "id"));
+            if (restored != 1) throw conflict("WORK_LOG_CONFLICT","日志日位置已被并发修改，请刷新后重试");
+            events.record(a,null,"log.restored",List.of(),Map.of("logId",s(existing,"id")));
+            return Map.of("logId",s(existing,"id"),"rowVersion",n(existing,"rowVersion")+1,"businessDate",date.toString(),"restored",true);
+        }
         String logId = id();
         try {
-            db.update("INSERT INTO work_logs(id,organization_id,author_id,business_date,body,task_id) VALUES(?,?,?,?,?,?)",logId,a.organizationId(),a.id(),java.sql.Date.valueOf(date),text,taskId);
+            db.update("INSERT INTO work_logs(id,organization_id,author_id,business_date,body,task_id,tag_id) VALUES(?,?,?,?,?,?,?)",logId,a.organizationId(),a.id(),java.sql.Date.valueOf(date),text,taskId,tagId);
         } catch (DuplicateKeyException duplicate) {
             var concurrent = findLog(a, date);
-            if (concurrent != null) throw logExists(concurrent);
+            if (concurrent != null && s(concurrent, "id") != null) throw logExists(concurrent);
             throw duplicate;
         }
         events.record(a,null,"log.created",List.of(),Map.of("logId",logId));
@@ -214,10 +314,10 @@ public class WorkspaceService {
 
     public Map<String,Object> changeLog(Actor a, String logId, String ifMatch, Map<String,Object> body) {
         business(a);
-        allowed(body,Set.of("body","businessDate","taskId"));
+        allowed(body,Set.of("body","businessDate","taskId","tagId"));
         var row = ownedLog(a,logId);
         LocalDate rowDate = LocalDate.parse(s(row,"businessDate"));
-        if (!rowDate.equals(today(a))) throw conflict("WORK_LOG_FROZEN","该日志已过公司当天，不能再修改");
+        requireWritable(row);
         if (body.containsKey("businessDate")) {
             LocalDate requested = dateFor(a,body,"businessDate");
             if (!requested.equals(rowDate)) throw bad("日志日期不能修改");
@@ -226,7 +326,14 @@ public class WorkspaceService {
         String text = body.containsKey("body") ? required(body,"body",10000) : s(row,"body");
         String taskId = body.containsKey("taskId") ? nullable(body,"taskId") : s(row,"taskId");
         if (body.containsKey("taskId") && taskId != null) tasks.detail(a,taskId);
-        db.update("UPDATE work_logs SET body=?,task_id=?,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) WHERE id=? AND organization_id=?",text,taskId,logId,a.organizationId());
+        Map<String,Object> tag = body.containsKey("tagId")
+                ? tags.resolveForWrite(a,nullable(body,"tagId"),s(row,"tagId"))
+                : tags.view(a,s(row,"tagId"));
+        // An unchanged tag is kept verbatim even if its catalogue row cannot be resolved; only an
+        // explicit request can clear the association.
+        String tagId = tag != null ? s(tag,"id") : (body.containsKey("tagId") ? null : s(row,"tagId"));
+        // Editing text never moves created_at, so the freeze instant is unchanged (chapter 7.1).
+        db.update("UPDATE work_logs SET body=?,task_id=?,tag_id=?,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) WHERE id=? AND organization_id=?",text,taskId,tagId,logId,a.organizationId());
         events.record(a,null,"log.updated",List.of(),Map.of("logId",logId));
         return Map.of("logId",logId,"rowVersion",n(row,"rowVersion")+1,"businessDate",rowDate.toString());
     }
@@ -234,12 +341,16 @@ public class WorkspaceService {
     public Map<String,Object> deleteLog(Actor a, String logId, String ifMatch) {
         business(a);
         var row = ownedLog(a,logId);
-        LocalDate rowDate = LocalDate.parse(s(row,"businessDate"));
-        if (!rowDate.equals(today(a))) throw conflict("WORK_LOG_FROZEN","该日志已过公司当天，不能再删除");
+        requireWritable(row);
         Writes.checkVersion(ifMatch,n(row,"rowVersion"));
-        db.update("DELETE FROM work_logs WHERE id=? AND organization_id=?",logId,a.organizationId());
+        // Logical delete keeps the author/day row (and its real created_at) so the slot cannot be
+        // reused with a reset window; the row is excluded from every read path instead.
+        int changed = db.update("UPDATE work_logs SET deleted_at=UTC_TIMESTAMP(6),row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) "
+                + "WHERE id=? AND organization_id=? AND author_id=? AND deleted_at IS NULL",
+                logId, a.organizationId(), a.id());
+        if (changed != 1) throw conflict("WORK_LOG_CONFLICT","日志已被删除，请刷新后重试");
         events.record(a,null,"log.deleted",List.of(),Map.of("logId",logId));
-        return Map.of("logId",logId,"deleted",true);
+        return Map.of("logId",logId,"deleted",true,"rowVersion",n(row,"rowVersion")+1);
     }
 
     public Map<String,Object> notifications(Actor a, Map<String,String> filters) {
@@ -403,6 +514,19 @@ public class WorkspaceService {
 
     private Map<String,Object> safeNotification(Actor a, Map<String,Object> row, Instant now) {
         var event = db.find("SELECT * FROM domain_events WHERE organization_id=? AND id=?",a.organizationId(),s(row,"eventId"));
+        String objectType = s(row,"objectType"), objectId = s(row,"objectId");
+        if (objectType == null && s(row,"taskId") != null) { objectType = "task"; objectId = s(row,"taskId"); }
+        String eventType = s(row,"eventType");
+        Map<String,Object> objectDetails = event == null || event.get("detailsJson")==null ? Map.of() : db.parse(s(event,"detailsJson"));
+        // A comment message must be re-verified against the current object authority every time it is
+        // read; a deleted comment keeps a placeholder and never exposes its excerpt (chapter 8.5).
+        boolean objectReadable = objectType == null || canReadEventObject(a,objectType,objectId,objectDetails);
+        boolean commentEvent = eventType != null && eventType.startsWith("comment.");
+        // A deleted comment keeps a placeholder; a mere loss of authority uses the generic message.
+        boolean commentGone = commentEvent && eventObjectDeleted(a,objectType,objectId,objectDetails);
+        // Comments have no historical-notification exception: losing the object authority now masks the
+        // excerpt, while an ordinary task message keeps its delivered read-only historical entry.
+        boolean commentMasked = commentEvent && !objectReadable;
         boolean revoked = event != null && event.get("revokedAt")!=null;
         // Copies masked at delivery must never regain the restricted title/summary from the event row.
         boolean contentMasked = Boolean.TRUE.equals(row.get("contentMasked"))
@@ -423,11 +547,14 @@ public class WorkspaceService {
             view.put("summary",canReadWithdrawnDetails ? event.get("changeSummary") : "该通知已被撤回。");
             view.put("changeSummary",canReadWithdrawnDetails ? event.get("changeSummary") : null);
             view.put("readonly",true);
-        } else if (contentMasked) {
+        } else if (contentMasked || commentGone || commentMasked) {
             // Ordinary event whose recipient lost task authority before delivery: keep only the generic
             // delivery message, with no restricted title, change summary, request metadata or task jump.
             view.put("title",null);
-            view.put("summary",row.get("summary")!=null?row.get("summary"):"你的工作关系或访问范围已变化，请查看当前工作安排。");
+            // A masked copy must never reuse a stored excerpt: losing the object authority leaves only
+            // the generic delivery notice, exactly like a comment that no longer exists.
+            view.put("summary",commentGone ? "该评论已删除，正文不再展示。"
+                    : "你的工作关系或访问范围已变化，请查看当前工作安排。");
             view.put("changeSummary",null);
             view.put("readonly",true);
         } else {
@@ -445,6 +572,13 @@ public class WorkspaceService {
         view.put("canReview",false);
         view.put("requestStatus",null);
         view.put("requestKind",null);
+        boolean objectOpen = !revoked && !contentMasked && !commentGone && !commentMasked;
+        view.put("objectType",objectOpen?objectType:null);
+        view.put("objectId",objectOpen?objectId:null);
+        view.put("focus",objectOpen && commentEvent ? "comments" : null);
+        view.put("commentId",objectOpen && objectDetails.get("commentId") instanceof String id ? id : null);
+        view.put("purpose",notificationPurpose(eventType));
+        view.put("objectName",objectOpen?objectName(a,objectType,objectId,row,event):null);
         String requestId = revoked || contentMasked ? null : s(row,"requestId");
         if (requestId != null) {
             var request = db.find("SELECT id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline FROM approval_requests WHERE organization_id=? AND id=?",a.organizationId(),requestId);
@@ -460,6 +594,73 @@ public class WorkspaceService {
             }
         }
         return view;
+    }
+
+    /** Readable identity of the object a message is about; never a restricted proposal or body. */
+    private String objectName(Actor a, String objectType, String objectId, Map<String,Object> row, Map<String,Object> event) {
+        if (objectId == null) return null;
+        if ("log".equals(objectType)) {
+            var log = db.find("SELECT business_date FROM work_logs WHERE organization_id=? AND id=?",a.organizationId(),objectId);
+            return log == null ? "日志" : "日志 · " + s(log,"businessDate");
+        }
+        if ("task".equals(objectType)) {
+            String title = s(row,"title");
+            if (title == null && event != null) title = s(event,"title");
+            if (title != null) return title;
+            String taskId = s(row,"taskId") == null ? objectId : s(row,"taskId");
+            var task = db.find("SELECT v.title FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id WHERE t.organization_id=? AND t.id=?",a.organizationId(),taskId);
+            return task == null ? null : s(task,"title");
+        }
+        return null;
+    }
+
+    /** Human purpose of a message, independent of its body (chapter 8.6). */
+    static String notificationPurpose(String eventType) {
+        String type = eventType == null ? "" : eventType;
+        if (type.startsWith("comment.")) return "新评论";
+        if (type.startsWith("log.")) return "日志";
+        if (type.startsWith("task.create.")) return type.endsWith(".submitted") ? "待创建审核" : "创建结果";
+        if (type.startsWith("task.change.")) return type.endsWith(".submitted") ? "修改资料待审" : "修改结果";
+        if (type.startsWith("task.progress.")) return type.endsWith(".submitted") ? "进展待审" : "进展结果";
+        if (type.startsWith("task.complete.")) return type.endsWith(".submitted") ? "完成待审" : "完成结果";
+        if (type.startsWith("task.reopen.")) return type.endsWith(".submitted") ? "重开待审" : "重开结果";
+        if (type.startsWith("task.handover.")) return type.endsWith(".submitted") ? "交接待审" : "交接结果";
+        if (type.startsWith("task.deadline.") || type.startsWith("reminder.")) return "截止提醒";
+        if (type.startsWith("home_item.")) return "公司信息";
+        return "工作通知";
+    }
+
+    /** Whether the business object (or the exact comment) a message refers to no longer exists. */
+    public boolean eventObjectDeleted(Actor a, String objectType, String objectId, Map<String,Object> details) {
+        // A copy that never carried an object reference (masked at delivery) proves nothing about
+        // deletion, so it must not be presented as "the comment was deleted".
+        if (objectId == null) return false;
+        if (details != null && details.get("commentId") instanceof String commentId) {
+            var comment = db.find("SELECT deleted_at FROM task_log_comments WHERE organization_id=? AND id=?",a.organizationId(),commentId);
+            return comment == null || comment.get("deletedAt") != null;
+        }
+        if ("log".equals(objectType)) {
+            return db.find("SELECT id FROM work_logs WHERE organization_id=? AND id=? AND deleted_at IS NULL",a.organizationId(),objectId) == null;
+        }
+        if ("task".equals(objectType)) {
+            return db.find("SELECT id FROM tasks WHERE organization_id=? AND id=?",a.organizationId(),objectId) == null;
+        }
+        return false;
+    }
+
+    /** Delivery/open-time authority for a non-task object; the historical-notification exception never applies. */
+    public boolean canReadEventObject(Actor a, String objectType, String objectId, Map<String,Object> details) {
+        if ("log".equals(objectType)) {
+            var log = db.find("SELECT * FROM work_logs WHERE organization_id=? AND id=? AND deleted_at IS NULL",a.organizationId(),objectId);
+            if (log == null) return false;
+            if (details != null && details.get("commentId") instanceof String commentId) {
+                var comment = db.find("SELECT deleted_at FROM task_log_comments WHERE organization_id=? AND id=?",a.organizationId(),commentId);
+                if (comment == null || comment.get("deletedAt") != null) return false;
+            }
+            return access.canReadLogAuthor(a, s(log,"authorId"));
+        }
+        if ("task".equals(objectType)) return canReadTaskForComments(a, objectId);
+        return true;
     }
 
     private boolean notificationVisible(Actor a, Map<String,Object> row, Instant now) {
@@ -648,6 +849,20 @@ public class WorkspaceService {
         return page(list,filters);
     }
 
+    /**
+     * Normal viewing authority for comments and comment messages. A published task is judged only by
+     * its current effective version: an older approval request (whose base version may still list the
+     * requester) must not keep a removed assignee inside the current object (chapter 8.4/8.5). Only an
+     * unpublished creation falls back to its applicant/reviewer participants.
+     */
+    public boolean canReadTaskForComments(Actor a, String taskId) {
+        if (taskId == null) return false;
+        var task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?", a.organizationId(), taskId);
+        if (task == null) return false;
+        if (s(task,"currentVersionId") == null) return canReadTask(a, taskId, true);
+        return canReadTask(a, taskId, false);
+    }
+
     public boolean canReadTask(Actor a,String taskId,boolean includeApproval) {
         if (taskId == null) return true;
         var task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?",a.organizationId(),taskId);
@@ -825,18 +1040,42 @@ public class WorkspaceService {
                                  String suggestionQuery,String requestedScope) {}
 
     private Map<String,Object> ownedLog(Actor a,String logId) {
-        return db.one("SELECT * FROM work_logs WHERE organization_id=? AND author_id=? AND id=? FOR UPDATE",a.organizationId(),a.id(),logId);
+        return db.one("SELECT * FROM work_logs WHERE organization_id=? AND author_id=? AND id=? AND deleted_at IS NULL FOR UPDATE",a.organizationId(),a.id(),logId);
     }
-    private Map<String,Object> safeLog(Actor a,Map<String,Object> row,LocalDate today) {
+    private Map<String,Object> safeLog(Actor a,Map<String,Object> row) {
         row.remove("organizationId");
         String taskId=s(row,"taskId");
         if (taskId!=null && !canReadTask(a,taskId,false)) row.remove("taskId");
-        row.put("editable",a.id().equals(s(row,"authorId"))
-                && LocalDate.parse(s(row,"businessDate")).equals(today));
+        Map<String,Object> tag = tags.view(a,s(row,"tagId"));
+        row.put("tagId", tag == null ? null : s(tag,"id"));
+        row.put("tag", tag);
+        Instant freezeAt = freezeAt(row);
+        boolean frozen = freezeAt == null || !clock.instant().isBefore(freezeAt);
+        boolean owner = a.id().equals(s(row,"authorId"));
+        // The freeze is a real instant, not a business-date comparison: a log written last night stays
+        // editable across midnight until its own 24 hours are over (chapter 7.1).
+        row.put("frozen", frozen);
+        row.put("frozenAt", freezeAt == null ? null : freezeAt.toString());
+        row.put("editable", owner && !frozen);
+        row.put("deletable", owner && !frozen);
         return row;
     }
+
+    /** Real first-creation plus 24 hours, from the stored created_at only (never the migration time). */
+    private static Instant freezeAt(Map<String,Object> row) {
+        Instant created = instant(s(row,"createdAt"));
+        return created == null ? null : created.plus(LOG_FREEZE_WINDOW);
+    }
+
+    private void requireWritable(Map<String,Object> row) {
+        Instant freezeAt = freezeAt(row);
+        if (freezeAt == null || !clock.instant().isBefore(freezeAt)) {
+            throw conflict("WORK_LOG_FROZEN","该日志自首次创建已满24小时，只能查看");
+        }
+    }
+
     private Map<String,Object> findLog(Actor a,LocalDate date) {
-        return db.find("SELECT id,row_version,business_date FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?",
+        return db.find("SELECT id,row_version,business_date,deleted_at,created_at FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?",
                 a.organizationId(),a.id(),java.sql.Date.valueOf(date));
     }
     private static ApiException logExists(Map<String,Object> row) {

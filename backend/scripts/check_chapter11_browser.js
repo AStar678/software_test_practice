@@ -4,6 +4,11 @@
 /* Chapter 10/11 layout evidence against the packaged, served application.
  * Uses desktop Chrome/Edge device-metric emulation; this is not real-device evidence.
  */
+/* Employees authenticate by phone number (chapter 2.1/2.3). */
+const DEMO_PHONE = { upper: "13800000001", middle: "13800000002", market: "13800000003",
+  employee: "13800000004", colleague: "13800000005", marketing: "13800000006", admin: "admin" };
+function loginIdentity(account) { return DEMO_PHONE[account] || account; }
+
 const { spawn } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
@@ -73,7 +78,7 @@ async function shot(b, filename) {
 }
 async function login(b, username, password) {
   await waitFor(b, "!!document.getElementById('backend-login')");
-  await b.evaluate(`(() => { document.getElementById('login-user').value=${JSON.stringify(username)}; document.getElementById('login-password').value=${JSON.stringify(password)}; document.getElementById('backend-login').requestSubmit(); })()`);
+  await b.evaluate(`(() => { document.getElementById('login-user').value=${JSON.stringify(loginIdentity(username))}; document.getElementById('login-password').value=${JSON.stringify(password)}; document.getElementById('backend-login').requestSubmit(); })()`);
   return waitFor(b, "window.Pandora && window.Pandora.ready");
 }
 
@@ -86,16 +91,31 @@ async function runViewport(base, password, outputDir, width, height) {
     await b.evaluate("document.querySelector('[data-page=\"view\"]').click()");
     await waitFor(b, "state.page === 'view' && !!document.querySelector('.p-schedule-fab')");
     await b.evaluate("document.querySelector('.p-schedule-fab').click()");
-    await waitFor(b, "document.getElementById('sheetTitle').textContent === '创建任务'");
-    const fields = await b.evaluate("(() => { const d=document.getElementById('tf-desc'),a=document.getElementById('tf-acceptance'); return {desc:d.getBoundingClientRect().height,acceptance:a.getBoundingClientRect().height,descMin:getComputedStyle(d).minHeight,acceptanceMin:getComputedStyle(a).minHeight}; })()");
-    check(label, "task description and acceptance fields are at least 234px", fields.desc >= 234 && fields.acceptance >= 234, fields);
+    await waitFor(b, "document.getElementById('sheetTitle').textContent === '创建任务' && window.Pandora.idle()");
+    // Chapter 4.1 removed the completion criterion from creation; keep asserting the remaining
+    // description field is usable and that the removed input has not come back.
+    const fields = await b.evaluate("(() => { const d=document.getElementById('tf-desc'); return {desc:d ? d.getBoundingClientRect().height : 0, descMin:d ? getComputedStyle(d).minHeight : null, acceptance:!!document.getElementById('tf-acceptance')}; })()");
+    check(label, "task description field is at least 234px and no completion criterion is required", fields.desc >= 234 && !fields.acceptance, fields);
     await shot(b, path.join(outputDir, "task-form-" + label + ".png"));
-    await b.evaluate("document.getElementById('sheetClose').click()");
+    // The task form guards an unsaved draft with a confirm dialog; accept it in headless automation.
+    // Candidate loading may re-render the form once more after the sheet title appears; close until
+    // the overlay really stays hidden.
+    for (let attempt = 0; attempt < 6; attempt++) {
+      if (await b.evaluate("document.getElementById('overlay').hidden === true")) break;
+      await b.evaluate("window.confirm = () => true; window.closeSheet ? window.closeSheet() : document.getElementById('sheetClose').click()");
+      await sleep(400);
+    }
+    await waitFor(b, "document.getElementById('overlay').hidden === true");
 
     await b.evaluate("document.querySelector('[data-page=\"log\"]').click()");
-    await waitFor(b, "state.page === 'log' && window.Pandora.idle()");
+    await waitFor(b, "state.page === 'log' && window.Pandora.idle() && !!document.querySelector('[data-action=\"new-log\"]')");
+    await waitFor(b, "window.Pandora.idle()");
     await b.evaluate("document.querySelector('[data-action=\"new-log\"]').click()");
-    await waitFor(b, "document.getElementById('sheet').classList.contains('is-fullscreen') && !!document.getElementById('lf-content')");
+    const logOpened = await waitFor(b, "document.getElementById('sheet').classList.contains('is-fullscreen') && !!document.getElementById('lf-content')");
+    if (!logOpened) {
+      const diagnostic = await b.evaluate("({ page: state.page, ready: window.Pandora.ready, title: document.getElementById('sheetTitle').textContent, overlay: document.getElementById('overlay').hidden, sheetClass: document.getElementById('sheet').className, lf: !!document.getElementById('lf-content'), body: (document.getElementById('sheetBody').textContent || '').slice(0, 120), error: (document.getElementById('lf-error') || {}).textContent || '', closeFn: typeof window.closeSheet, idle: window.Pandora.idle(), busy: document.querySelector('.app').getAttribute('aria-busy') })");
+      console.log("LOGDIAG", JSON.stringify(diagnostic));
+    }
     const logLayout = await b.evaluate("(() => { const r=document.getElementById('sheet').getBoundingClientRect(),o=document.getElementById('overlay').getBoundingClientRect(); return {fullscreen:document.getElementById('sheet').classList.contains('is-fullscreen'),width:r.width,height:r.height,overlayWidth:o.width,overlayHeight:o.height,viewport:[innerWidth,innerHeight],save:!!document.querySelector('[data-action=\"save-log\"]'),picker:!!document.querySelector('[data-action=\"pick-log-task\"]'),close:document.getElementById('sheetClose').tabIndex>=0}; })()");
     check(label, "log editor fills the application overlay with save, close and related-task controls", logLayout.fullscreen && Math.abs(logLayout.height-logLayout.overlayHeight) < 2 && Math.abs(logLayout.width-logLayout.overlayWidth) < 2 && logLayout.save && logLayout.picker && logLayout.close, logLayout);
     await b.evaluate("document.querySelector('[data-action=\"pick-log-task\"]').click()");
@@ -124,7 +144,11 @@ async function runAdminViewport(base, password, outputDir, width, height) {
     const loaded = await waitFor(b, "document.getElementById('console').hidden === false && state.structure && document.querySelectorAll('#employeeRows tr').length > 0");
     check(label, "administrator console loads real organization data", loaded);
     const tabs = await b.evaluate("(() => { const buttons=Array.from(document.querySelectorAll('#tabs button')); const result=[]; for (const button of buttons) { button.click(); const section=Array.from(document.querySelectorAll('section.active'))[0]; result.push({label:button.textContent,active:section&&section.id}); } return result; })()");
-    check(label, "all management tabs are clickable", tabs.length === 7 && tabs.every((row) => row.active), tabs);
+    check(label, "all management tabs including task history and notification management are clickable",
+      tabs.length === 9 && tabs.every((row) => row.active)
+      && tabs.some((row) => row.label === '任务历史' && row.active === 'tab-history')
+      && tabs.some((row) => row.label === '通知管理' && row.active === 'tab-notifications'), tabs);
+    await b.evaluate("Array.from(document.querySelectorAll('#tabs button')).find((x) => x.textContent === '员工').click()");
     await b.evaluate("Array.from(document.querySelectorAll('#tabs button')).find((x) => x.textContent === '员工').click(); document.getElementById('employeeNew').click()");
     const dialog = await waitFor(b, "document.getElementById('employeeDialog').open && !!document.getElementById('fDepartment').value && !!document.getElementById('fPosition').value");
     check(label, "new employee management dialog is operable without SQL", dialog);

@@ -45,6 +45,88 @@
       list.map(person => button("p-open-person", person.displayName, "", person.id)).join("") + '</div></details>';
   }
 
+  function teamEntrySection() {
+    if (me().canManageTeam !== true) return "";
+    return '<section class="card profile-fold"><div class="profile-details"><div class="profile-row"><span class="k">团队管理</span><span class="v">' +
+      button("p-open-teams", "管理本人部门的团队", "primary") + '</span></div>' +
+      '<p class="tiny muted">仅显示本人可管理的部门、团队及本部门负责人候选；创建者默认为负责人，可转交本部门成员。团队负责人身份不会带来额外的任务或日志权限。</p></div></section>';
+  }
+
+  function openTeams() {
+    return P.busy(async function () {
+      const data = await P.request("/me/team-management");
+      openSheet(teamView(data));
+    });
+  }
+
+  function teamView(data) {
+    const departments = data.departments || [];
+    const department = departments[0];
+    if (!department) {
+      return { title: "团队管理", body: '<p class="muted">当前账号没有可管理的部门，请联系管理员确认组织关系。</p>',
+        foot: button("sheet-close", "关闭") };
+    }
+    const members = data.members || [];
+    const memberOptions = (selected) => members.map(person => '<option value="' + esc(person.id) + '"' +
+      (person.id === selected ? ' selected' : '') + '>' + esc(person.displayName) + '</option>').join("");
+    const teams = data.teams || [];
+    const teamCards = teams.map(team => '<div class="card team-card" data-team="' + esc(team.id) + '">' +
+      '<div class="profile-row"><span class="k">' + esc(team.name) + '</span><span class="v">' +
+      (team.memberCount || 0) + ' 人 · 负责人 ' + esc(team.leadName || '未设置') + '</span></div>' +
+      '<div class="field"><label for="team-lead-' + esc(team.id) + '">转交负责人</label>' +
+      '<select id="team-lead-' + esc(team.id) + '">' + memberOptions(team.leadUserId) + '</select></div>' +
+      '<div class="action-grid">' + button("p-transfer-team", "转交负责人", "", team.id) + '</div>' +
+      '<span class="tiny muted" data-team-version="' + esc(team.rowVersion) + '"></span></div>').join("");
+    return {
+      title: "团队管理",
+      body: '<p class="tiny muted">仅可管理本人所属部门：' + esc(department.name) + '。写入继续使用现有团队创建/转交能力，服务端每次重新校验授权与部门。</p>' +
+        (teamCards || '<p class="muted">本部门还没有团队，可以在下方创建。</p>') +
+        '<div class="divider"></div><div class="field"><label for="team-create-name">新团队名称</label>' +
+        '<input id="team-create-name" maxlength="100" placeholder="例如：产品一组" /></div>' +
+        '<div class="field"><label for="team-create-lead">负责人</label><select id="team-create-lead">' +
+        '<option value="">（创建者默认负责）</option>' + memberOptions(null) + '</select></div>' +
+        '<div class="action-grid">' + button("p-create-team", "创建团队", "primary") + '</div>' +
+        '<div class="callout reject" id="team-error" role="alert" hidden></div>',
+      foot: button("sheet-close", "关闭")
+    };
+  }
+
+  function createTeam() {
+    return P.busy(async function () {
+      const name = (document.getElementById("team-create-name") || {}).value || "";
+      if (!name.trim()) throw new Error("请填写团队名称。");
+      const lead = (document.getElementById("team-create-lead") || {}).value || "";
+      const data = await currentTeamDepartment();
+      const body = { name: name.trim(), departmentId: data.departments[0].id };
+      if (lead) body.leadUserId = lead;
+      await P.mutation("team-create", "POST", "/admin/teams", body, null);
+      P.notice("团队已创建，创建者默认为负责人。");
+      await P.reload();
+      replaceTopSheet(teamView(await P.request("/me/team-management")));
+    }, "team-error");
+  }
+
+  async function currentTeamDepartment() {
+    const data = await P.request("/me/team-management");
+    if (!data.departments || !data.departments.length) throw new Error("当前没有可管理的部门。");
+    return data;
+  }
+
+  function transferTeam(id) {
+    return P.busy(async function () {
+      const select = document.getElementById("team-lead-" + id);
+      const card = document.querySelector('[data-team="' + id + '"]');
+      const version = card && card.querySelector("[data-team-version]") ? card.querySelector("[data-team-version]").dataset.teamVersion : null;
+      if (!select || !select.value) throw new Error("请选择新的团队负责人。");
+      if (!version) throw new Error("团队数据已失效，请关闭后重新打开。");
+      await P.mutation("team-transfer:" + id, "PATCH", "/admin/teams/" + encodeURIComponent(id),
+        { leadUserId: select.value }, '"' + version + '"');
+      P.notice("团队负责人已转交。");
+      await P.reload();
+      replaceTopSheet(teamView(await P.request("/me/team-management")));
+    }, "team-error");
+  }
+
   function openPerson(id) {
     return P.busy(async function () {
       const person = await P.request("/users/" + encodeURIComponent(id));
@@ -78,7 +160,7 @@
       avatarHTML(user) + '</div><div class="profile-heading"><p class="eyebrow">MY WORKSPACE</p><h2>' + esc(user.displayName) + '</h2><p>' + esc(user.positionName || ROLE_LABEL[user.role] || "团队成员") + '</p></div>' +
       '<button type="button" class="profile-settings" data-action="p-open-settings" aria-label="个人设置">' + gear + '</button></div>' +
       '<div class="profile-details">' + row("联系电话", user.phone) + row("邮箱", user.email) + '</div></section>' +
-      '<details class="card profile-fold" data-profile-fold="organization"' + (folds.organization ? ' open' : '') + '><summary><span>组织信息</span><span class="fold-hint">由管理员维护</span><span class="fold-chevron" aria-hidden="true">⌄</span></summary><div class="profile-details fold-content">' + readonlyRows(user) + '</div></details>' + reportsSection();
+      '<details class="card profile-fold" data-profile-fold="organization"' + (folds.organization ? ' open' : '') + '><summary><span>组织信息</span><span class="fold-hint">由管理员维护</span><span class="fold-chevron" aria-hidden="true">⌄</span></summary><div class="profile-details fold-content">' + readonlyRows(user) + '</div></details>' + teamEntrySection() + reportsSection();
   };
 
   function openSettings() {
@@ -102,7 +184,7 @@
         field("profile-display-name", "text", "姓名（必填）", raw.displayName, 100, "name", true) +
         field("profile-phone", "tel", "联系电话（选填）", raw.phone, 32, "tel", false) +
         field("profile-email", "email", "邮箱（选填）", raw.email, 254, "email", false) +
-        '<p class="tiny muted">手机号仅本人及管理链上的上级可见，邮箱仅本人可见；留空可清除。</p><div class="divider"></div>' + readonlyRows(raw) +
+        '<p class="tiny muted">手机号用于登录，不能留空；仅本人及管理链上的上级可见。邮箱仅本人可见，可留空清除。</p><div class="divider"></div>' + readonlyRows(raw) +
         '<p class="tiny muted">账号、部门、身份和直属上级由管理员维护。</p><div class="callout reject" id="profile-error" role="alert" hidden></div>',
       foot: button("sheet-back", "返回设置") + button("p-save-profile", "保存资料", "primary")
     };
@@ -213,6 +295,9 @@
 
   runAction = function (element) {
     if (element.dataset.action === "p-open-settings") return openSettings();
+    if (element.dataset.action === "p-open-teams") return openTeams();
+    if (element.dataset.action === "p-create-team") return createTeam();
+    if (element.dataset.action === "p-transfer-team") return transferTeam(element.dataset.id);
     if (element.dataset.action === "p-select-avatar") return selectAvatar(element.dataset.avatar);
     if (element.dataset.action === "p-open-person") return openPerson(element.dataset.id);
     if (element.dataset.action === "p-open-person-logs") return openPersonLogs(element.dataset.id);

@@ -11,6 +11,12 @@
  *   node scripts/check_handover_browser.js --base-url http://127.0.0.1:18500 \
  *       --width 390 --height 844 --output handover-browser.json --screenshot-dir shots/
  */
+
+/* Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers. */
+const DEMO_PHONE = { upper: "13800000001", middle: "13800000002", market: "13800000003",
+  employee: "13800000004", colleague: "13800000005", marketing: "13800000006", admin: "admin" };
+function loginIdentity(account) { return DEMO_PHONE[account] || account; }
+
 const { spawn } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
@@ -104,20 +110,23 @@ const visible = (label) => `(() => { const el = Array.from(document.querySelecto
 
 async function loginPage(browser, username) {
   await waitFor(browser, "document.getElementById('backend-login')");
-  await browser.evaluate(setValue("login-user", username));
+  await browser.evaluate(setValue("login-user", loginIdentity(username)));
   await browser.evaluate(setValue("login-password", PASSWORD));
   await browser.evaluate(submit("backend-login"));
   return waitFor(browser, "window.Pandora && window.Pandora.ready");
 }
 
 async function searchAndOpen(browser, title) {
+  // The calendar no longer carries a name search (chapter 5); the task form is the supported
+  // authorized lookup, and its row opens exactly the same task detail sheet.
   await browser.evaluate("document.querySelector('#tabbar button[data-page=\"view\"]').click()");
-  const ready = await waitFor(browser, "!!document.getElementById('p-schedule-search')");
-  if (!ready) return false;
-  await browser.evaluate(setValue("p-schedule-search", title));
-  const found = await waitFor(browser, `Array.from(document.querySelectorAll('.p-search-row')).some(b => (b.textContent || '').includes(${JSON.stringify(title)}))`);
+  await waitFor(browser, "state.page === 'view' && !!document.querySelector('[data-action=\"task-table-open\"]')");
+  await browser.evaluate("document.querySelector('[data-action=\"task-table-open\"]').click()");
+  await waitFor(browser, "window.Pandora.taskForm && window.Pandora.taskForm.state.loaded");
+  await browser.evaluate(setValue("p-filter-query", title));
+  const found = await waitFor(browser, `Array.from(document.querySelectorAll('#p-table-body tr')).some(r => r.textContent.includes(${JSON.stringify(title)}))`);
   if (!found) return false;
-  await browser.evaluate(`(() => { const b = Array.from(document.querySelectorAll('.p-search-row')).find(x => (x.textContent || '').includes(${JSON.stringify(title)})); if (!b) return false; b.click(); return true; })()`);
+  await browser.evaluate(`(() => { const row = Array.from(document.querySelectorAll('#p-table-body tr')).find(r => r.textContent.includes(${JSON.stringify(title)})); const b = row && row.querySelector('button[data-task]'); if (!b) return false; b.click(); return true; })()`);
   return waitFor(browser, text("#sheetTitle") + " === " + JSON.stringify(title));
 }
 
@@ -127,7 +136,7 @@ async function main() {
   const shotDir = arg("screenshot-dir", null);
   if (shotDir) fs.mkdirSync(shotDir, { recursive: true });
 
-  const login = async (username) => (await api(base, "POST", "/api/v1/auth/sessions", { body: { username, password: PASSWORD } })).body.token;
+  const login = async (username) => (await api(base, "POST", "/api/v1/auth/sessions", { body: { username: loginIdentity(username), password: PASSWORD } })).body.token;
   const admin = await login("admin");
   const middle = await login("middle");
   const employee = await login("employee");
@@ -135,21 +144,34 @@ async function main() {
   const upper = await login("upper");
   const me = async (token) => (await api(base, "GET", "/api/v1/me", { token })).body;
   const employeeMe = await me(employee), colleagueMe = await me(colleague), middleMe = await me(middle), upperMe = await me(upper);
+  const adminMe = await me(admin);
+  // Creation now routes by the creator's own direct manager (chapter 3.2), so the fixture resolves the
+  // reviewer of record instead of assuming the assignee's manager. A founder creation applies directly.
+  const tokensByUser = {
+    [employeeMe.id]: employee, [colleagueMe.id]: colleague, [middleMe.id]: middle,
+    [upperMe.id]: upper, [adminMe.id]: admin,
+  };
 
   const now = new Date();
-  const createApproved = async (title, assignees, creatorToken = middle, approverToken = middle) => {
+  const createApproved = async (title, assignees, creatorToken = middle) => {
     const response = await api(base, "POST", "/api/v1/tasks", { token: creatorToken, key: key(), body: {
-      title, description: "交接界面核验", acceptanceCriteria: "可复核", priority: "medium", allDay: false,
+      title, description: "交接界面核验", priority: "medium", allDay: false,
       assigneeIds: assignees, startAt: iso(new Date(now.getTime() + 3600_000)), dueAt: iso(new Date(now.getTime() + 172800_000)) } });
     if (response.status !== 201) throw new Error("create failed " + title + " " + JSON.stringify(response.body));
-    const current = await api(base, "GET", "/api/v1/approval-requests/" + response.body.requestId, { token: approverToken });
-    const approved = await api(base, "PATCH", "/api/v1/approval-requests/" + response.body.requestId, { token: approverToken, key: key(),
-      etag: etag(current.body, current.headers), body: { decision: "approve", comment: "浏览器核验" } });
-    if (approved.status !== 200) throw new Error("approve failed " + JSON.stringify(approved.body));
+    if (response.body.requestId) {
+      const current = await api(base, "GET", "/api/v1/approval-requests/" + response.body.requestId, { token: creatorToken });
+      if (current.body.status === "pending") {
+        const approverToken = tokensByUser[current.body.currentReviewerId];
+        if (!approverToken) throw new Error("no session for the recorded reviewer " + current.body.currentReviewerId);
+        const approved = await api(base, "PATCH", "/api/v1/approval-requests/" + response.body.requestId, { token: approverToken, key: key(),
+          etag: etag(current.body, current.headers), body: { decision: "approve", comment: "浏览器核验" } });
+        if (approved.status !== 200) throw new Error("approve failed " + JSON.stringify(approved.body));
+      }
+    }
     return response.body.taskId;
   };
   const employeeTask = await createApproved("交接UI员工任务 " + RUN, [employeeMe.id]);
-  const managerTask = await createApproved("交接UI领导任务 " + RUN, [employeeMe.id], upper, middle);
+  const managerTask = await createApproved("交接UI领导任务 " + RUN, [employeeMe.id], upper);
   const managerTaskRow = await api(base, "GET", "/api/v1/tasks/" + managerTask, { token: middle });
   if (managerTaskRow.body.originalCreatorId !== upperMe.id) throw new Error("manager fixture creator mismatch");
 
@@ -159,8 +181,11 @@ async function main() {
     check("V-010 the served page loads the real employee workspace", employeeReady);
 
     await browser.evaluate("document.querySelector('#tabbar button[data-page=\"me\"]').click()");
-    check("V-010 我的 exposes a handover preset entry",
-      await waitFor(browser, `Array.from(document.querySelectorAll('#page-me button')).some(b => b.textContent.trim() === '交接预设')`));
+    // The profile page keeps the preset entry inside the personal settings sheet.
+    await waitFor(browser, "!!document.querySelector('#page-me [data-action=\"p-open-settings\"]')");
+    await browser.evaluate("document.querySelector('#page-me [data-action=\"p-open-settings\"]').click()");
+    check("V-010 我的 personal settings exposes a handover preset entry",
+      await waitFor(browser, `document.getElementById('sheetTitle').textContent === '个人设置' && Array.from(document.querySelectorAll('#sheetBody button')).some(b => b.textContent.trim() === '交接预设')`));
     check("V-010 the preset entry is reachable at this viewport", await browser.evaluate(visible("交接预设")));
     await browser.evaluate(clickText("交接预设"));
     check("V-010 the preset sheet opens from 我的", await waitFor(browser, text("#sheetTitle") + " === '交接预设'"));
