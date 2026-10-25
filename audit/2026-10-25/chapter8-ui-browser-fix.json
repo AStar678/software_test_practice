@@ -1,0 +1,212 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "checks": [
+    {
+      "check": "8.2 an ordinary employee has no tag-maintenance entry in 我的",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.2 the calendar uses the task's single tag colour",
+      "pass": true,
+      "evidence": "#d8eaf4"
+    },
+    {
+      "check": "8.2 an unmarked task uses the default pink that is outside the palette",
+      "pass": true,
+      "evidence": {
+        "tagged": "#d8eaf4",
+        "plain": "#ffe1ea",
+        "palette": [
+          "#f6d5d2",
+          "#fbe3cb",
+          "#f8efc8",
+          "#dceee0",
+          "#d8eaf4",
+          "#e4def3",
+          "#f2dfe9",
+          "#e4e7ec"
+        ],
+        "defaultPink": "#FFE1EA"
+      }
+    },
+    {
+      "check": "8.2 the task detail shows the same tag name and colour pill",
+      "pass": true,
+      "evidence": {
+        "pill": "UI 标签乙 6716a2",
+        "bg": "#D8EAF4"
+      }
+    },
+    {
+      "check": "8.4 the task detail has a flat comment area with a publication form",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the comment area lists the existing comment with its author",
+      "pass": true,
+      "evidence": [
+        "李敏2026年10月25日 17:29UI 评论摘要 6716a2"
+      ]
+    },
+    {
+      "check": "8.4 the author can manage their own comment while others cannot",
+      "pass": true,
+      "evidence": {
+        "id": "d8e1469d-265b-4ef1-b2a8-12decdad4d8f",
+        "edit": true
+      }
+    },
+    {
+      "check": "8.4 the author can open their own comment for editing",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "8.4 editing marks the comment as edited without changing publication order",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 deleting hides the body from the list",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V-002 the comment area loads the first UI page and offers load more",
+      "pass": true,
+      "evidence": {
+        "rows": 10
+      }
+    },
+    {
+      "check": "V-002 a comment already on the first UI page can be deleted from another session",
+      "pass": true,
+      "evidence": {
+        "deleted": true,
+        "objectId": "b9339cd1-a154-41f2-9d0c-4e78d8037b64",
+        "commentId": "d0736fc9-8350-4f41-b309-7c4dcd9b8097",
+        "rowVersion": 2,
+        "objectType": "task"
+      }
+    },
+    {
+      "check": "V-002 loading more after deleting a paged comment reaches every live unseen comment",
+      "pass": true,
+      "evidence": {
+        "loaded": 25,
+        "live": 24,
+        "missing": []
+      }
+    },
+    {
+      "check": "8.2 the log list shows the log's tag with the same colour",
+      "pass": true,
+      "evidence": {
+        "text": "UI 标签乙 6716a2",
+        "bg": "#D8EAF4",
+        "who": "张涛"
+      }
+    },
+    {
+      "check": "8.2 the log detail shows the tag pill and an independent comment area",
+      "pass": true,
+      "evidence": {
+        "title": "日志详情",
+        "pill": "UI 标签乙 6716a2",
+        "comments": true,
+        "notice": "评论已删除，正文不再展示。"
+      }
+    },
+    {
+      "check": "8.6 the notification list shows purpose, object name and the real summary",
+      "pass": true,
+      "evidence": {
+        "purpose": "新评论",
+        "title": "UI 带标签任务 6716a2",
+        "summary": "UI 带标签任务 6716a2有新评论：UI 评论摘要 6716a2"
+      }
+    },
+    {
+      "check": "8.5 a comment notification offers a jump that locates the comment area",
+      "pass": true,
+      "evidence": {
+        "title": "通知详情",
+        "text": "定位到评论区",
+        "notice": "评论已删除，正文不再展示。",
+        "body": "时间2026年10月25日 17:29用途新评论对象UI 带标签任务 6716a2状态已读UI 带标签任务 6716a2UI 带标签任务 6716a2有新评论："
+      }
+    },
+    {
+      "check": "8.5 the jump opens the object detail with the comment area rendered",
+      "pass": true,
+      "evidence": {
+        "title": "UI 带标签任务 6716a2",
+        "comments": true,
+        "notice": "评论已删除，正文不再展示。"
+      }
+    },
+    {
+      "check": "8.2 the founder sees the tag-maintenance entry in 我的",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.2 the management sheet lists tags with colour swatches and the predefined palette",
+      "pass": true,
+      "evidence": {
+        "rows": [
+          "UI 标签乙 6716a2改名/改色删除",
+          "UI 标签甲 6716a2改名/改色删除",
+          "例行改名/改色删除",
+          "重点改名/改色删除"
+        ],
+        "swatches": 4,
+        "colors": 8
+      }
+    },
+    {
+      "check": "8.2 a new tag created from the palette persists and refreshes the list",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.2 the founder can locate the tag row to rename",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.3 renaming a tag immediately updates the current task reference",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.3 a deleted tag keeps its reference and shows the deleted mark",
+      "pass": true,
+      "evidence": {
+        "text": "UI 标签乙 改名 6716a2（已删除）",
+        "deleted": true
+      }
+    },
+    {
+      "check": "8.3 a deleted tag is no longer offered for a new association",
+      "pass": true,
+      "evidence": [
+        "无标签（默认粉色）",
+        "UI 新建标签 6716a2",
+        "UI 标签甲 6716a2",
+        "例行",
+        "重点"
+      ]
+    },
+    {
+      "check": "8.2 no uncaught script or console errors on the tag/comment pages",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

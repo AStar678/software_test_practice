@@ -8,7 +8,7 @@
   const previousRunAction = runAction;
   const previousRenderMe = renderMe;
   const COMMENT_PAGE = 10;
-  const commentState = new Map(); // objectType:objectId -> {items, total, nextOffset, loading, error, draft, editing}
+  const commentState = new Map(); // objectType:objectId -> {items, total, nextCursor, loading, error, draft, editing}
   let tagEditing = null, pendingColor = null;
   function whenText(value) {
     if (!value) return '—';
@@ -118,7 +118,7 @@
   function commentKey(objectType, objectId) { return objectType + ':' + objectId; }
   function commentStateFor(objectType, objectId) {
     const key = commentKey(objectType, objectId);
-    if (!commentState.has(key)) commentState.set(key, { items: [], total: 0, nextOffset: 0, loading: false, error: null, draft: '', editingId: null, loaded: false });
+    if (!commentState.has(key)) commentState.set(key, { items: [], total: 0, nextCursor: null, loading: false, error: null, draft: '', editingId: null, loaded: false });
     return commentState.get(key);
   }
   function endpointFor(objectType, objectId) {
@@ -162,20 +162,23 @@
       else if (!found.items.length) list.innerHTML = '<div class="empty">还没有评论，欢迎发表第一条。</div>';
       else list.innerHTML = found.items.map(comment => commentRowHTML(comment, found.editingId)).join('');
     }
-    if (more) more.hidden = found.nextOffset == null || !!found.error;
+    if (more) more.hidden = found.nextCursor == null || !!found.error;
   }
-  async function loadComments(objectType, objectId, offset) {
+  async function loadComments(objectType, objectId, cursor) {
     const found = commentStateFor(objectType, objectId);
     if (found.loading) return;
     found.loading = true; found.error = null;
     paintComments(objectType, objectId);
     try {
-      const query = endpointFor(objectType, objectId) + '?limit=' + COMMENT_PAGE + '&offset=' + (offset || 0);
+      // Continue by the immutable (created_at, id) cursor, never by a positional offset: deleting an
+      // earlier comment between loads must not skip an unseen one.
+      const query = endpointFor(objectType, objectId) + '?limit=' + COMMENT_PAGE
+        + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '&offset=0');
       const result = await P.request(query);
       const rows = (result.items || []).map(item => Object.assign({ editing: false }, item));
-      found.items = offset ? found.items.concat(rows) : rows;
+      found.items = cursor ? found.items.concat(rows) : rows;
       found.total = result.total == null ? found.items.length : result.total;
-      found.nextOffset = result.nextOffset == null ? null : result.nextOffset;
+      found.nextCursor = result.nextCursor == null ? null : result.nextCursor;
       found.loaded = true;
     } catch (error) {
       if (error.name === 'AbortError') return;
@@ -195,7 +198,7 @@
     const target = activeCommentTarget(container);
     const found = commentStateFor(target.objectType, target.objectId);
     paintComments(target.objectType, target.objectId);
-    if (!found.loaded && !found.loading) loadComments(target.objectType, target.objectId, 0);
+    if (!found.loaded && !found.loading) loadComments(target.objectType, target.objectId, null);
   }
   openSheet = function (view) {
     previousOpenSheet(view);
@@ -225,8 +228,8 @@
         endpointFor(target.objectType, target.objectId), { body: body });
       if (error) error.hidden = true;
       input.value = '';
-      found.items = []; found.nextOffset = null; found.loaded = false; found.total = 0;
-      await loadComments(target.objectType, target.objectId, 0);
+      found.items = []; found.nextCursor = null; found.loaded = false; found.total = 0;
+      await loadComments(target.objectType, target.objectId, null);
       P.notice('评论已发表。');
     }, 'p-comment-error');
   }
@@ -302,12 +305,12 @@
     if (action === 'p-comment-more') {
       const container = element.closest('.p-comments');
       const found = commentStateFor(container.dataset.objectType, container.dataset.objectId);
-      loadComments(container.dataset.objectType, container.dataset.objectId, found.nextOffset || 0);
+      loadComments(container.dataset.objectType, container.dataset.objectId, found.nextCursor);
       return;
     }
     if (action === 'p-comment-retry') {
       const container = element.closest('.p-comments');
-      loadComments(container.dataset.objectType, container.dataset.objectId, 0);
+      loadComments(container.dataset.objectType, container.dataset.objectId, null);
       return;
     }
     if (action === 'p-comment-edit') { editComment(element.dataset.id); return; }

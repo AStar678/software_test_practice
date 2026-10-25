@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.*;
 
 import static cn.pandora.common.Db.*;
@@ -38,23 +39,58 @@ public class CommentService {
         this.db = db; this.access = access; this.workspace = workspace; this.events = events; this.clock = clock;
     }
 
+    /**
+     * Publication-ordered paging. The initial page keeps the historical offset contract, while
+     * {@code cursor} continues after the last returned comment by its immutable (created_at, id) key.
+     * A comment deleted between two loads therefore cannot shift the continuation past unseen rows;
+     * deleted bodies are never selected. The client uses the returned cursor, so a saved offset is no
+     * longer the continuation contract.
+     */
     public Map<String, Object> list(Actor a, String objectType, String objectId, Map<String, String> filters) {
         business(a);
         CommentedObject object = requireObject(a, objectType, objectId);
         int limit = number(filters, "limit", 20, 1, 100);
         int offset = number(filters, "offset", 0, 0, Integer.MAX_VALUE);
-        List<Map<String, Object>> rows = db.list("SELECT c.*,u.display_name AS author_name FROM task_log_comments c "
+        String objectCondition = "task".equals(object.type()) ? "c.task_id=?" : "c.log_id=?";
+        String select = "SELECT c.*,u.display_name AS author_name FROM task_log_comments c "
                 + "JOIN users u ON u.organization_id=c.organization_id AND u.id=c.author_id "
-                + "WHERE c.organization_id=? AND c.object_type=? AND c.deleted_at IS NULL AND "
-                + ("task".equals(object.type()) ? "c.task_id=?" : "c.log_id=?")
-                + " ORDER BY c.created_at,c.id", a.organizationId(), object.type(), object.id());
-        int start = Math.min(offset, rows.size());
-        int end = (int) Math.min((long) start + limit, rows.size());
-        List<Map<String, Object>> items = rows.subList(start, end).stream().map(row -> view(a, row, object)).toList();
+                + "WHERE c.organization_id=? AND c.object_type=? AND c.deleted_at IS NULL AND " + objectCondition;
+        long total = n(db.one("SELECT COUNT(*) AS c FROM task_log_comments c "
+                + "WHERE c.organization_id=? AND c.object_type=? AND c.deleted_at IS NULL AND " + objectCondition,
+                a.organizationId(), object.type(), object.id()), "c");
+        String cursor = filters.get("cursor");
+        List<Map<String, Object>> items;
+        Integer nextOffset = null;
+        String nextCursor = null;
+        if (cursor != null && !cursor.isBlank()) {
+            String trimmed = cursor.trim();
+            Map<String, Object> anchor = db.find("SELECT created_at FROM task_log_comments "
+                    + "WHERE organization_id=? AND object_type=? AND id=? AND " + objectCondition.replace("c.", ""),
+                    a.organizationId(), object.type(), trimmed, object.id());
+            if (anchor == null) throw bad("评论分页游标无效，请重新加载");
+            Timestamp anchorAt = Timestamp.from(Instant.parse(s(anchor, "createdAt")));
+            List<Map<String, Object>> rows = db.list(select
+                    + " AND (c.created_at>? OR (c.created_at=? AND c.id>?)) ORDER BY c.created_at,c.id LIMIT ?",
+                    a.organizationId(), object.type(), object.id(), anchorAt, anchorAt, trimmed, limit + 1);
+            int end = Math.min(limit, rows.size());
+            items = rows.subList(0, end).stream().map(row -> view(a, row, object)).toList();
+            if (rows.size() > limit && end > 0) nextCursor = s(rows.get(end - 1), "id");
+        } else {
+            List<Map<String, Object>> rows = db.list(select + " ORDER BY c.created_at,c.id",
+                    a.organizationId(), object.type(), object.id());
+            int start = Math.min(offset, rows.size());
+            int end = (int) Math.min((long) start + limit, rows.size());
+            items = rows.subList(start, end).stream().map(row -> view(a, row, object)).toList();
+            if (end < rows.size()) {
+                nextOffset = end;
+                if (end > 0) nextCursor = s(rows.get(end - 1), "id");
+            }
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("items", items);
-        result.put("total", rows.size());
-        result.put("nextOffset", end < rows.size() ? end : null);
+        result.put("total", total);
+        result.put("nextOffset", nextOffset);
+        result.put("nextCursor", nextCursor);
         result.put("objectType", object.type());
         result.put("objectId", object.id());
         return result;
@@ -140,12 +176,13 @@ public class CommentService {
                 for (var owner : db.list("SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=? ORDER BY ordinal,user_id",
                         a.organizationId(), s(task, "currentVersionId"))) recipients.add(s(owner, "userId"));
             } else {
-                // Unpublished creation: its applicant and current reviewer are the only task people.
+                // An unpublished creation has no effective assignee set, so a new comment has no
+                // notification recipient. Applicant/reviewer may still comment (the object permission
+                // check above allows participants), but that role alone must not add a message
+                // recipient (chapter 8.5). Only the title is read for the event object name.
                 var request = db.find("SELECT * FROM approval_requests WHERE organization_id=? AND task_id=? ORDER BY created_at DESC,id DESC LIMIT 1",
                         a.organizationId(), objectId);
                 if (request != null) {
-                    recipients.add(s(request, "applicantId"));
-                    recipients.add(s(request, "currentReviewerId"));
                     var proposed = db.find("SELECT title FROM task_versions WHERE organization_id=? AND id=?", a.organizationId(), s(request, "proposedVersionId"));
                     title = proposed == null ? null : s(proposed, "title");
                 }

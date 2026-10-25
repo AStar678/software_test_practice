@@ -1,0 +1,48 @@
+{
+  "success": true,
+  "checksPassed": 5,
+  "checksFailed": 0,
+  "checks": [
+    {
+      "check": "V-004 the owner can set a phone for the cycle check",
+      "pass": true,
+      "evidence": {
+        "profileVersion": 2,
+        "id": "e14ad504-1282-4577-b113-9f1a8c38e3dc",
+        "rowVersion": 2
+      }
+    },
+    {
+      "check": "V-004 a viewer inside a cyclic chain receives no phone number",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "phone": null
+      }
+    },
+    {
+      "check": "V-004 a viewer above the cycle receives no phone number",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "phone": null
+      }
+    },
+    {
+      "check": "V-004 the owner still reads their own phone",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "phone": "13900009999"
+      }
+    },
+    {
+      "check": "V-004 restoring the valid chain restores the authorised phone read",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "phone": "13900009999"
+      }
+    }
+  ]
+}

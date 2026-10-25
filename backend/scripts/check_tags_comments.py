@@ -17,7 +17,10 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 from pathlib import Path
+import re
+import subprocess
 import time
 import urllib.error
 import urllib.parse
@@ -27,6 +30,8 @@ import uuid
 RESULTS: list[dict] = []
 REVIEWER_IDS: dict[str, str] = {}
 PASSWORD = "Demo@123456"
+DB_DATABASE: str | None = None
+DB_DEFAULTS = ".runtime/mysql-admin.cnf"
 COMPANY = dt.timezone(dt.timedelta(hours=8))
 DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
               'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
@@ -85,6 +90,16 @@ class Api:
 def check(name: str, condition: bool, evidence=None) -> None:
     RESULTS.append({"check": name, "pass": bool(condition), "evidence": evidence})
     print(("PASS  " if condition else "FAIL  ") + name + ("" if condition else f"  -> {evidence}"))
+
+
+def db_sql(statement: str) -> str:
+    if not DB_DATABASE:
+        raise RuntimeError("an isolated database is required for the equal-timestamp paging fixture")
+    result = subprocess.run(["mysql", f"--defaults-file={DB_DEFAULTS}", f"--database={DB_DATABASE}",
+                             "-N", "-B", "-e", statement], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"sql failed: {result.stderr}")
+    return result.stdout.strip()
 
 
 def wait_for(predicate, timeout=20.0, interval=0.5):
@@ -271,6 +286,110 @@ def run(base: str) -> int:
           and [row["id"] for row in page2["items"]] == ids[2:]
           and page1["nextOffset"] == 2 and page2["nextOffset"] is None, {"page1": page1, "page2": page2})
 
+    # ---------------- V-002 deletion-stable continuation ----------------
+    def paging_task(label: str) -> str:
+        result = create_task(api, middle, {
+            "title": marker + " " + label, "description": "评论分页回归。", "priority": "medium",
+            "allDay": True, "startDate": iso_day(0), "dueDate": iso_day(3),
+            "assigneeIds": [employee_id, colleague_id]})
+        approve_current(api, "middle", result, "upper")
+        return result["taskId"]
+
+    def publish_comment(task_id: str, token: str, body: str) -> str:
+        status, result, _ = api.call("POST", f"/api/v1/tasks/{task_id}/comments", token,
+                                     {"body": body}, api.key("comment"))
+        if status not in (200, 201):
+            raise SystemExit(f"paging comment failed: {status} {result}")
+        return result["commentId"]
+
+    def comment_page(task_id: str, token: str, cursor=None, limit=2):
+        suffix = f"?limit={limit}&" + (f"cursor={urllib.parse.quote(cursor)}" if cursor else "offset=0")
+        status, result, _ = api.call("GET", f"/api/v1/tasks/{task_id}/comments{suffix}", token)
+        if status != 200:
+            raise SystemExit(f"comment page failed: {status} {result}")
+        return result
+
+    delete_task = paging_task("分页删除修复")
+
+
+    delete_a = publish_comment(delete_task, employee, marker + " 删除场景A")
+    delete_b = publish_comment(delete_task, colleague, marker + " 删除场景B")
+    delete_c = publish_comment(delete_task, employee, marker + " 删除场景C")
+    delete_page1 = comment_page(delete_task, middle)
+    check("V-002 the first page returns a stable continuation cursor",
+          [row["id"] for row in delete_page1["items"]] == [delete_a, delete_b]
+          and bool(delete_page1.get("nextCursor")), delete_page1)
+    status, deleted_paged, _ = api.call("DELETE", "/api/v1/comments/" + delete_a, employee,
+                                       key=api.key("comment"), if_match=Api.etag(delete_page1["items"][0]))
+    delete_page2 = comment_page(delete_task, middle, delete_page1.get("nextCursor"))
+    check("V-002 deleting an already-paged comment still reaches every unseen comment",
+          status == 200 and [row["id"] for row in delete_page2["items"]] == [delete_c]
+          and delete_page2.get("nextCursor") is None
+          and all("删除场景A" not in (row.get("body") or "") for row in delete_page2["items"]),
+          {"page2": delete_page2})
+
+    edit_task = paging_task("分页编辑修复")
+    edit_d = publish_comment(edit_task, employee, marker + " 编辑场景D")
+    edit_e = publish_comment(edit_task, colleague, marker + " 编辑场景E")
+    edit_f = publish_comment(edit_task, employee, marker + " 编辑场景F")
+    edit_page1 = comment_page(edit_task, middle)
+    status, reedited, _ = api.call("PATCH", "/api/v1/comments/" + edit_e, colleague,
+                                   {"body": marker + " 编辑场景E已编辑"}, api.key("comment"),
+                                   Api.etag(edit_page1["items"][1]))
+    edit_page2 = comment_page(edit_task, middle, edit_page1.get("nextCursor"))
+    check("V-002 editing an already-paged comment does not change the continuation",
+          status == 200 and reedited.get("edited") is True
+          and [row["id"] for row in edit_page1["items"]] == [edit_d, edit_e]
+          and [row["id"] for row in edit_page2["items"]] == [edit_f]
+          and edit_page2.get("nextCursor") is None,
+          {"page2": edit_page2, "edited": reedited})
+
+    equal_task = paging_task("分页同时间修复")
+    equal_ids = [publish_comment(equal_task, employee, marker + f" 同时间{index}")
+                 for index in range(4)]
+    db_sql("UPDATE task_log_comments SET created_at='2026-10-25 04:00:00.000001' "
+           f"WHERE task_id='{equal_task}'")
+    equal_expected = db_sql(f"SELECT id FROM task_log_comments WHERE task_id='{equal_task}' "
+                            "AND deleted_at IS NULL ORDER BY created_at,id").splitlines()
+    equal_page1 = comment_page(equal_task, middle)
+    equal_page2 = comment_page(equal_task, middle, equal_page1.get("nextCursor"))
+    equal_seen = [row["id"] for row in equal_page1["items"] + equal_page2["items"]]
+    check("V-002 equal publication timestamps keep a stable, complete cursor order",
+          bool(equal_page1.get("nextCursor")) and equal_page2.get("nextCursor") is None
+          and equal_seen == equal_expected and len(set(equal_seen)) == len(equal_seen) == 4,
+          {"seen": equal_seen, "expected": equal_expected, "page1Cursor": equal_page1.get("nextCursor"),
+           "page2Cursor": equal_page2.get("nextCursor")})
+    # Deleting one already-paged row under equal timestamps must still reach the rest.
+    status, _, _ = api.call("DELETE", "/api/v1/comments/" + equal_seen[0], employee,
+                            key=api.key("comment"),
+                            if_match='"' + str(equal_page1["items"][0]["rowVersion"]) + '"')
+    equal_after = comment_page(equal_task, middle, equal_page1.get("nextCursor"))
+    equal_after_ids = [row["id"] for row in equal_after["items"]]
+    check("V-002 a deletion between equal-time pages skips no unseen comment",
+          status == 200 and equal_after_ids == equal_seen[2:] and equal_after.get("nextCursor") is None,
+          {"after": equal_after_ids, "expected": equal_seen[2:]})
+
+    many_task = paging_task("分页二十修复")
+    many_ids = [publish_comment(many_task, employee if index % 2 else colleague,
+                                marker + f" 多页{index:02d}") for index in range(25)]
+    many_first = comment_page(many_task, middle, limit=10)
+    status, _, _ = api.call("DELETE", "/api/v1/comments/" + many_ids[0], colleague,
+                            key=api.key("comment"),
+                            if_match='"' + str(many_first["items"][0]["rowVersion"]) + '"')
+    collected = [row["id"] for row in many_first["items"]]
+    cursor = many_first.get("nextCursor")
+    while cursor:
+        page = comment_page(many_task, middle, cursor, limit=10)
+        collected.extend(row["id"] for row in page["items"])
+        cursor = page.get("nextCursor")
+    expected_many = db_sql(f"SELECT id FROM task_log_comments WHERE task_id='{many_task}' "
+                           "AND deleted_at IS NULL ORDER BY created_at,id").splitlines()
+    live_collected = [comment_id for comment_id in collected if comment_id != many_ids[0]]
+    check("V-002 the UI page size reaches all >20 live comments after an early deletion",
+          len(collected) == 25 and len(set(collected)) == 25
+          and live_collected == expected_many and len(expected_many) == 24,
+          {"collected": len(collected), "live": len(live_collected), "expected": len(expected_many)})
+
     # ---------------- 8.5/8.6 comment notifications ----------------
     def employee_comment_notifications():
         _, inbox, _ = api.call("GET", "/api/v1/notifications?limit=100", employee)
@@ -293,6 +412,61 @@ def run(base: str) -> int:
           len(colleague_copies) >= 1
           and len({row.get("eventId") for row in colleague_copies}) == len(colleague_copies),
           {"commentCopies": len(colleague_copies)})
+
+    # ---------------- V-003 unpublished-task comment recipients ----------------
+    unpublished = create_task(api, employee, {
+        "title": marker + " 未发布评论接收人", "description": "未发布评论接收矩阵。", "priority": "medium",
+        "allDay": True, "startDate": iso_day(0), "dueDate": iso_day(2),
+        "assigneeIds": [colleague_id]})
+    unpublished_id = unpublished["taskId"]
+
+    def comment_notifications(token: str, object_id: str):
+        _, inbox, _ = api.call("GET", "/api/v1/notifications?limit=100", token)
+        return [row for row in inbox.get("items", []) if row.get("eventType") == "comment.created"
+                and (row.get("objectId") or "") == object_id]
+
+    status_reviewer_comment, reviewer_comment, _ = api.call(
+        "POST", f"/api/v1/tasks/{unpublished_id}/comments", middle,
+        {"body": marker + " 未发布评审评论"}, api.key("comment"))
+    status_applicant_comment, applicant_comment, _ = api.call(
+        "POST", f"/api/v1/tasks/{unpublished_id}/comments", employee,
+        {"body": marker + " 未发布申请人评论"}, api.key("comment"))
+    worker_status = api.call("POST", "/api/v1/admin/worker/run-once", api.tokens["admin"],
+                             {}, api.key("worker"))[0]
+    check("V-003 an unpublished comment has no recipient by applicant/reviewer role",
+          status_reviewer_comment in (200, 201) and status_applicant_comment in (200, 201)
+          and worker_status == 200
+          and not comment_notifications(employee, unpublished_id)
+          and not comment_notifications(middle, unpublished_id),
+          {"reviewerComment": status_reviewer_comment, "applicantComment": status_applicant_comment,
+           "worker": worker_status,
+           "employee": comment_notifications(employee, unpublished_id),
+           "middle": comment_notifications(middle, unpublished_id)})
+
+    approve_current(api, "employee", unpublished, "middle")
+    status_published_comment, published_comment, _ = api.call(
+        "POST", f"/api/v1/tasks/{unpublished_id}/comments", employee,
+        {"body": marker + " 发布后评论"}, api.key("comment"))
+    api.call("POST", "/api/v1/admin/worker/run-once", api.tokens["admin"], {}, api.key("worker"))
+    assigned_copies = comment_notifications(colleague, unpublished_id)
+    check("V-003 after publishing only the effective assignee receives the comment message",
+          status_published_comment in (200, 201) and len(assigned_copies) == 1
+          and not comment_notifications(employee, unpublished_id)
+          and not comment_notifications(middle, unpublished_id)
+          and (assigned_copies[0].get("objectId") or "") == unpublished_id,
+          {"copies": len(assigned_copies), "comment": published_comment})
+
+    status_self_comment, self_comment, _ = api.call(
+        "POST", f"/api/v1/tasks/{unpublished_id}/comments", colleague,
+        {"body": marker + " 负责人本人评论"}, api.key("comment"))
+    api.call("POST", "/api/v1/admin/worker/run-once", api.tokens["admin"], {}, api.key("worker"))
+    check("V-003 the only assignee commenting receives no copy and no role gains an extra one",
+          status_self_comment in (200, 201)
+          and len(comment_notifications(colleague, unpublished_id)) == 1
+          and not comment_notifications(employee, unpublished_id)
+          and not comment_notifications(middle, unpublished_id),
+          {"selfComment": status_self_comment,
+           "colleagueCopies": len(comment_notifications(colleague, unpublished_id))})
 
     # Editing and deleting never create a new notification.
     def employee_comment_events():
@@ -409,8 +583,14 @@ def run(base: str) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:18120")
+    parser.add_argument("--database", default=None)
+    parser.add_argument("--defaults-file", default=".runtime/mysql-admin.cnf")
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
+    global DB_DATABASE, DB_DEFAULTS
+    DB_DEFAULTS = args.defaults_file
+    derived = re.search(r"/([A-Za-z0-9_]+)\?", os.environ.get("PANDORA_DB_URL", ""))
+    DB_DATABASE = args.database or (derived.group(1) if derived else None)
     code = 1
     try:
         code = run(args.base_url)

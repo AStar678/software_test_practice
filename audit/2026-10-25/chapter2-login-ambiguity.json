@@ -1,0 +1,145 @@
+{
+  "generatedAt": "2026-10-25T09:29:02.448823+00:00",
+  "baseUrl": "http://127.0.0.1:18130",
+  "passed": 14,
+  "total": 14,
+  "results": [
+    {
+      "check": "V-001 the seeded employee has a normalized login key to duplicate",
+      "pass": true,
+      "evidence": {
+        "employee": "b58fe41a-3d37-4d23-add0-b099f1d3af69",
+        "keyPrefix": "138***"
+      }
+    },
+    {
+      "check": "V-001 the fixture reproduces a normalized duplicate key without the unique index",
+      "pass": true,
+      "evidence": {
+        "matchingActiveEmployees": "2"
+      }
+    },
+    {
+      "check": "V-001 an ambiguous key cannot authenticate even when the password matches an employee",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "formattedStatus": 409,
+        "body": {
+          "code": "LOGIN_KEY_AMBIGUOUS",
+          "message": "该手机号在多个员工账号中重复，无法安全登录；请联系管理员修复手机号后重试"
+        }
+      }
+    },
+    {
+      "check": "V-001 a different password for the other duplicate is also rejected",
+      "pass": true,
+      "evidence": {
+        "reset": 200,
+        "status": 409,
+        "body": {
+          "code": "LOGIN_KEY_AMBIGUOUS",
+          "message": "该手机号在多个员工账号中重复，无法安全登录；请联系管理员修复手机号后重试"
+        }
+      }
+    },
+    {
+      "check": "V-001 a cross-company duplicate key is rejected under the global login contract",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "LOGIN_KEY_AMBIGUOUS",
+          "message": "该手机号在多个员工账号中重复，无法安全登录；请联系管理员修复手机号后重试"
+        }
+      }
+    },
+    {
+      "check": "V-001 rejected ambiguity issues no session for either employee",
+      "pass": true,
+      "evidence": {
+        "beforeAttempts": "2",
+        "afterAttempts": "2"
+      }
+    },
+    {
+      "check": "V-001 the administrator repairs the duplicate through the normal employee flow",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "21058c3f-b2f3-4a83-88b6-98ab0cf70f53",
+          "rowVersion": 2,
+          "changed": [
+            "phone"
+          ],
+          "phoneUpdated": true
+        }
+      }
+    },
+    {
+      "check": "V-001 the unique employee login key is safely re-established after repair",
+      "pass": true,
+      "evidence": {
+        "uniqueIndex": "1"
+      }
+    },
+    {
+      "check": "V-001 the resolved migration blockers are closed in the console",
+      "pass": true,
+      "evidence": {
+        "openBlockers": []
+      }
+    },
+    {
+      "check": "V-001 the original employee still logs in to the same ID and relations",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "userId": "b58fe41a-3d37-4d23-add0-b099f1d3af69"
+      }
+    },
+    {
+      "check": "V-001 the repaired number logs in to the repaired employee ID",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "userId": "21058c3f-b2f3-4a83-88b6-98ab0cf70f53"
+      }
+    },
+    {
+      "check": "V-001 the administrator keeps the username login",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "V-001 the original IDs and organization relations are unchanged",
+      "pass": true,
+      "evidence": {
+        "employee": "b58fe41a-3d37-4d23-add0-b099f1d3af69\t10000000-0000-0000-0000-000000000001\tbf06064e-388f-4bd1-9344-e60e01f71061\t6ce56224-11a0-4e06-b54c-84cba6571705\t10426473-11c2-426c-89a1-9c14bcaabcc3\tefdde1fe-ae13-4253-9215-daca87b86105\temployee\t13800000004\t13800000004",
+        "colleague": "21058c3f-b2f3-4a83-88b6-98ab0cf70f53\t10000000-0000-0000-0000-000000000001\tbf06064e-388f-4bd1-9344-e60e01f71061\t6ce56224-11a0-4e06-b54c-84cba6571705\t10426473-11c2-426c-89a1-9c14bcaabcc3\tefdde1fe-ae13-4253-9215-daca87b86105\tcolleague\t13723448583\t13723448583"
+      }
+    },
+    {
+      "check": "V-001 tasks, versions, assignments and logs are not rewritten by the repair",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "tasks": "17",
+          "versions": "23",
+          "assignments": "26",
+          "logs": "18",
+          "sessions": "2"
+        },
+        "after": {
+          "tasks": "17",
+          "versions": "23",
+          "assignments": "26",
+          "logs": "18"
+        }
+      }
+    }
+  ]
+}

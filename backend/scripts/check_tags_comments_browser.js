@@ -154,6 +154,13 @@ async function main() {
   await api(base, "PATCH", "/api/v1/work-logs/" + todayLog.id, { token: employee, body: { tagId: tagB.tagId }, key: key("log"), etag: '"' + todayLog.rowVersion + '"' });
   const comment = (await api(base, "POST", "/api/v1/tasks/" + tagged.taskId + "/comments", { token: middle, body: { body: "UI 评论摘要 " + RUN }, key: key("comment") })).body;
   if (!comment.commentId) throw new Error("comment fixture failed " + JSON.stringify(comment));
+  // >20 comments for the cursor/load-more UI; one already-paged row is deleted from another session.
+  const pagingTask = (await api(base, "POST", "/api/v1/tasks", { token: upper, body: taskBody("UI 评论分页任务 " + RUN), key: key("task") })).body;
+  for (let index = 0; index < 25; index += 1) {
+    const posted = await api(base, "POST", "/api/v1/tasks/" + pagingTask.taskId + "/comments",
+      { token: employee, body: { body: "UI 分页评论 " + RUN + " #" + index }, key: key("comment") });
+    if (posted.status !== 200 && posted.status !== 201) throw new Error("paging comment fixture failed " + JSON.stringify(posted.body));
+  }
   // The worker delivers asynchronously; the list/jump checks need the real message to exist first.
   for (let attempt = 0; attempt < 40; attempt += 1) {
     const inbox = (await api(base, "GET", "/api/v1/notifications?limit=100", { token: employee })).body;
@@ -212,6 +219,35 @@ async function main() {
     await waitFor(browser, `!document.querySelector('.p-comments .p-comment[data-comment-id="${ownComment.id}"]')`);
     check("8.4 deleting hides the body from the list",
       await browser.evaluate(`!document.getElementById('sheetBody').textContent.includes('员工自己的评论已编辑')`));
+    await browser.evaluate("document.getElementById('sheetClose').click()");
+    await sleep(150);
+
+    // ---- V-002: >20 comments, load-more cursor after an early deletion ----
+    await browser.evaluate(`window.openTaskDetail(${JSON.stringify(pagingTask.taskId)})`);
+    await waitFor(browser, "document.getElementById('overlay').hidden === false && window.Pandora.idle()");
+    await waitFor(browser, "document.querySelectorAll('.p-comments .p-comment').length === 10");
+    const firstPageIds = await browser.evaluate("Array.from(document.querySelectorAll('.p-comments .p-comment')).map(row => row.dataset.commentId)");
+    check("V-002 the comment area loads the first UI page and offers load more",
+      firstPageIds.length === 10 && await browser.evaluate("!document.querySelector('[data-comment-more]').hidden"),
+      { rows: firstPageIds.length });
+    const firstPageFromApi = (await api(base, "GET", "/api/v1/tasks/" + pagingTask.taskId + "/comments?limit=10&offset=0", { token: employee })).body;
+    const lastPaged = firstPageFromApi.items[9];
+    const deletedPaged = await api(base, "DELETE", "/api/v1/comments/" + lastPaged.id,
+      { token: employee, key: key("comment"), etag: '"' + lastPaged.rowVersion + '"' });
+    check("V-002 a comment already on the first UI page can be deleted from another session",
+      deletedPaged.status === 200, deletedPaged.body);
+    for (let guard = 0; guard < 8; guard += 1) {
+      if (await browser.evaluate("document.querySelector('[data-comment-more]').hidden")) break;
+      await browser.evaluate("document.querySelector('[data-action=\"p-comment-more\"]').click()");
+      await waitFor(browser, "window.Pandora.idle()");
+      await sleep(200);
+    }
+    const loadedIds = await browser.evaluate("Array.from(document.querySelectorAll('.p-comments .p-comment')).map(row => row.dataset.commentId)");
+    const live = (await api(base, "GET", "/api/v1/tasks/" + pagingTask.taskId + "/comments?limit=100&offset=0", { token: employee })).body.items.map(row => row.id);
+    const missing = live.filter(id => !loadedIds.includes(id));
+    check("V-002 loading more after deleting a paged comment reaches every live unseen comment",
+      missing.length === 0 && new Set(loadedIds).size === loadedIds.length && live.length === 24,
+      { loaded: loadedIds.length, live: live.length, missing });
     await browser.evaluate("document.getElementById('sheetClose').click()");
     await sleep(150);
 
