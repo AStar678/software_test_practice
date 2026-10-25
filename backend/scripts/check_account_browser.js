@@ -9,6 +9,12 @@
  *
  *   node scripts/check_account_browser.js --base-url http://127.0.0.1:18092
  */
+
+/* Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers. */
+const DEMO_PHONE = { upper: "13800000001", middle: "13800000002", market: "13800000003",
+  employee: "13800000004", colleague: "13800000005", marketing: "13800000006", admin: "admin" };
+function loginIdentity(account) { return DEMO_PHONE[account] || account; }
+
 const { spawn } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
@@ -128,9 +134,12 @@ async function main() {
   const position = structure.positions[0].id;
 
   const username = "brw-" + RUN;
+  /* The employee authenticates with this number; the administrator no longer has to invent a
+     public login name (chapter 2.3). */
+  let phone = "136" + String(crypto.randomInt(10000000, 99999999));
   const created = await api(base, "POST", "/api/v1/admin/employees", {
     token: adminToken, key: "browser-" + crypto.randomUUID(),
-    body: { username, displayName: "浏览器验证", departmentId: department, positionId: position, level: 3, roleCodes: ["employee"] },
+    body: { username, displayName: "浏览器验证", departmentId: department, positionId: position, level: 3, roleCodes: ["employee"], phone },
   });
   if (created.status !== 201) throw new Error("employee create failed: " + JSON.stringify(created.body));
   const initialPassword = created.body.initialPassword;
@@ -145,7 +154,7 @@ async function main() {
       !(await browser.evaluate(`/注册/.test(document.getElementById("page-map").textContent)`)));
 
     // First login with the generated password must land on the forced-change screen.
-    await browser.evaluate(setValue("login-user", username));
+    await browser.evaluate(setValue("login-user", phone));
     await browser.evaluate(setValue("login-password", initialPassword));
     await browser.evaluate(submit("backend-login"));
     check("3.4 a first login opens the forced password change screen",
@@ -183,7 +192,7 @@ async function main() {
       { message: await browser.evaluate(text("#login-error")) });
 
     // The old password no longer works, the new one does.
-    await browser.evaluate(setValue("login-user", username));
+    await browser.evaluate(setValue("login-user", phone));
     await browser.evaluate(setValue("login-password", initialPassword));
     await browser.evaluate(submit("backend-login"));
     check("3.4 the old password is refused after the change",
@@ -199,9 +208,12 @@ async function main() {
 
     // Everyday change from 我的.
     await browser.evaluate(`(() => { const b = document.querySelector('#tabbar button[data-page="me"]'); if (b) b.click(); return !!b; })()`);
-    const onProfile = await waitFor(browser, `!!document.querySelector('#page-me [data-action="p-change-password"]')`);
-    check("3.4 the profile page offers a password change", onProfile, {});
-    await browser.evaluate(`document.querySelector('#page-me [data-action="p-change-password"]').click()`);
+    /* The password entry now lives in 我的 → 个人设置; open that sheet first. */
+    const onProfile = await waitFor(browser, `!!document.querySelector('#page-me [data-action="p-open-settings"]')`);
+    await browser.evaluate(`document.querySelector('#page-me [data-action="p-open-settings"]').click()`);
+    const hasPasswordEntry = await waitFor(browser, `!!document.querySelector('[data-action="p-change-password"]')`);
+    check("3.4 the profile page offers a password change", onProfile && hasPasswordEntry, {});
+    await browser.evaluate(`document.querySelector('[data-action="p-change-password"]').click()`);
     await waitFor(browser, `!!document.getElementById("cp-current")`);
     await browser.evaluate(setValue("cp-current", "definitely-wrong"));
     await browser.evaluate(setValue("cp-new", "Abcdefghi1"));
@@ -220,12 +232,39 @@ async function main() {
       await waitFor(browser, `!!document.getElementById("backend-login") && /重新登录/.test(${text("#login-error")})`, 12000),
       { message: await browser.evaluate(text("#login-error")) });
 
-    await browser.evaluate(setValue("login-user", username));
+    await browser.evaluate(setValue("login-user", phone));
     await browser.evaluate(setValue("login-password", everydayPassword));
     await browser.evaluate(submit("backend-login"));
     check("3.4 the everyday password is the active one",
       await waitFor(browser, `document.getElementById("whoami").textContent !== "未登录"`, 15000),
       { whoami: await browser.evaluate(text("#whoami")) });
+
+    /* Chapter 2.3/2.2: the employee changes their own number from 我的, and the new number becomes the
+       login identity while the old number stops authenticating. */
+    await browser.evaluate(`(() => { const b = document.querySelector('#tabbar button[data-page="me"]'); if (b) b.click(); return !!b; })()`);
+    await waitFor(browser, `!!document.querySelector('#page-me [data-action="p-open-settings"]')`);
+    await browser.evaluate(`document.querySelector('[data-action="p-open-settings"]').click()`);
+    await waitFor(browser, `!!document.querySelector('[data-action="p-edit-profile"]')`);
+    await browser.evaluate(`document.querySelector('[data-action="p-edit-profile"]').click()`);
+    await waitFor(browser, `!!document.getElementById("profile-phone")`);
+    const changedPhone = "137" + String(crypto.randomInt(10000000, 99999999));
+    await browser.evaluate(setValue("profile-phone", changedPhone));
+    await browser.evaluate(`document.querySelector('[data-action="p-save-profile"]').click()`);
+    const phoneSaved = await waitFor(browser, `document.getElementById("overlay").hidden`, 15000);
+    check("2.3 the employee can change their own login number from the profile page", phoneSaved, { phone: changedPhone });
+    await browser.evaluate("window.Pandora.logout(), true");
+    await waitFor(browser, `!!document.getElementById("backend-login")`);
+    await browser.evaluate(setValue("login-user", changedPhone));
+    await browser.evaluate(setValue("login-password", everydayPassword));
+    await browser.evaluate(submit("backend-login"));
+    check("2.2 the changed number signs in to the same employee account",
+      await waitFor(browser, `document.getElementById("whoami").textContent !== "未登录"`, 15000),
+      { whoami: await browser.evaluate(text("#whoami")) });
+    const staleLogin = await api(base, "POST", "/api/v1/auth/sessions",
+      { body: { username: phone, password: everydayPassword } });
+    check("2.2 the previous number no longer authenticates", staleLogin.status === 401,
+      { status: staleLogin.status, code: staleLogin.body.code });
+    phone = changedPhone;
 
     // The administrator console exposes reset for this account.
     const reset = await api(base, "POST", `/api/v1/admin/employees/${userId}/password-reset`,

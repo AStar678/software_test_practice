@@ -3,7 +3,9 @@ package cn.pandora.seed;
 import cn.pandora.admin.RoleCatalog;
 import cn.pandora.auth.*;
 import cn.pandora.common.*;
+import cn.pandora.task.Tags;
 import cn.pandora.task.TaskService;
+import cn.pandora.workspace.CommentService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -26,9 +28,11 @@ public class DemoSeed implements ApplicationRunner {
     private final Db db; private final TaskService tasks;private final TransactionTemplate tx;private final String password;
     private final RoleCatalog roles;
     private final cn.pandora.auth.Access access;
+    private final Tags tags;
+    private final CommentService comments;
     private final Map<String,Actor> actors=new LinkedHashMap<>();
     private final LocalDate today=LocalDate.now(ZoneId.of("Asia/Shanghai"));
-    public DemoSeed(Db db,TaskService tasks,TransactionTemplate tx,@Value("${pandora.demo-password}") String password,RoleCatalog roles,cn.pandora.auth.Access access) {this.db=db;this.tasks=tasks;this.tx=tx;this.password=password;this.roles=roles;this.access=access;}
+    public DemoSeed(Db db,TaskService tasks,TransactionTemplate tx,@Value("${pandora.demo-password}") String password,RoleCatalog roles,cn.pandora.auth.Access access,Tags tags,CommentService comments) {this.db=db;this.tasks=tasks;this.tx=tx;this.password=password;this.roles=roles;this.access=access;this.tags=tags;this.comments=comments;}
     @Override public void run(ApplicationArguments args) {
         tx.executeWithoutResult(status->{
             db.update("INSERT IGNORE INTO organizations(id,name,time_zone) VALUES(?,?,?)",ORG,"潘多拉演示公司","Asia/Shanghai");
@@ -39,13 +43,14 @@ public class DemoSeed implements ApplicationRunner {
             String management=team("公司管理层",managementDepartment), product=team("产品部",productDepartment), marketing=team("市场部",marketingDepartment);
             roles.ensureDefaults(ORG);
             String hash=AuthService.PASSWORDS.encode(password);
-            user("upper","王海", "upper",management,managementDepartment,generalManager,null,1,hash);
-            user("admin","系统管理员","admin",management,managementDepartment,administrator,null,0,hash);
-            user("middle","李敏","middle",product,productDepartment,departmentManager,actors.get("upper").id(),2,hash);
-            user("market","陈冲","middle",marketing,marketingDepartment,departmentManager,actors.get("upper").id(),2,hash);
-            user("employee","张涛","lower",product,productDepartment,specialist,actors.get("middle").id(),3,hash);
-            user("colleague","赵蕾","lower",product,productDepartment,specialist,actors.get("middle").id(),3,hash);
-            user("marketing","孙悦","lower",marketing,marketingDepartment,specialist,actors.get("market").id(),3,hash);
+            user("upper","王海", "upper",management,managementDepartment,generalManager,null,1,hash,"13800000001");
+            // The independent administrator keeps the username login and therefore has no employee key.
+            user("admin","系统管理员","admin",management,managementDepartment,administrator,null,0,hash,null);
+            user("middle","李敏","middle",product,productDepartment,departmentManager,actors.get("upper").id(),2,hash,"13800000002");
+            user("market","陈冲","middle",marketing,marketingDepartment,departmentManager,actors.get("upper").id(),2,hash,"13800000003");
+            user("employee","张涛","lower",product,productDepartment,specialist,actors.get("middle").id(),3,hash,"13800000004");
+            user("colleague","赵蕾","lower",product,productDepartment,specialist,actors.get("middle").id(),3,hash,"13800000005");
+            user("marketing","孙悦","lower",marketing,marketingDepartment,specialist,actors.get("market").id(),3,hash,"13800000006");
             lead(management,actors.get("upper").id());
             lead(product,actors.get("middle").id());
             lead(marketing,actors.get("market").id());
@@ -69,6 +74,11 @@ public class DemoSeed implements ApplicationRunner {
             childInput.put("parentTaskId",parent);
             var child=tasks.create(actors.get("upper"),childInput); approve(child);
             for(int i=1;i<=6;i++) create("middle","今日排期事项 "+i,List.of("employee"),0,0,false,true);
+            // Historical rows keep a completion criterion even though the creation form no longer
+            // offers one (chapter 4.1): it must stay displayed, editable and auditable.
+            for(String historical:List.of(parent,completed)) {
+                db.update("UPDATE task_versions SET acceptance_criteria=? WHERE organization_id=? AND id=(SELECT current_version_id FROM tasks WHERE organization_id=? AND id=?)","材料完整、结果可复核，并经审核确认。",ORG,ORG,historical);
+            }
             for(var entry:actors.entrySet()) {
                 Actor a=entry.getValue();if(a.role().equals("admin")) continue;
                 for(int i=0;i<3;i++) {
@@ -77,14 +87,32 @@ public class DemoSeed implements ApplicationRunner {
                 db.update("INSERT INTO home_items(id,organization_id,owner_id,kind,title,body,sort_order) VALUES(?,?,?,'personal',?,?,0)",id(),ORG,a.id(),"本周关注","明确完成标准，及时同步阻塞事项。");
             }
             for(int i=1;i<=3;i++) db.update("INSERT INTO home_items(id,organization_id,kind,title,body,sort_order) VALUES(?,?,'company',?,?,?)",id(),ORG,"公司目标 "+i,List.of("按计划交付并保障质量","及时处理客户反馈","完善协作与知识记录").get(i-1),i);
+            // Chapter 8 demo content: one shared catalogue, a task tag, a log tag and flat comments.
+            String important=predefinedTag("重点", "#F6D5D2", "#C05B52");
+            String routine=predefinedTag("例行", "#D8EAF4", "#4C87A3");
+            db.update("UPDATE task_versions SET tag_id=?,tag_name_snapshot=?,tag_color_snapshot=? WHERE organization_id=? AND id=(SELECT current_version_id FROM tasks WHERE organization_id=? AND id=?)",
+                    important,"重点","#F6D5D2",ORG,ORG,parent);
+            db.update("UPDATE work_logs SET tag_id=? WHERE organization_id=? AND author_id=? AND business_date=?",
+                    routine,ORG,actors.get("employee").id(),today);
+            comments.create(actors.get("middle"),"task",doing,Map.of("body","请同步确认最终交付清单，评论独立于任务审核。"));
+            var employeeLog=db.find("SELECT id FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?",ORG,actors.get("employee").id(),today);
+            if(employeeLog!=null) comments.create(actors.get("middle"),"log",s(employeeLog,"id"),
+                    Map.of("body","这条日志的后续计划请补充时间点。"));
         });
+    }
+    private String predefinedTag(String name,String color,String border) {
+        var existing=db.find("SELECT id FROM tags WHERE organization_id=? AND name=?",ORG,name);
+        if(existing!=null) return s(existing,"id");
+        String tagId=id();
+        db.update("INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,?,?)",tagId,ORG,name,color);
+        return tagId;
     }
     private String department(String name) {String id=id();db.update("INSERT INTO departments(id,organization_id,name) VALUES(?,?,?)",id,ORG,name);return id;}
     private String position(String name) {String id=id();db.update("INSERT INTO positions(id,organization_id,name) VALUES(?,?,?)",id,ORG,name);return id;}
     private String team(String name,String departmentId) {String id=id();db.update("INSERT INTO teams(id,organization_id,name,department_id) VALUES(?,?,?,?)",id,ORG,name,departmentId);return id;}
     private void lead(String teamId,String userId) {db.update("UPDATE teams SET lead_user_id=? WHERE organization_id=? AND id=?",userId,ORG,teamId);}
-    private void user(String username,String name,String role,String team,String department,String position,String manager,int rank,String hash) {
-        String uid=id();db.update("INSERT INTO users(id,organization_id,team_id,department_id,position_id,manager_id,username,password_hash,display_name,role,rank_level) VALUES(?,?,?,?,?,?,?,?,?,?,?)",uid,ORG,team,department,position,manager,username,hash,name,role,rank);
+    private void user(String username,String name,String role,String team,String department,String position,String manager,int rank,String hash,String loginPhone) {
+        String uid=id();db.update("INSERT INTO users(id,organization_id,team_id,department_id,position_id,manager_id,username,password_hash,display_name,role,rank_level,phone,login_phone) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",uid,ORG,team,department,position,manager,username,hash,name,role,rank,loginPhone,loginPhone);
         roles.grant(ORG,uid,RoleCatalog.codeForLegacyRole(role),null);
         // The seeded actors carry their real capabilities and ranges, exactly like a logged-in one.
         actors.put(username,access.actor(db.one("SELECT * FROM users WHERE id=?",uid)));
@@ -93,7 +121,7 @@ public class DemoSeed implements ApplicationRunner {
         // Seeding runs through the real submission path, which refuses an already-expired schedule.
         // Demo rows therefore use a future deadline; tasks become overdue only as the controlled clock advances.
         int effectiveDue=Math.max(due,1);
-        Map<String,Object> body=new LinkedHashMap<>();body.put("title",title);body.put("description","本地演示任务，用于核对任务流转与人员权限。");body.put("acceptanceCriteria","材料完整、结果可复核，并经审核确认。");body.put("priority",due<0?"urgent":"medium");body.put("allDay",allDay);body.put("assigneeIds",owners.stream().map(k->actors.get(k).id()).toList());
+        Map<String,Object> body=new LinkedHashMap<>();body.put("title",title);body.put("description","本地演示任务，用于核对任务流转与人员权限。");body.put("priority",due<0?"urgent":"medium");body.put("allDay",allDay);body.put("assigneeIds",owners.stream().map(k->actors.get(k).id()).toList());
         if(allDay) { body.put("startDate",today.plusDays(start).toString());body.put("dueDate",today.plusDays(effectiveDue).toString()); }
         else {body.put("startAt",today.plusDays(start).atTime(9,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());body.put("dueAt",today.plusDays(effectiveDue).atTime(18,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());}
         return body;

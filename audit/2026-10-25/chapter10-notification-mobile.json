@@ -1,0 +1,142 @@
+{
+  "success": true,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "checksPassed": 23,
+  "checksFailed": 0,
+  "checks": [
+    {
+      "check": "7.7 the served page loads the real employee workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.7 the notification list opens from the bell",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.7 the list has no footer action bar",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.7 the header close button exists in the focus order",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 the list shows real event titles",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.6 the list separates purpose, object name and the real summary",
+      "pass": true,
+      "evidence": [
+        {
+          "purpose": "修改结果",
+          "title": "通知UI移除负责人 e560ab",
+          "summary": "任务《通知UI移除负责人 e560ab》的修改申请已通过。本次变化：负责人：张涛、赵蕾→张涛；"
+        },
+        {
+          "purpose": "创建结果",
+          "title": "通知UI移除负责人 e560ab",
+          "summary": "任务《通知UI移除负责人 e560ab》的创建申请已通过。"
+        },
+        {
+          "purpose": "待创建审核",
+          "title": "通知UI待审自建 e560ab",
+          "summary": "提交创建任务《通知UI待审自建 e560ab》，等待审核。"
+        }
+      ]
+    },
+    {
+      "check": "8.6 a long object name truncates inside its own line and never hides the purpose",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3/7.7 opening a message shows its detail",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 opening automatically marks the message read",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 no manual read button remains",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 an old resolved request shows the result and no approve button",
+      "pass": true,
+      "evidence": "{\"body\":\"时间\\n2026年10月25日 15:52\\n用途\\n创建结果\\n对象\\n通知UI已办结 e560ab\\n状态\\n已读\\n通知UI已办结 e560ab\\n\\n任务《通知UI已办结 e560ab》的创建申请已通过。\\n\\n原申请：创建任务 · 已通过（已办结，不再提供审核按钮）\",\"buttons\":[\"\\n          \\n          9+\\n        \",\"＋新建任务\",\"跨层派发 待排期变更中\",\"全天部门培训中\",\"通知UI移除负责人 e560ab中\",\"上线素材校对中\",\"今日排期事项 6中\",\"今日排期事项 4中\",\"今日排期事项 2中\",\"今日排期事项 1中\",\"产品资料 子任务中\",\"今日排期事项 3中\",\"新增\",\"1明确完成标准，及时同步阻塞事项。\",\"2026-10-25完成本日工作整理，记录待办与协作问题。\",\"2026-10-24复盘工作进展并补充后续计划。\",\"2026-10-23复盘工作进展并补充后续计划。\",\"\\n        \\n      \",\"\\n          \\n          工作台\\n        \",\"\\n          \\n          日程\\n        \",\"\\n          \\n          日志\\n        \",\"\\n          \\n          统计\\n        \",\"\\n          \\n          我的\\n        \",\"‹返回\",\"✕\",\"查看原申请结果\",\"查看相关任务\",\"查看相关对象\",\"删除此消息\"]}"
+    },
+    {
+      "check": "7.3 the read state is persisted and the unread count refreshes",
+      "pass": true,
+      "evidence": "2026-10-25T04:00:00Z"
+    },
+    {
+      "check": "7.7 the business initiator sees the withdrawal action",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.7 the withdrawn message is listed as withdrawn",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.7 withdrawal keeps a placeholder without a jump",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 the 我的 page lists management-chain subordinates",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 the subordinate detail opens from 我的",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 the actual superior reads the phone in the served page",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.5 the profile card has no dispatch button",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.6 a removed recipient sees the read-only historical entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.6 the historical read-only page opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.6 the historical page explains the lost current authority",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.6 the historical page has no business action",
+      "pass": true,
+      "evidence": null
+    }
+  ]
+}

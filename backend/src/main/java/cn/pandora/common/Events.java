@@ -37,10 +37,24 @@ public class Events {
 
     public void record(Actor actor, String taskId, String type, Collection<String> recipients, Map<String, Object> details,
                        String requestId, String versionId, String title, String summary) {
+        recordObject(actor, taskId, type, recipients, details, requestId, versionId, title, summary,
+                taskId == null ? null : "task", taskId);
+    }
+
+    /**
+     * Same durable event, with an explicit business object reference. A log comment message has no task,
+     * so the reference travels with the event and its copies instead of being forced into task_id
+     * (chapter 8.5). The audit row keeps pointing at the object that actually changed.
+     */
+    public void recordObject(Actor actor, String taskId, String type, Collection<String> recipients,
+                             Map<String, Object> details, String requestId, String versionId,
+                             String title, String summary, String objectType, String objectId) {
         Instant occurredAt = clock.instant();
         db.update("INSERT INTO audit_logs(id,organization_id,actor_id,object_id,action,details_json) VALUES(?,?,?,?,?,?)",
-                id(), actor.organizationId(), actor.id(), taskId, type, db.json(details == null ? Map.of() : details));
-        insert(actor.organizationId(), taskId, type, recipients, details, requestId, versionId, actor.id(), title, summary, occurredAt);
+                id(), actor.organizationId(), actor.id(), objectId == null ? taskId : objectId, type,
+                db.json(details == null ? Map.of() : details));
+        insert(actor.organizationId(), taskId, type, recipients, details, requestId, versionId, actor.id(),
+                title, summary, occurredAt, objectType, objectId);
     }
 
     /**
@@ -49,7 +63,8 @@ public class Events {
      */
     public String scheduled(String organizationId, String taskId, String type, String recipient,
                             Map<String, Object> details, String title, String summary) {
-        return insert(organizationId, taskId, type, List.of(recipient), details, null, null, null, title, summary, clock.instant());
+        return insert(organizationId, taskId, type, List.of(recipient), details, null, null, null, title, summary,
+                clock.instant(), taskId == null ? null : "task", taskId);
     }
 
     /**
@@ -60,22 +75,24 @@ public class Events {
     public void systemRecord(String organizationId, String taskId, String type, Collection<String> recipients,
                              Map<String, Object> details, String requestId, String versionId,
                              String initiatorId, String title, String summary, Instant occurredAt) {
-        insert(organizationId, taskId, type, recipients, details, requestId, versionId, initiatorId, title, summary, occurredAt);
+        insert(organizationId, taskId, type, recipients, details, requestId, versionId, initiatorId, title, summary,
+                occurredAt, taskId == null ? null : "task", taskId);
     }
 
     private String insert(String organizationId, String taskId, String type, Collection<String> recipients,
                         Map<String, Object> details, String requestId, String versionId, String initiatorId,
-                        String title, String summary, Instant occurredAt) {
+                        String title, String summary, Instant occurredAt, String objectType, String objectId) {
         LinkedHashSet<String> unique = new LinkedHashSet<>();
         if (recipients != null) for (String recipient : recipients) if (recipient != null && !recipient.isBlank()) unique.add(recipient);
         Map<String, Object> payload = details == null ? new LinkedHashMap<>() : new LinkedHashMap<>(details);
         String eventId = id();
         db.update("INSERT INTO domain_events(id,organization_id,task_id,event_type,recipients_json,details_json,status,"
-                        + "request_id,task_version_id,initiator_id,title,change_summary,occurred_at,expires_at) "
-                        + "VALUES(?,?,?,?,?,?,'pending',?,?,?,?,?,?,?)",
+                        + "request_id,task_version_id,initiator_id,title,change_summary,occurred_at,expires_at,object_type,object_id) "
+                        + "VALUES(?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?,?)",
                 eventId, organizationId, taskId, type, db.json(unique), db.json(payload),
                 requestId, versionId, initiatorId, truncate(title, 200), truncate(summary, SUMMARY_LIMIT),
-                Timestamp.from(occurredAt), Timestamp.from(retentionEndsAt(organizationId, occurredAt)));
+                Timestamp.from(occurredAt), Timestamp.from(retentionEndsAt(organizationId, occurredAt)),
+                objectType, objectId);
         return eventId;
     }
 

@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-10-25T07:42:54.165123+00:00",
+  "baseUrl": "http://127.0.0.1:18150",
+  "created": {
+    "companyItems": 7,
+    "tasks": 76,
+    "comments": 1,
+    "tags": 0
+  },
+  "reused": {
+    "companyItems": 0,
+    "tasks": 0,
+    "comments": 0,
+    "tags": 1
+  },
+  "counts": {
+    "companyItems": 10,
+    "demoTasks": 76,
+    "pendingDemoTasks": 3,
+    "employeeLogs": 3,
+    "tags": 2,
+    "commentsOnFocus": 1,
+    "notifications": 69
+  },
+  "flags": {
+    "workerRan": true,
+    "focusTask": "f88d3cb6-244b-4ab9-b115-647d1d2603c4",
+    "denseDates": [
+      "2026-10-30",
+      "2026-11-01"
+    ],
+    "crossYear": "2027-01-01"
+  }
+}

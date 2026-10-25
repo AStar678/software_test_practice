@@ -12,6 +12,16 @@ from pathlib import Path
 from smoke_test import Client
 
 
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 def run(base, password, report):
     checks, created, clients = [], [], {}
     prefix = "首页接口检查 " + str(uuid.uuid4())[:8]
@@ -31,7 +41,7 @@ def run(base, password, report):
     try:
         for username in ("upper", "middle", "employee", "colleague"):
             client = Client(base)
-            _, session, _ = client.call("POST", "/auth/sessions", {"username": username, "password": password})
+            _, session, _ = client.call("POST", "/auth/sessions", {"username": login_identity(username), "password": password})
             client.token = session["token"]
             clients[username] = client
         upper, owner, other = clients["upper"], clients["employee"], clients["colleague"]

@@ -20,6 +20,16 @@ import urllib.request
 import uuid
 
 
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 class Failure(AssertionError):
     pass
 
@@ -83,7 +93,7 @@ class Check:
         public = Client(self.base_url)
         for name in ("admin", "upper", "middle", "employee", "colleague"):
             _, login, _ = public.call("POST", "/api/v1/auth/sessions",
-                                      {"username": name, "password": self.password})
+                                      {"username": login_identity(name), "password": self.password})
             self.clients[name] = Client(self.base_url, login["token"])
             _, me, _ = self.clients[name].call("GET", "/api/v1/me")
             self.users[name] = me
@@ -109,7 +119,6 @@ class Check:
         return {
             "title": title,
             "description": description,
-            "acceptanceCriteria": "第十章真实分析验证通过",
             "assigneeIds": [self.users[assignee]["id"]],
             "priority": priority,
             "allDay": False,

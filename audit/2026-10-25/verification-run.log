@@ -1,0 +1,485 @@
+=== mvn test ===
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.172 s
+[INFO] Finished at: 2026-10-25T13:11:59+08:00
+[INFO] ------------------------------------------------------------------------
+=== account lifecycle ===
+scratch database: pandora_check_1792905119_10857
+scratch backend: http://127.0.0.1:18130
+PASS  3.1 creating an account returns a generated initial password once
+PASS  3.1 a repeated create never re-displays the secret
+PASS  3.1 the new employee signs in with the recorded phone
+PASS  3.1 the public username is not an employee login fallback
+PASS  3.1 no plaintext initial password reaches idempotency/audit/outbox
+PASS  3.1 only a BCrypt hash is stored for the account
+PASS  3.2 login reports the password change requirement up front
+PASS  3.2 a restricted session may read its own identity
+PASS  3.2 a restricted session cannot read business data
+PASS  3.2 a restricted session cannot list tasks
+PASS  3.2 a restricted session cannot reach the administration API
+PASS  3.2 refreshing cannot bypass the gate
+PASS  3.3 a wrong current password is rejected
+PASS  3.3 a policy violation is rejected (fewer than ten characters)
+PASS  3.3 a policy violation is rejected (letters only)
+PASS  3.3 a policy violation is rejected (digits only)
+PASS  3.3 a policy violation is rejected (more than 72 UTF-8 bytes)
+PASS  3.3 a second session can be established before the change
+PASS  3.3 a valid change succeeds and demands a new login
+PASS  3.3 the session that changed the password is revoked
+PASS  3.3 the other session is revoked too
+PASS  3.3 the old password no longer works
+PASS  3.3 the new password works and the gate is lifted
+PASS  3.3 business data is reachable after the change
+PASS  3.3 the chosen new password is never persisted in clear text
+PASS  3.1 an administrator reset issues a new one-time password
+PASS  3.1 the reset is a different secret from the created one
+PASS  3.1 the reset revokes the previously valid sessions
+PASS  3.1 the password from before the reset no longer works
+PASS  3.1 the reset restores the forced change gate
+PASS  3.2 a restricted session may log out
+PASS  3.1 a later reset issues a fresh secret, never the previous one
+PASS  3.5 the seeded employee can sign in normally
+PASS  3.5 the owner can read their own contacts
+PASS  3.5 the owner can write name, phone and email
+PASS  3.5 the owner sees their own saved phone
+PASS  3.5 the owner cannot change an organization field
+PASS  3.5 the owner cannot change their organization level
+PASS  3.5 the administrator writes a phone and gets a receipt without the number
+PASS  3.5 the employee directory never contains a phone number
+PASS  3.5 task detail and participant summaries contain no phone number
+PASS  3.5 notifications contain no phone number
+PASS  3.5 analytics contain no phone number
+PASS  3.5 the audit trail contains no phone number
+PASS  3.5 no stored audit/outbox/idempotency payload contains a phone number
+PASS  3.4 the login page wires first-login and everyday password changes
+PASS  3.4 a normal account can change its password from the profile page
+PASS  3.4 the administrator console exposes password reset
+PASS  3.4 self-registration does not exist and creates no account
+
+49/49 checks passed
+=== account browser ===
+scratch database: pandora_check_1792905128_11225
+scratch backend: http://127.0.0.1:18130
+PASS  3.4 the served page renders a login form
+PASS  3.4 the login form offers no self-registration
+PASS  3.4 a first login opens the forced password change screen
+PASS  3.4 the workspace is not rendered before the password change
+PASS  3.4 a mismatched confirmation shows an inline error
+PASS  3.4 a policy violation is rejected in the page
+PASS  3.4 a successful change returns to the login screen
+PASS  3.4 the old password is refused after the change
+PASS  3.4 the new password loads the workspace with the real identity
+PASS  3.4 the profile page offers a password change
+PASS  3.4 a wrong current password is refused from the profile page
+PASS  3.4 an everyday change returns to the login screen
+PASS  3.4 the everyday password is the active one
+PASS  2.3 the employee can change their own login number from the profile page
+PASS  2.2 the changed number signs in to the same employee account
+PASS  2.2 the previous number no longer authenticates
+PASS  3.4 the administrator can reset and receives a new one-time password
+PASS  3.4 the reset invalidates the browser session in place
+
+18/18 browser checks passed
+wrote ../audit/account-browser-chapter2.json
+=== profile phone matrix ===
+scratch database: pandora_check_1792905137_22070
+scratch backend: http://127.0.0.1:18130
+PASS  3.5 the owner can save their own phone
+PASS  3.5 the owner reads their own phone from person details
+PASS  3.5 the direct superior with current profile access reads the phone
+PASS  3.5 the indirect actual superior reads the phone
+PASS  3.5 another person's detail never returns email
+PASS  3.5 same-level colleague gets no person detail or phone
+PASS  3.5 other chain manager gets no person detail or phone
+PASS  3.5 a subordinate cannot read a superior's phone
+PASS  3.5 an administrator does not get employee person details
+PASS  3.5 the people directory contains no phone or email
+PASS  3.5 task summaries contain no phone
+PASS  3.5 notification summaries contain no phone
+PASS  3.5 home data contains no phone
+PASS  3.5 the administration roster returns no phone value
+PASS  3.5 audit output contains no phone
+PASS  3.5 log filtering contains no phone
+PASS  3.5 analytics output contains no phone
+PASS  3.5 stored analysis detail contains no phone
+PASS  3.5 the owner cannot edit organization fields
+PASS  3.5 the organization change is accepted
+PASS  3.5 the old superior loses the phone and person detail after transfer
+PASS  3.5 the new actual superior gains the phone after transfer
+PASS  3.5 the higher actual superior still reads the phone through the new chain
+PASS  3.5 the original organization is restored
+PASS  3.5 the restored superior reads the phone again
+PASS  3.5 the original phone is restored
+PASS: 26 passed, 0 failed
+=== profile reports ===
+scratch database: pandora_check_1792905146_27947
+scratch backend: http://127.0.0.1:18130
+PASS  8.4 the self profile contains organizationName
+PASS  8.4 the self profile contains departmentName
+PASS  8.4 the self profile contains positionName
+PASS  8.4 the self profile contains teamName
+PASS  8.4 the self profile contains managerName
+PASS  8.4 the employee saves a phone for the detail boundary
+PASS  8.4 the executive subordinate list includes direct and indirect chains
+PASS  8.4 the executive list excludes the administrator and unrelated self
+PASS  8.4 the manager list contains direct reports only
+PASS  8.4 non-chain people never enter the manager list
+PASS  8.4 an employee has no subordinate entry
+PASS  8.4 the administrator has no business subordinate list
+PASS  8.4 upper subordinate rows carry no phone or email
+PASS  8.4 middle subordinate rows carry no phone or email
+PASS  8.4 the direct manager reads the employee phone through person details
+PASS  8.4 person details expose the separate log authority
+PASS  8.4 another person's detail never returns email
+PASS  8.4 the indirect executive reads the employee phone
+PASS  8.4 a non-chain person is refused even when the id is known
+PASS  8.4 the administrator gets no employee person detail
+PASS  8.4 the temporary organization change is accepted
+PASS  8.4 the manager list does not gain the new indirect report
+PASS  8.4 the executive list still contains the new indirect report
+PASS  8.4 the manager cannot read the indirect person detail
+PASS  8.4 the manager cannot read the indirect report's logs
+PASS  8.4 the executive still reads company logs from the log page
+PASS: 26 checks
+=== review routing ===
+scratch database: pandora_check_1792905155_23346
+scratch backend: http://127.0.0.1:18130
+PASS  4.1 a creation routes to the creator's direct manager, never the assignees
+PASS  4.1 the submitted order is returned unchanged
+PASS  4.1 a refresh returns the same order
+PASS  4.1 a same-level reorder across chains changes the request reviewer
+PASS  4.1 the new reviewer follows the new first assignee
+PASS  4.6 a pure assignee reorder stays visible in the reviewer's authorized diff
+PASS  4.1 the swapped order persists after approval
+PASS  4.1 the unique employee organization root is exempt with a recorded reason
+PASS  4.2 a founder creation publishes without a self-review request
+PASS  4.2 a task with a reviewer is never applied automatically
+PASS  4.2 the creation reviewer is the creator's direct manager
+PASS  4.2 a frozen task refuses another business command
+PASS  4.2 every progress also requires approval
+PASS  4.2 the first approved progress moves the task to doing
+PASS  4.2 completion requires approval too
+PASS  4.9 a rejected completion returns to doing, never done
+PASS  4.9 the rejection keeps its comment for the applicant
+PASS  4.9 a withdrawal restores the state from before the submission
+PASS  4.3 the creation preview reports the creator's direct manager
+PASS  4.3 a non-creation preview follows the effective assignee chain
+PASS  4.3 the preview creates no request
+PASS  4.3 the modification preview follows the proposed order
+PASS  4.3 changing the assignee produces a pending request
+PASS  4.3 the previous reviewer cannot decide the new route
+PASS  4.3 the request names the new reviewer
+PASS  4.3 the detail exposes the request route separately from the effective route
+PASS  4.3 a rejection keeps the original assignees
+PASS  4.5 the applicant sees the submitted content but no comparison fields
+PASS  4.5 only the reviewer receives the base snapshot and the diff
+PASS  4.5 an ordinary viewer cannot read the request at all
+PASS  4.5 the ordinary task area keeps the effective version while frozen
+PASS  4.4 the creation request starts with the creator's direct manager
+PASS  4.4 the transfer succeeds and reports invalidation
+PASS  4.4 the pending creation follows the creator's new direct manager
+PASS  4.4 the reassignment is persisted with both reviewers and a reason
+PASS  4.4 the previous reviewer can no longer decide
+PASS  4.4 the new reviewer can decide
+PASS  4.6 a handover cannot smuggle a base field
+PASS  4.6 a non-direct manager has no handover authority
+PASS  4.6 the direct manager can hand the task over
+PASS  4.6 the handover routes by the new owner
+PASS  4.6 the new route approves the handover
+PASS  4.6 the target now owns the task and the source does not
+PASS  4.6 provenance is preserved and recorded
+PASS  4.7 the task is done before the reopen
+PASS  4.7 only the creator may reopen
+PASS  4.7 a reopen accepts a complete schedule
+PASS  4.7 a rejected reopen keeps the task done and the round unchanged
+PASS  4.7 an approved reopen atomically applies doing, the new round and the schedule
+PASS  4.8 the App cannot read the complete history
+PASS  4.8 the App task projection carries no history payload
+PASS  4.8 the history records fields, order, reviewer, decisions and the handover
+PASS  4.8 the ordered assignee change keeps before and after values
+PASS  4.8 a reassignment is traceable entry by entry
+PASS  4.8 the history exposes no contact fields
+PASS  4.2 a creator with no direct manager is exempt
+PASS  4.2 the exemption is recorded with the creator as the route basis
+PASS  4.2 the direct application publishes the task
+PASS  4.2 an unavailable direct manager blocks the creation instead of exempting it
+PASS  4.2 the blocked creation preview names no fallback reviewer and requires no approval
+PASS  4.4 the pending creation starts at the direct manager
+PASS  4.4 the reviewer of record is the creator's direct manager
+PASS  4.4 making the creation reviewer unusable completes the organization change
+PASS  4.4 the creation stays pending and is marked blocked instead of applying itself
+PASS  4.4 the blocked creation is not published
+PASS  4.4 the blocked reviewer cannot approve the creation
+PASS  4.9 concurrent submissions produce exactly one pending request
+PASS  4.9 the task stays frozen with a single pending request
+PASS  4.9 a child state change leaves the parent untouched
+PASS  3.1 the administrator cannot create a business task
+PASS  3.1 an employee may assign a peer, an upper level and the founder
+PASS  3.1 the creation still routes by the creator, not by the founder in the list
+PASS  3.1 a non-company assignee identifier is refused
+PASS  3.2 reordering or replacing assignees never moves the creation reviewer
+PASS  3.2 an inactive direct manager blocks the creation instead of escalating
+PASS  3.2 the organization interface refuses a manager cycle
+PASS  3.2 a second isolated upper account is created as a second root
+PASS  3.2 with multiple roots a root creation is exempt as "no manager", never as the founder
+PASS  3.2 a provable direct manager still routes normally with multiple roots
+
+79/79 checks passed
+wrote ../audit/review-routing-chapter3.json
+=== creation flow ===
+scratch database: pandora_check_1792905168_19654
+scratch backend: http://127.0.0.1:18130
+PASS  4.4 a request past its applicable deadline expires instead of being approved
+PASS  4.1 the creation form opens without a completion-criterion field
+PASS  4.2 the schedule uses the shared hour/minute selects instead of a platform time picker
+PASS  4.2 toggling all-day keeps the entered hour/minute in the web control
+PASS  3.5 the creation form previews the creator's direct manager
+PASS  3.1 the picker offers candidates from every department, not just the creator's
+PASS  3.1 the founder is a selectable assignee for an ordinary employee
+PASS  3.1 the founder can be selected as an assignee from the employee web form
+PASS  3.2 changing the assignee does not move the creation reviewer
+PASS  4.1 a creation without a completion criterion can be submitted with another person as owner
+PASS  3.5 the creation is reviewed by the creator's direct manager, not the selected founder
+PASS  4.6 the reviewer sees the backend's field-by-field diff with before and after values
+PASS  4.3 the reopen action carries an all-day switch, dates and the shared time control
+PASS  4.3 a reopen after the old deadline proposes a future schedule without changing the completed task
+PASS  4.3 the reopen request stays pending for review instead of publishing immediately
+PASS  3.5 a non-creation operation whose reviewer is the applicant shows an explicit reviewer, never an exemption
+PASS  4.4 the expired application is marked expired and offers modify-and-resubmit
+PASS  4.1 a creation resubmission also has no completion-criterion field
+PASS  4.4 the resubmission creates a new pending request and leaves the old one permanently expired
+PASS  the browser run raised no uncaught page error
+
+20/20 checks passed
+wrote ../audit/chapter4-creation-flow.json
+=== org admin ===
+scratch database: pandora_check_1792905177_26865
+scratch backend: http://127.0.0.1:18130
+PASS  2.6 the administration page is served from the build with every maintenance area
+PASS  2.6 the role editor exposes independent view/dispatch scope selectors
+PASS  2.1 admin reads the organization structure
+PASS  2.1 admin creates a department
+PASS  2.1 a duplicate department name is rejected
+PASS  2.1 admin creates a position
+PASS  2.1 a department can be placed under another department
+PASS  2.1 a department hierarchy cycle is rejected
+PASS  2.1 an employee without a department is rejected
+PASS  2.1 an employee without a position is rejected
+PASS  2.1 an out-of-range organization level is rejected
+PASS  2.1 a team outside the employee department is rejected
+PASS  2.1 a second administrator is rejected
+PASS  2.1 admin creates an employee through the interface
+PASS  2.1 a repeated request never re-displays the initial password
+PASS  2.1 the generated initial password works and forces a change
+PASS  2.1 a management cycle is rejected
+PASS  2.1 the employee directory reports contact presence without echoing the number
+PASS  2.2 an employee may only dispatch to themselves
+PASS  2.2 a department lead sees self and own-department staff only
+PASS  2.2 a business account has no administration access
+PASS  2.2 a middle manager cannot write organization data
+PASS  2.2 a business write before the scope change succeeds
+PASS  2.2 the administrator configures company view with self-only dispatch
+PASS  2.2 the independent ranges persist and advance the authorization version
+PASS  2.2 an idempotent replay from before the scope change is rejected
+PASS  2.2 the executive can now see company tasks but only dispatch to themselves
+PASS  2.2 the configured company view still returns the company task set
+PASS  3.1 a creation may assign an employee outside the old dispatch range
+PASS  2.2 modifying a published task stays inside the configured dispatch range
+PASS  2.2 the administrator role cannot be given employee business ranges
+PASS  2.2 restoring the dispatch range restores the candidate set
+PASS  2.3 the log author filter is limited to self and direct reports
+PASS  2.3 a same-department non-report is excluded from the log filter
+PASS  2.3 the log list excludes the same-department non-report
+PASS  2.3 a direct author filter outside the log range is refused
+PASS  2.3 an author outside the log range is refused even with a visible scope
+PASS  2.4 a middle manager has no administration console access
+PASS  2.4 an authorized department lead creates a team and becomes its lead
+PASS  2.4 one department holds several independent teams
+PASS  2.4 an unauthorized account cannot create a team
+PASS  2.4 a department lead cannot create a team in another department
+PASS  2.4 the team lead can be transferred and persists
+PASS  2.4 the transferred lead is stored
+PASS  2.4 a team lead gains no dispatch authority from being lead
+PASS  2.5 a transfer persists and reports invalidation
+PASS  2.5 the organization authorization version increased
+PASS  2.5 the transfer removes the person from the old department range
+PASS  2.5 the moved person stays outside the old department log range
+PASS  2.5 a structure change succeeds with the current version
+PASS  2.5 a stale structure form cannot bypass the new state
+PASS  2.7 a freshly seeded company uses the 18:00 all-day cut-off
+PASS  2.7 the all-day cut-off can be set
+PASS  2.7 an invalid cut-off is rejected
+PASS  2.7 the eleventh company item is rejected
+PASS  2.7 a business account cannot maintain company information
+PASS  2.7 company information can be reordered manually
+PASS  2.7 the manual order is persisted
+PASS  2.7 concurrent creation cannot exceed ten items
+
+59/59 checks passed
+=== work logs ===
+scratch database: pandora_check_1792905184_27716
+scratch backend: http://127.0.0.1:18130
+PASS  8.1 the self scope returns only the current author's day
+PASS  8.1 an existing today log is edited rather than duplicated
+PASS  8.1 the editable flag is true on the company day
+PASS  8.1 a second today create returns 409 with the existing id
+PASS  8.2 changing the recorded date is rejected
+PASS  8.2 the log is still editable at 23:59:59
+PASS  8.2 the log is frozen at 00:00:00
+PASS  8.2 a frozen log cannot be edited
+PASS  8.2 a frozen log cannot be deleted
+PASS  8.2 an old day cannot be recreated after midnight
+PASS  8.1 the new day starts empty for this author
+PASS  8.1 concurrent creates with distinct keys produce one row
+PASS  8.1 only one persisted log exists for the new day
+PASS  8.2 a client timezone date is not accepted as today
+PASS  8.3 the author tree contains self and direct reports only
+PASS  8.3 author search keeps only matches inside the permission tree
+PASS  8.3 an author outside the log range is refused
+PASS: 17 checks
+=== reminders ===
+scratch database: pandora_check_1792905190_30867
+scratch backend: http://127.0.0.1:18130
+PASS  5.2 rejects a submission whose proposed deadline already passed
+PASS  5.2 the rejected creation is rolled back and never appears
+PASS  5.1 a valid creation is approved before its deadline
+PASS  5.1 progress submission succeeds before the effective deadline
+PASS  5.1 the request stores an applicable deadline
+PASS  5.2 decide after the deadline is refused
+PASS  5.2 the expiry terminal state survives the error response
+PASS  5.2 expiry unfreezes the task and keeps the pre-submission effective version
+PASS  5.2 expiry notifies the applicant and reviewer
+PASS  5.2 a submission from a page older than expiry is refused
+PASS  5.2 the submission-entry expiry terminal state survives the 4xx
+PASS  5.2 the unpublished task stays unpublished and unfrozen after the refusal
+PASS  5.2 the expired submission can no longer be approved
+PASS  5.2 a valid handover is pending before the deadline
+PASS  5.2 a handover from a page older than expiry is refused
+PASS  5.2 the handover expiry terminal state survives the 4xx
+PASS  5.2 the handover expiry unfreezes the still-effective task
+PASS  5.3 the scheduled scan expires a pending request at the deadline
+PASS  5.3 the scan backfills one overdue notice for a published unfinished task
+PASS  5.3 repeated scans do not create a duplicate expiry result
+PASS  5.4 concurrent decisions after the deadline never approve the old request
+PASS  5.4 the race ends in exactly one expired terminal state
+PASS  5.4 a later retry cannot revive the expired request
+PASS  6.1 the administrator can set the company cut-off
+PASS  6.1 the new all-day schedule snapshots the configured cut-off
+PASS  6.1 an all-day task keeps the complete first and last calendar dates
+PASS  6.1 a non-schedule edit keeps the schedule and cut-off snapshot
+PASS  6.1 a real schedule change increments the schedule version
+PASS  6.1 changing only the start time recalculates the schedule version
+PASS  6.2 no reminder is sent before the first reached node
+PASS  6.2 the 20% node fires first for a ten-hour task
+PASS  6.2 no 90% reminder is produced
+PASS  7.4 an ordinary recipient cannot withdraw an automatic reminder
+PASS  7.4 a notification manager can withdraw an automatic reminder
+PASS  7.4 notification administration is denied to ordinary accounts
+PASS  7.4 the administrator can list notification copies
+PASS  6.2 the 10% node fires next
+PASS  6.2 the 5% node fires next
+PASS  6.2 a finished schedule becomes overdue exactly once
+PASS  6.2 a repeated scan does not repeat the overdue reminder
+PASS  6.3 a late first scan sends only the nearest reached node (10%)
+PASS  6.3 a second scan does not backfill the skipped 20% node
+PASS  6.3 the following 5% node still fires normally
+PASS  6.3 a zero-duration task sends only one overdue notice
+PASS  6.4 a pending request suspends normal reminders
+PASS  6.4 the applicant can withdraw and unfreeze the task
+PASS  6.4 reminders resume after the withdrawal
+PASS  6.4 a completed task gets no proportional reminder
+PASS  6.4 a removed recipient does not receive a new reminder
+PASS  6.4 a new effective schedule gets its own reminder identity
+PASS  6.4 a reopen creates a new round with its own reminder identity
+PASS  7.1 an unpublished creation notifies the applicant and reviewer only
+PASS  7.1 creation approval notifies the task people
+PASS  7.1 one event delivers once even when applicant and reviewer are the same identity
+PASS  7.1 a published submission notifies only the reviewer
+PASS  7.1 one event carries one actual multi-field summary
+PASS  7.1 the new assignee receives the applied change
+PASS  7.2 a removed assignee receives a delivered read-only summary
+PASS  7.2 the removed assignee loses normal task access
+PASS  7.6 the dedicated historical DTO is read-only and shows the revocation
+PASS  7.6 the historical DTO leaks no proposal, diff, phone or log
+PASS  7.6 historical access does not rejoin normal task lists
+PASS  7.3 opening a message marks it read and refreshes the unread count
+PASS  7.3 opening is idempotent
+PASS  7.3 a list GET does not change read state
+PASS  7.3 an old review message keeps its own completed request
+PASS  7.4 a business initiator can withdraw strictly before 180 seconds
+PASS  7.4 withdrawal keeps a placeholder without body or jump
+PASS  7.4 withdrawal does not change the business task
+PASS  7.4 a 180-second-old event can no longer be withdrawn
+PASS  7.4 a recipient can delete only their own copy
+PASS  7.4 a personally deleted copy is gone for that recipient
+PASS  7.4 the other recipients still hold their copies
+PASS  7.5 a personally deleted message cannot be used as a historical entry
+PASS  7.1 notification copies carry an explicit retention instant
+PASS  7.5 the read interface rejects a message at/after its retention instant without waiting for cleanup
+PASS  7.5 a message past three calendar months is no longer readable
+PASS  7.8 retention cleanup keeps the complete task history
+PASS  7.8 retention cleanup keeps the effective task
+PASS  7.1 an organization change is accepted for a pending request
+PASS  7.1 the pending request moves to the new reviewer of record
+PASS  7.1 the reassignment event reaches the new reviewer
+PASS  7.1 the reassignment keeps previous/new reviewer and source
+PASS  7.2 the ordinary create notice is queued before the owner changes
+PASS  7.2 the ordinary create notification is still queued when the owner changes
+PASS  7.2 the removed owner can no longer read the task
+PASS  7.2 the undelivered ordinary notice keeps no restricted title or change summary
+PASS  7.2 the message detail cannot refill restricted content from the event
+PASS  7.2 the undelivered copy grants no historical task entry
+PASS  7.2 the read response repeats no restricted content
+PASS  7.2 a real removal event still keeps its read-only summary
+PASS: 91 passed, 0 failed
+=== handover preset ===
+scratch database: pandora_check_1792905201_28992
+scratch backend: http://127.0.0.1:18130
+PASS  V-010 the legal target range contains the department colleague and the direct manager
+PASS  V-010 the target range excludes the person, the administrator and unrelated departments
+PASS  V-010 the person saves their own preset
+PASS  V-010 the preset is readable after a fresh login
+PASS  V-010 the preset survives re-login
+PASS  V-010 the direct manager saves the subordinate preset
+PASS  V-010 a non-direct manager cannot set the preset
+PASS  V-010 an unrelated colleague cannot set another person preset
+PASS  V-010 the target cannot be the person being handed over
+PASS  V-010 an administrator cannot be a handover target
+PASS  V-010 a target outside the legal working circle is rejected
+PASS  V-010 an inactive account is rejected as a handover target
+PASS  V-010 the handover fixture is published
+PASS  V-010 the task detail exposes the dedicated handover source and preset
+PASS  V-010 the command uses the persisted preset when no target is supplied
+PASS  V-010 the handover routes by the new owner and waits for explicit review
+PASS  V-010 the new route approves the handover
+PASS  V-010 the target owns the task and the source no longer does
+PASS  V-010 the source, target, setter and approval remain traceable
+PASS  V-010 the manager handling the second task is not its original creator
+PASS  V-010 the direct manager can use the same preset for the subordinate task
+PASS  V-010 a handover still cannot carry a base field
+PASS  V-010 a non-direct manager cannot hand the task over
+PASS  V-010 the ordered effective owners start as submitted
+PASS  V-010 a pending handover freezes the task but keeps the effective owners
+PASS  V-010 the pending handover routes by the new ordered owners
+PASS  V-010 rejecting a handover keeps the old ordered owners and unfreezes
+PASS  V-010 withdrawing a handover keeps the old ordered owners and unfreezes
+PASS  V-010 the preset can be cleared and no longer applies
+PASS: 29 passed, 0 failed
+=== auto apply ===
+scratch database: pandora_check_1792905207_17122
+scratch backend: http://127.0.0.1:18130
+PASS  V-008 the executive publishes a task owned by the employee
+PASS  V-008 the modification waits for its explicit reviewer
+PASS  V-008 the creator is the reviewer of record on the ordered-owner route
+PASS  V-008 the dispatch range is revoked through the admin API
+PASS  V-008 explicit approval is refused after the range is revoked
+PASS  V-008 the organization change itself still succeeds
+PASS  V-008 the reviewer-less automatic path does not apply the revoked proposal
+PASS  V-008 the proposal is not published by the automatic path
+PASS  V-008 no direct-application history was recorded
+PASS  V-008 a valid modification proposal can be submitted
+PASS  V-008 a valid proposal still waits for its explicit reviewer
+PASS  V-008 a legitimate reviewer-less application applies directly with a reason
+PASS: 12 passed, 0 failed

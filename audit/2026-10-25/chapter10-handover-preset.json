@@ -1,0 +1,489 @@
+{
+  "success": true,
+  "checksPassed": 29,
+  "checksFailed": 0,
+  "checks": [
+    {
+      "check": "V-010 the legal target range contains the department colleague and the direct manager",
+      "pass": true,
+      "evidence": {
+        "items": [
+          "746efd42-0fed-4a76-ac94-76d7f0cd3312",
+          "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9"
+        ]
+      }
+    },
+    {
+      "check": "V-010 the target range excludes the person, the administrator and unrelated departments",
+      "pass": true,
+      "evidence": {
+        "items": [
+          "746efd42-0fed-4a76-ac94-76d7f0cd3312",
+          "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9"
+        ]
+      }
+    },
+    {
+      "check": "V-010 the person saves their own preset",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+          "targetUserId": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+          "target": {
+            "displayName": "赵蕾",
+            "id": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+            "username": "colleague"
+          },
+          "rowVersion": 1,
+          "setByUserId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+          "updatedAt": "2026-10-25T07:30:22.115232Z"
+        }
+      }
+    },
+    {
+      "check": "V-010 the preset is readable after a fresh login",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+          "targetUserId": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+          "target": {
+            "displayName": "赵蕾",
+            "id": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+            "username": "colleague"
+          },
+          "rowVersion": 1,
+          "setByUserId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+          "updatedAt": "2026-10-25T07:30:22.115232Z"
+        }
+      }
+    },
+    {
+      "check": "V-010 the preset survives re-login",
+      "pass": true,
+      "evidence": {
+        "userId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+        "targetUserId": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+        "target": {
+          "displayName": "赵蕾",
+          "id": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+          "username": "colleague"
+        },
+        "rowVersion": 1,
+        "setByUserId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+        "updatedAt": "2026-10-25T07:30:22.115232Z"
+      }
+    },
+    {
+      "check": "V-010 the direct manager saves the subordinate preset",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+          "targetUserId": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+          "target": {
+            "displayName": "赵蕾",
+            "id": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+            "username": "colleague"
+          },
+          "rowVersion": 2,
+          "setByUserId": "746efd42-0fed-4a76-ac94-76d7f0cd3312",
+          "updatedAt": "2026-10-25T07:30:22.347218Z"
+        }
+      }
+    },
+    {
+      "check": "V-010 a non-direct manager cannot set the preset",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "仅本人或直属领导可设置交接对象"
+        }
+      }
+    },
+    {
+      "check": "V-010 an unrelated colleague cannot set another person preset",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "仅本人或直属领导可设置交接对象"
+        }
+      }
+    },
+    {
+      "check": "V-010 the target cannot be the person being handed over",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "交接对象不能是本人"
+        }
+      }
+    },
+    {
+      "check": "V-010 an administrator cannot be a handover target",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "交接对象须为本公司有效业务账号且在合法交接范围内"
+        }
+      }
+    },
+    {
+      "check": "V-010 a target outside the legal working circle is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "交接对象须为本公司有效业务账号且在合法交接范围内"
+        }
+      }
+    },
+    {
+      "check": "V-010 an inactive account is rejected as a handover target",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "交接对象须为本公司有效业务账号且在合法交接范围内"
+        }
+      }
+    },
+    {
+      "check": "V-010 the handover fixture is published",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "534c70cb-904e-44ca-83ea-288e6e696ef2",
+          "requestId": "4b194cac-99fb-4be7-afe6-fbb277fdeb3f",
+          "outcome": "approved",
+          "rowVersion": 2,
+          "requestRowVersion": 2
+        }
+      }
+    },
+    {
+      "check": "V-010 the task detail exposes the dedicated handover source and preset",
+      "pass": true,
+      "evidence": {
+        "canHandover": true,
+        "handoverSources": [
+          "6fdcb7c5-0440-483a-ab4a-4a91527b0895"
+        ],
+        "handoverPresets": {
+          "6fdcb7c5-0440-483a-ab4a-4a91527b0895": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9"
+        }
+      }
+    },
+    {
+      "check": "V-010 the command uses the persisted preset when no target is supplied",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "534c70cb-904e-44ca-83ea-288e6e696ef2",
+          "requestId": "3a9db234-642a-41e3-9602-ea7d0c902374",
+          "outcome": "pending",
+          "rowVersion": 3
+        }
+      }
+    },
+    {
+      "check": "V-010 the handover routes by the new owner and waits for explicit review",
+      "pass": true,
+      "evidence": {
+        "requestId": "3a9db234-642a-41e3-9602-ea7d0c902374",
+        "taskId": "534c70cb-904e-44ca-83ea-288e6e696ef2",
+        "kind": "handover",
+        "status": "pending",
+        "comment": null,
+        "applicantId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+        "currentReviewerId": "746efd42-0fed-4a76-ac94-76d7f0cd3312",
+        "rowVersion": 1,
+        "previousState": "todo",
+        "exemptionReason": null,
+        "createdAt": "2026-10-25T04:00:00Z",
+        "decidedAt": null,
+        "applicableDeadline": "2026-10-28T07:30:22Z",
+        "expiredAt": null,
+        "title": "预设交接任务-b1cebd",
+        "versionNo": 2,
+        "route": {
+          "reviewerId": "746efd42-0fed-4a76-ac94-76d7f0cd3312",
+          "basisAssigneeId": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+          "path": [],
+          "reason": "manager-chain",
+          "reasonText": "按最高组织层级负责人的管理链上溯",
+          "authzVersion": 3,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "id": "746efd42-0fed-4a76-ac94-76d7f0cd3312",
+              "displayName": "李敏"
+            },
+            {
+              "id": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+              "displayName": "赵蕾"
+            }
+          ]
+        },
+        "proposedVersion": {
+          "id": "bd071546-2c71-4f30-b0d4-ad33ec564027",
+          "taskId": "534c70cb-904e-44ca-83ea-288e6e696ef2",
+          "versionNo": 2,
+          "title": "预设交接任务-b1cebd",
+          "description": "交接受权核验",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-10-26T07:30:22Z",
+          "dueAt": "2026-10-28T07:30:22Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "proposed",
+          "createdBy": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+          "createdAt": "2026-10-25T04:00:00Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9"
+          ],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "baseVersionId": "c46afee5-5fa7-4e1e-b1be-eb7fe02cd23e",
+        "baseVersion": {
+          "id": "c46afee5-5fa7-4e1e-b1be-eb7fe02cd23e",
+          "taskId": "534c70cb-904e-44ca-83ea-288e6e696ef2",
+          "versionNo": 1,
+          "title": "预设交接任务-b1cebd",
+          "description": "交接受权核验",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-10-26T07:30:22Z",
+          "dueAt": "2026-10-28T07:30:22Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "applied",
+          "createdBy": "746efd42-0fed-4a76-ac94-76d7f0cd3312",
+          "createdAt": "2026-10-25T04:00:00Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "6fdcb7c5-0440-483a-ab4a-4a91527b0895"
+          ],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "diff": [
+          {
+            "before": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+            "after": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+            "field": "assigneeIds"
+          }
+        ],
+        "participants": [
+          {
+            "id": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+            "displayName": "张涛"
+          },
+          {
+            "id": "746efd42-0fed-4a76-ac94-76d7f0cd3312",
+            "displayName": "李敏"
+          },
+          {
+            "id": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+            "displayName": "赵蕾"
+          }
+        ],
+        "records": [
+          {
+            "id": "d109877a-1dea-486a-b357-39df7f1302ca",
+            "authorId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+            "body": "使用预设交接",
+            "kind": "handover",
+            "effectiveAt": null,
+            "createdAt": "2026-10-25T04:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "check": "V-010 the new route approves the handover",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "534c70cb-904e-44ca-83ea-288e6e696ef2",
+          "requestId": "3a9db234-642a-41e3-9602-ea7d0c902374",
+          "outcome": "approved",
+          "rowVersion": 4,
+          "requestRowVersion": 2
+        }
+      }
+    },
+    {
+      "check": "V-010 the target owns the task and the source no longer does",
+      "pass": true,
+      "evidence": {
+        "assigneeIds": [
+          "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9"
+        ]
+      }
+    },
+    {
+      "check": "V-010 the source, target, setter and approval remain traceable",
+      "pass": true,
+      "evidence": {
+        "handovers": [
+          {
+            "id": "4a9a49fe-275f-4c3b-911f-90ad4d1215a9",
+            "organizationId": "10000000-0000-0000-0000-000000000001",
+            "taskId": "534c70cb-904e-44ca-83ea-288e6e696ef2",
+            "requestId": "3a9db234-642a-41e3-9602-ea7d0c902374",
+            "sourceUserId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+            "targetUserId": "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9",
+            "setByUserId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+            "createdAt": "2026-10-25T07:30:22.643477Z"
+          }
+        ]
+      }
+    },
+    {
+      "check": "V-010 the manager handling the second task is not its original creator",
+      "pass": true,
+      "evidence": {
+        "originalCreatorId": "f4a907bf-48c9-4790-9dcc-47332c2ea175",
+        "manager": "746efd42-0fed-4a76-ac94-76d7f0cd3312"
+      }
+    },
+    {
+      "check": "V-010 the direct manager can use the same preset for the subordinate task",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "dd688007-f7c4-4513-ad19-8968b92ed5f4",
+          "requestId": "5549de76-a15f-458d-98e1-93b144ef3d07",
+          "outcome": "pending",
+          "rowVersion": 3
+        }
+      }
+    },
+    {
+      "check": "V-010 a handover still cannot carry a base field",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "不支持的字段：title"
+        }
+      }
+    },
+    {
+      "check": "V-010 a non-direct manager cannot hand the task over",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "body": {
+          "code": "FORBIDDEN",
+          "message": "仅本人或直属领导可交接该任务"
+        }
+      }
+    },
+    {
+      "check": "V-010 the ordered effective owners start as submitted",
+      "pass": true,
+      "evidence": [
+        "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+        "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9"
+      ]
+    },
+    {
+      "check": "V-010 a pending handover freezes the task but keeps the effective owners",
+      "pass": true,
+      "evidence": {
+        "frozen": true,
+        "assigneeIds": [
+          "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+          "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9"
+        ]
+      }
+    },
+    {
+      "check": "V-010 the pending handover routes by the new ordered owners",
+      "pass": true,
+      "evidence": "f4a907bf-48c9-4790-9dcc-47332c2ea175"
+    },
+    {
+      "check": "V-010 rejecting a handover keeps the old ordered owners and unfreezes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "frozen": false,
+        "assigneeIds": [
+          "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+          "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9"
+        ]
+      }
+    },
+    {
+      "check": "V-010 withdrawing a handover keeps the old ordered owners and unfreezes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "595ab48e-0683-44b8-8c7d-642fa61632ae",
+          "requestId": "47f442bc-eefd-41ef-882d-0f1f93c08565",
+          "outcome": "withdrawn",
+          "rowVersion": 6,
+          "requestRowVersion": 2
+        },
+        "assigneeIds": [
+          "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+          "97a055de-9ba2-4858-b0d1-f2cc8c6a17d9"
+        ]
+      }
+    },
+    {
+      "check": "V-010 the preset can be cleared and no longer applies",
+      "pass": true,
+      "evidence": {
+        "clear": {
+          "userId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+          "cleared": true
+        },
+        "read": {
+          "userId": "6fdcb7c5-0440-483a-ab4a-4a91527b0895",
+          "targetUserId": null,
+          "target": null,
+          "rowVersion": 0
+        }
+      }
+    }
+  ]
+}

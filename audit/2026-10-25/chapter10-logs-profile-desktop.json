@@ -1,0 +1,197 @@
+{
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "checks": [
+    {
+      "check": "8.3 the browser reaches the login screen",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 the log page defaults to the current user",
+      "pass": true,
+      "evidence": {
+        "me": "63dabc48-159d-4c61-bfef-d7ae047eae1f",
+        "author": "63dabc48-159d-4c61-bfef-d7ae047eae1f",
+        "all": false
+      }
+    },
+    {
+      "check": "7.3 no review, application or consultation content mixes into the log page",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 no task creation command remains on the log page",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 the page title and navigation call the feature 日志",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 the department level only offers authorised departments",
+      "pass": true,
+      "evidence": [
+        "全部可见部门",
+        "产品部（3人）"
+      ]
+    },
+    {
+      "check": "7.3 the team level only offers teams inside the authorised departments",
+      "pass": true,
+      "evidence": [
+        "全部团队（含无团队）",
+        "产品部（3人）"
+      ]
+    },
+    {
+      "check": "7.3 the person level lists self and direct reports and offers the whole scope",
+      "pass": true,
+      "evidence": [
+        "权限内全部人员",
+        "李敏 · 产品部（我）",
+        "张涛 · 产品部",
+        "赵蕾 · 产品部"
+      ]
+    },
+    {
+      "check": "7.3 the person search keeps its input and narrows the person level only",
+      "pass": true,
+      "evidence": {
+        "input": "张",
+        "options": [
+          "权限内全部人员",
+          "张涛 · 产品部"
+        ]
+      }
+    },
+    {
+      "check": "7.3 selecting a direct report loads only that author's logs",
+      "pass": true,
+      "evidence": {
+        "author": "a4bb7ddf-bb26-4b25-b522-7b16ad4637ee",
+        "all": false,
+        "team": "__all__",
+        "who": [
+          "张涛",
+          "张涛",
+          "张涛"
+        ],
+        "logs": 3,
+        "results": "张涛10月25日 15:50今天只读例行完成本日工作整理，记录待办与协作问题。关联任务：上线素材校对查看与评论张涛10月25日 15:50今天只读复盘工作进展并补充后续计划。关联任务：上线素材校对查看与评论张涛10月25日 15:50今天只",
+        "errors": []
+      }
+    },
+    {
+      "check": "7.3 a subordinate log is read-only in the list and offers no body edit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 switching the department clears a person from another department and reloads the visible set",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "7.3 the team level narrows the result list and keeps its count consistent",
+      "pass": true,
+      "evidence": {
+        "team": "25bb8a3b-12bc-4738-9c31-56825067ce47",
+        "department": "9e47cf0d-3e27-4f82-9d9e-bd9bbad7fba2",
+        "cards": [
+          "张涛",
+          "张涛",
+          "张涛"
+        ],
+        "label": "张涛 的日志 · 3 条",
+        "logs": 3
+      }
+    },
+    {
+      "check": "7.3 the department/team/person selection survives page navigation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 return-to-top keeps the valid log filters",
+      "pass": true,
+      "evidence": {
+        "topVisible": false,
+        "scrollTop": 0,
+        "all": true,
+        "team": "25bb8a3b-12bc-4738-9c31-56825067ce47"
+      }
+    },
+    {
+      "check": "8.4 the profile shows company, department, position, team and manager",
+      "pass": true,
+      "evidence": "李MY WORKSPACE李敏部门经理联系电话13800000002邮箱未填写组织信息由管理员维护⌄公司潘多拉演示公司部门产品部职位部门经理独立团队产品部直属上级王海团队管理管理本人部门的团队仅显示本人可管理的部门、团队及本部门负责人候选；创建者默认为负责人，可转交本部门成员。团队负责人身份不会带来额外的任务或日志权限。下属资料2 人⌄张涛赵蕾"
+    },
+    {
+      "check": "8.4 the direct manager sees only direct reports",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the subordinate card has no dispatch button",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the subordinate detail shows the authorized phone",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the subordinate detail offers a separate log entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the log entry opens the selected person's scope",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the selected person's logs are shown",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 the executive sees indirect subordinates",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 the executive log page includes every authorised department and person",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "8.4 an employee has no subordinate section",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "7.3 an employee has only the self log scope",
+      "pass": true,
+      "evidence": {
+        "hasSelect": true,
+        "ready": true,
+        "page": "log",
+        "all": false,
+        "me": "employee",
+        "people": [
+          "权限内全部人员",
+          "张涛 · 产品部（我）"
+        ],
+        "text": "日志写日志人员筛选先选部门，再选团队和人员部门搜索部门全部可见部门产品部（1人）团队搜索团队全部团队（含无团队）产品部（1人）人员搜索人员权限内全部人员张涛 · 产品部（我）仅显示你有权限查看日志的部门和人员；切换部门或团队会清理不匹配的下级选择。日志本人日志 · 3 条张涛10月25日 15:50今天编辑例行完成本日工作整理，记录待办与协作问题。关联任务：上线素材校对查看与评论张涛10月25日 15:50今天编辑复盘工作进展并补充后续计划。关联任务：上线素材校对查看与评论张涛10月25日 15:50今天编辑复盘工作进展并补充后续计划。关联任务：上线素材校对查看与评论"
+      }
+    }
+  ]
+}

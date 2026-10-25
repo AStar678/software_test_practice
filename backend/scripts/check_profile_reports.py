@@ -21,8 +21,20 @@ RESULTS: list[dict] = []
 PASSWORD = "Demo@123456"
 
 
+
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 class Api:
     def __init__(self, base: str):
+        self.identifiers = {}
         self.base = base.rstrip("/")
         self.tokens: dict[str, str] = {}
 
@@ -50,8 +62,9 @@ class Api:
             return error.code, parsed, dict(error.headers)
 
     def login(self, username):
+        identity = self.identifiers.get(username, login_identity(username))
         status, body, _ = self.call("POST", "/api/v1/auth/sessions",
-                                    body={"username": username, "password": PASSWORD})
+                                    body={'username': identity, 'password': PASSWORD})
         if status != 200:
             raise SystemExit(f"login failed for {username}: {status} {body}")
         self.tokens[username] = body["token"]
@@ -108,6 +121,8 @@ def run(base: str) -> int:
         status, saved, _ = api.call("PATCH", "/api/v1/me/profile", api.tokens["employee"],
                                     {"phone": phone}, api.key(), Api.etag(profile, headers))
         check("8.4 the employee saves a phone for the detail boundary", status == 200, saved)
+        if status == 200:
+            api.identifiers["employee"] = phone
 
         status, upper, _ = api.call("GET", "/api/v1/me/reports", api.tokens["upper"])
         upper_ids = ids_of(upper)

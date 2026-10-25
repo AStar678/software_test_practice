@@ -52,10 +52,17 @@ public class AuthService {
         return result;
     }
 
+    /**
+     * Employee login is by normalized phone number (chapter 2.1). The public username is deliberately
+     * not a fallback for employees, so a number that became the authentication key never leaks through
+     * the username column. The single administrator identity keeps its original username login.
+     */
     @Transactional
-    public Map<String,Object> login(String username,String password) {
-        if(username==null || password==null || username.length()>80 || password.getBytes(StandardCharsets.UTF_8).length>72) throw new ApiException(401,"BAD_CREDENTIALS","账号或密码不正确");
-        var u=db.find("SELECT * FROM users WHERE username=? AND active=1",username);
+    public Map<String,Object> login(String identifier,String password) {
+        if(identifier==null || password==null || identifier.length()>80 || password.getBytes(StandardCharsets.UTF_8).length>72) throw new ApiException(401,"BAD_CREDENTIALS","账号或密码不正确");
+        String loginPhone=PhoneNumbers.normalize(identifier);
+        var u=loginPhone==null?null:db.find("SELECT * FROM users WHERE login_phone=? AND role<>'admin' AND active=1",loginPhone);
+        if(u==null) u=db.find("SELECT * FROM users WHERE username=? AND role='admin' AND active=1",identifier);
         boolean valid=PASSWORDS.matches(password,u==null?dummyHash:s(u,"passwordHash"));
         if(u==null || !valid) throw new ApiException(401,"BAD_CREDENTIALS","账号或密码不正确");
         return issue(u);

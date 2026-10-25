@@ -1,6 +1,7 @@
 package cn.pandora.task;
 
 import cn.pandora.auth.Access;
+import cn.pandora.auth.CompanyTree;
 import cn.pandora.auth.Actor;
 import cn.pandora.common.ApiException;
 import cn.pandora.common.Db;
@@ -23,11 +24,13 @@ import static cn.pandora.common.Db.n;
 public class TaskService {
     /** Snapshot fields in a stable order so the recorded history and the reviewer diff are deterministic. */
     private static final List<String> FORM_FIELDS = List.of("title", "description", "acceptanceCriteria", "priority",
-            "allDay", "startAt", "dueAt", "startDate", "dueDate", "assigneeIds", "parentTaskId");
+            "allDay", "startAt", "dueAt", "startDate", "dueDate", "assigneeIds", "parentTaskId", "tagId");
     private static final Set<String> FORM = Set.copyOf(FORM_FIELDS);
     /** A reopen may only carry a new schedule; the assignees and the base fields stay untouched. */
     private static final Set<String> REOPEN_FORM = Set.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
     private static final Set<String> COMMANDS = Set.of("create", "change", "progress", "complete", "reopen");
+    /** Operations a preview may be asked about (chapter 3.3); each uses its own routing rule. */
+    private static final Set<String> OPERATIONS = Set.of("create", "change", "progress", "complete", "reopen", "handover");
     private static final Set<String> STATES = Set.of("todo", "doing", "done");
     private static final Set<String> PRIORITIES = Set.of("urgent", "high", "medium", "low");
     private static final Set<String> SCHEDULE_FIELDS = Set.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
@@ -38,13 +41,24 @@ public class TaskService {
     private final Events events;
     private final Clock clock;
     private final ExpiryService expiry;
+    private final CompanyTree companyTree;
+    private final Tags tags;
 
+    /** Test seam: the real dependencies are derived from the same Db when constructed directly. */
     public TaskService(Db db, Access access, Events events, Clock clock, ExpiryService expiry) {
+        this(db, access, events, clock, expiry, new CompanyTree(db), new Tags(db, access, new CompanyTree(db)));
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public TaskService(Db db, Access access, Events events, Clock clock, ExpiryService expiry,
+                       CompanyTree companyTree, Tags tags) {
         this.db = db;
         this.access = access;
         this.events = events;
         this.clock = clock;
         this.expiry = expiry;
+        this.companyTree = companyTree;
+        this.tags = tags;
     }
 
     public Map<String, Object> list(Actor actor, Map<String, String> filters) {
@@ -90,14 +104,125 @@ public class TaskService {
     }
 
     /**
-     * Assignee candidates come from the dispatch range only (DEV-002). The list is deliberately
-     * narrower than what the actor may view: seeing a department's tasks never offers its people.
+     * Administration task locator (chapter 9.1): a paginated, company-wide minimum projection used by
+     * the formal PC console to find a task before opening its operation history.
+     *
+     * <p>It is authorized by the task-history capability and deliberately does not call the employee
+     * visible-list path, so it neither borrows nor widens employee viewing authority. The projection
+     * carries display fields only: no phone number, e-mail, password or other contact/credential field.
+     */
+    public Map<String, Object> adminTasks(Actor actor, Map<String, String> filters) {
+        access.requireCapability(actor, "view_task_history");
+        int limit = integer(filters.get("limit"), 50, 1, 100, "limit");
+        int offset = integer(filters.get("offset"), 0, 0, Integer.MAX_VALUE, "offset");
+        String state = filters.get("state");
+        if (state != null && !state.isBlank() && !STATES.contains(state)) throw bad("无效的任务状态");
+        if (state != null && state.isBlank()) state = null;
+        String creator = optionalId(filters.get("creatorId"), "creatorId");
+        String assignee = optionalId(filters.get("assigneeId"), "assigneeId");
+        String requestStatus = filters.get("requestStatus");
+        String query = filters.getOrDefault("q", "").trim();
+        if (query.length() > 200) throw bad("搜索内容最多200字");
+        LocalDate from = optionalDate(filters.get("from"), "from");
+        LocalDate to = optionalDate(filters.get("to"), "to");
+        if (from != null && to != null && to.isBefore(from)) throw bad("结束日期不得早于开始日期");
+        ZoneId zone = organizationZone(actor);
+        Map<String, String> names = userNameMap(actor);
+        Map<String, Map<String, Object>> latestRequests = new LinkedHashMap<>();
+        for (Map<String, Object> row : db.list("SELECT * FROM approval_requests WHERE organization_id=? ORDER BY created_at,id", actor.organizationId())) {
+            latestRequests.put(s(row, "taskId"), row);
+        }
+        List<Map<String, Object>> visible = new ArrayList<>();
+        for (Map<String, Object> task : db.list("SELECT * FROM tasks WHERE organization_id=? ORDER BY created_at DESC,id", actor.organizationId())) {
+            String taskId = s(task, "id");
+            String current = s(task, "currentVersionId");
+            Map<String, Object> request = latestRequests.get(taskId);
+            Map<String, Object> version = current != null ? version(actor, current)
+                    : request == null ? null : version(actor, s(request, "proposedVersionId"));
+            if (version == null) continue;
+            String latestStatus = request == null ? null : s(request, "status");
+            if (requestStatus != null && !requestStatus.equals(latestStatus)) continue;
+            if (state != null && !state.equals(s(task, "executionState"))) continue;
+            if (creator != null && !creator.equals(s(task, "originalCreatorId"))) continue;
+            List<String> owners = current != null ? assignees(actor, current) : assignees(actor, s(version, "id"));
+            if (assignee != null && !owners.contains(assignee)) continue;
+            String title = s(version, "title");
+            if (!query.isEmpty() && (title == null || !title.toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))) continue;
+            if (from != null || to != null) {
+                LocalDate start = scheduleDate(version, "start", zone), due = scheduleDate(version, "due", zone);
+                if (start == null || due == null) continue;
+                if (from != null && due.isBefore(from) || to != null && start.isAfter(to)) continue;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("taskId", taskId);
+            row.put("id", taskId);
+            row.put("title", title);
+            row.put("published", current != null);
+            row.put("currentVersionId", current);
+            row.put("executionState", s(task, "executionState"));
+            for (String key : List.of("priority", "allDay", "startAt", "dueAt", "startDate", "dueDate")) row.put(key, version.get(key));
+            row.put("ownerIds", owners);
+            row.put("ownerNames", owners.stream().map(id -> names.getOrDefault(id, id)).toList());
+            row.put("creatorId", s(task, "originalCreatorId"));
+            row.put("creatorName", names.getOrDefault(s(task, "originalCreatorId"), s(task, "originalCreatorId")));
+            for (String key : List.of("createdAt", "updatedAt", "rowVersion")) row.put(key, task.get(key));
+            row.put("latestRequestId", request == null ? null : s(request, "id"));
+            row.put("latestRequestStatus", latestStatus);
+            row.put("pendingRequestId", "pending".equals(latestStatus) ? s(request, "id") : null);
+            row.put("pendingKind", "pending".equals(latestStatus) ? s(request, "kind") : null);
+            visible.add(row);
+        }
+        int begin = Math.min(offset, visible.size());
+        int end = (int) Math.min((long) begin + limit, visible.size());
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("items", visible.subList(begin, end));
+        result.put("total", visible.size());
+        result.put("nextOffset", end < visible.size() ? end : null);
+        return result;
+    }
+
+    /** Display names for one company, used only to label administrator history/task projections. */
+    private Map<String, String> userNameMap(Actor actor) {
+        Map<String, String> names = new LinkedHashMap<>();
+        for (Map<String, Object> row : db.list("SELECT id,display_name FROM users WHERE organization_id=?", actor.organizationId())) {
+            names.put(s(row, "id"), s(row, "displayName"));
+        }
+        return names;
+    }
+
+    /** One schedule boundary as a business date in the company zone, or null when absent. */
+    private static LocalDate scheduleDate(Map<String, Object> version, String boundary, ZoneId zone) {
+        String exact = s(version, boundary + "At");
+        if (exact != null) return instant(version.get(boundary + "At"), boundary + "At").atZone(zone).toLocalDate();
+        Object value = version.get(boundary + "Date");
+        return value == null ? null : LocalDate.parse(String.valueOf(value));
+    }
+
+    /**
+     * Assignee candidates for the task form.
+     *
+     * {@code purpose=create} (the default, and what the creation form asks for) is the whole company's
+     * active business staff, including other departments, direct managers and the founder. This is a
+     * candidate/person list only: it does not grant viewing, log, handover or administrator authority,
+     * and the submit/approve checks re-run the same rule.
+     *
+     * {@code purpose=edit} keeps the historical dispatch range for modifications of a published task,
+     * so this change never widens non-creation dispatch authority.
      */
     public Map<String, Object> assigneeCandidates(Actor actor, String query) {
+        return assigneeCandidates(actor, query, "create");
+    }
+
+    public Map<String, Object> assigneeCandidates(Actor actor, String query, String purpose) {
         requireBusiness(actor);
         if (query != null && query.length() > 100) throw bad("搜索内容最多100字");
+        String resolved = purpose == null || purpose.isBlank() ? "create" : purpose;
+        if (!Set.of("create", "edit").contains(resolved)) throw bad("purpose须为create或edit");
+        List<Map<String, Object>> people = "edit".equals(resolved)
+                ? access.dispatchCandidates(actor, query)
+                : access.creationCandidates(actor, query);
         List<Map<String, Object>> items = new ArrayList<>();
-        for (Map<String, Object> person : access.dispatchCandidates(actor, query)) {
+        for (Map<String, Object> person : people) {
             Map<String, Object> item = new LinkedHashMap<>();
             for (String key : List.of("id", "username", "displayName", "departmentId", "departmentName",
                     "positionId", "positionName", "teamId", "rankLevel")) {
@@ -108,6 +233,7 @@ public class TaskService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("items", items);
         result.put("empty", items.isEmpty());
+        result.put("purpose", resolved);
         return result;
     }
 
@@ -180,12 +306,15 @@ public class TaskService {
     public Map<String, Object> create(Actor actor, Map<String, Object> input) {
         requireBusiness(actor);
         allowed(input, FORM);
+        rejectCreationCriteria(input);
         Map<String, Object> proposed = validateForm(actor, input, null);
+        proposed.put("acceptanceCriteria", "");
         List<String> owners = ids(proposed.get("assigneeIds"));
-        validateAssignable(actor, owners);
+        validateCreationAssignable(actor, owners);
         String id = Db.id();
         validateParent(actor, id, s(proposed, "parentTaskId"), true);
-        Route route = route(actor, owners, actor.id());
+        Route route = creationRoute(actor, actor.id());
+        if (route.blocked()) throw conflict("ROUTE_BLOCKED", route.reasonText());
         Timestamp now = now();
         db.update("INSERT INTO tasks(id,organization_id,original_creator_id,current_version_id,execution_state,row_version,execution_round,due_version,created_at,updated_at) VALUES(?,?,?,NULL,'todo',1,1,1,?,?)", id, actor.organizationId(), actor.id(), now, now);
         Map<String, Object> task = task(actor, id, true);
@@ -221,10 +350,14 @@ public class TaskService {
         if (current == null) {
             if (!creator || !Set.of("create", "change").contains(command)) throw forbidden("未发布任务仅创建者可编辑重提");
             allowed(input, union(FORM, "command", "action", "reason"));
+            rejectCreationCriteria(input);
             Map<String, Object> previous = db.one("SELECT * FROM task_versions WHERE organization_id=? AND task_id=? ORDER BY version_no DESC LIMIT 1", actor.organizationId(), id);
             previous = new LinkedHashMap<>(previous);
             previous.put("assigneeIds", assignees(actor, s(previous, "id")));
             proposed = validateForm(actor, input, previous);
+            // A creation resubmission is a new creation request: it starts with an empty criterion and
+            // never inherits the obsolete proposal's text as a required field.
+            proposed.put("acceptanceCriteria", "");
             proposed.put("executionState", "todo");
             proposed.put("progressNote", "");
             command = "create";
@@ -280,13 +413,16 @@ public class TaskService {
             }
         }
         proposedOwners = ids(proposed.get("assigneeIds"));
-        if (current == null || "change".equals(command)) validateAssignable(actor, proposedOwners);
+        if (current == null) validateCreationAssignable(actor, proposedOwners);
+        else if ("change".equals(command)) validateAssignable(actor, proposedOwners);
         else validateActiveOwners(actor, proposedOwners);
         validateParent(actor, id, s(proposed, "parentTaskId"), current == null || !Objects.equals(s(current, "parentTaskId"), s(proposed, "parentTaskId")));
-        // A creation or an assignee change routes by the proposed owners; progress, completion and reopen
-        // keep the effective owners (DEV-008).
-        List<String> routeOwners = current == null || "change".equals(command) ? proposedOwners : currentOwners;
-        Route route = route(actor, routeOwners, s(task, "originalCreatorId"));
+        // A creation and a creation resubmission route by the creator's own place in the organization,
+        // never by the assignees, so reordering owners cannot change the creation reviewer (chapter 3.2).
+        // Every other operation keeps the ordered-assignee rule (DEV-008).
+        Route route = current == null ? creationRoute(actor, s(task, "originalCreatorId"))
+                : route(actor, command.equals("change") ? proposedOwners : currentOwners, s(task, "originalCreatorId"));
+        if (route.blocked()) throw conflict("ROUTE_BLOCKED", route.reasonText());
         return submit(actor, task, current, proposed, proposedOwners, route, command, body);
     }
 
@@ -383,8 +519,8 @@ public class TaskService {
         if (base == null) return changes;
         for (String field : FORM_FIELDS) {
             if ("assigneeIds".equals(field)) continue;
-            String before = plain(base.get(field));
-            String after = plain(proposed.get(field));
+            String before = tagAware(base, field);
+            String after = tagAware(proposed, field);
             if (!Objects.equals(before, after)) {
                 changes.add(Map.of("field", field, "before", Objects.toString(before, ""), "after", Objects.toString(after, "")));
             }
@@ -427,6 +563,31 @@ public class TaskService {
         if ("withdraw".equals(decision)) {
             if (!actor.id().equals(s(request, "applicantId"))) throw forbidden("仅申请人可撤销申请");
         } else {
+            if ("create".equals(s(request, "kind"))) {
+                // A creation is re-decided against the creator's CURRENT place in the organization, so a
+                // stale page or a reviewer who lost the relationship can never cast this decision (3.4).
+                Route current = creationRoute(actor, s(task, "originalCreatorId"));
+                if (current.blocked()) throw conflict("ROUTE_BLOCKED", current.reasonText());
+                if (!current.hasReviewer()) {
+                    // The relationship may have legitimately become an exemption. Apply it with the
+                    // recorded reason, deadline and version guards — never through the old reviewer.
+                    if (!applyWithoutReviewer(actor, task, request, current)) {
+                        throw conflict("ROUTE_BLOCKED", "创建免审生效校验未通过，请管理员修复组织关系后重试");
+                    }
+                    Map<String, Object> applied = result(s(task, "id"), id, "direct",
+                            n(task(actor, s(task, "id"), false), "rowVersion"));
+                    applied.put("status", "direct");
+                    applied.put("requestStatus", "direct");
+                    applied.put("exemptionReason", current.reasonText());
+                    applied.put("reviewerId", "");
+                    return applied;
+                }
+                if (!Objects.equals(current.reviewerId(), reviewer)) {
+                    reassignCreationReviewer(actor, task, request, current);
+                    throw conflict("REVIEWER_CHANGED", "创建审核人已按当前组织关系调整，请刷新后由新的审核人处理");
+                }
+                reviewer = current.reviewerId();
+            }
             if (reviewer == null) throw conflict("ROUTE_BLOCKED", "无可用审核人，请联系管理员处理组织关系");
             if (!actor.id().equals(reviewer)) throw forbidden("仅当前指定审核人可处理申请");
         }
@@ -501,34 +662,81 @@ public class TaskService {
     }
 
     /**
-     * Read-only reviewer preview (DEV-008, DEV-010). It creates no request and is not an authorization
-     * token: submit recomputes the route inside its own transaction.
+     * Read-only reviewer preview for one operation (DEV-008, DEV-010; chapters 3.2-3.3).
+     *
+     * A creation (or creation resubmission) is previewed with the creator's own rule: the unique
+     * organization-tree founder or a creator with no manager is exempt with a recorded reason, anyone
+     * else routes to their direct manager, and an unusable relationship is reported as blocked instead
+     * of being quietly crossed upwards. Every other operation keeps the ordered-assignee rule. The
+     * response says which operation was previewed, so the page can show the real reviewer or reason.
+     *
+     * It creates no request and is not an authorization token: submit re-runs the same calculation
+     * inside its own transaction.
      */
     public Map<String, Object> reviewerPreview(Actor actor, Map<String, Object> input) {
         requireBusiness(actor);
-        allowed(input, Set.of("taskId", "assigneeIds"));
-        List<String> owners = ids(input.get("assigneeIds"));
-        for (String id : owners) {
-            Map<String, Object> person = access.activeUser(actor, id);
-            if (person == null || "admin".equals(s(person, "role"))) throw bad("负责人须为本公司有效业务账号");
-        }
-        String creator = actor.id();
+        allowed(input, Set.of("taskId", "assigneeIds", "operation"));
+        String requestedOperation = command(input, "operation", "kind", null);
+        if (requestedOperation != null && !OPERATIONS.contains(requestedOperation)) throw bad("不支持的操作预览类型");
         String requestedTask = optionalId(input.get("taskId"), "taskId");
-        if (requestedTask != null) {
-            Map<String, Object> task = task(actor, requestedTask, false);
-            String currentId = s(task, "currentVersionId");
-            if (currentId == null || !access.canSeeTask(actor, task, version(actor, currentId), assignees(actor, currentId))) {
-                throw ApiException.notFound();
+        boolean creation = requestedOperation != null ? "create".equals(requestedOperation) : requestedTask == null;
+        if (!creation && requestedTask == null) throw bad("非创建预览须提供taskId");
+        Map<String, Object> task = requestedTask == null ? null : task(actor, requestedTask, false);
+        String creatorId = actor.id();
+        if (task != null) {
+            if (creation) {
+                if (s(task, "currentVersionId") != null) throw conflict("TASK_PUBLISHED", "已发布任务不再走创建预览");
+                // Only the original applicant may resubmit, so only that person sees its creation route.
+                if (!actor.id().equals(s(task, "originalCreatorId"))) throw forbidden("仅原申请人可预览创建重提");
+            } else {
+                String currentId = s(task, "currentVersionId");
+                if (currentId == null || !access.canSeeTask(actor, task, version(actor, currentId), assignees(actor, currentId))) {
+                    throw ApiException.notFound();
+                }
             }
-            creator = s(task, "originalCreatorId");
+            creatorId = s(task, "originalCreatorId");
         }
-        Route route = route(actor, owners, creator);
+        Route route;
+        if (creation) {
+            route = creationRoute(actor, creatorId);
+            if (input.containsKey("assigneeIds")) {
+                // Validated so the page can reject an ineligible person early; it never influences the route.
+                validateCreationAssignable(actor, ids(input.get("assigneeIds")));
+            }
+        } else {
+            List<String> owners = input.containsKey("assigneeIds") ? ids(input.get("assigneeIds"))
+                    : effectiveOwnersForPreview(actor, task, requestedOperation);
+            for (String id : owners) {
+                Map<String, Object> person = access.activeUser(actor, id);
+                if (person == null || "admin".equals(s(person, "role"))) throw bad("负责人须为本公司有效业务账号");
+            }
+            route = route(actor, owners, creatorId);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
+        String operation = requestedOperation == null ? (creation ? "create" : "change") : requestedOperation;
+        result.put("operation", operation);
+        result.put("mode", creation ? "creation" : "non-creation");
         result.put("route", routeView(actor, route));
         result.put("reviewerId", route.reviewerId());
         result.put("requiresApproval", route.hasReviewer());
+        result.put("blocked", route.blocked());
+        result.put("exemptionReason", route.hasReviewer() || route.blocked() ? null : route.reasonText());
+        result.put("blockedReason", route.blocked() ? route.reasonText() : null);
+        result.put("reviewerBasis", creation ? "creator" : "assignees");
         result.put("previewOnly", true);
         return result;
+    }
+
+    /**
+     * Owners a non-creation preview falls back to when the caller does not send them. Modification and
+     * handover change the proposal itself, so their owners must be supplied instead of guessed.
+     */
+    private List<String> effectiveOwnersForPreview(Actor actor, Map<String, Object> task, String operation) {
+        if (task == null) throw bad("非创建预览须提供负责人或taskId");
+        if (Set.of("change", "handover").contains(operation)) throw bad("修改或交接预览须提供assigneeIds");
+        String currentId = s(task, "currentVersionId");
+        if (currentId == null) throw conflict("TASK_NOT_PUBLISHED", "未发布任务没有非创建审核路线");
+        return assignees(actor, currentId);
     }
 
     /**
@@ -722,19 +930,67 @@ public class TaskService {
         }
         List<Map<String, Object>> versions = new ArrayList<>();
         for (Map<String, Object> row : db.list("SELECT id,version_no,status,title,priority,all_day,start_at,due_at,execution_state,progress_note,created_by,created_at,applied_at,expired_at FROM task_versions WHERE organization_id=? AND task_id=? ORDER BY version_no,id", actor.organizationId(), taskId)) {
-            row.put("assigneeIds", assignees(actor, s(row, "id")));
+            List<String> order = assignees(actor, s(row, "id"));
+            row.put("assigneeIds", order);
             versions.add(row);
         }
+        List<Map<String, Object>> reassignments = db.list("SELECT * FROM request_reassignments WHERE organization_id=? AND task_id=? ORDER BY created_at,id", actor.organizationId(), taskId);
+        List<Map<String, Object>> handovers = db.list("SELECT * FROM handover_requests WHERE organization_id=? AND task_id=? ORDER BY created_at,id", actor.organizationId(), taskId);
+        // The console shows ordered assignee names, not raw ids. Resolve every referenced person once;
+        // only id and display name are returned, never a phone, e-mail or credential.
+        Set<String> people = new LinkedHashSet<>();
+        addIfPresent(people, s(task, "originalCreatorId"));
+        for (Map<String, Object> row : versions) {
+            addIfPresent(people, s(row, "createdBy"));
+            people.addAll((List<String>) row.get("assigneeIds"));
+        }
+        for (Map<String, Object> row : reassignments) {
+            addIfPresent(people, s(row, "previousReviewerId"));
+            addIfPresent(people, s(row, "newReviewerId"));
+            addIfPresent(people, s(row, "basisAssigneeId"));
+        }
+        for (Map<String, Object> row : handovers) {
+            addIfPresent(people, s(row, "sourceUserId"));
+            addIfPresent(people, s(row, "targetUserId"));
+            addIfPresent(people, s(row, "setByUserId"));
+        }
+        for (Map<String, Object> entry : entries) {
+            addIfPresent(people, s(entry, "actorId"));
+            if (Set.of("assignee_order", "reviewer_reassigned", "handover").contains(s(entry, "entryType"))) {
+                addIfPresent(people, s(entry, "beforeValue"));
+                addIfPresent(people, s(entry, "afterValue"));
+            }
+            Object detail = entry.get("detail");
+            if (detail instanceof Map<?, ?> map) {
+                for (String key : List.of("sourceUserId", "targetUserId", "setByUserId", "reviewerId")) {
+                    addIfPresent(people, map.get(key) instanceof String text ? text : null);
+                }
+                for (String key : List.of("beforeOrder", "afterOrder")) {
+                    if (map.get(key) instanceof List<?> list) {
+                        for (Object value : list) addIfPresent(people, value instanceof String text ? text : null);
+                    }
+                }
+            }
+        }
+        Map<String, String> names = userNameMap(actor);
+        Map<String, String> resolved = new LinkedHashMap<>();
+        for (String id : people) resolved.put(id, names.getOrDefault(id, id));
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("taskId", taskId);
         result.put("originalCreatorId", s(task, "originalCreatorId"));
+        result.put("originalCreatorName", names.getOrDefault(s(task, "originalCreatorId"), s(task, "originalCreatorId")));
         result.put("executionState", s(task, "executionState"));
         result.put("createdAt", task.get("createdAt"));
         result.put("entries", entries);
         result.put("versions", versions);
-        result.put("reassignments", db.list("SELECT * FROM request_reassignments WHERE organization_id=? AND task_id=? ORDER BY created_at,id", actor.organizationId(), taskId));
-        result.put("handovers", db.list("SELECT * FROM handover_requests WHERE organization_id=? AND task_id=? ORDER BY created_at,id", actor.organizationId(), taskId));
+        result.put("reassignments", reassignments);
+        result.put("handovers", handovers);
+        result.put("people", resolved);
         return result;
+    }
+
+    private static void addIfPresent(Set<String> ids, String id) {
+        if (id != null && !id.isBlank()) ids.add(id);
     }
 
     /**
@@ -754,12 +1010,24 @@ public class TaskService {
             Map<String, Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?", actor.organizationId(), taskId);
             if (task == null) continue;
             String kind = s(request, "kind");
-            List<String> routeOwners = Set.of("create", "change", "handover").contains(kind)
-                    ? assignees(actor, s(request, "proposedVersionId"))
-                    : (s(request, "baseVersionId") != null ? assignees(actor, s(request, "baseVersionId")) : assignees(actor, s(request, "proposedVersionId")));
-            if (routeOwners.isEmpty()) continue;
-            Route route = route(actor, routeOwners, s(task, "originalCreatorId"));
             String previous = reviewerOfRecord(request);
+            Route route;
+            if ("create".equals(kind)) {
+                // A creation follows the creator's own relationship, so an assignee change or a
+                // department transfer of an assignee cannot move it (chapter 3.4).
+                route = creationRoute(actor, s(task, "originalCreatorId"));
+                if (route.blocked()) {
+                    recordBlockedCreationRoute(actor, task, request, route, previous);
+                    moved++;
+                    continue;
+                }
+            } else {
+                List<String> routeOwners = Set.of("change", "handover").contains(kind)
+                        ? assignees(actor, s(request, "proposedVersionId"))
+                        : (s(request, "baseVersionId") != null ? assignees(actor, s(request, "baseVersionId")) : assignees(actor, s(request, "proposedVersionId")));
+                if (routeOwners.isEmpty()) continue;
+                route = route(actor, routeOwners, s(task, "originalCreatorId"));
+            }
             if (!route.hasReviewer()) {
                 Instant deadline = applicableDeadline(actor, request);
                 Instant refreshedAt = clock.instant();
@@ -798,6 +1066,41 @@ public class TaskService {
     }
 
     /**
+     * Re-decide creations that were pending under the previous rules (chapter 3.4). Only requests whose
+     * stored route still carries a legacy reason code are touched, so a request created by the current
+     * code is never recomputed just because the application restarted. Each moved request writes the
+     * same reassignment/blocked records the on-line organization refresh writes, and a request whose
+     * relationship became a legitimate exemption is applied with the recorded reason and version guard.
+     */
+    public int refreshLegacyCreationRoutes(Actor actor) {
+        int moved = 0;
+        for (Map<String, Object> request : db.list(
+                "SELECT * FROM approval_requests WHERE organization_id=? AND status='pending' AND kind='create' "
+                        + "AND route_reason IN ('manager-chain','creator-fallback','no-reviewer') "
+                        + "ORDER BY created_at,id FOR UPDATE", actor.organizationId())) {
+            Map<String, Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?",
+                    actor.organizationId(), s(request, "taskId"));
+            if (task == null || s(task, "currentVersionId") != null) continue;
+            String previous = reviewerOfRecord(request);
+            Route route = creationRoute(actor, s(task, "originalCreatorId"));
+            if (route.blocked()) {
+                recordBlockedCreationRoute(actor, task, request, route, previous);
+                moved++;
+                continue;
+            }
+            if (!route.hasReviewer()) {
+                if (applyWithoutReviewer(actor, task, request, route)) moved++;
+                continue;
+            }
+            if (!Objects.equals(previous, route.reviewerId())) {
+                reassignCreationReviewer(actor, task, request, route);
+                moved++;
+            }
+        }
+        return moved;
+    }
+
+    /**
      * SQL and argument contract for applying a request with no reviewer. Kept in one place so the
      * placeholder count and the argument count cannot drift apart (V-003).
      */
@@ -824,7 +1127,10 @@ public class TaskService {
         List<String> newOwners = assignees(context, s(proposed, "id"));
         validateActiveOwners(context, newOwners);
         Actor applicant = activeActor(context, s(request, "applicantId"));
-        if (Set.of("create", "change").contains(kind)) validateAssignable(applicant, newOwners);
+        // A creation (and its resubmission) is approved against the same company-wide candidate rule the
+        // submit used; a modification of a published task keeps the historical dispatch range (3.1).
+        if ("create".equals(kind)) validateCreationAssignable(applicant, newOwners);
+        else if ("change".equals(kind)) validateAssignable(applicant, newOwners);
         // A handover is re-checked at approval: the setter must still hold the dedicated authority and
         // the source must still be the current owner (DEV-004).
         if ("handover".equals(kind)) validateHandoverAtApproval(context, taskId, requestId, base);
@@ -833,8 +1139,34 @@ public class TaskService {
         validateRequestActor(applicant, task, base, kind);
     }
 
+    /**
+     * A creation pending on an unusable relationship keeps its data but is marked blocked: the stored
+     * reviewer is retained only because a pending row needs one, and every decision re-checks the route
+     * and refuses it. The applicant is told what to repair, and nothing is escalated or exempted.
+     */
+    private void recordBlockedCreationRoute(Actor actor, Map<String, Object> task, Map<String, Object> request,
+                                            Route route, String previous) {
+        String requestId = s(request, "id");
+        String taskId = s(task, "id");
+        if (Objects.equals(route.reason(), Objects.toString(request.get("routeReason"), ""))) return;
+        db.update("UPDATE approval_requests SET route_basis_assignee_id=?,route_reason=?,route_authz_version=?,route_refreshed_at=UTC_TIMESTAMP(6),row_version=row_version+1 WHERE organization_id=? AND id=?",
+                route.basisAssigneeId(), route.reason(), route.authzVersion(), actor.organizationId(), requestId);
+        db.update("INSERT INTO request_reassignments(id,organization_id,request_id,task_id,previous_reviewer_id,new_reviewer_id,basis_assignee_id,reason,source) VALUES(?,?,?,?,?,NULL,?,?,'route_refresh')",
+                Db.id(), actor.organizationId(), requestId, taskId, previous, route.basisAssigneeId(), route.reasonText());
+        recordHistory(actor, taskId, requestId, "route_blocked", "reviewerId", previous, null,
+                Map.of("reason", route.reason(), "source", "route_refresh"));
+        Set<String> recipients = new LinkedHashSet<>();
+        recipients.add(s(request, "applicantId"));
+        recipients.add(previous);
+        recipients.remove(null);
+        events.record(actor, taskId, "task.create.route_blocked", recipients,
+                Map.of("requestId", requestId, "kind", "create", "reason", route.reason()),
+                requestId, s(request, "proposedVersionId"), titleOf(actor, request),
+                "任务《" + titleOf(actor, request) + "》的创建审核被阻断：" + route.reasonText());
+    }
+
     /** Applies a request whose refreshed route has no reviewer at all, with the reason persisted. */
-    private void applyWithoutReviewer(Actor actor, Map<String, Object> task, Map<String, Object> request, Route route) {
+    private boolean applyWithoutReviewer(Actor actor, Map<String, Object> task, Map<String, Object> request, Route route) {
         String taskId = s(task, "id");
         String requestId = s(request, "id");
         String kind = s(request, "kind");
@@ -846,12 +1178,12 @@ public class TaskService {
             // The organization change itself must still complete. The old proposal stays pending and
             // frozen; it can never be published with authority the applicant no longer holds, and it is
             // ended by the documented deadline/withdrawal paths instead of a fabricated approval.
-            return;
+            return false;
         }
         Timestamp now = now();
         int changed = db.update(NO_REVIEWER_APPLY_SQL,
                 noReviewerApplyArgs(route, now, actor.organizationId(), requestId, n(request, "rowVersion")));
-        if (changed != 1) return;
+        if (changed != 1) return false;
         db.update("UPDATE task_versions SET status='applied' WHERE organization_id=? AND id=? AND status='proposed'", actor.organizationId(), s(proposed, "id"));
         applyVersion(actor, task, base, proposed, kind, "create".equals(kind) ? "created" : "approval");
         db.update("UPDATE task_records SET effective_at=? WHERE organization_id=? AND request_id=?", now, actor.organizationId(), requestId);
@@ -863,6 +1195,36 @@ public class TaskService {
                 Map.of("requestId", requestId, "kind", kind, "status", "direct", "reason", route.reason()),
                 requestId, s(proposed, "id"), s(proposed, "title"),
                 "任务《" + s(proposed, "title") + "》的管理链无有效审核人，已记录原因后直接生效。");
+        return true;
+    }
+
+    /**
+     * Persist a creation reviewer change discovered while deciding (chapter 3.4). The request keeps its
+     * original reviewer only until this row is written; afterwards the old reviewer's page is refused
+     * with REVIEWER_CHANGED and the new reviewer owns the decision.
+     */
+    private void reassignCreationReviewer(Actor actor, Map<String, Object> task, Map<String, Object> request, Route route) {
+        String requestId = s(request, "id");
+        String taskId = s(task, "id");
+        String previous = reviewerOfRecord(request);
+        db.update("UPDATE approval_requests SET current_reviewer_id=?,route_basis_assignee_id=?,route_reason=?,route_authz_version=?,route_refreshed_at=UTC_TIMESTAMP(6),row_version=row_version+1 WHERE organization_id=? AND id=?",
+                route.reviewerId(), route.basisAssigneeId(), route.reason(), route.authzVersion(), actor.organizationId(), requestId);
+        db.update("INSERT INTO request_reassignments(id,organization_id,request_id,task_id,previous_reviewer_id,new_reviewer_id,basis_assignee_id,reason,source) VALUES(?,?,?,?,?,?,?,?,'route_refresh')",
+                Db.id(), actor.organizationId(), requestId, taskId, previous, route.reviewerId(),
+                route.basisAssigneeId(), route.reasonText());
+        recordHistory(actor, taskId, requestId, "reviewer_reassigned", "reviewerId", previous, route.reviewerId(),
+                Map.of("reason", route.reason(), "source", "route_refresh"));
+        Set<String> recipients = new LinkedHashSet<>();
+        recipients.add(s(request, "applicantId"));
+        recipients.add(previous);
+        recipients.add(route.reviewerId());
+        recipients.add(s(task, "originalCreatorId"));
+        recipients.remove(null);
+        events.record(actor, taskId, "task.create.reassigned", recipients,
+                Map.of("requestId", requestId, "kind", "create",
+                        "previousReviewerId", Objects.toString(previous, ""), "reviewerId", route.reviewerId()),
+                requestId, s(request, "proposedVersionId"), titleOf(actor, request),
+                "任务《" + titleOf(actor, request) + "》的创建审核人已按当前组织关系调整，请重新处理。");
     }
 
     /** Best-effort applicable deadline: the stored snapshot, else the route's own version deadline. */
@@ -932,7 +1294,8 @@ public class TaskService {
         eventDetails.put("status", direct ? "direct" : "pending");
         eventDetails.put("reviewerId", Objects.toString(route.reviewerId(), ""));
         if (base != null && direct) {
-            List<String> previousOwners = assignees(actor, s(base, "id"));
+            // assignees() returns an immutable list; removal events need a mutable working copy.
+            List<String> previousOwners = new ArrayList<>(assignees(actor, s(base, "id")));
             previousOwners.removeAll(owners);
             if (!previousOwners.isEmpty()) eventDetails.put("removedUserIds", previousOwners);
         }
@@ -960,8 +1323,8 @@ public class TaskService {
         }
         for (String field : FORM_FIELDS) {
             if ("assigneeIds".equals(field)) continue;
-            String before = plain(base.get(field));
-            String after = plain(proposed.get(field));
+            String before = tagAware(base, field);
+            String after = tagAware(proposed, field);
             if (!Objects.equals(before, after)) {
                 recordHistory(actor, taskId, requestId, "field_change", field, before, after, Map.of());
             }
@@ -974,6 +1337,15 @@ public class TaskService {
             recordHistory(actor, taskId, requestId, "assignee_order", "assigneeIds",
                     String.join(",", beforeOrder), String.join(",", owners), detail);
         }
+    }
+
+    /** The tag id is stored, but people compare the tag name; everything else stays its plain value. */
+    private static String tagAware(Map<String, Object> snapshot, String field) {
+        if (snapshot == null) return null;
+        if ("tagId".equals(field)) {
+            return (String) snapshot.getOrDefault("tagNameSnapshot", snapshot.get("tagId"));
+        }
+        return plain(snapshot.get(field));
     }
 
     private static String plain(Object value) {
@@ -1047,6 +1419,7 @@ public class TaskService {
             case "dueDate" -> "截止日期";
             case "assigneeIds" -> "负责人";
             case "parentTaskId" -> "上级任务";
+            case "tagId" -> "标签";
             default -> field;
         };
     }
@@ -1140,8 +1513,8 @@ public class TaskService {
 
     private String insertVersion(Actor actor, String taskId, Map<String, Object> values, List<String> owners, String status) {
         String id = Db.id();
-        db.update("INSERT INTO task_versions(id,organization_id,task_id,version_no,title,description,acceptance_criteria,priority,all_day,start_at,due_at,start_date,due_date,execution_state,progress_note,parent_task_id,status,created_by,created_at,all_day_cutoff_time) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                id, actor.organizationId(), taskId, nextVersionNumber(actor, taskId), values.get("title"), values.get("description"), values.get("acceptanceCriteria"), values.get("priority"), bool(values.get("allDay"), "allDay"), Timestamp.from(instant(values.get("startAt"), "startAt")), Timestamp.from(instant(values.get("dueAt"), "dueAt")), values.get("startDate"), values.get("dueDate"), values.get("executionState"), values.get("progressNote"), values.get("parentTaskId"), status, actor.id(), now(), cutoffTime(values.get("allDayCutoffTime")));
+        db.update("INSERT INTO task_versions(id,organization_id,task_id,version_no,title,description,acceptance_criteria,priority,all_day,start_at,due_at,start_date,due_date,execution_state,progress_note,parent_task_id,status,created_by,created_at,all_day_cutoff_time,tag_id,tag_name_snapshot,tag_color_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                id, actor.organizationId(), taskId, nextVersionNumber(actor, taskId), values.get("title"), values.get("description"), values.get("acceptanceCriteria"), values.get("priority"), bool(values.get("allDay"), "allDay"), Timestamp.from(instant(values.get("startAt"), "startAt")), Timestamp.from(instant(values.get("dueAt"), "dueAt")), values.get("startDate"), values.get("dueDate"), values.get("executionState"), values.get("progressNote"), values.get("parentTaskId"), status, actor.id(), now(), cutoffTime(values.get("allDayCutoffTime")), values.get("tagId"), values.get("tagNameSnapshot"), values.get("tagColorSnapshot"));
         int ordinal = 0;
         for (String owner : owners) {
             db.update("INSERT INTO task_version_assignees(organization_id,version_id,user_id,ordinal,order_source) VALUES(?,?,?,?,?)",
@@ -1210,6 +1583,19 @@ public class TaskService {
         for (String key : List.of("id", "taskId", "versionNo", "title", "description", "acceptanceCriteria", "priority", "allDay", "startAt", "dueAt", "startDate", "dueDate", "executionState", "progressNote", "status", "createdBy", "createdAt")) result.put(key, version.get(key));
         result.put("allDayCutoffTime", version.get("allDayCutoffTime") == null ? null : version.get("allDayCutoffTime").toString());
         result.put("assigneeIds", assignees(actor, s(version, "id")));
+        // The live catalogue supplies the current name and colour; the stored snapshot is only a
+        // fallback (and the immutable audit value) when the catalogue row is no longer readable.
+        Map<String, Object> liveTag = tags.view(actor, s(version, "tagId"));
+        if (liveTag == null && s(version, "tagNameSnapshot") != null) {
+            liveTag = new LinkedHashMap<>();
+            liveTag.put("id", s(version, "tagId"));
+            liveTag.put("name", s(version, "tagNameSnapshot"));
+            liveTag.put("color", s(version, "tagColorSnapshot"));
+            liveTag.put("border", "#8A8F98");
+            liveTag.put("deleted", true);
+        }
+        result.put("tagId", s(version, "tagId"));
+        result.put("tag", liveTag);
         String parent = s(version, "parentTaskId");
         boolean seeParent = parent == null || canSeeEffective(actor, parent);
         result.put("parentTaskId", seeParent ? parent : null);
@@ -1304,18 +1690,80 @@ public class TaskService {
             cursor = s(manager, "managerId");
         }
         if (found != null) {
-            return new Route(found, basisId, path, "manager-chain", "按最高组织层级负责人的管理链上溯", context.authzVersion());
+            return new Route(found, basisId, path, "manager-chain", routeReasonText("manager-chain"), context.authzVersion(), false, false);
         }
 
         if (creatorId != null) {
             Map<String, Object> creator = db.find("SELECT * FROM users WHERE organization_id=? AND id=?", context.organizationId(), creatorId);
             if (creator != null && active(creator) && !"admin".equals(s(creator, "role")) && availableForReview(creator)) {
                 return new Route(creatorId, basisId, List.of(creatorId), "creator-fallback",
-                        "管理链无有效审核人，由可承接的原创建者审核", context.authzVersion());
+                        routeReasonText("creator-fallback"), context.authzVersion(), false, false);
             }
         }
         return new Route(null, basisId, List.of(), "no-reviewer",
-                "依据人管理链与原创建者均不可承接，记录原因后直接生效", context.authzVersion());
+                routeReasonText("no-reviewer"), context.authzVersion(), false, false);
+    }
+
+    /**
+     * Creation and creation-resubmission routing, separated from the ordered-assignee route
+     * (chapters 3.1-3.2).
+     *
+     * <ul>
+     *   <li>The founder is the unique root of the company's active employee manager tree, proven from
+     *       the organization data. A role name, an "upper" title, an administrator or an isolated
+     *       person is never accepted as a founder by assumption.</li>
+     *   <li>A valid founder creation is exempt with a recorded reason; so is a creator whose
+     *       manager is genuinely unset in a provably valid tree.</li>
+     *   <li>Every other creator is reviewed by exactly their direct manager. A configured manager that
+     *       does not exist, is inactive, is an administrator, cannot review, or forms a cycle blocks the
+     *       creation — it is never skipped, escalated, self-reviewed or treated as an exemption.</li>
+     * </ul>
+     */
+    public Route creationRoute(Actor context, String creatorId) {
+        if (creatorId == null) return Route.blocked(null, "creator-missing", context.authzVersion());
+        Map<String, Object> creator = db.find("SELECT * FROM users WHERE organization_id=? AND id=?",
+                context.organizationId(), creatorId);
+        if (creator == null) return Route.blocked(creatorId, "creator-missing", context.authzVersion());
+        if (!active(creator) || "admin".equals(s(creator, "role"))) {
+            // Reported as a blocked route rather than an exception so an organization change that
+            // invalidates a pending creation's applicant still completes and can be repaired.
+            return Route.blocked(creatorId, "creator-unavailable", context.authzVersion());
+        }
+        CompanyTree.Tree tree = companyTree.of(context.organizationId());
+        String managerId = s(creator, "managerId");
+        if (tree.valid() && creatorId.equals(tree.founderId())) {
+            // Only a proven unique root earns the founder reason; it is never inferred from a role name
+            // or from "has no manager" alone.
+            return Route.exempt(creatorId, "founder-exempt", context.authzVersion());
+        }
+        if (managerId == null) {
+            // A genuinely unset manager is exempt with its own recorded reason. In a multi-root or
+            // otherwise incomplete tree this stays "no manager" and can never be presented as the
+            // founder, so the tag-maintenance authority is not granted by accident.
+            return Route.exempt(creatorId, "no-manager-exempt", context.authzVersion());
+        }
+        Set<String> visited = new LinkedHashSet<>();
+        visited.add(creatorId);
+        List<String> path = new ArrayList<>();
+        Map<String, Object> directManager = null;
+        String cursor = managerId;
+        while (cursor != null) {
+            // The whole chain is walked only to prove the relationship is a finite, existing chain; a
+            // cycle or a dangling reference blocks instead of silently choosing another reviewer.
+            if (!visited.add(cursor)) return Route.blocked(creatorId, "manager-cycle", context.authzVersion());
+            Map<String, Object> manager = db.find("SELECT * FROM users WHERE organization_id=? AND id=?",
+                    context.organizationId(), cursor);
+            if (manager == null) return Route.blocked(creatorId, "manager-missing", context.authzVersion());
+            path.add(cursor);
+            if (directManager == null) directManager = manager;
+            cursor = s(manager, "managerId");
+        }
+        if (!active(directManager)) return Route.blocked(creatorId, "manager-inactive", context.authzVersion());
+        if ("admin".equals(s(directManager, "role"))) return Route.blocked(creatorId, "manager-admin", context.authzVersion());
+        if (!availableForReview(directManager)) return Route.blocked(creatorId, "manager-unavailable", context.authzVersion());
+        // Only the direct manager decides; the rest of the chain is never used as a fallback.
+        return new Route(managerId, creatorId, List.of(managerId), "direct-manager",
+                routeReasonText("direct-manager"), context.authzVersion(), false, true);
     }
 
     private static boolean availableForReview(Map<String, Object> user) {
@@ -1334,6 +1782,8 @@ public class TaskService {
         view.put("reasonText", routeReasonText(route.reason()));
         view.put("authzVersion", route.authzVersion());
         view.put("reviewerAvailable", route.hasReviewer());
+        view.put("blocked", route.blocked());
+        view.put("creation", route.creation());
         Set<String> ids = new LinkedHashSet<>();
         ids.add(route.reviewerId());
         ids.add(route.basisAssigneeId());
@@ -1346,7 +1796,11 @@ public class TaskService {
         String reviewer = reviewerOfRecord(request);
         String reason = Objects.toString(request.get("routeReason"), reviewer == null ? "no-reviewer" : "manager-chain");
         long version = request.get("routeAuthzVersion") == null ? actor.authzVersion() : n(request, "routeAuthzVersion");
-        return new Route(reviewer, s(request, "routeBasisAssigneeId"), List.of(), reason, routeReasonText(reason), version);
+        return new Route(reviewer, s(request, "routeBasisAssigneeId"), List.of(), reason, routeReasonText(reason), version,
+                "route-blocked".equals(reason) || reason.endsWith("-missing") || reason.endsWith("-inactive")
+                        || reason.endsWith("-admin") || reason.endsWith("-unavailable") || "manager-cycle".equals(reason)
+                        || "organization-tree".equals(reason),
+                "create".equals(s(request, "kind")));
     }
 
     static String routeReasonText(String reason) {
@@ -1354,19 +1808,51 @@ public class TaskService {
             case "manager-chain" -> "按最高组织层级负责人的管理链上溯";
             case "creator-fallback" -> "管理链无有效审核人，由可承接的原创建者审核";
             case "no-reviewer" -> "依据人管理链与原创建者均不可承接，记录原因后直接生效";
+            case "direct-manager" -> "创建按创建人的直属上级审核";
+            case "founder-exempt" -> "创建人为员工组织树唯一根节点（创始人），记录原因后免审生效";
+            case "no-manager-exempt" -> "创建人确无直属上级，记录原因后免审生效";
+            case "organization-tree" -> "员工组织树不唯一或上级引用损坏，无法确认创始人免审，请管理员修复组织关系";
+            case "manager-missing" -> "已配置的直属上级账号不存在，创建审核被阻断，请管理员修复组织关系";
+            case "manager-inactive" -> "已配置的直属上级账号已失效，创建审核被阻断，请管理员恢复或调整直属关系";
+            case "manager-admin" -> "直属上级为独立管理员，不能审核业务创建，请管理员调整直属关系";
+            case "manager-unavailable" -> "直属上级当前不可审核，创建审核被阻断，请管理员恢复其审核资格";
+            case "manager-cycle" -> "直属上级关系存在循环，创建审核被阻断，请管理员修复组织关系";
+            case "route-blocked" -> "创建审核路线不可用，请管理员修复组织关系";
+            case "creator-missing" -> "创建人账号不存在，创建审核被阻断，请管理员修复组织关系";
+            case "creator-unavailable" -> "创建人账号已失效或不具业务身份，创建审核被阻断，请管理员恢复账号";
             default -> Objects.toString(reason, "");
         };
     }
 
-    /** The reviewer chosen for one request: manager chain, creator fallback or a documented exemption. */
+    /**
+     * The reviewer chosen for one request: a creation rule, the ordered manager chain, a creator
+     * fallback or a documented exemption. A blocked route carries no reviewer at all — it is never an
+     * exemption, because the relationship exists but cannot be used.
+     */
     public record Route(String reviewerId, String basisAssigneeId, List<String> path, String reason,
-                        String reasonText, long authzVersion) {
-        public boolean hasReviewer() { return reviewerId != null; }
+                        String reasonText, long authzVersion, boolean blocked, boolean creation) {
+        public boolean hasReviewer() { return reviewerId != null && !blocked; }
+
+        /** A creation route that resolves to no reviewer on purpose (founder or provably no manager). */
+        static Route exempt(String creatorId, String reason, long authzVersion) {
+            return new Route(null, creatorId, List.of(), reason, routeReasonText(reason), authzVersion, false, true);
+        }
+
+        /** A creation route whose configured relationship cannot be used; never applied. */
+        static Route blocked(String creatorId, String reason, long authzVersion) {
+            return new Route(null, creatorId, List.of(), reason, routeReasonText(reason), authzVersion, true, true);
+        }
     }
 
     private void validateAssignable(Actor actor, List<String> owners) {
         requireBusiness(actor);
         for (String id : owners) access.requireDispatchable(actor, id);
+    }
+
+    /** A creation assignee may be any active business member of the same company (chapter 3.1). */
+    private void validateCreationAssignable(Actor actor, List<String> owners) {
+        requireBusiness(actor);
+        for (String id : owners) access.requireCreationCandidate(actor, id);
     }
 
     private void validateActiveOwners(Actor actor, List<String> owners) {
@@ -1397,7 +1883,9 @@ public class TaskService {
         for (String key : FORM) if (input.containsKey(key)) values.put(key, input.get(key));
         values.put("title", requiredText(values, "title", 80));
         values.put("description", requiredText(values, "description", 5000));
-        values.put("acceptanceCriteria", requiredText(values, "acceptanceCriteria", 2000));
+        // The creation form no longer asks for a completion criterion (chapter 4.1). The value stays in
+        // the snapshot so historical tasks keep displaying, editing and auditing it.
+        values.put("acceptanceCriteria", optionalTextValue(values.get("acceptanceCriteria"), "acceptanceCriteria", 2000));
         Object priority = values.getOrDefault("priority", "medium");
         if (!(priority instanceof String) || !PRIORITIES.contains(priority)) throw bad("无效的紧急程度");
         values.put("priority", priority);
@@ -1429,6 +1917,15 @@ public class TaskService {
         values.put("dueAt", due.toString());
         values.put("assigneeIds", ids(values.get("assigneeIds")));
         values.put("parentTaskId", optionalId(values.get("parentTaskId"), "parentTaskId"));
+        // A task version holds at most one tag. The catalogue is resolved here, once, so the proposal,
+        // the effective version and the audit snapshot all carry the same value.
+        Object requestedTag = values.get("tagId");
+        if (requestedTag != null && !(requestedTag instanceof String)) throw bad("tagId 必须为文字或空值");
+        Map<String, Object> tag = tags.resolveForWrite(actor,
+                requestedTag instanceof String text ? text.trim() : null, base == null ? null : s(base, "tagId"));
+        values.put("tagId", tag == null ? null : s(tag, "id"));
+        values.put("tagNameSnapshot", tag == null ? null : s(tag, "name"));
+        values.put("tagColorSnapshot", tag == null ? null : s(tag, "color"));
         return values;
     }
 
@@ -1502,6 +1999,25 @@ public class TaskService {
         if (text.isEmpty() || text.codePointCount(0, text.length()) > max) throw bad(key + "长度须为1至" + max + "字");
         if (text.indexOf('\0') >= 0) throw bad(key + "含无效字符");
         return text;
+    }
+
+    /** Rule 4.1: a creation must not smuggle back a completion criterion. */
+    private static void rejectCreationCriteria(Map<String, Object> input) {
+        if (!input.containsKey("acceptanceCriteria")) return;
+        Object raw = input.get("acceptanceCriteria");
+        if (raw == null) return;
+        if (!(raw instanceof String text)) throw bad("acceptanceCriteria为文字");
+        if (!text.isBlank()) throw bad("创建任务不再填写完成标准；历史任务的完成标准仍可保留和编辑");
+    }
+
+    /** Empty or absent text is a valid value here (completion criteria are optional). */
+    static String optionalTextValue(Object value, String key, int max) {
+        if (value == null) return "";
+        if (!(value instanceof String text)) throw bad(key + "为文字");
+        String stripped = text.strip();
+        if (stripped.codePointCount(0, stripped.length()) > max) throw bad(key + "长度须为0至" + max + "字");
+        if (stripped.indexOf('\0') >= 0) throw bad(key + "含无效字符");
+        return stripped;
     }
 
     private static String optionalText(Map<String, Object> input, String key, int max) {

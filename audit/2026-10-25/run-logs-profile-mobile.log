@@ -1,0 +1,28 @@
+scratch database: pandora_check_1792914307_29076
+scratch backend: http://127.0.0.1:18130
+PASS  8.3 the browser reaches the login screen
+PASS  7.3 the log page defaults to the current user
+PASS  7.3 no review, application or consultation content mixes into the log page
+PASS  7.3 no task creation command remains on the log page
+PASS  7.3 the page title and navigation call the feature 日志
+PASS  7.3 the department level only offers authorised departments
+PASS  7.3 the team level only offers teams inside the authorised departments
+PASS  7.3 the person level lists self and direct reports and offers the whole scope
+PASS  7.3 the person search keeps its input and narrows the person level only
+PASS  7.3 selecting a direct report loads only that author's logs
+PASS  7.3 a subordinate log is read-only in the list and offers no body edit
+PASS  7.3 switching the department clears a person from another department and reloads the visible set
+PASS  7.3 the team level narrows the result list and keeps its count consistent
+PASS  7.3 the department/team/person selection survives page navigation
+PASS  7.3 return-to-top keeps the valid log filters
+PASS  8.4 the profile shows company, department, position, team and manager
+PASS  8.4 the direct manager sees only direct reports
+PASS  8.4 the subordinate card has no dispatch button
+PASS  8.4 the subordinate detail shows the authorized phone
+PASS  8.4 the subordinate detail offers a separate log entry
+PASS  8.4 the log entry opens the selected person's scope
+PASS  8.4 the selected person's logs are shown
+PASS  8.4 the executive sees indirect subordinates
+PASS  7.3 the executive log page includes every authorised department and person
+PASS  8.4 an employee has no subordinate section
+Terminated: 15

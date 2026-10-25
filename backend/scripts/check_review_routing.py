@@ -23,6 +23,17 @@ RUN = uuid.uuid4().hex[:6]
 PASSWORD = "Aa1" + uuid.uuid4().hex[:10]
 
 
+
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 class Api:
     def __init__(self, base: str, admin_password: str):
         self.base = base.rstrip('/')
@@ -88,17 +99,18 @@ def main() -> int:
     position = structure['positions'][0]['id']
 
     def make_employee(username, level, manager, role):
+        phone = '133' + str(uuid.uuid4().int)[:8]
         status, body, _ = api.call('POST', '/api/v1/admin/employees', admin,
                                    {'username': username, 'displayName': username, 'departmentId': department,
                                     'positionId': position, 'level': level, 'managerId': manager,
-                                    'roleCodes': [role]}, Api.key())
+                                    'roleCodes': [role], 'phone': phone}, Api.key())
         if status != 201:
             raise SystemExit(f'fixture {username} failed: {status} {body}')
-        return body['userId'], body['initialPassword']
+        return body['userId'], body['initialPassword'], phone
 
-    def onboard(username, initial):
+    def onboard(username, initial, phone):
         status, session, _ = api.call('POST', '/api/v1/auth/sessions',
-                                      body={'username': username, 'password': initial})
+                                      body={'username': phone, 'password': initial})
         if status != 200:
             raise SystemExit(f'onboard login failed for {username}: {status} {session}')
         token = session['token']
@@ -107,31 +119,31 @@ def main() -> int:
         if status != 200:
             raise SystemExit(f'onboard change failed for {username}: {status} {body}')
         status, session, _ = api.call('POST', '/api/v1/auth/sessions',
-                                      body={'username': username, 'password': PASSWORD})
+                                      body={'username': phone, 'password': PASSWORD})
         if status != 200:
             raise SystemExit(f'onboard relogin failed for {username}: {status} {session}')
         api.tokens[username] = session['token']
         return session['token']
 
-    boss_id, boss_pw = make_employee(f'boss-{RUN}', 0, None, 'executive')
-    lead_a_id, lead_a_pw = make_employee(f'leada-{RUN}', 2, boss_id, 'manager')
-    lead_b_id, lead_b_pw = make_employee(f'leadb-{RUN}', 2, boss_id, 'manager')
-    w1_id, w1_pw = make_employee(f'w1-{RUN}', 3, lead_a_id, 'employee')
-    w2_id, w2_pw = make_employee(f'w2-{RUN}', 3, lead_b_id, 'employee')
-    w3_id, w3_pw = make_employee(f'w3-{RUN}', 3, None, 'employee')
-    w4_id, w4_pw = make_employee(f'w4-{RUN}', 3, lead_a_id, 'employee')
+    boss_id, boss_pw, boss_phone = make_employee(f'boss-{RUN}', 0, None, 'executive')
+    lead_a_id, lead_a_pw, lead_a_phone = make_employee(f'leada-{RUN}', 2, boss_id, 'manager')
+    lead_b_id, lead_b_pw, lead_b_phone = make_employee(f'leadb-{RUN}', 2, boss_id, 'manager')
+    w1_id, w1_pw, w1_phone = make_employee(f'w1-{RUN}', 3, lead_a_id, 'employee')
+    w2_id, w2_pw, w2_phone = make_employee(f'w2-{RUN}', 3, lead_b_id, 'employee')
+    w3_id, w3_pw, w3_phone = make_employee(f'w3-{RUN}', 3, None, 'employee')
+    w4_id, w4_pw, w4_phone = make_employee(f'w4-{RUN}', 3, lead_a_id, 'employee')
 
-    boss = onboard(f'boss-{RUN}', boss_pw)
-    lead_a = onboard(f'leada-{RUN}', lead_a_pw)
-    lead_b = onboard(f'leadb-{RUN}', lead_b_pw)
-    w1 = onboard(f'w1-{RUN}', w1_pw)
-    w2 = onboard(f'w2-{RUN}', w2_pw)
-    w3 = onboard(f'w3-{RUN}', w3_pw)
-    w4 = onboard(f'w4-{RUN}', w4_pw)
+    boss = onboard(f'boss-{RUN}', boss_pw, boss_phone)
+    lead_a = onboard(f'leada-{RUN}', lead_a_pw, lead_a_phone)
+    lead_b = onboard(f'leadb-{RUN}', lead_b_pw, lead_b_phone)
+    w1 = onboard(f'w1-{RUN}', w1_pw, w1_phone)
+    w2 = onboard(f'w2-{RUN}', w2_pw, w2_phone)
+    w3 = onboard(f'w3-{RUN}', w3_pw, w3_phone)
+    w4 = onboard(f'w4-{RUN}', w4_pw, w4_phone)
 
     def task_payload(title, owners, days=3):
         start = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
-        return {'title': title, 'description': '路由验证任务', 'acceptanceCriteria': '可复核',
+        return {'title': title, 'description': '路由验证任务',
                 'priority': 'medium', 'allDay': False,
                 'startAt': start.isoformat().replace('+00:00', 'Z'),
                 'dueAt': (start + dt.timedelta(days=days)).isoformat().replace('+00:00', 'Z'),
@@ -162,14 +174,14 @@ def main() -> int:
         status, body, headers = api.call('GET', f'/api/v1/tasks/{task_id}', token)
         return status, body, headers.get('ETag')
 
-    # ---------------- 4.1 ordered assignees ----------------
+    # ---------------- 4.1 creation routes by the creator, not the assignees ----------------
     status, created, _ = create(lead_a, '有序负责人验证', [w1_id, w2_id])
     task_ordered = created.get('taskId')
     _, view, _ = request_of(created['requestId'], lead_a)
-    check('4.1 a creation routes by the highest level and the saved first position',
-          status == 201 and view['currentReviewerId'] == lead_a_id,
+    check('4.1 a creation routes to the creator\'s direct manager, never the assignees',
+          status == 201 and view['currentReviewerId'] == boss_id,
           {'status': status, 'reviewer': view.get('currentReviewerId')})
-    decide(lead_a, created['requestId'], 'approve', '通过')
+    decide(boss, created['requestId'], 'approve', '通过')
     _, ordered, _ = detail(lead_a, task_ordered)
     check('4.1 the submitted order is returned unchanged', ordered['assigneeIds'] == [w1_id, w2_id],
           {'assigneeIds': ordered['assigneeIds']})
@@ -187,19 +199,23 @@ def main() -> int:
     _, swapped_view, _ = request_of(changed['requestId'], lead_a)
     check('4.1 the new reviewer follows the new first assignee',
           swapped_view['currentReviewerId'] == lead_b_id, {'reviewer': swapped_view.get('currentReviewerId')})
+    _, reorder_diff, _ = api.call('GET', f"/api/v1/approval-requests/{changed['requestId']}", lead_b)
+    check('4.6 a pure assignee reorder stays visible in the reviewer\'s authorized diff',
+          any(item.get('field') == 'assigneeIds' and item.get('before') != item.get('after')
+              for item in (reorder_diff.get('diff') or [])),
+          {'diff': reorder_diff.get('diff')})
     decide(lead_b, changed['requestId'], 'approve', '同意换序')
     _, swapped, _ = detail(lead_a, task_ordered)
     check('4.1 the swapped order persists after approval', swapped['assigneeIds'] == [w2_id, w1_id],
           {'assigneeIds': swapped['assigneeIds']})
 
-    status, created, _ = create(boss, '低层排首不越级', [w1_id, boss_id])
+    status, created, _ = create(boss, '创始人创建免审', [w1_id, boss_id])
     _, view, _ = request_of(created['requestId'], boss)
-    check('4.1 a lower level listed first does not outrank the highest level',
-          status == 201 and view['currentReviewerId'] == boss_id,
-          {'status': status, 'reviewer': view.get('currentReviewerId')})
-    decide(boss, created['requestId'], 'approve', '本人显式审核')
+    check('4.1 the unique employee organization root is exempt with a recorded reason',
+          status == 201 and view['status'] == 'direct' and bool(view.get('exemptionReason')),
+          {'status': status, 'request': view.get('status'), 'reason': view.get('exemptionReason')})
     _, raised, _ = detail(boss, created['taskId'])
-    check('4.2 the creator reviews their own creation explicitly instead of being exempt',
+    check('4.2 a founder creation publishes without a self-review request',
           raised['executionState'] == 'todo' and raised['published'] is True,
           {'executionState': raised.get('executionState')})
 
@@ -208,7 +224,7 @@ def main() -> int:
     _, view, _ = request_of(created['requestId'], lead_a)
     check('4.2 a task with a reviewer is never applied automatically',
           status == 201 and view['status'] == 'pending', {'status': status, 'request': view.get('status')})
-    check('4.2 the reviewer is the basis assignee\'s manager', view['currentReviewerId'] == lead_a_id,
+    check('4.2 the creation reviewer is the creator\'s direct manager', view['currentReviewerId'] == boss_id,
           {'reviewer': view.get('currentReviewerId')})
     task_pending = created['taskId']
 
@@ -216,7 +232,7 @@ def main() -> int:
                                {'command': 'progress', 'progressNote': '等待中的进展'}, Api.key(), '"1"')
     check('4.2 a frozen task refuses another business command', status == 409 and body.get('code') == 'TASK_FROZEN',
           {'status': status, 'body': body})
-    decide(lead_a, created['requestId'], 'approve', '通过')
+    decide(boss, created['requestId'], 'approve', '通过')
 
     # progress and completion each need their own approval
     _, current, etag = detail(w1, task_pending)
@@ -254,54 +270,68 @@ def main() -> int:
     # ---------------- 4.3 reviewer preview ----------------
     _, before_preview, _ = api.call('GET', '/api/v1/approval-requests', lead_a)
     status, preview, _ = api.call('POST', '/api/v1/tasks/reviewer-preview', lead_a,
-                                  {'assigneeIds': [w1_id]}, Api.key())
-    check('4.3 the preview reports the real reviewer',
-          status == 200 and preview['reviewerId'] == lead_a_id and preview['requiresApproval'] is True,
+                                  {'operation': 'create'}, Api.key())
+    check('4.3 the creation preview reports the creator\'s direct manager',
+          status == 200 and preview['reviewerId'] == boss_id and preview['requiresApproval'] is True
+          and preview['mode'] == 'creation',
           {'status': status, 'body': preview})
+    status, preview_progress, _ = api.call('POST', '/api/v1/tasks/reviewer-preview', lead_a,
+                                           {'operation': 'progress', 'taskId': task_pending}, Api.key())
+    check('4.3 a non-creation preview follows the effective assignee chain',
+          status == 200 and preview_progress['reviewerId'] == lead_a_id
+          and preview_progress['mode'] == 'non-creation',
+          {'status': status, 'body': preview_progress})
     _, after_preview, _ = api.call('GET', '/api/v1/approval-requests', lead_a)
     check('4.3 the preview creates no request',
           after_preview['total'] == before_preview['total'],
           {'before': before_preview['total'], 'after': after_preview['total']})
     status, preview_swap, _ = api.call('POST', '/api/v1/tasks/reviewer-preview', lead_a,
-                                       {'assigneeIds': [w2_id, w1_id]}, Api.key())
-    check('4.3 the preview follows the proposed order', preview_swap['reviewerId'] == lead_b_id,
+                                       {'operation': 'change', 'taskId': task_pending,
+                                        'assigneeIds': [w2_id, w1_id]}, Api.key())
+    check('4.3 the modification preview follows the proposed order', preview_swap['reviewerId'] == lead_b_id,
           {'reviewer': preview_swap.get('reviewerId')})
 
     # Assignee change: the old reviewer loses the decision, the new one gains it.
-    status, created, _ = create(boss, '换负责人改路线', [w1_id])
+    status, created, _ = create(lead_a, '换负责人改路线', [w1_id])
     task_route = created['taskId']
-    decide(lead_a, created['requestId'], 'approve', '初始通过')
-    _, body, etag = detail(boss, task_route)
-    status, changed, _ = api.call('PATCH', f'/api/v1/tasks/{task_route}', boss,
+    decide(boss, created['requestId'], 'approve', '初始通过')
+    _, body, etag = detail(lead_a, task_route)
+    status, changed, _ = api.call('PATCH', f'/api/v1/tasks/{task_route}', lead_a,
                                   {'command': 'change', 'assigneeIds': [w2_id], 'reason': '改由他人负责'},
                                   Api.key(), etag)
     check('4.3 changing the assignee produces a pending request', status == 200, {'status': status, 'body': changed})
-    status, old_reviewer_attempt, _ = decide_blind(lead_a, changed['requestId'], 'approve', '旧审核人尝试')
-    _, live_view, _ = request_of(changed['requestId'], boss)
+    status, old_reviewer_attempt, _ = decide_blind(boss, changed['requestId'], 'approve', '旧审核人尝试')
+    _, live_view, _ = request_of(changed['requestId'], lead_a)
     check('4.3 the previous reviewer cannot decide the new route',
           status == 404 and live_view['status'] == 'pending' and live_view['currentReviewerId'] == lead_b_id,
           {'status': status, 'stillPending': live_view.get('status')})
-    _, route_view, _ = request_of(changed['requestId'], boss)
+    _, route_view, _ = request_of(changed['requestId'], lead_a)
     check('4.3 the request names the new reviewer', route_view['currentReviewerId'] == lead_b_id,
           {'reviewer': route_view.get('currentReviewerId')})
-    _, frozen_detail, _ = detail(boss, task_route)
+    _, frozen_detail, _ = detail(lead_a, task_route)
     check('4.3 the detail exposes the request route separately from the effective route',
           frozen_detail['pendingRoute']['reviewerId'] == lead_b_id
           and frozen_detail['route']['reviewerId'] == lead_a_id
           and frozen_detail['frozen'] is True,
           {'pending': frozen_detail['pendingRoute'].get('reviewerId'), 'effective': frozen_detail['route'].get('reviewerId')})
     decide(lead_b, changed['requestId'], 'reject', '暂不调整')
-    _, kept, _ = detail(boss, task_route)
+    _, kept, _ = detail(lead_a, task_route)
     check('4.3 a rejection keeps the original assignees', kept['assigneeIds'] == [w1_id],
           {'assigneeIds': kept['assigneeIds']})
 
     # ---------------- 4.5 request DTO trimming ----------------
-    _, body, etag = detail(boss, task_route)
-    status, changed, _ = api.call('PATCH', f'/api/v1/tasks/{task_route}', boss,
+    # Move the effective owner to w2 so the next modification has a reviewer other than the applicant.
+    _, _, etag = detail(lead_a, task_route)
+    status, moved_owner, _ = api.call('PATCH', f'/api/v1/tasks/{task_route}', lead_a,
+                                      {'command': 'change', 'assigneeIds': [w2_id], 'reason': '改由他人负责'},
+                                      Api.key(), etag)
+    decide(lead_b, moved_owner['requestId'], 'approve', '同意改派')
+    _, body, etag = detail(lead_a, task_route)
+    status, changed, _ = api.call('PATCH', f'/api/v1/tasks/{task_route}', lead_a,
                                   {'command': 'change', 'title': '提议中的新标题', 'reason': '验证裁剪'},
                                   Api.key(), etag)
-    applicant_view = request_of(changed['requestId'], boss)[1]
-    reviewer_view = request_of(changed['requestId'], lead_a)[1]
+    applicant_view = request_of(changed['requestId'], lead_a)[1]
+    reviewer_view = request_of(changed['requestId'], lead_b)[1]
     check('4.5 the applicant sees the submitted content but no comparison fields',
           'proposedVersion' in applicant_view and 'baseVersion' not in applicant_view
           and 'diff' not in applicant_view and 'baseVersionId' not in applicant_view,
@@ -312,21 +342,21 @@ def main() -> int:
           {'diff': reviewer_view.get('diff')})
     status, outsider_view, _ = request_of(changed['requestId'], w2)
     check('4.5 an ordinary viewer cannot read the request at all', status == 404, {'status': status})
-    _, frozen_detail, _ = detail(w1, task_route)
+    _, frozen_detail, _ = detail(lead_a, task_route)
     check('4.5 the ordinary task area keeps the effective version while frozen',
           frozen_detail['frozen'] is True and frozen_detail['title'] != '提议中的新标题'
           and 'proposedVersion' not in frozen_detail,
           {'title': frozen_detail.get('title'), 'frozen': frozen_detail.get('frozen')})
-    api.call('PATCH', f"/api/v1/approval-requests/{changed['requestId']}", boss,
-             {'decision': 'withdraw'}, Api.key(), f'"{request_of(changed["requestId"], boss)[1]["rowVersion"]}"')
+    api.call('PATCH', f"/api/v1/approval-requests/{changed['requestId']}", lead_a,
+             {'decision': 'withdraw'}, Api.key(), f'"{request_of(changed["requestId"], lead_a)[1]["rowVersion"]}"')
 
     # ---------------- 4.4 persisted reassignment after an organization change ----------------
-    status, created, _ = create(boss, '组织变更改派验证', [w4_id])
+    status, created, _ = create(w4, '组织变更改派验证', [w2_id])
     task_reassign = created['taskId']
     reassign_request = created['requestId']
-    _, view, _ = request_of(reassign_request, boss)
-    check('4.4 the request starts with the manager-chain reviewer', view['currentReviewerId'] == lead_a_id,
-          {'reviewer': view.get('currentReviewerId')})
+    _, view, _ = request_of(reassign_request, w4)
+    check('4.4 the creation request starts with the creator\'s direct manager',
+          view['currentReviewerId'] == lead_a_id, {'reviewer': view.get('currentReviewerId')})
     worker_etag = api.call('GET', f'/api/v1/admin/employees/{w4_id}', admin)[2].get('ETag')
     status, moved, _ = api.call('POST', f'/api/v1/admin/employees/{w4_id}/transfer', admin,
                                 {'departmentId': department, 'positionId': position, 'managerId': lead_b_id,
@@ -334,8 +364,8 @@ def main() -> int:
                                 Api.key(), worker_etag)
     check('4.4 the transfer succeeds and reports invalidation',
           status == 200 and moved.get('authorizationInvalidated') is True, {'status': status, 'body': moved})
-    _, view_after, _ = request_of(reassign_request, boss)
-    check('4.4 the pending request now points at the new manager-chain reviewer',
+    _, view_after, _ = request_of(reassign_request, w4)
+    check('4.4 the pending creation follows the creator\'s new direct manager',
           view_after['currentReviewerId'] == lead_b_id, {'reviewer': view_after.get('currentReviewerId')})
     _, history, _ = api.call('GET', f'/api/v1/admin/tasks/{task_reassign}/history', admin)
     reassignments = history.get('reassignments', [])
@@ -346,12 +376,18 @@ def main() -> int:
     status, stale_attempt, _ = decide_blind(lead_a, reassign_request, 'approve', '旧审核人尝试')
     check('4.4 the previous reviewer can no longer decide', status == 404, {'status': status})
     status, new_attempt, _ = decide(lead_b, reassign_request, 'approve', '新审核人通过')
-    check('4.4 the new reviewer can decide', status == 200, {'status': status})
+    check('4.4 the new reviewer can decide', status == 200,
+          {'status': status, 'body': new_attempt, 'lead_b': lead_b_id})
+    # Restore the fixture relationship so later checks keep their documented reviewer chain.
+    restore_etag = api.call('GET', f'/api/v1/admin/employees/{w4_id}', admin)[2].get('ETag')
+    api.call('POST', f'/api/v1/admin/employees/{w4_id}/transfer', admin,
+             {'departmentId': department, 'positionId': position, 'managerId': lead_a_id,
+              'level': 3, 'roleCodes': ['employee'], 'reason': '还原改派夹具'}, Api.key(), restore_etag)
 
     # ---------------- 4.6 dedicated handover ----------------
     status, created, _ = create(lead_a, '交接验证', [w1_id])
     task_handover = created['taskId']
-    decide(lead_a, created['requestId'], 'approve', '初始通过')
+    decide(boss, created['requestId'], 'approve', '初始通过')
     _, body, etag = detail(lead_a, task_handover)
     status, bad_handover, _ = api.call('POST', f'/api/v1/tasks/{task_handover}/handover', lead_a,
                                        {'sourceUserId': w1_id, 'targetUserId': w2_id, 'title': '夹带标题'},
@@ -387,7 +423,7 @@ def main() -> int:
     # ---------------- 4.7 reopen with a complete schedule ----------------
     status, created, _ = create(lead_a, '重开排期验证', [w1_id])
     task_reopen = created['taskId']
-    decide(lead_a, created['requestId'], 'approve', '初始通过')
+    decide(boss, created['requestId'], 'approve', '初始通过')
     _, body, etag = detail(w1, task_reopen)
     status, done, _ = api.call('PATCH', f'/api/v1/tasks/{task_reopen}', w1,
                                {'command': 'complete', 'completionNote': '完成'}, Api.key(), etag)
@@ -452,49 +488,65 @@ def main() -> int:
           '"phone"' not in serialized and '"email"' not in serialized and '"password"' not in serialized,
           {'bytes': len(serialized)})
 
-    # ---------------- 4.2 no-reviewer exemption, recorded ----------------
-    lead_b_etag = api.call('GET', f'/api/v1/admin/employees/{lead_b_id}', admin)[2].get('ETag')
-    api.call('PATCH', f'/api/v1/admin/employees/{lead_b_id}', admin, {'reviewerAvailable': False},
-             Api.key(), lead_b_etag)
-    status, created, _ = create(lead_b, '无审核人留因验证', [w3_id])
-    check('4.2 the submission still succeeds with no reviewer', status == 201, {'status': status, 'body': created})
-    _, exempt_view, _ = request_of(created['requestId'], lead_b)
-    check('4.2 a reviewer-less request is applied directly with a recorded reason',
+    # ---------------- 4.2 genuine exemption versus a blocked relationship ----------------
+    # A creator with no configured manager is genuinely exempt and the reason is recorded.
+    status, created, _ = create(w3, '无直属上级留因免审', [w3_id])
+    check('4.2 a creator with no direct manager is exempt', status == 201, {'status': status, 'body': created})
+    _, exempt_view, _ = request_of(created['requestId'], w3)
+    check('4.2 the exemption is recorded with the creator as the route basis',
           exempt_view['status'] == 'direct' and bool(exempt_view.get('exemptionReason'))
           and exempt_view['currentReviewerId'] is None,
           {'status': exempt_view.get('status'), 'reason': exempt_view.get('exemptionReason')})
-    _, exempt_task, _ = detail(lead_b, created['taskId'])
+    _, exempt_task, _ = detail(w3, created['taskId'])
     check('4.2 the direct application publishes the task', exempt_task.get('published') is True,
           {'published': exempt_task.get('published')})
-    api.call('PATCH', f'/api/v1/admin/employees/{lead_b_id}', admin, {'reviewerAvailable': True},
-             Api.key(), api.call('GET', f'/api/v1/admin/employees/{lead_b_id}', admin)[2].get('ETag'))
 
-    # ---------------- 4.4 a pending request loses its last reviewer (V-003) ----------------
-    status, created, _ = create(boss, '最后审核人撤销验证', [boss_id])
-    check('4.4 a self-created task keeps its creator-fallback reviewer',
-          status == 201, {'status': status, 'body': created})
-    _, last_reviewer_view, _ = request_of(created['requestId'], boss)
-    check('4.4 the only reviewer is the creator of record',
+    # A configured manager that cannot review blocks; it is never skipped, escalated or exempted.
+    boss_etag = api.call('GET', f'/api/v1/admin/employees/{boss_id}', admin)[2].get('ETag')
+    api.call('PATCH', f'/api/v1/admin/employees/{boss_id}', admin, {'reviewerAvailable': False},
+             Api.key(), boss_etag)
+    status, blocked, _ = create(lead_a, '上级不可审核阻断', [w1_id])
+    check('4.2 an unavailable direct manager blocks the creation instead of exempting it',
+          status == 409 and blocked.get('code') == 'ROUTE_BLOCKED', {'status': status, 'body': blocked})
+    status, blocked_preview, _ = api.call('POST', '/api/v1/tasks/reviewer-preview', lead_a,
+                                          {'operation': 'create'}, Api.key())
+    check('4.2 the blocked creation preview names no fallback reviewer and requires no approval',
+          blocked_preview.get('blocked') is True and blocked_preview.get('reviewerId') is None
+          and blocked_preview.get('requiresApproval') is False,
+          {'preview': blocked_preview})
+    api.call('PATCH', f'/api/v1/admin/employees/{boss_id}', admin, {'reviewerAvailable': True},
+             Api.key(), api.call('GET', f'/api/v1/admin/employees/{boss_id}', admin)[2].get('ETag'))
+
+    # ---------------- 4.4 a pending creation whose reviewer becomes unusable ----------------
+    status, created, _ = create(lead_a, '最后审核人不可用验证', [w1_id])
+    check('4.4 the pending creation starts at the direct manager', status == 201, {'status': status})
+    _, last_reviewer_view, _ = request_of(created['requestId'], lead_a)
+    check('4.4 the reviewer of record is the creator\'s direct manager',
           last_reviewer_view['currentReviewerId'] == boss_id, last_reviewer_view.get('currentReviewerId'))
     boss_etag = api.call('GET', f'/api/v1/admin/employees/{boss_id}', admin)[2].get('ETag')
     status, body, _ = api.call('PATCH', f'/api/v1/admin/employees/{boss_id}', admin,
                                {'reviewerAvailable': False}, Api.key(), boss_etag)
-    check('4.4 removing the last reviewer completes the organization change',
+    check('4.4 making the creation reviewer unusable completes the organization change',
           status == 200, {'status': status, 'body': body})
-    _, final_view, _ = request_of(created['requestId'], boss)
-    check('4.4 the request applies directly with the no-reviewer reason instead of failing',
-          final_view['status'] == 'direct' and final_view['currentReviewerId'] is None
-          and bool(final_view.get('exemptionReason')), final_view)
-    _, final_task, _ = detail(boss, created['taskId'])
-    check('4.4 the direct application publishes the created task',
-          final_task.get('published') is True, final_task.get('published'))
+    _, final_view, _ = request_of(created['requestId'], lead_a)
+    check('4.4 the creation stays pending and is marked blocked instead of applying itself',
+          final_view['status'] == 'pending' and final_view['currentReviewerId'] == boss_id
+          and final_view['route'].get('reason') == 'manager-unavailable',
+          {'status': final_view.get('status'), 'reviewer': final_view.get('currentReviewerId'),
+           'reason': final_view.get('route', {}).get('reason')})
+    _, still_unpublished, _ = detail(lead_a, created['taskId'])
+    check('4.4 the blocked creation is not published', still_unpublished.get('published') is False,
+          {'published': still_unpublished.get('published')})
+    status, refused, _ = decide(boss, created['requestId'], 'approve', '旧审核人尝试')
+    check('4.4 the blocked reviewer cannot approve the creation',
+          status == 409 and refused.get('code') == 'ROUTE_BLOCKED', {'status': status, 'body': refused})
     api.call('PATCH', f'/api/v1/admin/employees/{boss_id}', admin, {'reviewerAvailable': True},
              Api.key(), api.call('GET', f'/api/v1/admin/employees/{boss_id}', admin)[2].get('ETag'))
 
     # ---------------- 4.9 unique pending under concurrency ----------------
     status, created, _ = create(lead_a, '并发唯一待审', [w1_id])
     task_concurrent = created['taskId']
-    decide(lead_a, created['requestId'], 'approve', '通过')
+    decide(boss, created['requestId'], 'approve', '通过')
     _, body, etag = detail(w1, task_concurrent)
     outcomes = []
 
@@ -518,12 +570,12 @@ def main() -> int:
           {'frozen': frozen_after.get('frozen'), 'pending': frozen_after.get('pendingRequestId')})
 
     # parent and child keep independent states
-    status, parent_created, _ = create(boss, '父任务状态独立', [boss_id])
+    status, parent_created, _ = create(lead_a, '父任务状态独立', [w1_id])
     decide(boss, parent_created['requestId'], 'approve', '通过')
     parent_payload = task_payload('子任务状态独立', [w1_id])
     parent_payload['parentTaskId'] = parent_created['taskId']
-    status, child_created, _ = api.call('POST', '/api/v1/tasks', boss, parent_payload, Api.key())
-    decide(lead_a, child_created['requestId'], 'approve', '通过')
+    status, child_created, _ = api.call('POST', '/api/v1/tasks', lead_a, parent_payload, Api.key())
+    decide(boss, child_created['requestId'], 'approve', '通过')
     _, child_body, child_etag = detail(w1, child_created['taskId'])
     api.call('PATCH', f"/api/v1/tasks/{child_created['taskId']}", w1,
              {'command': 'complete', 'completionNote': '子任务完成'}, Api.key(), child_etag)
@@ -532,6 +584,77 @@ def main() -> int:
     check('4.9 a child state change leaves the parent untouched',
           child_done['executionState'] in ('todo', 'doing', 'done') and parent_state['executionState'] == 'todo',
           {'parent': parent_state['executionState'], 'child': child_done['executionState']})
+
+    # ---------------- creation matrix and negative cases (chapters 3.1, 3.2, 3.6) ----------------
+    # An administrator has no business creation authority at all.
+    status, admin_created, _ = api.call('POST', '/api/v1/tasks', admin,
+                                        task_payload('管理员创建', [w1_id]), Api.key())
+    check('3.1 the administrator cannot create a business task', status == 403,
+          {'status': status, 'body': admin_created})
+
+    # A normal employee may assign another department, a direct manager and the founder.
+    status, span, _ = create(w2, '跨部门与上溯派发', [w1_id, lead_a_id, boss_id])
+    _, span_view, _ = request_of(span['requestId'], w2)
+    _, span_detail, _ = detail(w2, span['taskId'])
+    span_owners = (span_detail.get('proposedVersion') or span_detail).get('assigneeIds')
+    check('3.1 an employee may assign a peer, an upper level and the founder',
+          status == 201 and span_owners == [w1_id, lead_a_id, boss_id],
+          {'status': status, 'assigneeIds': span_owners})
+    check('3.1 the creation still routes by the creator, not by the founder in the list',
+          span_view['currentReviewerId'] == lead_b_id, {'reviewer': span_view.get('currentReviewerId')})
+    decide(lead_b, span['requestId'], 'approve', '通过')
+
+    # A non-company (therefore cross-company/unknown) identifier is refused.
+    status, foreign, _ = api.call('POST', '/api/v1/tasks', w2,
+                                  task_payload('跨公司人员验证', [str(uuid.uuid4())]), Api.key())
+    check('3.1 a non-company assignee identifier is refused', status == 400,
+          {'status': status, 'body': foreign})
+
+    # Reordering or replacing assignees never moves the creation reviewer.
+    _, route_a, _ = api.call('POST', '/api/v1/tasks/reviewer-preview', w2,
+                             {'operation': 'create'}, Api.key())
+    _, route_b, _ = api.call('POST', '/api/v1/tasks/reviewer-preview', w2,
+                             {'operation': 'create', 'assigneeIds': [boss_id, w1_id]}, Api.key())
+    check('3.2 reordering or replacing assignees never moves the creation reviewer',
+          route_a.get('reviewerId') == route_b.get('reviewerId') == lead_b_id,
+          {'first': route_a.get('reviewerId'), 'second': route_b.get('reviewerId')})
+
+    # An inactive configured manager blocks instead of being skipped or exempted.
+    lead_a_etag = api.call('GET', f'/api/v1/admin/employees/{lead_a_id}', admin)[2].get('ETag')
+    api.call('PATCH', f'/api/v1/admin/employees/{lead_a_id}', admin, {'active': False}, Api.key(), lead_a_etag)
+    status, inactive_blocked, _ = create(w1, '上级失效阻断', [w1_id])
+    check('3.2 an inactive direct manager blocks the creation instead of escalating',
+          status == 409 and inactive_blocked.get('code') == 'ROUTE_BLOCKED',
+          {'status': status, 'body': inactive_blocked})
+    api.call('PATCH', f'/api/v1/admin/employees/{lead_a_id}', admin, {'active': True},
+             Api.key(), api.call('GET', f'/api/v1/admin/employees/{lead_a_id}', admin)[2].get('ETag'))
+
+    # The organization interface itself refuses to introduce a manager cycle.
+    lead_a_etag = api.call('GET', f'/api/v1/admin/employees/{lead_a_id}', admin)[2].get('ETag')
+    status, cycle, _ = api.call('PATCH', f'/api/v1/admin/employees/{lead_a_id}', admin,
+                                {'managerId': w1_id}, Api.key(), lead_a_etag)
+    check('3.2 the organization interface refuses a manager cycle',
+          status in (400, 409) and cycle.get('code') in ('INVALID_INPUT', 'ORGANIZATION_CYCLE', 'DATA_CONFLICT'),
+          {'status': status, 'body': cycle})
+
+    # A second organization root removes the provable founder but must not guess one.
+    status, boss2, _ = api.call('POST', '/api/v1/admin/employees', admin,
+                                {'displayName': '第二根节点', 'departmentId': department,
+                                 'positionId': position, 'level': 0, 'roleCodes': ['executive'],
+                                 'phone': '130' + str(uuid.uuid4().int)[:8]}, Api.key())
+    check('3.2 a second isolated upper account is created as a second root', status == 201,
+          {'status': status, 'body': boss2})
+    status, boss_root, _ = create(boss, '多根创始人无法证明', [w1_id])
+    _, boss_root_view, _ = request_of(boss_root['requestId'], boss)
+    check('3.2 with multiple roots a root creation is exempt as "no manager", never as the founder',
+          status == 201 and boss_root_view['status'] == 'direct'
+          and '创始人' not in (boss_root_view.get('exemptionReason') or '')
+          and '无直属上级' in (boss_root_view.get('exemptionReason') or ''),
+          {'status': status, 'reason': boss_root_view.get('exemptionReason')})
+    status, manager_ok, _ = create(lead_a, '多根下直属上级仍可审核', [w1_id])
+    check('3.2 a provable direct manager still routes normally with multiple roots',
+          status == 201 and manager_ok.get('outcome') == 'pending',
+          {'status': status, 'body': manager_ok})
 
     passed = sum(1 for result in RESULTS if result['pass'])
     print(f'\n{passed}/{len(RESULTS)} checks passed')

@@ -1,0 +1,25 @@
+=== task creation flow
+PASS  the browser run raised no uncaught page error
+
+17/20 checks passed
+wrote ../audit/2026-10-25/chapter10-task-creation-flow.json
+=== review routing
+PASS  3.2 a provable direct manager still routes normally with multiple roots
+
+79/79 checks passed
+wrote ../audit/2026-10-25/chapter10-review-routing.json
+=== handover preset
+PASS  V-010 rejecting a handover keeps the old ordered owners and unfreezes
+PASS  V-010 withdrawing a handover keeps the old ordered owners and unfreezes
+PASS  V-010 the preset can be cleared and no longer applies
+PASS: 29 passed, 0 failed
+=== submit lock deadline
+PASS  V-002 the stale submission is refused after the wait
+PASS  V-002 the waiting submission expires the old request after the lock is released
+PASS  V-002 the unpublished task stays unpublished and unfrozen
+PASS: 5 passed, 0 failed
+=== task form
+Error: create failed TF26 race 52b659 409 {"code":"DEADLINE_PASSED","message":"提交的排期或当前有效截止时间已到，请调整后重提"}
+    at createTask (/Users/watuji/MyGitDev/software_test_practice/backend/scripts/check_task_form.js:325:38)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async main (/Users/watuji/MyGitDev/software_test_practice/backend/scripts/check_task_form.js:713:22)

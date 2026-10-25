@@ -1,0 +1,24 @@
+=== task creation flow (real clock)
+PASS  4.4 the resubmission creates a new pending request and leaves the old one permanently expired
+PASS  the browser run raised no uncaught page error
+
+20/20 checks passed
+wrote ../audit/2026-10-25/chapter10-task-creation-flow.json
+=== task form (fixed 2026-10-22)
+PASS  A-28 the administrator prompt points at the real /admin.html PC entry and the app has no full management module
+PASS  A-27 logout during the in-flight refresh started by a main-page return clears rows/filters and a late response cannot repopulate the table
+PASS  A-27 no uncaught script errors after the login switch and late response
+
+85/85 checks passed
+=== handover browser
+scratch backend: http://127.0.0.1:18130
+FAIL Error: approve failed {"code":"FORBIDDEN","message":"仅当前指定审核人可处理申请"}
+    at createApproved (/Users/watuji/MyGitDev/software_test_practice/backend/scripts/check_handover_browser.js:154:40)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async main (/Users/watuji/MyGitDev/software_test_practice/backend/scripts/check_handover_browser.js:157:24)
+=== deadline reminder
+PASS  7.2 the message detail cannot refill restricted content from the event
+PASS  7.2 the undelivered copy grants no historical task entry
+PASS  7.2 the read response repeats no restricted content
+PASS  7.2 a real removal event still keeps its read-only summary
+PASS: 91 passed, 0 failed

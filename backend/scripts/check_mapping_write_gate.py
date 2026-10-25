@@ -22,6 +22,17 @@ RESULTS: list[dict] = []
 RUN = uuid.uuid4().hex[:6]
 
 
+
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 class Api:
     def __init__(self, base: str, password: str):
         self.base = base.rstrip('/')
@@ -53,7 +64,7 @@ class Api:
 
     def login(self, username: str):
         status, body, _ = self.call('POST', '/api/v1/auth/sessions',
-                                    body={'username': username, 'password': self.password})
+                                    body={'username': login_identity(username), 'password': self.password})
         if status != 200:
             raise SystemExit(f'login failed for {username}: {status} {body}')
         self.tokens[username] = body['token']
@@ -71,8 +82,7 @@ def check(name: str, condition: bool, evidence) -> None:
 
 def task_payload() -> dict:
     start = dt.datetime.now(dt.timezone.utc).replace(microsecond=0) + dt.timedelta(days=1)
-    return {'title': f'映射门禁任务-{RUN}', 'description': '门禁核验', 'acceptanceCriteria': '门禁核验',
-            'priority': 'medium', 'allDay': False,
+    return {'title': f'映射门禁任务-{RUN}', 'description': '门禁核验', 'priority': 'medium', 'allDay': False,
             'startAt': start.isoformat().replace('+00:00', 'Z'),
             'dueAt': (start + dt.timedelta(days=1)).isoformat().replace('+00:00', 'Z'),
             'assigneeIds': []}

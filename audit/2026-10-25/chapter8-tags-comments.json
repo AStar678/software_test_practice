@@ -1,0 +1,605 @@
+{
+  "checks": [
+    {
+      "check": "8.1 every business account can read the company catalogue and its fixed palette",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "c70f4205-061a-4c45-aa0b-6efe160d87bf",
+          "name": "例行",
+          "color": "#D8EAF4",
+          "border": "#4C87A3",
+          "deleted": false,
+          "rowVersion": 1
+        },
+        {
+          "id": "39be50b0-d2a8-4bac-8333-c9a38d0b3e3a",
+          "name": "重点",
+          "color": "#F6D5D2",
+          "border": "#C05B52",
+          "deleted": false,
+          "rowVersion": 1
+        }
+      ]
+    },
+    {
+      "check": "8.1 the default unmarked pink is outside the palette",
+      "pass": true,
+      "evidence": "#FFE1EA"
+    },
+    {
+      "check": "8.1 a non-founder employee cannot maintain the catalogue",
+      "pass": true,
+      "evidence": {
+        "code": "TAG_MAINTENANCE_FORBIDDEN",
+        "message": "只有公司员工组织树唯一根节点（创始人）可以维护标签"
+      }
+    },
+    {
+      "check": "8.1 an upper identity that is not the unique root is still refused",
+      "pass": true,
+      "evidence": {
+        "code": "TAG_MAINTENANCE_FORBIDDEN",
+        "message": "只有公司员工组织树唯一根节点（创始人）可以维护标签"
+      }
+    },
+    {
+      "check": "8.1 the independent administrator cannot impersonate the founder on the employee API",
+      "pass": true,
+      "evidence": {
+        "code": "BUSINESS_ROLE_REQUIRED",
+        "message": "管理员请使用管理端接口"
+      }
+    },
+    {
+      "check": "8.1 a colour outside the predefined palette is rejected",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "请选择预定义色板中的颜色"
+      }
+    },
+    {
+      "check": "8.1 the founder creates tags from the predefined palette",
+      "pass": true,
+      "evidence": {
+        "a": {
+          "tag": {
+            "id": "c02736b4-9b31-46c2-ad82-d37b9fde29d0",
+            "name": "8.x-3d2d830a 重点",
+            "color": "#F6D5D2",
+            "border": "#C05B52",
+            "deleted": false,
+            "rowVersion": 1
+          },
+          "tagId": "c02736b4-9b31-46c2-ad82-d37b9fde29d0",
+          "rowVersion": 1
+        },
+        "b": {
+          "tag": {
+            "id": "7d848420-2a23-4647-9ea6-8e45df429203",
+            "name": "8.x-3d2d830a 例行",
+            "color": "#FBE3CB",
+            "border": "#C08547",
+            "deleted": false,
+            "rowVersion": 1
+          },
+          "tagId": "7d848420-2a23-4647-9ea6-8e45df429203",
+          "rowVersion": 1
+        }
+      }
+    },
+    {
+      "check": "8.1 a duplicate tag name is refused",
+      "pass": true,
+      "evidence": {
+        "code": "TAG_NAME_TAKEN",
+        "message": "已有同名标签，请换一个名称"
+      }
+    },
+    {
+      "check": "8.1 the founder sees the maintenance capability, other accounts do not",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "8.1 a creation carries exactly one tag into the effective version",
+      "pass": true,
+      "evidence": {
+        "id": "c02736b4-9b31-46c2-ad82-d37b9fde29d0",
+        "name": "8.x-3d2d830a 重点",
+        "color": "#F6D5D2",
+        "border": "#C05B52",
+        "deleted": false,
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "8.1 a multi-tag submission is rejected before any write",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "不支持的字段：tagIds"
+      }
+    },
+    {
+      "check": "8.1 an unknown/cross-company tag reference is rejected",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_TAG",
+        "message": "标签不存在或不属于本公司"
+      }
+    },
+    {
+      "check": "8.1/8.3 a pending tag change does not alter the effective tag",
+      "pass": true,
+      "evidence": {
+        "id": "c02736b4-9b31-46c2-ad82-d37b9fde29d0",
+        "name": "8.x-3d2d830a 重点",
+        "color": "#F6D5D2",
+        "border": "#C05B52",
+        "deleted": false,
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "8.1 the approved tag change becomes the effective single tag",
+      "pass": true,
+      "evidence": {
+        "id": "7d848420-2a23-4647-9ea6-8e45df429203",
+        "name": "8.x-3d2d830a 例行",
+        "color": "#FBE3CB",
+        "border": "#C08547",
+        "deleted": false,
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "8.3 renaming the tag does not rewrite the recorded audit snapshot",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "id": "6ad4d64a-2e8e-4a1d-9beb-116f93a2c5f1",
+          "entryType": "field_change",
+          "fieldName": "tagId",
+          "beforeValue": "8.x-3d2d830a 重点",
+          "afterValue": "8.x-3d2d830a 例行",
+          "actorId": "326c4289-d8c3-437d-91d0-86196e6169a7",
+          "actorName": "李敏",
+          "requestId": "8e6a823b-32b9-4435-ba3f-d9528517653b",
+          "occurredAt": "2026-10-25T06:17:55.358157Z",
+          "detail": {}
+        },
+        "after": {
+          "id": "6ad4d64a-2e8e-4a1d-9beb-116f93a2c5f1",
+          "entryType": "field_change",
+          "fieldName": "tagId",
+          "beforeValue": "8.x-3d2d830a 重点",
+          "afterValue": "8.x-3d2d830a 例行",
+          "actorId": "326c4289-d8c3-437d-91d0-86196e6169a7",
+          "actorName": "李敏",
+          "requestId": "8e6a823b-32b9-4435-ba3f-d9528517653b",
+          "occurredAt": "2026-10-25T06:17:55.358157Z",
+          "detail": {}
+        }
+      }
+    },
+    {
+      "check": "8.4 a task viewer who is not the reviewer can publish a flat comment",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 1,
+        "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+        "commentId": "91acd7a4-69c6-41f8-a415-1749176a0059",
+        "objectType": "task"
+      }
+    },
+    {
+      "check": "8.4 a reply/hierarchy field is rejected",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "请求含不支持的字段（评论不支持回复层级）"
+      }
+    },
+    {
+      "check": "8.4 comments are readable by a normal task viewer with stable publication paging",
+      "pass": true,
+      "evidence": {
+        "items": [
+          {
+            "id": "91acd7a4-69c6-41f8-a415-1749176a0059",
+            "objectType": "task",
+            "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+            "authorId": "eead5539-7fe2-4f9a-820a-36a2fe0d03b9",
+            "authorName": "张涛",
+            "body": "8.x-3d2d830a 第一条评论",
+            "createdAt": "2026-10-25T06:17:55.394686Z",
+            "editedAt": null,
+            "edited": false,
+            "deleted": false,
+            "rowVersion": 1,
+            "canManage": false
+          }
+        ],
+        "total": 1,
+        "nextOffset": null,
+        "objectType": "task",
+        "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a"
+      }
+    },
+    {
+      "check": "8.4 only the author may edit a comment",
+      "pass": true,
+      "evidence": {
+        "code": "COMMENT_AUTHOR_ONLY",
+        "message": "只有评论作者可以修改或删除自己的评论"
+      }
+    },
+    {
+      "check": "8.4 a manager or task owner cannot delete another author's comment",
+      "pass": true,
+      "evidence": {
+        "code": "COMMENT_AUTHOR_ONLY",
+        "message": "只有评论作者可以修改或删除自己的评论"
+      }
+    },
+    {
+      "check": "8.4 the author edits their own comment and it is marked edited",
+      "pass": true,
+      "evidence": {
+        "objectType": "task",
+        "edited": true,
+        "rowVersion": 2,
+        "commentId": "91acd7a4-69c6-41f8-a415-1749176a0059",
+        "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a"
+      }
+    },
+    {
+      "check": "8.4 comments leave the task version and its execution state untouched",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "8.4 stable publication-order paging is complete and free of duplicates",
+      "pass": true,
+      "evidence": {
+        "page1": {
+          "items": [
+            {
+              "id": "91acd7a4-69c6-41f8-a415-1749176a0059",
+              "objectType": "task",
+              "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+              "authorId": "eead5539-7fe2-4f9a-820a-36a2fe0d03b9",
+              "authorName": "张涛",
+              "body": "8.x-3d2d830a 第一条评论已编辑",
+              "createdAt": "2026-10-25T06:17:55.394686Z",
+              "editedAt": "2026-10-25T06:17:55.413602Z",
+              "edited": true,
+              "deleted": false,
+              "rowVersion": 2,
+              "canManage": false
+            },
+            {
+              "id": "f6049ff6-7e23-45a9-ad56-c9281336fee1",
+              "objectType": "task",
+              "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+              "authorId": "7e09fdd9-7b61-49fc-9507-280008f326fb",
+              "authorName": "赵蕾",
+              "body": "8.x-3d2d830a 补充评论 0",
+              "createdAt": "2026-10-25T06:17:55.422338Z",
+              "editedAt": null,
+              "edited": false,
+              "deleted": false,
+              "rowVersion": 1,
+              "canManage": false
+            }
+          ],
+          "total": 3,
+          "nextOffset": 2,
+          "objectType": "task",
+          "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a"
+        },
+        "page2": {
+          "items": [
+            {
+              "id": "22cb7e95-30fc-4cd4-9bec-c8719c1a5f98",
+              "objectType": "task",
+              "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+              "authorId": "7e09fdd9-7b61-49fc-9507-280008f326fb",
+              "authorName": "赵蕾",
+              "body": "8.x-3d2d830a 补充评论 1",
+              "createdAt": "2026-10-25T06:17:55.426925Z",
+              "editedAt": null,
+              "edited": false,
+              "deleted": false,
+              "rowVersion": 1,
+              "canManage": false
+            }
+          ],
+          "total": 3,
+          "nextOffset": null,
+          "objectType": "task",
+          "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a"
+        }
+      }
+    },
+    {
+      "check": "8.5 an effective assignee receives one comment notification with the real object and purpose",
+      "pass": true,
+      "evidence": {
+        "count": 2,
+        "first": {
+          "id": "7af3bee4-edf7-44dd-be9d-26353f3a8620",
+          "eventId": "61940fd9-f2e9-4d92-a7fd-3d71a1e0d41c",
+          "eventType": "comment.created",
+          "createdAt": "2026-10-25T06:17:58.022080Z",
+          "deliveredAt": "2026-10-25T04:00:00Z",
+          "readAt": null,
+          "readonly": false,
+          "relationLost": false,
+          "taskId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+          "requestId": null,
+          "title": "8.x-3d2d830a 带标签任务",
+          "summary": "8.x-3d2d830a 带标签任务有新评论：8.x-3d2d830a 补充评论 1",
+          "changeSummary": "8.x-3d2d830a 带标签任务有新评论：8.x-3d2d830a 补充评论 1",
+          "revoked": false,
+          "withdrawn": false,
+          "canReadWithdrawnDetails": false,
+          "expiresAt": "2027-01-25T04:00:00Z",
+          "rowVersion": 1,
+          "canWithdraw": false,
+          "canOpenTask": true,
+          "canReview": false,
+          "requestStatus": null,
+          "requestKind": null,
+          "objectType": "task",
+          "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+          "focus": "comments",
+          "commentId": "22cb7e95-30fc-4cd4-9bec-c8719c1a5f98",
+          "purpose": "新评论",
+          "objectName": "8.x-3d2d830a 带标签任务"
+        }
+      }
+    },
+    {
+      "check": "8.5 the commenter and the task creator who is not an assignee receive no comment message",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "8.5 the other effective assignee receives one copy per event and no duplicate per event",
+      "pass": true,
+      "evidence": {
+        "commentCopies": 2
+      }
+    },
+    {
+      "check": "8.4 the author deletes their own comment",
+      "pass": true,
+      "evidence": {
+        "objectType": "task",
+        "rowVersion": 2,
+        "commentId": "22cb7e95-30fc-4cd4-9bec-c8719c1a5f98",
+        "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+        "deleted": true
+      }
+    },
+    {
+      "check": "8.5 editing or deleting a comment produces no additional notification",
+      "pass": true,
+      "evidence": {
+        "before": 4,
+        "after": 4
+      }
+    },
+    {
+      "check": "8.4 a deleted comment no longer exposes its body in the list",
+      "pass": true,
+      "evidence": 2
+    },
+    {
+      "check": "8.5 the existing message for a deleted comment is clipped and loses its object jump",
+      "pass": true,
+      "evidence": {
+        "id": "7af3bee4-edf7-44dd-be9d-26353f3a8620",
+        "eventId": "61940fd9-f2e9-4d92-a7fd-3d71a1e0d41c",
+        "eventType": "comment.created",
+        "createdAt": "2026-10-25T06:17:58.022080Z",
+        "deliveredAt": "2026-10-25T04:00:00Z",
+        "readAt": null,
+        "readonly": true,
+        "relationLost": false,
+        "taskId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+        "requestId": null,
+        "title": null,
+        "summary": "该评论已删除，正文不再展示。",
+        "changeSummary": null,
+        "revoked": false,
+        "withdrawn": false,
+        "canReadWithdrawnDetails": false,
+        "expiresAt": "2027-01-25T04:00:00Z",
+        "rowVersion": 1,
+        "canWithdraw": false,
+        "canOpenTask": true,
+        "canReview": false,
+        "requestStatus": null,
+        "requestKind": null,
+        "objectType": null,
+        "objectId": null,
+        "focus": null,
+        "commentId": null,
+        "purpose": "新评论",
+        "objectName": null
+      }
+    },
+    {
+      "check": "8.5 a retried comment request creates exactly one comment",
+      "pass": true,
+      "evidence": {
+        "first": {
+          "rowVersion": 1,
+          "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+          "commentId": "613a15e5-d22a-42f4-8e84-0a8d45007de7",
+          "objectType": "task"
+        },
+        "second": {
+          "objectId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+          "commentId": "613a15e5-d22a-42f4-8e84-0a8d45007de7",
+          "objectType": "task",
+          "rowVersion": 1
+        }
+      }
+    },
+    {
+      "check": "8.4 the removal of one assignee becomes the effective version",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "result": {
+          "taskId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+          "requestId": "c06c5777-2b5c-423d-9e64-83892dec0244",
+          "outcome": "pending",
+          "rowVersion": 5
+        },
+        "assignees": [
+          "7e09fdd9-7b61-49fc-9507-280008f326fb"
+        ]
+      }
+    },
+    {
+      "check": "8.4 losing task authority removes normal comment access",
+      "pass": true,
+      "evidence": {
+        "code": "NOT_FOUND",
+        "message": "内容不存在或无权查看"
+      }
+    },
+    {
+      "check": "8.5 an already delivered comment message is re-verified and masked after authority loss",
+      "pass": true,
+      "evidence": {
+        "id": "7074e3c4-a6eb-45c2-979a-615c45ba9dc5",
+        "eventId": "38bda534-bc64-4174-bbe0-7314e1f71625",
+        "eventType": "comment.created",
+        "createdAt": "2026-10-25T06:17:58.020121Z",
+        "deliveredAt": "2026-10-25T04:00:00Z",
+        "readAt": null,
+        "readonly": true,
+        "relationLost": false,
+        "taskId": "334c689b-7ced-4c29-9c44-4a043f27832a",
+        "requestId": null,
+        "title": null,
+        "summary": "你的工作关系或访问范围已变化，请查看当前工作安排。",
+        "changeSummary": null,
+        "revoked": false,
+        "withdrawn": false,
+        "canReadWithdrawnDetails": false,
+        "expiresAt": "2027-01-25T04:00:00Z",
+        "rowVersion": 1,
+        "canWithdraw": false,
+        "canOpenTask": true,
+        "canReview": false,
+        "requestStatus": null,
+        "requestKind": null,
+        "objectType": null,
+        "objectId": null,
+        "focus": null,
+        "commentId": null,
+        "purpose": "新评论",
+        "objectName": null
+      }
+    },
+    {
+      "check": "8.4 a manager with log read authority can comment on a log without body edit rights",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 1,
+        "objectId": "219d18ef-f9c2-4a63-9e8a-52242ac999fb",
+        "commentId": "f2910dd9-06f2-4c9e-86e9-c7ec637e3334",
+        "objectType": "log"
+      }
+    },
+    {
+      "check": "8.4 an account outside the log range cannot comment",
+      "pass": true,
+      "evidence": {
+        "code": "NOT_FOUND",
+        "message": "内容不存在或无权查看"
+      }
+    },
+    {
+      "check": "8.5 a log comment binds the log object (not a task) and locates the comment area",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "91d98b7c-5f54-4c64-afea-03d557d0d41d",
+          "eventId": "ff5618d5-dfaa-476b-b5ac-a8398e233709",
+          "eventType": "comment.created",
+          "createdAt": "2026-10-25T06:17:54.978789Z",
+          "deliveredAt": "2026-10-25T04:00:00Z",
+          "readAt": null,
+          "readonly": false,
+          "relationLost": false,
+          "taskId": null,
+          "requestId": null,
+          "title": "日志 · 2026-10-25",
+          "summary": "日志 · 2026-10-25有新评论：这条日志的后续计划请补充时间点。",
+          "changeSummary": "日志 · 2026-10-25有新评论：这条日志的后续计划请补充时间点。",
+          "revoked": false,
+          "withdrawn": false,
+          "canReadWithdrawnDetails": false,
+          "expiresAt": "2027-01-25T04:00:00Z",
+          "rowVersion": 1,
+          "canWithdraw": false,
+          "canOpenTask": false,
+          "canReview": false,
+          "requestStatus": null,
+          "requestKind": null,
+          "objectType": "log",
+          "objectId": "219d18ef-f9c2-4a63-9e8a-52242ac999fb",
+          "focus": "comments",
+          "commentId": "d35ddb59-d6c9-4ab8-a04d-700d1a5c0fae",
+          "purpose": "新评论",
+          "objectName": "日志 · 2026-10-25"
+        }
+      ]
+    },
+    {
+      "check": "8.5 the log author receives at most one copy of that comment message",
+      "pass": true,
+      "evidence": {
+        "count": 1
+      }
+    },
+    {
+      "check": "8.4 the log body is frozen while its comment area stays independent",
+      "pass": true,
+      "evidence": {
+        "editable": false,
+        "frozen": true
+      }
+    },
+    {
+      "check": "8.4 a frozen log still accepts new comments",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 1,
+        "objectId": "219d18ef-f9c2-4a63-9e8a-52242ac999fb",
+        "commentId": "7be08fe5-f93d-42be-be16-1f5950a933e0",
+        "objectType": "log"
+      }
+    },
+    {
+      "check": "8.4 the author may still manage their own comment after the object freeze",
+      "pass": true,
+      "evidence": {
+        "objectType": "log",
+        "edited": true,
+        "rowVersion": 2,
+        "commentId": "f2910dd9-06f2-4c9e-86e9-c7ec637e3334",
+        "objectId": "219d18ef-f9c2-4a63-9e8a-52242ac999fb"
+      }
+    }
+  ]
+}

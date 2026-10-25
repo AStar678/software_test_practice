@@ -22,6 +22,17 @@ RESULTS: list[dict] = []
 PASSWORD = "Demo@123456"
 
 
+
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 class Api:
     def __init__(self, base: str):
         self.base = base.rstrip('/')
@@ -53,7 +64,7 @@ class Api:
 
     def login(self, username: str) -> str:
         status, body, _ = self.call('POST', '/api/v1/auth/sessions',
-                                    body={'username': username, 'password': PASSWORD})
+                                    body={'username': login_identity(username), 'password': PASSWORD})
         if status != 200:
             raise SystemExit(f'login failed for {username}: {status} {body}')
         self.tokens[username] = body['token']
@@ -75,8 +86,7 @@ def check(name: str, condition: bool, evidence) -> None:
 
 def task_payload(title: str, assignees: list[str]) -> dict:
     start = dt.datetime.now(dt.timezone.utc).replace(microsecond=0) + dt.timedelta(days=1)
-    return {'title': title, 'description': '交接受权核验', 'acceptanceCriteria': '可复核',
-            'priority': 'medium', 'allDay': False,
+    return {'title': title, 'description': '交接受权核验', 'priority': 'medium', 'allDay': False,
             'startAt': start.isoformat().replace('+00:00', 'Z'),
             'dueAt': (start + dt.timedelta(days=2)).isoformat().replace('+00:00', 'Z'),
             'assigneeIds': assignees}
@@ -157,6 +167,7 @@ def main() -> int:
     employee_row = next(row for row in employees['items'] if row['id'] == employee)
     status, inactive_created, _ = api.call('POST', '/api/v1/admin/employees', api.tokens['admin'],
                                            {'username': 'ho-inactive-' + uuid.uuid4().hex[:8],
+                                            'phone': '132' + str(uuid.uuid4().int)[:8],
                                             'displayName': '交接失效账号',
                                             'departmentId': employee_row['departmentId'],
                                             'positionId': employee_row['positionId'],
@@ -178,7 +189,8 @@ def main() -> int:
                                   task_payload(f'预设交接任务-{uuid.uuid4().hex[:6]}', [employee]),
                                   Api.key('create'))
     task_id, request_id = created['taskId'], created['requestId']
-    status, approved, _ = api.call('PATCH', f'/api/v1/approval-requests/{request_id}', api.tokens['middle'],
+    # A creation is reviewed by the creator's direct manager (chapter 3.2): middle's manager is upper.
+    status, approved, _ = api.call('PATCH', f'/api/v1/approval-requests/{request_id}', api.tokens['upper'],
                                    {'decision': 'approve', 'comment': '初始通过'}, Api.key('approve'), '"1"')
     check('V-010 the handover fixture is published', status == 200, {'status': status, 'body': approved})
     status, detail, headers = api.call('GET', f'/api/v1/tasks/{task_id}', api.tokens['employee'])
@@ -265,7 +277,7 @@ def main() -> int:
                                    Api.key('create3'))
     task3, request3 = created3['taskId'], created3['requestId']
     _, create3_view, _ = api.call('GET', f'/api/v1/approval-requests/{request3}', api.tokens['middle'])
-    api.call('PATCH', f'/api/v1/approval-requests/{request3}', api.tokens['middle'],
+    api.call('PATCH', f'/api/v1/approval-requests/{request3}', api.tokens['upper'],
              {'decision': 'approve', 'comment': '初始通过'}, Api.key('approve3'),
              '"' + str(create3_view['rowVersion']) + '"')
     _, detail3, headers3 = api.call('GET', f'/api/v1/tasks/{task3}', api.tokens['employee'])

@@ -1,0 +1,179 @@
+{
+  "generatedAt": "2026-10-25T07:32:18.219Z",
+  "baseUrl": "http://127.0.0.1:18130",
+  "passed": 20,
+  "total": 20,
+  "results": [
+    {
+      "check": "4.4 a request past its applicable deadline expires instead of being approved",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "REQUEST_EXPIRED",
+          "message": "申请已到适用截止时间失效，请调整后重提"
+        }
+      }
+    },
+    {
+      "check": "4.1 the creation form opens without a completion-criterion field",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "4.2 the schedule uses the shared hour/minute selects instead of a platform time picker",
+      "pass": true,
+      "evidence": {
+        "selects": 4
+      }
+    },
+    {
+      "check": "4.2 toggling all-day keeps the entered hour/minute in the web control",
+      "pass": true,
+      "evidence": {
+        "value": "10:30"
+      }
+    },
+    {
+      "check": "3.5 the creation form previews the creator's direct manager",
+      "pass": true,
+      "evidence": {
+        "hint": "创建审核人：王海（按创建人的直属上级审核；负责人换序、更换或跨部门都不改变审核人）。 | 中层自建任务需经直属上级审核通过后才进入执行状态。"
+      }
+    },
+    {
+      "check": "3.1 the picker offers candidates from every department, not just the creator's",
+      "pass": true,
+      "evidence": {
+        "departments": [
+          "未分配部门",
+          "产品部",
+          "市场部"
+        ]
+      }
+    },
+    {
+      "check": "3.1 the founder is a selectable assignee for an ordinary employee",
+      "pass": true,
+      "evidence": {
+        "candidates": 3
+      }
+    },
+    {
+      "check": "3.1 the founder can be selected as an assignee from the employee web form",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "3.2 changing the assignee does not move the creation reviewer",
+      "pass": true,
+      "evidence": {
+        "hint": "创建审核人：王海（按创建人的直属上级审核；负责人换序、更换或跨部门都不改变审核人）。 | 中层自建任务需经直属上级审核通过后才进入执行状态。"
+      }
+    },
+    {
+      "check": "4.1 a creation without a completion criterion can be submitted with another person as owner",
+      "pass": true,
+      "evidence": {
+        "owners": [
+          "1df6d794-cf86-4f49-aaf8-6de5ba464c1c"
+        ],
+        "criteria": "",
+        "recent": [
+          [
+            "浏览器创建核验 a98d",
+            "create",
+            "pending"
+          ],
+          [
+            "重开表单核验 0a86",
+            "create",
+            "approved"
+          ],
+          [
+            "今日排期事项 6",
+            "create",
+            "approved"
+          ],
+          [
+            "今日排期事项 5",
+            "create",
+            "approved"
+          ]
+        ],
+        "wanted": "浏览器创建核验 a98d"
+      }
+    },
+    {
+      "check": "3.5 the creation is reviewed by the creator's direct manager, not the selected founder",
+      "pass": true,
+      "evidence": {
+        "reviewer": "1df6d794-cf86-4f49-aaf8-6de5ba464c1c"
+      }
+    },
+    {
+      "check": "4.6 the reviewer sees the backend's field-by-field diff with before and after values",
+      "pass": true,
+      "evidence": {
+        "text": "待审核\n修改资料\n申请人\n李敏\n当前审核人\n李敏\n申请时间\n2026年10月25日 15:32\n本次授权差异\n仅本次审核人可见\n负责人\n王海 → 张涛\n申请快照\n名称\n浏览器创建核验 a98d\n任务说明\n不填写完成标准，仅选择创始人作为负责人。\n完成标准\n负责人\n张涛\n排期\n2026年10月26日 10:30 → 2026年10月28日 18:00\n紧急程度\n中\n执行状态\n待开始\n进展\n暂无\n上级任务\n无\n查看申请前有效版本\n申请说明\n"
+      }
+    },
+    {
+      "check": "4.3 the reopen action carries an all-day switch, dates and the shared time control",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "4.3 a reopen after the old deadline proposes a future schedule without changing the completed task",
+      "pass": true,
+      "evidence": {
+        "state": "done",
+        "proposed": "2026-11-14T07:32:00Z",
+        "expected": "2026-11-14"
+      }
+    },
+    {
+      "check": "4.3 the reopen request stays pending for review instead of publishing immediately",
+      "pass": true,
+      "evidence": {
+        "pending": true
+      }
+    },
+    {
+      "check": "3.5 a non-creation operation whose reviewer is the applicant shows an explicit reviewer, never an exemption",
+      "pass": true,
+      "evidence": {
+        "hint": "进展也需要审核。通过后更新有效进展，首条有效进展使任务进入进行中。 | 本次审核人：王海；提交后由该审核人处理。"
+      }
+    },
+    {
+      "check": "4.4 the expired application is marked expired and offers modify-and-resubmit",
+      "pass": true,
+      "evidence": {
+        "text": "已失效\n创建任务\n申请人\n张涛\n当前审核人\n李敏\n申请时间\n2026年10月25日 15:32\n处理时间\n2026年10月25日 15:32\n本次提交内容\n名称\n失效重提核验 692f\n任务说明\n第四章浏览器核验 · 失效重提核验 692f\n完成标准\n负责人\n张涛\n排期\n2026年10月26日 15:32 → 2026"
+      }
+    },
+    {
+      "check": "4.1 a creation resubmission also has no completion-criterion field",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "4.4 the resubmission creates a new pending request and leaves the old one permanently expired",
+      "pass": true,
+      "evidence": {
+        "statuses": [
+          "expired",
+          "pending"
+        ]
+      }
+    },
+    {
+      "check": "the browser run raised no uncaught page error",
+      "pass": true,
+      "evidence": {
+        "errors": []
+      }
+    }
+  ]
+}

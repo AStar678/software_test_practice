@@ -10,8 +10,17 @@ import java.util.Map;
 @RequestMapping("/api/v1")
 public class WorkspaceController {
     private final WorkspaceService workspace;
+    private final CommentService comments;
     private final Writes writes;
-    public WorkspaceController(WorkspaceService workspace,Writes writes) {this.workspace=workspace;this.writes=writes;}
+    /** Test seam kept for controller-only unit tests; production injects the dependency explicitly. */
+    public WorkspaceController(WorkspaceService workspace,Writes writes) {
+        this(workspace,null,writes);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public WorkspaceController(WorkspaceService workspace,CommentService comments,Writes writes) {
+        this.workspace=workspace;this.comments=comments;this.writes=writes;
+    }
 
     @GetMapping("/me") public Map<String,Object> me(@RequestAttribute("actor") Actor a) {return workspace.me(a);}
     /** Subordinates inside both the current profile scope and the actual management chain. */
@@ -48,6 +57,25 @@ public class WorkspaceController {
     }
     @DeleteMapping("/work-logs/{id}") public Map<String,Object> deleteLog(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestHeader(value="If-Match",required=false) String match) {
         return writes.run(a,key,"DELETE /work-logs/"+id,Map.of(),match,()->workspace.deleteLog(a,id,match));
+    }
+    /** Flat comments on a task or a log; one publication-ordered, stably paged list. */
+    @GetMapping("/tasks/{id}/comments") public Map<String,Object> taskComments(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestParam Map<String,String> filters) {
+        return comments.list(a,"task",id,filters);
+    }
+    @PostMapping("/tasks/{id}/comments") public Map<String,Object> createTaskComment(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestBody Map<String,Object> body) {
+        return writes.run(a,key,"POST /tasks/"+id+"/comments",body,null,()->comments.create(a,"task",id,body));
+    }
+    @GetMapping("/work-logs/{id}/comments") public Map<String,Object> logComments(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestParam Map<String,String> filters) {
+        return comments.list(a,"log",id,filters);
+    }
+    @PostMapping("/work-logs/{id}/comments") public Map<String,Object> createLogComment(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestBody Map<String,Object> body) {
+        return writes.run(a,key,"POST /work-logs/"+id+"/comments",body,null,()->comments.create(a,"log",id,body));
+    }
+    @PatchMapping("/comments/{id}") public Map<String,Object> changeComment(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestHeader(value="If-Match",required=false) String match,@RequestBody Map<String,Object> body) {
+        return writes.run(a,key,"PATCH /comments/"+id,body,match,()->comments.change(a,id,match,body));
+    }
+    @DeleteMapping("/comments/{id}") public Map<String,Object> deleteComment(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestHeader(value="If-Match",required=false) String match) {
+        return writes.run(a,key,"DELETE /comments/"+id,Map.of(),match,()->comments.delete(a,id,match));
     }
     @GetMapping("/notifications") public Map<String,Object> notifications(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.notifications(a,filters);}
     @GetMapping("/notifications/{id}") public ResponseEntity<Map<String,Object>> notification(@RequestAttribute("actor") Actor a,@PathVariable String id) {

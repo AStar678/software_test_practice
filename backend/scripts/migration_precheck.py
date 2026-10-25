@@ -8,7 +8,16 @@ can be tightened:
 * duplicate personal work logs that block the per-day unique key,
 * assignee order that has no durable proof in the V4 schema,
 * dispatch (assignment) timestamps with no recorded source,
-* notifications whose durable event cannot be bound to the originating request.
+* notifications whose durable event cannot be bound to the originating request,
+* employee phone numbers that are missing or collide after the shared normalization
+  (chapter 1.1 / 2.1: the login key is derived, never invented),
+* the company employee organization tree: a unique root, no dangling or cyclic
+  manager reference (chapter 1.1 / 3.2: the founder is proven, never guessed),
+* the historical acceptance-criteria population that must survive its removal from
+  the creation form (chapter 1.1 / 4.1).
+
+Every phone-derived figure is reported as an object id or a masked number; a full
+contact number is never printed.
 
 Every statement issued by ``precheck`` and ``fingerprint`` is a read-only
 SELECT/SHOW/DESCRIBE statement; the runner refuses anything else. ``restore`` and
@@ -114,7 +123,10 @@ class Mysql:
     def server_side(self, sql: str) -> None:
         """Run a write statement. Only used for scratch-database setup."""
         command = ['mysql', '--defaults-file=' + str(self.option_file),
-                   '-h', self.host, '-P', str(self.port), '-e', sql]
+                   '-h', self.host, '-P', str(self.port)]
+        if self.database:
+            command.append('--database=' + self.database)
+        command += ['-e', sql]
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode != 0:
             raise MysqlError(result.stderr.strip() or 'mysql client failed')
@@ -185,6 +197,42 @@ def fingerprint(client: Mysql) -> dict:
         digest.update(f'{table}:{count}:{table_hash.hexdigest()}\n'.encode())
     result['digest'] = digest.hexdigest()
     return result
+
+
+# --------------------------------------------------------------------------- #
+# Shared phone normalization (same rule as cn.pandora.auth.PhoneNumbers)
+# --------------------------------------------------------------------------- #
+
+PHONE_SEPARATORS = (' ', '\u3000', '\t', '-', '(', ')', '.')
+
+
+def normalize_phone(value: str | None) -> str | None:
+    """Remove the display separators the profile form allows and keep one leading '+'.
+
+    Mirrors the Java implementation so the precheck reports exactly the collisions the
+    application will refuse. It never rewrites a number into a different range.
+    """
+    if value is None:
+        return None
+    text = ''.join(ch for ch in value if ch not in PHONE_SEPARATORS)
+    if not re.fullmatch(r'\+?[0-9]{3,20}', text):
+        return None
+    return text
+
+
+def cell(value):
+    """The mysql client prints NULL as the text 'NULL'; keep the real absence instead."""
+    return None if value is None or value == 'NULL' else value
+
+
+def mask_phone(value: str | None) -> str:
+    """An identifier safe to put in a report: never the full number."""
+    text = normalize_phone(value) or ''
+    if not text:
+        return '(none)'
+    if len(text) <= 6:
+        return text[0] + '***'
+    return text[:3] + '***' + text[-4:]
 
 
 # --------------------------------------------------------------------------- #
@@ -382,6 +430,113 @@ def check_request_routes(client: Mysql) -> dict:
     }
 
 
+def check_login_identity(client: Mysql) -> dict:
+    """Employee login keys: missing numbers and normalized collisions block phone login."""
+    if not has_column(client, 'users', 'phone'):
+        rows = client.rows(
+            'SELECT id,organization_id,role,active,NULL AS phone,username FROM users ORDER BY organization_id,id')
+    else:
+        rows = client.rows(
+            'SELECT id,organization_id,role,active,phone,username FROM users ORDER BY organization_id,id')
+    employees = [row for row in rows
+                 if cell(row[2]) != 'admin' and str(cell(row[3])) in ('1', 'true', 'True')]
+    missing, invalid = [], []
+    groups: dict[str, list[str]] = {}
+    for user_id, organization_id, _role, _active, phone, _username in employees:
+        phone = cell(phone)
+        key = normalize_phone(phone)
+        if key is None:
+            (missing if phone is None or str(phone).strip() == '' else invalid).append(user_id)
+            continue
+        groups.setdefault(key, []).append(user_id)
+    duplicates = [
+        {'phone': mask_phone(key), 'userId': None, 'userIds': sorted(ids)}
+        for key, ids in sorted(groups.items()) if len(ids) > 1]
+    return {
+        'activeEmployees': len(employees),
+        'missingPhone': len(missing),
+        'invalidPhone': len(invalid),
+        'missingPhoneUserIds': sorted(missing)[:200],
+        'invalidPhoneUserIds': sorted(invalid)[:200],
+        'distinctLoginKeys': len(groups),
+        'duplicateGroups': len(duplicates),
+        'duplicates': duplicates,
+        'administratorsKeepUsernameLogin': sum(1 for row in rows if cell(row[2]) == 'admin'),
+        'note': ('The employee login key is the normalized contact number. A missing or colliding '
+                 'number is a blocker: the migration never generates a number, creates another '
+                 'account, or lets an ambiguous key authenticate. The administrator keeps its '
+                 'original username login and has no employee key.'),
+    }
+
+
+def check_organization_roots(client: Mysql) -> dict:
+    """Prove a single employee organization root and no dangling/cyclic manager reference."""
+    rows = client.rows(
+        'SELECT id,role,active,manager_id FROM users ORDER BY id')
+    nodes = {row[0]: cell(row[3]) for row in rows
+             if cell(row[1]) != 'admin' and str(cell(row[2])) in ('1', 'true', 'True')}
+    dangling = sorted(node for node, manager in nodes.items()
+                      if manager is not None and manager not in nodes)
+    roots = sorted(node for node, manager in nodes.items() if manager is None)
+
+    # Iterative cycle detection over the employee-only manager graph.
+    state: dict[str, int] = {}  # 0 unvisited, 1 in progress, 2 done
+    cyclic: set[str] = set()
+    for start in nodes:
+        path, cursor = [], start
+        while cursor is not None and cursor in nodes:
+            if state.get(cursor) == 1:
+                cyclic.update(path[path.index(cursor):])
+                break
+            if state.get(cursor) == 2:
+                break
+            state[cursor] = 1
+            path.append(cursor)
+            cursor = nodes.get(cursor)
+        for node in path:
+            state[node] = 2
+
+    unique_root = len(roots) == 1 and not dangling and not cyclic
+    return {
+        'employees': len(nodes),
+        'roots': roots,
+        'uniqueRoot': unique_root,
+        'founderId': roots[0] if unique_root else None,
+        'danglingManagerUserIds': dangling[:200],
+        'cyclicUserIds': sorted(cyclic)[:200],
+        'note': ('The founder is the unique root of the active employee manager tree, never a role '
+                 'name or an administrator. Multiple roots, a dangling reference or a cycle mean no '
+                 'founder can be proven; the precheck reports it instead of guessing.'),
+    }
+
+
+def check_acceptance_criteria(client: Mysql) -> dict:
+    """Historical completion criteria must survive removal from the creation form."""
+    if not has_table(client, 'task_versions'):
+        return {'note': 'task_versions missing'}
+    total = client.scalar('SELECT COUNT(*) FROM task_versions')
+    non_empty = client.scalar(
+        "SELECT COUNT(*) FROM task_versions "
+        "WHERE acceptance_criteria IS NOT NULL AND CHAR_LENGTH(TRIM(acceptance_criteria))>0")
+    tasks_with_value = client.scalar(
+        'SELECT COUNT(*) FROM (SELECT t.id FROM tasks t JOIN task_versions v '
+        'ON v.organization_id=t.organization_id AND v.id=t.current_version_id '
+        "WHERE CHAR_LENGTH(TRIM(v.acceptance_criteria))>0) x")
+    column_nullable = client.rows(
+        "SELECT IS_NULLABLE FROM information_schema.columns WHERE table_schema=DATABASE() "
+        "AND table_name='task_versions' AND column_name='acceptance_criteria'")
+    return {
+        'versions': total,
+        'versionsWithValue': non_empty,
+        'versionsEmpty': total - non_empty,
+        'effectiveTasksWithValue': tasks_with_value,
+        'columnNullable': bool(column_nullable and str(column_nullable[0][0]).upper() == 'YES'),
+        'note': ('A new task or creation resubmission carries an empty value, because the form no '
+                 'longer asks for one. Existing values are preserved and remain editable and '
+                 'auditable; nothing is cleared or backfilled empty by the migration.'),
+    }
+
+
 def precheck(client: Mysql) -> dict:
     present = tables(client)
     report = {
@@ -403,6 +558,9 @@ def precheck(client: Mysql) -> dict:
         'dispatch': check_dispatch,
         'notifications': check_notifications,
         'requestRoutes': check_request_routes,
+        'loginIdentity': check_login_identity,
+        'organizationRoots': check_organization_roots,
+        'acceptanceCriteria': check_acceptance_criteria,
     }
     for name, function in check_checks.items():
         report['checks'][name] = function(client)
@@ -437,6 +595,30 @@ def precheck(client: Mysql) -> dict:
         report['blockers'].append(
             f"{report['checks']['requestRoutes']['expiredPendingCandidates']} pending request(s) are past "
             'their applicable deadline and must be expired, not approved.')
+    login = report['checks']['loginIdentity']
+    if login['missingPhone']:
+        report['blockers'].append(
+            f"{login['missingPhone']} active employee(s) have no phone number, so they cannot log in "
+            'until an administrator records a real one; the migration never invents a number.')
+    if login['invalidPhone']:
+        report['blockers'].append(
+            f"{login['invalidPhone']} active employee phone number(s) do not normalize to a usable "
+            'login key after removing display separators; an administrator must correct them.')
+    if login['duplicateGroups']:
+        report['blockers'].append(
+            f"{login['duplicateGroups']} normalized phone number group(s) are shared by more than one "
+            'employee account; ambiguous login keys stay disabled until the administrator resolves them.')
+    roots = report['checks']['organizationRoots']
+    if not roots['uniqueRoot']:
+        report['blockers'].append(
+            f"the employee manager tree has {len(roots['roots'])} root(s), "
+            f"{len(roots['danglingManagerUserIds'])} dangling manager reference(s) and "
+            f"{len(roots['cyclicUserIds'])} cyclic member(s); no founder can be proven and the "
+            'creation route stays unavailable until an administrator repairs the organization.')
+    else:
+        report['limitations'].append(
+            "a unique employee organization root was proven; only that founder is exempt from "
+            'creation review, and every other creator routes to their direct manager.')
     return report
 
 
@@ -479,6 +661,19 @@ def render(report: dict) -> str:
         routes = checks['requestRoutes']
         lines.append(f"| Request routes | pending {routes['pending']}, expired candidates "
                      f"{routes['expiredPendingCandidates']}, direct {routes['direct']} |")
+        login = checks['loginIdentity']
+        lines.append(f"| Employee login key | active employees {login['activeEmployees']}, missing "
+                     f"{login['missingPhone']}, invalid {login['invalidPhone']}, duplicate groups "
+                     f"{login['duplicateGroups']}, distinct keys {login['distinctLoginKeys']} |")
+        roots = checks['organizationRoots']
+        lines.append(f"| Organization roots | employees {roots['employees']}, roots "
+                     f"{len(roots['roots'])}, unique {roots['uniqueRoot']}, dangling "
+                     f"{len(roots['danglingManagerUserIds'])}, cyclic {len(roots['cyclicUserIds'])} |")
+        criteria = checks['acceptanceCriteria']
+        lines.append(f"| Acceptance criteria | versions {criteria.get('versions', 0)}, with value "
+                     f"{criteria.get('versionsWithValue', 0)}, empty "
+                     f"{criteria.get('versionsEmpty', 0)}, effective with value "
+                     f"{criteria.get('effectiveTasksWithValue', 0)} |")
         lines.append('')
     return '\n'.join(lines)
 

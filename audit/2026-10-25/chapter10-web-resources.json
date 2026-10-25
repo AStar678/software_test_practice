@@ -1,0 +1,133 @@
+{
+  "generatedAt": "2026-10-25T07:29:06.918697+00:00",
+  "passed": 14,
+  "total": 14,
+  "checks": [
+    {
+      "check": "10.1 the employee page references real local resources only",
+      "pass": true,
+      "evidence": {
+        "missing": []
+      }
+    },
+    {
+      "check": "10.1 every cache-busting version equals the current file hash",
+      "pass": true,
+      "evidence": {
+        "mismatched": []
+      }
+    },
+    {
+      "check": "10.1 the later modules load in dependency order so their overrides win",
+      "pass": true,
+      "evidence": {
+        "scripts": [
+          "潘多拉-交互原型.js",
+          "潘多拉-api.js",
+          "潘多拉-任务接入.js",
+          "潘多拉-工作区接入.js",
+          "潘多拉-日程视图.js",
+          "潘多拉-任务表单.js",
+          "潘多拉-个人资料.js",
+          "潘多拉-标签评论.js"
+        ],
+        "expected": [
+          "潘多拉-交互原型.js",
+          "潘多拉-api.js",
+          "潘多拉-任务接入.js",
+          "潘多拉-工作区接入.js",
+          "潘多拉-日程视图.js",
+          "潘多拉-任务表单.js",
+          "潘多拉-个人资料.js",
+          "潘多拉-标签评论.js"
+        ]
+      }
+    },
+    {
+      "check": "10.1 the employee page loads the shared tag/comment and profile modules",
+      "pass": true,
+      "evidence": {
+        "scripts": [
+          "潘多拉-交互原型.js",
+          "潘多拉-api.js",
+          "潘多拉-任务接入.js",
+          "潘多拉-工作区接入.js",
+          "潘多拉-日程视图.js",
+          "潘多拉-任务表单.js",
+          "潘多拉-个人资料.js",
+          "潘多拉-标签评论.js"
+        ]
+      }
+    },
+    {
+      "check": "10.1 the employee page no longer references an Android-only theme override",
+      "pass": true,
+      "evidence": {
+        "found": false
+      }
+    },
+    {
+      "check": "10.1 the administrator page is standalone and loads no employee module",
+      "pass": true,
+      "evidence": {
+        "employeeScripts": []
+      }
+    },
+    {
+      "check": "10.1 the administrator page starts with its own login and management tabs",
+      "pass": true,
+      "evidence": {
+        "tabs": [
+          "员工",
+          "任务历史",
+          "通知管理"
+        ]
+      }
+    },
+    {
+      "check": "10.1 every referenced web file is in the explicit Maven resource list",
+      "pass": true,
+      "evidence": {
+        "missing": []
+      }
+    },
+    {
+      "check": "10.1 the packaged resource list includes the administrator page",
+      "pass": true,
+      "evidence": {
+        "pom": "/Users/watuji/MyGitDev/software_test_practice/backend/pom.xml"
+      }
+    },
+    {
+      "check": "10.1 the built backend jar exists",
+      "pass": true,
+      "evidence": {
+        "jar": "/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar"
+      }
+    },
+    {
+      "check": "10.1 the built jar contains every referenced web resource",
+      "pass": true,
+      "evidence": {
+        "missing": []
+      }
+    },
+    {
+      "check": "10.1 packaged resources are byte-identical to the sources",
+      "pass": true,
+      "evidence": {
+        "differing": []
+      }
+    },
+    {
+      "check": "10.1 the built jar serves the administrator page",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "10.1 the built jar serves the updated employee profile module",
+      "pass": true,
+      "evidence": null
+    }
+  ]
+}

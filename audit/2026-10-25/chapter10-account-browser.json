@@ -1,0 +1,136 @@
+{
+  "generatedAt": "2026-10-25T07:56:55.583Z",
+  "baseUrl": "http://127.0.0.1:18130",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "passed": 18,
+  "total": 18,
+  "results": [
+    {
+      "check": "3.4 the served page renders a login form",
+      "pass": true,
+      "evidence": {
+        "url": "/%E6%BD%98%E5%A4%9A%E6%8B%89-%E4%BA%A4%E4%BA%92%E5%8E%9F%E5%9E%8B.html"
+      }
+    },
+    {
+      "check": "3.4 the login form offers no self-registration",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "3.4 a first login opens the forced password change screen",
+      "pass": true,
+      "evidence": {
+        "heading": "修改密码"
+      }
+    },
+    {
+      "check": "3.4 the workspace is not rendered before the password change",
+      "pass": true,
+      "evidence": {
+        "whoami": "未登录"
+      }
+    },
+    {
+      "check": "3.4 a mismatched confirmation shows an inline error",
+      "pass": true,
+      "evidence": {
+        "message": "两次输入的新密码不一致。"
+      }
+    },
+    {
+      "check": "3.4 a policy violation is rejected in the page",
+      "pass": true,
+      "evidence": {
+        "message": "新密码至少10个字符"
+      }
+    },
+    {
+      "check": "3.4 a successful change returns to the login screen",
+      "pass": true,
+      "evidence": {
+        "message": "密码已修改，请使用新密码重新登录。"
+      }
+    },
+    {
+      "check": "3.4 the old password is refused after the change",
+      "pass": true,
+      "evidence": {
+        "message": "账号或密码不正确"
+      }
+    },
+    {
+      "check": "3.4 the new password loads the workspace with the real identity",
+      "pass": true,
+      "evidence": {
+        "whoami": "浏览器验证 · 下层"
+      }
+    },
+    {
+      "check": "3.4 the profile page offers a password change",
+      "pass": true,
+      "evidence": {}
+    },
+    {
+      "check": "3.4 a wrong current password is refused from the profile page",
+      "pass": true,
+      "evidence": {
+        "message": "当前密码不正确"
+      }
+    },
+    {
+      "check": "3.4 an everyday change returns to the login screen",
+      "pass": true,
+      "evidence": {
+        "message": "密码已修改，请使用新密码重新登录。"
+      }
+    },
+    {
+      "check": "3.4 the everyday password is the active one",
+      "pass": true,
+      "evidence": {
+        "whoami": "浏览器验证 · 下层"
+      }
+    },
+    {
+      "check": "2.3 the employee can change their own login number from the profile page",
+      "pass": true,
+      "evidence": {
+        "phone": "13717752208"
+      }
+    },
+    {
+      "check": "2.2 the changed number signs in to the same employee account",
+      "pass": true,
+      "evidence": {
+        "whoami": "浏览器验证 · 下层"
+      }
+    },
+    {
+      "check": "2.2 the previous number no longer authenticates",
+      "pass": true,
+      "evidence": {
+        "status": 401,
+        "code": "BAD_CREDENTIALS"
+      }
+    },
+    {
+      "check": "3.4 the administrator can reset and receives a new one-time password",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "sessionsRevoked": 1
+      }
+    },
+    {
+      "check": "3.4 the reset invalidates the browser session in place",
+      "pass": true,
+      "evidence": {
+        "path": "/%E6%BD%98%E5%A4%9A%E6%8B%89-%E4%BA%A4%E4%BA%92%E5%8E%9F%E5%9E%8B.html"
+      }
+    }
+  ]
+}

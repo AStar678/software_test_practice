@@ -76,6 +76,15 @@ public class AdminController {
         return tasks.taskHistory(actor, id);
     }
 
+    /**
+     * Administrator-only task locator for the formal console (chapter 9.1). A business account is
+     * rejected by the capability check inside the service, and the projection carries no contact data.
+     */
+    @GetMapping("/tasks")
+    public Map<String, Object> adminTasks(@RequestAttribute("actor") Actor actor, @RequestParam Map<String, String> filters) {
+        return tasks.adminTasks(actor, filters);
+    }
+
     @GetMapping("/organization")
     public Map<String, Object> structure(@RequestAttribute("actor") Actor actor) {
         return organization.structure(actor);

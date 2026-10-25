@@ -24,6 +24,16 @@ RESULTS: list[dict] = []
 RUN = uuid.uuid4().hex[:6]
 
 
+# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
+DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
+              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
+              'admin': 'admin'}
+
+
+def login_identity(account):
+    """Map a demo account name to the phone number it now authenticates with."""
+    return DEMO_PHONE.get(account, account)
+
 class Api:
     def __init__(self, base: str, password: str):
         self.base = base.rstrip('/')
@@ -57,7 +67,7 @@ class Api:
             return error.code, parsed, dict(error.headers)
 
     def login(self, username: str, password: str):
-        return self.call('POST', '/api/v1/auth/sessions', body={'username': username, 'password': password})
+        return self.call('POST', '/api/v1/auth/sessions', body={'username': login_identity(username), 'password': password})
 
     @staticmethod
     def key() -> str:
@@ -111,8 +121,9 @@ def main() -> int:
 
     # ---------------- 3.1 creation and one-time delivery ----------------
     username = f'acct-{RUN}'
+    account_phone = '135' + str(uuid.uuid4().int)[:8]
     payload = {'username': username, 'displayName': '账户验证', 'departmentId': department,
-               'positionId': position, 'level': 3, 'roleCodes': ['employee']}
+               'positionId': position, 'level': 3, 'roleCodes': ['employee'], 'phone': account_phone}
     key = Api.key()
     status, created, _ = api.call('POST', '/api/v1/admin/employees', admin_token, payload, key)
     user_id = created.get('userId')
@@ -124,6 +135,13 @@ def main() -> int:
     check('3.1 a repeated create never re-displays the secret',
           status == 201 and replay.get('userId') == user_id and 'initialPassword' not in replay,
           {'status': status, 'body': replay})
+
+    # Chapter 2.1/2.2: the employee authenticates with the recorded phone, never the public username.
+    status, phone_session, _ = api.login(account_phone, first_password)
+    check('3.1 the new employee signs in with the recorded phone', status == 200, {'status': status})
+    status, legacy_login, _ = api.login(username, first_password)
+    check('3.1 the public username is not an employee login fallback',
+          status == 401 and legacy_login.get('code') == 'BAD_CREDENTIALS', {'status': status})
 
     if leaks:
         dump = (sql(args.defaults_file, args.database, 'SELECT response_json FROM idempotency_keys')
@@ -137,7 +155,7 @@ def main() -> int:
               stored.startswith('$2') and first_password not in stored, {'prefix': stored[:7]})
 
     # ---------------- 3.2 forced-change restricted session ----------------
-    status, session, _ = api.login(username, first_password)
+    status, session, _ = api.login(account_phone, first_password)
     restricted = session.get('token')
     check('3.2 login reports the password change requirement up front',
           status == 200 and session.get('passwordChangeRequired') is True
@@ -173,7 +191,7 @@ def main() -> int:
               status == 400 and body.get('code') == 'INVALID_PASSWORD', {'status': status, 'body': body})
 
     # A second session proves that a successful change revokes every session, not just the current one.
-    status, second, _ = api.login(username, first_password)
+    status, second, _ = api.login(account_phone, first_password)
     second_token = second.get('token')
     check('3.3 a second session can be established before the change', status == 200, {'status': status})
 
@@ -190,10 +208,10 @@ def main() -> int:
     status, body, _ = api.call('GET', '/api/v1/auth/session', second_token)
     check('3.3 the other session is revoked too', status == 401, {'status': status})
 
-    status, body, _ = api.login(username, first_password)
+    status, body, _ = api.login(account_phone, first_password)
     check('3.3 the old password no longer works', status == 401, {'status': status})
 
-    status, session, _ = api.login(username, new_password)
+    status, session, _ = api.login(account_phone, new_password)
     business = session.get('token')
     check('3.3 the new password works and the gate is lifted',
           status == 200 and session.get('passwordChangeRequired') is False,
@@ -222,7 +240,7 @@ def main() -> int:
     status, body, _ = api.login(username, new_password)
     check('3.1 the password from before the reset no longer works', status == 401, {'status': status})
 
-    status, session, _ = api.login(username, reset_password)
+    status, session, _ = api.login(account_phone, reset_password)
     check('3.1 the reset restores the forced change gate',
           status == 200 and session.get('passwordChangeRequired') is True,
           {'status': status, 'passwordChangeRequired': session.get('passwordChangeRequired')})
@@ -230,7 +248,7 @@ def main() -> int:
     status, body, _ = api.call('DELETE', '/api/v1/auth/sessions/current', session.get('token'))
     check('3.2 a restricted session may log out', status == 200, {'status': status})
 
-    status, session, _ = api.login(username, reset_password)
+    status, session, _ = api.login(account_phone, reset_password)
     status, replay, _ = api.call('POST', f'/api/v1/admin/employees/{user_id}/password-reset',
                                  admin_token, None, Api.key())
     check('3.1 a later reset issues a fresh secret, never the previous one',

@@ -1,0 +1,343 @@
+{
+  "checks": [
+    {
+      "check": "9.2 the home has four independent quadrants",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2 assigned tasks are title + priority rows",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2 personal items do not expose edit/delete in the list",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.2 personal detail has edit and delete commands",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the calendar exposes a side toggle, a year-month picker, the task table and a floating create",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the calendar has no person switch, no week mode, no ordinary search and no statistics",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the side panel starts collapsed",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 opening the side panel exposes month/day and my applications",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 my applications opens only my submitted requests",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 closing the side panel returns the calendar as the main body",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the month stream mounts adjacent months around the anchor",
+      "pass": true,
+      "evidence": {
+        "keys": [
+          "2026-08",
+          "2026-09",
+          "2026-10",
+          "2026-11",
+          "2026-12"
+        ],
+        "count": 5
+      }
+    },
+    {
+      "check": "9.3 every business day appears exactly once across the mounted months (no duplicated boundary content)",
+      "pass": true,
+      "evidence": {
+        "total": 153,
+        "unique": 153
+      }
+    },
+    {
+      "check": "9.4 the pinned task sorts first in its week and only gets an emphasis marker",
+      "pass": true,
+      "evidence": {
+        "found": true,
+        "first": true,
+        "marker": true
+      }
+    },
+    {
+      "check": "9.4 month overflow shows the real hidden count and not an aggregate substitute",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "text": "+1",
+        "date": "2026-10-23"
+      }
+    },
+    {
+      "check": "9.4 opening the month overflow lists the complete day list",
+      "pass": true,
+      "evidence": {
+        "listed": {
+          "mode": "day",
+          "items": 4,
+          "detail": "我的申请"
+        },
+        "totalOnDay": 4
+      }
+    },
+    {
+      "check": "9.3 scrolling down mounts the next months without jumping the reader",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 3186,
+          "stream": 5
+        },
+        "after": {
+          "top": 5555,
+          "stream": 6,
+          "lastMonth": 6
+        }
+      }
+    },
+    {
+      "check": "9.3 a far year/month can be selected from the picker and is mounted",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the far month contains the real task created for it",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 returning today rebuilds the stream around the current month",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.4 the keyboard raises the month density while keeping the visible business-day anchor",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "height": 220,
+          "week": "2026-10-12"
+        },
+        "after": {
+          "height": 228,
+          "week": "2026-10-12"
+        }
+      }
+    },
+    {
+      "check": "9.4 dragging the handle raises the month density",
+      "pass": true,
+      "evidence": {
+        "before": 228,
+        "after": 268
+      }
+    },
+    {
+      "check": "9.4 tapping a month bar opens the task detail and keeps the month mode",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.5 the day view is a vertical 00:00—24:00 axis",
+      "pass": true,
+      "evidence": {
+        "exists": true,
+        "height": "1440px",
+        "hours": 24,
+        "labels": [
+          "00:00",
+          "01:00",
+          "02:00",
+          "03:00",
+          "04:00",
+          "05:00",
+          "06:00",
+          "07:00",
+          "08:00",
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "13:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00",
+          "19:00",
+          "20:00",
+          "21:00",
+          "22:00",
+          "23:00"
+        ],
+        "mode": "day",
+        "page": "view",
+        "viewPage": "calendar",
+        "card": true,
+        "overlay": true,
+        "dayMode": "timeline",
+        "timeline": true,
+        "dayList": false,
+        "snippet": "<section class=\"card p-schedule-card\"><header class=\"p-schedule-header\"><div class=\"p-schedule-toolbar\"><button type=\"button\" class=\"p-icon-button p-side-toggle\" data-action=\"sched"
+      }
+    },
+    {
+      "check": "9.5 the axis can scroll to the end of the day",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.5 a timed cross-day task is drawn with its real coverage per day",
+      "pass": true,
+      "evidence": [
+        {
+          "start": 1200,
+          "end": 1440
+        }
+      ]
+    },
+    {
+      "check": "9.5 a midnight deadline and a zero-duration task stay single points",
+      "pass": true,
+      "evidence": {
+        "midnightEvents": [
+          {
+            "start": 1320,
+            "end": 1440
+          }
+        ],
+        "zeroEvents": [
+          {
+            "start": 960,
+            "end": 960
+          }
+        ]
+      }
+    },
+    {
+      "check": "9.5 six timed overlaps are fully split into six clickable columns",
+      "pass": true,
+      "evidence": {
+        "count": 6,
+        "columns": [
+          18,
+          18,
+          18,
+          18,
+          18,
+          18
+        ],
+        "lanes": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    },
+    {
+      "check": "9.6 all eight all-day tasks are individually reachable without a +N aggregate",
+      "pass": true,
+      "evidence": {
+        "count": 9,
+        "ids": [
+          "0625abcb-1abc-443e-bd72-071e5f6841e3",
+          "07536ca9-1342-4bb8-8091-f144be3743e0",
+          "2e45cfae-9fcd-4e5e-89b2-d4629eeec5c0",
+          "71136316-e2a6-44d5-94ae-1a0df3d5beca",
+          "cc3e61e4-6f19-438a-9335-e0117d935f66",
+          "e7c32b16-1e96-4e94-a29d-a97796f2ee53",
+          "ed9f570b-1e5e-48e5-8ffb-0d1bf94bb932",
+          "eff3d417-4158-4dc4-9fd7-76b4a8762440",
+          "f3ea3c2e-79f4-4f12-9888-ac21ae9d6e33"
+        ],
+        "aggregate": false,
+        "scrolls": true
+      }
+    },
+    {
+      "check": "9.5 tapping an axis bar opens the detail and keeps the day mode",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 the task table opens under the unchanged five main navigation entries",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "9.3 returning from the task table keeps the mode, date and continuous-month anchor",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "mode": "day",
+          "anchor": "2026-10-26",
+          "stream": "2026-08,2026-09,2026-10,2026-11,2026-12",
+          "pages": 5
+        },
+        "after": {
+          "mode": "day",
+          "anchor": "2026-10-26",
+          "stream": "2026-08,2026-09,2026-10,2026-11,2026-12"
+        }
+      }
+    },
+    {
+      "check": "9.3 layout 320x740 keeps the floating create visible above the navigation",
+      "pass": true,
+      "evidence": {
+        "left": 248,
+        "right": 304,
+        "bottom": 648.5625,
+        "navTop": 664.5625,
+        "innerHeight": 740
+      }
+    },
+    {
+      "check": "9.3 layout 390x844 keeps the floating create visible above the navigation",
+      "pass": true,
+      "evidence": {
+        "left": 318,
+        "right": 374,
+        "bottom": 752.5625,
+        "navTop": 768.5625,
+        "innerHeight": 844
+      }
+    },
+    {
+      "check": "9.3 layout 1440x900 keeps the floating create visible above the navigation",
+      "pass": true,
+      "evidence": {
+        "left": 1208,
+        "right": 1264,
+        "bottom": 803.5625,
+        "navTop": 819.5625,
+        "innerHeight": 900
+      }
+    }
+  ]
+}
