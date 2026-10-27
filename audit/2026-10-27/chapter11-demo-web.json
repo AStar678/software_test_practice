@@ -1,0 +1,181 @@
+{
+  "generatedAt": "2026-10-27T08:00:32.439Z",
+  "baseUrl": "http://127.0.0.1:18130",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "scope": "web only; legacy shell and device not verified",
+  "passed": 15,
+  "total": 15,
+  "checks": [
+    {
+      "check": "11.2 the same demo account (middle manager) reaches the real workspace",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "11.2 the home page shows the ten persisted company items including the demo rows",
+      "pass": true,
+      "evidence": {
+        "items": 10,
+        "demo": true,
+        "page": "map"
+      }
+    },
+    {
+      "check": "11.2 the notification list contains delivered real messages",
+      "pass": true,
+      "evidence": {
+        "rows": 39
+      }
+    },
+    {
+      "check": "11.2 a delivered review request is present for the manager",
+      "pass": true,
+      "evidence": {
+        "id": "af7b8a67-22cf-409e-890f-281eff2c2067",
+        "title": "[演示] 待审核任务 03"
+      }
+    },
+    {
+      "check": "11.2 the review request opens the real application with a decision action",
+      "pass": true,
+      "evidence": {
+        "pending": 6
+      }
+    },
+    {
+      "check": "11.2 approving one demo application really publishes it and refreshes the pending count",
+      "pass": true,
+      "evidence": {
+        "before": 6,
+        "after": 5
+      }
+    },
+    {
+      "check": "11.2 the task form holds enough authorized rows to page (more than 50)",
+      "pass": true,
+      "evidence": {
+        "pager": "第 1–50 条，共 89 条 · 第 1/2 页"
+      }
+    },
+    {
+      "check": "11.2 the name filter narrows the complete task set without losing rows",
+      "pass": true,
+      "evidence": {
+        "rows": 50,
+        "allMatch": true,
+        "range": "第 1–50 条，共 55 条 · 第 1/2 页"
+      }
+    },
+    {
+      "check": "11.2 the sort control orders the visible page by the chosen column",
+      "pass": true,
+      "evidence": {
+        "sort": {
+          "key": "title",
+          "dir": "asc"
+        },
+        "aria": [
+          "ascending"
+        ]
+      }
+    },
+    {
+      "check": "11.2 the next page shows different rows from the complete filtered set",
+      "pass": true,
+      "evidence": {
+        "secondPage": {
+          "range": "第 51–89 条，共 89 条 · 第 2/2 页",
+          "titles": [
+            "[演示] 分页事项 50",
+            "[演示] 分页事项 51",
+            "[演示] 分页事项 52",
+            "[演示] 分页事项 53",
+            "[演示] 分页事项 54",
+            "[演示] 分页事项 55",
+            "[演示] 跨年全天",
+            "[演示] 跨月全天 1101",
+            "[演示] 跨月全天 1103",
+            "[演示] 密集排期 1101-1",
+            "[演示] 密集排期 1101-2",
+            "[演示] 密集排期 1101-3",
+            "[演示] 密集排期 1101-4",
+            "[演示] 密集排期 1101-5",
+            "[演示] 密集排期 1101-6",
+            "[演示] 密集排期 1103-1",
+            "[演示] 密集排期 1103-2",
+            "[演示] 密集排期 1103-3",
+            "[演示] 密集排期 1103-4",
+            "[演示] 密集排期 1103-5",
+            "[演示] 密集排期 1103-6",
+            "[演示] 下属任务 01",
+            "[演示] 下属任务 02",
+            "[演示] 下属任务 03",
+            "产品验收 待完成审核",
+            "产品资料 子任务",
+            "季度产品目标",
+            "今日排期事项 1",
+            "今日排期事项 2",
+            "今日排期事项 3",
+            "今日排期事项 4",
+            "今日排期事项 5",
+            "今日排期事项 6",
+            "客户反馈整理",
+            "跨层派发 待排期变更",
+            "全天部门培训",
+            "上线素材校对",
+            "数据清单复核",
+            "预算核对"
+          ]
+        },
+        "firstPageTitles": [
+          "[演示] 待审核任务 03",
+          "[演示] 分页事项 01",
+          "[演示] 分页事项 02"
+        ]
+      }
+    },
+    {
+      "check": "11.2 a task row opens the real detail from the table",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "11.2 the manager reads the subordinate's persisted logs",
+      "pass": true,
+      "evidence": {
+        "who": [
+          "张涛",
+          "张涛",
+          "张涛"
+        ],
+        "cards": 3
+      }
+    },
+    {
+      "check": "11.2 after a full refresh the same account still has the company items, tasks and messages",
+      "pass": true,
+      "evidence": {
+        "company": 10,
+        "tasks": 89,
+        "notices": 40,
+        "me": "middle",
+        "roleSwitch": 0
+      }
+    },
+    {
+      "check": "11.2 the continuous path uses one real session and no visible role switch",
+      "pass": true,
+      "evidence": {
+        "visibleRoleSwitches": 0
+      }
+    },
+    {
+      "check": "11.2 the demo web flow produced no uncaught script errors",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

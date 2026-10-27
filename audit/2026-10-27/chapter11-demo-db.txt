@@ -1,0 +1,23 @@
+# Demo DB counts after two idempotent prepare runs (isolated DB: pandora_demo_e13_1793088020)
+# Queried 2026-10-27T16:00:52+08:00; the backend was stopped before querying, so these rows prove the data lives in MySQL, not in process memory or static frontend fixtures.
+phone_users	company_items	demo_tasks	pending_demo_tasks	tags	comments	notifications
+6	10	76	3	2	3	256
+
+# Demo phone-login employees and organization placement (no password hashes):
+id	display_name	role	in_team	login_phone
+95faf9df-a8a3-4282-ae95-426caf602942	孙悦	lower	1	13800000006
+e3821dea-bab2-4937-a30f-d9448b4e6b28	张涛	lower	1	13800000004
+412b6cac-133c-4633-81bf-e04afd6d28bb	李敏	middle	1	13800000002
+d937a33a-78cf-48cd-9762-3fd896184c31	王海	upper	1	13800000001
+f602f1ae-276b-4963-a893-7ab0922fab14	赵蕾	lower	1	13800000005
+b7fbfc87-19fb-44ae-aba1-b57e15467eca	陈冲	middle	1	13800000003
+
+# Subordinate logs read by the middle demo account (张涛, 13800000004):
+display_name	business_date	body
+张涛	2026-10-27	完成本日工作整理，记录待办与协作问题。
+张涛	2026-10-26	复盘工作进展并补充后续计划。
+张涛	2026-10-25	复盘工作进展并补充后续计划。
+
+# middle-account responsibility used to enter the task form/detail from the same session:
+middle_current_versions	middle_logs
+1	3

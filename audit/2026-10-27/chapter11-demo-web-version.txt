@@ -1,0 +1,75 @@
+# Chapter 11.2 demo Web evidence — version and reproduction
+
+- Evidence generated: 2026-10-27T16:00 +08:00 (fresh run this session; earlier scratch runs the same session are superseded by this consistent set)
+- Git revision: 79d583329ca2cc7377624a5e373e73969275fd03 (merge of `xzs_feature`)
+- Worktree at run time: no product-code changes. `git status --porcelain` showed only:
+  - `M AGENTS.md`
+  - `M openspec/changes/update-pandora-web-admin-from-oct25-checklist/{design,proposal,tasks}.md` and its spec delta (planning revision)
+  - `?? audit/2026-10-27/` (this evidence)
+  - `?? backend/scripts/check_demo_home_style.js` (supplemental check added this session)
+  - `?? docs/reviews/更改指导.md` (guidance for a future change, not applied here)
+  The employee Web, `admin.html` and `backend/` trees were byte-identical to HEAD apart from that new check script; the jar below was rebuilt from that tree.
+- Backend jar: `backend/target/pandora-backend-0.1.0.jar`, sha256 `e12b3b697f4a1740263961494389007750d100571c1062779ab418d961e9c61b`
+- Jar/Web resource parity: `audit/2026-10-27/chapter10-web-resources.json` (14/14; cache versions, load order, Maven resource list, packaged bytes)
+- Isolated demo DB: `pandora_demo_e13_1793088020` on port 18130 (`PANDORA_SEED=true`, `PANDORA_WORKER_ENABLED=true`); created for this run and dropped afterwards. MySQL on 127.0.0.1:13306 is the project's private instance.
+- Viewport: 390×844 headless Chrome (mobile Web). This is browser evidence, not an Android device/WebView result.
+
+## Employee Web entry/script versions (from `潘多拉-交互原型.html`)
+
+```
+src="潘多拉-手账标记.svg?v=51ec58a6ecee"
+src="潘多拉-交互原型.js?v=6bae31d531a6"
+src="潘多拉-api.js?v=31d7b62a076b"
+src="潘多拉-任务接入.js?v=f4e1493f9be5"
+src="潘多拉-工作区接入.js?v=5d2453af7af9"
+src="潘多拉-日程视图.js?v=8c2f77ce04c9"
+src="潘多拉-任务表单.js?v=ee863ff2f2a1"
+src="潘多拉-个人资料.js?v=8abf51f387e7"
+src="潘多拉-标签评论.js?v=b54ed2d39696"
+href="潘多拉-交互原型.css?v=77d2420332cf"
+href="潘多拉-界面调整.css?v=4444b358ce21"
+href="潘多拉-正式版.css?v=b32d8310dacc"
+href="潘多拉-日历.css?v=36539269a44a"
+href="潘多拉-任务表单.css?v=31a5d34bb9f8"
+href="潘多拉-手账主题.css?v=b4589be924c4"
+```
+
+## Evidence files
+
+| File | Content |
+| --- | --- |
+| `chapter11-demo-prep-1.json` | first `prepare_demo.py` run: created 7 company items / 76 tasks / 1 comment / 0 tags (1 tag reused) |
+| `chapter11-demo-prep-2.json` | second run: created 0 of everything, reused 76 tasks / 1 comment / 1 tag (idempotent) |
+| `chapter11-demo-web.json` | `check_demo_flow_browser.js`: 15/15 — same `middle` account home → notification → review approval → task form filter/sort/page/detail → subordinate logs → full reload; no visible role switch, no script errors |
+| `chapter11-demo-db.txt` | row counts queried from MySQL with the backend stopped: 6 phone-login employees, 10 company items, 76 demo tasks, 3 pending demo tasks, 2 tags, 3 comments, 256 notifications; 张涛's 3 logs; middle owns 1 current-version task assignment |
+| `chapter11-demo-home-style.json` | `check_demo_home_style.js` after restarting the backend on the same DB: 5/5 — ten company items as ten visible rows in four styled cards, two-column grid, no 390px horizontal overflow, no script errors |
+| `chapter11-demo-home.png` | 390×844 screenshot of the same home page (`middle` account) |
+
+## Reproduction (backend/ as cwd; project MySQL already running on 127.0.0.1:13306)
+
+```bash
+mvn -B -ntp -o -Dmaven.repo.local=.runtime/m2 -DskipTests package
+python3 scripts/check_web_resources.py --repo .. --jar target/pandora-backend-0.1.0.jar \
+  --output ../audit/2026-10-27/chapter10-web-resources.json
+
+# dedicated isolated demo DB, same env as run_check_isolated.sh
+set -a; source .runtime/database.env; set +a
+DB="pandora_demo_e13_$(date +%s)"
+mysql --defaults-file=.runtime/mysql-admin.cnf -e "CREATE DATABASE \`$DB\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+  GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,ALTER,INDEX,REFERENCES,DROP ON \`$DB\`.* TO '$PANDORA_DB_USER'@'localhost';
+  GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,ALTER,INDEX,REFERENCES,DROP ON \`$DB\`.* TO '$PANDORA_DB_USER'@'127.0.0.1'; FLUSH PRIVILEGES;"
+export PANDORA_DB_URL="jdbc:mysql://127.0.0.1:13306/$DB?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&sslMode=DISABLED"
+export PANDORA_SEED=true PANDORA_WORKER_ENABLED=true PANDORA_PORT=18130 PANDORA_BIND_ADDRESS=127.0.0.1
+java -jar target/pandora-backend-0.1.0.jar --pandora.seed=true --pandora.worker-enabled=true &   # wait for /health and seeded users
+
+python3 scripts/prepare_demo.py --base-url http://127.0.0.1:18130 --output ../audit/2026-10-27/chapter11-demo-prep-1.json
+python3 scripts/prepare_demo.py --base-url http://127.0.0.1:18130 --output ../audit/2026-10-27/chapter11-demo-prep-2.json
+node scripts/check_demo_flow_browser.js --base-url http://127.0.0.1:18130 \
+  --output ../audit/2026-10-27/chapter11-demo-web.json
+# stop the backend, then query the counts shown in chapter11-demo-db.txt
+# restart the backend on the SAME database, then:
+node scripts/check_demo_home_style.js --base-url http://127.0.0.1:18130 \
+  --output ../audit/2026-10-27/chapter11-demo-home-style.json \
+  --screenshot ../audit/2026-10-27/chapter11-demo-home.png
+# stop the backend and DROP DATABASE `$DB`
+```

@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-10-27T08:00:56.861Z",
+  "baseUrl": "http://127.0.0.1:18130",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "scope": "web only; home style supplement for 11.2",
+  "passed": 5,
+  "total": 5,
+  "checks": [
+    {
+      "check": "11.2 home style: the same demo account loads the real home page after a backend restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "11.2 home style: the ten persisted company items render as ten visible list rows",
+      "pass": true,
+      "evidence": {
+        "companyRows": 10,
+        "visibleRows": 10,
+        "sample": [
+          "1按计划交付并保障质量",
+          "2及时处理客户反馈"
+        ]
+      }
+    },
+    {
+      "check": "11.2 home style: the home page uses the two-column grid and styled cards, not un-styled text",
+      "pass": true,
+      "evidence": {
+        "gridDisplay": "grid",
+        "gridColumns": 2,
+        "quads": 4,
+        "cardBg": "rgb(255, 255, 255)",
+        "cardRadius": "19px",
+        "rowHeight": 61
+      }
+    },
+    {
+      "check": "11.2 home style: the mobile home page has no horizontal overflow at 390px",
+      "pass": true,
+      "evidence": {
+        "overflowX": 0
+      }
+    },
+    {
+      "check": "11.2 home style: no uncaught script errors while rendering the home page",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}
