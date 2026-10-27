@@ -1,9 +1,9 @@
 ## MODIFIED Requirements
 
 ### Requirement: Strict prototype scope
-本变更 SHALL 以《潘多拉 Web 与管理端代码修改清单》（2026-10-25）及本轮用户范围确认为需求和验收依据；新 PRD 尚未发布，V3 章节号 SHALL 仅用于追溯，冲突处 SHALL 按清单执行。未覆盖的已确认行为 SHALL 保留，非创建审核 SHALL 按本规格明确保留的规则执行。范围 SHALL 为员工 Web、独立 PC 管理端、旧安卓 Web 套壳的资源同步/必要适配/安装包构建及必需的后端、数据和演示准备。
+本变更 SHALL 以《潘多拉 Web 与管理端代码修改清单》（2026-10-25）及本轮用户范围确认为需求和验收依据；新 PRD 尚未发布，V3 章节号 SHALL 仅用于追溯，冲突处 SHALL 按清单执行。未覆盖的已确认行为 SHALL 保留，非创建审核 SHALL 按本规格明确保留的规则执行。范围 SHALL 为员工 Web、独立 PC 管理端及必需的后端、数据和演示准备；Android 套壳资源同步、容器适配、安装包及设备交付 SHALL 由其他人员另行负责，不属于本 change 的实施及验收范围。
 
-系统 SHALL 使用真实认证、持久化及事件调度验收，保留五个主页面、任务表单二级页、个人置顶、冲突建议和账户维护。旧 Web 套壳 SHALL 同步本次完整员工网页资源并做必要容器适配、APK 重打包与针对性设备验证；安卓原生新版工程及其原生 UI/APK、系统推送和全量真机专项验收 SHALL 不纳入本次修改。时间选择业务控件 SHALL 共用 Web 实现，套壳导航文案和布局 SHALL 与网页一致，证据不得冒充安卓原生新版或全量真机验收。请示回复、完整账号启停、一人多团队、任务私人草稿、任务取消、公司草稿/定时发布、日志转待办、外部模型与 MBTI SHALL 继续不纳入本轮。
+系统 SHALL 使用真实认证、持久化及事件调度验收，保留五个主页面、任务表单二级页、个人置顶、冲突建议和账户维护。旧 Android Web 套壳和安卓原生新版工程及其 UI/APK、系统推送、Android WebView/真机验收 SHALL 不纳入本次修改。时间选择业务控件 SHALL 使用 Web 实现并在移动浏览器验收；套壳未交付 SHALL 不作为本 change 完成或归档的前置阻塞，Web 证据 SHALL 不代表套壳或真机验证通过。请示回复、完整账号启停、一人多团队、任务私人草稿、任务取消、公司草稿/定时发布、日志转待办、外部模型与 MBTI SHALL 继续不纳入本轮。
 
 #### Scenario: Validate against the selected checklist
 - **WHEN** 实施者或验证者检查本变更
@@ -11,7 +11,7 @@
 
 #### Scenario: Keep native Android outside the change
 - **WHEN** 检查修改文件和交付记录
-- **THEN** 安卓原生新版工程及其界面 SHALL 不在修改范围，旧 Web 套壳资源、必要容器适配和构建 SHALL 纳入，配套共用后端影响如实记录；未完成的实际套壳检查 SHALL 不被宣称已完成
+- **THEN** `android/` 和 `android-shell/` SHALL 均不在修改范围，资源同步、容器/桥接适配、APK 构建签名、升级及设备验证 SHALL 交由其他人员另行负责；共用后端兼容影响 SHALL 如实记录，不将移出范围的事项标为已交付或已验证
 
 #### Scenario: Validate the real service and declared scope
 - **WHEN** 实施者或验证者检查本变更
@@ -475,8 +475,8 @@
 - **THEN** 系统 SHALL 不提供抽象任务类型，旧样例如保留 SHALL 是普通独立可执行任务
 
 #### Scenario: Choose time through a mobile web control
-- **WHEN** 手机浏览器或已有 WebView 内创建、编辑、重开非全天任务，选时分、取消、弹出键盘或切换全天
-- **THEN** Web SHALL 统一提供直观时分输入选择并同步入旧套壳，不触发系统大表盘，取消保留草稿且不误提交，跨日、全天、校验和提交值正确；旧套壳可做必要容器适配，不依赖原生新版改动
+- **WHEN** 手机浏览器内创建、编辑、重开非全天任务，选时分、取消、弹出键盘或切换全天
+- **THEN** Web SHALL 统一提供直观时分输入选择，不触发系统大表盘，取消保留草稿且不误提交，跨日、全天、校验和提交值正确；套壳资源同步、容器适配及实际 WebView 验收 SHALL 由接手人另行负责
 
 ### Requirement: Task editing and completion review
 仅原创建者 SHALL 可申请修改基础信息及重开已完成任务；当前负责人仅可申请每次新增/修改文字进展与完成；专用交接仅依交接要求开放。有审核人的创建、修改、每次进展、完成、重开及交接 SHALL 先待审，同任务唯一待审并冻结其他任务业务变更（有当前正常访问权者的独立评论除外），只有申请人能撤销；修改提议须先撤销再重提。普通区域 SHALL 保留原有效版本，申请人可看自己提交的内容/状态/结果，只有本次审核人可获得原版与提议的专用 diff，不能靠前端隐藏代替字段裁剪。
@@ -712,27 +712,6 @@
 - **THEN** 系统 SHALL 只展示当前账号最新有效查询结果，旧行、条件、返回上下文及迟到响应 SHALL 不污染新会话
 
 ## ADDED Requirements
-
-### Requirement: Legacy Android web shell delivery
-旧安卓 Web 套壳 SHALL 同步本次员工网页的完整页面、业务脚本、样式和引用资源，实际安装运行本次功能，不仅替换主题或继续使用旧包内业务资源。套壳 SHALL 保留现有后端连接配置和所需网页桥接，导航统一显示“日志”，网页与容器不出现重复导航；返回、通知入口及未读提示 SHALL 正常协作，任务表单和详情返回上下文 SHALL 与 Web 一致。PC 管理端 SHALL 保持独立，不嵌入员工套壳。
-
-交付安装包 SHALL 保持原套壳包名和原签名、提高可升级版本，支持保留应用配置的覆盖升级，不依赖卸载或清空应用数据，且不删除原后端业务数据。构建结果 SHALL 附版本、APK 摘要、资源清单及校验结果，安装包内实际业务资源 SHALL 与本次员工 Web 版本一致。安卓原生新版 SHALL 不因该交付被修改或重新构建。
-
-#### Scenario: Run the updated web resources inside the installed shell
-- **WHEN** 使用重建的旧套壳安装包连接实际后端并登录员工账号
-- **THEN** 本次手机号登录、创建审核、日历/任务表单、日志、标签及评论 SHALL 使用更新后的 Web 功能与真实数据，不使用基线旧脚本；完整资源及相互引用 SHALL 可核验
-
-#### Scenario: Keep navigation bridge and return behavior consistent
-- **WHEN** 用户切换五个主页面、进入表单/详情、打开通知并按系统返回
-- **THEN** 套壳 SHALL 显示“日志”且无重复导航，标题/未读提示和入口正确，返回按页面层级处理并保留日期/筛选上下文，不因旧桥接误切首页或退出
-
-#### Scenario: Upgrade the legacy shell without clearing its data
-- **WHEN** 对旧套壳执行保留数据的覆盖升级
-- **THEN** 新 APK SHALL 与旧套壳包名及签名相同且版本可升级，连接配置及原后端业务数据保留，重启后加载本次网页资源，不要求卸载重装
-
-#### Scenario: Verify time keyboard and continuous scrolling in the shell
-- **WHEN** 在实际旧套壳 WebView 内创建/编辑/重开排期、打开键盘、取消输入、跨月滚动或全屏写日志
-- **THEN** 时分控件 SHALL 不触发系统大表盘，草稿和提交时刻正确，键盘不遮挡关键操作，滚动与导航不冲突；验证 SHALL 记录包版本、设备及 WebView 信息，缺少实际环境时明确未验证，不以浏览器截图替代
 
 ### Requirement: Shared single-select tags for tasks and logs
 任务和日志 SHALL 共用本公司标签目录，每对象可不选或只选一个，选新替换旧，前后端拒绝多标签及跨公司引用。只有公司员工组织树唯一根节点创始人 SHALL 从员工 Web“我的→标签管理”创建、改名、从预定义色板选色和删除，不要求管理员身份；其他员工只能在有对象编辑权时选择清除，其他上层和仅管理员不得维护。任务标签 SHALL 随原审核及有效版规则，日志标签随原编辑及冻结规则。

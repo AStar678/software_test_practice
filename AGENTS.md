@@ -1,1 +1,1 @@
-agent应当先检查openspec/下是否有仍未archive的change，若有，应当提醒用户，并仅在用户明确要求先干别的的情况下才不优先接着完成change。
+agent应当先检查openspec/下是否有仍未archive的change，若有，应当提醒用户，并询问用户，仅在用户回答明确要求先干别的的情况下才不优先接着完成change。
