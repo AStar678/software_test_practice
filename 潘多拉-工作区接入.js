@@ -116,7 +116,7 @@
     return P.busy(async function () {
       const raw = await P.request("/home/items/" + endpoint(id));
       openSheet({ title: "个人信息", body: '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(raw.body || raw.title) + '</p>',
-        foot: withBack(button("p-edit-home-personal", "编辑", "primary", id) + button("p-delete-home-personal", "删除", "danger", id) + button("sheet-close", "关闭")) });
+        foot: withBack(button("p-edit-home-personal", "编辑", id, "primary") + button("p-delete-home-personal", "删除", id, "danger") + button("sheet-close", "关闭")) });
     });
   }
 
@@ -368,7 +368,7 @@ function logDateOptions() {
   const today = parseDateInput(companyBusinessDate()) || new Date();
   return [-2,-1,0].map(offset => {
     const date = addDays(today, offset);
-    return { value: dateKey(date), label: (offset === 0 ? '今天' : offset === -1 ? '昨天' : '前天') + ' · ' + (date.getMonth()+1) + '月' + date.getDate() + '日' };
+    return { value: toDateInput(date), label: (offset === 0 ? '今天' : offset === -1 ? '昨天' : '前天') + ' · ' + (date.getMonth()+1) + '月' + date.getDate() + '日' };
   }).reverse();
 }
 function tagSelectHTML(kind, current) {
