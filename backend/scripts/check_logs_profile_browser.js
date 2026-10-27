@@ -263,6 +263,28 @@ async function main() {
     await openMePage(browser);
     check("8.4 an employee has no subordinate section",
       await browser.evaluate("!/下属资料/.test(document.getElementById('page-me').textContent)"));
+
+    // Regression: personal-item detail actions must retain the real item id. A previous argument-order
+    // bug rendered data-id="primary" / "danger", so both edit and delete fetched a nonexistent item.
+    await browser.evaluate(clickPage("map"));
+    await waitFor(browser, "state.page === 'map' && window.Pandora.idle()");
+    await browser.evaluate("document.querySelector('[data-action=\"p-open-home-personal\"]').click()");
+    await waitFor(browser, "document.getElementById('sheetTitle').textContent === '个人信息' && window.Pandora.idle()");
+    const personalActions = await browser.evaluate(`(() => {
+      const edit = document.querySelector('[data-action="p-edit-home-personal"]');
+      const remove = document.querySelector('[data-action="p-delete-home-personal"]');
+      return { editId: edit && edit.dataset.id, deleteId: remove && remove.dataset.id,
+               itemId: window.Pandora.data.home.personalItems[0].id };
+    })()`);
+    check("home personal detail keeps the real item id for edit and delete",
+      personalActions.editId === personalActions.itemId && personalActions.deleteId === personalActions.itemId,
+      personalActions);
+    await browser.evaluate("document.querySelector('[data-action=\"p-edit-home-personal\"]').click()");
+    await waitFor(browser, "window.Pandora.idle() && document.getElementById('sheetTitle').textContent === '编辑个人信息'");
+    check("home personal edit opens the owned item instead of a permission error",
+      await browser.evaluate("!!document.getElementById('pi-text') && !/无权查看/.test(document.getElementById('sheetBody').textContent)"));
+    await browser.evaluate("document.getElementById('sheetClose').click()");
+
     await openLogPage(browser);
     // After switching accounts the log page render can race the tab click; reload once and reopen
     // rather than asserting against a half-rendered page.
@@ -282,6 +304,11 @@ async function main() {
     check("7.3 an employee has only the self log scope",
       selfScope.ready && selfScope.page === "log" && selfScope.all === false && selfScope.hasSelect
       && selfScope.people.filter(n => !n.includes('全部')).every(n => n.includes('张涛')), selfScope);
+    await browser.evaluate("document.querySelector('[data-action=\"new-log\"]').click()");
+    await waitFor(browser, "window.Pandora.idle()");
+    check("7.3 writing a log opens the editor without a date helper error",
+      await browser.evaluate("document.getElementById('sheetTitle').textContent === '写日志' && !!document.getElementById('lf-content') && !/dateKey is not defined/.test(document.body.textContent)"),
+      await browser.evaluate("({ title: document.getElementById('sheetTitle').textContent, hasEditor: !!document.getElementById('lf-content') })"));
   } finally {
     try {
       const current = await api(base, "GET", "/api/v1/me/profile", { token: employee });
