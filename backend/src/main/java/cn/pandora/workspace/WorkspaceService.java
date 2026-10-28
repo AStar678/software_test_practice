@@ -479,6 +479,10 @@ public class WorkspaceService {
         Instant now = clock.instant();
         if (!notificationVisible(a,row,now)) throw ApiException.notFound();
         if (s(row,"taskId")==null) throw conflict("HISTORICAL_TASK_UNAVAILABLE","该消息没有可查看的任务");
+        // The historical entry must apply the inbox's current-object mask too. In particular, a
+        // delivered comment never grants historical access after its object permission is lost or
+        // its comment is deleted. Ordinary task messages keep their existing read-only exception.
+        if (!Boolean.TRUE.equals(safeNotification(a,row,now).get("canOpenTask"))) throw ApiException.notFound();
         Map<String,Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?",a.organizationId(),s(row,"taskId"));
         if (task == null || s(task,"currentVersionId")==null) throw conflict("HISTORICAL_TASK_UNAVAILABLE","该任务尚未发布或已不可用");
         Map<String,Object> version = db.find("SELECT * FROM task_versions WHERE organization_id=? AND id=?",a.organizationId(),s(task,"currentVersionId"));
@@ -531,7 +535,8 @@ public class WorkspaceService {
         // Copies masked at delivery must never regain the restricted title/summary from the event row.
         boolean contentMasked = Boolean.TRUE.equals(row.get("contentMasked"))
                 || row.get("contentMasked") instanceof Number masked && masked.intValue() == 1;
-        boolean canReadWithdrawnDetails = revoked && !contentMasked
+        boolean objectOpen = !revoked && !contentMasked && !commentGone && !commentMasked;
+        boolean canReadWithdrawnDetails = revoked && !contentMasked && !commentGone && !commentMasked
                 && access.isManagerOf(a, s(event,"initiatorId"));
         Map<String,Object> details = event == null || event.get("detailsJson")==null ? Map.of() : db.parse(s(event,"detailsJson"));
         Instant occurred = event == null || event.get("occurredAt")==null ? null : Instant.parse(String.valueOf(event.get("occurredAt")));
@@ -540,8 +545,8 @@ public class WorkspaceService {
         boolean withinWithdrawal = occurred != null && !now.isBefore(occurred) && now.isBefore(occurred.plusSeconds(180));
         var view = new LinkedHashMap<String,Object>();
         for (String key : List.of("id","eventId","eventType","createdAt","deliveredAt","readAt","readonly","relationLost")) view.put(key,row.get(key));
-        view.put("taskId",contentMasked||revoked?null:row.get("taskId"));
-        view.put("requestId",contentMasked||revoked?null:row.get("requestId"));
+        view.put("taskId",objectOpen?row.get("taskId"):null);
+        view.put("requestId",objectOpen?row.get("requestId"):null);
         if (revoked) {
             view.put("title",canReadWithdrawnDetails ? event.get("title") : null);
             view.put("summary",canReadWithdrawnDetails ? event.get("changeSummary") : "该通知已被撤回。");
@@ -568,18 +573,17 @@ public class WorkspaceService {
         view.put("expiresAt",row.get("expiresAt")!=null?row.get("expiresAt"):event==null?null:event.get("expiresAt"));
         view.put("rowVersion",notificationVersion(row));
         view.put("canWithdraw",!revoked && withinWithdrawal && (manager || (!automatic && event!=null && a.id().equals(s(event,"initiatorId")))));
-        view.put("canOpenTask",!revoked && !contentMasked && s(row,"taskId")!=null);
+        view.put("canOpenTask",objectOpen && s(row,"taskId")!=null);
         view.put("canReview",false);
         view.put("requestStatus",null);
         view.put("requestKind",null);
-        boolean objectOpen = !revoked && !contentMasked && !commentGone && !commentMasked;
         view.put("objectType",objectOpen?objectType:null);
         view.put("objectId",objectOpen?objectId:null);
         view.put("focus",objectOpen && commentEvent ? "comments" : null);
         view.put("commentId",objectOpen && objectDetails.get("commentId") instanceof String id ? id : null);
         view.put("purpose",notificationPurpose(eventType));
         view.put("objectName",objectOpen?objectName(a,objectType,objectId,row,event):null);
-        String requestId = revoked || contentMasked ? null : s(row,"requestId");
+        String requestId = objectOpen ? s(row,"requestId") : null;
         if (requestId != null) {
             var request = db.find("SELECT id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline FROM approval_requests WHERE organization_id=? AND id=?",a.organizationId(),requestId);
             if (request != null) {

@@ -225,7 +225,7 @@ document.addEventListener('toggle', event => {
 }, true);
 renderLog = function () {
   document.getElementById("page-log").innerHTML =
-    '<header class="p-log-header"><h2>日志</h2>' + button("new-log", "写日志", "primary") + '</header>' +
+    '<header class="p-log-header"><h2>日志</h2>' + button("new-log", "写日志", null, "primary") + '</header>' +
     logFindingHTML() +
     '<section class="card p-log-panel" id="p-log-panel"><div class="card-head"><h2>日志</h2>' +
       '<span class="hint" id="logResultsCount">' + esc(logScopeLabel()) + '</span></div>' +
@@ -343,7 +343,7 @@ logDetailView = function (id) {
       '</span></div><div class="row wrap">' + logTagHTML(raw) + '</div><div class="divider"></div><p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(l.content) + '</p>' +
       (t ? '<div class="divider"></div><button type="button" class="btn" data-task="' + esc(t.id) + '">关联：' + esc(t.title) + '</button>' : '') +
       '<div class="divider"></div>' + (P.commentsHTML ? P.commentsHTML("log", id) : ''),
-    foot: withBack((raw.editable ? button("edit-log", "编辑日志", "primary", id) : "") + button("sheet-close", "关闭"), actor()) };
+    foot: withBack((raw.editable ? button("edit-log", "编辑日志", id, "primary") : "") + button("sheet-close", "关闭"), actor()) };
 };
 openLogDetail = function (id) {
   P.busy(async () => {
@@ -388,9 +388,13 @@ async function applyLogAuthor(id, all) {
   state.logAuthorId = authorId || me;
   refreshLogResults();
 }
-/* 从人员资料进入某人的日志：清空部门限制，仍按日志权限重新查询。 */
+/* 从人员资料进入某人的日志：清空先前的人员筛选，仍按日志权限重新查询。 */
 P.openLogsFor = async function (id) {
   state.logDepartmentId = "__all__";
+  state.logTeamId = "__all__";
+  state.logDepartmentQuery = "";
+  state.logTeamQuery = "";
+  state.logAuthorQuery = "";
   await applyLogAuthor(id, false);
   setPage("log");
 };

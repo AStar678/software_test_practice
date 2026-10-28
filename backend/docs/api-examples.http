@@ -30,13 +30,25 @@ GET {{baseUrl}}/health
 POST {{baseUrl}}/api/v1/auth/sessions
 Content-Type: application/json
 
-{"username":"employee","password":"{{password}}"}
+{"username":"13800000004","password":"{{password}}","accountType":"employee"}
 
 ### Manager login: this manager reviews the example employee's self-created tasks.
 POST {{baseUrl}}/api/v1/auth/sessions
 Content-Type: application/json
 
-{"username":"middle","password":"{{password}}"}
+{"username":"13800000002","password":"{{password}}","accountType":"employee"}
+
+### Administrator login uses the original username, even when it is also an employee phone number.
+POST {{baseUrl}}/api/v1/auth/sessions
+Content-Type: application/json
+
+{"username":"admin","password":"{{password}}","accountType":"admin"}
+
+# accountType is optional for older clients. Without it, exactly one matching identity/password is
+# required; a shared identifier and password returns 409 LOGIN_IDENTITY_AMBIGUOUS. Use the intended
+# employee/admin entry point instead of relying on lookup order. Duplicate active employee phone keys
+# still return 409 LOGIN_KEY_AMBIGUOUS; only the explicit admin entry bypasses the employee namespace.
+# Unknown accountType values return 400 INVALID_INPUT.
 
 ### Discover the current server identity. Do not send a client-selected actor ID.
 GET {{baseUrl}}/api/v1/me

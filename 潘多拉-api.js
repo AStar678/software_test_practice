@@ -57,7 +57,7 @@
       '<div class="field"><label for="login-password">密码</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required></div>' +
       '<div class="callout" id="login-error" role="alert"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
       '<button type="submit" class="btn primary auth-submit">登录工作台</button></form>' +
-      '<p class="auth-help">员工使用本人手机号登录，初始密码由公司管理员提供；忘记密码请联系管理员。管理员仍使用管理账号登录。</p>' +
+      '<p class="auth-help">员工使用本人手机号登录，初始密码由公司管理员提供；忘记密码请联系管理员。管理员请通过下方“进入管理后台”入口使用管理账号登录。</p>' +
       '<p class="auth-help auth-demo">演示员工手机号 13800000001—13800000006；管理员账号 admin。</p>' +
       '<a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
     gate();
@@ -66,7 +66,7 @@
       P.busy(async () => {
         const username = document.getElementById("login-user").value.trim();
         const password = document.getElementById("login-password").value;
-        const result = await P.request("/auth/sessions", { method: "POST", body: { username, password } });
+        const result = await P.request("/auth/sessions", { method: "POST", body: { username, password, accountType: "employee" } });
         P.epoch++;
         P.token = result.token; sessionStorage.setItem(SESSION_KEY, P.token);
         // A new account or a reset account must change its password before any business page loads.
