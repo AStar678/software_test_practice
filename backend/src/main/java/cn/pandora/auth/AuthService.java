@@ -59,22 +59,36 @@ public class AuthService {
      */
     @Transactional
     public Map<String,Object> login(String identifier,String password) {
+        return login(identifier,password,null);
+    }
+
+    /** Explicit entry points select an identity namespace; older clients omit accountType. */
+    @Transactional
+    public Map<String,Object> login(String identifier,String password,String accountType) {
+        if(accountType!=null && !Set.of("admin","employee").contains(accountType)) throw new ApiException(400,"INVALID_INPUT","登录类型不正确");
         if(identifier==null || password==null || identifier.length()>80 || password.getBytes(StandardCharsets.UTF_8).length>72) throw new ApiException(401,"BAD_CREDENTIALS","账号或密码不正确");
         String loginPhone=PhoneNumbers.normalize(identifier);
-        Map<String,Object> u=null;
-        if(loginPhone!=null) {
+        Map<String,Object> employee=null;
+        if(!"admin".equals(accountType) && loginPhone!=null) {
             // The login contract has no company selector, so an employee key must be unambiguous across
             // every active business account. Migration may intentionally leave duplicate keys in place
             // (V19 only adds the unique index when the data is clean); such data must fail closed here
             // instead of authenticating whichever row the database happens to return first.
             List<Map<String,Object>> matches=db.list("SELECT * FROM users WHERE login_phone=? AND role<>'admin' AND active=1",loginPhone);
             if(matches.size()>1) throw new ApiException(409,"LOGIN_KEY_AMBIGUOUS","该手机号在多个员工账号中重复，无法安全登录；请联系管理员修复手机号后重试");
-            u=matches.isEmpty()?null:matches.get(0);
+            employee=matches.isEmpty()?null:matches.get(0);
         }
-        if(u==null) u=db.find("SELECT * FROM users WHERE username=? AND role='admin' AND active=1",identifier);
-        boolean valid=PASSWORDS.matches(password,u==null?dummyHash:s(u,"passwordHash"));
-        if(u==null || !valid) throw new ApiException(401,"BAD_CREDENTIALS","账号或密码不正确");
-        return issue(u);
+        Map<String,Object> admin="employee".equals(accountType)?null:
+                db.find("SELECT * FROM users WHERE username=? AND role='admin' AND active=1",identifier);
+        boolean employeePassword=PASSWORDS.matches(password,employee==null?dummyHash:s(employee,"passwordHash"));
+        boolean adminPassword=PASSWORDS.matches(password,admin==null?dummyHash:s(admin,"passwordHash"));
+        boolean employeeValid=employee!=null && employeePassword;
+        boolean adminValid=admin!=null && adminPassword;
+        // Numeric administrator usernames predate phone login. Neither lookup order nor a shared
+        // password may silently choose a different identity for a legacy client.
+        if(employeeValid && adminValid) throw new ApiException(409,"LOGIN_IDENTITY_AMBIGUOUS","该登录信息对应不同类型账号，请使用员工或管理员的专用登录入口");
+        if(!employeeValid && !adminValid) throw new ApiException(401,"BAD_CREDENTIALS","账号或密码不正确");
+        return issue(adminValid?admin:employee);
     }
     private Map<String,Object> issue(Map<String,Object> u) {
         byte[] bytes=new byte[32];new SecureRandom().nextBytes(bytes);

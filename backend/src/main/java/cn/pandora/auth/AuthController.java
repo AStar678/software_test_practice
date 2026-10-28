@@ -12,7 +12,7 @@ public class AuthController {
         db.jdbc.queryForObject("SELECT 1",Integer.class);
         return Map.of("status","UP","application","pandora-backend","database","MySQL");
     }
-    @PostMapping("/api/v1/auth/sessions") public Map<String,Object> login(@RequestBody Map<String,String> input) {return auth.login(input.get("username"),input.get("password"));}
+    @PostMapping("/api/v1/auth/sessions") public Map<String,Object> login(@RequestBody Map<String,String> input) {return auth.login(input.get("username"),input.get("password"),input.get("accountType"));}
     @PostMapping("/api/v1/auth/sessions/refresh") public Map<String,Object> refresh(@RequestAttribute("token") String token) {return auth.refresh(token);}
     @DeleteMapping("/api/v1/auth/sessions/current") public Map<String,Object> logout(@RequestAttribute("token") String token) {auth.logout(token);return Map.of("revoked",true);}
 

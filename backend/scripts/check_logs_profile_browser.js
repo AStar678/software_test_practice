@@ -244,7 +244,7 @@ async function main() {
     check("8.4 the log entry opens the selected person's scope",
       await browser.evaluate("state.logAuthorId === window.Pandora.data.users.find(u => u.username === 'employee').id"));
     check("8.4 the selected person's logs are shown",
-      await browser.evaluate("Array.from(document.querySelectorAll('.log-card .who')).every(el => el.textContent.includes('张涛'))"));
+      await browser.evaluate("document.querySelectorAll('.log-card .who').length > 0 && Array.from(document.querySelectorAll('.log-card .who')).every(el => el.textContent.includes('张涛'))"));
 
     await logout(browser, "upper", password);
     await openMePage(browser);
@@ -257,6 +257,35 @@ async function main() {
         const departments = Array.from(document.getElementById('logDepartmentSelect').options).map(o => o.textContent);
         return people.some(n => n.includes('孙悦')) && departments.some(n => n.includes('市场部')) && people.some(n => n.includes('全部'));
       })()`));
+
+    // An explicit person entry must replace filters kept from the previous log search. In particular,
+    // the product team must not hide the market employee's logs after following their profile link.
+    await browser.evaluate(`(() => { const el = document.getElementById('logDepartmentSelect'); el.value = ${JSON.stringify(departmentId)}; el.dispatchEvent(new Event('change', {bubbles:true})); })()`);
+    await waitFor(browser, "window.Pandora.idle()");
+    await browser.evaluate(`(() => { const el = document.getElementById('logTeamSelect'); el.value = ${JSON.stringify(teamId)}; el.dispatchEvent(new Event('change', {bubbles:true})); })()`);
+    await waitFor(browser, "window.Pandora.idle()");
+    await browser.evaluate(setValue("logDepartmentSearch", "产品"));
+    await browser.evaluate(setValue("logTeamSearch", "产品"));
+    await browser.evaluate(setValue("logAuthorInput", "张"));
+    check("8.4 the cross-team profile regression starts with a different team filter",
+      await browser.evaluate(`state.logDepartmentId === ${JSON.stringify(departmentId)} && state.logTeamId === ${JSON.stringify(teamId)} && window.Pandora.data.logAuthors.items.find(p => p.displayName === '孙悦').teamId !== state.logTeamId`));
+    await openMePage(browser);
+    await browser.evaluate("Array.from(document.querySelectorAll('[data-action=\"p-open-person\"]')).find(b => b.textContent.includes('孙悦')).click()");
+    await waitFor(browser, "document.getElementById('overlay').hidden === false && /人员资料/.test(document.getElementById('sheetTitle').textContent) && !!document.querySelector('[data-action=\"p-open-person-logs\"]')");
+    await browser.evaluate("document.querySelector('[data-action=\"p-open-person-logs\"]').click()");
+    await waitFor(browser, "state.page === 'log' && window.Pandora.idle() && !!document.getElementById('logAuthorSelect')");
+    const crossTeam = await browser.evaluate(`(() => ({
+      author: state.logAuthorId, selected: document.getElementById('logAuthorSelect').value,
+      expectedAuthor: window.Pandora.data.logAuthors.items.find(p => p.displayName === '孙悦').id,
+      department: state.logDepartmentId, team: state.logTeamId,
+      searches: ['logDepartmentSearch', 'logTeamSearch', 'logAuthorInput'].map(id => document.getElementById(id).value),
+      authors: Array.from(document.querySelectorAll('.log-card .who')).map(el => el.textContent)
+    }))()`);
+    check("8.4 a profile log entry clears old team and search filters and displays the selected person's logs",
+      crossTeam.author === crossTeam.expectedAuthor && crossTeam.selected === crossTeam.expectedAuthor
+      && crossTeam.department === '__all__' && crossTeam.team === '__all__'
+      && crossTeam.searches.every(value => value === '')
+      && crossTeam.authors.length > 0 && crossTeam.authors.every(name => name.includes('孙悦')), crossTeam);
 
     // The privacy fixture changed the employee phone above, so this final sign-in must use it.
     await logout(browser, "employee", password, phone);
@@ -304,11 +333,27 @@ async function main() {
     check("7.3 an employee has only the self log scope",
       selfScope.ready && selfScope.page === "log" && selfScope.all === false && selfScope.hasSelect
       && selfScope.people.filter(n => !n.includes('全部')).every(n => n.includes('张涛')), selfScope);
+
+    const editableLogId = await browser.evaluate("(document.querySelector('.log-card [data-action=\"edit-log\"]') || {}).dataset?.id || null");
+    check("7.3 the fresh fixture has an editable own log for the detail regression", !!editableLogId);
+    if (editableLogId) {
+      await browser.evaluate(`document.querySelector('[data-action="p-open-log"][data-id="${editableLogId}"]').click()`);
+      await waitFor(browser, "window.Pandora.idle() && document.getElementById('sheetTitle').textContent === '日志详情' && !!document.querySelector('#sheetFoot [data-action=\"edit-log\"]')");
+      const detailAction = await browser.evaluate("({ id: document.querySelector('#sheetFoot [data-action=\"edit-log\"]').dataset.id, primary: document.querySelector('#sheetFoot [data-action=\"edit-log\"]').classList.contains('primary') })");
+      check("7.3 the log detail edit action keeps the actual log id", detailAction.id === editableLogId && detailAction.primary, detailAction);
+      await browser.evaluate("document.querySelector('#sheetFoot [data-action=\"edit-log\"]').click()");
+      await waitFor(browser, "window.Pandora.idle() && !!document.getElementById('lf-content')");
+      const detailEditor = await browser.evaluate("({ title: document.getElementById('sheetTitle').textContent, id: drafts.log && drafts.log.id, hasEditor: !!document.getElementById('lf-content') })");
+      check("7.3 editing from log detail opens the selected log's editor",
+        detailEditor.title === '编辑日志' && detailEditor.id === editableLogId && detailEditor.hasEditor, detailEditor);
+      await browser.evaluate("document.getElementById('sheetClose').click()");
+    }
     await browser.evaluate("document.querySelector('[data-action=\"new-log\"]').click()");
     await waitFor(browser, "window.Pandora.idle()");
+    const logEditor = await browser.evaluate("({ title: document.getElementById('sheetTitle').textContent, existing: !!(drafts.log && drafts.log.id), hasEditor: !!document.getElementById('lf-content'), dates: document.getElementById('lf-date') ? document.getElementById('lf-date').options.length : 0, dateError: /dateKey is not defined/.test(document.body.textContent) })");
     check("7.3 writing a log opens the editor without a date helper error",
-      await browser.evaluate("document.getElementById('sheetTitle').textContent === '写日志' && !!document.getElementById('lf-content') && !/dateKey is not defined/.test(document.body.textContent)"),
-      await browser.evaluate("({ title: document.getElementById('sheetTitle').textContent, hasEditor: !!document.getElementById('lf-content') })"));
+      logEditor.title === (logEditor.existing ? '编辑日志' : '写日志') && logEditor.hasEditor && logEditor.dates >= 3
+      && !logEditor.dateError && !browser.errors.some(message => /dateKey is not defined/.test(message)), logEditor);
   } finally {
     try {
       const current = await api(base, "GET", "/api/v1/me/profile", { token: employee });

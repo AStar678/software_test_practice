@@ -455,6 +455,14 @@ def run(base: str) -> int:
           and not comment_notifications(middle, unpublished_id)
           and (assigned_copies[0].get("objectId") or "") == unpublished_id,
           {"copies": len(assigned_copies), "comment": published_comment})
+    if assigned_copies:
+        status, current_task, _ = api.call("GET", "/api/v1/notifications/" + assigned_copies[0]["id"] + "/task", colleague)
+        check("8.5 a live comment message can open a task while current authority remains",
+              status == 200 and current_task.get("taskId") == unpublished_id
+              and current_task.get("accessRevoked") is False,
+              {"status": status, "taskId": current_task.get("taskId"), "accessRevoked": current_task.get("accessRevoked")})
+    else:
+        check("8.5 a live comment message can open a task while current authority remains", False, "no delivered comment message")
 
     status_self_comment, self_comment, _ = api.call(
         "POST", f"/api/v1/tasks/{unpublished_id}/comments", colleague,
@@ -495,8 +503,17 @@ def run(base: str) -> int:
 
     deleted_message = wait_for(deleted_copy, timeout=10)
     check("8.5 the existing message for a deleted comment is clipped and loses its object jump",
-          bool(deleted_message) and deleted_message.get("objectId") is None and deleted_message.get("focus") is None,
+          bool(deleted_message) and deleted_message.get("objectId") is None and deleted_message.get("focus") is None
+          and deleted_message.get("taskId") is None and deleted_message.get("requestId") is None
+          and deleted_message.get("canOpenTask") is False,
           deleted_message)
+    if deleted_message:
+        status, deleted_task, _ = api.call("GET", "/api/v1/notifications/" + deleted_message["id"] + "/task", employee)
+        check("8.5 a deleted comment cannot use the historical task endpoint",
+              status == 404 and deleted_task.get("code") == "NOT_FOUND" and "description" not in deleted_task,
+              {"status": status, "code": deleted_task.get("code")})
+    else:
+        check("8.5 a deleted comment cannot use the historical task endpoint", False, "no deleted comment message")
 
     # Same idempotency key twice: one comment, one message.
     dedupe_body = {"body": marker + " 幂等评论"}
@@ -512,10 +529,11 @@ def run(base: str) -> int:
     # ---------------- delivered comment messages re-verify current authority ----------------
     delivered_comment = next((row for row in employee_comment_events()
                               if row.get("objectId") == created["taskId"]), None)
+    private_after_removal = marker + " 移出后生效的新任务说明"
     _, task_now, task_headers = api.call("GET", "/api/v1/tasks/" + created["taskId"], middle)
     status_change, change, _ = api.call("PATCH", "/api/v1/tasks/" + created["taskId"], middle,
                                         {"command": "change", "reason": "移除评论接收人", "title": title,
-                                         "description": "标签与审核生命周期验证。", "priority": "medium", "allDay": True,
+                                         "description": private_after_removal, "priority": "medium", "allDay": True,
                                          "startDate": iso_day(0), "dueDate": iso_day(3), "assigneeIds": [colleague_id]},
                                         api.key("change"), Api.etag(task_now))
     approve_current(api, "middle", change, "upper")
@@ -523,16 +541,27 @@ def run(base: str) -> int:
     check("8.4 the removal of one assignee becomes the effective version",
           status_change in (200, 201) and employee_id not in (effective_after.get("assigneeIds") or []),
           {"status": status_change, "result": change, "assignees": effective_after.get("assigneeIds")})
-    _, gone, _ = api.call("GET", "/api/v1/tasks/" + created["taskId"] + "/comments?limit=10&offset=0", employee)
-    check("8.4 losing task authority removes normal comment access", gone.get("code") == "NOT_FOUND" or gone.get("message") or not gone.get("items"), gone)
+    gone_status, gone, _ = api.call("GET", "/api/v1/tasks/" + created["taskId"] + "/comments?limit=10&offset=0", employee)
+    task_status, task_gone, _ = api.call("GET", "/api/v1/tasks/" + created["taskId"], employee)
+    check("8.4 losing task authority removes normal task and comment access",
+          gone_status == task_status == 404 and gone.get("code") == task_gone.get("code") == "NOT_FOUND",
+          {"comments": gone_status, "task": task_status})
     if delivered_comment:
         _, reopened, _ = api.call("GET", "/api/v1/notifications/" + delivered_comment["id"], employee)
         check("8.5 an already delivered comment message is re-verified and masked after authority loss",
               reopened.get("objectId") is None and reopened.get("focus") is None
+              and reopened.get("taskId") is None and reopened.get("requestId") is None
+              and reopened.get("canOpenTask") is False
               and "第一条评论" not in (reopened.get("summary") or "")
               and reopened.get("purpose") == "新评论", reopened)
+        status, historical, _ = api.call("GET", "/api/v1/notifications/" + delivered_comment["id"] + "/task", employee)
+        check("8.5 a delivered comment cannot leak a new task version through the historical endpoint after authority loss",
+              status == 404 and historical.get("code") == "NOT_FOUND"
+              and "description" not in historical and private_after_removal not in json.dumps(historical, ensure_ascii=False),
+              {"status": status, "code": historical.get("code")})
     else:
         check("8.5 an already delivered comment message is re-verified and masked after authority loss", False, "no delivered comment message")
+        check("8.5 a delivered comment cannot leak a new task version through the historical endpoint after authority loss", False, "no delivered comment message")
 
     # ---------------- log comments stay independent of the 24h freeze ----------------
     _, logs, _ = api.call("GET", "/api/v1/work-logs?scope=self&limit=10", employee)
