@@ -124,19 +124,6 @@
       return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
     });
   }
-  function summarizeTaskRows(rows, accountId, nowMs) {
-    const counts = { total: rows.length, own: 0, created: 0, visible: 0, pendingComplete: 0, done: 0, overdue: 0 };
-    rows.forEach(function (task) {
-      const relation = relationOf(task, accountId);
-      if (relation.assigned) counts.own += 1;
-      if (relation.created) counts.created += 1;
-      if (relation.visibleOnly) counts.visible += 1;
-      if (task && task.pendingKind === "complete") counts.pendingComplete += 1;
-      if (taskIsDone(task)) counts.done += 1;
-      if (taskIsOverdue(task, nowMs)) counts.overdue += 1;
-    });
-    return counts;
-  }
   function pageTaskRows(rows, page, pageSize) {
     const size = Math.max(1, Math.floor(pageSize || PAGE_SIZE));
     const pages = Math.max(1, Math.ceil(rows.length / size));
@@ -148,11 +135,10 @@
     const config = options || {};
     const filters = config.filters || defaultFilters();
     const filtered = (rows || []).filter(function (task) { return matchesTaskFilters(task, filters, config.accountId, config.timeZone); });
-    const counts = summarizeTaskRows(filtered, config.accountId, config.nowMs);
     const sort = config.sort || { key: "start", dir: "asc" };
     const sorted = sortTaskRows(filtered, sort.key, sort.dir);
     const paged = pageTaskRows(sorted, config.page, config.pageSize || PAGE_SIZE);
-    return { rows: filtered, sorted: sorted, counts: counts, paged: paged };
+    return { rows: filtered, sorted: sorted, paged: paged };
   }
 
   /* ---------- session helpers ---------- */
@@ -281,15 +267,6 @@
       '<th scope="col">排期类型</th>' + '<th scope="col">是否完成</th>' +
       '<th scope="col">进展备注</th><th scope="col">逾期</th><th scope="col">上级任务</th></tr>';
   }
-  function countsHTML(result) {
-    const counts = result ? result.counts : { total: 0, own: 0, created: 0, visible: 0, pendingComplete: 0, done: 0, overdue: 0 };
-    const items = [["total", "总数", counts.total], ["own", "我负责", counts.own], ["created", "我创建", counts.created],
-      ["visible", "仅可见", counts.visible], ["pendingComplete", "待完成审核", counts.pendingComplete],
-      ["done", "已完成", counts.done], ["overdue", "逾期未完成", counts.overdue]];
-    return items.map(function (item) {
-      return '<span class="p-table-count" data-count="' + item[0] + '"><b>' + item[2] + '</b>' + item[1] + '</span>';
-    }).join("");
-  }
   function emptyRow(message, action) {
     return '<tr class="p-table-empty"><td colspan="17"><div class="p-table-empty-body">' + message + (action || "") + '</div></td></tr>';
   }
@@ -319,12 +296,11 @@
     return '<section class="card p-task-table-card" aria-label="任务表单">' +
       '<header class="p-table-header"><div class="p-table-heading">' +
         '<button type="button" class="p-table-back" data-action="task-table-close">返回日历</button>' +
-        '<h2>任务表单</h2><span class="p-table-source">当前授权正常任务</span></div>' +
+        '<h2>任务表单</h2></div>' +
         '<div class="p-table-tools"><button type="button" class="btn tiny-btn primary" data-action="task-table-refresh">刷新任务</button></div></header>' +
       filterBarHTML() +
-      '<div class="p-table-counts" id="p-table-counts" aria-live="polite"></div>' +
       '<div class="p-table-scroll" id="p-table-scroll" tabindex="0" role="region" aria-label="任务表，可纵向和横向滚动">' +
-        '<table class="p-task-table"><caption>任务名称固定在左侧，列头可排序；点击任务名称打开原任务详情。</caption>' +
+        '<table class="p-task-table">' +
         '<thead id="p-table-head"></thead><tbody id="p-table-body"></tbody></table></div>' +
       '<nav class="p-table-pager" id="p-table-pager" aria-label="任务分页"></nav></section>';
   }
@@ -343,13 +319,11 @@
     const scroller = document.getElementById("p-table-scroll");
     const keepScroll = T.scrollMemory != null ? T.scrollMemory : (scroller ? scroller.scrollTop : 0);
     T.scrollMemory = null;
-    const countsEl = document.getElementById("p-table-counts");
     const pager = document.getElementById("p-table-pager");
 
     if (T.loading) {
       head.innerHTML = headHTML();
       body.innerHTML = emptyRow("正在加载当前授权任务…");
-      if (countsEl) countsEl.innerHTML = '<span class="p-table-count is-muted">正在加载…</span>';
       if (pager) pager.innerHTML = "";
       // Keep the reader's place across the masked refresh and restore it with the new rows.
       if (scroller) T.scrollMemory = keepScroll;
@@ -358,7 +332,6 @@
     if (T.error) {
       head.innerHTML = headHTML();
       body.innerHTML = emptyRow("任务加载失败：" + esc(T.error), '<button type="button" class="btn tiny-btn primary" data-action="task-table-retry">重试</button>');
-      if (countsEl) countsEl.innerHTML = '<span class="p-table-count is-muted">加载失败，未显示统计</span>';
       if (pager) pager.innerHTML = "";
       if (scroller) T.scrollMemory = keepScroll;
       return;
@@ -366,7 +339,6 @@
     if (!companyZone()) {
       head.innerHTML = headHTML();
       body.innerHTML = emptyRow("无法确定公司时区，任务日期不能按业务口径显示。", '<button type="button" class="btn tiny-btn primary" data-action="task-table-retry">重试</button>');
-      if (countsEl) countsEl.innerHTML = '<span class="p-table-count is-muted">公司时区缺失</span>';
       if (pager) pager.innerHTML = "";
       return;
     }
@@ -378,7 +350,6 @@
     head.innerHTML = headHTML();
     if (!rawRows().length) {
       body.innerHTML = emptyRow("当前没有可查看的任务。", '<button type="button" class="btn tiny-btn" data-action="task-table-refresh">重新加载</button>');
-      if (countsEl) countsEl.innerHTML = countsHTML(result);
       if (pager) pager.innerHTML = "";
       return;
     }
@@ -387,7 +358,6 @@
     } else {
       body.innerHTML = result.paged.items.map(function (task) { return rowHTML(task, zone); }).join("");
     }
-    if (countsEl) countsEl.innerHTML = countsHTML(result);
     if (pager) pager.innerHTML = pagerHTML(result);
     if (scroller) scroller.scrollTop = keepScroll;
   }
@@ -608,7 +578,7 @@
   /* Main-navigation return into an already-open task table must re-query the full current
      authorization set. Only that transition triggers a load; internal paints, sorting, paging and
      ResizeObserver callbacks do not. Loading is set before the first render so retained rows and
-     counts never appear as current results while the query is in flight. */
+     previous rows never appear as current results while the query is in flight. */
   const previousSetPage = setPage;
   setPage = function (page) {
     const returningToTable = page === "view" && state.page !== "view" && state.viewPage === "table" && !!P.ready;
@@ -622,7 +592,7 @@
     pageSize: PAGE_SIZE, queryMax: QUERY_MAX,
     state: T,
     open: openTable, close: closeTable, refresh: refreshTable, paint: paintResults,
-    compute: computeTaskForm, matches: matchesTaskFilters, sort: sortTaskRows, summarize: summarizeTaskRows,
+    compute: computeTaskForm, matches: matchesTaskFilters, sort: sortTaskRows,
     page: pageTaskRows, relation: relationOf, isDone: taskIsDone, isOverdue: taskIsOverdue,
     businessDates: taskBusinessDates, companyDateKey: companyDateKey, companyDateTime: companyDateTime,
     companyZone: companyZone, current: filteredResult

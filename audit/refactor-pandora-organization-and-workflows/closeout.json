@@ -1,0 +1,72 @@
+{
+  "updated": "2026-10-28T13:09:46.965231+00:00",
+  "baseRevision": "64ea994e7b97b740b7fb60eae07b8f6c1b000d70",
+  "dirtyWorktree": true,
+  "completedTasks": 26,
+  "totalTasks": 57,
+  "pausedByUser": true,
+  "independentVerification": false,
+  "jarSha256": "9706dd1e064021022f229489b7a9ebca1a6aa32c738aba9c9ff69a9a223b86bc",
+  "reports": {
+    "account-contract": {
+      "passed": 74,
+      "total": 74,
+      "reportedAt": "2026-10-28T12:23:58.832455+00:00",
+      "sha256": "9835365fe97102254b604e39d5c6b86aa33be84b631043c148b52226611e008c"
+    },
+    "placement-migration": {
+      "passed": 51,
+      "total": 51,
+      "reportedAt": "2026-10-28T11:25:14.077788+00:00",
+      "sha256": "7e74e3f6e8acc45e02924f2bdb7d40f5282cdde7b8303104600927880489eb13"
+    },
+    "workspace-access": {
+      "passed": 62,
+      "total": 62,
+      "reportedAt": "2026-10-28T11:51:10.287273+00:00",
+      "sha256": "3eaad0dad70074466dc1a71f608781a82d72d4782eb14b03bcab65783a5693a9"
+    },
+    "review-routing": {
+      "passed": 51,
+      "total": 51,
+      "reportedAt": "2026-10-28T12:13:00.966242+00:00",
+      "sha256": "d1ab5b859451f7ec24fbff108a8080ff5a3e7b7b62f34f1556d617ed16a770dc"
+    },
+    "profile-phone-matrix": {
+      "passed": 32,
+      "total": 32,
+      "reportedAt": "2026-10-28T12:17:11.296776+00:00",
+      "sha256": "aaa13359c37b86d5575fc79de64c9c78541f0b0621ec3b232aa951be90a983dc"
+    },
+    "organization-plans": {
+      "passed": 30,
+      "total": 30,
+      "reportedAt": "2026-10-28T12:13:02.328393+00:00",
+      "sha256": "e556cf2aafb17c10c2b64e90575f572e1501f7f1a3e93956d24b88eaf59440f6"
+    },
+    "business-takeover": {
+      "passed": 74,
+      "total": 74,
+      "reportedAt": "2026-10-28T12:50:46.011888+00:00",
+      "sha256": "57392d195e36acf79c0c9b1f2de609cce70be767d89580fbf486e25ba95ab031"
+    },
+    "admin-browser": {
+      "passed": 15,
+      "total": 15,
+      "reportedAt": "2026-10-28T13:07:57.380Z",
+      "sha256": "700fe3cacd9b28c485ae6f131a6df36c017176e7d0a8d482c641096557f86524"
+    },
+    "employee-browser": {
+      "passed": 46,
+      "total": 46,
+      "reportedAt": "2026-10-28T13:08:19.848Z",
+      "sha256": "b6816bb231ea3bb6d4b678f155da8694bb8c54ba1501cda5b8f23af94a67f57c"
+    },
+    "web-resources": {
+      "passed": 14,
+      "total": 14,
+      "reportedAt": "2026-10-28T12:59:25.160477+00:00",
+      "sha256": "d1db5e34e6f97164ca74868f9ba409f8322af9bfb07d3c62957d3483d94d737b"
+    }
+  }
+}

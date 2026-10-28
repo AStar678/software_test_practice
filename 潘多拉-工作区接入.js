@@ -95,7 +95,7 @@
     const weekday = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][today.getDay()];
     document.getElementById("page-map").innerHTML =
       '<section class="workday"><div class="workday-copy"><h2>' + esc(fmtDate(today)) + '</h2><p>' + esc(weekday) + '</p></div>' +
-      '<button type="button" class="btn primary create-task" data-action="new-task"><span aria-hidden="true">＋</span>新建任务</button></section>' +
+      '</section>' +
       '<div class="map-grid">' +
         '<section class="quad company-quad" aria-labelledby="q1"><div class="card-head"><h2 id="q1">公司事项</h2><span class="hint">统一发布</span></div>' +
           '<div class="q-body" tabindex="0" role="region" aria-labelledby="q1">' + (company.length ? company.map((item, index) =>

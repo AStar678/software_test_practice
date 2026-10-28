@@ -1,6 +1,7 @@
 "use strict";
 /* 后端适配层：沿用原型的渲染器和交互，仅替换数据来源与会话。 */
 (function () {
+  Object.assign(ROLE_LABEL,{founder:"创始人",department_head:"部门负责人",team_head:"团队负责人",employee:"员工"});
   const SESSION_KEY = "pandora.backend.session";
   const P = window.Pandora = {
     epoch: 0, token: sessionStorage.getItem(SESSION_KEY) || "", ready: false,
@@ -53,7 +54,7 @@
     document.querySelectorAll(".role-switch button").forEach(b => b.setAttribute("aria-pressed", "false"));
     document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div>' +
       '<div class="auth-copy"><p class="eyebrow">PANDORA WORKSPACE</p><h2>让每一天，<br>有序向前。</h2><p>登录你的工作台，查看任务与团队动态。</p></div>' +
-      '<form id="backend-login"><div class="field"><label for="login-user">手机号</label><input id="login-user" type="text" name="username" inputmode="tel" autocomplete="tel" autocapitalize="none" spellcheck="false" placeholder="请输入本人手机号" required value="' + esc(identifier || "") + '"></div>' +
+      '<form id="backend-login"><div class="field"><label for="login-user">手机号</label><input id="login-user" type="text" name="phone" inputmode="tel" autocomplete="tel" autocapitalize="none" spellcheck="false" placeholder="请输入本人手机号" required value="' + esc(identifier || "") + '"></div>' +
       '<div class="field"><label for="login-password">密码</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required></div>' +
       '<div class="callout" id="login-error" role="alert"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
       '<button type="submit" class="btn primary auth-submit">登录工作台</button></form>' +
@@ -64,9 +65,9 @@
     document.getElementById("backend-login").addEventListener("submit", event => {
       event.preventDefault();
       P.busy(async () => {
-        const username = document.getElementById("login-user").value.trim();
+        const phone = document.getElementById("login-user").value.trim();
         const password = document.getElementById("login-password").value;
-        const result = await P.request("/auth/sessions", { method: "POST", body: { username, password, accountType: "employee" } });
+        const result = await P.request("/auth/sessions", { method: "POST", body: { phone, password, accountType: "employee" } });
         P.epoch++;
         P.token = result.token; sessionStorage.setItem(SESSION_KEY, P.token);
         // A new account or a reset account must change its password before any business page loads.
@@ -241,12 +242,30 @@
   function mapPerson(u) {
     /* departmentName is the real department; teamName is an independent team and must never stand in
        for it (a candidate list grouped by team would hide cross-department choices). */
-    return { id: u.id, name: u.displayName || "相关人员", role: u.role || "lower",
-      dept: u.departmentName || u.department || "未分配部门", superiorId: u.managerId || null, raw: u };
+    return { id: u.id, name: u.displayName || "相关人员", role: u.placementType || u.role || "employee",
+      dept: u.departmentName || u.department || (u.placementType === "founder" ? "公司" : "—"), superiorId: u.managerId || null, raw: u };
   }
+  // One company-calendar conversion shared by calendar, log and table projections.
+  const companyFormatters=new Map(),dayBoundaryCache=new Map();
+  P.companyZone=function(){return P.data?.me?.organizationTimeZone||P.data?.home?.timeZone||null;};
+  P.companyParts=function(value,zone=P.companyZone()){
+    if(!zone)throw new Error("公司时区尚未加载");
+    if(!companyFormatters.has(zone))companyFormatters.set(zone,new Intl.DateTimeFormat('en-US',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}));
+    const parts=companyFormatters.get(zone).formatToParts(new Date(value)),out={};parts.forEach(p=>out[p.type]=p.value);return out;
+  };
+  P.companyDateKey=function(value,zone){const p=P.companyParts(value,zone);return p.year+'-'+p.month+'-'+p.day;};
+  P.companyDayStart=function(key,zone=P.companyZone()){
+    const cacheKey=zone+':'+key;if(dayBoundaryCache.has(cacheKey))return new Date(dayBoundaryCache.get(cacheKey));
+    const nominal=Date.parse(key+'T00:00:00Z');if(!Number.isFinite(nominal))throw new Error("无效业务日期");
+    // First instant of the company date, including zones whose DST transition skips midnight.
+    let low=nominal-36*3600000,high=nominal+36*3600000;
+    while(high-low>1){const mid=Math.floor((low+high)/2);if(P.companyDateKey(mid,zone)<key)low=mid;else high=mid;}
+    if(P.companyDateKey(high,zone)!==key)throw new Error("公司日期不存在");
+    dayBoundaryCache.set(cacheKey,high);return new Date(high);
+  };
   P.mapTask = function (t) {
     return { id: t.id || t.taskId, parentId: t.parentTaskId || null, title: t.title || "", desc: t.description || "",
-      creatorId: t.originalCreatorId, assigneeIds: (t.assigneeIds || []).slice(), selfCreated: (t.assigneeIds || []).length === 1 && t.assigneeIds[0] === t.originalCreatorId,
+      creatorId: t.originalCreatorId, businessOwnerId: t.businessOwnerId || t.originalCreatorId, assigneeIds: (t.assigneeIds || []).slice(), selfCreated: (t.assigneeIds || []).length === 1 && t.assigneeIds[0] === t.originalCreatorId,
       createdAt: new Date(t.createdAt), allDay: !!t.allDay,
       start: t.allDay ? parseISO(t.startDate) : new Date(t.startAt), due: t.allDay ? parseISO(t.dueDate) : new Date(t.dueAt),
       urgency: ({ urgent: "紧急", high: "高", medium: "中", low: "低" })[t.priority] || "中",
@@ -333,7 +352,7 @@
     retries.clear(); P.ready = true; gate(); renderAll();
     return P.data;
   };
-  P.logout = async function (username) {
+  P.logout = async function () {
     if (P.token) await P.request("/auth/sessions/current", { method: "DELETE" });
     P.epoch++; P.token = ""; sessionStorage.removeItem(SESSION_KEY);
     clearData(); state.logFilter = "logs"; state.logsMineOnly = false; state.logAuthorQuery = "";
@@ -344,7 +363,7 @@
   visibleTasks = () => TASKS.slice();
   visibleLogs = () => LOGS.slice();
   assignablePeople = function (a) {
-    return P.data.users.filter(u => u.id === a.id || a.role === "upper" || (a.role === "middle" && u.role === "lower" && u.teamId === P.data.me.teamId)).map(u => personById(u.id));
+    return P.data.users.filter(u => u.active !== false).map(u => personById(u.id));
   };
   isOverdue = function (t) { return !isFinished(t) && (t.allDay ? new Date(t.raw.dueAt) : t.due) < new Date(); };
   const originalRender = renderAll;

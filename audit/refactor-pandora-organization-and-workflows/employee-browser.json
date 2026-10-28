@@ -1,0 +1,385 @@
+{
+  "updated": "2026-10-28T13:08:19.848Z",
+  "checks": [
+    {
+      "check": "login form ready alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "dashboard priority and independent quadrants at 320",
+      "pass": true,
+      "evidence": {
+        "quadrants": 4,
+        "scroll": true,
+        "priorities": [
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          }
+        ],
+        "duplicate": false,
+        "longTitle": true
+      }
+    },
+    {
+      "check": "dashboard priority and independent quadrants at 390",
+      "pass": true,
+      "evidence": {
+        "quadrants": 4,
+        "scroll": true,
+        "priorities": [
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          }
+        ],
+        "duplicate": false,
+        "longTitle": true
+      }
+    },
+    {
+      "check": "dashboard priority and independent quadrants at 1440",
+      "pass": true,
+      "evidence": {
+        "quadrants": 4,
+        "scroll": true,
+        "priorities": [
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          }
+        ],
+        "duplicate": false,
+        "longTitle": true
+      }
+    },
+    {
+      "check": "task form retains more than two pages and removes explanatory statistics",
+      "pass": true
+    },
+    {
+      "check": "global task form sort title",
+      "pass": true
+    },
+    {
+      "check": "global task form sort createdAt",
+      "pass": true
+    },
+    {
+      "check": "global task form sort start",
+      "pass": true
+    },
+    {
+      "check": "global task form sort due",
+      "pass": true
+    },
+    {
+      "check": "global task form sort urgency",
+      "pass": true
+    },
+    {
+      "check": "global task form sort status",
+      "pass": true
+    },
+    {
+      "check": "task form third page keeps unique rows",
+      "pass": true
+    },
+    {
+      "check": "combined task form filters recalculate total and page",
+      "pass": true
+    },
+    {
+      "check": "profile has no employee identity or team management writers",
+      "pass": true
+    },
+    {
+      "check": "self email and avatar save against actual service",
+      "pass": true
+    },
+    {
+      "check": "employee password maintenance entry remains usable",
+      "pass": true
+    },
+    {
+      "check": "company day boundaries respect DST and skipped midnight",
+      "pass": true
+    },
+    {
+      "check": "cross-day first middle last project timed full-day timed",
+      "pass": true,
+      "evidence": [
+        {
+          "start": 1200,
+          "end": 1440,
+          "point": false,
+          "fullDay": false
+        },
+        {
+          "start": 0,
+          "end": 1440,
+          "point": false,
+          "fullDay": true
+        },
+        {
+          "start": 0,
+          "end": 600,
+          "point": false,
+          "fullDay": false
+        }
+      ]
+    },
+    {
+      "check": "midnight deadline exclusive and midnight point belongs to next day",
+      "pass": true,
+      "evidence": [
+        null,
+        {
+          "start": 0,
+          "end": 0,
+          "point": true,
+          "fullDay": false
+        }
+      ]
+    },
+    {
+      "check": "projected all-day tasks appear once and leave timed axis",
+      "pass": true
+    },
+    {
+      "check": "real day view renders projected full-day and midnight point",
+      "pass": true
+    },
+    {
+      "check": "dense all-day list and entire 24-hour axis stay scrollable",
+      "pass": true
+    },
+    {
+      "check": "calendar plus still opens a creation form",
+      "pass": true
+    },
+    {
+      "check": "calendar rendering never mutates raw schedules",
+      "pass": true
+    },
+    {
+      "check": "login form ready beta-two-employee",
+      "pass": true
+    },
+    {
+      "check": "phone login beta-two-employee",
+      "pass": true
+    },
+    {
+      "check": "takeover recipient sees reopen on original completed work",
+      "pass": true
+    },
+    {
+      "check": "reopen exposes ordered active replacement assignees",
+      "pass": true
+    },
+    {
+      "check": "reopen saves new round and replacement without adding business owner",
+      "pass": true
+    },
+    {
+      "check": "login form ready founder",
+      "pass": true
+    },
+    {
+      "check": "phone login founder",
+      "pass": true
+    },
+    {
+      "check": "fixed profile organization fields founder",
+      "pass": true,
+      "evidence": [
+        "公司",
+        "组织身份",
+        "职位",
+        "直属上级"
+      ]
+    },
+    {
+      "check": "fixed manager retains subordinate profile and logs founder",
+      "pass": true
+    },
+    {
+      "check": "actual descendant contact and log entry founder",
+      "pass": true
+    },
+    {
+      "check": "login form ready alpha-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-head",
+      "pass": true
+    },
+    {
+      "check": "fixed profile organization fields alpha-head",
+      "pass": true,
+      "evidence": [
+        "公司",
+        "组织身份",
+        "部门",
+        "职位",
+        "直属上级"
+      ]
+    },
+    {
+      "check": "fixed manager retains subordinate profile and logs alpha-head",
+      "pass": true
+    },
+    {
+      "check": "actual descendant contact and log entry alpha-head",
+      "pass": true
+    },
+    {
+      "check": "login form ready alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "fixed profile organization fields alpha-two-head",
+      "pass": true,
+      "evidence": [
+        "公司",
+        "组织身份",
+        "部门",
+        "职位",
+        "团队",
+        "直属上级"
+      ]
+    },
+    {
+      "check": "fixed manager retains subordinate profile and logs alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "actual descendant contact and log entry alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "employee interactions have no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "result": "PASS"
+}

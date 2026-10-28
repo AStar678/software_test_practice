@@ -26,9 +26,11 @@
     const person = user.managerId && personById(user.managerId);
     return person ? person.name : user.managerId ? "已分配直属上级" : "无";
   }
+  function identityLabel(user) { return ({founder:"创始人",department_head:"部门负责人",team_head:"团队负责人",employee:"员工"})[user.placementType || user.role] || "员工"; }
   function readonlyRows(user) {
-    return row("公司", user.organizationName) + row("部门", user.departmentName) + row("职位", user.positionName) +
-      row("独立团队", user.teamName) + row("直属上级", superior(user));
+    return row("公司", user.organizationName) + row("组织身份", identityLabel(user)) +
+      (user.departmentName ? row("部门", user.departmentName) : "") + row("职位", user.positionName) +
+      (user.teamName ? row("团队", user.teamName) : "") + row("直属上级", superior(user));
   }
   function field(id, type, label, value, max, autocomplete, required) {
     return '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" type="' + type + '" value="' + esc(value || "") + '" maxlength="' + max + '" autocomplete="' + autocomplete + '"' + (required ? ' required data-autofocus' : '') + ' /></div>';
@@ -45,92 +47,10 @@
       list.map(person => button("p-open-person", person.displayName, "", person.id)).join("") + '</div></details>';
   }
 
-  function teamEntrySection() {
-    if (me().canManageTeam !== true) return "";
-    return '<section class="card profile-fold"><div class="profile-details"><div class="profile-row"><span class="k">团队管理</span><span class="v">' +
-      button("p-open-teams", "管理本人部门的团队", "primary") + '</span></div>' +
-      '<p class="tiny muted">仅显示本人可管理的部门、团队及本部门负责人候选；创建者默认为负责人，可转交本部门成员。团队负责人身份不会带来额外的任务或日志权限。</p></div></section>';
-  }
-
-  function openTeams() {
-    return P.busy(async function () {
-      const data = await P.request("/me/team-management");
-      openSheet(teamView(data));
-    });
-  }
-
-  function teamView(data) {
-    const departments = data.departments || [];
-    const department = departments[0];
-    if (!department) {
-      return { title: "团队管理", body: '<p class="muted">当前账号没有可管理的部门，请联系管理员确认组织关系。</p>',
-        foot: button("sheet-close", "关闭") };
-    }
-    const members = data.members || [];
-    const memberOptions = (selected) => members.map(person => '<option value="' + esc(person.id) + '"' +
-      (person.id === selected ? ' selected' : '') + '>' + esc(person.displayName) + '</option>').join("");
-    const teams = data.teams || [];
-    const teamCards = teams.map(team => '<div class="card team-card" data-team="' + esc(team.id) + '">' +
-      '<div class="profile-row"><span class="k">' + esc(team.name) + '</span><span class="v">' +
-      (team.memberCount || 0) + ' 人 · 负责人 ' + esc(team.leadName || '未设置') + '</span></div>' +
-      '<div class="field"><label for="team-lead-' + esc(team.id) + '">转交负责人</label>' +
-      '<select id="team-lead-' + esc(team.id) + '">' + memberOptions(team.leadUserId) + '</select></div>' +
-      '<div class="action-grid">' + button("p-transfer-team", "转交负责人", "", team.id) + '</div>' +
-      '<span class="tiny muted" data-team-version="' + esc(team.rowVersion) + '"></span></div>').join("");
-    return {
-      title: "团队管理",
-      body: '<p class="tiny muted">仅可管理本人所属部门：' + esc(department.name) + '。写入继续使用现有团队创建/转交能力，服务端每次重新校验授权与部门。</p>' +
-        (teamCards || '<p class="muted">本部门还没有团队，可以在下方创建。</p>') +
-        '<div class="divider"></div><div class="field"><label for="team-create-name">新团队名称</label>' +
-        '<input id="team-create-name" maxlength="100" placeholder="例如：产品一组" /></div>' +
-        '<div class="field"><label for="team-create-lead">负责人</label><select id="team-create-lead">' +
-        '<option value="">（创建者默认负责）</option>' + memberOptions(null) + '</select></div>' +
-        '<div class="action-grid">' + button("p-create-team", "创建团队", "primary") + '</div>' +
-        '<div class="callout reject" id="team-error" role="alert" hidden></div>',
-      foot: button("sheet-close", "关闭")
-    };
-  }
-
-  function createTeam() {
-    return P.busy(async function () {
-      const name = (document.getElementById("team-create-name") || {}).value || "";
-      if (!name.trim()) throw new Error("请填写团队名称。");
-      const lead = (document.getElementById("team-create-lead") || {}).value || "";
-      const data = await currentTeamDepartment();
-      const body = { name: name.trim(), departmentId: data.departments[0].id };
-      if (lead) body.leadUserId = lead;
-      await P.mutation("team-create", "POST", "/admin/teams", body, null);
-      P.notice("团队已创建，创建者默认为负责人。");
-      await P.reload();
-      replaceTopSheet(teamView(await P.request("/me/team-management")));
-    }, "team-error");
-  }
-
-  async function currentTeamDepartment() {
-    const data = await P.request("/me/team-management");
-    if (!data.departments || !data.departments.length) throw new Error("当前没有可管理的部门。");
-    return data;
-  }
-
-  function transferTeam(id) {
-    return P.busy(async function () {
-      const select = document.getElementById("team-lead-" + id);
-      const card = document.querySelector('[data-team="' + id + '"]');
-      const version = card && card.querySelector("[data-team-version]") ? card.querySelector("[data-team-version]").dataset.teamVersion : null;
-      if (!select || !select.value) throw new Error("请选择新的团队负责人。");
-      if (!version) throw new Error("团队数据已失效，请关闭后重新打开。");
-      await P.mutation("team-transfer:" + id, "PATCH", "/admin/teams/" + encodeURIComponent(id),
-        { leadUserId: select.value }, '"' + version + '"');
-      P.notice("团队负责人已转交。");
-      await P.reload();
-      replaceTopSheet(teamView(await P.request("/me/team-management")));
-    }, "team-error");
-  }
-
   function openPerson(id) {
     return P.busy(async function () {
       const person = await P.request("/users/" + encodeURIComponent(id));
-      const detail = row("姓名", person.displayName) +
+      const detail = row("姓名", person.displayName) + row("组织身份", identityLabel(person)) +
         (person.departmentName ? row("部门", person.departmentName) : "") +
         (person.positionName ? row("职位", person.positionName) : "") +
         (person.teamName ? row("独立团队", person.teamName) : "") +
@@ -160,13 +80,13 @@
       avatarHTML(user) + '</div><div class="profile-heading"><p class="eyebrow">MY WORKSPACE</p><h2>' + esc(user.displayName) + '</h2><p>' + esc(user.positionName || ROLE_LABEL[user.role] || "团队成员") + '</p></div>' +
       '<button type="button" class="profile-settings" data-action="p-open-settings" aria-label="个人设置">' + gear + '</button></div>' +
       '<div class="profile-details">' + row("联系电话", user.phone) + row("邮箱", user.email) + '</div></section>' +
-      '<details class="card profile-fold" data-profile-fold="organization"' + (folds.organization ? ' open' : '') + '><summary><span>组织信息</span><span class="fold-hint">由管理员维护</span><span class="fold-chevron" aria-hidden="true">⌄</span></summary><div class="profile-details fold-content">' + readonlyRows(user) + '</div></details>' + teamEntrySection() + reportsSection();
+      '<details class="card profile-fold" data-profile-fold="organization"' + (folds.organization ? ' open' : '') + '><summary><span>组织信息</span><span class="fold-hint">由管理员维护</span><span class="fold-chevron" aria-hidden="true">⌄</span></summary><div class="profile-details fold-content">' + readonlyRows(user) + '</div></details>' + reportsSection();
   };
 
   function openSettings() {
     const user = me();
     openSheet({ title: "个人设置", body: '<div class="settings-menu">' + button("p-edit-profile", "编辑资料与头像", "primary") +
-      '<div class="settings-section"><h3>账号与安全</h3>' + row("账号", user.username) + row("身份", ROLE_LABEL[user.role] || user.role) +
+      '<div class="settings-section"><h3>账号与安全</h3>' + row("登录手机号", user.phone) + row("身份", identityLabel(user)) +
       '<div class="action-grid">' + button("p-change-password", "修改密码") + button("p-refresh-workspace", "刷新数据") +
       '<button type="button" class="btn" data-action="p-open-handover-preset" data-id="' + esc(user.id) + '" data-name="' + esc(user.displayName) + '">交接预设</button></div></div>' +
       button("p-logout", "退出登录", "danger") + '</div>' });
@@ -181,10 +101,9 @@
         '<button type="button" class="avatar-option" data-action="p-select-avatar" data-avatar="" aria-label="使用姓名头像" aria-pressed="' + !raw.avatar + '">' + esc(Array.from(raw.displayName || "我")[0]) + '</button>' +
         Object.keys(avatarPresets).map(key => '<button type="button" class="avatar-option" data-action="p-select-avatar" data-avatar="' + key + '" aria-label="' + ({rabbit:'兔子',cat:'小猫',bear:'小熊',panda:'熊猫'})[key] + '头像" aria-pressed="' + (raw.avatar === key) + '">' + avatarPresets[key] + '</button>').join('') + '</div>' +
         '<div class="field avatar-upload"><label for="profile-avatar-file">上传照片（PNG / JPG，最大10MB）</label><input id="profile-avatar-file" type="file" accept="image/png,image/jpeg"><p class="tiny muted" id="avatar-upload-status" role="status">' + (/^data:image\//.test(raw.avatar || "") ? '照片已选好，保存资料后生效。' : '照片会自动裁成方形，保存资料后生效。') + '</p></div>' +
-        field("profile-display-name", "text", "姓名（必填）", raw.displayName, 100, "name", true) +
-        field("profile-phone", "tel", "联系电话（选填）", raw.phone, 32, "tel", false) +
+        row("姓名", raw.displayName) + row("登录手机号", raw.phone) +
         field("profile-email", "email", "邮箱（选填）", raw.email, 254, "email", false) +
-        '<p class="tiny muted">手机号用于登录，不能留空；仅本人及管理链上的上级可见。邮箱仅本人可见，可留空清除。</p><div class="divider"></div>' + readonlyRows(raw) +
+        '<p class="tiny muted">姓名和登录手机号由管理员维护。邮箱仅本人可见，可留空清除。</p><div class="divider"></div>' + readonlyRows(raw) +
         '<p class="tiny muted">账号、部门、身份和直属上级由管理员维护。</p><div class="callout reject" id="profile-error" role="alert" hidden></div>',
       foot: button("sheet-back", "返回设置") + button("p-save-profile", "保存资料", "primary")
     };
@@ -205,14 +124,10 @@
     return P.busy(async function () {
       const draft = profileDraft;
       if (!current(draft)) throw new Error("资料表单已失效，请重新打开。");
-      const name = document.getElementById("profile-display-name");
-      const phone = document.getElementById("profile-phone");
       const email = document.getElementById("profile-email");
-      if (!name || !phone || !email) throw new Error("请重新打开个人资料表单。");
-      const displayName = name.value.trim();
-      if (!displayName || Array.from(displayName).length > 100) { name.focus(); throw new Error("姓名须为1至100字。"); }
+      if (!email) throw new Error("请重新打开个人资料表单。");
       if (email.value.trim() && !email.checkValidity()) { email.focus(); throw new Error("请输入有效的邮箱地址。"); }
-      const body = { displayName: displayName, phone: phone.value.trim(), email: email.value.trim() };
+      const body = { email: email.value.trim() };
       if (draft.avatarLoading) throw new Error("头像正在处理，请稍候再保存。");
       if ((draft.raw.avatar || null) !== draft.originalAvatar) body.avatar = draft.raw.avatar || null;
       await P.mutation(draft.slot, "PATCH", "/me/profile", body, draft.etag);
@@ -227,7 +142,7 @@
 
   function syncProfileDraft() {
     if (!current(profileDraft)) return;
-    for (const [field, id] of [["displayName", "profile-display-name"], ["phone", "profile-phone"], ["email", "profile-email"]]) {
+    for (const [field, id] of [["email", "profile-email"]]) {
       const input = document.getElementById(id);
       if (input) profileDraft.raw[field] = input.value;
     }
@@ -247,7 +162,7 @@
       draft.avatarLoading = true; status.textContent = "正在处理头像…";
       const data = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error("照片读取失败，请重新选择。")); reader.readAsDataURL(file); });
       const image = await new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = () => reject(new Error("照片无法打开，请重新选择。")); img.src = data; });
-      if (!current(draft) || profileDraft !== draft || !document.getElementById("profile-display-name")) return;
+      if (!current(draft) || profileDraft !== draft || !document.getElementById("profile-email")) return;
       const canvas = document.createElement("canvas"); canvas.width = canvas.height = 256;
       const context = canvas.getContext("2d"); context.fillStyle = "#fff9fc"; context.fillRect(0, 0, 256, 256);
       const size = Math.min(image.width, image.height);
@@ -295,9 +210,6 @@
 
   runAction = function (element) {
     if (element.dataset.action === "p-open-settings") return openSettings();
-    if (element.dataset.action === "p-open-teams") return openTeams();
-    if (element.dataset.action === "p-create-team") return createTeam();
-    if (element.dataset.action === "p-transfer-team") return transferTeam(element.dataset.id);
     if (element.dataset.action === "p-select-avatar") return selectAvatar(element.dataset.avatar);
     if (element.dataset.action === "p-open-person") return openPerson(element.dataset.id);
     if (element.dataset.action === "p-open-person-logs") return openPersonLogs(element.dataset.id);

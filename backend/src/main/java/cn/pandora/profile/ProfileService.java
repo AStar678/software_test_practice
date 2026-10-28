@@ -1,7 +1,6 @@
 package cn.pandora.profile;
 
 import cn.pandora.auth.Actor;
-import cn.pandora.auth.PhoneNumbers;
 import cn.pandora.common.ApiException;
 import cn.pandora.common.Db;
 import cn.pandora.common.Events;
@@ -17,7 +16,7 @@ import static cn.pandora.common.Db.*;
 
 @Service
 public class ProfileService {
-    private static final Set<String> EDITABLE = Set.of("displayName", "phone", "email", "avatar");
+    private static final Set<String> EDITABLE = Set.of("email", "avatar");
     private static final Set<String> AVATARS = Set.of("rabbit", "cat", "bear", "panda");
     private static final Pattern EMAIL = Pattern.compile("^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$");
     private final Db db;
@@ -26,15 +25,18 @@ public class ProfileService {
     public ProfileService(Db db, Events events) { this.db = db; this.events = events; }
 
     public Map<String, Object> get(Actor actor) {
-        Map<String, Object> row = db.one("SELECT u.id,u.username,u.display_name,u.phone,u.email,u.avatar,u.profile_version,u.role,"
-                + "u.team_id,u.manager_id,o.name AS organization_name,d.name AS department_name,"
+        if(actor.administrator()) throw new ApiException(403,"BUSINESS_ROLE_REQUIRED","管理员请使用独立管理端");
+        Map<String, Object> row = db.one("SELECT u.id,u.display_name,u.phone,u.email,u.avatar,u.profile_version,"
+                + "ep.team_id,o.name AS organization_name,d.name AS department_name,"
                 + "p.name AS position_name,t.name AS team_name,m.display_name AS manager_name "
-                + "FROM users u LEFT JOIN organizations o ON o.id=u.organization_id "
-                + "LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
-                + "LEFT JOIN positions p ON p.organization_id=u.organization_id AND p.id=u.position_id "
-                + "LEFT JOIN teams t ON t.organization_id=u.organization_id AND t.id=u.team_id "
-                + "LEFT JOIN users m ON m.organization_id=u.organization_id AND m.id=u.manager_id "
-                + "WHERE u.organization_id=? AND u.id=? AND u.active=1", actor.organizationId(), actor.id());
+                + "FROM users u JOIN organizations o ON o.id=u.organization_id "
+                + "JOIN employee_placements ep ON ep.organization_id=u.organization_id AND ep.employee_id=u.id "
+                + "LEFT JOIN departments d ON d.organization_id=ep.organization_id AND d.id=ep.department_id "
+                + "JOIN positions p ON p.organization_id=ep.organization_id AND p.id=ep.position_id "
+                + "LEFT JOIN teams t ON t.organization_id=ep.organization_id AND t.id=ep.team_id "
+                + "LEFT JOIN users m ON m.organization_id=u.organization_id AND m.id=? "
+                + "WHERE u.organization_id=? AND u.id=? AND u.active=1", actor.managerId(), actor.organizationId(), actor.id());
+        row.put("role",actor.role());row.put("placementType",actor.role());row.put("managerId",actor.managerId());
         row.put("rowVersion", n(row, "profileVersion"));
         return row;
     }
@@ -42,57 +44,23 @@ public class ProfileService {
     /** Called exclusively inside Writes.run; client IDs and organization fields are never accepted. */
     public Map<String, Object> update(Actor actor, String ifMatch, Map<String, Object> input) {
         Map<String, Object> values = validate(input);
-        Map<String, Object> current = db.one("SELECT display_name,phone,email,avatar,profile_version,role,login_phone FROM users WHERE organization_id=? AND id=? AND active=1 FOR UPDATE", actor.organizationId(), actor.id());
+        if(actor.administrator()) throw new ApiException(403,"BUSINESS_ROLE_REQUIRED","管理员请使用独立管理端");
+        Map<String, Object> current = db.one("SELECT email,avatar,profile_version FROM users WHERE organization_id=? AND id=? AND active=1 FOR UPDATE", actor.organizationId(), actor.id());
         long version = n(current, "profileVersion");
         Writes.checkVersion(ifMatch, version);
-        String name = values.containsKey("displayName") ? (String) values.get("displayName") : s(current, "displayName");
-        String phone = values.containsKey("phone") ? (String) values.get("phone") : s(current, "phone");
         String email = values.containsKey("email") ? (String) values.get("email") : s(current, "email");
         String avatar = values.containsKey("avatar") ? (String) values.get("avatar") : s(current, "avatar");
-        String loginPhone = s(current, "loginPhone");
-        if (values.containsKey("phone") && !"admin".equals(s(current, "role"))) {
-            // The contact number is the employee's authentication key: it may not be cleared, and the
-            // stored key is always the normalized form of the number the person just entered.
-            String normalized = PhoneNumbers.normalize(phone);
-            if (normalized == null) throw bad("员工登录手机号不能为空，请输入3至20位有效号码");
-            requireFreePhone(actor, normalized);
-            loginPhone = normalized;
-        }
-        int changed;
-        try {
-            changed = db.update("UPDATE users SET display_name=?,phone=?,email=?,avatar=?,login_phone=?,profile_version=profile_version+1 WHERE organization_id=? AND id=? AND active=1 AND profile_version=?", name, phone, email, avatar, loginPhone, actor.organizationId(), actor.id(), version);
-        } catch (org.springframework.dao.DuplicateKeyException duplicate) {
-            throw conflict("该手机号已被其他员工账号使用");
-        }
+        int changed=db.update("UPDATE users SET email=?,avatar=?,profile_version=profile_version+1 WHERE organization_id=? AND id=? AND active=1 AND profile_version=?",
+                email,avatar,actor.organizationId(),actor.id(),version);
         if (changed != 1) throw new ApiException(412, "VERSION_CONFLICT", "个人资料已更新，请重新读取后再保存");
         // Audit only which fields changed. Contact values are not copied into audit/outbox/idempotency payloads.
         events.record(actor, null, "profile.updated", List.of(), Map.of("userId", actor.id(), "fields", values.keySet()));
         return Map.of("id", actor.id(), "rowVersion", version + 1, "profileVersion", version + 1);
     }
 
-    /** Another employee may not share this login key; the message never echoes the number itself. */
-    private void requireFreePhone(Actor actor, String normalized) {
-        Map<String, Object> clash = db.find("SELECT id FROM users WHERE login_phone=? AND NOT (organization_id=? AND id=?)",
-                normalized, actor.organizationId(), actor.id());
-        if (clash != null && !clash.isEmpty()) throw conflict("该手机号已被其他员工账号使用");
-    }
-
     static Map<String, Object> validate(Map<String, Object> input) {
-        if (input == null || input.isEmpty() || !EDITABLE.containsAll(input.keySet())) throw bad("仅可修改姓名、联系电话、邮箱和头像，请至少填写一项");
+        if (input == null || input.isEmpty() || !EDITABLE.containsAll(input.keySet())) throw bad("仅可修改邮箱和头像，请至少填写一项；姓名和手机号由管理员维护");
         Map<String, Object> result = new LinkedHashMap<>();
-        if (input.containsKey("displayName")) {
-            String name = text(input.get("displayName"), "姓名", 100, false);
-            result.put("displayName", name);
-        }
-        if (input.containsKey("phone")) {
-            String phone = text(input.get("phone"), "联系电话", 32, true);
-            if (phone != null) {
-                long digits = phone.chars().filter(Character::isDigit).count();
-                if (!phone.matches("[+0-9() .-]+") || digits < 3 || digits > 20 || phone.indexOf('+') > 0 || phone.lastIndexOf('+') != phone.indexOf('+'))
-                    throw bad("联系电话须含3至20位数字，可使用开头的+、空格、括号或短横线");
-            }
-            result.put("phone", phone);
-        }
         if (input.containsKey("email")) {
             String email = text(input.get("email"), "邮箱", 254, true);
             if (email != null) {
@@ -145,5 +113,4 @@ public class ProfileService {
     }
 
     private static ApiException bad(String message) { return new ApiException(400, "INVALID_INPUT", message); }
-    private static ApiException conflict(String message) { return new ApiException(409, "PHONE_TAKEN", message); }
 }

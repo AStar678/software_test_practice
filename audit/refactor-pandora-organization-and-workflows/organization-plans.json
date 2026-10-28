@@ -1,0 +1,188 @@
+{
+  "updated": "2026-10-28T12:13:02.328393+00:00",
+  "checks": [
+    {
+      "check": "administrator can read complete versioned plan",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "employee cannot access controlled mapping plan",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "missing head is rejected without changing any original placement",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "ordinary organization maintenance cannot replace fixed founder",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "stale unit version is rejected before writes",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "incomplete expected employee versions cannot be saved",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "cross-department team placement is rejected atomically",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "late audit failure rolls back every organization write",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "creation before organization change has a pending direct manager",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "head/employee swap succeeds as one full result",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "same organization transaction reassigns pending creation to new direct manager",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "old reviewer and old page cannot approve after reassignment",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "same command replays without reapplying the swap",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "new command with old company version cannot overwrite swap",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator can read complete versioned plan",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "new units and their first employees are created atomically",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "initial credentials are returned only once outside replayable receipt",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "credentials and contacts never enter plan audit or idempotency",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "new independent employee identity is stable and first-login restricted",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator can read complete versioned plan",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "unit removal and every employee destination commit together",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "administrator can read complete versioned plan",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "concurrent complete plans commit exactly one result",
+      "pass": true,
+      "evidence": {
+        "statuses": [
+          200,
+          409
+        ]
+      }
+    },
+    {
+      "check": "administrator can read complete versioned plan",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "concurrent loser leaves no extra authority version",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "readiness remains valid after competing head and unit changes",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "missing founder blocks ordinary business",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator can read complete versioned plan",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "explicit stable-ID founder mapping repairs readiness without inventing a root",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "controlled mapping repair restores normal business",
+      "pass": true,
+      "evidence": null
+    }
+  ],
+  "result": "PASS"
+}

@@ -16,19 +16,15 @@ class ProfileServiceTest {
     private static final Actor SELF = new Actor("self", "org", "lower", "team", "manager", 3);
 
     @Test
-    void allowsOnlyEditableProfileFieldsAndSupportsClearingContacts() {
-        Map<String, Object> result = ProfileService.validate(Map.of("displayName", "  张三  ", "phone", " ", "email", ""));
-        assertEquals("张三", result.get("displayName"));
-        assertNull(result.get("phone"));
-        assertNull(result.get("email"));
-        assertEquals("+86 (010) 1234-5678", ProfileService.validate(Map.of("phone", "+86 (010) 1234-5678")).get("phone"));
+    void permitsOnlyAvatarAndEmailIncludingClearingEmail() {
+        assertNull(ProfileService.validate(Map.of("email", "")).get("email"));
         assertEquals("user+work@example.test", ProfileService.validate(Map.of("email", "user+work@example.test")).get("email"));
     }
 
     @Test
     void rejectsPermissionAndIdentityChangesEvenWhenMixedWithValidFields() {
-        for (String field : List.of("id", "userId", "organizationId", "role", "teamId", "managerId", "username", "password", "profileVersion", "rowVersion")) {
-            assertThrows(ApiException.class, () -> ProfileService.validate(Map.of("displayName", "姓名", field, "injected")), field);
+        for (String field : List.of("displayName", "phone", "id", "userId", "organizationId", "role", "teamId", "managerId", "username", "password", "profileVersion", "rowVersion")) {
+            assertThrows(ApiException.class, () -> ProfileService.validate(Map.of("email", "valid@example.test", field, "injected")), field);
         }
         assertThrows(ApiException.class, () -> ProfileService.validate(Map.of()));
     }
@@ -47,37 +43,24 @@ class ProfileServiceTest {
     }
 
     @Test
-    void usesActorIdentityAndVersionAndSyncsTheNormalizedLoginKey() {
-        Db db = mock(Db.class);
-        Events events = mock(Events.class);
-        when(db.one(anyString(), eq("org"), eq("self"))).thenReturn(Map.of("displayName", "原姓名", "phone", "13800000000",
-                "email", "old@example.test", "role", "lower", "loginPhone", "13800000000", "profileVersion", 2L));
-        when(db.find(anyString(), any(), any(), any())).thenReturn(null);
-        when(db.update(anyString(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
-        ProfileService service = new ProfileService(db, events);
-        Map<String, Object> result = service.update(SELF, "\"2\"", Map.of("phone", "139 0000 1111"));
-        assertEquals(Map.of("id", "self", "rowVersion", 3L, "profileVersion", 3L), result);
-        // The contact number keeps the entered formatting; the authentication key is normalized.
-        verify(db).update(anyString(), eq("原姓名"), eq("139 0000 1111"), eq("old@example.test"), isNull(),
-                eq("13900001111"), eq("org"), eq("self"), eq(2L));
-        verify(events).record(eq(SELF), isNull(), eq("profile.updated"), eq(List.of()), eq(Map.of("userId", "self", "fields", Set.of("phone"))));
+    void usesActorIdentityAndVersionWhileWritingOnlyAllowedFields() {
+        Db db=mock(Db.class);Events events=mock(Events.class);
+        when(db.one(anyString(),eq("org"),eq("self"))).thenReturn(Map.of("email","old@example.test","avatar","cat","profileVersion",2L));
+        when(db.update(anyString(),any(),any(),any(),any(),any())).thenReturn(1);
+        Map<String,Object> result=new ProfileService(db,events).update(SELF,"\"2\"",Map.of("email","new@example.test"));
+        assertEquals(Map.of("id","self","rowVersion",3L,"profileVersion",3L),result);
+        verify(db).update(startsWith("UPDATE users SET email=?,avatar=?"),eq("new@example.test"),eq("cat"),eq("org"),eq("self"),eq(2L));
+        verify(events).record(eq(SELF),isNull(),eq("profile.updated"),eq(List.of()),eq(Map.of("userId","self","fields",Set.of("email"))));
     }
 
     @Test
-    void employeeCannotClearTheLoginNumberAndADuplicateIsRejected() {
-        Db db = mock(Db.class);
-        when(db.one(anyString(), eq("org"), eq("self"))).thenReturn(Map.of("displayName", "姓名", "phone", "13800000000",
-                "role", "lower", "loginPhone", "13800000000", "profileVersion", 2L));
-        ProfileService service = new ProfileService(db, mock(Events.class));
-        assertEquals(400, assertThrows(ApiException.class,
-                () -> service.update(SELF, "\"2\"", Map.of("phone", ""))).status);
-
-        when(db.find(anyString(), any(), any(), any())).thenReturn(Map.of("id", "other"));
-        ApiException duplicate = assertThrows(ApiException.class,
-                () -> service.update(SELF, "\"2\"", Map.of("phone", "13900001111")));
-        assertEquals(409, duplicate.status);
-        assertEquals("PHONE_TAKEN", duplicate.code);
-        verify(db, never()).update(anyString(), any(Object[].class));
+    void identityChangesAreRejectedBeforeAnyReadOrPartialProfileWrite() {
+        Db db=mock(Db.class);var service=new ProfileService(db,mock(Events.class));
+        for(var input:List.<Map<String,Object>>of(Map.of("phone","13900001111"),Map.of("displayName","New name"),
+                Map.of("email","new@example.test","phone","13900001111"))) {
+            assertEquals(400,assertThrows(ApiException.class,()->service.update(SELF,"\"2\"",input)).status);
+        }
+        verifyNoInteractions(db);
     }
 
     @Test
@@ -85,8 +68,8 @@ class ProfileServiceTest {
         Db db = mock(Db.class);
         when(db.one(anyString(), eq("org"), eq("self"))).thenReturn(Map.of("profileVersion", 2L));
         ProfileService service = new ProfileService(db, mock(Events.class));
-        assertEquals(412, assertThrows(ApiException.class, () -> service.update(SELF, "\"1\"", Map.of("displayName", "新姓名"))).status);
-        assertEquals(428, assertThrows(ApiException.class, () -> service.update(SELF, null, Map.of("displayName", "新姓名"))).status);
+        assertEquals(412, assertThrows(ApiException.class, () -> service.update(SELF, "\"1\"", Map.of("email", "new@example.test"))).status);
+        assertEquals(428, assertThrows(ApiException.class, () -> service.update(SELF, null, Map.of("email", "new@example.test"))).status);
         verify(db, never()).update(anyString(), any(Object[].class));
     }
 
@@ -112,10 +95,9 @@ class ProfileServiceTest {
         Db db = mock(Db.class);
         Events events = mock(Events.class);
         when(db.one(anyString(), eq("org"), eq("self"))).thenReturn(Map.of("displayName", "姓名", "phone", "13800000000", "email", "old@example.test", "avatar", "cat", "role", "lower", "loginPhone", "13800000000", "profileVersion", 4L));
-        when(db.update(anyString(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
+        when(db.update(anyString(), any(), any(), any(), any(), any())).thenReturn(1);
         new ProfileService(db, events).update(SELF, "\"4\"", Map.of("avatar", "bear"));
-        verify(db).update(anyString(), eq("姓名"), eq("13800000000"), eq("old@example.test"), eq("bear"),
-                eq("13800000000"), eq("org"), eq("self"), eq(4L));
+        verify(db).update(anyString(), eq("old@example.test"), eq("bear"), eq("org"), eq("self"), eq(4L));
         verify(events).record(eq(SELF), isNull(), eq("profile.updated"), eq(List.of()), eq(Map.of("userId", "self", "fields", Set.of("avatar"))));
     }
 }

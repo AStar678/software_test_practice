@@ -1,0 +1,474 @@
+{
+  "updated": "2026-10-28T12:23:58.832455+00:00",
+  "checks": [
+    {
+      "check": "all current Flyway migrations applied to an empty isolated database",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee phone login establishes the original employee principal",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "employee session carries fixed position and no employee username",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "independent administrator authenticates without a user row",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "administrator has no employee organization placement",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "real founder identity comes from fixed placement",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "real department_head identity comes from fixed placement",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "real team_head identity comes from fixed placement",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "old/missing/mixed login payload is rejected without a session: password,username",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_LOGIN_CONTRACT"
+      }
+    },
+    {
+      "check": "old/missing/mixed login payload is rejected without a session: password,phone",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_LOGIN_CONTRACT"
+      }
+    },
+    {
+      "check": "old/missing/mixed login payload is rejected without a session: accountType,password,username",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_LOGIN_CONTRACT"
+      }
+    },
+    {
+      "check": "old/missing/mixed login payload is rejected without a session: accountName,accountType,password,phone",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_LOGIN_CONTRACT"
+      }
+    },
+    {
+      "check": "old/missing/mixed login payload is rejected without a session: accountType,password,phone",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_LOGIN_CONTRACT"
+      }
+    },
+    {
+      "check": "old/missing/mixed login payload is rejected without a session: accountType,password,phone",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_LOGIN_CONTRACT"
+      }
+    },
+    {
+      "check": "same identifier and password explicitly choose admin namespace",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "same identifier and password explicitly choose employee namespace",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "duplicate employee phone across companies is refused",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "code": "LOGIN_KEY_AMBIGUOUS"
+      }
+    },
+    {
+      "check": "duplicate employee keys never prevent explicit admin repair login",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "administrator has no employee business API access",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "employee has no admin API access",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "admin employee lookup remains company isolated",
+      "pass": true,
+      "evidence": {
+        "status": 404
+      }
+    },
+    {
+      "check": "fixed company and independent admin satisfy readiness without legacy departments",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "missing explicit founder blocks normal business even for a previously valid session",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "code": "ORGANIZATION_MAPPING_INCOMPLETE"
+      }
+    },
+    {
+      "check": "admin repair read remains available while employee organization is blocked",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "repair restores business access without runtime DDL or guessed identity",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "founder cannot use former employee team maintenance",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "founder cannot write old admin team or role interfaces",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-head cannot use former employee team maintenance",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-head cannot write old admin team or role interfaces",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-head cannot use former employee team maintenance",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-head cannot write old admin team or role interfaces",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee cannot use former employee team maintenance",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee cannot write old admin team or role interfaces",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "old custom authorization write is retired even for administrators",
+      "pass": true,
+      "evidence": {
+        "status": 410
+      }
+    },
+    {
+      "check": "self profile shows fixed position and contact only through its authorized endpoint",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "employee identity or mixed identity/profile request is rejected: phone",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "employee identity or mixed identity/profile request is rejected: displayName",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "employee identity or mixed identity/profile request is rejected: email,phone",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "self avatar and email remain editable",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "admin cannot change another employee email",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin phone/name change returns a receipt without contact values",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "admin phone change revokes existing employee sessions",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "old phone no longer logs in after admin change",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "normalized new phone logs into the same stable employee ID",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "authorization version is checked before replaying an old success",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "code": "AUTHORIZATION_CHANGED"
+      }
+    },
+    {
+      "check": "admin refresh preserves selected account type",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "admin refresh consumes its previous token",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin logout revokes refreshed token",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee refresh preserves selected account type",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "alpha-one-employee refresh consumes its previous token",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee logout revokes refreshed token",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator forced-password gate allows auth maintenance but blocks management",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin password policy rejects invalid form 6",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "admin password policy rejects invalid form 13",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "admin password policy rejects invalid form 11",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "admin password policy rejects invalid form 27",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "admin change requires the correct old password",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin password change revokes all sessions",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "admin old password no longer authenticates",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin new password authenticates same principal",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee password policy rejects invalid form 6",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "alpha-one-employee password policy rejects invalid form 13",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "alpha-one-employee password policy rejects invalid form 11",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "alpha-one-employee password policy rejects invalid form 27",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "alpha-one-employee change requires the correct old password",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee password change revokes all sessions",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "alpha-one-employee old password no longer authenticates",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee new password authenticates same principal",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator reset returns one initial password",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "same reset idempotency key never replays a credential",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "reset password requires first-login change",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "restricted session can read only its identity and cannot refresh/business-read",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "restricted employee can change password and must reauthenticate",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "passwords never enter audit or idempotency documents",
+      "pass": true,
+      "evidence": null
+    }
+  ],
+  "database": "pandora_precheck_model_e16f5af418ae4a3b",
+  "result": "PASS"
+}

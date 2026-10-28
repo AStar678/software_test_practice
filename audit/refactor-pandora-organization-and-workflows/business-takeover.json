@@ -1,0 +1,440 @@
+{
+  "updated": "2026-10-28T12:50:46.011888+00:00",
+  "checks": [
+    {
+      "check": "create real task for alpha-one-employee",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "qualified participant reads approve",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "creation follows direct manager decision",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "non-owner progress begins pending",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin reads minimal responsibility inventory",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover rejects admin target",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover rejects other-founder target",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover rejects changed task version",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover rejects changed owner version",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover rejects stale company version",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employees cannot invoke administrative takeover",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "valid takeover directly applies qualified applicant becoming reviewer",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "original creator and creation time remain stable",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "pending request has one direct terminal with original applicant decision",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct business event records applicant and administrative refresh separately",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover applied progress exactly once",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "taken-over work is absent from receiver original-created filter",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "old creator loses basic modification authority",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "receiver can continue base edits directly",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "former idempotency success is not replayed after later responsibility mutation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "management history resolves independent administrator and transfer provenance",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create real task for alpha-one-employee",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "qualified participant reads approve",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "creation follows direct manager decision",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin reads minimal responsibility inventory",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover to another employee reassigns active request",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "old reviewer cannot read old diff",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "old reviewer cannot decide from old page",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "qualified participant reads approve",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "new current business owner can approve",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create real task for alpha-one-employee",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "qualified participant reads approve",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "creation follows direct manager decision",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin reads minimal responsibility inventory",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover completes after deadline scan",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "expired applicant-becomes-reviewer request stays expired and ineffective",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create real task for alpha-one-employee",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "qualified participant reads approve",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "creation follows direct manager decision",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "self completion directly applies",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create real task for founder",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "create real task for alpha-one-employee",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "deactivation refuses unapproved unfinished assignment handover",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "departure handover awaits business approval",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "pending handover does not satisfy final deactivation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "qualified participant reads approve",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "business owner approves departure handover",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin reads minimal responsibility inventory",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "completed work remains in business responsibility inventory",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "missing completed-work takeover rejects entire final plan",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "code": "BUSINESS_TAKEOVER_REQUIRED"
+      }
+    },
+    {
+      "check": "late validation failure rolls back employee placement and sessions",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin reads minimal responsibility inventory",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "unsettled unpublished application refuses final plan",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin cannot cancel a published employee business request",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "changed employee version refuses full final plan",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "complete deactivation atomically submits ownership and unpublished cancellation",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "all employee sessions and old login are unusable",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "disabled employee has no live position",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin cancellation preserves original unpublished applicant and source",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "reopen without replacement rejects the retained inactive assignee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "reopen rejects empty/nonemployee/inactive/cross-company assignees",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "reopen rejects empty/nonemployee/inactive/cross-company assignees",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "reopen rejects empty/nonemployee/inactive/cross-company assignees",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "reopen rejects empty/nonemployee/inactive/cross-company assignees",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover owner reopens completed work with ordered active replacements",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "reopen increments round and never automatically assigns takeover owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "head departure without succession is rejected",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "head succession and direct-report placement commit together",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "successor now derives head identity without editable manager fields",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "fixed founder cannot be deactivated",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "concurrent final deactivation commits one legal successor state",
+      "pass": true,
+      "evidence": {
+        "statuses": [
+          200,
+          409
+        ]
+      }
+    },
+    {
+      "check": "create real task for founder",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "admin reads minimal responsibility inventory",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "concurrent takeovers commit one ownership transition",
+      "pass": true,
+      "evidence": {
+        "statuses": [
+          409,
+          200
+        ]
+      }
+    }
+  ],
+  "result": "PASS"
+}

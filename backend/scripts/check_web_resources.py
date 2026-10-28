@@ -94,7 +94,8 @@ def main() -> int:
           "潘多拉-交互原型.js" not in admin_html and "潘多拉-api.js" not in admin_html,
           {"employeeScripts": [name for name in ("潘多拉-交互原型.js", "潘多拉-api.js") if name in admin_html]})
     check("10.1 the administrator page starts with its own login and management tabs",
-          all(label in admin_html for label in ("任务历史", "通知管理", "员工", "角色与授权")),
+          all(label in admin_html for label in ("任务历史", "通知管理", "员工", "组织", "管理员账号"))
+          and 'id="tab-roles"' not in admin_html,
           {"tabs": [label for label in ("员工", "任务历史", "通知管理") if label in admin_html]})
     missing_from_pom = [name for name in set(names) if name not in pom_text]
     check("10.1 every referenced web file is in the explicit Maven resource list",
@@ -123,7 +124,8 @@ def main() -> int:
                       and "任务历史".encode() in archive.read("BOOT-INF/classes/static/admin.html"))
                 check("10.1 the built jar serves the updated employee profile module",
                       "BOOT-INF/classes/static/潘多拉-个人资料.js" in packed
-                      and "p-open-teams".encode() in archive.read("BOOT-INF/classes/static/潘多拉-个人资料.js"))
+                      and "p-edit-profile".encode() in archive.read("BOOT-INF/classes/static/潘多拉-个人资料.js")
+                      and "p-open-teams".encode() not in archive.read("BOOT-INF/classes/static/潘多拉-个人资料.js"))
 
     passed = sum(1 for row in RESULTS if row["pass"])
     print(f"\n{passed}/{len(RESULTS)} checks passed")

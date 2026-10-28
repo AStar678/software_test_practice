@@ -18,9 +18,9 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class WorkspaceLogAndReportsTest {
-    private static final Actor EMPLOYEE = new Actor("u", "org", "lower", "team", "lead", 3);
-    private static final Actor MANAGER = new Actor("m", "org", "middle", "team", "exec", 2);
-    private static final Actor EXECUTIVE = new Actor("exec", "org", "upper", "team", null, 1);
+    private static final Actor EMPLOYEE = new Actor("u", "org", "employee", "team", "lead", 3);
+    private static final Actor MANAGER = new Actor("m", "org", "department_head", "team", "exec", 2);
+    private static final Actor EXECUTIVE = new Actor("exec", "org", "founder", "team", null, 1);
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-20T15:59:59Z"), ZoneOffset.UTC);
 
     private static WorkspaceService service(Db db, Access access) {
@@ -154,7 +154,7 @@ class WorkspaceLogAndReportsTest {
     }
 
     @Test
-    void reportsAreTheIntersectionOfProfileScopeAndTheManagementChain() {
+    void reportsIncludeAllActualDescendantsButNoOtherChain() {
         Db db = mock(Db.class);
         Access access = mock(Access.class);
         List<Map<String, Object>> rows = List.of(
@@ -162,14 +162,13 @@ class WorkspaceLogAndReportsTest {
                 person("e", "m", "e", 3),
                 person("g", "e", "g", 3),
                 person("x", "other", "x", 3));
-        when(db.list(startsWith("SELECT u.*,d.name AS department_name"), eq("org"))).thenReturn(rows);
-        when(access.canSeePerson(eq(MANAGER), anyMap())).thenAnswer(call ->
-                "e".equals(((Map<?, ?>) call.getArgument(1)).get("id")));
-        when(access.canSeePerson(eq(EXECUTIVE), anyMap())).thenReturn(true);
+        when(access.employeeDirectory(any(),eq(false))).thenReturn(rows);
+        when(access.isManagerOf(eq(MANAGER),anyString())).thenAnswer(call->List.of("e","g").contains(call.getArgument(1)));
+        when(access.isManagerOf(eq(EXECUTIVE),anyString())).thenAnswer(call->List.of("m","e","g").contains(call.getArgument(1)));
         WorkspaceService service = service(db, access);
 
         List<Map<String, Object>> direct = items(service.reports(MANAGER));
-        assertEquals(List.of("e"), direct.stream().map(row -> row.get("id")).toList());
+        assertEquals(List.of("e","g"), direct.stream().map(row -> row.get("id")).toList());
         List<Map<String, Object>> company = items(service.reports(EXECUTIVE));
         assertEquals(List.of("m", "e", "g"), company.stream().map(row -> row.get("id")).toList());
         assertTrue(company.stream().noneMatch(row -> "x".equals(row.get("id"))));
@@ -179,7 +178,7 @@ class WorkspaceLogAndReportsTest {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("id", id);
         row.put("displayName", id.toUpperCase(Locale.ROOT));
-        row.put("role", "lower");
+        row.put("role", "employee");
         row.put("managerId", managerId);
         row.put("departmentId", departmentId);
         row.put("departmentName", departmentId + "-dept");

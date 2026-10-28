@@ -1,0 +1,304 @@
+{
+  "updated": "2026-10-28T12:13:00.966242+00:00",
+  "checks": [
+    {
+      "check": "alpha-head creation routes to direct manager regardless of owner order",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-head creation routes to direct manager regardless of owner order",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-head creation routes to direct manager regardless of owner order",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-head creation routes to direct manager regardless of owner order",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee creation routes to direct manager regardless of owner order",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee creation routes to direct manager regardless of owner order",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "only explicit fixed founder creation is directly applied",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "unavailable direct manager blocks creation without escalation or exemption",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin is not an employee assignee candidate",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "other-founder is not an employee assignee candidate",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create alpha-one-employee submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "employee creation remains unpublished and pending",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "unpublished assignee and founder cannot read pending creation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "creation applicant receives no comparison snapshot",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "creation reviewer has comparison snapshot",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "direct manager approves creation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "non-creation routes solely to current business owner with self direct application",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "non-creation routes solely to current business owner with self direct application",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "viewing authority does not grant basic edit preview",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee change has expected outcome direct",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "outcome": "direct"
+      }
+    },
+    {
+      "check": "direct change is not left pending",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "self direct apply cannot bypass task version",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "self direct apply cannot remove every assignee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "business owner is not automatically entitled to submit progress",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct history records actual applicant and exemption reason",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "beta-one-employee progress has expected outcome pending",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "outcome": "pending"
+      }
+    },
+    {
+      "check": "pending progress keeps old effective content",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "self direct apply cannot bypass unique pending freeze",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "unrelated scope viewer cannot obtain proposal",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "current business owner approves cross-department progress",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "approved progress becomes effective",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "beta-one-employee complete has expected outcome pending",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "outcome": "pending"
+      }
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "business owner approves completion",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "self reopen requires a complete explicit schedule",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee reopen has expected outcome direct",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "outcome": "direct"
+      }
+    },
+    {
+      "check": "self reopen publishes doing state and advances round",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "founder progress has expected outcome direct",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "outcome": "direct"
+      }
+    },
+    {
+      "check": "founder complete has expected outcome direct",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "outcome": "direct"
+      }
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "self operations cannot be approved again",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "founder cannot delegate handover for an indirect report",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-head cannot delegate handover for an indirect report",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct manager cannot use company-wide edit scope for dedicated handover",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct manager handover awaits business owner approval",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "business owner approves dedicated handover",
+      "pass": true,
+      "evidence": null
+    }
+  ],
+  "result": "PASS"
+}

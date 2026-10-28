@@ -1,0 +1,67 @@
+{
+  "updated": "2026-10-28T13:07:57.380Z",
+  "checks": [
+    {
+      "check": "independent admin enters real management console",
+      "pass": true
+    },
+    {
+      "check": "retired role and manual manager controls are removed",
+      "pass": true
+    },
+    {
+      "check": "invalid final draft stays open with server error and no write",
+      "pass": true
+    },
+    {
+      "check": "cancel local draft restores saved positions",
+      "pass": true
+    },
+    {
+      "check": "browser saves full head swap with derived managers",
+      "pass": true
+    },
+    {
+      "check": "new employee is a local draft before final save",
+      "pass": true
+    },
+    {
+      "check": "new employee full plan returns one-time initial credential",
+      "pass": true
+    },
+    {
+      "check": "organization persists across browser reload without redisplaying credential",
+      "pass": true
+    },
+    {
+      "check": "founder inventory offers no deactivation control",
+      "pass": true
+    },
+    {
+      "check": "departure inventory includes completed work and pending unpublished creation",
+      "pass": true
+    },
+    {
+      "check": "browser commits completed responsibility takeover and employee deactivation",
+      "pass": true
+    },
+    {
+      "check": "admin account has independent account fields",
+      "pass": true
+    },
+    {
+      "check": "admin account save revokes console and requires new login",
+      "pass": true
+    },
+    {
+      "check": "renamed administrator logs in with same principal",
+      "pass": true
+    },
+    {
+      "check": "real admin interactions have no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "result": "PASS"
+}

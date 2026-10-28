@@ -52,27 +52,32 @@
   }
   function monthTitle(d) { return d.getFullYear() + '年' + (d.getMonth() + 1) + '月'; }
   function shiftMonth(d, amount) { return new Date(d.getFullYear(), d.getMonth() + amount, 1); }
-  function rangeHits(task, start, end) {
-    const r = taskRange(task), s = r.start.getTime(), e = r.end.getTime();
-    return e === s ? s >= +start && s < +end : e > +start && s < +end;
+  function businessBounds(d) {
+    return {start:P.companyDayStart(dateKey(d)),end:P.companyDayStart(dateKey(addDays(d,1)))};
+  }
+  function calendarRange(task) {
+    if(task.allDay){const from=task.raw?.startDate||dateKey(task.start),to=task.raw?.dueDate||dateKey(task.due);
+      return {start:P.companyDayStart(from),end:P.companyDayStart(dateKey(addDays(parseDateInput(to),1)))};}
+    return {start:new Date(task.raw?.startAt||task.start),end:new Date(task.raw?.dueAt||task.due)};
+  }
+  function rangeHits(task,start,end) {
+    const range=calendarRange(task),from=P.companyDayStart(dateKey(start)),to=P.companyDayStart(dateKey(end));
+    return +range.start===+range.end?range.start>=from&&range.start<to:range.end>from&&range.start<to;
   }
   function dayTasks(d) {
-    const start = startOfDay(d), end = addDays(start, 1);
-    return viewTasks(actor()).filter(t => rangeHits(t, start, end));
+    const seen=new Set();return viewTasks(actor()).filter(t=>rangeHits(t,d,addDays(d,1))&&!seen.has(t.id)&&seen.add(t.id));
   }
   function dayLogs(d) {
     const key = dateKey(d), self = selfId();
     return (P.data?.calendarLogs || []).filter(log => log.authorId === self && log.businessDate === key);
   }
-  function scheduleText(t, d) {
-    if (t.allDay) return '全天';
-    const start = startOfDay(d), end = addDays(start, 1);
-    const begins = t.start < start ? '前日延续' : fmtTime(t.start);
-    const ends = t.due >= end ? '24:00' : fmtTime(t.due);
-    return begins + ' – ' + ends + (t.due > end ? ' · 跨日' : '');
+  function scheduleText(t,d) {
+    if(t.allDay)return '全天';const bounds=businessBounds(d),range=calendarRange(t);
+    const time=value=>{const p=P.companyParts(value);return p.hour+':'+p.minute;};
+    return (range.start<bounds.start?'前日延续':time(range.start))+' – '+(range.end>=bounds.end?'24:00':time(range.end))+(range.end>bounds.end?' · 跨日':'');
   }
   function sortedDay(d) { return dayListSort(dayTasks(d)); }
-  function allDayTasks(d) { return sortedDay(d).filter(t => t.allDay); }
+  function allDayTasks(d) { return sortedDay(d).filter(t => t.allDay || dayCoverage(t,d)?.fullDay); }
   function monthSortTasks(list) {
     return list.slice().sort((a, b) => {
       const pa = a.pinned ? 1 : 0, pb = b.pinned ? 1 : 0;
@@ -147,10 +152,10 @@
       let lane = occupied.findIndex(bits => !(bits & mask));
       if (lane < 0) lane = occupied.length;
       occupied[lane] = (occupied[lane] || 0) | mask;
-      const range = taskRange(task);
+      const range = calendarRange(task);
       segments.push({task,start,end,lane,
-        before: range.start < days[start],
-        after: range.end > addDays(days[end-1], 1)});
+        before: range.start < P.companyDayStart(dateKey(days[start])),
+        after: range.end > P.companyDayStart(dateKey(addDays(days[end-1], 1)))});
     }
     const shown = segments.filter(s => s.lane < capacity);
     const hidden = days.map((d,col) => segments.filter(s => s.lane >= capacity && s.start <= col && s.end > col).map(s => s.task));
@@ -407,29 +412,21 @@
   },true);
 
   /* ---- 日视图：纵向 00:00—24:00 轴，完整重叠分栏 ---- */
-  function minuteAt(date, day) {
-    const end = addDays(day, 1);
-    if (date <= day) return 0;
-    if (date >= end) return 1440;
-    return date.getHours()*60 + date.getMinutes() + date.getSeconds()/60;
+  function minuteAt(date,day) {
+    const bounds=businessBounds(day);if(date<=bounds.start)return 0;if(date>=bounds.end)return 1440;
+    const p=P.companyParts(date);return Number(p.hour)*60+Number(p.minute)+Number(p.second)/60;
   }
-  /* 任务在所选业务日的真实覆盖；午夜截止不生成次日副本，零时长任务保留为点。 */
-  function dayCoverage(task, d) {
-    const day = startOfDay(d), range = taskRange(task);
-    const point = +range.start === +range.end;
-    if (point) {
-      const at = minuteAt(range.start, day);
-      return at >= 0 && at <= 1440 ? { start: at, end: at, point: true } : null;
-    }
-    const from = minuteAt(range.start, day), to = minuteAt(range.end, day);
-    if (to <= 0 || from >= 1440) return null;
-    return { start: Math.max(0, from), end: Math.min(1440, to), point: false };
+  // Projection only: true instants determine whether a positive interval covers the complete company day.
+  function dayCoverage(task,d) {
+    const bounds=businessBounds(d),range=calendarRange(task),point=+range.start===+range.end;
+    if(point){if(range.start<bounds.start||range.start>=bounds.end)return null;const at=minuteAt(range.start,d);return {start:at,end:at,point:true,fullDay:false};}
+    if(range.end<=bounds.start||range.start>=bounds.end)return null;
+    const fullDay=range.start<=bounds.start&&range.end>=bounds.end;
+    return {start:minuteAt(range.start,d),end:minuteAt(range.end,d),point:false,fullDay};
   }
   function dayEvents(d) {
-    return dayTasks(d).filter(task => !task.allDay).map(task => {
-      const coverage = dayCoverage(task, d);
-      return coverage ? Object.assign({ task }, coverage) : null;
-    }).filter(Boolean);
+    return dayTasks(d).filter(task=>!task.allDay).map(task=>{const coverage=dayCoverage(task,d);
+      return coverage&&!coverage.fullDay?Object.assign({task},coverage):null;}).filter(Boolean);
   }
   /* 命中区可以放大到最小可点高度，但真实时段单独绘制；分栏按放大后的区间分组，
      因此放大永远不会让两个任务互相遮挡。 */
@@ -492,7 +489,7 @@
       '<span class="p-axis-end" aria-hidden="true">24:00</span></div>';
   }
   function allDayHTML(d) {
-    const tasks = sortedDay(d).filter(t => t.allDay);
+    const tasks = allDayTasks(d);
     if (!tasks.length) return '<span class="p-all-day-empty">—</span>';
     return '<div class="p-allday-list">' + tasks.map(t =>
       '<button type="button" class="p-all-day-event" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '" aria-label="' + esc(taskAriaLabel(t,actor())) + '">' + esc(t.title) + '</button>').join('') + '</div>';
@@ -534,7 +531,7 @@
       }
     } else if (dayDisplay==='timeline') {
       const now = new Date(), includesToday = sameDay(now, state.viewAnchor);
-      const first = sortedDay(state.viewAnchor).filter(t => !t.allDay)[0];
+      const first = dayEvents(state.viewAnchor)[0]?.task;
       const coverage = first ? dayCoverage(first, state.viewAnchor) : null;
       const minute = includesToday ? minuteAt(now, startOfDay(now)) : coverage ? coverage.start : 480;
       scroller.scrollTop = Math.max(0, minute - 60);
