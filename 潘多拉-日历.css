@@ -240,9 +240,9 @@
 .p-axis-now{position:absolute;left:-4px;right:0;height:1px;background:#ff3b30;z-index:3;pointer-events:none}
 .p-axis-now>span{position:absolute;left:-3px;top:-3px;width:7px;height:7px;border-radius:50%;background:#ff3b30}
 .p-axis-end{position:absolute;left:-48px;bottom:-16px;width:42px;text-align:right;font-size:10px;line-height:14px;color:#8e8e93;font-variant-numeric:tabular-nums}
-.p-day-allday{display:grid;grid-template-columns:var(--axis-width,50px) minmax(0,1fr);gap:6px;flex:0 0 auto;max-height:34%;min-height:0;padding:6px 14px 6px 0;border-bottom:1px solid #eeeef0;background:#fff}
-.p-day-allday .p-allday-label{font-size:10px;line-height:1.4;color:#8e8e93;text-align:right;padding:3px 0 0}
-.p-day-allday .p-allday-scroll{min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain}
+.p-day-allday{display:flex;align-items:stretch;gap:6px;flex:0 1 auto;max-height:34%;min-height:0;padding:6px 14px 6px 0;border-bottom:1px solid #eeeef0;background:#fff;overflow:hidden}
+.p-day-allday .p-allday-label{flex:0 0 auto;width:var(--axis-width,50px);font-size:10px;line-height:1.4;color:#8e8e93;text-align:right;padding:3px 6px 0 0}
+.p-day-allday .p-allday-scroll{flex:1 1 auto;min-width:0;min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .p-day-allday .p-allday-list{display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start}
 .p-day-allday .p-all-day-event{flex:1 1 auto;max-width:100%;min-width:0;min-height:30px;padding:5px 7px;border:0;border-left:3px solid var(--tc-bd);border-radius:5px;background:var(--tc-bg);color:#303036;font-size:11px;line-height:1.35;text-align:left;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
 .p-day-allday .p-all-day-empty{padding:3px;font-size:11px;color:#a0a0a6}
@@ -258,4 +258,66 @@
   .p-table-entry{padding:0 8px;font-size:12px}
   .p-day-axis{margin-left:44px}
   .p-axis-hour span,.p-axis-end{left:-42px;width:36px}
+}
+
+/* ========================================================================== *
+ * 第六章：覆盖式侧边抽屉与当天底部清单
+ * 两个层都绝对定位在日程卡片内：底层日历不重排、不缩放，关闭后日期/密度/滚动保持原样。
+ * ========================================================================== */
+.p-schedule-card{position:relative;overflow:hidden}
+.p-schedule-layer{position:absolute;inset:0;z-index:24;pointer-events:none}
+.p-schedule-scrim{position:absolute;inset:0;background:#1c1c1e26;pointer-events:auto;touch-action:none}
+.p-schedule-drawer{position:absolute;top:0;left:0;bottom:0;width:42%;max-width:480px;display:flex;flex-direction:column;min-width:0;background:#fff;border-right:1px solid #e5e5e9;box-shadow:6px 0 24px #00000024;pointer-events:auto;overflow:hidden;animation:p-drawer-in .16s ease-out both}
+@keyframes p-drawer-in{from{transform:translateX(-10%)}to{transform:translateX(0)}}
+.p-drawer-head{flex:0 0 auto;display:flex;align-items:center;gap:2px;min-height:46px;padding:5px 6px 5px 10px;border-bottom:1px solid #eeeef0;background:#fff}
+.p-drawer-head h2{flex:1;min-width:0;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:650;letter-spacing:-.2px;color:#1c1c1e}
+.p-drawer-head .p-icon-button{width:30px;min-width:30px;height:34px;padding:0;font-size:16px;color:#1c1c1e;background:transparent;border:0;border-radius:8px}
+.p-drawer-head .p-drawer-back{font-size:22px;line-height:1;color:#e63730}
+.p-drawer-head .p-drawer-close{color:#8e8e93;font-size:15px}
+.p-drawer-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:grid;align-content:start;gap:10px;padding:10px 10px 16px;-webkit-overflow-scrolling:touch}
+.p-schedule-drawer .p-side-row{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;min-height:0;justify-items:stretch}
+.p-schedule-drawer .p-side-label{font-size:11px;line-height:1.4;color:#8e8e93;letter-spacing:.02em}
+.p-schedule-drawer .p-schedule-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;padding:3px;border:0;border-radius:10px;background:#f1f1f3}
+.p-schedule-drawer .p-schedule-modes button{min-height:36px;padding:4px 2px;border:0;border-radius:7px;background:transparent;color:#636366;font-size:13px;cursor:pointer}
+.p-schedule-drawer .p-schedule-modes button[aria-pressed="true"]{color:#1c1c1e;background:#fff;box-shadow:0 1px 3px #00000014;font-weight:600}
+.p-schedule-drawer .p-text-button{display:flex;align-items:center;justify-content:space-between;gap:4px;min-height:40px;padding:0 2px;border:0;background:transparent;color:#e63730;font-size:13px;text-align:left;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.p-schedule-drawer .p-text-button svg{width:14px;height:14px;flex:0 0 auto}
+.p-drawer-head .p-icon-button:focus-visible,.p-schedule-drawer .p-text-button:focus-visible,.p-schedule-drawer .p-schedule-modes button:focus-visible,.p-day-sheet button:focus-visible{outline:2px solid #e63730;outline-offset:-2px}
+
+.p-day-sheet{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;min-height:0;max-height:76%;background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -10px 34px #0000002b;pointer-events:auto;animation:p-sheet-in .18s ease-out both;transition:transform .16s ease-out}
+.p-day-sheet:focus{outline:none}
+.p-day-sheet.is-dragging{transition:none}
+@keyframes p-sheet-in{from{transform:translateY(18%)}to{transform:translateY(0)}}
+.p-sheet-handle{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:100%;height:24px;border:0;background:transparent;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.p-sheet-handle>span{display:block;width:40px;height:5px;border-radius:999px;background:#c7c7cc}
+.p-day-sheet.is-dragging .p-sheet-handle>span{background:#8e8e93}
+.p-day-sheet-head{flex:0 0 auto;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 10px 6px 14px;border-bottom:1px solid #eeeef0;background:#fff}
+.p-day-sheet-head h2{flex:1;min-width:0;margin:0;font-size:16px;font-weight:650;line-height:1.4;color:#1c1c1e}
+.p-day-sheet-head h2>span{margin-left:6px;font-size:11px;font-weight:400;color:#8e8e93}
+.p-day-sheet-tools{display:flex;align-items:center;gap:2px;flex:0 0 auto}
+.p-day-sheet-tools .p-text-button{display:flex;align-items:center;gap:2px;min-height:38px;padding:0 6px;border:0;background:transparent;color:#e63730;font-size:12px;white-space:nowrap;cursor:pointer}
+.p-day-sheet-tools .p-text-button svg{width:13px;height:13px}
+.p-day-sheet-tools .p-icon-button{width:34px;min-width:34px;height:38px;padding:0;border:0;background:transparent;color:#8e8e93;font-size:15px;cursor:pointer}
+.p-day-sheet-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:2px 14px 20px;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+.p-day-sheet-body .p-agenda-item{width:100%;max-width:none;min-height:64px;padding:14px 0;border-bottom:1px solid #eeeef0;text-align:left}
+.p-day-sheet-body .p-agenda-copy strong{font-size:14px;line-height:1.5}
+.p-day-sheet-body .p-agenda-copy>span{font-size:12px;line-height:1.5;color:#636366}
+.p-day-sheet-body .p-day-list-count{margin:0;padding:8px 0 2px;font-size:12px;color:#8e8e93}
+.p-day-sheet-body .p-calendar-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:150px;padding:20px 0;text-align:center}
+.p-day-sheet-body .p-calendar-empty strong{font-size:14px;font-weight:500;color:#636366}
+.p-day-sheet-body .p-text-button{color:#e63730}
+
+.p-month-stream-error{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;border-top:1px solid #f0d9d7;background:#fff6f5;color:#a3312b;font-size:12px;line-height:1.5}
+.p-month-stream-error>span{min-width:0;overflow-wrap:anywhere}
+.p-month-stream-error .p-text-button{flex:0 0 auto;min-height:32px;padding:0 8px;border:1px solid #e6b7b3;border-radius:8px;background:#fff;color:#c0362e;font-size:12px;cursor:pointer}
+
+@media(max-width:359px){
+  .p-schedule-drawer{width:45%;max-width:none}
+  .p-drawer-head{padding-inline:6px 4px;gap:0}
+  .p-drawer-body{padding:8px 8px 14px;gap:8px}
+  .p-schedule-drawer .p-text-button{font-size:12px}
+  .p-day-sheet{max-height:80%}
+  .p-day-sheet-head h2{font-size:14px}
+  .p-day-sheet-tools .p-text-button{font-size:11px;padding-inline:3px}
+  .p-day-sheet-body{padding-inline:10px}
 }

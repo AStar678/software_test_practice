@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T14:06:48.777Z",
+  "updated": "2026-10-28T15:28:29.113Z",
   "checks": [
     {
       "check": "login form ready alpha-one-employee",
@@ -313,7 +313,7 @@
         "total": 109,
         "head": [
           "All day original",
-          "Browser task 068 very long title  very long title  very long title"
+          "Browser task 092 very long title  very long title  very long title"
         ],
         "tail": [
           "Calendar cross",
@@ -343,7 +343,7 @@
           "Calendar cross"
         ],
         "tail": [
-          "Browser task 072 very long title  very long title  very long title",
+          "Browser task 059 very long title  very long title  very long title",
           "All day original"
         ]
       }
@@ -365,8 +365,8 @@
           "Calendar midnight"
         ],
         "tail": [
-          "Browser task 030 very long title  very long title  very long title",
-          "Browser task 072 very long title  very long title  very long title"
+          "Browser task 075 very long title  very long title  very long title",
+          "Browser task 059 very long title  very long title  very long title"
         ]
       }
     },
@@ -388,8 +388,8 @@
         "dir": "desc",
         "total": 109,
         "head": [
-          "Browser task 068 very long title  very long title  very long title",
-          "Browser task 097 very long title  very long title  very long title"
+          "Browser task 092 very long title  very long title  very long title",
+          "Browser task 095 very long title  very long title  very long title"
         ],
         "tail": [
           "Calendar point",
@@ -410,12 +410,12 @@
         "dir": "asc",
         "total": 109,
         "head": [
-          "Browser task 068 very long title  very long title  very long title",
-          "Browser task 097 very long title  very long title  very long title"
+          "Browser task 092 very long title  very long title  very long title",
+          "Browser task 095 very long title  very long title  very long title"
         ],
         "tail": [
-          "Browser task 030 very long title  very long title  very long title",
-          "Browser task 072 very long title  very long title  very long title"
+          "Browser task 075 very long title  very long title  very long title",
+          "Browser task 059 very long title  very long title  very long title"
         ]
       }
     },
@@ -437,12 +437,12 @@
         "dir": "desc",
         "total": 109,
         "head": [
-          "Browser task 068 very long title  very long title  very long title",
-          "Browser task 097 very long title  very long title  very long title"
+          "Browser task 092 very long title  very long title  very long title",
+          "Browser task 095 very long title  very long title  very long title"
         ],
         "tail": [
-          "Browser task 030 very long title  very long title  very long title",
-          "Browser task 072 very long title  very long title  very long title"
+          "Browser task 075 very long title  very long title  very long title",
+          "Browser task 059 very long title  very long title  very long title"
         ]
       }
     },
@@ -459,12 +459,12 @@
         "dir": "asc",
         "total": 109,
         "head": [
-          "Browser task 068 very long title  very long title  very long title",
-          "Browser task 097 very long title  very long title  very long title"
+          "Browser task 092 very long title  very long title  very long title",
+          "Browser task 095 very long title  very long title  very long title"
         ],
         "tail": [
-          "Browser task 030 very long title  very long title  very long title",
-          "Browser task 072 very long title  very long title  very long title"
+          "Browser task 075 very long title  very long title  very long title",
+          "Browser task 059 very long title  very long title  very long title"
         ]
       }
     },
@@ -486,12 +486,12 @@
         "dir": "desc",
         "total": 109,
         "head": [
-          "Browser task 068 very long title  very long title  very long title",
-          "Browser task 097 very long title  very long title  very long title"
+          "Browser task 092 very long title  very long title  very long title",
+          "Browser task 095 very long title  very long title  very long title"
         ],
         "tail": [
-          "Browser task 030 very long title  very long title  very long title",
-          "Browser task 072 very long title  very long title  very long title"
+          "Browser task 075 very long title  very long title  very long title",
+          "Browser task 059 very long title  very long title  very long title"
         ]
       }
     },
@@ -535,58 +535,58 @@
           "query": "Browser task 0",
           "scroll": 420,
           "ids": [
-            "88ffe852-1ab3-4ff6-a64e-1ee465e6a35e",
-            "8d0a0605-0aa9-45cd-8d32-f7c4b0810758",
-            "8d312ba1-f192-4801-8acd-de68b6ce6786",
-            "90f9f83b-2b26-42e3-852f-695636c52ad6",
-            "9829386d-a8b6-47b0-b1cf-2e0159f6e28f",
-            "99c0267d-6f59-4200-9a2c-2842650f232d",
-            "9ecaa20c-9c10-4cfb-b163-a77d6e2c0832",
-            "9f1237b2-583a-41ab-9da4-3f6758d63555",
-            "9fb76b81-0c83-4acc-b316-5b77bf6d7dd0",
-            "a00137bf-5797-439d-831d-1fc2aa978353",
-            "a4891ddd-0727-49c1-8f4d-d404d595a283",
-            "a77e7f0b-1eae-4056-bfb6-5b3788b92d69",
-            "aa399666-c541-4ebf-b604-13cf20749c29",
-            "aba08bc9-5043-4361-b66d-4f2d14387a43",
-            "aef4a859-20d8-4164-bdf3-f572b7e2d56b",
-            "b22705d9-d5ea-4b61-8710-12dfbaa3e59f",
-            "b81b56a4-dd65-4de9-9684-aa3ebc923cdc",
-            "b9158f2e-fd4a-4b99-a8a2-44db115a5161",
-            "b993e69b-5072-41dc-b806-2a019201e657",
-            "bae5e287-35f9-4611-b645-57e554108058",
-            "bcdb19af-38b6-49d7-805c-e82c5890c32e",
-            "be753c49-ab3b-41ac-92e8-17c9b477bd40",
-            "c1255263-0d79-4553-bc25-ef11cebe0537",
-            "c140f437-133c-4587-9998-9adf7aa4f223",
-            "c28cd0e6-6cad-404d-81b9-124b555722ba",
-            "c2adf94a-dcce-4728-ab77-54122adf9790",
-            "c85c7288-cc7b-4ff6-805c-96ae80fe92ff",
-            "caa4daae-a3df-450b-b4e5-1014bd5415aa",
-            "ce18d5ea-6942-47e6-809f-6da9865aef35",
-            "cefdb7f7-3005-40ba-86ea-d93980a9dc83",
-            "d012514a-b359-40bc-b46f-992639339ed0",
-            "d3e9e91b-878c-4fcb-afa1-a3a93d08268d",
-            "d6446c03-aa39-4f14-86eb-b8cfab720898",
-            "d733a672-2c10-4049-8fa6-07757e959ed7",
-            "d943bd28-24cd-4698-9a1f-966193cfb96c",
-            "db7e4ae3-a802-401e-a055-a2fd7823d766",
-            "dcf56809-d7f0-4c25-8609-286181323d5e",
-            "defc8f6b-d7d3-4860-afff-34d6d91b81a9",
-            "e10e0b53-99ea-44e4-a869-7b52264270a1",
-            "e423d4f8-fd1e-4964-8ac9-eddccc7d2e5d",
-            "e4d5f625-0dcb-43e8-960f-20c67069cf13",
-            "e6dd9934-a1aa-44f0-9cea-3e88d67af106",
-            "e8f68370-cf51-435f-9b88-8c519387ca07",
-            "ebdff6ae-6318-4b23-84c2-181940b81f3e",
-            "eeccdca7-d489-4295-b268-2becbe9456a5",
-            "f0f0c38f-810f-45a8-b931-dc5a8ee757ba",
-            "f3a4fb08-b5e2-4ce7-8886-c85349c98953",
-            "f45f76ee-e1ab-4646-95e0-8e0c924fce69",
-            "f62d83ba-063b-4e73-953d-9ca476814d1e",
-            "ff5dc40d-548d-4b7d-900d-e4e0e699a3a5"
+            "87daf1af-3831-4371-b9a2-bb04eed048bf",
+            "886aeced-5652-4d10-88ef-d8a451699485",
+            "898bd41d-78a7-4f9f-bf4b-da69a11a4942",
+            "9340fc86-8b5e-4281-9066-365d5a3587a3",
+            "934fd0b9-7a16-4e36-84ec-703dc9a6af5e",
+            "95222871-a8ff-40c5-ba6a-594efb34e854",
+            "95650bbf-be9a-4ad6-a33b-2a3803400766",
+            "95eb7831-0625-40f9-b891-8cc223f4695f",
+            "97756329-db67-4542-bbb0-ee326cbea843",
+            "97a4381f-0e72-4f21-b024-053602be4e4d",
+            "980cf274-19ee-40dd-80b2-0fa551f1bd6a",
+            "9c4a803d-d8d5-40af-8704-e012c570379e",
+            "a1d6c7a8-cc74-4f46-9282-80da4101ff1a",
+            "a83e4c0e-6e09-4055-99cf-c79cd9f6999e",
+            "a9996330-89ac-44d2-80e3-013aab8fa2bb",
+            "adad1bf7-0473-4fdd-afcd-a2bf13363947",
+            "af5c3b36-f729-4b21-9ecf-4c5808a06ecc",
+            "b05c8f8b-a3af-4d92-9cb8-1c48c42f17d4",
+            "b28b62e8-58b1-42f0-9d8b-69d3cb542bdd",
+            "b320d966-24eb-4059-a6ca-a2db51036535",
+            "b3ce3e31-2b06-49b0-8064-755130e9f912",
+            "b409d094-b17d-4222-b9f5-5b4ed3830951",
+            "b488e490-9236-4577-be6b-1174e7316596",
+            "b56b841c-8ad6-4bf0-b691-385ba1047806",
+            "b6a20d55-30f0-4514-965e-bb1d972d8d2d",
+            "b8437c07-a702-4bec-a462-a23378b7c6aa",
+            "bbaf4df9-03c3-453e-82bb-dbd25a284cdb",
+            "be83e710-2325-42c7-872e-93630695dd86",
+            "bedb1297-3559-4d5a-bdf7-d4567e9ce2cc",
+            "c2bca6e7-dceb-42ed-8570-d87415ac9720",
+            "c62e4c8d-8497-44c3-94e9-3a92c7f417d5",
+            "c7d74ee4-1e8e-48ee-b1bb-c5f10921f143",
+            "c86d408b-3e97-4442-9222-c818d949f482",
+            "cd606c30-a4b2-43fc-b635-1ebe0f112c97",
+            "cfb0d356-cc3b-45c9-8c09-c7b49704ead3",
+            "d157a162-df26-406c-b3d6-4e2f5a90d5d4",
+            "d40a848c-5c53-41fa-bf5f-a9debec8bdef",
+            "d4a106d0-6e52-45a1-8574-bd3062990df1",
+            "d4f1325b-4265-4ae4-9ee5-3d18351f4e2b",
+            "de4d0956-013d-4cbd-80af-3b4815f5aa8c",
+            "e0f539ad-1019-4aa3-b3dc-07bd7cc2bb71",
+            "e4abdc9f-a8cb-4776-b52e-db2559fb151e",
+            "e4c27959-5e30-4e23-bc55-46ad061fc5cd",
+            "e90ca666-b1c0-4fe5-bd45-4fb3eead6d12",
+            "ef317adc-7b70-4ab5-a308-370e5699870f",
+            "ef3b4367-6e08-49bb-9499-810b66a5f576",
+            "f31da0a9-73f9-4b69-835d-76fce14d542c",
+            "f702341e-e63d-4774-81eb-319c92133efd",
+            "fd036283-dafb-438f-add9-b98dafe85e1d",
+            "fe7468c0-91ea-449c-8660-070a2a7c5d41"
           ],
-          "first": "88ffe852-1ab3-4ff6-a64e-1ee465e6a35e"
+          "first": "87daf1af-3831-4371-b9a2-bb04eed048bf"
         },
         "afterDetail": {
           "page": 1,
@@ -594,56 +594,56 @@
           "queryInput": "Browser task 0",
           "scroll": 420,
           "ids": [
-            "88ffe852-1ab3-4ff6-a64e-1ee465e6a35e",
-            "8d0a0605-0aa9-45cd-8d32-f7c4b0810758",
-            "8d312ba1-f192-4801-8acd-de68b6ce6786",
-            "90f9f83b-2b26-42e3-852f-695636c52ad6",
-            "9829386d-a8b6-47b0-b1cf-2e0159f6e28f",
-            "99c0267d-6f59-4200-9a2c-2842650f232d",
-            "9ecaa20c-9c10-4cfb-b163-a77d6e2c0832",
-            "9f1237b2-583a-41ab-9da4-3f6758d63555",
-            "9fb76b81-0c83-4acc-b316-5b77bf6d7dd0",
-            "a00137bf-5797-439d-831d-1fc2aa978353",
-            "a4891ddd-0727-49c1-8f4d-d404d595a283",
-            "a77e7f0b-1eae-4056-bfb6-5b3788b92d69",
-            "aa399666-c541-4ebf-b604-13cf20749c29",
-            "aba08bc9-5043-4361-b66d-4f2d14387a43",
-            "aef4a859-20d8-4164-bdf3-f572b7e2d56b",
-            "b22705d9-d5ea-4b61-8710-12dfbaa3e59f",
-            "b81b56a4-dd65-4de9-9684-aa3ebc923cdc",
-            "b9158f2e-fd4a-4b99-a8a2-44db115a5161",
-            "b993e69b-5072-41dc-b806-2a019201e657",
-            "bae5e287-35f9-4611-b645-57e554108058",
-            "bcdb19af-38b6-49d7-805c-e82c5890c32e",
-            "be753c49-ab3b-41ac-92e8-17c9b477bd40",
-            "c1255263-0d79-4553-bc25-ef11cebe0537",
-            "c140f437-133c-4587-9998-9adf7aa4f223",
-            "c28cd0e6-6cad-404d-81b9-124b555722ba",
-            "c2adf94a-dcce-4728-ab77-54122adf9790",
-            "c85c7288-cc7b-4ff6-805c-96ae80fe92ff",
-            "caa4daae-a3df-450b-b4e5-1014bd5415aa",
-            "ce18d5ea-6942-47e6-809f-6da9865aef35",
-            "cefdb7f7-3005-40ba-86ea-d93980a9dc83",
-            "d012514a-b359-40bc-b46f-992639339ed0",
-            "d3e9e91b-878c-4fcb-afa1-a3a93d08268d",
-            "d6446c03-aa39-4f14-86eb-b8cfab720898",
-            "d733a672-2c10-4049-8fa6-07757e959ed7",
-            "d943bd28-24cd-4698-9a1f-966193cfb96c",
-            "db7e4ae3-a802-401e-a055-a2fd7823d766",
-            "dcf56809-d7f0-4c25-8609-286181323d5e",
-            "defc8f6b-d7d3-4860-afff-34d6d91b81a9",
-            "e10e0b53-99ea-44e4-a869-7b52264270a1",
-            "e423d4f8-fd1e-4964-8ac9-eddccc7d2e5d",
-            "e4d5f625-0dcb-43e8-960f-20c67069cf13",
-            "e6dd9934-a1aa-44f0-9cea-3e88d67af106",
-            "e8f68370-cf51-435f-9b88-8c519387ca07",
-            "ebdff6ae-6318-4b23-84c2-181940b81f3e",
-            "eeccdca7-d489-4295-b268-2becbe9456a5",
-            "f0f0c38f-810f-45a8-b931-dc5a8ee757ba",
-            "f3a4fb08-b5e2-4ce7-8886-c85349c98953",
-            "f45f76ee-e1ab-4646-95e0-8e0c924fce69",
-            "f62d83ba-063b-4e73-953d-9ca476814d1e",
-            "ff5dc40d-548d-4b7d-900d-e4e0e699a3a5"
+            "87daf1af-3831-4371-b9a2-bb04eed048bf",
+            "886aeced-5652-4d10-88ef-d8a451699485",
+            "898bd41d-78a7-4f9f-bf4b-da69a11a4942",
+            "9340fc86-8b5e-4281-9066-365d5a3587a3",
+            "934fd0b9-7a16-4e36-84ec-703dc9a6af5e",
+            "95222871-a8ff-40c5-ba6a-594efb34e854",
+            "95650bbf-be9a-4ad6-a33b-2a3803400766",
+            "95eb7831-0625-40f9-b891-8cc223f4695f",
+            "97756329-db67-4542-bbb0-ee326cbea843",
+            "97a4381f-0e72-4f21-b024-053602be4e4d",
+            "980cf274-19ee-40dd-80b2-0fa551f1bd6a",
+            "9c4a803d-d8d5-40af-8704-e012c570379e",
+            "a1d6c7a8-cc74-4f46-9282-80da4101ff1a",
+            "a83e4c0e-6e09-4055-99cf-c79cd9f6999e",
+            "a9996330-89ac-44d2-80e3-013aab8fa2bb",
+            "adad1bf7-0473-4fdd-afcd-a2bf13363947",
+            "af5c3b36-f729-4b21-9ecf-4c5808a06ecc",
+            "b05c8f8b-a3af-4d92-9cb8-1c48c42f17d4",
+            "b28b62e8-58b1-42f0-9d8b-69d3cb542bdd",
+            "b320d966-24eb-4059-a6ca-a2db51036535",
+            "b3ce3e31-2b06-49b0-8064-755130e9f912",
+            "b409d094-b17d-4222-b9f5-5b4ed3830951",
+            "b488e490-9236-4577-be6b-1174e7316596",
+            "b56b841c-8ad6-4bf0-b691-385ba1047806",
+            "b6a20d55-30f0-4514-965e-bb1d972d8d2d",
+            "b8437c07-a702-4bec-a462-a23378b7c6aa",
+            "bbaf4df9-03c3-453e-82bb-dbd25a284cdb",
+            "be83e710-2325-42c7-872e-93630695dd86",
+            "bedb1297-3559-4d5a-bdf7-d4567e9ce2cc",
+            "c2bca6e7-dceb-42ed-8570-d87415ac9720",
+            "c62e4c8d-8497-44c3-94e9-3a92c7f417d5",
+            "c7d74ee4-1e8e-48ee-b1bb-c5f10921f143",
+            "c86d408b-3e97-4442-9222-c818d949f482",
+            "cd606c30-a4b2-43fc-b635-1ebe0f112c97",
+            "cfb0d356-cc3b-45c9-8c09-c7b49704ead3",
+            "d157a162-df26-406c-b3d6-4e2f5a90d5d4",
+            "d40a848c-5c53-41fa-bf5f-a9debec8bdef",
+            "d4a106d0-6e52-45a1-8574-bd3062990df1",
+            "d4f1325b-4265-4ae4-9ee5-3d18351f4e2b",
+            "de4d0956-013d-4cbd-80af-3b4815f5aa8c",
+            "e0f539ad-1019-4aa3-b3dc-07bd7cc2bb71",
+            "e4abdc9f-a8cb-4776-b52e-db2559fb151e",
+            "e4c27959-5e30-4e23-bc55-46ad061fc5cd",
+            "e90ca666-b1c0-4fe5-bd45-4fb3eead6d12",
+            "ef317adc-7b70-4ab5-a308-370e5699870f",
+            "ef3b4367-6e08-49bb-9499-810b66a5f576",
+            "f31da0a9-73f9-4b69-835d-76fce14d542c",
+            "f702341e-e63d-4774-81eb-319c92133efd",
+            "fd036283-dafb-438f-add9-b98dafe85e1d",
+            "fe7468c0-91ea-449c-8660-070a2a7c5d41"
           ],
           "loaded": true,
           "error": null,
@@ -706,27 +706,27 @@
           "page": "log"
         },
         "yesterdayLog": {
-          "id": "3b957cbb-d6da-43e7-9605-0f01429080fa",
+          "id": "f1112b91-b616-47b5-9867-0f833d13a908",
           "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
           "businessDate": "2026-10-27",
           "body": "Browser log yesterday backfill",
           "taskId": null,
           "rowVersion": 1,
-          "createdAt": "2026-10-28T14:06:52.467654Z",
-          "updatedAt": "2026-10-28T14:06:52.467654Z",
+          "createdAt": "2026-10-28T15:28:33.213311Z",
+          "updatedAt": "2026-10-28T15:28:33.213311Z",
           "deletedAt": null,
           "recoveredFrom": "log-row",
           "tagId": null,
           "authorName": "alpha-one-employee",
           "tag": null,
           "frozen": false,
-          "frozenAt": "2026-10-29T14:06:52.467654Z",
+          "frozenAt": "2026-10-29T15:28:33.213311Z",
           "editable": true,
           "deletable": true
         },
         "allSelf": [
           {
-            "id": "3b957cbb-d6da-43e7-9605-0f01429080fa",
+            "id": "f1112b91-b616-47b5-9867-0f833d13a908",
             "date": "2026-10-27",
             "body": "Browser log yesterday backfill"
           }
@@ -737,21 +737,21 @@
       "check": "backfill creates a real day-before log with a distinct object id",
       "pass": true,
       "evidence": {
-        "id": "84b51302-8dc1-448b-be38-a22d62ae13c5",
+        "id": "8387174b-6bae-4078-b098-19566eb562d6",
         "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
         "businessDate": "2026-10-26",
         "body": "Browser log day before backfill",
         "taskId": null,
         "rowVersion": 1,
-        "createdAt": "2026-10-28T14:06:53.214815Z",
-        "updatedAt": "2026-10-28T14:06:53.214815Z",
+        "createdAt": "2026-10-28T15:28:33.963148Z",
+        "updatedAt": "2026-10-28T15:28:33.963148Z",
         "deletedAt": null,
         "recoveredFrom": "log-row",
         "tagId": null,
         "authorName": "alpha-one-employee",
         "tag": null,
         "frozen": false,
-        "frozenAt": "2026-10-29T14:06:53.214815Z",
+        "frozenAt": "2026-10-29T15:28:33.963148Z",
         "editable": true,
         "deletable": true
       }
@@ -771,27 +771,27 @@
       "pass": true,
       "evidence": {
         "restored": {
-          "rowVersion": 3,
-          "logId": "84b51302-8dc1-448b-be38-a22d62ae13c5",
           "businessDate": "2026-10-26",
-          "restored": true
+          "restored": true,
+          "rowVersion": 3,
+          "logId": "8387174b-6bae-4078-b098-19566eb562d6"
         },
         "predayRestored": {
-          "id": "84b51302-8dc1-448b-be38-a22d62ae13c5",
+          "id": "8387174b-6bae-4078-b098-19566eb562d6",
           "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
           "businessDate": "2026-10-26",
           "body": "Browser log day before restored",
           "taskId": null,
           "rowVersion": 3,
-          "createdAt": "2026-10-28T14:06:53.214815Z",
-          "updatedAt": "2026-10-28T14:06:54.534065Z",
+          "createdAt": "2026-10-28T15:28:33.963148Z",
+          "updatedAt": "2026-10-28T15:28:35.291480Z",
           "deletedAt": null,
           "recoveredFrom": "log-row",
           "tagId": null,
           "authorName": "alpha-one-employee",
           "tag": null,
           "frozen": false,
-          "frozenAt": "2026-10-29T14:06:53.214815Z",
+          "frozenAt": "2026-10-29T15:28:33.963148Z",
           "editable": true,
           "deletable": true
         }
@@ -802,10 +802,10 @@
       "pass": true,
       "evidence": {
         "race": {
-          "rowVersion": 5,
-          "logId": "84b51302-8dc1-448b-be38-a22d62ae13c5",
           "businessDate": "2026-10-26",
-          "restored": true
+          "restored": true,
+          "rowVersion": 5,
+          "logId": "8387174b-6bae-4078-b098-19566eb562d6"
         },
         "notice": "该日期已有日志，已打开已有记录继续编辑。",
         "form": {
@@ -818,21 +818,21 @@
       "check": "same-day uniqueness keeps one live row for the company business date",
       "pass": true,
       "evidence": {
-        "id": "84b51302-8dc1-448b-be38-a22d62ae13c5",
+        "id": "8387174b-6bae-4078-b098-19566eb562d6",
         "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
         "businessDate": "2026-10-26",
         "body": "Browser same-day race winner",
         "taskId": null,
         "rowVersion": 5,
-        "createdAt": "2026-10-28T14:06:53.214815Z",
-        "updatedAt": "2026-10-28T14:06:54.869599Z",
+        "createdAt": "2026-10-28T15:28:33.963148Z",
+        "updatedAt": "2026-10-28T15:28:35.640036Z",
         "deletedAt": null,
         "recoveredFrom": "log-row",
         "tagId": null,
         "authorName": "alpha-one-employee",
         "tag": null,
         "frozen": false,
-        "frozenAt": "2026-10-29T14:06:53.214815Z",
+        "frozenAt": "2026-10-29T15:28:33.963148Z",
         "editable": true,
         "deletable": true
       }
@@ -855,21 +855,21 @@
       "check": "today log is a real record with the company business date",
       "pass": true,
       "evidence": {
-        "id": "a0a96b35-70ce-492d-8c53-9d40487d98f9",
+        "id": "40a3918d-ab42-4b06-88cb-4d73c1685c7e",
         "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
         "businessDate": "2026-10-28",
         "body": "Browser log today original",
         "taskId": null,
         "rowVersion": 1,
-        "createdAt": "2026-10-28T14:06:55.174006Z",
-        "updatedAt": "2026-10-28T14:06:55.174006Z",
+        "createdAt": "2026-10-28T15:28:35.948593Z",
+        "updatedAt": "2026-10-28T15:28:35.948593Z",
         "deletedAt": null,
         "recoveredFrom": "log-row",
         "tagId": null,
         "authorName": "alpha-one-employee",
         "tag": null,
         "frozen": false,
-        "frozenAt": "2026-10-29T14:06:55.174006Z",
+        "frozenAt": "2026-10-29T15:28:35.948593Z",
         "editable": true,
         "deletable": true
       }
@@ -887,40 +887,40 @@
       "pass": true,
       "evidence": {
         "before": {
-          "id": "a0a96b35-70ce-492d-8c53-9d40487d98f9",
+          "id": "40a3918d-ab42-4b06-88cb-4d73c1685c7e",
           "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
           "businessDate": "2026-10-28",
           "body": "Browser log today original",
           "taskId": null,
           "rowVersion": 1,
-          "createdAt": "2026-10-28T14:06:55.174006Z",
-          "updatedAt": "2026-10-28T14:06:55.174006Z",
+          "createdAt": "2026-10-28T15:28:35.948593Z",
+          "updatedAt": "2026-10-28T15:28:35.948593Z",
           "deletedAt": null,
           "recoveredFrom": "log-row",
           "tagId": null,
           "authorName": "alpha-one-employee",
           "tag": null,
           "frozen": false,
-          "frozenAt": "2026-10-29T14:06:55.174006Z",
+          "frozenAt": "2026-10-29T15:28:35.948593Z",
           "editable": true,
           "deletable": true
         },
         "after": {
-          "id": "a0a96b35-70ce-492d-8c53-9d40487d98f9",
+          "id": "40a3918d-ab42-4b06-88cb-4d73c1685c7e",
           "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
           "businessDate": "2026-10-28",
           "body": "Browser log today edited",
           "taskId": null,
           "rowVersion": 2,
-          "createdAt": "2026-10-28T14:06:55.174006Z",
-          "updatedAt": "2026-10-28T14:06:55.760654Z",
+          "createdAt": "2026-10-28T15:28:35.948593Z",
+          "updatedAt": "2026-10-28T15:28:36.535040Z",
           "deletedAt": null,
           "recoveredFrom": "log-row",
           "tagId": null,
           "authorName": "alpha-one-employee",
           "tag": null,
           "frozen": false,
-          "frozenAt": "2026-10-29T14:06:55.174006Z",
+          "frozenAt": "2026-10-29T15:28:35.948593Z",
           "editable": true,
           "deletable": true
         }
@@ -953,7 +953,7 @@
         "frozenPage": {
           "requests": [
             {
-              "path": "/work-logs/3b957cbb-d6da-43e7-9605-0f01429080fa",
+              "path": "/work-logs/f1112b91-b616-47b5-9867-0f833d13a908",
               "method": "PATCH",
               "status": 409,
               "code": "WORK_LOG_FROZEN",
@@ -1016,26 +1016,26 @@
           "draft": null
         },
         "yesterdayFrozen": {
-          "id": "3b957cbb-d6da-43e7-9605-0f01429080fa",
+          "id": "f1112b91-b616-47b5-9867-0f833d13a908",
           "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
           "businessDate": "2026-10-27",
           "body": "Browser log yesterday backfill",
           "taskId": null,
           "rowVersion": 1,
-          "createdAt": "2026-10-27T13:06:56.669056Z",
-          "updatedAt": "2026-10-28T14:06:52.467654Z",
+          "createdAt": "2026-10-27T14:28:37.461367Z",
+          "updatedAt": "2026-10-28T15:28:33.213311Z",
           "deletedAt": null,
           "recoveredFrom": "log-row",
           "tagId": null,
           "authorName": "alpha-one-employee",
           "tag": null,
           "frozen": true,
-          "frozenAt": "2026-10-28T13:06:56.669056Z",
+          "frozenAt": "2026-10-28T14:28:37.461367Z",
           "editable": false,
           "deletable": false
         },
-        "createdAtAged": "2026-10-27 13:06:56.669056",
-        "createdAtAfter": "2026-10-27 13:06:56.669056"
+        "createdAtAged": "2026-10-27 14:28:37.461367",
+        "createdAtAfter": "2026-10-27 14:28:37.461367"
       }
     },
     {
@@ -1046,8 +1046,8 @@
       "check": "recreating a deleted slot never resets the first-creation freeze window",
       "pass": true,
       "evidence": {
-        "before": "a0a96b35-70ce-492d-8c53-9d40487d98f9\t2026-10-28\t2026-10-28 14:06:57.142792\t2026-10-28 14:06:55.174006",
-        "after": "a0a96b35-70ce-492d-8c53-9d40487d98f9\t2026-10-28\t2026-10-28 14:06:57.142792\t2026-10-27 13:06:57.167067",
+        "before": "40a3918d-ab42-4b06-88cb-4d73c1685c7e\t2026-10-28\t2026-10-28 15:28:37.939014\t2026-10-28 15:28:35.948593",
+        "after": "40a3918d-ab42-4b06-88cb-4d73c1685c7e\t2026-10-28\t2026-10-28 15:28:37.939014\t2026-10-27 14:28:37.961324",
         "liveToday": "0",
         "notice": "该日志已满24小时，只能查看。"
       }
@@ -1060,7 +1060,7 @@
       "check": "new personal item is saved with a real object id",
       "pass": true,
       "evidence": {
-        "id": "192efc36-4708-4add-9bfc-4f81bfc91d2d",
+        "id": "1b898fcb-af58-4a2a-abe3-0f95cf9fc3ff",
         "kind": "personal",
         "title": "Browser personal item v1",
         "body": "Browser personal item v1",
@@ -1077,12 +1077,12 @@
       "pass": true,
       "evidence": {
         "personalEdited": {
-          "id": "192efc36-4708-4add-9bfc-4f81bfc91d2d",
+          "id": "1b898fcb-af58-4a2a-abe3-0f95cf9fc3ff",
           "kind": "personal",
           "title": "Browser personal item v1",
           "body": "Browser personal item v2",
           "sortOrder": 1,
-          "createdAt": "2026-10-28T14:06:57.786713Z",
+          "createdAt": "2026-10-28T15:28:38.581222Z",
           "rowVersion": 2,
           "editable": true
         }
@@ -1137,7 +1137,7 @@
         "unpublished": false,
         "pending": "complete",
         "row": true,
-        "rowText": "Effective version pending task创建待开始审核中完成待审冻结2026-11-03 18:00中beta-one-employee2026-10-31 09:00alpha-one-head2026-10-28 22:06Browser acceptance real task—定时否———"
+        "rowText": "Effective version pending task创建待开始审核中完成待审冻结2026-11-03 18:00中beta-one-employee2026-10-31 09:00alpha-one-head2026-10-28 23:28Browser acceptance real task—定时否———"
       }
     },
     {
@@ -1240,16 +1240,16 @@
         "teamQuery": "",
         "authorQuery": "",
         "cards": [
-          "84b51302-8dc1-448b-be38-a22d62ae13c5",
-          "3b957cbb-d6da-43e7-9605-0f01429080fa"
+          "8387174b-6bae-4078-b098-19566eb562d6",
+          "f1112b91-b616-47b5-9867-0f833d13a908"
         ],
         "filtered": [
           {
-            "id": "84b51302-8dc1-448b-be38-a22d62ae13c5",
+            "id": "8387174b-6bae-4078-b098-19566eb562d6",
             "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
           },
           {
-            "id": "3b957cbb-d6da-43e7-9605-0f01429080fa",
+            "id": "f1112b91-b616-47b5-9867-0f833d13a908",
             "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
           }
         ]
@@ -1260,20 +1260,20 @@
       "pass": true,
       "evidence": {
         "expected": [
-          "3b957cbb-d6da-43e7-9605-0f01429080fa",
-          "84b51302-8dc1-448b-be38-a22d62ae13c5"
+          "f1112b91-b616-47b5-9867-0f833d13a908",
+          "8387174b-6bae-4078-b098-19566eb562d6"
         ],
         "cards": [
-          "84b51302-8dc1-448b-be38-a22d62ae13c5",
-          "3b957cbb-d6da-43e7-9605-0f01429080fa"
+          "8387174b-6bae-4078-b098-19566eb562d6",
+          "f1112b91-b616-47b5-9867-0f833d13a908"
         ],
         "filtered": [
           {
-            "id": "84b51302-8dc1-448b-be38-a22d62ae13c5",
+            "id": "8387174b-6bae-4078-b098-19566eb562d6",
             "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
           },
           {
-            "id": "3b957cbb-d6da-43e7-9605-0f01429080fa",
+            "id": "f1112b91-b616-47b5-9867-0f833d13a908",
             "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
           }
         ]
