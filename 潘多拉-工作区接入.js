@@ -225,7 +225,8 @@ document.addEventListener('toggle', event => {
 }, true);
 renderLog = function () {
   document.getElementById("page-log").innerHTML =
-    '<header class="p-log-header"><h2>日志</h2>' + button("new-log", "写日志", null, "primary") + '</header>' +
+    '<header class="p-log-header"><h2>日志</h2><div class="row">' + button("new-log", "写日志", null, "primary") +
+      button("backfill-log", "补写") + '</div></header>' +
     logFindingHTML() +
     '<section class="card p-log-panel" id="p-log-panel"><div class="card-head"><h2>日志</h2>' +
       '<span class="hint" id="logResultsCount">' + esc(logScopeLabel()) + '</span></div>' +
@@ -449,6 +450,20 @@ openLogForm = function (id, date) {
     openSheet(logFormView());
   });
 };
+async function openBackfillLog() {
+  // A user who already wrote today still needs a page entry to backfill yesterday/the day before.
+  for (const option of logDateOptions()) {
+    if (!(await existingLogFor(option.value))) { openLogForm(null, option.value); return; }
+  }
+  P.notice("今天、昨天和前天都已有日志。");
+}
+document.addEventListener('click', function (event) {
+  if (!P.ready || !event.target.closest) return;
+  const trigger = event.target.closest('[data-action="backfill-log"]');
+  if (!trigger) return;
+  event.preventDefault(); event.stopImmediatePropagation();
+  openBackfillLog().catch(error => P.notice(error.message));
+}, true);
 logFormView = function () {
   const d = drafts.log;
   if (!d) return null;

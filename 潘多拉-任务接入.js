@@ -665,7 +665,9 @@
     return owners;
   }
   function requestHandoverPreview(taskId, owners) {
-    return P.request("/tasks/reviewer-preview", { method: "POST", body: { taskId: taskId, assigneeIds: owners } });
+    // A handover is not a business-owner edit: without the explicit operation the preview validates
+    // the change rule and reports "applicant no longer allowed" for the owner who is only handing over.
+    return P.request("/tasks/reviewer-preview", { method: "POST", body: { taskId: taskId, assigneeIds: owners, operation: "handover" } });
   }
   function handoverPreviewText(preview) {
     if (!preview) return "正在计算审核人…";

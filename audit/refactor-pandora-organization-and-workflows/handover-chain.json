@@ -1,0 +1,144 @@
+{
+  "updated": "2026-10-28T14:05:06.506Z",
+  "checks": [
+    {
+      "check": "administrator browser logs into the real console",
+      "pass": true
+    },
+    {
+      "check": "administrator loads the departure responsibility inventory",
+      "pass": true
+    },
+    {
+      "check": "administrator stages handover, unpublished cancellation and deactivation in one draft",
+      "pass": true
+    },
+    {
+      "check": "current owner logs into the real employee app",
+      "pass": true
+    },
+    {
+      "check": "current owner opens the dedicated handover entry",
+      "pass": true
+    },
+    {
+      "check": "dedicated handover renders a target choice and preview",
+      "pass": true
+    },
+    {
+      "check": "handover target list stays in the work circle and refuses the ordinary company-wide candidate",
+      "pass": true,
+      "evidence": [
+        "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+        "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+        "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+      ]
+    },
+    {
+      "check": "complete final plan deactivates the employee atomically",
+      "pass": true
+    },
+    {
+      "check": "deactivated employee can no longer authenticate",
+      "pass": true,
+      "evidence": {
+        "status": 401,
+        "body": {
+          "code": "BAD_CREDENTIALS",
+          "message": "账号或密码不正确"
+        },
+        "headers": {
+          "connection": "keep-alive",
+          "content-type": "application/json",
+          "date": "Wed, 28 Oct 2026 14:05:09 GMT",
+          "keep-alive": "timeout=60",
+          "transfer-encoding": "chunked",
+          "x-content-type-options": "nosniff",
+          "x-frame-options": "DENY"
+        }
+      }
+    },
+    {
+      "check": "takeover recipient logs into the employee app",
+      "pass": true
+    },
+    {
+      "check": "takeover recipient opens the active written-off task",
+      "pass": true
+    },
+    {
+      "check": "takeover recipient reaches the real edit form",
+      "pass": true
+    },
+    {
+      "check": "takeover recipient directly edits the active task",
+      "pass": true
+    },
+    {
+      "check": "assignee progress waits for the takeover business owner",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "e631fbf4-bc87-440d-aac4-a2de8be84e5c",
+          "requestId": "aee4d38d-346c-41e2-95bb-76405bd6bba3",
+          "outcome": "pending",
+          "rowVersion": 8
+        },
+        "headers": {
+          "cache-control": "no-store",
+          "connection": "keep-alive",
+          "content-type": "application/json",
+          "date": "Wed, 28 Oct 2026 14:05:10 GMT",
+          "etag": "\"8\"",
+          "keep-alive": "timeout=60",
+          "transfer-encoding": "chunked",
+          "x-content-type-options": "nosniff",
+          "x-frame-options": "DENY"
+        }
+      }
+    },
+    {
+      "check": "takeover recipient opens the real review sheet",
+      "pass": true
+    },
+    {
+      "check": "takeover recipient approves the pending progress",
+      "pass": true
+    },
+    {
+      "check": "takeover recipient opens the original completed task",
+      "pass": true
+    },
+    {
+      "check": "reopen offers ordered replacement assignees",
+      "pass": true
+    },
+    {
+      "check": "takeover recipient reopens with a new round and active assignee",
+      "pass": true
+    },
+    {
+      "check": "administrator locates the completed task in formal history",
+      "pass": true
+    },
+    {
+      "check": "history shows original creator, administrator takeover and continued work",
+      "pass": true
+    },
+    {
+      "check": "history keeps the dedicated handover and business applicant separate from the administrator",
+      "pass": true
+    },
+    {
+      "check": "administrator console and employee continuation have no browser exceptions",
+      "pass": true,
+      "evidence": {
+        "admin": [],
+        "employee": []
+      }
+    }
+  ],
+  "result": "PASS"
+}

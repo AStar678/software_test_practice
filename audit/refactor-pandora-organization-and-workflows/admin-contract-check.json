@@ -1,0 +1,781 @@
+{
+  "updated": "2026-10-28T14:08:16.336926+00:00",
+  "task": "6.3 admin console and notification contract",
+  "checks": [
+    {
+      "check": "disposable fixture service is healthy and seeded",
+      "pass": true,
+      "evidence": {
+        "identities": [
+          "admin",
+          "alpha-head",
+          "alpha-one-employee",
+          "alpha-one-head",
+          "alpha-two-employee",
+          "alpha-two-head",
+          "beta-head",
+          "beta-one-employee",
+          "beta-one-head",
+          "beta-two-employee",
+          "beta-two-head",
+          "founder",
+          "other-admin",
+          "other-founder"
+        ]
+      }
+    },
+    {
+      "check": "legacy company-wide authorization rows exist in the fixture",
+      "pass": true,
+      "evidence": {
+        "grants": 1,
+        "companyScopes": 4
+      }
+    },
+    {
+      "check": "GET /admin/roles is retired with 410",
+      "pass": true,
+      "evidence": {
+        "status": 410,
+        "code": "ROLE_AUTHORIZATION_RETIRED"
+      }
+    },
+    {
+      "check": "POST /admin/employees/{id}/roles is retired with 410",
+      "pass": true,
+      "evidence": {
+        "status": 410,
+        "code": "ROLE_AUTHORIZATION_RETIRED"
+      }
+    },
+    {
+      "check": "direct department creation requires the complete organization plan",
+      "pass": true,
+      "evidence": {
+        "status": 410,
+        "code": "ORGANIZATION_PLAN_REQUIRED"
+      }
+    },
+    {
+      "check": "legacy role/rank rows do not change the fixed /me identity",
+      "pass": true,
+      "evidence": {
+        "role": "team_head",
+        "placementType": "team_head",
+        "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+        "positionId": "fixture-company-title"
+      }
+    },
+    {
+      "check": "creation reviewer is the real direct manager before the position rename",
+      "pass": true,
+      "evidence": {
+        "reviewerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+        "basis": "be5ad191-3c18-5b60-a420-dc24f216c7b8"
+      }
+    },
+    {
+      "check": "sequential eleventh company item is refused with HOME_ITEM_LIMIT",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "code": "HOME_ITEM_LIMIT"
+      }
+    },
+    {
+      "check": "company information is capped at ten and admin/App order agree",
+      "pass": true,
+      "evidence": {
+        "limit": 10,
+        "adminTitles": [
+          "Company Notice 01",
+          "Company Notice 02",
+          "Company Notice 03",
+          "Company Notice 04",
+          "Company Notice 05",
+          "Company Notice 06",
+          "Company Notice 07",
+          "Company Notice 08",
+          "Company Notice 09",
+          "Company Notice 10"
+        ],
+        "appTitles": [
+          "Company Notice 01",
+          "Company Notice 02",
+          "Company Notice 03",
+          "Company Notice 04",
+          "Company Notice 05",
+          "Company Notice 06",
+          "Company Notice 07",
+          "Company Notice 08",
+          "Company Notice 09",
+          "Company Notice 10"
+        ]
+      }
+    },
+    {
+      "check": "real departure work and unpublished creation are prepared",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "real approval requests and notification copies exist for boundary checks",
+      "pass": true,
+      "evidence": {
+        "pass": {
+          "eventId": "7c549f08-6ef7-428f-918f-bd7259fddbfa",
+          "taskId": "35baca4b-ae5f-41b2-bba7-493ec8ccc8a2"
+        },
+        "closed": {
+          "eventId": "c83c6190-d5c0-408f-86b2-dbc4562e6295",
+          "taskId": "dbed58b2-22bb-43d2-96db-695d47ac9e3a"
+        },
+        "edge": {
+          "eventId": "8995280f-d655-4694-b7e1-4c9620e983d8",
+          "taskId": "3eea41af-5629-4d0e-9ad9-f54af9dfffc6"
+        }
+      }
+    },
+    {
+      "check": "notification at 179.x seconds is withdrawable through the admin API",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "ageMs": 179015,
+        "body": {
+          "copies": 1,
+          "withdrawn": true,
+          "eventId": "8995280f-d655-4694-b7e1-4c9620e983d8"
+        }
+      }
+    },
+    {
+      "check": "179.x withdrawal clears the copy but keeps the approval request and task history",
+      "pass": true,
+      "evidence": {
+        "revokedAt": "2026-10-28 14:08:22.377842",
+        "copy": [
+          "该通知已被撤回。",
+          "NULL",
+          "NULL",
+          "1"
+        ],
+        "requestStatus": "pending",
+        "historyBefore": 2,
+        "historyAfter": 2
+      }
+    },
+    {
+      "check": "withdrawal writes the immutable notification.withdrawn audit record",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin task history still opens after notification withdrawal",
+      "pass": true,
+      "evidence": {
+        "entries": 2,
+        "executionState": "todo"
+      }
+    },
+    {
+      "check": "notification at 180 seconds is refused with WITHDRAW_WINDOW_CLOSED",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "code": "WITHDRAW_WINDOW_CLOSED",
+        "ageMs": 180015
+      }
+    },
+    {
+      "check": "refused withdrawal leaves the event, copy and approval request untouched",
+      "pass": true,
+      "evidence": {
+        "revokedAt": "NULL",
+        "copy": [
+          "提交创建任务《Contract window closed》，等待审核。",
+          "Contract window closed",
+          "dbed58b2-22bb-43d2-96db-695d47ac9e3a"
+        ],
+        "requestStatus": "pending"
+      }
+    },
+    {
+      "check": "employee token is refused by GET /admin/users",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "FORBIDDEN"
+      }
+    },
+    {
+      "check": "employee token is refused by POST /admin/positions",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "FORBIDDEN"
+      }
+    },
+    {
+      "check": "employee token is refused by GET /admin/notifications",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "FORBIDDEN"
+      }
+    },
+    {
+      "check": "employee token is refused by GET /admin/company",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "FORBIDDEN"
+      }
+    },
+    {
+      "check": "administrator can read the management employee list",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "administrator can read notification management",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "administrator can read company information",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "employee pages contain no management API path",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "admin markup has no retired role/scope/rank/manual-manager editor",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "real Chrome admin browser suite exits successfully",
+      "pass": true,
+      "evidence": {
+        "returncode": 0,
+        "tail": "osition name do not grant admin access\nPASS employee token is refused by GET /admin/users\nPASS employee token is refused by POST /admin/positions\nPASS employee token is refused by GET /admin/notifications\nPASS administrator still calls management APIs normally\nPASS employee credentials cannot enter the admin console\nPASS company info shows exactly ten managed entries\nPASS company info admin order matches the managed list\nPASS App reads company info in the same admin order\nPASS admin reorders company info through the real console\nPASS admin and App read the reordered company info identically\nPASS eleventh company entry is refused at the ten-item limit\nPASS notification management loads real notification rows\nPASS notification management shows real withdrawn and unread statuses\nPASS browser withdraws a real notification strictly under 180 seconds\nPASS withdrawn notification keeps a placeholder and removes its withdraw action\nPASS browser refuses notification withdrawal at or after 180 seconds\nPASS closed-window notification remains unread and withdrawable\nPASS admin task history lists real tasks\nPASS admin task history opens complete real operation history\nPASS invalid final draft stays open with server error and no write\nPASS cancel local draft restores saved positions\nPASS browser saves full head swap with derived managers\nPASS new employee is a local draft before final save\nPASS new employee full plan returns one-time initial credential\nPASS organization persists across browser reload without redisplaying credential\nPASS founder inventory offers no deactivation control\nPASS departure inventory includes completed work and pending unpublished creation\nPASS browser commits completed responsibility takeover and employee deactivation\nPASS admin account has independent account fields\nPASS admin account save revokes console and requires new login\nPASS renamed administrator logs in with same principal\nPASS real admin interactions have no browser exceptions\n\n--- STDERR ---\n"
+      }
+    },
+    {
+      "check": "browser report preserves every existing admin-browser check",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "browser report ran every task 6.3 contract check",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "browser report result is PASS",
+      "pass": true,
+      "evidence": "PASS"
+    },
+    {
+      "check": "administrator re-authenticates after the preserved account-rename check",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "browser position rename left every authorization-relevant placement field unchanged",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "role": "team_head",
+          "placementType": "team_head",
+          "departmentId": "fixture-company-beta",
+          "teamId": "fixture-company-beta-one",
+          "positionId": "fixture-company-title",
+          "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+          "positionName": "Display title"
+        },
+        "after": {
+          "role": "team_head",
+          "placementType": "team_head",
+          "departmentId": "fixture-company-beta",
+          "teamId": "fixture-company-beta-one",
+          "positionId": "fixture-company-title",
+          "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+          "positionName": "Browser Renamed Title"
+        }
+      }
+    },
+    {
+      "check": "browser position rename left the creation reviewer and route basis unchanged",
+      "pass": true,
+      "evidence": {
+        "reviewerBefore": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+        "reviewerAfter": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+        "basisBefore": "be5ad191-3c18-5b60-a420-dc24f216c7b8",
+        "basisAfter": "be5ad191-3c18-5b60-a420-dc24f216c7b8"
+      }
+    },
+    {
+      "check": "browser created and renamed display positions without touching the placement id",
+      "pass": true,
+      "evidence": {
+        "eb531c0b-1382-43eb-bcac-22f10e9c08ed": "Browser Catalog Analyst",
+        "fixture-company-title": "Browser Renamed Title"
+      }
+    },
+    {
+      "check": "browser reorder persists and the App reads the identical admin order",
+      "pass": true,
+      "evidence": {
+        "expected": [
+          "Company Notice 01",
+          "Company Notice 02",
+          "Company Notice 03",
+          "Company Notice 04",
+          "Company Notice 05",
+          "Company Notice 06",
+          "Company Notice 07",
+          "Company Notice 08",
+          "Company Notice 10",
+          "Company Notice 09"
+        ],
+        "admin": [
+          "Company Notice 01",
+          "Company Notice 02",
+          "Company Notice 03",
+          "Company Notice 04",
+          "Company Notice 05",
+          "Company Notice 06",
+          "Company Notice 07",
+          "Company Notice 08",
+          "Company Notice 10",
+          "Company Notice 09"
+        ],
+        "app": [
+          "Company Notice 01",
+          "Company Notice 02",
+          "Company Notice 03",
+          "Company Notice 04",
+          "Company Notice 05",
+          "Company Notice 06",
+          "Company Notice 07",
+          "Company Notice 08",
+          "Company Notice 10",
+          "Company Notice 09"
+        ]
+      }
+    },
+    {
+      "check": "eleventh company item is still refused after the browser reorder",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "code": "HOME_ITEM_LIMIT"
+      }
+    },
+    {
+      "check": "browser under-180 withdrawal clears the copy but keeps the approval request and task history",
+      "pass": true,
+      "evidence": {
+        "revokedAt": "2026-10-28 14:08:24.446743",
+        "copy": [
+          "该通知已被撤回。",
+          "NULL",
+          "NULL",
+          "1"
+        ],
+        "requestStatus": "pending",
+        "requestSubmittedEntries": 1,
+        "historyBefore": 2,
+        "historyAfter": 3
+      }
+    },
+    {
+      "check": "browser 180+ refusal left the closed-window notification unrevoked and readable",
+      "pass": true,
+      "evidence": {
+        "revokedAt": "NULL",
+        "copy": [
+          "提交创建任务《Contract window closed》，等待审核。",
+          "Contract window closed",
+          "dbed58b2-22bb-43d2-96db-695d47ac9e3a"
+        ]
+      }
+    },
+    {
+      "check": "browser withdrawal wrote its own immutable audit record",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "real fixture service log was produced",
+      "pass": true,
+      "evidence": "/Users/watuji/MyGitDev/software_test_practice/audit/refactor-pandora-organization-and-workflows/admin-contract-service.log"
+    }
+  ],
+  "browser": {
+    "updated": "2026-10-28T14:08:22.621Z",
+    "checks": [
+      {
+        "check": "independent admin enters real management console",
+        "pass": true
+      },
+      {
+        "check": "retired role and manual manager controls are removed",
+        "pass": true
+      },
+      {
+        "check": "management console has no role/scope/rank/manual-manager editor",
+        "pass": true,
+        "evidence": {
+          "nav": "员工组织调整展示职位停用与接管管理员账号公司信息组织完整性任务历史通知管理"
+        }
+      },
+      {
+        "check": "position catalog is independent display metadata",
+        "pass": true
+      },
+      {
+        "check": "real employee identity is readable before the position rename",
+        "pass": true,
+        "evidence": {
+          "status": 200,
+          "role": "team_head",
+          "positionName": "Display title"
+        }
+      },
+      {
+        "check": "admin creates a display position independently",
+        "pass": true
+      },
+      {
+        "check": "admin renames a display position independently",
+        "pass": true
+      },
+      {
+        "check": "renamed position is shown for assigned staff",
+        "pass": true
+      },
+      {
+        "check": "position rename keeps role, placement, manager and position id",
+        "pass": true,
+        "evidence": {
+          "before": {
+            "role": "team_head",
+            "placementType": "team_head",
+            "departmentId": "fixture-company-beta",
+            "teamId": "fixture-company-beta-one",
+            "positionId": "fixture-company-title",
+            "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+            "positionName": "Display title"
+          },
+          "after": {
+            "role": "team_head",
+            "placementType": "team_head",
+            "departmentId": "fixture-company-beta",
+            "teamId": "fixture-company-beta-one",
+            "positionId": "fixture-company-title",
+            "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+            "positionName": "Browser Renamed Title"
+          }
+        }
+      },
+      {
+        "check": "position rename changes no creation route or reviewer",
+        "pass": true,
+        "evidence": {
+          "reviewerBefore": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+          "reviewerAfter": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+          "basisBefore": "be5ad191-3c18-5b60-a420-dc24f216c7b8",
+          "basisAfter": "be5ad191-3c18-5b60-a420-dc24f216c7b8"
+        }
+      },
+      {
+        "check": "legacy role data and the new position name do not grant admin access",
+        "pass": true,
+        "evidence": {
+          "usersStatus": 403,
+          "usersCode": "FORBIDDEN",
+          "positionStatus": 403,
+          "role": "team_head"
+        }
+      },
+      {
+        "check": "employee token is refused by GET /admin/users",
+        "pass": true,
+        "evidence": {
+          "status": 403,
+          "code": "FORBIDDEN"
+        }
+      },
+      {
+        "check": "employee token is refused by POST /admin/positions",
+        "pass": true,
+        "evidence": {
+          "status": 403,
+          "code": "FORBIDDEN"
+        }
+      },
+      {
+        "check": "employee token is refused by GET /admin/notifications",
+        "pass": true,
+        "evidence": {
+          "status": 403,
+          "code": "FORBIDDEN"
+        }
+      },
+      {
+        "check": "administrator still calls management APIs normally",
+        "pass": true,
+        "evidence": {
+          "usersStatus": 200,
+          "notificationsStatus": 200
+        }
+      },
+      {
+        "check": "employee credentials cannot enter the admin console",
+        "pass": true,
+        "evidence": {
+          "status": 401,
+          "code": "BAD_CREDENTIALS"
+        }
+      },
+      {
+        "check": "company info shows exactly ten managed entries",
+        "pass": true
+      },
+      {
+        "check": "company info admin order matches the managed list",
+        "pass": true,
+        "evidence": {
+          "adminTitles": [
+            "Company Notice 01",
+            "Company Notice 02",
+            "Company Notice 03",
+            "Company Notice 04",
+            "Company Notice 05",
+            "Company Notice 06",
+            "Company Notice 07",
+            "Company Notice 08",
+            "Company Notice 09",
+            "Company Notice 10"
+          ],
+          "browserTitles": [
+            "Company Notice 01",
+            "Company Notice 02",
+            "Company Notice 03",
+            "Company Notice 04",
+            "Company Notice 05",
+            "Company Notice 06",
+            "Company Notice 07",
+            "Company Notice 08",
+            "Company Notice 09",
+            "Company Notice 10"
+          ]
+        }
+      },
+      {
+        "check": "App reads company info in the same admin order",
+        "pass": true,
+        "evidence": {
+          "appTitles": [
+            "Company Notice 01",
+            "Company Notice 02",
+            "Company Notice 03",
+            "Company Notice 04",
+            "Company Notice 05",
+            "Company Notice 06",
+            "Company Notice 07",
+            "Company Notice 08",
+            "Company Notice 09",
+            "Company Notice 10"
+          ]
+        }
+      },
+      {
+        "check": "admin reorders company info through the real console",
+        "pass": true,
+        "evidence": {
+          "expectedTitles": [
+            "Company Notice 01",
+            "Company Notice 02",
+            "Company Notice 03",
+            "Company Notice 04",
+            "Company Notice 05",
+            "Company Notice 06",
+            "Company Notice 07",
+            "Company Notice 08",
+            "Company Notice 10",
+            "Company Notice 09"
+          ]
+        }
+      },
+      {
+        "check": "admin and App read the reordered company info identically",
+        "pass": true,
+        "evidence": {
+          "adminTitles": [
+            "Company Notice 01",
+            "Company Notice 02",
+            "Company Notice 03",
+            "Company Notice 04",
+            "Company Notice 05",
+            "Company Notice 06",
+            "Company Notice 07",
+            "Company Notice 08",
+            "Company Notice 10",
+            "Company Notice 09"
+          ],
+          "appTitles": [
+            "Company Notice 01",
+            "Company Notice 02",
+            "Company Notice 03",
+            "Company Notice 04",
+            "Company Notice 05",
+            "Company Notice 06",
+            "Company Notice 07",
+            "Company Notice 08",
+            "Company Notice 10",
+            "Company Notice 09"
+          ]
+        }
+      },
+      {
+        "check": "eleventh company entry is refused at the ten-item limit",
+        "pass": true,
+        "evidence": {
+          "error": "公司信息最多10条，请先删除后再新增"
+        }
+      },
+      {
+        "check": "notification management loads real notification rows",
+        "pass": true
+      },
+      {
+        "check": "notification management shows real withdrawn and unread statuses",
+        "pass": true,
+        "evidence": {
+          "withdrawn": 1,
+          "unread": 2,
+          "edgeAction": false,
+          "closedAction": true
+        }
+      },
+      {
+        "check": "browser withdraws a real notification strictly under 180 seconds",
+        "pass": true,
+        "evidence": {
+          "message": "通知已撤回：跳转与正文已移除，任务申请、业务结果和历史记录保持不变。"
+        }
+      },
+      {
+        "check": "withdrawn notification keeps a placeholder and removes its withdraw action",
+        "pass": true
+      },
+      {
+        "check": "browser refuses notification withdrawal at or after 180 seconds",
+        "pass": true,
+        "evidence": {
+          "error": "通知发出已满3分钟，不能撤回"
+        }
+      },
+      {
+        "check": "closed-window notification remains unread and withdrawable",
+        "pass": true,
+        "evidence": {
+          "text": "\n      alpha-one-head\n      Contract window closedtask.create.submitted\n      未读2026/10/28 22:08:222027/1/28 22:08:22\n      撤回",
+          "withdraw": true
+        }
+      },
+      {
+        "check": "admin task history lists real tasks",
+        "pass": true,
+        "evidence": {
+          "hint": "共 5 条任务，按创建时间倒序。当前显示第 1—5 条。"
+        }
+      },
+      {
+        "check": "admin task history opens complete real operation history",
+        "pass": true
+      },
+      {
+        "check": "invalid final draft stays open with server error and no write",
+        "pass": true
+      },
+      {
+        "check": "cancel local draft restores saved positions",
+        "pass": true
+      },
+      {
+        "check": "browser saves full head swap with derived managers",
+        "pass": true
+      },
+      {
+        "check": "new employee is a local draft before final save",
+        "pass": true
+      },
+      {
+        "check": "new employee full plan returns one-time initial credential",
+        "pass": true
+      },
+      {
+        "check": "organization persists across browser reload without redisplaying credential",
+        "pass": true
+      },
+      {
+        "check": "founder inventory offers no deactivation control",
+        "pass": true
+      },
+      {
+        "check": "departure inventory includes completed work and pending unpublished creation",
+        "pass": true
+      },
+      {
+        "check": "browser commits completed responsibility takeover and employee deactivation",
+        "pass": true
+      },
+      {
+        "check": "admin account has independent account fields",
+        "pass": true
+      },
+      {
+        "check": "admin account save revokes console and requires new login",
+        "pass": true
+      },
+      {
+        "check": "renamed administrator logs in with same principal",
+        "pass": true
+      },
+      {
+        "check": "real admin interactions have no browser exceptions",
+        "pass": true,
+        "evidence": []
+      }
+    ],
+    "result": "PASS"
+  },
+  "environment": {
+    "port": 18183,
+    "serviceLog": "/Users/watuji/MyGitDev/software_test_practice/audit/refactor-pandora-organization-and-workflows/admin-contract-service.log",
+    "browserReport": "/Users/watuji/MyGitDev/software_test_practice/audit/refactor-pandora-organization-and-workflows/admin-contract-browser.json",
+    "nodeLog": "/Users/watuji/MyGitDev/software_test_practice/audit/refactor-pandora-organization-and-workflows/admin-contract-browser-node.log",
+    "browserChecks": 43,
+    "existingBrowserChecks": 15,
+    "newBrowserChecks": 28
+  },
+  "result": "PASS",
+  "passed": 40,
+  "failed": 0
+}

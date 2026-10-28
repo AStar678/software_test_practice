@@ -839,8 +839,9 @@ public class WorkspaceService {
         }
         if(includeApproval) {
             for(var request:db.list("SELECT id FROM approval_requests WHERE organization_id=? AND task_id=?",a.organizationId(),taskId)) {
-                try {tasks.approval(a,s(request,"id"));return true;}
-                catch(ApiException ignored) { /* Recompute the current reviewer through the task authority. */ }
+                // A plain read probe: the transactional approval projection would mark this worker
+                // transaction rollback-only when an unrelated request is legitimately not visible.
+                if(tasks.canReadRequest(a,s(request,"id"))) return true;
             }
         }
         return false;

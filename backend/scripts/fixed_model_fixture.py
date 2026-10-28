@@ -21,7 +21,9 @@ def quote(value):
     return "'"+str(value).replace('\\','\\\\').replace("'","''")+"'"
 
 class Fixture:
-    def __init__(self,port=18175):
+    def __init__(self,port=18175,worker=False,controllable=False):
+        self.worker=worker
+        self.controllable=controllable
         self.database='pandora_precheck_model_'+uuid.uuid4().hex[:16]
         self.admin=Mysql(None,DEFAULT_OPTION_FILE)
         self.db=Mysql(self.database,DEFAULT_OPTION_FILE)
@@ -58,10 +60,16 @@ class Fixture:
             env=dict(os.environ)
             env.update(values)
             env.update(PANDORA_DB_URL=f'jdbc:mysql://127.0.0.1:13306/{self.database}?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED',
-                       PANDORA_PORT=str(self.port),PANDORA_BIND_ADDRESS='127.0.0.1',PANDORA_SEED='false',PANDORA_WORKER_ENABLED='false')
+                       PANDORA_PORT=str(self.port),PANDORA_BIND_ADDRESS='127.0.0.1',PANDORA_SEED='false',
+                       PANDORA_WORKER_ENABLED='true' if self.worker else 'false')
+            args=['java','-jar',str(BASE/'target/pandora-backend-0.1.0.jar')]
+            if self.controllable:
+                # Keep the scheduler quiet; verification calls POST /admin/worker/run-once.
+                args += ['--pandora.clock.controllable=true','--pandora.worker.delay-ms=3600000',
+                         '--pandora.worker.initial-delay-ms=3600000']
             self.log_path.parent.mkdir(parents=True,exist_ok=True)
             with self.log_path.open('w') as log:
-                self.process=subprocess.Popen(['java','-jar',str(BASE/'target/pandora-backend-0.1.0.jar')],env=env,stdout=log,stderr=subprocess.STDOUT)
+                self.process=subprocess.Popen(args,env=env,stdout=log,stderr=subprocess.STDOUT)
             for _ in range(120):
                 if self.process.poll() is not None: raise RuntimeError('fixture service failed; see '+str(self.log_path))
                 try:

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T12:13:00.966242+00:00",
+  "updated": "2026-10-28T14:07:51.798763+00:00",
   "checks": [
     {
       "check": "alpha-head creation routes to direct manager regardless of owner order",
@@ -296,6 +296,946 @@
     },
     {
       "check": "business owner approves dedicated handover",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "cross-department task is visible to both effective-owner department heads",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "team-head scope follows the effective owner, not the creator team",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "ordinary employee sees own created work but not a teammate-owned task",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "fixed founder reads company tasks while independent administrator is refused",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct ID access is refused outside the fixed scope",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "cross-department task reaches both teams and both department heads",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "creator department never decides the task department",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create alpha-head submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "department head creation follows the direct manager route",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "manager keeps a cross-department task they created",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create alpha-one-employee submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "unpublished creation stays out of every normal list and detail",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "old team head sees the current team owner before the move",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator reads the complete organization draft",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "complete plan moves an employee to another team atomically",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "old manager loses list, detail and handover ranges after the move",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "new team head and ordinary teammate scope follow the current placement",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "ordinary employee cannot inherit a teammate-owned task",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "history-only recipient is excluded from normal list and detail",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "delivered task message remains in the notification inbox",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "c134ea77-6945-4017-a459-340fd8c56933",
+          "eventId": "edb95dab-5eaa-4aa3-94f4-df652bef7af8",
+          "eventType": "task.create.applied",
+          "createdAt": "2026-10-28T14:07:59.908550Z",
+          "deliveredAt": "2026-10-28T14:07:59.849319Z",
+          "readAt": null,
+          "readonly": false,
+          "relationLost": false,
+          "taskId": "5c95c822-ec28-4382-a9b7-95bf4227bc85",
+          "requestId": "af8a4d0f-9857-4d18-b0a9-165437b7dfc7",
+          "title": "Fixed review fixture",
+          "summary": "任务《Fixed review fixture》的创建已生效。",
+          "changeSummary": "任务《Fixed review fixture》的创建已生效。",
+          "revoked": false,
+          "withdrawn": false,
+          "canReadWithdrawnDetails": false,
+          "expiresAt": "2027-01-28T14:07:59.845944Z",
+          "rowVersion": 1,
+          "canWithdraw": false,
+          "canOpenTask": true,
+          "canReview": false,
+          "requestStatus": "direct",
+          "requestKind": "create",
+          "objectType": "task",
+          "objectId": "5c95c822-ec28-4382-a9b7-95bf4227bc85",
+          "focus": null,
+          "commentId": null,
+          "purpose": "创建结果",
+          "objectName": "Fixed review fixture",
+          "requestComment": null,
+          "requestDecidedAt": "2026-10-28T14:07:59.843168Z"
+        }
+      ]
+    },
+    {
+      "check": "dedicated history entry returns the current effective task read-only",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "readonly": true
+      }
+    },
+    {
+      "check": "idempotent command succeeds before the organization change",
+      "pass": true,
+      "evidence": {
+        "status": 201
+      }
+    },
+    {
+      "check": "administrator reads the complete organization draft",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "second complete plan keeps a legal final organization",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "old idempotency success is not replayed after the organization version changed",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "code": "AUTHORIZATION_CHANGED"
+      }
+    },
+    {
+      "check": "administrator reads the complete organization draft",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "concurrent organization plan and reads return only a legal observed state",
+      "pass": true,
+      "evidence": {
+        "write": 200,
+        "reads": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200
+        ]
+      }
+    },
+    {
+      "check": "a successful organization read is internally consistent",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "progress preview shows the current business owner as reviewer",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "detail route matches the preview for the applicant",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "progress by a non-owner-business assignee becomes pending",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "applicant sees submitted content but no reviewer comparison",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "only the actual reviewer receives the field-by-field diff",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a task viewer outside the request cannot obtain proposal content",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "published submission notifies only the reviewer of record",
+      "pass": true,
+      "evidence": [
+        "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+      ]
+    },
+    {
+      "check": "applicant cannot decide their own reviewed request",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "reviewer decides and the effective version changes",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "approval result reaches applicant, business owner and current owner only",
+      "pass": true,
+      "evidence": [
+        "df322039-debc-570e-a1e9-b76f2bd8d66f",
+        "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+      ]
+    },
+    {
+      "check": "self direct operation leaves no pending record or re-approval entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "administrator reads responsibility inventory for founder",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator reads the complete organization draft",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "takeover reassigns an active request to the new business owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "old reviewer loses read and decision after reassignment",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "new current business owner can decide the refreshed request",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "administrator reads responsibility inventory for founder",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator reads the complete organization draft",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "takeover to the applicant refreshes and directly applies",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct refresh applies the proposal exactly once",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "administrator reads responsibility inventory for founder",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator reads the complete organization draft",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "refresh checks expiry before a new direct route",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "administrator reads responsibility inventory for founder",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator reads the complete organization draft",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "refresh keeps a request blocked when the business owner cannot review",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "blocked route is visible and never fabricated as an exemption",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "concurrent decisions produce exactly one terminal result",
+      "pass": true,
+      "evidence": [
+        412,
+        200
+      ]
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "direct-manager handover is pending for the business owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator reads the complete organization draft",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "organization move blocks a handover whose setter is no longer the direct manager",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "blocked handover keeps the original effective owners",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "fixed founder may hand over to any active company employee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "ordinary-handover targets stay inside the work circle",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "preset refuses a recipient outside the work circle",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "self preset saves a legal recipient",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "indirect management cannot set a handover preset",
+      "pass": true,
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "check": "dedicated handover rejects smuggled base fields",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "ordinary owner editing remains company-wide without widening handover",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "dedicated handover still refuses the wider ordinary-edit candidate",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create alpha-head submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "unpublished submission is addressed only to applicant and reviewer",
+      "pass": true,
+      "evidence": [
+        [
+          "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+          "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+        ]
+      ]
+    },
+    {
+      "check": "deterministic worker pass completes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "unpublished submission creates no copy for an uninvolved task participant",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "reviewer receives the actionable creation request",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "direct manager approves creation and result reaches the applicant",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "creation result recipient matrix includes applicant, reviewer and owner only",
+      "pass": true,
+      "evidence": [
+        "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+        "c446e82b-711b-5d20-8fdd-b878fd0f0890",
+        "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+      ]
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "deterministic worker pass completes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "direct self operation is an applied event, never a self-review request",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct self operation leaves no pending approval row",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "published submission event carries only the current reviewer",
+      "pass": true,
+      "evidence": [
+        [
+          "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+        ]
+      ]
+    },
+    {
+      "check": "deterministic worker pass completes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "applicant receives no early proposal copy while the request is pending",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "deterministic worker pass completes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "approval result is delivered to applicant and current business owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "submission and result stay bound to the originating request",
+      "pass": true,
+      "evidence": {
+        "request": "d69a243f-7f40-4ad1-9d11-7ec86e607032"
+      }
+    },
+    {
+      "check": "create founder submits a real task",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "administrator reads responsibility inventory for founder",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator reads the complete organization draft",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "takeover changes the future business responsibility",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "after takeover the active reviewer is the takeover owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover review notification excludes the original creator",
+      "pass": true,
+      "evidence": [
+        [
+          "df322039-debc-570e-a1e9-b76f2bd8d66f"
+        ]
+      ]
+    },
+    {
+      "check": "deterministic worker pass completes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "original creator receives no new review request after takeover",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "deterministic worker pass completes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "takeover result reaches the current responsibility chain",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "verification clock is controllable",
+      "pass": true,
+      "evidence": {
+        "controllable": true,
+        "now": "2026-10-28T14:08:01.065972Z"
+      }
+    },
+    {
+      "check": "reminder fixture task is created directly",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator reads responsibility inventory for founder",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator reads the complete organization draft",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "reminder task is taken over before its node",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "deterministic worker pass completes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "reminder reaches the current business owner and effective assignee only",
+      "pass": true,
+      "evidence": [
+        "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "df322039-debc-570e-a1e9-b76f2bd8d66f"
+      ]
+    },
+    {
+      "check": "reminder does not keep the original creator responsibility slot",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "deterministic worker pass completes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "same round and schedule version are deduplicated on a second scan",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "reminder receipt carries the real schedule version and round",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "effective assignee completes and awaits the current business owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "completion request is pending for the takeover owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "takeover owner reopens directly with a new round and schedule",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "deterministic worker pass completes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "new round receives its own reminder keyed by the new schedule",
+      "pass": true,
+      "evidence": [
+        [
+          "df322039-debc-570e-a1e9-b76f2bd8d66f",
+          "2",
+          "2",
+          "20"
+        ],
+        [
+          "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "2",
+          "2",
+          "20"
+        ]
+      ]
+    },
+    {
+      "check": "completion and reopen write real result events",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "frozen-reminder fixture is published",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "deterministic worker pass completes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "no reminder is emitted while the task is frozen by a pending request",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "current participant reads request approve",
+      "pass": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "check": "current reviewer can release the freeze",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "deterministic worker pass completes",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "the reached node is emitted once after the pending request ends",
       "pass": true,
       "evidence": null
     }

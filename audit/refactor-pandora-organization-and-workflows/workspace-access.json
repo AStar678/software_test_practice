@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T11:51:10.287273+00:00",
+  "updated": "2026-10-28T14:00:36.287076+00:00",
   "checks": [
     {
       "check": "founder reports include exactly all actual descendants",
@@ -250,6 +250,6 @@
       "pass": true
     }
   ],
-  "database": "pandora_precheck_model_b3ee6da408f84427",
+  "database": "pandora_precheck_model_cafe38e3caf94e60",
   "result": "PASS"
 }

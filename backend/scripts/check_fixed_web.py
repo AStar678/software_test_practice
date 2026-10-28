@@ -13,7 +13,7 @@ def main():
     fixture.log_path=BASE.parent/'audit/refactor-pandora-organization-and-workflows/web-service.log'
     with fixture as f:
         manifest={'base':f'http://127.0.0.1:{f.port}','identities':f.identities}
-        tokens={key:f.login(key)[1]['token'] for key in ('founder','alpha-two-employee','alpha-two-head')}
+        tokens={key:f.login(key)[1]['token'] for key in ('founder','alpha-one-head','alpha-head','beta-one-employee','alpha-two-employee','alpha-two-head')}
         ids={key:value['id'] for key,value in f.identities.items()}
         now=dt.datetime.now(dt.timezone.utc);zone=dt.timezone(dt.timedelta(hours=8));day=(now.astimezone(zone)+dt.timedelta(days=3)).date()
         def instant(offset,hour=0):return dt.datetime.combine(day+dt.timedelta(days=offset),dt.time(hour),zone).isoformat()
@@ -35,7 +35,18 @@ def main():
         view=call('GET','/tasks/'+completed['taskId'],who='alpha-two-employee')
         call('PATCH','/tasks/'+completed['taskId'],{'command':'complete','completionNote':'Finished before departure'},'alpha-two-employee',view['rowVersion'])
         call('POST','/tasks',form('Unpublished departure creation',['beta-one-employee']),'alpha-two-employee')
-        manifest.update(day=str(day),special=special,completedTask=completed['taskId'])
+        # A published task whose completion is waiting for review: the task form and detail must keep
+        # showing the effective execution state/current progress, never the proposed completion text,
+        # until the business owner decides.
+        pending=call('POST','/tasks',form('Effective version pending task',['beta-one-employee']),'alpha-one-head')
+        request=call('GET','/approval-requests/'+pending['requestId'],who='alpha-head')
+        call('PATCH','/approval-requests/'+pending['requestId'],{'decision':'approve'},'alpha-head',request['rowVersion'])
+        view=call('GET','/tasks/'+pending['taskId'],who='beta-one-employee')
+        call('PATCH','/tasks/'+pending['taskId'],{'command':'complete',
+            'completionNote':'Proposed completion must not appear'},'beta-one-employee',view['rowVersion'])
+        manifest.update(day=str(day),special=special,completedTask=completed['taskId'],database=f.database,
+            pendingTask=pending['taskId'],pendingOldTitle='Effective version pending task',
+            pendingProposedTitle='Proposed completion must not appear')
         env={**os.environ,'PANDORA_BROWSER_FIXTURE':json.dumps(manifest)}
         subprocess.run(['node',str(BASE/'scripts/check_fixed_admin_browser.js')],env=env,check=True)
         subprocess.run(['node',str(BASE/'scripts/check_fixed_employee_browser.js')],env=env,check=True)

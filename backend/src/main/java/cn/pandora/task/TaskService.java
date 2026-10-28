@@ -65,7 +65,7 @@ public class TaskService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> list(Actor actor, Map<String, String> filters) {
-        requireBusiness(actor);
+        requireBusiness(actor);access.requireCurrent(actor);
         int limit = integer(filters.get("limit"), 50, 1, 100, "limit");
         int offset = integer(filters.get("offset"), 0, 0, Integer.MAX_VALUE, "offset");
         String state = filters.get("state");
@@ -117,7 +117,7 @@ public class TaskService {
      */
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> adminTasks(Actor actor, Map<String, String> filters) {
-        access.requireCapability(actor, "view_task_history");
+        access.requireCapability(actor, "view_task_history");access.requireCurrent(actor);
         int limit = integer(filters.get("limit"), 50, 1, 100, "limit");
         int offset = integer(filters.get("offset"), 0, 0, Integer.MAX_VALUE, "offset");
         String state = filters.get("state");
@@ -221,7 +221,7 @@ public class TaskService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> assigneeCandidates(Actor actor, String query, String purpose) {
-        requireBusiness(actor);
+        requireBusiness(actor);access.requireCurrent(actor);
         if (query != null && query.length() > 100) throw bad("搜索内容最多100字");
         String resolved = purpose == null || purpose.isBlank() ? "create" : purpose;
         if (!Set.of("create", "edit").contains(resolved)) throw bad("purpose须为create或edit");
@@ -246,7 +246,7 @@ public class TaskService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> detail(Actor actor, String id) {
-        requireBusiness(actor);
+        requireBusiness(actor);access.requireCurrent(actor);
         Map<String, Object> task = task(actor, id, false);
         String current = s(task, "currentVersionId");
         if (current == null) {
@@ -445,7 +445,7 @@ public class TaskService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> approvals(Actor actor, String mine, String requestedLimit, String requestedOffset) {
-        requireBusiness(actor);
+        requireBusiness(actor);access.requireCurrent(actor);
         int limit = integer(requestedLimit, 50, 1, 100, "limit");
         int offset = integer(requestedOffset, 0, 0, Integer.MAX_VALUE, "offset");
         if (mine == null || mine.isBlank()) mine = "all";
@@ -472,7 +472,7 @@ public class TaskService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> approval(Actor actor, String id) {
-        requireBusiness(actor);
+        requireBusiness(actor);access.requireCurrent(actor);
         Map<String, Object> request = request(actor, id, false);
         Map<String, Object> task = task(actor, s(request, "taskId"), false);
         if (!canSeeRequest(actor, request, task)) throw ApiException.notFound();
@@ -481,6 +481,26 @@ public class TaskService {
         Map<String, Object> result = requestView(actor, request, task, reviewer);
         result.put("records", db.list("SELECT id,author_id,body,kind,effective_at,created_at FROM task_records WHERE organization_id=? AND request_id=? ORDER BY created_at,id", actor.organizationId(), id));
         return result;
+    }
+
+    /**
+     * Non-authoritative visibility probe for the notification worker. It deliberately avoids the
+     * {@link #approval(Actor, String)} read projection: that method is transactional through the
+     * Spring proxy, so a legitimate 404 for an unrelated request would mark the enclosing delivery
+     * transaction rollback-only even though the caller catches the exception. This probe performs
+     * only reads and treats a broken/blocked route as "not visible".
+     */
+    public boolean canReadRequest(Actor actor, String requestId) {
+        if (requestId == null || requestId.isBlank()) return false;
+        Map<String, Object> request = db.find("SELECT * FROM approval_requests WHERE organization_id=? AND id=?", actor.organizationId(), requestId);
+        if (request == null) return false;
+        Map<String, Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?", actor.organizationId(), s(request, "taskId"));
+        if (task == null) return false;
+        try {
+            return canSeeRequest(actor, request, task);
+        } catch (RuntimeException brokenRoute) {
+            return false;
+        }
     }
 
     /**
@@ -679,7 +699,7 @@ public class TaskService {
      */
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> reviewerPreview(Actor actor, Map<String, Object> input) {
-        requireBusiness(actor);
+        requireBusiness(actor);access.requireCurrent(actor);
         allowed(input, Set.of("taskId", "assigneeIds", "operation"));
         String requestedOperation = command(input, "operation", "kind", null);
         if (requestedOperation != null && !OPERATIONS.contains(requestedOperation)) throw bad("不支持的操作预览类型");
@@ -755,7 +775,7 @@ public class TaskService {
      */
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> handoverTargets(Actor actor, String subjectId, String query) {
-        requireBusiness(actor);
+        requireBusiness(actor);access.requireCurrent(actor);
         Map<String, Object> subject = handoverPresetSubject(actor, subjectId);
         if (query != null && query.length() > 100) throw bad("搜索内容最多100字");
         List<Map<String, Object>> items = access.handoverTargets(access.actor(subject), query).stream()
@@ -774,7 +794,7 @@ public class TaskService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> handoverPreset(Actor actor, String subjectId) {
-        requireBusiness(actor);
+        requireBusiness(actor);access.requireCurrent(actor);
         handoverPresetSubject(actor, subjectId);
         return handoverPresetView(actor, subjectId);
     }
@@ -924,7 +944,7 @@ public class TaskService {
     /** Administration console: the complete operation history of one task (DEV-016). Never exposed to the App. */
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> taskHistory(Actor actor, String taskId) {
-        access.requireCapability(actor, "view_task_history");
+        access.requireCapability(actor, "view_task_history");access.requireCurrent(actor);
         Map<String, Object> task = db.find("SELECT id,organization_id,original_creator_id,execution_state,created_at FROM tasks WHERE organization_id=? AND id=?", actor.organizationId(), taskId);
         if (task == null) throw ApiException.notFound();
         List<Map<String, Object>> entries = new ArrayList<>();

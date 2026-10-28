@@ -1,0 +1,88 @@
+{
+  "updated": "2026-10-28T14:04:16.583Z",
+  "checks": [
+    {
+      "check": "first employee session becomes ready",
+      "pass": true
+    },
+    {
+      "check": "a task request is deliberately still in flight",
+      "pass": true
+    },
+    {
+      "check": "logout returns to the login screen",
+      "pass": true
+    },
+    {
+      "check": "second account is fully loaded before the old response is released",
+      "pass": true
+    },
+    {
+      "check": "late task response cannot replace the new account identity",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "tasks": 0,
+          "epoch": 3
+        },
+        "after": {
+          "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "tasks": 0,
+          "epoch": 3,
+          "idle": true
+        }
+      }
+    },
+    {
+      "check": "late task response cannot restore the old session token or epoch",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "tasks": 0,
+          "epoch": 3
+        },
+        "after": {
+          "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "tasks": 0,
+          "epoch": 3,
+          "idle": true
+        }
+      }
+    },
+    {
+      "check": "late response leaves the workspace idle and consistent",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "tasks": 0,
+          "epoch": 3
+        },
+        "after": {
+          "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "tasks": 0,
+          "epoch": 3,
+          "idle": true
+        }
+      }
+    },
+    {
+      "check": "account switch resets the task form instead of keeping the old account state",
+      "pass": true
+    },
+    {
+      "check": "browser has no exceptions during account switches",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "result": "PASS"
+}

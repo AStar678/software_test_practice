@@ -1,215 +1,144 @@
 #!/usr/bin/env python3
-"""HTTP regression for V-008: the reviewer-less automatic path keeps current authority checks.
+"""Task 5.3: direct self-application runs through the same version, deadline, freeze and authority checks.
 
-Scenario: an executive creates a pending task that includes an employee as assignee, then the
-administrator withdraws the executive's company dispatch range. An explicit approval is already
-refused; when the last reviewer is then marked unavailable, the automatic path must not publish the
-same proposal either. A genuinely valid reviewer-less application still applies directly.
-
-    python3 scripts/check_auto_apply_authorization.py --base-url http://127.0.0.1:18311
+The former V-008 script depended on editable role scopes and username logins, both retired by the
+fixed-position contract. This version uses the current identity/login contract and a disposable
+real JAR/MySQL fixture.
 """
-from __future__ import annotations
-
-import argparse
 import datetime as dt
 import json
-from pathlib import Path
-import urllib.error
-import urllib.parse
-import urllib.request
 import uuid
+from fixed_model_fixture import Fixture
+from migration_precheck import BASE
 
-RESULTS: list[dict] = []
-RUN = uuid.uuid4().hex[:6]
-PASSWORD = "Demo@123456"
-EXECUTIVE_SCOPES = {"task_view": "company", "task_dispatch": "company",
-                    "log_read": "company", "profile_read": "company"}
+OUTPUT = BASE.parent / 'audit/refactor-pandora-organization-and-workflows/auto-apply-authorization.json'
 
 
+def main():
+    report = {'updated': dt.datetime.now(dt.timezone.utc).isoformat(), 'checks': []}
 
-# Employees authenticate by phone number (chapter 2.1/2.3); demo accounts keep stable numbers.
-DEMO_PHONE = {'upper': '13800000001', 'middle': '13800000002', 'market': '13800000003',
-              'employee': '13800000004', 'colleague': '13800000005', 'marketing': '13800000006',
-              'admin': 'admin'}
+    def check(name, condition, evidence=None):
+        report['checks'].append({'check': name, 'pass': bool(condition), 'evidence': evidence})
+        print(('PASS ' if condition else 'FAIL ') + name, flush=True)
+        if not condition:
+            print('EVIDENCE ' + json.dumps(evidence, ensure_ascii=False, default=str), flush=True)
+            raise AssertionError(name)
 
-
-def login_identity(account):
-    """Map a demo account name to the phone number it now authenticates with."""
-    return DEMO_PHONE.get(account, account)
-
-class Api:
-    def __init__(self, base: str):
-        self.base = base.rstrip('/')
-        self.tokens: dict[str, str] = {}
-
-    def call(self, method: str, path: str, token: str | None = None, body=None,
-             key: str | None = None, if_match: str | None = None):
-        data = None if body is None else json.dumps(body).encode()
-        target = urllib.parse.quote(self.base + path, safe=":/?&=%")
-        request = urllib.request.Request(target, data=data, method=method)
-        request.add_header('Content-Type', 'application/json')
-        if token:
-            request.add_header('Authorization', 'Bearer ' + token)
-        if key:
-            request.add_header('Idempotency-Key', key)
-        if if_match:
-            request.add_header('If-Match', if_match)
-        try:
-            with urllib.request.urlopen(request) as response:
-                payload = response.read().decode()
-                return response.status, (json.loads(payload) if payload else {}), dict(response.headers)
-        except urllib.error.HTTPError as error:
-            payload = error.read().decode()
-            try:
-                parsed = json.loads(payload) if payload else {}
-            except json.JSONDecodeError:
-                parsed = {'raw': payload}
-            return error.code, parsed, dict(error.headers)
-
-    def login(self, username: str) -> str:
-        status, body, _ = self.call('POST', '/api/v1/auth/sessions',
-                                    body={'username': login_identity(username), 'password': PASSWORD})
-        if status != 200:
-            raise SystemExit(f'login failed for {username}: {status} {body}')
-        self.tokens[username] = body['token']
-        return body['token']
-
-    def me(self, username: str) -> dict:
-        _, body, _ = self.call('GET', '/api/v1/me', self.tokens[username])
-        return body
-
-    @staticmethod
-    def key(prefix='auto') -> str:
-        return prefix + '-' + uuid.uuid4().hex
-
-
-def check(name: str, condition: bool, evidence) -> None:
-    RESULTS.append({'check': name, 'pass': bool(condition), 'evidence': evidence})
-    print(('PASS  ' if condition else 'FAIL  ') + name + ('' if condition else f'  -> {evidence}'))
-
-
-def task_payload(title: str, assignees: list[str]) -> dict:
-    start = dt.datetime.now(dt.timezone.utc).replace(microsecond=0) + dt.timedelta(days=1)
-    return {'title': title, 'description': '自动生效授权核验', 'priority': 'medium', 'allDay': False,
-            'startAt': start.isoformat().replace('+00:00', 'Z'),
-            'dueAt': (start + dt.timedelta(days=2)).isoformat().replace('+00:00', 'Z'),
-            'assigneeIds': assignees}
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--base-url', default='http://127.0.0.1:18311')
-    parser.add_argument('--output', type=Path, default=None)
-    args = parser.parse_args()
-    api = Api(args.base_url)
-    admin = api.login('admin')
-    upper = api.login('upper')
-    api.login('employee')
-    api.login('middle')
-    upper_id = api.me('upper')['id']
-    employee_id = api.me('employee')['id']
-    middle_id = api.me('middle')['id']
-
-    def set_scopes(scopes: dict) -> tuple[int, dict]:
-        status, body, _ = api.call('PATCH', '/api/v1/admin/roles/executive/scopes', admin,
-                                   {'scopes': scopes}, Api.key('scopes'))
-        return status, body
-
-    def set_reviewer_available(value: bool) -> tuple[int, dict]:
-        _, _, headers = api.call('GET', f'/api/v1/admin/employees/{upper_id}', admin)
-        status, body, _ = api.call('PATCH', f'/api/v1/admin/employees/{upper_id}', admin,
-                                   {'reviewerAvailable': value}, Api.key('reviewer'),
-                                   headers.get('ETag'))
-        return status, body
-
-    def request_view(request_id: str) -> dict:
-        _, body, _ = api.call('GET', f'/api/v1/approval-requests/{request_id}', upper)
-        return body
-
+    fixture = Fixture(port=18186, worker=False, controllable=True)
+    fixture.log_path = OUTPUT.with_name('auto-apply-service.log')
     try:
-        # 1) A published task owned by the employee, modified by the executive: the ordered-owner route
-        #    makes the executive the reviewer, so the non-creation automatic path can be exercised.
-        status, created, _ = api.call('POST', '/api/v1/tasks', upper,
-                                      task_payload(f'越权自动生效-{RUN}', [middle_id]),
-                                      Api.key('create'))
-        check('V-008 the executive publishes a task owned by the employee', status == 201,
-              {'status': status, 'body': created})
-        task_id = created['taskId']
-        _, detail, headers = api.call('GET', f'/api/v1/tasks/{task_id}', upper)
-        status, changed, _ = api.call('PATCH', f'/api/v1/tasks/{task_id}', upper,
-                                      {'command': 'change', 'title': f'越权自动生效-{RUN}-修改',
-                                       'reason': 'V-008 核验'}, Api.key('change'), headers.get('ETag'))
-        check('V-008 the modification waits for its explicit reviewer', status == 200
-              and changed.get('outcome') == 'pending', {'status': status, 'body': changed})
-        request_id = changed['requestId']
-        view = request_view(request_id)
-        check('V-008 the creator is the reviewer of record on the ordered-owner route',
-              view.get('currentReviewerId') == upper_id, {'reviewer': view.get('currentReviewerId')})
+        with fixture as f:
+            tokens = {key: f.login(key)[1]['token'] for key in f.identities}
+            ids = {key: value['id'] for key, value in f.identities.items()}
 
-        # 2) Withdraw the dispatch range. Explicit approval must be refused.
-        status, configured = set_scopes({'task_view': 'company', 'task_dispatch': 'self',
-                                         'log_read': 'company', 'profile_read': 'company'})
-        check('V-008 the dispatch range is revoked through the admin API', status == 200,
-              {'status': status, 'body': configured})
-        status, explicit, _ = api.call('PATCH', f'/api/v1/approval-requests/{request_id}', upper,
-                                       {'decision': 'approve', 'comment': '越权显式批准'},
-                                       Api.key('approve'), '"' + str(view['rowVersion']) + '"')
-        check('V-008 explicit approval is refused after the range is revoked',
-              status == 403 and explicit.get('code') == 'DISPATCH_NOT_ALLOWED',
-              {'status': status, 'body': explicit})
+            def call(method, path, body=None, who='founder', version=None, key=None):
+                return f.call(method, path, body, tokens[who], key or 'auto-' + uuid.uuid4().hex, version)
 
-        # 3) Remove the last reviewer. The automatic path must not apply the revoked proposal.
-        status, updated = set_reviewer_available(False)
-        check('V-008 the organization change itself still succeeds', status == 200,
-              {'status': status, 'body': updated})
-        after = request_view(request_id)
-        check('V-008 the reviewer-less automatic path does not apply the revoked proposal',
-              after.get('status') == 'pending', {'status': after.get('status'), 'body': after})
-        _, detail, _ = api.call('GET', f'/api/v1/tasks/{task_id}', upper)
-        check('V-008 the proposal is not published by the automatic path',
-              detail.get('title') != f'越权自动生效-{RUN}-修改', {'title': detail.get('title')})
-        _, history, _ = api.call('GET', f'/api/v1/admin/tasks/{task_id}/history', admin)
-        check('V-008 no direct-application history was recorded',
-              not any(entry.get('entryType') == 'no_reviewer' and entry.get('requestId') == request_id
-                      for entry in history.get('entries', [])),
-              {'entries': [entry.get('entryType') for entry in history.get('entries', [])]})
+            def detail(task, who='founder'):
+                return call('GET', '/tasks/' + task, who=who)[1]
 
-        # 4) Restore authority; a genuinely valid reviewer-less application still applies directly.
-        set_scopes(EXECUTIVE_SCOPES)
-        status, valid, _ = api.call('POST', '/api/v1/tasks', upper,
-                                 task_payload(f'合法无审核人-{RUN}', [middle_id]),
-                                 Api.key('valid-create'))
-        check('V-008 a valid modification proposal can be submitted', status == 201,
-              {'status': status, 'body': valid})
-        _, valid_detail, valid_headers = api.call('GET', f"/api/v1/tasks/{valid['taskId']}", upper)
-        status, valid_change, _ = api.call('PATCH', f"/api/v1/tasks/{valid['taskId']}", upper,
-                                           {'command': 'change', 'title': f'合法无审核人-{RUN}-修改',
-                                            'reason': 'V-008 合法免审'}, Api.key('valid-change'),
-                                           valid_headers.get('ETag'))
-        check('V-008 a valid proposal still waits for its explicit reviewer', status == 200,
-              {'status': status, 'body': valid_change})
-        status, updated = set_reviewer_available(False)
-        valid_after = request_view(valid_change['requestId'])
-        _, valid_task, _ = api.call('GET', f"/api/v1/tasks/{valid['taskId']}", upper)
-        check('V-008 a legitimate reviewer-less application applies directly with a reason',
-              status == 200 and valid_after.get('status') == 'direct'
-              and valid_after.get('currentReviewerId') is None and bool(valid_after.get('exemptionReason'))
-              and valid_task.get('title') == f'合法无审核人-{RUN}-修改',
-              {'status': status, 'request': valid_after.get('status'),
-               'title': valid_task.get('title')})
+            def now():
+                return dt.datetime.fromisoformat(call('GET', '/admin/clock', who='admin')[1]['now'].replace('Z', '+00:00'))
+
+            def create(who, owners, title='Auto apply fixture', start_offset=3600, due_offset=86400, key=None):
+                base = now()
+                body = {'title': title + ' ' + uuid.uuid4().hex[:6], 'description': 'Direct application contract',
+                        'priority': 'medium', 'allDay': False,
+                        'startAt': (base + dt.timedelta(seconds=start_offset)).isoformat(),
+                        'dueAt': (base + dt.timedelta(seconds=due_offset)).isoformat(),
+                        'assigneeIds': [ids[key] for key in owners]}
+                return call('POST', '/tasks', body, who, key=key)
+
+            own = create('founder', ['founder'])
+            check('fixed founder creates directly without a pending request', own[0] == 201 and own[1]['outcome'] == 'direct', own)
+
+            task = own[1]['taskId']
+            version = detail(task)['rowVersion']
+            status, changed = call('PATCH', '/tasks/' + task,
+                                   {'command': 'change', 'title': 'Direct change accepted', 'reason': 'Self maintenance'},
+                                   'founder', version)
+            check('self change applies directly with a documented reason', status == 200 and changed['outcome'] == 'direct')
+            request = f.db.rows('SELECT status,decided_by,exemption_reason FROM approval_requests WHERE id=' + repr(changed['requestId']))
+            check('direct request stores applicant decision and exemption reason',
+                  request and request[0][0] == 'direct' and request[0][1] == ids['founder'] and bool(request[0][2]), request)
+            check('direct change records no self-review entry', not f.db.scalar(
+                "SELECT COUNT(*) FROM approval_requests WHERE task_id=" + repr(task) + " AND status='pending'"))
+            check('direct change history is durable', f.db.scalar(
+                "SELECT COUNT(*) FROM task_history_entries WHERE task_id=" + repr(task) + " AND request_id=" + repr(changed['requestId']) + " AND entry_type='no_reviewer'") == 1)
+            check('detail exposes no re-approval entry for the direct change', 'pendingRequestId' not in detail(task))
+
+            status, _ = call('PATCH', '/tasks/' + task,
+                             {'command': 'change', 'title': 'Stale direct change', 'reason': 'Stale'},
+                             'founder', version)
+            check('direct apply cannot bypass the task version', status == 412, {'status': status})
+            status, _ = call('PATCH', '/tasks/' + task,
+                             {'command': 'change', 'title': 'Missing precondition', 'reason': 'No version'},
+                             'founder', None)
+            check('direct apply requires If-Match', status == 428, {'status': status})
+
+            status, empty = call('PATCH', '/tasks/' + task,
+                                 {'command': 'change', 'assigneeIds': [], 'reason': 'Empty owners'},
+                                 'founder', detail(task)['rowVersion'])
+            check('direct apply refuses an empty effective owner list', status == 400, empty)
+            status, _ = call('PATCH', '/tasks/' + task,
+                             {'command': 'change', 'assigneeIds': [ids['other-founder']], 'reason': 'Cross company'},
+                             'founder', detail(task)['rowVersion'])
+            check('direct apply refuses a cross-company owner', status == 400)
+            other = create('other-founder', ['other-founder'])
+            status, _ = call('PATCH', '/tasks/' + task,
+                             {'command': 'change', 'parentTaskId': other[1]['taskId'], 'reason': 'Foreign parent'},
+                             'founder', detail(task)['rowVersion'])
+            check('direct apply rechecks the parent-task relationship', status in (400, 404), {'status': status})
+
+            direct_version = detail(task)['rowVersion']
+            status, repeated = call('PATCH', '/tasks/' + task,
+                                    {'command': 'change', 'title': 'Idempotent direct change', 'reason': 'Same request'},
+                                    'founder', direct_version, key='auto-apply-idempotent')
+            check('direct change succeeds with an idempotency key', status == 200 and repeated['outcome'] == 'direct')
+            after_first = detail(task)['rowVersion']
+            status, replay = call('PATCH', '/tasks/' + task,
+                                  {'command': 'change', 'title': 'Idempotent direct change', 'reason': 'Same request'},
+                                  'founder', direct_version, key='auto-apply-idempotent')
+            check('same-key replay returns the cached direct result without a new version',
+                  status == 200 and replay['requestId'] == repeated['requestId'] and detail(task)['rowVersion'] == after_first,
+                  {'status': status, 'replay': replay, 'version': detail(task)['rowVersion']})
+
+            reviewed = create('founder', ['beta-two-employee'])
+            reviewed_task = reviewed[1]['taskId']
+            status, pending = call('PATCH', '/tasks/' + reviewed_task,
+                                   {'command': 'progress', 'progressNote': 'Requires owner review'},
+                                   'beta-two-employee', detail(reviewed_task, 'beta-two-employee')['rowVersion'])
+            check('different applicant and reviewer stays pending without direct publication', status == 200 and pending['outcome'] == 'pending')
+            check('pending request leaves the old effective progress', detail(reviewed_task, 'beta-two-employee')['progressNote'] == '')
+            status, _ = call('PATCH', '/tasks/' + reviewed_task,
+                             {'command': 'change', 'title': 'Frozen direct change', 'reason': 'Frozen'},
+                             'founder', detail(reviewed_task)['rowVersion'])
+            check('direct apply cannot bypass the unique pending freeze', status == 409)
+
+            expiring = create('founder', ['founder'], 'Auto expiry', 5, 10)
+            expiring_task = expiring[1]['taskId']
+            call('POST', '/admin/clock/advance', {'seconds': 20}, 'admin')
+            status, expired = call('PATCH', '/tasks/' + expiring_task,
+                                   {'command': 'change', 'title': 'Past deadline', 'reason': 'Expired schedule'},
+                                   'founder', detail(expiring_task)['rowVersion'])
+            check('direct self change cannot bypass the applicable deadline', status == 409 and expired.get('code') == 'DEADLINE_PASSED', expired)
+
+            call('POST', '/admin/clock/advance', {'seconds': 7200}, 'admin')
+            status, completion = call('PATCH', '/tasks/' + reviewed_task,
+                                      {'command': 'complete', 'completionNote': 'Reviewer decides'},
+                                      'beta-two-employee', detail(reviewed_task, 'beta-two-employee')['rowVersion'])
+            # The task is still frozen by its pending progress, so a second pending operation is refused.
+            check('a second operation cannot bypass an existing pending freeze', status == 409, completion)
+
+            report['result'] = 'PASS'
+    except BaseException as error:
+        report['result'] = 'FAIL'
+        report['errorType'] = type(error).__name__
+        raise
     finally:
-        set_reviewer_available(True)
-        set_scopes(EXECUTIVE_SCOPES)
-
-    report = {'success': all(row['pass'] for row in RESULTS),
-              'checksPassed': sum(1 for row in RESULTS if row['pass']),
-              'checksFailed': sum(1 for row in RESULTS if not row['pass']), 'checks': RESULTS}
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    print(('PASS' if report['success'] else 'FAIL') + f": {report['checksPassed']} passed, {report['checksFailed']} failed")
-    return 0 if report['success'] else 1
+        OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+        OUTPUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    main()
