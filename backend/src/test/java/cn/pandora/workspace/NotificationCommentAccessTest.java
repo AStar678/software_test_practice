@@ -127,7 +127,10 @@ class NotificationCommentAccessTest {
     @Test
     void ordinaryDeliveredTaskMessageRetainsItsReadOnlyHistoricalEntry() {
         WorkspaceService service = service("task.change.approved", false, null);
-        assertEquals(true, service.notification(viewer, "notice").get("canOpenTask"));
+        Map<String,Object> notice = service.notification(viewer, "notice");
+        assertEquals(true, notice.get("canOpenTask"));
+        assertEquals(true, notice.get("readonly"));
+        assertEquals(true, notice.get("relationLost"));
         Map<String,Object> historical = service.notificationTask(viewer, "notice");
         assertEquals("task", historical.get("taskId"));
         assertEquals(true, historical.get("readonly"));

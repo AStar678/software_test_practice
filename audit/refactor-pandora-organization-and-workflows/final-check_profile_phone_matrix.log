@@ -1,0 +1,32 @@
+PASS founder contact detail follows actual management relationship
+PASS alpha-head contact detail follows actual management relationship
+PASS alpha-one-head contact detail follows actual management relationship
+PASS alpha-one-employee contact detail follows actual management relationship
+PASS alpha-two-employee contact detail follows actual management relationship
+PASS alpha-two-head contact detail follows actual management relationship
+PASS beta-head contact detail follows actual management relationship
+PASS other-founder contact detail follows actual management relationship
+PASS admin contact detail follows actual management relationship
+PASS /users?limit=100 summary has no contact, credential or username fields
+PASS /work-log-authors summary has no contact, credential or username fields
+PASS /assignee-candidates?purpose=create summary has no contact, credential or username fields
+PASS /assignee-candidates?purpose=edit summary has no contact, credential or username fields
+PASS /admin/employees summary has no contact, credential or username fields
+PASS /admin/organization-plans summary has no contact, credential or username fields
+PASS self identity or mixed payload is rejected: phone
+PASS self identity or mixed payload is rejected: displayName
+PASS self identity or mixed payload is rejected: email,phone
+PASS self avatar and email remain editable
+PASS even actual manager cannot read another employee email
+PASS administrator cannot edit employee email
+PASS empty, invalid or occupied login phone is rejected
+PASS empty, invalid or occupied login phone is rejected
+PASS empty, invalid or occupied login phone is rejected
+PASS empty, invalid or occupied login phone is rejected
+PASS administrator normalized phone/name command succeeds with contact-free receipt
+PASS phone change revokes all employee sessions
+PASS old phone cannot log in after change
+PASS new normalized phone logs into same stable ID
+PASS audit_logs never captures employee contact values
+PASS domain_events never captures employee contact values
+PASS idempotency_keys never captures employee contact values

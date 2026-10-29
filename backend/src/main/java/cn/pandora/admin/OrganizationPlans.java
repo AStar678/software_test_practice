@@ -92,10 +92,7 @@ public class OrganizationPlans {
         // Validate first, then replace inside this single DML transaction. Unique head slots need no
         // deferrable constraint, and readers on a consistent snapshot never see this intermediate state.
         db.update("DELETE FROM employee_placements WHERE organization_id=?",org);
-        // Clear transitional organization facts; they are never copied back from the new model.
-        db.update("UPDATE users SET department_id=NULL,team_id=NULL,manager_id=NULL,position_id=NULL WHERE organization_id=?",org);
-        db.update("UPDATE teams SET parent_id=NULL,lead_user_id=NULL WHERE organization_id=?",org);
-        db.update("UPDATE departments SET parent_id=NULL,name=CONCAT('__plan_',id) WHERE organization_id=?",org);
+        db.update("UPDATE departments SET name=CONCAT('__plan_',id) WHERE organization_id=?",org);
         writeUnits(org,"departments",departments,previousDepartments,false);
         writeUnits(org,"teams",teams,previousTeams,true);
         deleteMissing(org,"teams",teams,previousTeams);deleteMissing(org,"departments",departments,previousDepartments);
@@ -103,9 +100,8 @@ public class OrganizationPlans {
         for(var person:additions) {
             String employeeId=s(person,"id"),password=Credentials.generate();
             db.update("INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'employee')",employeeId,org);
-            // V20 expansion compatibility only; final cleanup removes these three legacy columns.
-            db.update("INSERT INTO users(id,organization_id,username,role,rank_level,password_hash,display_name,phone,login_phone,must_change_password) VALUES(?,?,?,'lower',4,?,?,?,?,TRUE)",
-                    employeeId,org,employeeId,AuthService.PASSWORDS.encode(password),s(person,"displayName"),s(person,"phone"),s(person,"phone"));
+            db.update("INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,must_change_password) VALUES(?,?,?,?,?,?,TRUE)",
+                    employeeId,org,AuthService.PASSWORDS.encode(password),s(person,"displayName"),s(person,"phone"),s(person,"phone"));
             passwords.put(employeeId,password);
         }
         Map<String,Map<String,Object>> oldPlaces=index(previousPlacements,"employeeId");

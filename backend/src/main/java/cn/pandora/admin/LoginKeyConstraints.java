@@ -57,7 +57,7 @@ public class LoginKeyConstraints implements ApplicationRunner {
      */
     public boolean tighten() {
         long missing = n(db.one("SELECT COUNT(*) AS c FROM users "
-                + "WHERE active=1 AND role<>'admin' AND (login_phone IS NULL OR login_phone='')"), "c");
+                + "WHERE active=1 AND (login_phone IS NULL OR login_phone='')"), "c");
         long duplicates = n(db.one("SELECT COUNT(*) AS c FROM ("
                 + "SELECT login_phone FROM users WHERE login_phone IS NOT NULL AND login_phone<>'' "
                 + "GROUP BY login_phone HAVING COUNT(*)>1) x"), "c");

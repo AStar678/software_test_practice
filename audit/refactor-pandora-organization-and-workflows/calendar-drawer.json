@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T15:27:01.463Z",
+  "updated": "2026-10-29T02:14:00.667Z",
   "checks": [
     {
       "check": "login form is ready",
@@ -20,8 +20,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -4.796450614929199,
-          "r": 159.0004243850708,
+          "l": -4.796021938323975,
+          "r": 159.00085306167603,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -30,7 +30,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 230.9995756149292,
+        "visibleRight": 230.99914693832397,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -42,7 +42,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -63,8 +63,8 @@
           "h": 650.5625
         },
         "scroll": [
-          2488,
-          2488
+          2268,
+          2268
         ]
       }
     },
@@ -79,8 +79,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -4.796450614929199,
-          "r": 159.0004243850708,
+          "l": -4.796021938323975,
+          "r": 159.00085306167603,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -89,7 +89,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 230.9995756149292,
+        "visibleRight": 230.99914693832397,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -101,7 +101,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -120,8 +120,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -4.796450614929199,
-          "r": 159.0004243850708,
+          "l": -4.796021938323975,
+          "r": 159.00085306167603,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -130,7 +130,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 230.9995756149292,
+        "visibleRight": 230.99914693832397,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -142,7 +142,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -161,8 +161,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -4.796450614929199,
-          "r": 159.0004243850708,
+          "l": -4.796021938323975,
+          "r": 159.00085306167603,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -171,7 +171,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 230.9995756149292,
+        "visibleRight": 230.99914693832397,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -183,7 +183,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -218,7 +218,7 @@
       "pass": true,
       "evidence": {
         "wheel": {
-          "scroll": 2488,
+          "scroll": 2268,
           "drawer": true,
           "sheet": null
         }
@@ -232,7 +232,7 @@
         "sheet": null,
         "overlay": true,
         "mode": "month",
-        "scroll": 2488
+        "scroll": 2268
       }
     },
     {
@@ -241,7 +241,7 @@
       "evidence": {
         "active": "schedule-side-toggle",
         "inert": false,
-        "scroll": 2488
+        "scroll": 2268
       }
     },
     {
@@ -249,7 +249,7 @@
       "pass": true,
       "evidence": {
         "active": "schedule-side-toggle",
-        "scroll": 2488
+        "scroll": 2268
       }
     },
     {
@@ -265,22 +265,22 @@
       "pass": true,
       "evidence": {
         "before": {
-          "anchor": 1793376000000,
+          "anchor": 1793462400000,
           "rowHeight": "220",
-          "scroll": 2488
+          "scroll": 2268
         },
         "after": {
           "mode": "month",
-          "anchor": 1793376000000,
+          "anchor": 1793462400000,
           "rowHeight": "220",
           "stream": [
-            "2026-08",
             "2026-09",
             "2026-10",
             "2026-11",
-            "2026-12"
+            "2026-12",
+            "2027-01"
           ],
-          "scroll": 2488,
+          "scroll": 2268,
           "note": false,
           "focus": "schedule-side-toggle"
         }
@@ -297,8 +297,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.758761405944824,
-          "r": 141.24123859405518,
+          "l": -2.7586007118225098,
+          "r": 141.2413992881775,
           "w": 144,
           "h": 611.5625
         },
@@ -307,7 +307,7 @@
           "h": 546.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.75876140594482,
+        "visibleRight": 178.7586007118225,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -319,7 +319,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -340,8 +340,8 @@
           "h": 546.5625
         },
         "scroll": [
-          2488,
-          2488
+          2268,
+          2268
         ]
       }
     },
@@ -356,8 +356,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.758761405944824,
-          "r": 141.24123859405518,
+          "l": -2.7586007118225098,
+          "r": 141.2413992881775,
           "w": 144,
           "h": 611.5625
         },
@@ -366,7 +366,7 @@
           "h": 546.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.75876140594482,
+        "visibleRight": 178.7586007118225,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -378,7 +378,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -397,8 +397,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.758761405944824,
-          "r": 141.24123859405518,
+          "l": -2.7586007118225098,
+          "r": 141.2413992881775,
           "w": 144,
           "h": 611.5625
         },
@@ -407,7 +407,7 @@
           "h": 546.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.75876140594482,
+        "visibleRight": 178.7586007118225,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -419,7 +419,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -438,8 +438,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.758761405944824,
-          "r": 141.24123859405518,
+          "l": -2.7586007118225098,
+          "r": 141.2413992881775,
           "w": 144,
           "h": 611.5625
         },
@@ -448,7 +448,7 @@
           "h": 546.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.75876140594482,
+        "visibleRight": 178.7586007118225,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -460,7 +460,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -479,8 +479,8 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 150.98980712890625,
-          "r": 621.3804321289062,
+          "l": 150.98875427246094,
+          "r": 621.3793792724609,
           "w": 470.390625,
           "h": 766.5625
         },
@@ -489,7 +489,7 @@
           "h": 701.5625
         },
         "ratio": 0.4199916294642857,
-        "visibleRight": 658.6195678710938,
+        "visibleRight": 658.6206207275391,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -501,7 +501,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -522,8 +522,8 @@
           "h": 701.5625
         },
         "scroll": [
-          2488,
-          2488
+          2268,
+          2268
         ]
       }
     },
@@ -538,8 +538,8 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 150.98980712890625,
-          "r": 621.3804321289062,
+          "l": 150.98875427246094,
+          "r": 621.3793792724609,
           "w": 470.390625,
           "h": 766.5625
         },
@@ -548,7 +548,7 @@
           "h": 701.5625
         },
         "ratio": 0.4199916294642857,
-        "visibleRight": 658.6195678710938,
+        "visibleRight": 658.6206207275391,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -560,7 +560,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -579,8 +579,8 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 150.98980712890625,
-          "r": 621.3804321289062,
+          "l": 150.98875427246094,
+          "r": 621.3793792724609,
           "w": 470.390625,
           "h": 766.5625
         },
@@ -589,7 +589,7 @@
           "h": 701.5625
         },
         "ratio": 0.4199916294642857,
-        "visibleRight": 658.6195678710938,
+        "visibleRight": 658.6206207275391,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -601,7 +601,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -620,8 +620,8 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 150.98980712890625,
-          "r": 621.3804321289062,
+          "l": 150.98875427246094,
+          "r": 621.3793792724609,
           "w": 470.390625,
           "h": 766.5625
         },
@@ -630,7 +630,7 @@
           "h": 701.5625
         },
         "ratio": 0.4199916294642857,
-        "visibleRight": 658.6195678710938,
+        "visibleRight": 658.6206207275391,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -642,7 +642,7 @@
         "modal": "true",
         "labelled": "日历面板",
         "inert": true,
-        "scroll": 2488,
+        "scroll": 2268,
         "activeInside": true,
         "activeTag": "返回",
         "toggleExpanded": "true",
@@ -665,7 +665,7 @@
       "evidence": {
         "mode": "month",
         "overlay": true,
-        "title": "10月31日 周六",
+        "title": "11月1日 周日",
         "items": 16
       }
     },
@@ -673,7 +673,7 @@
       "check": "a click on the empty part of a month cell opens that day sheet",
       "pass": true,
       "evidence": {
-        "blankDate": "2026-12-02",
+        "blankDate": "2026-12-03",
         "blankItems": 0
       }
     },
@@ -682,11 +682,11 @@
       "pass": true,
       "evidence": {
         "overflow": {
-          "date": "2026-10-31",
+          "date": "2026-11-01",
           "count": 13,
           "text": "+13",
-          "label": "10月31日，还有13项日程，打开当日任务清单",
-          "x": 306.421875,
+          "label": "11月1日，还有13项日程，打开当日任务清单",
+          "x": 362.1328125,
           "y": 420.25
         },
         "hiddenTruth": {
@@ -701,24 +701,24 @@
       "pass": true,
       "evidence": {
         "barTarget": {
-          "column": 3,
-          "start": 1,
+          "column": 4,
+          "start": 2,
           "end": 7,
-          "x": 195,
-          "y": 404,
+          "x": 250.71428571428572,
+          "y": 404.25,
           "weekStart": "2026-11-09"
         },
         "barPoint": {
-          "column": 3,
-          "x": 195,
-          "y": 404
+          "column": 4,
+          "x": 250.71428571428572,
+          "y": 404.25
         },
         "barSheet": {
-          "date": "2026-11-12",
+          "date": "2026-11-13",
           "mode": "month",
           "overlay": true
         },
-        "expectedBarDate": "2026-11-12"
+        "expectedBarDate": "2026-11-13"
       }
     },
     {
@@ -807,19 +807,19 @@
       "pass": true,
       "evidence": {
         "keyboardSetup": {
-          "start": 1,
+          "start": 2,
           "end": 7,
           "weekStart": "2026-11-09"
         },
         "keyboardBar": {
-          "hit": "3",
-          "date": "2026-11-12",
-          "label": "Calendar week span，我负责，待开始，紧急程度中，11月10日 10:00 → 11月18日 12:00，说明：Calendar browser acceptance task，已选择11月12日，回车打开当日清单"
+          "hit": "4",
+          "date": "2026-11-13",
+          "label": "Calendar week span，我负责，待开始，紧急程度中，11月11日 10:00 → 11月19日 12:00，说明：Calendar browser acceptance task，已选择11月13日，回车打开当日清单"
         },
-        "keyboardDate": "2026-11-12",
-        "keyboardExpected": 3,
+        "keyboardDate": "2026-11-13",
+        "keyboardExpected": 4,
         "beforeEnter": {
-          "active": "07913f1f-928b-4c4b-90e0-baa9a4172fcd",
+          "active": "4106aed1-bd45-4960-95d6-029b0a9385af",
           "isBar": true,
           "sheet": false
         },
@@ -838,8 +838,8 @@
       "check": "activating the focused bar (the native Enter/Space result) opens the same selected day",
       "pass": true,
       "evidence": {
-        "nativeDate": "2026-11-12",
-        "keyboardExpected": 3
+        "nativeDate": "2026-11-13",
+        "keyboardExpected": 4
       }
     },
     {
@@ -849,17 +849,17 @@
         "sheetList": {
           "count": 16,
           "first": [
-            "a3cf3d3b-5bb4-4a50-b9ca-95fb1e9a37b1",
-            "4b9ac4e9-f076-4a11-a418-9eedce625479",
-            "02a74193-8077-4ffe-b4c6-bc783553ecb1"
+            "1f24c9b7-70ba-4897-b2f3-a8713fca9844",
+            "5b053576-e4ed-49b7-8fbf-ceea2b768bc4",
+            "105d41ee-6ee1-4a37-b033-00e497e79d51"
           ]
         },
         "dayTruth": {
           "total": 16,
           "first": [
-            "a3cf3d3b-5bb4-4a50-b9ca-95fb1e9a37b1",
-            "4b9ac4e9-f076-4a11-a418-9eedce625479",
-            "02a74193-8077-4ffe-b4c6-bc783553ecb1"
+            "1f24c9b7-70ba-4897-b2f3-a8713fca9844",
+            "5b053576-e4ed-49b7-8fbf-ceea2b768bc4",
+            "105d41ee-6ee1-4a37-b033-00e497e79d51"
           ]
         }
       }
@@ -884,9 +884,9 @@
       "pass": true,
       "evidence": {
         "excluded": [
-          "ac5b7e62-56ea-4e9c-bb94-beada2720c5e",
-          "40cae316-8816-442b-8a74-40ba311f0d09",
-          "b9fa745a-b4f4-486f-982d-b0c16f013315"
+          "681a6eaa-96c2-47f4-81bc-ecb75dc8542c",
+          "fed0f10c-9b6e-4378-aede-f016874b5527",
+          "3d66c87a-929d-4e45-9034-74bb8ce3687a"
         ]
       }
     },
@@ -908,7 +908,7 @@
           "top": 120,
           "sheet": true,
           "drawer": false,
-          "focus": "4b9ac4e9-f076-4a11-a418-9eedce625479"
+          "focus": "5b053576-e4ed-49b7-8fbf-ceea2b768bc4"
         }
       }
     },
@@ -917,29 +917,29 @@
       "pass": true,
       "evidence": {
         "monthSnapshot": {
-          "anchor": 1793376000000,
+          "anchor": 1793462400000,
           "rowHeight": "220",
           "stream": [
-            "2026-08",
             "2026-09",
             "2026-10",
             "2026-11",
-            "2026-12"
+            "2026-12",
+            "2027-01"
           ],
-          "scroll": 3251,
+          "scroll": 2151,
           "mode": "month"
         },
         "monthAfter": {
-          "anchor": 1793376000000,
+          "anchor": 1793462400000,
           "rowHeight": "220",
           "stream": [
-            "2026-08",
             "2026-09",
             "2026-10",
             "2026-11",
-            "2026-12"
+            "2026-12",
+            "2027-01"
           ],
-          "scroll": 3251,
+          "scroll": 2151,
           "mode": "month",
           "inert": false,
           "drawer": false,
@@ -952,7 +952,7 @@
       "check": "the sheet returns focus to the month trigger that opened it",
       "pass": true,
       "evidence": {
-        "date": "2026-10-31",
+        "date": "2026-11-01",
         "action": "schedule-month-date",
         "tag": "BUTTON",
         "cls": "p-month-date is-selected"
@@ -962,16 +962,16 @@
       "check": "only 查看日视图 switches to the day mode for that date",
       "pass": true,
       "evidence": {
-        "anchor": 1793376000000,
+        "anchor": 1793462400000,
         "mode": "day",
-        "heading": "10月31日 周六",
+        "heading": "11月1日 周日",
         "items": 16
       }
     },
     {
       "check": "the fixture provides an empty day for the empty state",
       "pass": true,
-      "evidence": "2026-12-10"
+      "evidence": "2026-12-11"
     },
     {
       "check": "an empty day sheet shows the empty state and a create entry",
@@ -985,8 +985,8 @@
       "check": "creating from the empty sheet opens the create form for that date and keeps the sheet",
       "pass": true,
       "evidence": {
-        "start": "2026-12-10",
-        "end": "2026-12-10",
+        "start": "2026-12-11",
+        "end": "2026-12-11",
         "sheet": true
       }
     },
@@ -1133,8 +1133,8 @@
       "pass": true,
       "evidence": {
         "allDay": false,
-        "startAt": "2026-10-31T12:00:00Z",
-        "dueAt": "2026-11-02T02:00:00Z",
+        "startAt": "2026-11-01T12:00:00Z",
+        "dueAt": "2026-11-03T02:00:00Z",
         "pinned": false,
         "tag": null,
         "tagId": null
@@ -1145,7 +1145,7 @@
       "pass": true,
       "evidence": {
         "title": "Calendar cross",
-        "snippet": "待开始中👤我负责任务名称Calendar cross创建者founder创建时间2026年10月28日 23:27当前业务责任方founder任务排期10月31日 20:00 → 11月2日 10:00截止2026年11月2日 10:00负责人alpha-one-employee审核人founder任务说明Calendar browser acceptance task当前进展暂无评论共 0 条还没有评论，欢迎发表第一条。加载更多发表评论（平铺，不支持回复层级）发表"
+        "snippet": "待开始中👤我负责任务名称Calendar cross创建者founder创建时间2026年10月29日 10:14当前业务责任方founder任务排期11月1日 20:00 → 11月3日 10:00截止2026年11月3日 10:00负责人alpha-one-employee审核人founder任务说明Calendar browser acceptance task当前进展暂无评论共 0 条还没有评论，欢迎发表第一条。加载更多发表评论（平铺，不支持回复层级）发表"
       }
     },
     {
@@ -1179,18 +1179,18 @@
       "pass": true,
       "evidence": {
         "stream": [
-          "2026-08",
           "2026-09",
           "2026-10",
           "2026-11",
-          "2026-12"
+          "2026-12",
+          "2027-01"
         ],
         "sections": [
-          "2026-08",
           "2026-09",
           "2026-10",
           "2026-11",
-          "2026-12"
+          "2026-12",
+          "2027-01"
         ],
         "duplicates": 0
       }
@@ -1200,24 +1200,24 @@
       "pass": true,
       "evidence": {
         "scroll": [
-          5555,
-          5555
+          5335,
+          5335
         ],
         "stream": [
-          "2026-08",
           "2026-09",
           "2026-10",
           "2026-11",
           "2026-12",
-          "2027-01"
+          "2027-01",
+          "2027-02"
         ],
         "sections": [
-          "2026-08",
           "2026-09",
           "2026-10",
           "2026-11",
           "2026-12",
-          "2027-01"
+          "2027-01",
+          "2027-02"
         ]
       }
     },
@@ -1226,15 +1226,15 @@
       "pass": true,
       "evidence": {
         "stableBefore": {
-          "scroll": 3649,
+          "scroll": 3429,
           "stream": 6
         },
         "stableAfter": {
-          "scroll": 3649,
+          "scroll": 3429,
           "stream": 7
         },
-        "stableAnchor": "2026-10-26",
-        "stableAnchorAfter": "2026-10-26"
+        "stableAnchor": "2026-11-23",
+        "stableAnchorAfter": "2026-11-23"
       }
     },
     {
@@ -1242,16 +1242,16 @@
       "pass": true,
       "evidence": {
         "stream": [
-          "2026-07",
           "2026-08",
           "2026-09",
           "2026-10",
           "2026-11",
           "2026-12",
           "2027-01",
-          "2027-02"
+          "2027-02",
+          "2027-03"
         ],
-        "scroll": 1138
+        "scroll": 1358
       }
     },
     {
@@ -1335,7 +1335,7 @@
       "pass": true,
       "evidence": {
         "rowHeight": 340,
-        "shown": 15,
+        "shown": 14,
         "hidden": 36
       }
     },
@@ -1344,30 +1344,30 @@
       "pass": true,
       "evidence": {
         "contextBeforeForm": {
-          "anchor": 1793376000000,
+          "anchor": 1793462400000,
           "stream": [
-            "2026-08",
             "2026-09",
             "2026-10",
             "2026-11",
             "2026-12",
-            "2027-01"
+            "2027-01",
+            "2027-02"
           ],
           "rowHeight": "340",
-          "scroll": 8437
+          "scroll": 8097
         },
         "contextAfterForm": {
-          "anchor": 1793376000000,
+          "anchor": 1793462400000,
           "stream": [
-            "2026-08",
             "2026-09",
             "2026-10",
             "2026-11",
             "2026-12",
-            "2027-01"
+            "2027-01",
+            "2027-02"
           ],
           "rowHeight": "340",
-          "scroll": 8437,
+          "scroll": 8097,
           "mode": "month"
         }
       }
@@ -1383,7 +1383,7 @@
           "stream": 6,
           "sections": 6,
           "notice": true,
-          "text": "2027年2月加载失败（模拟月份载入失败），当前只显示已加载的月份。重试",
+          "text": "2027年3月加载失败（模拟月份载入失败），当前只显示已加载的月份。重试",
           "retry": true
         },
         "failedParts": {
@@ -1421,14 +1421,14 @@
       "evidence": {
         "before": {
           "stream": 7,
-          "scroll": 10637
+          "scroll": 9957
         },
         "after": {
           "stream": 8,
-          "scroll": 10637
+          "scroll": 9957
         },
-        "anchor": "2027-01-18",
-        "anchorAfter": "2027-01-18"
+        "anchor": "2027-02-15",
+        "anchorAfter": "2027-02-15"
       }
     },
     {
@@ -1437,14 +1437,14 @@
       "evidence": {
         "before": {
           "stream": 7,
-          "scroll": 10482
+          "scroll": 9802
         },
         "after": {
           "stream": 8,
-          "scroll": 10482
+          "scroll": 9802
         },
-        "anchor": "2027-01-18",
-        "anchorAfter": "2027-01-18"
+        "anchor": "2027-02-15",
+        "anchorAfter": "2027-02-15"
       }
     },
     {

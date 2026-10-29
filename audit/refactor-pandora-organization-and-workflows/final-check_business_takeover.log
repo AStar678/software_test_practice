@@ -1,0 +1,74 @@
+PASS create real task for alpha-one-employee
+PASS qualified participant reads approve
+PASS creation follows direct manager decision
+PASS non-owner progress begins pending
+PASS admin reads minimal responsibility inventory
+PASS takeover rejects admin target
+PASS takeover rejects other-founder target
+PASS takeover rejects changed task version
+PASS takeover rejects changed owner version
+PASS takeover rejects stale company version
+PASS employees cannot invoke administrative takeover
+PASS valid takeover directly applies qualified applicant becoming reviewer
+PASS original creator and creation time remain stable
+PASS pending request has one direct terminal with original applicant decision
+PASS direct business event records applicant and administrative refresh separately
+PASS takeover applied progress exactly once
+PASS taken-over work is absent from receiver original-created filter
+PASS old creator loses basic modification authority
+PASS receiver can continue base edits directly
+PASS former idempotency success is not replayed after later responsibility mutation
+PASS management history resolves independent administrator and transfer provenance
+PASS create real task for alpha-one-employee
+PASS qualified participant reads approve
+PASS creation follows direct manager decision
+PASS admin reads minimal responsibility inventory
+PASS takeover to another employee reassigns active request
+PASS old reviewer cannot read old diff
+PASS old reviewer cannot decide from old page
+PASS qualified participant reads approve
+PASS new current business owner can approve
+PASS create real task for alpha-one-employee
+PASS qualified participant reads approve
+PASS creation follows direct manager decision
+PASS admin reads minimal responsibility inventory
+PASS takeover completes after deadline scan
+PASS expired applicant-becomes-reviewer request stays expired and ineffective
+PASS create real task for alpha-one-employee
+PASS qualified participant reads approve
+PASS creation follows direct manager decision
+PASS self completion directly applies
+PASS create real task for founder
+PASS create real task for alpha-one-employee
+PASS deactivation refuses unapproved unfinished assignment handover
+PASS departure handover awaits business approval
+PASS pending handover does not satisfy final deactivation
+PASS qualified participant reads approve
+PASS business owner approves departure handover
+PASS admin reads minimal responsibility inventory
+PASS completed work remains in business responsibility inventory
+PASS missing completed-work takeover rejects entire final plan
+PASS late validation failure rolls back employee placement and sessions
+PASS admin reads minimal responsibility inventory
+PASS unsettled unpublished application refuses final plan
+PASS admin cannot cancel a published employee business request
+PASS changed employee version refuses full final plan
+PASS complete deactivation atomically submits ownership and unpublished cancellation
+PASS all employee sessions and old login are unusable
+PASS disabled employee has no live position
+PASS admin cancellation preserves original unpublished applicant and source
+PASS reopen without replacement rejects the retained inactive assignee
+PASS reopen rejects empty/nonemployee/inactive/cross-company assignees
+PASS reopen rejects empty/nonemployee/inactive/cross-company assignees
+PASS reopen rejects empty/nonemployee/inactive/cross-company assignees
+PASS reopen rejects empty/nonemployee/inactive/cross-company assignees
+PASS takeover owner reopens completed work with ordered active replacements
+PASS reopen increments round and never automatically assigns takeover owner
+PASS head departure without succession is rejected
+PASS head succession and direct-report placement commit together
+PASS successor now derives head identity without editable manager fields
+PASS fixed founder cannot be deactivated
+PASS concurrent final deactivation commits one legal successor state
+PASS create real task for founder
+PASS admin reads minimal responsibility inventory
+PASS concurrent takeovers commit one ownership transition

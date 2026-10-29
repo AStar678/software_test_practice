@@ -1,0 +1,86 @@
+PASS login form is ready
+PASS employee signs in with the real phone login
+PASS drawer overlays the left side of the schedule at 390
+PASS drawer keeps the underlying calendar size at 390
+PASS drawer wraps and scrolls its own content at 390
+PASS drawer offers month/day and my applications and drops the removed note at 390
+PASS drawer receives focus and locks the underlying calendar at 390
+PASS Tab from the last drawer control wraps back inside the drawer
+PASS Shift+Tab from the first drawer control wraps to the last one inside the drawer
+PASS the drawer scrim stops the calendar underneath from scrolling
+PASS clicking the covered calendar never opens a sheet or a detail (the scrim takes the click)
+PASS Esc closes the drawer and returns focus to the trigger with the calendar unlocked
+PASS the scrim closes the drawer and restores the original calendar scroll and trigger focus
+PASS the drawer back control closes it
+PASS the drawer close control closes it
+PASS closing the drawer keeps the month date, density, stream and scroll unchanged
+PASS drawer overlays the left side of the schedule at 320
+PASS drawer keeps the underlying calendar size at 320
+PASS drawer wraps and scrolls its own content at 320
+PASS drawer offers month/day and my applications and drops the removed note at 320
+PASS drawer receives focus and locks the underlying calendar at 320
+PASS drawer overlays the left side of the schedule at 1440
+PASS drawer keeps the underlying calendar size at 1440
+PASS drawer wraps and scrolls its own content at 1440
+PASS drawer offers month/day and my applications and drops the removed note at 1440
+PASS drawer receives focus and locks the underlying calendar at 1440
+PASS the drawer covers about 40-45% of the schedule region
+PASS a click on the month date number opens that day sheet
+PASS a click on the empty part of a month cell opens that day sheet
+PASS the +N overflow opens the complete day sheet and shows the real hidden count
+PASS a cross-week bar opens the sheet of the clicked middle date, not the bar start
+PASS the cross-month task is drawn in both month sections
+PASS a bar that continues into the next month opens the clicked calendar date
+PASS a drag across the month grid never opens the sheet or the day view
+PASS the same click opens the sheet once the gesture suppression window ends
+PASS a two-finger resize gesture never turns the following tap into a sheet
+PASS arrow keys pick a covered date on a cross-day bar and Enter opens exactly that day
+PASS activating the focused bar (the native Enter/Space result) opens the same selected day
+PASS the day sheet lists every own effective task exactly once in pin/start/id order
+PASS the day sheet header shows the date, day view and close entries
+PASS the day sheet keeps a bottom-sheet height and wraps at 320
+PASS the sheet only lists own effective ownership and excludes other people tasks
+PASS closing a nested task detail returns to the sheet with its scroll and focus intact
+PASS closing the sheet restores the month date, density, stream and scroll without leaving an inert page
+PASS the sheet returns focus to the month trigger that opened it
+PASS only 查看日视图 switches to the day mode for that date
+PASS the fixture provides an empty day for the empty state
+PASS an empty day sheet shows the empty state and a create entry
+PASS creating from the empty sheet opens the create form for that date and keeps the sheet
+PASS cancelling the form returns to the still-open day sheet
+PASS dragging the sheet handle down closes it
+PASS a short handle drag snaps back instead of closing
+PASS a cancelled handle drag restores the sheet without closing it
+PASS a second finger cancels the drag and keeps the sheet open
+PASS pulling the body down while it is at the top closes the sheet and takes over the gesture
+PASS ordinary body scrolling is never hijacked into a close
+PASS Esc closes only the topmost layer, then the sheet
+PASS signing out clears the drawer and sheet overlay state
+PASS login form is ready
+PASS employee signs in with the real phone login
+PASS signing back in reopens the calendar without stale overlays
+PASS every all-day and every timed task is rendered exactly once from the real coverage
+PASS more than five all-day tasks stay reachable through the compact scroll area
+PASS more than five overlapping timed tasks split across the full day width
+PASS the day axis still runs to 24:00 in a real scrollable column
+PASS a timed task fully covering the day is projected without changing its schedule
+PASS the projected task detail keeps the real schedule and no all-day semantics
+PASS displaying the full-day projection never writes task data
+PASS label colour and pin markers survive the display classification
+PASS the month stream starts with consecutive months and unique dates
+PASS scrolling down appends the next month without duplicating or losing dates
+PASS appending the next month keeps the same scroll offset and visible week
+PASS scrolling up prepends the previous month with unique dates
+PASS deep scrolling keeps a bounded, non-repeating mounted window
+PASS a cross-month task is drawn in more than one month section without being lost
+PASS scrolling past December continues into January of the next year
+PASS the year/month picker still jumps to a distant month and rebuilds the stream
+PASS keyboard resizing changes the visible density and stores it locally
+PASS the stored row height really mounts more task lanes
+PASS returning from the task form keeps the month date, stream, density and scroll
+PASS a failed month supplement shows an explicit retry instead of incomplete months
+PASS a retry that keeps failing does not pretend the month loaded
+PASS the retry loads the month once the source recovers and clears the notice
+PASS month augmentation stays stable at 320
+PASS month augmentation stays stable at 1440
+PASS the calendar checks raised no browser exception

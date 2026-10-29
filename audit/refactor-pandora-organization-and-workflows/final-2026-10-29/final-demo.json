@@ -1,0 +1,304 @@
+{
+  "updated": "2026-10-29T02:19:11.860474+00:00",
+  "database": "pandora_precheck_demo_e4226050acb8",
+  "checks": [
+    {
+      "check": "preparation refuses missing explicit database/marker arguments",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "preparation refuses missing explicit database/marker arguments",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "two preparations preserve all business rows, placements, stable seed keys and IDs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "two preparations preserve original business date, seed completion and counts",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "mismatched demo marker refuses preparation without business mutation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "startup seed refuses missing/mismatched explicit target without touching business data",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "startup seed refuses missing/mismatched explicit target without touching business data",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "read-only current precheck accepts the stored fixed organization",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "persistent demo satisfies all read-only database integrity checks",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "demo has two departments, four teams and complete single-position staff",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "every department and team has exactly one head",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator is independent and absent from staff/placements",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "seed contains approved, direct, pending, rejected, withdrawn and expired applications",
+      "pass": true,
+      "evidence": [
+        "approved",
+        "direct",
+        "expired",
+        "pending",
+        "rejected",
+        "withdrawn"
+      ]
+    },
+    {
+      "check": "seed has both completed work and a real reopened execution round",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "dedicated handover and formal takeover retain real separate histories",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "colleague authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "market authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "market-employee-2 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "market-head-1 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "market-head-2 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "marketing authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "middle authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-employee-2 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-1 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-2 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upper authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upper has the derived fixed position",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "middle has the derived fixed position",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-1 has the derived fixed position",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee has the derived fixed position",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "company employee directory excludes admin and all contacts",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin cannot read employee task business APIs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee cannot read admin management APIs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee task table has more than two 50-row pages after restart",
+      "pass": true,
+      "evidence": {
+        "first": 100,
+        "second": 38
+      }
+    },
+    {
+      "check": "company retains ten ordered managed items",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "creator-only demo retains original creator and excludes creator from effective assignees",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover recipient can read without being rewritten as original creator",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "middle log directory includes indirect/direct subordinate demo authors",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-1 log directory includes indirect/direct subordinate demo authors",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "frozen log is read-only from its real first creation instant",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "deletion/recreation keeps one day slot and first-creation history",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "cross-month schedule demo is present and readable as the real employee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "cross-year schedule demo is present and readable as the real employee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "full-coverage schedule demo is present and readable as the real employee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "midnight schedule demo is present and readable as the real employee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "point schedule demo is present and readable as the real employee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "eight real concurrent timed and eight all-day tasks exist",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "taken-over task remains directly editable by its business owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin task history can trace takeover after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator can persist a real account-name edit before repeat preparation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "repeat preparation preserves a real user edit instead of resetting demo data",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "repeat preparation preserves independent administrator account edits",
+      "pass": true,
+      "evidence": null
+    }
+  ],
+  "businessDate": "2026-10-29",
+  "counts": {
+    "users": 12,
+    "admin_accounts": 1,
+    "employee_placements": 12,
+    "departments": 2,
+    "teams": 4,
+    "tasks": 144,
+    "task_versions": 153,
+    "approval_requests": 153,
+    "work_logs": 36,
+    "home_items": 22,
+    "task_business_transfers": 1,
+    "handover_requests": 1,
+    "task_log_comments": 2,
+    "notifications": 340
+  },
+  "result": "PASS"
+}

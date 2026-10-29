@@ -1,0 +1,234 @@
+{
+  "updated": "2026-10-29T02:10:10.030144+00:00",
+  "database": "pandora_precheck_fixed_67fccd8a6aac4dd2",
+  "serverVersion": "9.3.0",
+  "historicalChecksums": {
+    "V1__initial_schema.sql": "71154f0cbfba16b62ffffacea48c4295abad129a6b23a27a8e9942564097b349",
+    "V2__case_sensitive_idempotency.sql": "f6e05c594336303bb92af88998ef21086b76ef8f5da109571d58d3e8f02940ea",
+    "V3__home_item_versions.sql": "977ed329b8d90f523af4e5623b5d7f5b11f24525cd4166c3087507f02e2318d8",
+    "V4__personal_profile.sql": "796b8947b282b93ba3cd4aaaa49e827feed97f1ee543b74cc42efad836ece7f1",
+    "V5__organization_roles_and_account_gate.sql": "f20e0594916f7b5071ea0bb51380c9667d1db9ad8d7ccc7a8feca08c6b534bb2",
+    "V6__ordered_routing_expiration_and_handover.sql": "c8832ec2b410ef8bc85df3290bf52ab052dcfac6dca9c18b8268b5ac53023316",
+    "V7__event_provenance_dispatch_and_pins.sql": "83c66675dcfb7c6015d0ea5caa4f956f6edb48791354fa48da7fc84bd518d0a3",
+    "V8__lossless_work_log_merge_and_unique_day.sql": "b6b82abdbc5092b62dda3340f7d3154929ee23d1d98bd8a3e367a3ff3ac0de83",
+    "V9__organization_row_versions.sql": "0d476af362bfecf6231749a3ec179fb305bf31f01ebfd73d8200909b08bb7995",
+    "V10__retire_superseded_check_constraints.sql": "28b5363aa98ab483d3bd0255e3f7416638dc38c1d67818f6d4b5b733b9f0c6b7",
+    "V11__schedule_snapshots_reminder_nodes_and_notification_lifecycle.sql": "54787d03131305541ab9229d195f03986bfaa4208c2c5489f1ce18b178d2a400",
+    "V12__backfill_task_assignments.sql": "a34c88e3ca66d53a20be96978f9e9cf51cf78a3caea3357419e60f71d4fdd8c4",
+    "V13__mask_undelivered_notification_content.sql": "558d85389850e901605d962a4389f7909e8256f00bc5ec54122b6fb2fd162761",
+    "V14__handover_presets.sql": "c333107e47ddece1a07c98d43163ce6a098281e19f3000b7607c0ad0c68aa0d7",
+    "V15__personal_avatar.sql": "4d29fafc2713a7df1c22a177510c0856f96aabbe584fdb1dd54d17f1f8a9cd76",
+    "V16__work_log_day_slot.sql": "f97c578ec0d042ec4954f88d2d1c69edd0fb77c1a68d90f95e2dfeb6a066f829",
+    "V17__tags_and_task_tag_snapshot.sql": "a1b971c88a69a1591a0bf63c14d7c30f54b4610977c46e5ec9354bf5b89959a1",
+    "V18__flat_comments.sql": "88356b5ba4088eb682c09cc3db6654789896d2e73f4751de8310f967362b50f0",
+    "V19__employee_phone_login.sql": "e62b3b8d49c7b3f2ff4982797c45cbebbfbe34ddc29de5234af2fa8c3eadfdd1",
+    "V20__notification_object_refs.sql": "e9e12751662ebef73d7e6eafa87788b134e0c7179aa6a841ff06b938e6c174f8"
+  },
+  "checks": [
+    {
+      "check": "stable employee IDs and creation times survive V21",
+      "pass": true
+    },
+    {
+      "check": "migration never infers a founder from legacy roots",
+      "pass": true
+    },
+    {
+      "check": "explicit mapping blockers exist for both companies",
+      "pass": true
+    },
+    {
+      "check": "all four placement types including department head without team are legal",
+      "pass": true
+    },
+    {
+      "check": "company-level founder is not forced into a legacy department",
+      "pass": true
+    },
+    {
+      "check": "one employee cannot occupy two placements",
+      "pass": true
+    },
+    {
+      "check": "one company cannot have two founder slots",
+      "pass": true
+    },
+    {
+      "check": "one department cannot have two heads",
+      "pass": true
+    },
+    {
+      "check": "one team cannot have two heads",
+      "pass": true
+    },
+    {
+      "check": "ordinary employee requires a team",
+      "pass": true
+    },
+    {
+      "check": "department head cannot occupy a team",
+      "pass": true
+    },
+    {
+      "check": "founder cannot occupy a department",
+      "pass": true
+    },
+    {
+      "check": "unknown placement type is rejected",
+      "pass": true
+    },
+    {
+      "check": "display position is required",
+      "pass": true
+    },
+    {
+      "check": "cross-company employee is rejected",
+      "pass": true
+    },
+    {
+      "check": "cross-company display position is rejected",
+      "pass": true
+    },
+    {
+      "check": "team must belong to its placement department",
+      "pass": true
+    },
+    {
+      "check": "cross-company founder reference is rejected",
+      "pass": true
+    },
+    {
+      "check": "clean administrator needs no pseudo employee row",
+      "pass": true
+    },
+    {
+      "check": "administrator ID and credential source survive extraction",
+      "pass": true
+    },
+    {
+      "check": "old administrator audit resolves via principal after employee removal",
+      "pass": true
+    },
+    {
+      "check": "auth_sessions.user_id retains shared administrator provenance",
+      "pass": true
+    },
+    {
+      "check": "idempotency_keys.user_id retains shared administrator provenance",
+      "pass": true
+    },
+    {
+      "check": "domain_events.initiator_id retains shared administrator provenance",
+      "pass": true
+    },
+    {
+      "check": "domain_events.revoked_by retains shared administrator provenance",
+      "pass": true
+    },
+    {
+      "check": "notifications.recipient_id retains shared administrator provenance",
+      "pass": true
+    },
+    {
+      "check": "task_records.author_id retains shared administrator provenance",
+      "pass": true
+    },
+    {
+      "check": "task_history_entries.actor_id retains shared administrator provenance",
+      "pass": true
+    },
+    {
+      "check": "approval_requests.decided_by retains shared administrator provenance",
+      "pass": true
+    },
+    {
+      "check": "employee business history occupied by legacy administrator is retained and blocked",
+      "pass": true
+    },
+    {
+      "check": "independent administrator cannot occupy an employee placement",
+      "pass": true
+    },
+    {
+      "check": "independent administrator cannot author a business log",
+      "pass": true
+    },
+    {
+      "check": "independent administrator cannot be an original task creator",
+      "pass": true
+    },
+    {
+      "check": "employee-only current reviewer FK remains restricted to users",
+      "pass": true
+    },
+    {
+      "check": "independent administrator cannot be a current business reviewer",
+      "pass": true
+    },
+    {
+      "check": "independent administrator cannot become an effective assignee",
+      "pass": true
+    },
+    {
+      "check": "employee cannot be used as an administrator credential principal",
+      "pass": true
+    },
+    {
+      "check": "initial business responsibility belongs to the original employee creator",
+      "pass": true
+    },
+    {
+      "check": "ownership migration fabricates no takeover history",
+      "pass": true
+    },
+    {
+      "check": "one task cannot have two current business owners",
+      "pass": true
+    },
+    {
+      "check": "current business owner must belong to the task company",
+      "pass": true
+    },
+    {
+      "check": "independent administrator cannot be the current business owner",
+      "pass": true
+    },
+    {
+      "check": "takeover history requires a nonblank reason",
+      "pass": true
+    },
+    {
+      "check": "takeover administrator must be an admin principal",
+      "pass": true
+    },
+    {
+      "check": "takeover next owner must belong to the company",
+      "pass": true
+    },
+    {
+      "check": "takeover history cannot name an administrator as business owner",
+      "pass": true
+    },
+    {
+      "check": "takeover keeps object, before/after owners, admin actor, time and reason",
+      "pass": true
+    },
+    {
+      "check": "business takeover does not overwrite original creator or creation time",
+      "pass": true
+    },
+    {
+      "check": "same ownership version cannot record two takeover results",
+      "pass": true
+    },
+    {
+      "check": "V1–V20 files match Git HEAD",
+      "pass": true
+    },
+    {
+      "check": "V1–V20 checksums remain unchanged during the check",
+      "pass": true
+    }
+  ],
+  "result": "PASS"
+}

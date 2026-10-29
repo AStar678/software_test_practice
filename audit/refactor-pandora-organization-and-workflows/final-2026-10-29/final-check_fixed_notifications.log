@@ -1,0 +1,44 @@
+PASS alpha-head cannot maintain another company/founder tag
+PASS alpha-one-head cannot maintain another company/founder tag
+PASS alpha-one-employee cannot maintain another company/founder tag
+PASS admin cannot maintain another company/founder tag
+PASS other-founder cannot maintain another company/founder tag
+PASS task tag changes directly when applicant is current business owner
+PASS multiple task tags are refused
+PASS catalog rename/recolor updates current task reference
+PASS logical tag deletion preserves referenced name/color snapshot
+PASS deleted tag is absent from selection catalogue
+PASS new comment delivers exactly one copy to the targeted recipient
+PASS comment does not notify its author
+PASS notification exposes current valid comment and its purpose
+PASS comment hierarchy is rejected
+PASS non-author cannot edit a comment
+PASS normal task detail refuses removed employee
+PASS removed employee loses comment reads/writes despite delivered task history
+PASS comment notification detail masks body and every jump after object revocation
+PASS comment notification cannot grant historical task access
+PASS ordinary previously delivered notification marks later authority loss for the UI
+PASS ordinary task notification still opens only current effective read-only data
+PASS historical-only task remains excluded from normal task list
+PASS new comment delivers exactly one copy to the targeted recipient
+PASS deleted comment notification hides old excerpt/jumps while object is otherwise visible
+PASS deleted comment never grants a notification historical entry
+PASS new comment delivers exactly one copy to the targeted recipient
+PASS missing comment notification hides old excerpt/jumps while object is otherwise visible
+PASS missing comment never grants a notification historical entry
+PASS new comment delivers exactly one copy to the targeted recipient
+PASS withdrawn summary exception is limited to actual manager and has no jumps
+PASS manager withdrawn exception cannot revive a deleted comment
+PASS progress uses current business owner review
+PASS comment edit neither changes pending business version nor emits another notification
+PASS immutable publication cursor survives deleted first row/anchor and an edited unseen row
+PASS new comment delivers exactly one copy to the targeted recipient
+PASS log comment targets only its author, without broad management delivery
+PASS log body freezes at its first creation window
+PASS frozen log comments stay independent of body/version/freeze and support author control
+PASS opening notification persists read time
+PASS personal hide ends ordinary historical task exception
+PASS withdrawal at 179 seconds follows strict 180-second rule
+PASS withdrawal at 180 seconds follows strict 180-second rule
+PASS expired notification cannot be read or grant historical entry
+PASS notification cleanup leaves business history intact

@@ -148,8 +148,7 @@ function teamOptions() {
 function personOptions() {
   const query = logPersonQuery();
   return visibleDepartmentAuthors().filter(person =>
-    !query || String(person.displayName || '').toLowerCase().includes(query)
-    || String(person.username || '').toLowerCase().includes(query));
+    !query || String(person.displayName || '').toLowerCase().includes(query));
 }
 function logAuthorId() {
   if (state.logAll) return null;
@@ -672,7 +671,8 @@ saveLog = function () {
       ? button("p-open-historical-task", "查看历史只读详情", raw.id)
       : button("p-open-notification-task", "查看相关任务", raw.id));
     if (!revoked && raw.canWithdraw) buttons.push(button("p-withdraw-notification", "撤回通知", raw.id));
-    if (!revoked && raw.objectType && raw.objectId) {
+    if (!revoked && raw.objectType && raw.objectId &&
+        !(raw.objectType === "task" && (raw.relationLost || raw.readonly))) {
       buttons.push(button("p-open-notification-object", raw.focus === "comments" ? "定位到评论区" : "查看相关对象", raw.id));
     }
     if (!revoked) buttons.push(button("p-hide-notification", "删除此消息", raw.id));
@@ -803,7 +803,7 @@ saveLog = function () {
   }
   renderMe = function () {
     const me = P.data.me || {}, superior = personById(me.managerId);
-    const rows = [["姓名",me.displayName],["账号",me.username],["部门",me.teamName || "未分配"],["角色",ROLE_LABEL[me.role] || me.role],["直属上级",superior ? superior.name : me.managerId ? "资料不在当前可见范围" : "无"]];
+    const rows = [["姓名",me.displayName],["部门",me.departmentName || "公司层"],["团队",me.teamName || "无"],["身份",ROLE_LABEL[me.role] || me.role],["直属上级",superior ? superior.name : me.managerId ? "资料不在当前可见范围" : "无"]];
     document.getElementById("page-me").innerHTML = '<section class="card profile-card"><div class="profile-row"><div class="avatar">' +
       esc((me.displayName || "").slice(0,1)) + '</div><div><div class="v">' + esc(me.displayName) + '</div><div class="tiny muted">当前登录账号</div></div></div>' +
       rows.map(([key,value]) => '<div class="profile-row"><span class="k">' + key + '</span><span class="v">' + esc(value) + '</span></div>').join("") +

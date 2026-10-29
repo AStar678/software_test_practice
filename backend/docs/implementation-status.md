@@ -1,8 +1,16 @@
 # 本地后端实施状态
 
-本次代码以用户最新修改的 **MySQL** 为数据库方向，采用 Java 21、Spring Boot 3.5.16、Spring JDBC 和 Flyway。V1.1 文档中的 PostgreSQL 建表附件没有直接执行；本地 V1 迁移包含 17 张表，V2 迁移明确幂等键的大小写敏感比较，V3 为首页信息加入编辑版本号，V4 加入个人联系电话、邮箱和资料版本号，均位于 `src/main/resources/db/migration/`。本文件描述当前代码范围，不代表详细设计全部交付。
+## 2026-10-29：固定组织、独立身份和 Web 工作流
 
-本文件按时间保留历史实施记录；下方早期规则、迁移版本和测试数字以当时提交为限。当前状态以本节「2026-10-21：甲方八条反馈对应实现」、末尾「2026-10-19：第 4 节与合入调整的协调」及 change 的 `tasks.md` / `implementation-notes.md` 为准。
+当前实现以 [更改指导](../../docs/reviews/更改指导.md) 和 [活动 change](../../openspec/changes/refactor-pandora-organization-and-workflows) 为准。员工 phone / 管理员 accountName 严格分离；固定四层位置与完整计划替代可编辑角色/管理链；创建由直属上级审核，其他操作由当前业务责任方审核，本人直接生效；支持原子停用和正式接管。最终迁移为V26，普通启动默认无种子，演示准备必须显式目标/标识。
+
+本轮实际命令、结果、追溯和待独立验证事项见 [implementation-notes](../../openspec/changes/refactor-pandora-organization-and-workflows/implementation-notes.md)，检查入口见 [current-checks](current-checks.md)，操作说明见 [升级与恢复](fixed-model-upgrade.md) 及 [后端 README](../README.md)。下文全部保留为历史记录，旧 username、可编辑角色、显式本人审核、周历、自动种子及测试数字不代表当前契约或本轮通过。Android 未修改、未交付 APK。
+
+## 历史记录
+
+本次代码以用户最新修改的 **MySQL** 为数据库方向，采用 Java 21、Spring Boot 3.5.16、Spring JDBC 和 Flyway。V1.1 文档中的 PostgreSQL 建表附件没有直接执行；本地 V1 迁移包含 17 张表，V2 迁移明确幂等键的大小写敏感比较，V3 为首页信息加入编辑版本号，V4 加入个人联系电话、邮箱和资料版本号，均位于 `src/main/resources/db/migration/`。以下描述当时的代码范围。
+
+本文件按时间保留历史实施记录；下方早期规则、迁移版本和测试数字以当时提交为限。当前状态以上方2026-10-29条目及本轮 change 的 `tasks.md` / `implementation-notes.md` 为准。
 
 ## 2026-10-21：甲方八条反馈对应实现
 

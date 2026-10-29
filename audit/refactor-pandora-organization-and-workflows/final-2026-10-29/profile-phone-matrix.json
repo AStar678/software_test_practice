@@ -1,0 +1,166 @@
+{
+  "updated": "2026-10-29T02:11:01.708761+00:00",
+  "checks": [
+    {
+      "check": "founder contact detail follows actual management relationship",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-head contact detail follows actual management relationship",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-head contact detail follows actual management relationship",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee contact detail follows actual management relationship",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-two-employee contact detail follows actual management relationship",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-two-head contact detail follows actual management relationship",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "beta-head contact detail follows actual management relationship",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "other-founder contact detail follows actual management relationship",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin contact detail follows actual management relationship",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "/users?limit=100 summary has no contact, credential or username fields",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "/work-log-authors summary has no contact, credential or username fields",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "/assignee-candidates?purpose=create summary has no contact, credential or username fields",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "/assignee-candidates?purpose=edit summary has no contact, credential or username fields",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "/admin/employees summary has no contact, credential or username fields",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "/admin/organization-plans summary has no contact, credential or username fields",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "self identity or mixed payload is rejected: phone",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "self identity or mixed payload is rejected: displayName",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "self identity or mixed payload is rejected: email,phone",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "self avatar and email remain editable",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "even actual manager cannot read another employee email",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator cannot edit employee email",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "empty, invalid or occupied login phone is rejected",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "empty, invalid or occupied login phone is rejected",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "empty, invalid or occupied login phone is rejected",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "empty, invalid or occupied login phone is rejected",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator normalized phone/name command succeeds with contact-free receipt",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "phone change revokes all employee sessions",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "old phone cannot log in after change",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "new normalized phone logs into same stable ID",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "audit_logs never captures employee contact values",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "domain_events never captures employee contact values",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "idempotency_keys never captures employee contact values",
+      "pass": true,
+      "evidence": null
+    }
+  ],
+  "result": "PASS"
+}

@@ -511,6 +511,14 @@ public class WorkspaceService {
         boolean withinWithdrawal = occurred != null && !now.isBefore(occurred) && now.isBefore(occurred.plusSeconds(180));
         var view = new LinkedHashMap<String,Object>();
         for (String key : List.of("id","eventId","eventType","createdAt","deliveredAt","readAt","readonly","relationLost")) view.put(key,row.get(key));
+        // A copy delivered before a later organization/assignment change keeps only the historical
+        // task entry. Delivery-time flags cannot describe authority lost after delivery.
+        if (!commentEvent && objectOpen && s(row,"taskId")!=null
+                && row.get("deliveredAt")!=null && "event".equals(s(row,"source"))
+                && !canReadTask(a,s(row,"taskId"),true)) {
+            view.put("readonly",true);
+            view.put("relationLost",true);
+        }
         view.put("taskId",objectOpen?row.get("taskId"):null);
         view.put("requestId",objectOpen?row.get("requestId"):null);
         if (revoked) {

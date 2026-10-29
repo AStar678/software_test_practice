@@ -1,0 +1,59 @@
+{
+  "file": "/Users/watuji/MyGitDev/software_test_practice/潘多拉-日程视图.js",
+  "total": 4,
+  "failures": 0,
+  "results": [
+    {
+      "check": "V-007 a cross-day timed task precedes an all-day task that starts later",
+      "pass": true,
+      "evidence": {
+        "actual": [
+          "earlier-timed",
+          "later-all-day"
+        ]
+      }
+    },
+    {
+      "check": "V-007 the complete day list and the month cell agree on the same mix",
+      "pass": true,
+      "evidence": {
+        "day": [
+          "earlier-timed",
+          "later-all-day"
+        ],
+        "month": [
+          "earlier-timed",
+          "later-all-day"
+        ]
+      }
+    },
+    {
+      "check": "V-007 an identical start falls back to the stable task id in both lists",
+      "pass": true,
+      "evidence": {
+        "day": [
+          "a-task",
+          "b-task"
+        ],
+        "month": [
+          "a-task",
+          "b-task"
+        ]
+      }
+    },
+    {
+      "check": "V-007 pinning still wins over the real start and stays private to the list input",
+      "pass": true,
+      "evidence": {
+        "pinned": [
+          "pinned-all-day",
+          "earlier-timed"
+        ],
+        "otherAccount": [
+          "earlier-timed",
+          "later-all-day"
+        ]
+      }
+    }
+  ]
+}

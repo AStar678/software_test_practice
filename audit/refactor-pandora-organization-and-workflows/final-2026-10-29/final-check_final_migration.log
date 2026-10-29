@@ -1,0 +1,14 @@
+Flyway completed; log: /Users/watuji/MyGitDev/software_test_practice/audit/refactor-pandora-organization-and-workflows/final-migration.log
+PASS empty database completes the full Flyway chain
+PASS backup restores an independent V20 database with identical row fingerprints
+PASS fresh and upgraded columns, FK, indexes, unique keys and CHECK constraints are identical
+PASS upgrade preserves stable employee/task/log/admin-audit IDs, original hashes, text and creation times
+PASS independent administrator extraction preserves identity without an employee row
+PASS historical admin audit still resolves through principals
+PASS upgrade does not infer an arbitrary founder or placement
+PASS final employee schema has no username, role, rank or editable organization chain
+PASS final schema removes old role grants and username mappings
+PASS SQL rejects a pseudo employee for an admin principal
+PASS unresolvable admin business history blocks final cleanup
+PASS blocked cleanup retains old administrator identity and real business source for repair
+PASS V1-V20 files match the committed historical versions

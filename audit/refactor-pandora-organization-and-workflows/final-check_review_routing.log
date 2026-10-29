@@ -1,0 +1,192 @@
+PASS alpha-head creation routes to direct manager regardless of owner order
+PASS alpha-head creation routes to direct manager regardless of owner order
+PASS alpha-one-head creation routes to direct manager regardless of owner order
+PASS alpha-one-head creation routes to direct manager regardless of owner order
+PASS alpha-one-employee creation routes to direct manager regardless of owner order
+PASS alpha-one-employee creation routes to direct manager regardless of owner order
+PASS only explicit fixed founder creation is directly applied
+PASS unavailable direct manager blocks creation without escalation or exemption
+PASS admin is not an employee assignee candidate
+PASS other-founder is not an employee assignee candidate
+PASS create alpha-one-employee submits a real task
+PASS employee creation remains unpublished and pending
+PASS unpublished assignee and founder cannot read pending creation
+PASS creation applicant receives no comparison snapshot
+PASS creation reviewer has comparison snapshot
+PASS current participant reads request approve
+PASS direct manager approves creation
+PASS non-creation routes solely to current business owner with self direct application
+PASS non-creation routes solely to current business owner with self direct application
+PASS viewing authority does not grant basic edit preview
+PASS alpha-one-employee change has expected outcome direct
+PASS direct change is not left pending
+PASS self direct apply cannot bypass task version
+PASS self direct apply cannot remove every assignee
+PASS business owner is not automatically entitled to submit progress
+PASS direct history records actual applicant and exemption reason
+PASS beta-one-employee progress has expected outcome pending
+PASS pending progress keeps old effective content
+PASS self direct apply cannot bypass unique pending freeze
+PASS unrelated scope viewer cannot obtain proposal
+PASS current participant reads request approve
+PASS current business owner approves cross-department progress
+PASS approved progress becomes effective
+PASS beta-one-employee complete has expected outcome pending
+PASS current participant reads request approve
+PASS business owner approves completion
+PASS self reopen requires a complete explicit schedule
+PASS alpha-one-employee reopen has expected outcome direct
+PASS self reopen publishes doing state and advances round
+PASS create founder submits a real task
+PASS founder progress has expected outcome direct
+PASS founder complete has expected outcome direct
+PASS current participant reads request approve
+PASS self operations cannot be approved again
+PASS create founder submits a real task
+PASS founder cannot delegate handover for an indirect report
+PASS alpha-head cannot delegate handover for an indirect report
+PASS direct manager cannot use company-wide edit scope for dedicated handover
+PASS direct manager handover awaits business owner approval
+PASS current participant reads request approve
+PASS business owner approves dedicated handover
+PASS cross-department task is visible to both effective-owner department heads
+PASS team-head scope follows the effective owner, not the creator team
+PASS ordinary employee sees own created work but not a teammate-owned task
+PASS fixed founder reads company tasks while independent administrator is refused
+PASS direct ID access is refused outside the fixed scope
+PASS create founder submits a real task
+PASS cross-department task reaches both teams and both department heads
+PASS create founder submits a real task
+PASS creator department never decides the task department
+PASS create alpha-head submits a real task
+PASS current participant reads request approve
+PASS department head creation follows the direct manager route
+PASS manager keeps a cross-department task they created
+PASS create alpha-one-employee submits a real task
+PASS unpublished creation stays out of every normal list and detail
+PASS current participant reads request approve
+PASS create founder submits a real task
+PASS old team head sees the current team owner before the move
+PASS administrator reads the complete organization draft
+PASS complete plan moves an employee to another team atomically
+PASS old manager loses list, detail and handover ranges after the move
+PASS new team head and ordinary teammate scope follow the current placement
+PASS create founder submits a real task
+PASS ordinary employee cannot inherit a teammate-owned task
+PASS create founder submits a real task
+PASS history-only recipient is excluded from normal list and detail
+PASS delivered task message remains in the notification inbox
+PASS dedicated history entry returns the current effective task read-only
+PASS idempotent command succeeds before the organization change
+PASS administrator reads the complete organization draft
+PASS second complete plan keeps a legal final organization
+PASS old idempotency success is not replayed after the organization version changed
+PASS administrator reads the complete organization draft
+PASS concurrent organization plan and reads return only a legal observed state
+PASS a successful organization read is internally consistent
+PASS create founder submits a real task
+PASS progress preview shows the current business owner as reviewer
+PASS detail route matches the preview for the applicant
+PASS progress by a non-owner-business assignee becomes pending
+PASS applicant sees submitted content but no reviewer comparison
+PASS only the actual reviewer receives the field-by-field diff
+PASS a task viewer outside the request cannot obtain proposal content
+PASS published submission notifies only the reviewer of record
+PASS applicant cannot decide their own reviewed request
+PASS current participant reads request approve
+PASS reviewer decides and the effective version changes
+PASS approval result reaches applicant, business owner and current owner only
+PASS self direct operation leaves no pending record or re-approval entry
+PASS create founder submits a real task
+PASS administrator reads responsibility inventory for founder
+PASS administrator reads the complete organization draft
+PASS takeover reassigns an active request to the new business owner
+PASS old reviewer loses read and decision after reassignment
+PASS current participant reads request approve
+PASS new current business owner can decide the refreshed request
+PASS create founder submits a real task
+PASS administrator reads responsibility inventory for founder
+PASS administrator reads the complete organization draft
+PASS takeover to the applicant refreshes and directly applies
+PASS direct refresh applies the proposal exactly once
+PASS create founder submits a real task
+PASS administrator reads responsibility inventory for founder
+PASS administrator reads the complete organization draft
+PASS refresh checks expiry before a new direct route
+PASS create founder submits a real task
+PASS administrator reads responsibility inventory for founder
+PASS administrator reads the complete organization draft
+PASS refresh keeps a request blocked when the business owner cannot review
+PASS blocked route is visible and never fabricated as an exemption
+PASS create founder submits a real task
+PASS concurrent decisions produce exactly one terminal result
+PASS create founder submits a real task
+PASS direct-manager handover is pending for the business owner
+PASS administrator reads the complete organization draft
+PASS organization move blocks a handover whose setter is no longer the direct manager
+PASS blocked handover keeps the original effective owners
+PASS fixed founder may hand over to any active company employee
+PASS ordinary-handover targets stay inside the work circle
+PASS preset refuses a recipient outside the work circle
+PASS self preset saves a legal recipient
+PASS indirect management cannot set a handover preset
+PASS dedicated handover rejects smuggled base fields
+PASS create founder submits a real task
+PASS ordinary owner editing remains company-wide without widening handover
+PASS dedicated handover still refuses the wider ordinary-edit candidate
+PASS create alpha-head submits a real task
+PASS unpublished submission is addressed only to applicant and reviewer
+PASS deterministic worker pass completes
+PASS unpublished submission creates no copy for an uninvolved task participant
+PASS reviewer receives the actionable creation request
+PASS current participant reads request approve
+PASS direct manager approves creation and result reaches the applicant
+PASS creation result recipient matrix includes applicant, reviewer and owner only
+PASS create founder submits a real task
+PASS deterministic worker pass completes
+PASS direct self operation is an applied event, never a self-review request
+PASS direct self operation leaves no pending approval row
+PASS create founder submits a real task
+PASS published submission event carries only the current reviewer
+PASS deterministic worker pass completes
+PASS applicant receives no early proposal copy while the request is pending
+PASS current participant reads request approve
+PASS deterministic worker pass completes
+PASS approval result is delivered to applicant and current business owner
+PASS submission and result stay bound to the originating request
+PASS create founder submits a real task
+PASS administrator reads responsibility inventory for founder
+PASS administrator reads the complete organization draft
+PASS takeover changes the future business responsibility
+PASS after takeover the active reviewer is the takeover owner
+PASS takeover review notification excludes the original creator
+PASS deterministic worker pass completes
+PASS original creator receives no new review request after takeover
+PASS current participant reads request approve
+PASS deterministic worker pass completes
+PASS takeover result reaches the current responsibility chain
+PASS verification clock is controllable
+PASS reminder fixture task is created directly
+PASS administrator reads responsibility inventory for founder
+PASS administrator reads the complete organization draft
+PASS reminder task is taken over before its node
+PASS deterministic worker pass completes
+PASS reminder reaches the current business owner and effective assignee only
+PASS reminder does not keep the original creator responsibility slot
+PASS deterministic worker pass completes
+PASS same round and schedule version are deduplicated on a second scan
+PASS reminder receipt carries the real schedule version and round
+PASS effective assignee completes and awaits the current business owner
+PASS completion request is pending for the takeover owner
+PASS current participant reads request approve
+PASS takeover owner reopens directly with a new round and schedule
+PASS deterministic worker pass completes
+PASS new round receives its own reminder keyed by the new schedule
+PASS completion and reopen write real result events
+PASS frozen-reminder fixture is published
+PASS deterministic worker pass completes
+PASS no reminder is emitted while the task is frozen by a pending request
+PASS current participant reads request approve
+PASS current reviewer can release the freeze
+PASS deterministic worker pass completes
+PASS the reached node is emitted once after the pending request ends

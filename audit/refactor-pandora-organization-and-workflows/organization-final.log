@@ -1,0 +1,30 @@
+PASS administrator can read complete versioned plan
+PASS employee cannot access controlled mapping plan
+PASS missing head is rejected without changing any original placement
+PASS ordinary organization maintenance cannot replace fixed founder
+PASS stale unit version is rejected before writes
+PASS incomplete expected employee versions cannot be saved
+PASS cross-department team placement is rejected atomically
+PASS late audit failure rolls back every organization write
+PASS creation before organization change has a pending direct manager
+PASS head/employee swap succeeds as one full result
+PASS same organization transaction reassigns pending creation to new direct manager
+PASS old reviewer and old page cannot approve after reassignment
+PASS same command replays without reapplying the swap
+PASS new command with old company version cannot overwrite swap
+PASS administrator can read complete versioned plan
+PASS new units and their first employees are created atomically
+PASS initial credentials are returned only once outside replayable receipt
+PASS credentials and contacts never enter plan audit or idempotency
+PASS new independent employee identity is stable and first-login restricted
+PASS administrator can read complete versioned plan
+PASS unit removal and every employee destination commit together
+PASS administrator can read complete versioned plan
+PASS concurrent complete plans commit exactly one result
+PASS administrator can read complete versioned plan
+PASS concurrent loser leaves no extra authority version
+PASS readiness remains valid after competing head and unit changes
+PASS missing founder blocks ordinary business
+PASS administrator can read complete versioned plan
+PASS explicit stable-ID founder mapping repairs readiness without inventing a root
+PASS controlled mapping repair restores normal business

@@ -1,0 +1,9 @@
+PASS first employee session becomes ready
+PASS a task request is deliberately still in flight
+PASS logout returns to the login screen
+PASS second account is fully loaded before the old response is released
+PASS late task response cannot replace the new account identity
+PASS late task response cannot restore the old session token or epoch
+PASS late response leaves the workspace idle and consistent
+PASS account switch resets the task form instead of keeping the old account state
+PASS browser has no exceptions during account switches

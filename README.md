@@ -2,7 +2,7 @@
 
 包含两个手机前端（网页套壳版、Android 原生版）、共用 Java 后端及数据库备份的完整项目。员工业务界面包含工作台、日程、日志、统计和我的五个栏目；另提供独立的 PC Web 管理端。
 
-当前需求基线为 [潘多拉产品需求文档（V4 修订版）](docs/requirements/潘多拉-产品需求文档-V4修订版.md)，已整合 2026-10-27 的 13 条甲方反馈，并优先采用 10-25 已确认保留行为：月/日两种日历模式、可调整月格及两行标题、日志“部门+人员”下拉且不要求搜索、撤回通知的受限上级只读例外、按角色初始化负责人；第 6 条进展功能按原始反馈标记为待确认。产品交付范围仍为 V1。本轮反馈所指 web 套壳端版本 `4a4b9b4` 已在当前仓库中；[甲方反馈差异分析](docs/reviews/潘多拉-甲方反馈差异分析-2026-10-21.md) 仍只适用 V3/`29ada01`。V3、V2 正式版与历史草案保留供追溯。
+当前实现依据 [2026-10-28 更改指导](docs/reviews/更改指导.md) 及 [本轮 OpenSpec delta](openspec/changes/refactor-pandora-organization-and-workflows/specs/pandora-requirements-aligned-prototype/spec.md)，与 V4 冲突处以本轮要求为准：固定创始人/部门负责人/团队负责人/员工四层位置、员工手机号与独立管理员登录、当前业务责任方审核及正式接管。历史 PRD 和审计保留供追溯。本轮为 Web 与共用后端改造，Android 客户端需要后续适配新契约，未交付新 APK。
 
 ## 两个前端与后端的范围
 
@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | 前端一：网页与旧套壳版 | 根目录 `index.html`、`潘多拉-*.html/css/js`；`android-shell/` | 网页实现员工五个栏目及任务、审批、交接、日程、日志、统计、通知和个人资料交互；旧 Android 套壳复用网页界面，维护容器适配和原生导航的主题。旧包名为 `cn.pandora.mobile`（调试包加 `.debug`）。 |
 | 前端二：Android 原生版 | `android/` | 使用 Java / Android 原生 Views 实现员工业务界面，直接请求服务器 API，不使用 WebView 或打包网页资源。新版包名为 `cn.pandora.workspace`（调试包加 `.debug`），与旧套壳独立安装、独立维护。 |
-| Web 管理端 | 根目录 `admin.html`，访问 `/admin.html` | 管理员在电脑浏览器维护员工、部门、职位、团队、角色授权、转岗与公司信息；完整管理模块不嵌入两个员工手机前端。`/debug.html` 仅供调试。 |
+| Web 管理端 | 根目录 `admin.html`，访问 `/admin.html` | 管理员在电脑浏览器维护完整组织计划、展示职位、员工身份、停用与业务接管、管理员账号及公司信息；完整管理模块不嵌入两个员工手机前端。`/debug.html` 仅供调试。 |
 | 共用后端 | `backend/`，API 前缀 `/api/v1` | Java / Spring Boot 提供认证与会话、组织和权限校验、任务及审批与交接、日程数据、日志、通知、统计与规则分析、个人资料接口，统一负责业务裁决、版本冲突、幂等和 MySQL 持久化；同时托管 Web 静态页面。 |
 
 两个手机前端共用后端接口与业务数据，不各自维护独立后端或数据库；实际连接地址以各端配置为准。网页静态文件随后端 Maven 构建打包，原生版独立构建 APK。旧套壳以保存的 0.2.1 APK 为重建基线，构建脚本更新网站主题与容器适配，根目录网页的其他修改不会自动全部同步到该基线，详见 [套壳说明](android-shell/README.md)。各端已验证与待验证的功能以对应说明和验证记录为准。
@@ -24,14 +24,14 @@ cd backend
 ./scripts/start.sh
 ```
 
-打开 http://127.0.0.1:8080。首次启动会生成模拟数据；如需恢复本分支保存的数据库现状，请先按 [数据库恢复说明](backend/database/README.md) 导入备份，再启动应用。
+打开 http://127.0.0.1:8080。普通启动默认不灌入演示数据。旧库先按 [受控升级与恢复说明](backend/docs/fixed-model-upgrade.md) 演练；新演示库必须通过显式目标和标识准备，见 [后端说明](backend/README.md)。
 
 ## 项目内容
 
 - 根目录 HTML、CSS、JS：原型页面及后端接入。
 - `backend/src`：后端源码、数据库迁移、模拟数据和单元测试。
 - `backend/scripts`：启动、停止、数据库导出及集成检查。
-- `backend/database/pandora.sql`：数据库结构及当前业务数据快照。
+- `backend/database/pandora.sql`：历史 V4 数据快照，非本轮最终结构或验收证据。
 - `android`：使用 Android 原生控件的安卓应用，直接连接现有服务器 API，安装与构建见 [Android 说明](android/README.md)。
 - `android-shell`：手机旧套壳的独立维护目录，网页与原生导航统一沿用网站主题，见 [套壳说明](android-shell/README.md)。
 - `backend/docs`：API 示例和实施说明。

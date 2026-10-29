@@ -180,37 +180,11 @@ def run_checks(f: Fixture, check, report: dict) -> None:
                 'allDay': False, 'startAt': instant(0, 9), 'dueAt': instant(3, 18),
                 'assigneeIds': [ids[key] for key in owners]}
 
-    # --- Legacy authorization data is injected in the fixture-owned database only. It must not be
-    # --- read as current authority; the fixed placement stays the only source of business rights.
-    user_columns = {row[0] for row in sql_rows(
-        "SELECT column_name FROM information_schema.columns WHERE table_schema=DATABASE() "
-        "AND table_name='users'")}
-    legacy_code = 'legacy_executive'
-    if 'role' in user_columns:
-        f.db.server_side("UPDATE users SET role='upper' WHERE organization_id=" + quote(ORG)
-                         + " AND id=" + quote(ids['beta-one-head']))
-    if 'rank_level' in user_columns:
-        f.db.server_side("UPDATE users SET rank_level=1 WHERE organization_id=" + quote(ORG)
-                         + " AND id=" + quote(ids['beta-one-head']))
-    f.db.server_side("INSERT IGNORE INTO roles(id,organization_id,code,name,administrator,system_role) VALUES("
-                     + ','.join([quote('fixture-legacy-executive'), quote(ORG), quote(legacy_code),
-                                 quote('Legacy Executive'), '0', '1']) + ')')
-    for capability in ('manage_organization', 'manage_accounts', 'manage_company_info',
-                       'manage_notifications', 'view_task_history'):
-        f.db.server_side("INSERT IGNORE INTO role_capabilities(organization_id,role_id,capability) VALUES("
-                         + ','.join([quote(ORG), quote('fixture-legacy-executive'), quote(capability)]) + ')')
-    for scope in ('task_view', 'task_dispatch', 'log_read', 'profile_read'):
-        f.db.server_side("INSERT IGNORE INTO role_scopes(organization_id,role_id,scope_type,scope_level) VALUES("
-                         + ','.join([quote(ORG), quote('fixture-legacy-executive'), quote(scope), quote('company')]) + ')')
-    f.db.server_side("INSERT IGNORE INTO user_role_grants(organization_id,user_id,role_id,granted_by) VALUES("
-                     + ','.join([quote(ORG), quote(ids['beta-one-head']), quote('fixture-legacy-executive'),
-                                 quote(ids['founder'])]) + ')')
-    legacy_grants = scalar("SELECT COUNT(*) FROM user_role_grants WHERE organization_id=" + quote(ORG)
-                           + " AND user_id=" + quote(ids['beta-one-head']))
-    legacy_scopes = scalar("SELECT COUNT(*) FROM role_scopes WHERE organization_id=" + quote(ORG)
-                           + " AND role_id='fixture-legacy-executive' AND scope_level='company'")
-    check('legacy company-wide authorization rows exist in the fixture',
-          legacy_grants >= 1 and legacy_scopes == 4, {'grants': legacy_grants, 'companyScopes': legacy_scopes})
+    # Final schema physically retires the alternate authorization source.
+    retired = ('roles', 'role_capabilities', 'role_scopes', 'user_role_grants')
+    present = {row[0] for row in sql_rows('SHOW TABLES')}
+    check('retired authorization tables are absent from the final schema',
+          not present.intersection(retired), {'absent': list(retired)})
 
     # --- Retired admin writes stay retired through the direct API as well as the removed console UI.
     status, body = raw('GET', '/admin/roles', None, 'admin')

@@ -1,6 +1,5 @@
 package cn.pandora.auth;
 
-import cn.pandora.admin.RoleCatalog;
 import cn.pandora.common.Db;
 import org.junit.jupiter.api.Test;
 import java.util.*;
@@ -16,7 +15,6 @@ class AccessTest {
     }
     static class Fixture {
         final Db db=mock(Db.class);
-        final RoleCatalog roles=mock(RoleCatalog.class);
         final Access access=new Access(db);
         final Map<String,Map<String,Object>> people=new LinkedHashMap<>();
         final List<Map<String,Object>> deps=new ArrayList<>(),teams=new ArrayList<>(),places=new ArrayList<>();
@@ -118,7 +116,6 @@ class AccessTest {
         assertDoesNotThrow(()->f.access.requireAdmin(admin));
         var employee=f.actor("a1e");assertEquals("employee",employee.role());assertEquals(4,employee.rank());
         assertThrows(cn.pandora.common.ApiException.class,()->f.access.requireAdmin(employee));
-        verifyNoInteractions(f.roles);
     }
     @Test void incompleteOrDisabledManagementNeverCreatesFounderOrRetainsOldScope() {
         var f=new Fixture();f.people.get("a").put("active",false);

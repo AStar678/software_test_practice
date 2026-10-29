@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T14:04:51.657067+00:00",
+  "updated": "2026-10-29T02:11:23.108784+00:00",
   "checks": [
     {
       "check": "fixed founder creates directly without a pending request",
@@ -7,8 +7,8 @@
       "evidence": [
         201,
         {
-          "taskId": "0450de9d-074a-4999-97e1-c2ce0f5cac20",
-          "requestId": "0fae3c28-ba0b-40f9-8967-ea12569a1925",
+          "taskId": "5591726f-b603-46e7-b91c-4422badef208",
+          "requestId": "b571d445-ee07-4211-ba1e-5c579ca76f7d",
           "outcome": "direct",
           "rowVersion": 2
         }
@@ -90,9 +90,9 @@
       "evidence": {
         "status": 200,
         "replay": {
-          "taskId": "0450de9d-074a-4999-97e1-c2ce0f5cac20",
+          "taskId": "5591726f-b603-46e7-b91c-4422badef208",
           "outcome": "direct",
-          "requestId": "7f2b5d1f-0676-4795-83eb-39427a72cc7c",
+          "requestId": "8f7f6298-ef6e-4f32-bbd0-bf49cd2089a4",
           "rowVersion": 4
         },
         "version": 4

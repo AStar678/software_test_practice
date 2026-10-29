@@ -1,0 +1,552 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29T09:53:50.169+08:00  INFO 12450 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 12450 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-10-29T09:53:50.170+08:00  INFO 12450 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-10-29T09:53:50.547+08:00  INFO 12450 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18194 (http)
+2026-10-29T09:53:50.552+08:00  INFO 12450 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-29T09:53:50.552+08:00  INFO 12450 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-10-29T09:53:50.560+08:00  INFO 12450 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-10-29T09:53:50.560+08:00  INFO 12450 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 374 ms
+2026-10-29T09:53:50.628+08:00  INFO 12450 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-29T09:53:50.688+08:00  INFO 12450 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@261b9a37
+2026-10-29T09:53:50.689+08:00  INFO 12450 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-29T09:53:50.703+08:00  INFO 12450 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_demo_17ce97eb02b5?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+2026-10-29T09:53:50.870+08:00  WARN 12450 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-10-29T09:53:50.888+08:00  INFO 12450 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 26 migrations (execution time 00:00.014s)
+2026-10-29T09:53:50.893+08:00  INFO 12450 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_precheck_demo_17ce97eb02b5`: 26
+2026-10-29T09:53:50.894+08:00  INFO 12450 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_precheck_demo_17ce97eb02b5` is up to date. No migration necessary.
+2026-10-29T09:53:51.226+08:00  INFO 12450 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-10-29T09:53:51.317+08:00  INFO 12450 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18194 (http) with context path '/'
+2026-10-29T09:53:51.324+08:00  INFO 12450 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.303 seconds (process running for 1.45)
+2026-10-29T09:53:51.330+08:00  INFO 12450 --- [pandora-backend] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-10-29T09:53:51.336+08:00 ERROR 12450 --- [pandora-backend] [           main] o.s.boot.SpringApplication               : Application run failed
+
+java.lang.IllegalStateException: Demo preparation requires an explicit matching database and demo marker
+	at cn.pandora.seed.DemoSeed.lambda$run$0(DemoSeed.java:57) ~[!/:0.1.0]
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at cn.pandora.seed.DemoSeed.run(DemoSeed.java:54) ~[!/:0.1.0]
+	at org.springframework.boot.SpringApplication.lambda$callRunner$4(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:82) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:86) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:796) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184) ~[na:na]
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596) ~[na:na]
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:325) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at cn.pandora.PandoraApplication.main(PandoraApplication.java:10) ~[!/:0.1.0]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:106) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40) ~[pandora-backend-0.1.0.jar:0.1.0]
+
+2026-10-29T09:53:51.338+08:00  INFO 12450 --- [pandora-backend] [           main] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-29T09:53:51.339+08:00  INFO 12450 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-10-29T09:53:51.341+08:00  INFO 12450 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-29T09:53:51.343+08:00  INFO 12450 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29T09:53:51.797+08:00  INFO 12473 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 12473 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-10-29T09:53:51.799+08:00  INFO 12473 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-10-29T09:53:52.180+08:00  INFO 12473 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18194 (http)
+2026-10-29T09:53:52.185+08:00  INFO 12473 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-29T09:53:52.185+08:00  INFO 12473 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-10-29T09:53:52.193+08:00  INFO 12473 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-10-29T09:53:52.193+08:00  INFO 12473 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 378 ms
+2026-10-29T09:53:52.257+08:00  INFO 12473 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-29T09:53:52.323+08:00  INFO 12473 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4a70d302
+2026-10-29T09:53:52.324+08:00  INFO 12473 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-29T09:53:52.339+08:00  INFO 12473 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_demo_17ce97eb02b5?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+2026-10-29T09:53:52.505+08:00  WARN 12473 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-10-29T09:53:52.524+08:00  INFO 12473 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 26 migrations (execution time 00:00.014s)
+2026-10-29T09:53:52.528+08:00  INFO 12473 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_precheck_demo_17ce97eb02b5`: 26
+2026-10-29T09:53:52.529+08:00  INFO 12473 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_precheck_demo_17ce97eb02b5` is up to date. No migration necessary.
+2026-10-29T09:53:52.859+08:00  INFO 12473 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-10-29T09:53:52.947+08:00  INFO 12473 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18194 (http) with context path '/'
+2026-10-29T09:53:52.954+08:00  INFO 12473 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.3 seconds (process running for 1.446)
+2026-10-29T09:53:52.963+08:00  INFO 12473 --- [pandora-backend] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-10-29T09:53:52.971+08:00 ERROR 12473 --- [pandora-backend] [           main] o.s.boot.SpringApplication               : Application run failed
+
+java.lang.IllegalStateException: Demo preparation requires an explicit matching database and demo marker
+	at cn.pandora.seed.DemoSeed.lambda$run$0(DemoSeed.java:57) ~[!/:0.1.0]
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at cn.pandora.seed.DemoSeed.run(DemoSeed.java:54) ~[!/:0.1.0]
+	at org.springframework.boot.SpringApplication.lambda$callRunner$4(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:82) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:86) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:796) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184) ~[na:na]
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596) ~[na:na]
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:325) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at cn.pandora.PandoraApplication.main(PandoraApplication.java:10) ~[!/:0.1.0]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:106) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40) ~[pandora-backend-0.1.0.jar:0.1.0]
+
+2026-10-29T09:53:52.974+08:00  INFO 12473 --- [pandora-backend] [           main] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-29T09:53:52.975+08:00  INFO 12473 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-10-29T09:53:52.978+08:00  INFO 12473 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-29T09:53:52.981+08:00  INFO 12473 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29T09:59:20.217+08:00  INFO 13359 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 13359 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-10-29T09:59:20.217+08:00  INFO 13359 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-10-29T09:59:20.598+08:00  INFO 13359 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18194 (http)
+2026-10-29T09:59:20.603+08:00  INFO 13359 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-29T09:59:20.603+08:00  INFO 13359 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-10-29T09:59:20.612+08:00  INFO 13359 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-10-29T09:59:20.612+08:00  INFO 13359 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 377 ms
+2026-10-29T09:59:20.677+08:00  INFO 13359 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-29T09:59:20.741+08:00  INFO 13359 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@261b9a37
+2026-10-29T09:59:20.741+08:00  INFO 13359 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-29T09:59:20.756+08:00  INFO 13359 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_demo_95c5dda45a6b?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+2026-10-29T09:59:20.930+08:00  WARN 13359 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-10-29T09:59:20.949+08:00  INFO 13359 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 26 migrations (execution time 00:00.015s)
+2026-10-29T09:59:20.953+08:00  INFO 13359 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_precheck_demo_95c5dda45a6b`: 26
+2026-10-29T09:59:20.955+08:00  INFO 13359 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_precheck_demo_95c5dda45a6b` is up to date. No migration necessary.
+2026-10-29T09:59:21.278+08:00  INFO 13359 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-10-29T09:59:21.364+08:00  INFO 13359 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18194 (http) with context path '/'
+2026-10-29T09:59:21.370+08:00  INFO 13359 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.298 seconds (process running for 1.445)
+2026-10-29T09:59:21.375+08:00  INFO 13359 --- [pandora-backend] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-10-29T09:59:21.379+08:00 ERROR 13359 --- [pandora-backend] [           main] o.s.boot.SpringApplication               : Application run failed
+
+java.lang.IllegalStateException: Demo preparation requires an explicit matching database and demo marker
+	at cn.pandora.seed.DemoSeed.lambda$run$0(DemoSeed.java:57) ~[!/:0.1.0]
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at cn.pandora.seed.DemoSeed.run(DemoSeed.java:54) ~[!/:0.1.0]
+	at org.springframework.boot.SpringApplication.lambda$callRunner$4(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:82) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:86) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:796) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184) ~[na:na]
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596) ~[na:na]
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:325) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at cn.pandora.PandoraApplication.main(PandoraApplication.java:10) ~[!/:0.1.0]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:106) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40) ~[pandora-backend-0.1.0.jar:0.1.0]
+
+2026-10-29T09:59:21.380+08:00  INFO 13359 --- [pandora-backend] [           main] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-29T09:59:21.381+08:00  INFO 13359 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-10-29T09:59:21.383+08:00  INFO 13359 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-29T09:59:21.385+08:00  INFO 13359 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29T09:59:21.838+08:00  INFO 13382 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 13382 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-10-29T09:59:21.839+08:00  INFO 13382 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-10-29T09:59:22.218+08:00  INFO 13382 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18194 (http)
+2026-10-29T09:59:22.224+08:00  INFO 13382 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-29T09:59:22.224+08:00  INFO 13382 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-10-29T09:59:22.232+08:00  INFO 13382 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-10-29T09:59:22.232+08:00  INFO 13382 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 376 ms
+2026-10-29T09:59:22.296+08:00  INFO 13382 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-29T09:59:22.361+08:00  INFO 13382 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@261b9a37
+2026-10-29T09:59:22.361+08:00  INFO 13382 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-29T09:59:22.375+08:00  INFO 13382 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_demo_95c5dda45a6b?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+2026-10-29T09:59:22.545+08:00  WARN 13382 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-10-29T09:59:22.562+08:00  INFO 13382 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 26 migrations (execution time 00:00.013s)
+2026-10-29T09:59:22.567+08:00  INFO 13382 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_precheck_demo_95c5dda45a6b`: 26
+2026-10-29T09:59:22.568+08:00  INFO 13382 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_precheck_demo_95c5dda45a6b` is up to date. No migration necessary.
+2026-10-29T09:59:22.896+08:00  INFO 13382 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-10-29T09:59:22.983+08:00  INFO 13382 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18194 (http) with context path '/'
+2026-10-29T09:59:22.990+08:00  INFO 13382 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.301 seconds (process running for 1.445)
+2026-10-29T09:59:22.995+08:00  INFO 13382 --- [pandora-backend] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-10-29T09:59:22.998+08:00 ERROR 13382 --- [pandora-backend] [           main] o.s.boot.SpringApplication               : Application run failed
+
+java.lang.IllegalStateException: Demo preparation requires an explicit matching database and demo marker
+	at cn.pandora.seed.DemoSeed.lambda$run$0(DemoSeed.java:57) ~[!/:0.1.0]
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at cn.pandora.seed.DemoSeed.run(DemoSeed.java:54) ~[!/:0.1.0]
+	at org.springframework.boot.SpringApplication.lambda$callRunner$4(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:82) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:86) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:796) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184) ~[na:na]
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596) ~[na:na]
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:325) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at cn.pandora.PandoraApplication.main(PandoraApplication.java:10) ~[!/:0.1.0]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:106) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40) ~[pandora-backend-0.1.0.jar:0.1.0]
+
+2026-10-29T09:59:23.000+08:00  INFO 13382 --- [pandora-backend] [           main] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-29T09:59:23.001+08:00  INFO 13382 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-10-29T09:59:23.002+08:00  INFO 13382 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-29T09:59:23.004+08:00  INFO 13382 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29T10:10:40.098+08:00  INFO 16816 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 16816 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-10-29T10:10:40.099+08:00  INFO 16816 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-10-29T10:10:40.444+08:00  INFO 16816 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18194 (http)
+2026-10-29T10:10:40.449+08:00  INFO 16816 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-29T10:10:40.449+08:00  INFO 16816 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-10-29T10:10:40.457+08:00  INFO 16816 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-10-29T10:10:40.457+08:00  INFO 16816 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 345 ms
+2026-10-29T10:10:40.520+08:00  INFO 16816 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-29T10:10:40.582+08:00  INFO 16816 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@261b9a37
+2026-10-29T10:10:40.583+08:00  INFO 16816 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-29T10:10:40.597+08:00  INFO 16816 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_demo_94c2aa8dbf19?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+2026-10-29T10:10:40.776+08:00  WARN 16816 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-10-29T10:10:40.793+08:00  INFO 16816 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 26 migrations (execution time 00:00.013s)
+2026-10-29T10:10:40.798+08:00  INFO 16816 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_precheck_demo_94c2aa8dbf19`: 26
+2026-10-29T10:10:40.799+08:00  INFO 16816 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_precheck_demo_94c2aa8dbf19` is up to date. No migration necessary.
+2026-10-29T10:10:41.122+08:00  INFO 16816 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-10-29T10:10:41.203+08:00  INFO 16816 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18194 (http) with context path '/'
+2026-10-29T10:10:41.209+08:00  INFO 16816 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.241 seconds (process running for 1.389)
+2026-10-29T10:10:41.214+08:00  INFO 16816 --- [pandora-backend] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-10-29T10:10:41.218+08:00 ERROR 16816 --- [pandora-backend] [           main] o.s.boot.SpringApplication               : Application run failed
+
+java.lang.IllegalStateException: Demo preparation requires an explicit matching database and demo marker
+	at cn.pandora.seed.DemoSeed.lambda$run$0(DemoSeed.java:57) ~[!/:0.1.0]
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at cn.pandora.seed.DemoSeed.run(DemoSeed.java:54) ~[!/:0.1.0]
+	at org.springframework.boot.SpringApplication.lambda$callRunner$4(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:82) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:86) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:796) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184) ~[na:na]
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596) ~[na:na]
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:325) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at cn.pandora.PandoraApplication.main(PandoraApplication.java:10) ~[!/:0.1.0]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:106) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40) ~[pandora-backend-0.1.0.jar:0.1.0]
+
+2026-10-29T10:10:41.220+08:00  INFO 16816 --- [pandora-backend] [           main] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-29T10:10:41.221+08:00  INFO 16816 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-10-29T10:10:41.223+08:00  INFO 16816 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-29T10:10:41.225+08:00  INFO 16816 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29T10:10:41.614+08:00  INFO 16825 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 16825 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-10-29T10:10:41.615+08:00  INFO 16825 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-10-29T10:10:41.939+08:00  INFO 16825 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18194 (http)
+2026-10-29T10:10:41.945+08:00  INFO 16825 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-29T10:10:41.945+08:00  INFO 16825 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-10-29T10:10:41.952+08:00  INFO 16825 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-10-29T10:10:41.952+08:00  INFO 16825 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 325 ms
+2026-10-29T10:10:42.012+08:00  INFO 16825 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-29T10:10:42.071+08:00  INFO 16825 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@261b9a37
+2026-10-29T10:10:42.072+08:00  INFO 16825 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-29T10:10:42.085+08:00  INFO 16825 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_demo_94c2aa8dbf19?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+2026-10-29T10:10:42.262+08:00  WARN 16825 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-10-29T10:10:42.279+08:00  INFO 16825 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 26 migrations (execution time 00:00.013s)
+2026-10-29T10:10:42.283+08:00  INFO 16825 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_precheck_demo_94c2aa8dbf19`: 26
+2026-10-29T10:10:42.285+08:00  INFO 16825 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_precheck_demo_94c2aa8dbf19` is up to date. No migration necessary.
+2026-10-29T10:10:42.610+08:00  INFO 16825 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-10-29T10:10:42.687+08:00  INFO 16825 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18194 (http) with context path '/'
+2026-10-29T10:10:42.693+08:00  INFO 16825 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.209 seconds (process running for 1.356)
+2026-10-29T10:10:42.697+08:00  INFO 16825 --- [pandora-backend] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-10-29T10:10:42.702+08:00 ERROR 16825 --- [pandora-backend] [           main] o.s.boot.SpringApplication               : Application run failed
+
+java.lang.IllegalStateException: Demo preparation requires an explicit matching database and demo marker
+	at cn.pandora.seed.DemoSeed.lambda$run$0(DemoSeed.java:57) ~[!/:0.1.0]
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at cn.pandora.seed.DemoSeed.run(DemoSeed.java:54) ~[!/:0.1.0]
+	at org.springframework.boot.SpringApplication.lambda$callRunner$4(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:82) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:86) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:796) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184) ~[na:na]
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596) ~[na:na]
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:325) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at cn.pandora.PandoraApplication.main(PandoraApplication.java:10) ~[!/:0.1.0]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:106) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40) ~[pandora-backend-0.1.0.jar:0.1.0]
+
+2026-10-29T10:10:42.704+08:00  INFO 16825 --- [pandora-backend] [           main] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-29T10:10:42.705+08:00  INFO 16825 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-10-29T10:10:42.706+08:00  INFO 16825 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-29T10:10:42.708+08:00  INFO 16825 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29T10:19:19.201+08:00  INFO 19299 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 19299 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-10-29T10:19:19.203+08:00  INFO 19299 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-10-29T10:19:19.577+08:00  INFO 19299 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18194 (http)
+2026-10-29T10:19:19.582+08:00  INFO 19299 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-29T10:19:19.582+08:00  INFO 19299 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-10-29T10:19:19.590+08:00  INFO 19299 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-10-29T10:19:19.590+08:00  INFO 19299 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 372 ms
+2026-10-29T10:19:19.659+08:00  INFO 19299 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-29T10:19:19.724+08:00  INFO 19299 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@622d7e4
+2026-10-29T10:19:19.725+08:00  INFO 19299 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-29T10:19:19.738+08:00  INFO 19299 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_demo_e4226050acb8?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+2026-10-29T10:19:19.912+08:00  WARN 19299 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-10-29T10:19:19.929+08:00  INFO 19299 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 26 migrations (execution time 00:00.013s)
+2026-10-29T10:19:19.933+08:00  INFO 19299 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_precheck_demo_e4226050acb8`: 26
+2026-10-29T10:19:19.934+08:00  INFO 19299 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_precheck_demo_e4226050acb8` is up to date. No migration necessary.
+2026-10-29T10:19:20.260+08:00  INFO 19299 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-10-29T10:19:20.347+08:00  INFO 19299 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18194 (http) with context path '/'
+2026-10-29T10:19:20.353+08:00  INFO 19299 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.294 seconds (process running for 1.44)
+2026-10-29T10:19:20.359+08:00  INFO 19299 --- [pandora-backend] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-10-29T10:19:20.363+08:00 ERROR 19299 --- [pandora-backend] [           main] o.s.boot.SpringApplication               : Application run failed
+
+java.lang.IllegalStateException: Demo preparation requires an explicit matching database and demo marker
+	at cn.pandora.seed.DemoSeed.lambda$run$0(DemoSeed.java:57) ~[!/:0.1.0]
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at cn.pandora.seed.DemoSeed.run(DemoSeed.java:54) ~[!/:0.1.0]
+	at org.springframework.boot.SpringApplication.lambda$callRunner$4(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:82) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:86) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:796) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184) ~[na:na]
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596) ~[na:na]
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:325) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at cn.pandora.PandoraApplication.main(PandoraApplication.java:10) ~[!/:0.1.0]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:106) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40) ~[pandora-backend-0.1.0.jar:0.1.0]
+
+2026-10-29T10:19:20.365+08:00  INFO 19299 --- [pandora-backend] [           main] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-29T10:19:20.366+08:00  INFO 19299 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-10-29T10:19:20.368+08:00  INFO 19299 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-29T10:19:20.370+08:00  INFO 19299 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29T10:19:20.811+08:00  INFO 19308 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 19308 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-10-29T10:19:20.812+08:00  INFO 19308 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-10-29T10:19:21.187+08:00  INFO 19308 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18194 (http)
+2026-10-29T10:19:21.192+08:00  INFO 19308 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-29T10:19:21.192+08:00  INFO 19308 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-10-29T10:19:21.200+08:00  INFO 19308 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-10-29T10:19:21.200+08:00  INFO 19308 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 374 ms
+2026-10-29T10:19:21.264+08:00  INFO 19308 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-29T10:19:21.327+08:00  INFO 19308 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4a70d302
+2026-10-29T10:19:21.328+08:00  INFO 19308 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-29T10:19:21.341+08:00  INFO 19308 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_demo_e4226050acb8?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+2026-10-29T10:19:21.519+08:00  WARN 19308 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-10-29T10:19:21.538+08:00  INFO 19308 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 26 migrations (execution time 00:00.014s)
+2026-10-29T10:19:21.542+08:00  INFO 19308 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_precheck_demo_e4226050acb8`: 26
+2026-10-29T10:19:21.543+08:00  INFO 19308 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_precheck_demo_e4226050acb8` is up to date. No migration necessary.
+2026-10-29T10:19:21.873+08:00  INFO 19308 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-10-29T10:19:21.962+08:00  INFO 19308 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18194 (http) with context path '/'
+2026-10-29T10:19:21.969+08:00  INFO 19308 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.304 seconds (process running for 1.451)
+2026-10-29T10:19:21.975+08:00  INFO 19308 --- [pandora-backend] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-10-29T10:19:21.978+08:00 ERROR 19308 --- [pandora-backend] [           main] o.s.boot.SpringApplication               : Application run failed
+
+java.lang.IllegalStateException: Demo preparation requires an explicit matching database and demo marker
+	at cn.pandora.seed.DemoSeed.lambda$run$0(DemoSeed.java:57) ~[!/:0.1.0]
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67) ~[spring-tx-6.2.19.jar!/:6.2.19]
+	at cn.pandora.seed.DemoSeed.run(DemoSeed.java:54) ~[!/:0.1.0]
+	at org.springframework.boot.SpringApplication.lambda$callRunner$4(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:82) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:86) ~[spring-core-6.2.19.jar!/:6.2.19]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:796) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:784) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184) ~[na:na]
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596) ~[na:na]
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:772) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:325) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.5.16.jar!/:3.5.16]
+	at cn.pandora.PandoraApplication.main(PandoraApplication.java:10) ~[!/:0.1.0]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:106) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64) ~[pandora-backend-0.1.0.jar:0.1.0]
+	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40) ~[pandora-backend-0.1.0.jar:0.1.0]
+
+2026-10-29T10:19:21.980+08:00  INFO 19308 --- [pandora-backend] [           main] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-29T10:19:21.981+08:00  INFO 19308 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-10-29T10:19:21.983+08:00  INFO 19308 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-10-29T10:19:21.985+08:00  INFO 19308 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

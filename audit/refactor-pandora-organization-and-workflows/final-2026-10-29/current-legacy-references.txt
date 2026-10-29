@@ -1,0 +1,40 @@
+admin.html:107:      <input id="accountName" placeholder="管理员账号" autocomplete="username">
+admin.html:153:      <div class="grid2"><div><label for="adminAccountName">账号名</label><input id="adminAccountName" autocomplete="username"></div>
+backend/scripts/check_profile_phone_matrix.py:27:                      (status==200 and result.get('phone')==old_phone and 'email' not in result and 'username' not in result) if allowed else status in (403,404))
+backend/scripts/check_profile_phone_matrix.py:31:                check(path+' summary has no contact, credential or username fields',status==200 and not any(field in json.dumps(result) for field in ('"phone"','"loginPhone"','"email"','"username"','"passwordHash"')))
+backend/src/test/java/cn/pandora/task/TaskParticipantSummaryTest.java:28:            return List.of(Map.of("id", "employee", "displayName", "员工", "username", "private", "managerId", "reviewer"));
+backend/scripts/migration_precheck.py:515:        'SELECT id,role,active,manager_id FROM users ORDER BY id')
+backend/scripts/migration_precheck.py:594:        'phase': 'v25+' if principals and not has_column(client, 'users', 'username') else ('v22+' if placements and principals else ('v21' if placements else 'v20')),
+backend/scripts/migration_precheck.py:619:    manager = 'u.manager_id' if has_column(client, 'users', 'manager_id') else 'NULL'
+backend/scripts/migration_precheck.py:628:            'SELECT u.id,u.active,u.org_version,u.phone,' + phone + ',u.manager_id,u.created_at,'
+backend/scripts/migration_precheck.py:670:        'SELECT id,username,active FROM users '
+backend/scripts/check_fixed_organization_migration.py:58:            db.server_side("INSERT INTO users(id,organization_id,username,password_hash,display_name,role,rank_level,department_id,position_id) "
+backend/scripts/check_fixed_organization_migration.py:60:        db.server_side("INSERT INTO users(id,organization_id,username,password_hash,display_name,role,rank_level,department_id,position_id) "
+backend/scripts/check_fixed_organization_migration.py:92:        db.server_side("INSERT INTO users(id,organization_id,username,password_hash,display_name,role,rank_level) "
+backend/src/test/java/cn/pandora/profile/ProfileServiceTest.java:26:        for (String field : List.of("displayName", "phone", "id", "userId", "organizationId", "role", "teamId", "managerId", "username", "password", "profileVersion", "rowVersion")) {
+backend/scripts/check_final_migration.py:39:        db.server_side("INSERT INTO users(id,organization_id,username,password_hash,display_name,role,rank_level,phone,login_phone) VALUES('employee','o','legacy-private-name','unchanged-hash','Person','lower',3,'13977770001','13977770001'),('admin','o','upgrade-admin','unchanged-admin-hash','Admin','admin',0,NULL,NULL)")
+backend/scripts/check_final_migration.py:76:        check('final employee schema has no username, role, rank or editable organization chain',not columns.intersection(('username','role','rank_level','manager_id','department_id','team_id','position_id')))
+backend/scripts/check_final_migration.py:77:        check('final schema removes old role grants and username mappings',not {row[0] for row in upgrade.rows('SHOW TABLES')}.intersection(('roles','role_scopes','role_capabilities','user_role_grants','organization_mapping_config')))
+backend/scripts/check_final_migration.py:85:        check('blocked cleanup retains old administrator identity and real business source for repair',conflict.rows("SELECT username FROM users WHERE id='admin'")==[['upgrade-admin']] and conflict.rows("SELECT body FROM work_logs WHERE id='admin-business'")==[['must retain']])
+backend/scripts/check_final_demo.py:64:                check(key+' authenticates through its real declared account namespace after restart',status==200 and session['user']['id']==identity['id'] and 'username' not in session['user'])
+backend/scripts/check_final_demo.py:71:            check('company employee directory excludes admin and all contacts',status==200 and ids['admin'] not in json.dumps(directory) and not any(field in json.dumps(directory) for field in ('"phone"','"email"','"username"')))
+backend/src/test/java/cn/pandora/auth/AuthServiceLoginTest.java:98:                Map.of("username",PHONE,"password",PASSWORD),
+backend/src/test/java/cn/pandora/auth/AuthServiceLoginTest.java:100:                Map.of("accountType","employee","username",PHONE,"password",PASSWORD),
+backend/src/test/java/cn/pandora/workspace/ProfilePrivacyAndCompanyTest.java:68:            assertFalse(person.containsKey("username"));
+backend/scripts/check_legacy_mapping.py:50:def insert_user(db: Mysql, organization_id: str, user_id: str, username: str, display_name: str,
+backend/scripts/check_legacy_mapping.py:52:                team_id: str | None, position_id: str | None, manager_id: str | None,
+backend/scripts/check_legacy_mapping.py:56:        'INSERT INTO users(id,organization_id,username,password_hash,display_name,role,rank_level,'
+backend/scripts/check_legacy_mapping.py:57:        'active,department_id,team_id,position_id,manager_id,phone,login_phone) VALUES ('
+backend/scripts/check_legacy_mapping.py:58:        f'{quote(user_id)},{quote(organization_id)},{quote(username)},'
+backend/scripts/check_legacy_mapping.py:60:        f'{quote(department_id)},{quote(team_id)},{quote(position_id)},{quote(manager_id)},'
+backend/scripts/check_legacy_mapping.py:163:        'UPDATE users SET department_id=NULL,team_id=NULL,manager_id=NULL,position_id=NULL '
+backend/scripts/check_admin_contract.py:184:    retired = ('roles', 'role_capabilities', 'role_scopes', 'user_role_grants')
+backend/scripts/check_admin_contract.py:193:    status, body = raw('POST', '/admin/employees/' + ids['beta-one-head'] + '/roles', {'roleCodes': ['executive']}, 'admin')
+backend/scripts/check_auto_apply_authorization.py:4:The former V-008 script depended on editable role scopes and username logins, both retired by the
+backend/scripts/check_fixed_workspace_access.py:42:                check(key+' log author directory contains no private fields or username',not any(field in json.dumps(result) for field in ('"phone"','"email"','"username"','"passwordHash"')))
+backend/scripts/check_fixed_workspace_access.py:46:                check(key+' self profile derives fixed identity and retains only own contacts',status==200 and result.get('phone')==f.identities[key]['identifier'] and result.get('email')==key+'@private.example.test' and result.get('canManageTeam') is False and 'username' not in result)
+backend/scripts/check_fixed_workspace_access.py:60:            check('employee directory excludes independent administrators and contacts',status==200 and len(directory['items'])==len(employees) and not any(field in json.dumps(directory) for field in ('"phone"','"email"','"username"')))
+backend/scripts/check_login_identity_collision.py:33:            check('employee session carries fixed position and no employee username',employee_session['user']['role']=='employee' and 'username' not in employee_session['user'])
+backend/scripts/check_login_identity_collision.py:42:            for invalid in ({'username':employee['identifier'],'password':PASSWORD},
+backend/scripts/check_login_identity_collision.py:44:                            {'accountType':'employee','username':employee['identifier'],'password':PASSWORD},
+backend/scripts/check_login_identity_collision.py:93:            check('self profile shows fixed position and contact only through its authorized endpoint',status==200 and profile.get('role')=='employee' and 'username' not in profile,{'status':status})

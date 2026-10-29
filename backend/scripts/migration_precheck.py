@@ -105,6 +105,8 @@ FINGERPRINT_TABLES = (
     'task_version_assignees', 'approval_requests', 'task_records',
     'work_logs', 'home_items', 'domain_events', 'notifications',
     'audit_logs', 'idempotency_keys', 'ai_jobs', 'reminder_receipts',
+    'principals', 'admin_accounts', 'departments', 'positions', 'employee_placements',
+    'task_business_owners', 'task_business_transfers', 'demo_database_identity', 'demo_seed_keys',
     'flyway_schema_history',
 )
 
@@ -472,15 +474,15 @@ def check_login_identity(client: Mysql) -> dict:
     """Employee login keys: missing numbers and normalized collisions block phone login."""
     if not has_column(client, 'users', 'phone'):
         rows = client.rows(
-            'SELECT id,organization_id,role,active,NULL AS phone,username FROM users ORDER BY organization_id,id')
+            'SELECT id,organization_id,role,active,NULL AS phone FROM users ORDER BY organization_id,id')
     else:
         rows = client.rows(
-            'SELECT id,organization_id,role,active,phone,username FROM users ORDER BY organization_id,id')
+            'SELECT id,organization_id,role,active,phone FROM users ORDER BY organization_id,id')
     employees = [row for row in rows
                  if cell(row[2]) != 'admin' and str(cell(row[3])) in ('1', 'true', 'True')]
     missing, invalid = [], []
     groups: dict[str, list[str]] = {}
-    for user_id, organization_id, _role, _active, phone, _username in employees:
+    for user_id, organization_id, _role, _active, phone in employees:
         phone = cell(phone)
         key = normalize_phone(phone)
         if key is None:
@@ -499,11 +501,11 @@ def check_login_identity(client: Mysql) -> dict:
         'distinctLoginKeys': len(groups),
         'duplicateGroups': len(duplicates),
         'duplicates': duplicates,
-        'administratorsKeepUsernameLogin': sum(1 for row in rows if cell(row[2]) == 'admin'),
+        'legacyAdministratorRows': sum(1 for row in rows if cell(row[2]) == 'admin'),
         'note': ('The employee login key is the normalized contact number. A missing or colliding '
                  'number is a blocker: the migration never generates a number, creates another '
                  'account, or lets an ambiguous key authenticate. The administrator keeps its '
-                 'original username login and has no employee key.'),
+                 'independent account namespace after extraction and has no employee key.'),
     }
 
 
@@ -589,7 +591,7 @@ def mapping_schema(client: Mysql) -> dict:
     placements = has_table(client, 'employee_placements')
     principals = has_table(client, 'principals')
     return {
-        'phase': 'v22+' if placements and principals else ('v21' if placements else 'v20'),
+        'phase': 'v25+' if principals and not has_column(client, 'users', 'username') else ('v22+' if placements and principals else ('v21' if placements else 'v20')),
         'hasPlacements': placements,
         'hasFounderColumn': has_column(client, 'organizations', 'founder_employee_id'),
         'hasPrincipals': principals,
@@ -614,9 +616,10 @@ def _sql_text(value: str) -> str:
 
 def _read_employees(client: Mysql, organization_id: str, schema: dict) -> list[dict]:
     phone = 'u.login_phone' if schema['hasLoginPhone'] else 'NULL'
+    manager = 'u.manager_id' if has_column(client, 'users', 'manager_id') else 'NULL'
     if schema['hasPrincipals']:
         rows = client.rows(
-            'SELECT u.id,u.active,u.org_version,u.phone,' + phone + ',u.manager_id,u.created_at,'
+            'SELECT u.id,u.active,u.org_version,u.phone,' + phone + ',' + manager + ',u.created_at,'
             'p.account_type,p.active FROM users u JOIN principals p '
             'ON p.organization_id=u.organization_id AND p.id=u.id '
             f"WHERE u.organization_id={_sql_text(organization_id)} ORDER BY u.id")
@@ -1454,6 +1457,30 @@ def render_mapping(report: dict) -> str:
     return '\n'.join(lines)
 
 
+def fixed_precheck(client: Mysql) -> dict:
+    """Validate the stored fixed model, with no legacy-root or all-staff department assumption."""
+    schema=mapping_schema(client)
+    companies=[]
+    for org,founder in client.rows('SELECT id,founder_employee_id FROM organizations ORDER BY id'):
+        employees=_read_employees(client,org,schema)
+        admins=_read_admins(client,org,schema)
+        placements=[{'employeeId':row[0],'placementType':row[1],'departmentId':cell(row[2]),
+                     'teamId':cell(row[3]),'positionId':row[4]} for row in client.rows(
+            'SELECT employee_id,placement_type,department_id,team_id,position_id FROM employee_placements WHERE organization_id='+_sql_text(org))]
+        companies.append({'organizationId':org,'founderEmployeeId':cell(founder),
+            'employees':[{'employeeId':person['id'],'phone':person['loginPhone'] or person['phone']} for person in employees if person['active'] and person['accountType']=='employee'],
+            'departments':[row[0] for row in client.rows('SELECT id FROM departments WHERE organization_id='+_sql_text(org))],
+            'teams':[{'id':row[0],'departmentId':cell(row[1])} for row in client.rows('SELECT id,department_id FROM teams WHERE organization_id='+_sql_text(org))],
+            'placements':placements,
+            'administrator':{'adminId':admins[0]['id'],'accountName':admins[0]['accountName']} if len(admins)==1 else {'repair':'Explicit independent administrator required'}})
+    report=mapping_report(client,{'companies':companies})
+    report['fixedModel']=True
+    report['checks']={'workLogs':check_work_logs(client),'requestRoutes':check_request_routes(client),
+                      'acceptanceCriteria':check_acceptance_criteria(client)}
+    report['limitations']=[]
+    return report
+
+
 def precheck(client: Mysql) -> dict:
     present = tables(client)
     report = {
@@ -1464,6 +1491,8 @@ def precheck(client: Mysql) -> dict:
         'blockers': [],
         'limitations': [],
     }
+    if 'users' in present and 'principals' in present:
+        return fixed_precheck(client)
     if 'users' not in present:
         report['blockers'].append('users table missing: the database is not a Pandora V4 schema')
         return report
@@ -1540,6 +1569,8 @@ def precheck(client: Mysql) -> dict:
 
 
 def render(report: dict) -> str:
+    if report.get('fixedModel'):
+        return render_mapping(report)
     lines = [f"# Migration precheck: {report['database']}",
              '',
              f"- Generated: {report.get('generatedAt', 'n/a')}",

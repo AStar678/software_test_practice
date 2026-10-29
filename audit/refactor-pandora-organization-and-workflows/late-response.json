@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T14:04:16.583Z",
+  "updated": "2026-10-29T02:14:59.020Z",
   "checks": [
     {
       "check": "first employee session becomes ready",
@@ -23,13 +23,13 @@
       "evidence": {
         "before": {
           "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
-          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "token": "GNnao5OEsnpAkyLzie9E1mKwsoOrt4ByROEI7Qa_CSg",
           "tasks": 0,
           "epoch": 3
         },
         "after": {
           "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
-          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "token": "GNnao5OEsnpAkyLzie9E1mKwsoOrt4ByROEI7Qa_CSg",
           "tasks": 0,
           "epoch": 3,
           "idle": true
@@ -42,13 +42,13 @@
       "evidence": {
         "before": {
           "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
-          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "token": "GNnao5OEsnpAkyLzie9E1mKwsoOrt4ByROEI7Qa_CSg",
           "tasks": 0,
           "epoch": 3
         },
         "after": {
           "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
-          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "token": "GNnao5OEsnpAkyLzie9E1mKwsoOrt4ByROEI7Qa_CSg",
           "tasks": 0,
           "epoch": 3,
           "idle": true
@@ -61,13 +61,13 @@
       "evidence": {
         "before": {
           "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
-          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "token": "GNnao5OEsnpAkyLzie9E1mKwsoOrt4ByROEI7Qa_CSg",
           "tasks": 0,
           "epoch": 3
         },
         "after": {
           "me": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
-          "token": "_Rj9XZRXabq0iTix9KZUTdaqIH7P8JAGCvl1eS-TopE",
+          "token": "GNnao5OEsnpAkyLzie9E1mKwsoOrt4ByROEI7Qa_CSg",
           "tasks": 0,
           "epoch": 3,
           "idle": true

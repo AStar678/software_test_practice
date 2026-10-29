@@ -114,13 +114,8 @@ class Fixture:
                 employee_id=str(uuid.uuid5(uuid.NAMESPACE_URL,'pandora.fixture/'+org+'/'+key))
                 phone=str(base_phone+index)
                 self.db.server_side('INSERT INTO principals(id,organization_id,account_type) VALUES('+quote(employee_id)+','+quote(org)+",'employee')")
-                # Transitional V20 columns are populated only while they exist. Final cleanup removes
-                # these fields; this fixture uses stable IDs, never a generated public login name.
                 columns=['id','organization_id','password_hash','display_name','phone','login_phone']
                 vals=[employee_id,org,encoded,key,phone,phone]
-                legacy={r[0] for r in self.db.rows("SELECT column_name FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='users'")}
-                for column,value in (('username',employee_id),('role','lower'),('rank_level','4')):
-                    if column in legacy: columns.append(column);vals.append(value)
                 self.db.server_side('INSERT INTO users('+','.join(columns)+') VALUES('+','.join(map(quote,vals))+')')
                 self.db.server_side('INSERT INTO employee_placements(organization_id,employee_id,placement_type,department_id,team_id,position_id) VALUES('
                                    +','.join(map(quote,(org,employee_id,kind,dep,team,org+'-title')))+')')

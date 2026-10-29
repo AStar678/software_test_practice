@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T14:08:16.336926+00:00",
+  "updated": "2026-10-29T02:11:52.260107+00:00",
   "task": "6.3 admin console and notification contract",
   "checks": [
     {
@@ -25,11 +25,15 @@
       }
     },
     {
-      "check": "legacy company-wide authorization rows exist in the fixture",
+      "check": "retired authorization tables are absent from the final schema",
       "pass": true,
       "evidence": {
-        "grants": 1,
-        "companyScopes": 4
+        "absent": [
+          "roles",
+          "role_capabilities",
+          "role_scopes",
+          "user_role_grants"
+        ]
       }
     },
     {
@@ -123,16 +127,16 @@
       "pass": true,
       "evidence": {
         "pass": {
-          "eventId": "7c549f08-6ef7-428f-918f-bd7259fddbfa",
-          "taskId": "35baca4b-ae5f-41b2-bba7-493ec8ccc8a2"
+          "eventId": "92ea1a6b-efcf-4d21-bf31-4601c4f1c8d6",
+          "taskId": "27c9c754-7312-40ff-bdd6-7c20c03be8ae"
         },
         "closed": {
-          "eventId": "c83c6190-d5c0-408f-86b2-dbc4562e6295",
-          "taskId": "dbed58b2-22bb-43d2-96db-695d47ac9e3a"
+          "eventId": "d085ba7a-4858-4917-8c6a-59c1813cad86",
+          "taskId": "0cf4a366-1f54-4d2e-901e-ce12b2780e2f"
         },
         "edge": {
-          "eventId": "8995280f-d655-4694-b7e1-4c9620e983d8",
-          "taskId": "3eea41af-5629-4d0e-9ad9-f54af9dfffc6"
+          "eventId": "98be68a0-14f8-4b47-9403-42d06183b261",
+          "taskId": "0ba9e42d-685e-4b37-9437-ff83b0cff442"
         }
       }
     },
@@ -141,11 +145,11 @@
       "pass": true,
       "evidence": {
         "status": 200,
-        "ageMs": 179015,
+        "ageMs": 179009,
         "body": {
-          "copies": 1,
+          "eventId": "98be68a0-14f8-4b47-9403-42d06183b261",
           "withdrawn": true,
-          "eventId": "8995280f-d655-4694-b7e1-4c9620e983d8"
+          "copies": 1
         }
       }
     },
@@ -153,7 +157,7 @@
       "check": "179.x withdrawal clears the copy but keeps the approval request and task history",
       "pass": true,
       "evidence": {
-        "revokedAt": "2026-10-28 14:08:22.377842",
+        "revokedAt": "2026-10-29 02:11:57.410950",
         "copy": [
           "该通知已被撤回。",
           "NULL",
@@ -184,7 +188,7 @@
       "evidence": {
         "status": 409,
         "code": "WITHDRAW_WINDOW_CLOSED",
-        "ageMs": 180015
+        "ageMs": 180010
       }
     },
     {
@@ -195,7 +199,7 @@
         "copy": [
           "提交创建任务《Contract window closed》，等待审核。",
           "Contract window closed",
-          "dbed58b2-22bb-43d2-96db-695d47ac9e3a"
+          "0cf4a366-1f54-4d2e-901e-ce12b2780e2f"
         ],
         "requestStatus": "pending"
       }
@@ -331,7 +335,7 @@
       "check": "browser created and renamed display positions without touching the placement id",
       "pass": true,
       "evidence": {
-        "eb531c0b-1382-43eb-bcac-22f10e9c08ed": "Browser Catalog Analyst",
+        "56ea47d5-060b-41ad-8bba-fb06ebc1e5a7": "Browser Catalog Analyst",
         "fixture-company-title": "Browser Renamed Title"
       }
     },
@@ -389,7 +393,7 @@
       "check": "browser under-180 withdrawal clears the copy but keeps the approval request and task history",
       "pass": true,
       "evidence": {
-        "revokedAt": "2026-10-28 14:08:24.446743",
+        "revokedAt": "2026-10-29 02:11:59.335486",
         "copy": [
           "该通知已被撤回。",
           "NULL",
@@ -410,7 +414,7 @@
         "copy": [
           "提交创建任务《Contract window closed》，等待审核。",
           "Contract window closed",
-          "dbed58b2-22bb-43d2-96db-695d47ac9e3a"
+          "0cf4a366-1f54-4d2e-901e-ce12b2780e2f"
         ]
       }
     },
@@ -426,7 +430,7 @@
     }
   ],
   "browser": {
-    "updated": "2026-10-28T14:08:22.621Z",
+    "updated": "2026-10-29T02:11:57.573Z",
     "checks": [
       {
         "check": "independent admin enters real management console",
@@ -695,7 +699,7 @@
         "check": "closed-window notification remains unread and withdrawable",
         "pass": true,
         "evidence": {
-          "text": "\n      alpha-one-head\n      Contract window closedtask.create.submitted\n      未读2026/10/28 22:08:222027/1/28 22:08:22\n      撤回",
+          "text": "\n      alpha-one-head\n      Contract window closedtask.create.submitted\n      未读2026/10/29 10:11:572027/1/29 10:11:57\n      撤回",
           "withdraw": true
         }
       },

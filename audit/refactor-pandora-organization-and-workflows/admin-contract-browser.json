@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T14:08:22.621Z",
+  "updated": "2026-10-29T02:11:57.573Z",
   "checks": [
     {
       "check": "independent admin enters real management console",
@@ -268,7 +268,7 @@
       "check": "closed-window notification remains unread and withdrawable",
       "pass": true,
       "evidence": {
-        "text": "\n      alpha-one-head\n      Contract window closedtask.create.submitted\n      未读2026/10/28 22:08:222027/1/28 22:08:22\n      撤回",
+        "text": "\n      alpha-one-head\n      Contract window closedtask.create.submitted\n      未读2026/10/29 10:11:572027/1/29 10:11:57\n      撤回",
         "withdraw": true
       }
     },

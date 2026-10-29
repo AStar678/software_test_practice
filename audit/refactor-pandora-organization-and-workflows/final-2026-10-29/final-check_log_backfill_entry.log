@@ -1,0 +1,8 @@
+PASS employee session is ready
+PASS today log entry opens for the first write
+PASS today log is persisted before backfilling
+PASS backfill entry opens yesterday instead of today's edit
+PASS backfill entry then opens the day before
+PASS all three business days hold one real log each
+PASS backfill entry reports that all three days are already written
+PASS backfill entry has no browser exceptions

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T14:07:51.798763+00:00",
+  "updated": "2026-10-29T02:11:14.416249+00:00",
   "checks": [
     {
       "check": "alpha-head creation routes to direct manager regardless of owner order",
@@ -464,23 +464,23 @@
       "pass": true,
       "evidence": [
         {
-          "id": "c134ea77-6945-4017-a459-340fd8c56933",
-          "eventId": "edb95dab-5eaa-4aa3-94f4-df652bef7af8",
+          "id": "dc45aefb-68a4-4526-9ba0-fe7a21158425",
+          "eventId": "dbb2b891-0112-41f2-a9a7-97f5bc1d2550",
           "eventType": "task.create.applied",
-          "createdAt": "2026-10-28T14:07:59.908550Z",
-          "deliveredAt": "2026-10-28T14:07:59.849319Z",
+          "createdAt": "2026-10-29T02:11:21.650533Z",
+          "deliveredAt": "2026-10-29T02:11:21.598155Z",
           "readAt": null,
-          "readonly": false,
-          "relationLost": false,
-          "taskId": "5c95c822-ec28-4382-a9b7-95bf4227bc85",
-          "requestId": "af8a4d0f-9857-4d18-b0a9-165437b7dfc7",
+          "readonly": true,
+          "relationLost": true,
+          "taskId": "967f7a19-b800-4564-9b60-92d51b614b88",
+          "requestId": "317fdc1c-f504-4410-8e78-321723654995",
           "title": "Fixed review fixture",
           "summary": "任务《Fixed review fixture》的创建已生效。",
           "changeSummary": "任务《Fixed review fixture》的创建已生效。",
           "revoked": false,
           "withdrawn": false,
           "canReadWithdrawnDetails": false,
-          "expiresAt": "2027-01-28T14:07:59.845944Z",
+          "expiresAt": "2027-01-29T02:11:21.595920Z",
           "rowVersion": 1,
           "canWithdraw": false,
           "canOpenTask": true,
@@ -488,13 +488,13 @@
           "requestStatus": "direct",
           "requestKind": "create",
           "objectType": "task",
-          "objectId": "5c95c822-ec28-4382-a9b7-95bf4227bc85",
+          "objectId": "967f7a19-b800-4564-9b60-92d51b614b88",
           "focus": null,
           "commentId": null,
           "purpose": "创建结果",
           "objectName": "Fixed review fixture",
           "requestComment": null,
-          "requestDecidedAt": "2026-10-28T14:07:59.843168Z"
+          "requestDecidedAt": "2026-10-29T02:11:21.594043Z"
         }
       ]
     },
@@ -999,7 +999,7 @@
       "check": "submission and result stay bound to the originating request",
       "pass": true,
       "evidence": {
-        "request": "d69a243f-7f40-4ad1-9d11-7ec86e607032"
+        "request": "2a4ddf53-9846-4413-a7bb-885168aca8ba"
       }
     },
     {
@@ -1079,7 +1079,7 @@
       "pass": true,
       "evidence": {
         "controllable": true,
-        "now": "2026-10-28T14:08:01.065972Z"
+        "now": "2026-10-29T02:11:22.738938Z"
       }
     },
     {
@@ -1178,13 +1178,13 @@
       "pass": true,
       "evidence": [
         [
-          "df322039-debc-570e-a1e9-b76f2bd8d66f",
+          "4ce9a359-10d8-524d-8232-c73416f398d0",
           "2",
           "2",
           "20"
         ],
         [
-          "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "df322039-debc-570e-a1e9-b76f2bd8d66f",
           "2",
           "2",
           "20"

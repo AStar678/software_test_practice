@@ -1,0 +1,255 @@
+{
+  "updated": "2026-10-29T02:11:37.405526+00:00",
+  "checks": [
+    {
+      "check": "founder reports include exactly all actual descendants",
+      "pass": true
+    },
+    {
+      "check": "founder log author directory includes self and actual descendants",
+      "pass": true
+    },
+    {
+      "check": "founder log author directory contains no private fields or username",
+      "pass": true
+    },
+    {
+      "check": "founder visible log list uses the same full descendant range",
+      "pass": true
+    },
+    {
+      "check": "founder self profile derives fixed identity and retains only own contacts",
+      "pass": true
+    },
+    {
+      "check": "alpha-head reports include exactly all actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-head log author directory includes self and actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-head log author directory contains no private fields or username",
+      "pass": true
+    },
+    {
+      "check": "alpha-head visible log list uses the same full descendant range",
+      "pass": true
+    },
+    {
+      "check": "alpha-head self profile derives fixed identity and retains only own contacts",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head reports include exactly all actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head log author directory includes self and actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head log author directory contains no private fields or username",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head visible log list uses the same full descendant range",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head self profile derives fixed identity and retains only own contacts",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee reports include exactly all actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee log author directory includes self and actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee log author directory contains no private fields or username",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee visible log list uses the same full descendant range",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee self profile derives fixed identity and retains only own contacts",
+      "pass": true
+    },
+    {
+      "check": "alpha-head profile access to alpha-one-employee matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-head log detail access to alpha-one-employee matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-head targeted log query cannot broaden authority",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head profile access to alpha-one-employee matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head log detail access to alpha-one-employee matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head targeted log query cannot broaden authority",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee profile access to alpha-one-head matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee log detail access to alpha-one-head matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee targeted log query cannot broaden authority",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee profile access to alpha-two-employee matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee log detail access to alpha-two-employee matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee targeted log query cannot broaden authority",
+      "pass": true
+    },
+    {
+      "check": "alpha-head profile access to beta-one-employee matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-head log detail access to beta-one-employee matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-head targeted log query cannot broaden authority",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head profile access to alpha-two-employee matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head log detail access to alpha-two-employee matches current chain",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head targeted log query cannot broaden authority",
+      "pass": true
+    },
+    {
+      "check": "founder cannot edit another author log",
+      "pass": true
+    },
+    {
+      "check": "alpha-head cannot edit another author log",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head cannot edit another author log",
+      "pass": true
+    },
+    {
+      "check": "employee directory excludes independent administrators and contacts",
+      "pass": true
+    },
+    {
+      "check": "founder task list uses assignee scope plus personal relations",
+      "pass": true
+    },
+    {
+      "check": "founder analysis excludes personal tasks outside its organizational range",
+      "pass": true
+    },
+    {
+      "check": "founder analysis job can be created",
+      "pass": true
+    },
+    {
+      "check": "founder analysis and suggestions have separate fixed scopes",
+      "pass": true
+    },
+    {
+      "check": "alpha-head task list uses assignee scope plus personal relations",
+      "pass": true
+    },
+    {
+      "check": "alpha-head analysis excludes personal tasks outside its organizational range",
+      "pass": true
+    },
+    {
+      "check": "alpha-head analysis job can be created",
+      "pass": true
+    },
+    {
+      "check": "alpha-head analysis and suggestions have separate fixed scopes",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head task list uses assignee scope plus personal relations",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head analysis excludes personal tasks outside its organizational range",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head analysis job can be created",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head analysis and suggestions have separate fixed scopes",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee task list uses assignee scope plus personal relations",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee analysis excludes personal tasks outside its organizational range",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee analysis job can be created",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee analysis and suggestions have separate fixed scopes",
+      "pass": true
+    },
+    {
+      "check": "former department manager loses old subordinate profile immediately",
+      "pass": true
+    },
+    {
+      "check": "former department manager loses old subordinate log immediately",
+      "pass": true
+    },
+    {
+      "check": "new department manager gains actual subordinate read",
+      "pass": true
+    },
+    {
+      "check": "old aggregate is rejected after authorization changes",
+      "pass": true
+    }
+  ],
+  "database": "pandora_precheck_model_2a63651c10aa413c",
+  "result": "PASS"
+}

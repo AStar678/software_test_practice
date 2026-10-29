@@ -1,44 +1,15 @@
-# 数据库备份
+# 数据库快照与当前迁移
 
-`pandora.sql` 是当前本地 `pandora` 应用数据库的可恢复快照，包含全部表结构、Flyway 迁移记录和现有业务数据。用户、团队、任务、审批、日志、通知等数据均保留，包括此前的模拟与验证记录。
+`pandora.sql` / `snapshot.json` 是历史 V4 快照及其当时恢复记录，保留历史用途。它们不是本轮V26结构，也不代表本轮演示数据或验证通过；本轮未覆盖此快照。会话仅保留结构，恢复后须重新登录。系统账号、连接密码和运行文件不在备份内。
 
-登录会话表 `auth_sessions` 仅保留结构，恢复后需要重新登录。MySQL 系统账号、本机连接密码、运行日志和数据库物理文件不在备份内。演示账号见上级目录的 README。
+当前迁移链为V1—V26，V1—V24保持原文件；V25清理员工 username/旧角色管理链并收紧类型外键，V26增加受控演示标识与稳定清单。旧快照应先恢复至独立空库，按 [受控升级/恢复说明](../docs/fixed-model-upgrade.md) 演练、显式映射、修复阻断，再决定切换。不得把旧SQL直接导入已有业务库或用新演示库代替升级验证。
 
-## 新克隆项目恢复
-
-需要 MySQL 8.4+、Java 21、Maven 3.9+、Python 3、OpenSSL 和 curl；快照实际在 MySQL 9.3 导出并验证。以下步骤只适用于新克隆的空数据库：SQL 会替换同名表，已有数据的环境请先另行备份。
-
-在仓库根目录执行：
+仓库根目录的本轮可复跑验收：
 
 ```sh
-cd backend
-./scripts/start-db.sh
-mysql --defaults-file="$PWD/.runtime/mysql-admin.cnf" --database=pandora < database/pandora.sql
-./scripts/start.sh
+python3 backend/scripts/check_final_workflow.py --phase migration
 ```
 
-打开 http://127.0.0.1:8080。导入快照后已有数据会保留，启动不会重复灌入模拟数据。
+检查真实打包Flyway空库/V20升级、非法映射和管理员历史冲突、MySQL information_schema结构一致性、原ID/正文/时间/哈希与真实备份恢复。随机数据库和临时备份由检查创建并清理，报告在 `audit/refactor-pandora-organization-and-workflows/final-migration.json`、`final-schema.json`，不修改普通库。
 
-## 迁移预检、演练与恢复
-
-本次变更新增 V16—V19 迁移（日志日位置保留、标签与任务审计快照、平铺评论、员工手机号登录键）。升级前请先读
-[V16—V19 迁移、预检与恢复说明](../docs/migration-v16-20261025.md)，并按其中的隔离演练步骤执行：
-
-```sh
-cd backend
-python3 scripts/migration_precheck.py --database pandora precheck
-python3 scripts/check_migration_foundation.py --output ../audit/2026-10-25/chapter1-migration.json
-```
-
-旧快照（V4）可直接前向迁移到 V19；缺少手机号、规范化重复号和组织树异常的账号会登记为阻断项，需要管理员通过
-既有员工维护流程补齐，迁移不会生成号码或重建账号。恢复演练只在隔离数据库进行，不能直接覆盖正在使用的库。
-
-## 更新备份
-
-在后端数据库运行时执行：
-
-```sh
-./scripts/export-db.sh
-```
-
-业务数据使用事务一致性快照导出，不修改本地数据；导出期间不要并行执行数据库结构迁移。`snapshot.json` 记录本次备份的校验值、各表行数及恢复检查结果，重新导出后应同步重新验证并更新该记录。
+`backend/scripts/export-db.sh` 仍可导出本机配置的普通库；只有明确要更新该历史快照时才执行并重新生成匹配恢复记录。导出过程中不要并行DDL。本轮演示使用 `prepare_demo.py --database ... --demo-marker ...`，见 [后端说明](../README.md)，不通过覆盖快照完成。

@@ -12,7 +12,7 @@ if curl -fsS "http://127.0.0.1:${PANDORA_PORT:-8080}/health" >/dev/null 2>&1; th
 fi
 if [[ -z "${JAVA_HOME:-}" && -x /usr/libexec/java_home ]]; then export JAVA_HOME="$(/usr/libexec/java_home -v 21)";fi
 mvn -B -ntp -Dmaven.repo.local="$BASE_DIR/.runtime/m2" package
-export PANDORA_SEED="${PANDORA_SEED:-true}"
+export PANDORA_SEED="${PANDORA_SEED:-false}"
 python3 scripts/service.py start backend "${JAVA_HOME:+$JAVA_HOME/bin/}java" -jar "$BASE_DIR/target/pandora-backend-0.1.0.jar"
 for i in {1..60}; do
   if curl -fsS "http://127.0.0.1:${PANDORA_PORT:-8080}/health" >/dev/null 2>&1; then
