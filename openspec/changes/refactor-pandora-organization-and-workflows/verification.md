@@ -3,19 +3,36 @@
 - Change: refactor-pandora-organization-and-workflows
 - Schema: spec-driven
 - Verdict: FAIL
-- Verified at: 2026-10-29T02:39:12.637050+00:00
+- Verified at: 2026-10-29T03:39:58.164088+00:00
 - Implementation roots: /Users/watuji/MyGitDev/software_test_practice
-- Verified revision: `1110dc84a16094cf95c2cf779767809ce037f13f`; 开始时工作树干净；结束时除本报告外无变更。
+- Verified revision: `03ac4fcf4416bd113874e59d03733f7478990de9`; 开始及结束时仅本报告有未提交变更，源文件前后清单及哈希相同。
+- Verification scope: 本轮用户授权补齐四组既有证据缺口；父任务及截止竞争通过；时间选择取消与日志无匹配空态发现V-002/V-003；V-001保持verified-resolved。
 
 ## Summary
 
-独立验证发现一个明确的 implementation 缺陷 V-001（medium）：普通员工新建任务没有默认选中本人。已在当前源码构建的真实服务、真实手机号认证和 Chrome 页面重现；不是旧静态页面现象。修复前不可归档。
+四组既有缺口已补充执行证据，整体结论 **FAIL**，新增两个明确implementation finding：V-002（medium）原生时间下拉打开后按Esc，事件继续触发表单级返回/关闭，丢失草稿；V-003（low）日志层级搜索从有结果变为无匹配时不创建空态提示。V-001负责人默认值修复仍为 `verified-resolved`，本轮没有重新打开该问题。
 
-严格 OpenSpec 校验、89个 Maven 测试和构建、19组隔离迁移/API/浏览器套件全部通过，另有资源14项和日历排序4项通过。这些检查没有覆盖到该默认值；通过的测试不抵消规范偏差。覆盖下表完整枚举24项delta requirement / 208个scenario，并补查6项未被替换的主规格要求 / 32个scenario。仅在源码阅读支持的部分明确标为静态证据，不把它们冒充浏览器操作结果。
+当前源码JAR、真实MySQL隔离库和Chrome下，GS01补充API检查50/50通过，包括1/6/24层循环拒绝、截止前/恰好截止/截止后九轮审批—撤销—扫描竞争，以及排队等组织锁期间跨截止、错误响应不回滚失效、同键/旧页重试与重复扫描不二次生效、逾期按收件人去重。GS02页面89项断言完成，82通过、7失败：6个创建/编辑/重开×定时/全天准备场景的取消失败归V-002，1个日志动态空态失败归V-003；父任务14项全部通过，其他时间保存/全天切换/倒置校验/原始来源、日志权限/联动/同名及无团队人员/回顶/账号切换通过。GS03另用独立的可见Chrome窗口确认原生下拉在Esc捕获时 `select:open === true`，随后创建表单关闭且草稿清空，排除了仅因无头浏览器没有打开原生菜单而误报V-002的可能。
 
-测试使用当前源码逐字节相同的临时副本 `/var/folders/4p/qcjpbnz56m15bct40fb6pnn00000gn/T/pandora-independent-verify-p_8_6wca`，以防既有 audit 报告被覆盖。实际实现根目录仍为上列项目；测试专用随机数据库和服务已由套件清理，普通开发数据库未迁移/重建/灌种子。本次只创建本报告，未修代码、改测试、改计划、改任务勾选或implementation-notes。
+严格OpenSpec校验通过；274文件manifest与上轮完全相同，前后不变。原89个Maven测试、19组隔离套件和RV修复复验保留为先前独立证据，本轮只补上述缺口，没有重复宣称全量重跑。完整覆盖矩阵按本轮结果更新；此前仅为静态/部分的四组现在有实际通过或明确失败的证据，不再以原四组缺证为由保留BLOCKED。
+
+执行根为源码逐字节相同的临时副本 `/var/folders/4p/qcjpbnz56m15bct40fb6pnn00000gn/T/pandora-v001-reverify-xq21wu5s`，复用RV01生成且源码匹配的JAR。新增探针只在 `/tmp`，真实fixture拥有并清理随机数据库、服务和Chrome进程。普通开发库、业务代码、项目测试、计划、任务勾选、implementation-notes和既有audit均未修改；只更新本报告，V-001 Repair notes原文保留。
 
 ## Verification Basis
+
+本轮四组补验基线与上轮修复复验相同；`/tmp/pandora-gap-basis-before.json`及`/tmp/pandora-gap-basis-after.json`逐项相同，274文件manifest仍为`d24681e9bbc2ebb9c63298e47d93d221f3f12198ca3b1eca42d13384e4387a1a`，新增/删除/改变源码0。开始时本报告已有上轮未提交更新；本轮仅继续修改报告。下方原manifest复算命令同样适用。
+
+| Path or scope | Revision / content fingerprint / file inventory |
+| ------------- | ---------------------------------------------- |
+| 当前项目根/HEAD | `/Users/watuji/MyGitDev/software_test_practice`; `03ac4fcf4416bd113874e59d03733f7478990de9` |
+| 当前完整源码清单 | 274文件；SHA-256 manifest `d24681e9bbc2ebb9c63298e47d93d221f3f12198ca3b1eca42d13384e4387a1a`；执行前后完全相同；`/tmp/pandora-reverify-basis-before.json`及`/tmp/pandora-reverify-basis-after.json` |
+| 对首轮完整manifest的内容比较 | 仅下列三个文件不同；无增删；proposal/design/tasks/delta spec及implementation-notes均未修改；Git diff额外变动仅历史audit和本报告 |
+| `潘多拉-任务接入.js` | `ea0a4d6d3bc31ddcb1a021e5100c939e2355b6a3a541f2122458f926f1f8ecce` |
+| `潘多拉-交互原型.html` | `86a64b6a50bd8d08e79455c40777cf14d49c26d0affa32bf5d298822cc788a91` |
+| `backend/scripts/check_fixed_employee_browser.js` | `fb671d464374f2fa0b11998198d4b122e08e2bcd6d44f6161031dfad0d18ccb8` |
+| 临时副本对应274文件 | 逐文件SHA-256对照当前项目，差异0；仅副本另加两份定向驱动脚本与临时构建/runtime/audit输出 |
+
+以下为首轮历史基线及复算方法，保留供差异与证据来源审计；不是本轮HEAD：
 
 | Path or scope | Revision / content fingerprint / file inventory |
 | ------------- | ---------------------------------------------- |
@@ -47,11 +64,17 @@ SNAPSHOT
 
 ## Apply Handoff Review
 
-`implementation-notes.md`的change/schema/root与当前选择一致。其HEAD `6a0e3f3... + dirty worktree`属于旧元数据；当前HEAD为`1110dc8...`且已提交，因此不沿用该revision表述。其源码线索与当前实现相符，所有适用命令在本轮独立重跑。原`final-2026-10-29`证据未作为本次执行结果使用。
+四组补验补充处置：当前planning/handoff与上轮内容一致，revision声明仍是历史元数据。按delta日志约束及主规格保留的任务结构/时间/截止场景执行GS01–GS03；对应提醒现在由真实证据覆盖。原native/手势方法限制不泛化为物理设备验收；GS03只新增本机可见Chrome的原生select取消证据。所有既有提醒及先前处置继续保留，未从apply自报PASS推导本轮结论。
+
+以下为前两轮handoff审查记录：
+
+本轮重新读取原implementation-notes及修复者的V-001 Repair notes。handoff的change/schema/root匹配，revision仍为历史元数据，未用其自报结果充当本轮证据；当前HEAD与三文件改动由上表确认。原提醒处置保留如下，均属于首轮执行；修复相关的草稿默认值/移除语义/缓存交付声明由RV01–RV05确认。修复者自报Maven89、整套浏览器128、日历86不继承为本轮执行。
+
+`implementation-notes.md`的change/schema/root与当前选择一致。其HEAD `6a0e3f3... + dirty worktree`属于旧元数据；当前HEAD为`1110dc8...`且已提交，因此不沿用该revision表述。其源码线索与首轮实现相符，所有适用命令在首轮独立重跑。原`final-2026-10-29`证据未作为本次执行结果使用。
 
 | Reminder | 本次处置 |
 | --- | --- |
-| 必须独立验证，不能继承apply PASS/任务勾选 | 已执行；结论FAIL，V-001；独立测试显示当前套件缺少员工默认负责人的断言 |
+| 必须独立验证，不能继承apply PASS/任务勾选 | 首轮发现V-001；本轮RV02独立重跑修复新增回归段，29/29，V-001 verified-resolved；整体既有证据缺口保留 |
 | V25非可无损逆迁移；管理员历史业务冲突不得伪造修复 | C03实际备份/恢复至独立库、结构比较及管理员业务引用阻断通过；文档回退语义核对一致 |
 | mapping只发计划，提交须新版本；多管理员不可猜测 | C23只读映射/blockers及C07真实HTTP版本化修复通过；无自动HTTP提交的虚假承诺 |
 | 部分手势/Enter使用构造事件，补载错误为monthSection注入 | C16本轮重跑86项；明确保留此方法限制；其他触摸/鼠标/焦点/滚轮由真实CDP输入驱动，不代表物理设备 |
@@ -64,7 +87,56 @@ SNAPSHOT
 
 ## Checks
 
-全部C02–C19及C23由`python3 backend/scripts/check_final_workflow.py --phase all`顺序调用，`final-all-run.json`记录19/19退出0。cwd为上述临时副本，C01 cwd为其`backend/`；命令在原项目同样可复跑但会按工具默认路径写audit，所以本轮在副本执行。工具版本为当前项目Java21/Spring Boot3.5.16、本机MySQL9.3、Chrome。Maven离线缓存复用，连接凭据仅复制到私有临时runtime，不写入报告。
+本轮补齐缺口的检查（GS编号）：
+
+| ID / command or inspection | Result | Evidence / SHA-256 |
+| -------------------------- | ------ | ------------------ |
+| GS00: `openspec validate refactor-pandora-organization-and-workflows --type change --strict --json --no-interactive` | valid=true; issues=[]; exit0 | 原项目根，本轮重新执行 |
+| GS01: `python3 /private/tmp/pandora_gap_api.py` | 50/50，exit0；父循环及截止API/事务竞争 | `/tmp/pandora-gap-api.json`; `99ec8de92801a2dbf9833c0f6baf98d92aac6d2fac13b02b1e735277b38d21a6`；stdout `/tmp/pandora-gap-api.log`; `3f9bfacd01b4da61128665b5b6c5e24fc8528d673ab796996e3064f25ffe1faa` |
+| GS02: `python3 /private/tmp/pandora_gap_browser.py` | 89断言，82通过/7失败，所有8个分组完成，exit1；失败对应V-002×6及V-003×1 | `/tmp/pandora-gap-browser.json`; `69e75b3ebb5e0beb5510384bb8e31c3d384010201aa0175a8f3690abbb539266`；stdout `/tmp/pandora-gap-browser.log`; `a4a212c503ea6f44512cb8d9a81e1ecedb522398219ba0aebb87ae8659f2ac3c` |
+| GS03: `PANDORA_GAP_HEADFUL=1 python3 /private/tmp/pandora_gap_native.py` | 探针exit0；对规范比较为FAIL：原生下拉打开时Esc导致overlay=false、draft=false | `/tmp/pandora-gap-native-headed.json`; `bb185088863a40e27a5a5d9dea9869ffcf0df38a5700814b5f504d907f487dac`；stdout `/tmp/pandora-gap-native-headed.log`; `3b43d79fd2679f552ad8ddfe6543a95cc8c2a7cadba677be9738cb8995c8b15a` |
+| GS04: 全文件清单/哈希对比、相关源码追踪 | 当前274文件与上轮及执行前后均相同；错误定位到共享Esc处理和动态空态更新 | `/tmp/pandora-gap-basis-before.json`、`/tmp/pandora-gap-basis-after.json`；digest见Verification Basis |
+| GS05: 日志空态截图 | 无匹配候选时没有提示；权威完整DOM/状态见GS02 | `/tmp/pandora-gap-log-empty.png`; `6a390870fff8e8ae1a316911f66e050b0c305e3563d05d69ea5ae2b4e4ef4fd6` |
+
+GS01使用Fixture(port18217, worker=true, controllable=true)及服务端固定时刻+合法管理员advance接口，准确覆盖`now==deadline`；九轮三方竞争覆盖截止前/相等/之后各三轮。截止前实际观察到approved及withdrawn，截止相等/之后全部expired；每请求rowVersion只增加一次、终态事件只有一条。另持有真实MySQL组织行锁，先让审批/撤销/扫描/提交排队，再推进11秒并释放锁，确认不能按排队前旧时刻生效。未修改系统时间。
+
+GS02使用Fixture(port18218)；API创建真实13层父任务链、不可见父任务/可见子任务、未发布及跨公司任务、编辑和已完成重开任务；为11名本公司员工通过真实API创建33条近三日日志。仅为同名/无团队搜索设置隔离fixture展示名。每分组用新Chrome进程避免原生菜单阻塞跨用；时分精确值23:41→次日00:07、全天首尾日期、倒置拒绝和创建来源由提交后的实际API核对。键盘输入由CDP真实按键/insertText驱动，390×480视口模拟键盘占用后的可用布局；不宣称物理手机系统键盘或Android验收。
+
+GS02观察到六次Esc退出表单，但无头Chrome不能可靠展示原生菜单，故没有仅凭这些输出确认原生取消缺陷。GS03用Fixture(port18219)及一个独立可见Chrome窗口补证；捕获阶段在小时select上记录`expanded:true`，相同Esc随后进入共享处理，overlay/draft均false。其余无头mouse/touch/AltDown/showPicker探针见`/tmp/pandora-gap-native.json`（`8d2ca2be6552291dcc3c574fc41d6ff8217b56090fcf15f34b7b72731088f312`），只用作诊断，不计额外通过数。
+
+早期驱动准备失败不计验收结果：沙箱localhost连接被拒后获准重跑；首个API驱动误用非本次审核人读取创建申请，改用合法审核人；浏览器首载等待、新原生菜单下截图阻塞及回顶平滑动画等待均在临时驱动中调整。没有改项目代码/测试来消除失败。以上GS01/GS02最终结果及GS03证据才是本轮结论依据。
+
+复现驱动SHA-256：`/tmp/pandora_gap_api.py`=`5a615bcca38b599bc42735c733a05f3bb0d73993be3f60d30c1d7aa3ebb06eac`；`pandora_gap_browser.py`=`72dccd6c14e9399f8a906dde45790c21545125704b8f3f02249a52ef0223b540`；`pandora_gap_browser.js`=`0e5fbb0290a72e5ba62c48d5997cff5565bf126d534993a3e7b67841d9b7f780`；`pandora_gap_native.py`=`76f27b90bebf0191bcf048e0a930a6af1ee455a8078f75167e7c9c44d532720c`；`pandora_gap_native.js`=`22ecd349843b36151a673a41dadccea3a4a9df83a9a3ae307ad1414cf7cfd5fb`。驱动通过`/tmp/pandora-v001-reverify-root`定位逐字节匹配的临时副本，私有runtime凭据不进入报告。`/tmp/pandora_browser_fixture_headed.js`仅从已有browser_fixture去掉`--headless`，其hash为`00f31e036a78f97608abf1c429039fdf880147dedcb48e0f0ba5c39303b02e1f`。
+
+以下RV编号为上一轮修复定向检查，保留独立证据及原执行范围：
+
+本轮修复定向检查（RV编号）；只执行新增V-001段及其必要fixture/login/picker helper，没有重跑原有100项员工检查、管理员套件、日历套件或19组全量流程。后端未改，仅为实际静态资源重新打包，明确跳过Maven单元测试。
+
+| ID / command or inspection | Result | Evidence / SHA-256 |
+| -------------------------- | ------ | ------------------ |
+| RV00: `openspec validate refactor-pandora-organization-and-workflows --type change --strict --json --no-interactive` | valid=true; issues=[]; exit0 | 当前项目根执行 |
+| RV01: `mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 -DskipTests package` | BUILD SUCCESS; 未执行单元测试 | 临时副本backend/；`/tmp/pandora-v001-reverify-build.log`; `3596407cf7a9c118b8a6cc2102364e5ab924507e1ce0a1215f81f00680eaa6eb` |
+| RV02: `python3 backend/scripts/verify_v001_only.py` | PASS; 29/29; 无浏览器异常 | 临时副本；`audit/refactor-pandora-organization-and-workflows/employee-browser.json`; `c1cbef9688492975f4836684fd3d388fb9d6957eb9fe6f2cbcf763dbb7fd1ca6`；stdout `/tmp/pandora-v001-reverify-browser.log`; `a64f4c011facfcc5dd4318983a48baf2f3c351f59fe6e25c4b4a60e97a39afcc` |
+| RV03: `python3 backend/scripts/check_web_resources.py --repo . --jar backend/target/pandora-backend-0.1.0.jar --output /tmp/pandora-v001-reverify-resources.json` | 14/14，当前HTML哈希、模块顺序、JAR资源字节一致 | 临时副本；`/tmp/pandora-v001-reverify-resources.json`; `dbfb6e74fcaa470726480f84547262d7062b8d6988ced0240ec97f80acaad754` |
+| RV04: `node --check 潘多拉-任务接入.js`; `node --check backend/scripts/check_fixed_employee_browser.js`; 修复三文件`git diff --check 1110dc8 -- ...` | 全部exit0 | 当前项目根执行 |
+| RV05: 静态追踪taskDraftFrom/openTaskForm/saveTask/resubmitCreate及前后manifest比较 | 只在mode=create初始化；提交复制当前有序选择，不补本人；编辑/重提走rawFormDraft读取有效版/原提议；HTML版本匹配ea0a4d6d3bc3；验证期间源码无变化 | `任务接入.js:179–202,284–346,616–635`; `交互原型.html:87`; 当前manifest见Verification Basis |
+
+RV02使用已有 `fixed_model_fixture.Fixture(port=18206)`，真实迁移后的随机隔离库、真实手机号登录、真实HTTP与Chrome页面。初次沙箱内因localhost MySQL连接被拒而中止；获准后同一命令重跑退出0，数据库/临时服务已清理。未使用mock替代负责人或审核接口。
+
+定向脚本仅在临时副本生成：保留 `check_fixed_employee_browser.js` 中 `try{` 前的原helper，等待真实登录页，然后拼接 `/* -------- V-001:` 到文件末尾的原新增回归段（包含原finally清理），不执行旧测试段。`verify_v001_only.js` SHA-256为 `71a5c24d5946203d48a86fc30bac7e6ea23622f641e8aef0dfb3a4f8f6855976`；`verify_v001_only.py` 为 `87e89c7cd8a488c91a0bc4defcf8b1b814cf5d4f8b3220ee0586d07de820c922`。Python驱动在Fixture内传入base/identities/database给该Node脚本；使用与项目fixture相同的私有本机runtime配置，不把凭据写入证据。保留的临时脚本可用上表命令直接复跑。
+
+四层真实表单的本轮决定性结果：
+
+| Account position | Expected initial assignees | Observed draft / DOM |
+| --- | --- | --- |
+| founder | `[]` | `[]`；0 chip；显示“尚未选择负责人” |
+| department_head | `[]` | `[]`；0 chip；显示“尚未选择负责人” |
+| team_head | `[]` | `[]`；0 chip；显示“尚未选择负责人” |
+| employee | `[本人ID]` | `[4ce9a359-10d8-524d-8232-c73416f398d0]`；1 chip；显示本人 |
+
+以下C00–C23及I01为首轮 `1110dc8...` 的历史检查记录（包括修复前C22的失败），本轮不重复执行；不要把历史C22当作当前缺陷。首轮原始方法/结果保留：
+
+全部C02–C19及C23由`python3 backend/scripts/check_final_workflow.py --phase all`顺序调用，`final-all-run.json`记录19/19退出0。首轮cwd为 `/var/folders/4p/qcjpbnz56m15bct40fb6pnn00000gn/T/pandora-independent-verify-p_8_6wca`，C01 cwd为其`backend/`；命令在原项目同样可复跑但会按工具默认路径写audit，所以首轮在副本执行。工具版本为当前项目Java21/Spring Boot3.5.16、本机MySQL9.3、Chrome。Maven离线缓存复用，连接凭据仅复制到私有临时runtime，不写入报告。
 
 初次套件因沙箱禁止本机MySQL连接中止；获准后首组在末尾因临时副本无Git历史中止。补齐相同Git元数据后完整19组从头干净重跑，下面仅计最终成功执行；两次准备失败不算实现缺陷或通过证据。
 
@@ -107,7 +179,7 @@ C22决定性输出（退出0表示探针成功运行，不表示断言通过；�
 
 ## Requirement Coverage
 
-证据ID见Checks。以下每个R行列出实现路径、验收证据和已观察行为；其后的场景行继承相同R的实现路径。`支持`表示相应实现已核查并有列出的当前执行证据支持，不能替代整体PASS；`静态/部分`明确说明未独立执行的细节。重复场景名称按当前WHEN/THEN处理，未按名称恢复旧规则。
+证据ID见Checks。本轮GS01–GS03补充R10及保留任务结构/时间/截止的四组缺口；R06沿用RV修复复验，其他未变区域保留首轮独立证据，未重新执行。以下每个R行列出实现路径、验收证据和已观察行为；其后的场景行继承相同R的实现路径。`支持`表示相应实现已核查并有列出的当前执行证据支持，不能替代整体PASS；`静态/部分`明确说明未独立执行的细节。重复场景名称按当前WHEN/THEN处理，未按名称恢复旧规则。
 
 | Requirement / scenario | Evidence | Result |
 | ---------------------- | -------- | ------ |
@@ -183,18 +255,18 @@ C22决定性输出（退出0表示探针成功运行，不表示断言通过；�
 | R05 / Prevent unauthorized detail access (`delta:298`) | C06,C07,C08,C11,C17 | 支持 |
 | R05 / Retain own cross-scope tasks and deny teammate access (`delta:302`) | C06,C07,C08,C11,C17 | 支持 |
 | R05 / Revoke management access after an atomic move (`delta:306`) | C06,C07,C08,C11,C17 | 支持 |
-| **R06: Role-scoped task creation and assignment** (`delta:310`) | `Access.creationCandidates; TaskService.create; 任务接入.js taskDraftFrom; 交互原型.js:1711`；C05,C08,C22。全公司候选/创建直属审核/未发布隔离通过；四角色真实创建表单补查发现 employee 初始负责人为空（V-001）。 | FAIL V-001 |
+| **R06: Role-scoped task creation and assignment** (`delta:310`) | `Access.creationCandidates; TaskService.create; 任务接入.js taskDraftFrom; 交互原型.js:1711`；首轮C05,C08及本轮RV02,RV05。四角色真实表单默认值、移除/换序/取消、空列表及实际审核路线均通过；未发布隔离及其他候选边界沿用首轮证据。 | V-001已验证解决；其余沿用首轮 |
 | R06 / Assign across departments and upward (`delta:315`) | C05,C08,C22 | 支持 |
-| R06 / Remove the creator and preserve selection order (`delta:319`) | C05,C08,C22 | FAIL V-001：普通员工初始本人未选中 |
+| R06 / Remove the creator and preserve selection order (`delta:319`) | 首轮C05,C08；本轮RV02,RV05 | PASS（修复范围）：默认本人/其余为空，移除、换序、取消及实际提交通过；V-001 verified-resolved |
 | R06 / Keep dispatch separate from unrelated access (`delta:323`) | C05,C08,C22 | 支持 |
 | R06 / Isolate an unpublished creation (`delta:327`) | C05,C08,C22 | 支持 |
-| R06 / Select and order authorized assignees (`delta:331`) | C05,C08,C22 | FAIL V-001：普通员工初始本人未选中 |
+| R06 / Select and order authorized assignees (`delta:331`) | 首轮C05,C08；本轮RV02,RV05 | PASS（修复范围）：默认本人/其余为空，移除、换序、取消及实际提交通过；V-001 verified-resolved |
 | R06 / Enforce dispatch independently from viewing (`delta:335`) | C05,C08,C22 | 支持 |
 | R06 / Executive selects assignees across departments (`delta:339`) | C05,C08,C22 | 支持 |
 | R06 / Manager assigns a departmental task (`delta:343`) | C05,C08,C22 | 支持 |
-| R06 / Cancel assignee selection (`delta:347`) | C05,C08,C22 | FAIL V-001：普通员工初始本人未选中 |
+| R06 / Cancel assignee selection (`delta:347`) | 首轮C05,C08；本轮RV02,RV05 | PASS（修复范围）：默认本人/其余为空，移除、换序、取消及实际提交通过；V-001 verified-resolved |
 | R06 / Search for an unavailable assignee (`delta:351`) | C05,C08,C22 | 支持 |
-| R06 / Employee submits a self-created task (`delta:355`) | C05,C08,C22 | FAIL V-001：普通员工初始本人未选中 |
+| R06 / Employee submits a self-created task (`delta:355`) | 首轮C05,C08；本轮RV02,RV05 | PASS（修复范围）：默认本人/其余为空，移除、换序、取消及实际提交通过；V-001 verified-resolved |
 | R06 / Superior reviews a self-created task (`delta:359`) | C05,C08,C22 | 支持 |
 | R06 / Select company members during a later owner change (`delta:363`) | C05,C08,C22 | 支持 |
 | **R07: Task editing and completion review** (`delta:367`) | `TaskService.change/submit/decide/validateApplicationEffect; 任务接入.js`；C08,C09,C10,C14,C15。操作身份、直接生效/有效版/唯一待审、重开换负责人/轮次、diff及历史通过；具体截止竞争的证据范围见保留行为补充。 | 支持；见各场景证据范围 |
@@ -237,22 +309,22 @@ C22决定性输出（退出0表示探针成功运行，不表示断言通过；�
 | R09 / Write an unlinked log (`delta:524`) | C11,C12,C15,C18 | 支持 |
 | R09 / Superior reads a subordinate log (`delta:528`) | C11,C12,C15,C18 | 支持 |
 | R09 / Regress actual log entry and the selected editor (`delta:532`) | C11,C12,C15,C18 | 支持 |
-| **R10: Log page single-content filtering and scroll return** (`delta:536`) | `WorkspaceService.logs/logAuthors; 工作区接入.js`；C11,C15,C17,C18。目录/定向范围、账号切换及人员入口清旧筛选通过；联动清理/搜索空态/回顶保留核当前渲染与事件处理。 | 支持；见各场景证据范围 |
-| R10 / Search each hierarchy within authorization (`delta:543`) | C11,C15,C17,C18 | 支持 |
-| R10 / Reset invalid children and restore self (`delta:547`) | C11,C15,C17,C18 | 支持 |
+| **R10: Log page single-content filtering and scroll return** (`delta:536`) | `WorkspaceService.logs/logAuthors; 工作区接入.js`；C11,C15,C17,C18；本轮GS02。真实层级联动、同名及无团队搜索、授权计数、回顶和账号隔离通过；从有候选搜索到无匹配时空态缺失。 | FAIL V-003 |
+| R10 / Search each hierarchy within authorization (`delta:543`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
+| R10 / Reset invalid children and restore self (`delta:547`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
 | R10 / Use consistent names and the selected log date (`delta:551`) | C11,C15,C17,C18 | 支持 |
-| R10 / Enter with self and filter a direct report (`delta:555`) | C11,C15,C17,C18 | 支持 |
-| R10 / Return to the top without mixing workflows (`delta:559`) | C11,C15,C17,C18 | 支持 |
+| R10 / Enter with self and filter a direct report (`delta:555`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
+| R10 / Return to the top without mixing workflows (`delta:559`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
 | R10 / Enter the log page (`delta:563`) | C11,C15,C17,C18 | 支持 |
 | R10 / Select pending reviews (`delta:567`) | C11,C15,C17,C18 | 支持 |
-| R10 / Switch between role-specific content filters (`delta:571`) | C11,C15,C17,C18 | 支持 |
+| R10 / Switch between role-specific content filters (`delta:571`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
 | R10 / Invoke a log-page command (`delta:575`) | C11,C15,C17,C18 | 支持 |
-| R10 / Toggle own logs (`delta:579`) | C11,C15,C17,C18 | 支持 |
-| R10 / Restore the visible log scope (`delta:583`) | C11,C15,C17,C18 | 支持 |
-| R10 / Search logs by author (`delta:587`) | C11,C15,C17,C18 | 支持 |
-| R10 / Show no matching authors (`delta:591`) | C11,C15,C17,C18 | 静态：空态/回顶处理已核；未单独驱动此组合 |
-| R10 / Keep log finding separate and scoped (`delta:595`) | C11,C15,C17,C18 | 静态：空态/回顶处理已核；未单独驱动此组合 |
-| R10 / Return to the top of log content (`delta:599`) | C11,C15,C17,C18 | 静态：空态/回顶处理已核；未单独驱动此组合 |
+| R10 / Toggle own logs (`delta:579`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
+| R10 / Restore the visible log scope (`delta:583`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
+| R10 / Search logs by author (`delta:587`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
+| R10 / Show no matching authors (`delta:591`) | C11,C15,C17,C18；GS02 | FAIL V-003：真实搜索无匹配后缺少明确空态 |
+| R10 / Keep log finding separate and scoped (`delta:595`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
+| R10 / Return to the top of log content (`delta:599`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
 | R10 / Reset old filters when opening logs from a person profile (`delta:603`) | C11,C15,C17,C18 | 支持 |
 | **R11: Role-scoped AI map** (`delta:607`) | `WorkspaceService.statistics/createAiJob/aiJob/visibleTasks; WorkspaceAnalysisTest`；C01,C11。四层真实任务统计范围与建议分离、旧分析失权通过；真实中文提词/规则指标由单测和实现核查支持。 | 支持；见各场景证据范围 |
 | R11 / Generate personal and department results separately (`delta:610`) | C01,C11 | 支持 |
@@ -358,34 +430,34 @@ C22决定性输出（退出0表示探针成功运行，不表示断言通过；�
 | Task table refresh and account isolation / Revoke all normal access (`main:294`) | C08,C15,C17 | 支持 |
 | Task table refresh and account isolation / Fail a later page and retry (`main:298`) | C08,C15,C17 | 支持 |
 | Task table refresh and account isolation / Ignore stale account and refresh responses (`main:302`) | C08,C15,C17 | 支持 |
-| **Retained: Task structure and attributes** (`main:382`) | `TaskService.validateForm/validateParent; 任务接入.js; 正式版.css`；C01,C08,C09,C14,C15,C22 | 支持（部分细节见场景行） |
+| **Retained: Task structure and attributes** (`main:382`) | `TaskService.validateForm/validateParent; 任务接入.js; 正式版.css`；C01,C08,C09,C14,C15,C22 | FAIL V-002（时间取消）；其余见GS01/GS02及既有证据 |
 | Task structure and attributes / Edit task text in expanded fields (`main:387`) | C01,C08,C09,C14,C15,C22 | 支持（部分细节见场景行） |
 | Task structure and attributes / Validate schedules and preserve provenance (`main:391`) | C01,C08,C09,C14,C15,C22 | 支持（部分细节见场景行） |
-| Task structure and attributes / Search, clear or reject a parent relation (`main:395`) | C01,C08,C09,C14,C15,C22 | 静态/部分：父关联鉴权/防环/独立执行核代码；C09实测跨公司父任务拒绝，未独立驱动每个搜索/任意深环UI |
-| Task structure and attributes / Keep parents independently executable (`main:399`) | C01,C08,C09,C14,C15,C22 | 静态/部分：父关联鉴权/防环/独立执行核代码；C09实测跨公司父任务拒绝，未独立驱动每个搜索/任意深环UI |
+| Task structure and attributes / Search, clear or reject a parent relation (`main:395`) | C01,C08,C09,C14,C15,C22；GS01,GS02 | 支持：本轮搜索/空态/确认取消/持久化清除、深环拒绝、父子独立执行和独立授权已执行；普通类型由六组API快照确认 |
+| Task structure and attributes / Keep parents independently executable (`main:399`) | C01,C08,C09,C14,C15,C22；GS01,GS02 | 支持：本轮搜索/空态/确认取消/持久化清除、深环拒绝、父子独立执行和独立授权已执行；普通类型由六组API快照确认 |
 | Task structure and attributes / Create a timed task (`main:403`) | C01,C08,C09,C14,C15,C22 | 支持（部分细节见场景行） |
 | Task structure and attributes / Create an all-day task (`main:407`) | C01,C08,C09,C14,C15,C22 | 支持（部分细节见场景行） |
 | Task structure and attributes / Reject an inverted task range (`main:411`) | C01,C08,C09,C14,C15,C22 | 支持（部分细节见场景行） |
 | Task structure and attributes / Preserve task creation time (`main:415`) | C01,C08,C09,C14,C15,C22 | 支持（部分细节见场景行） |
-| Task structure and attributes / Search and select a parent task (`main:419`) | C01,C08,C09,C14,C15,C22 | 静态/部分：父关联鉴权/防环/独立执行核代码；C09实测跨公司父任务拒绝，未独立驱动每个搜索/任意深环UI |
-| Task structure and attributes / Show no matching parent tasks (`main:423`) | C01,C08,C09,C14,C15,C22 | 静态/部分：父关联鉴权/防环/独立执行核代码；C09实测跨公司父任务拒绝，未独立驱动每个搜索/任意深环UI |
-| Task structure and attributes / Inspect a child task (`main:427`) | C01,C08,C09,C14,C15,C22 | 静态/部分：父关联鉴权/防环/独立执行核代码；C09实测跨公司父任务拒绝，未独立驱动每个搜索/任意深环UI |
-| Task structure and attributes / Inspect a parent task (`main:431`) | C01,C08,C09,C14,C15,C22 | 静态/部分：父关联鉴权/防环/独立执行核代码；C09实测跨公司父任务拒绝，未独立驱动每个搜索/任意深环UI |
-| Task structure and attributes / Inspect an abstract task (`main:435`) | C01,C08,C09,C14,C15,C22 | 静态/部分：父关联鉴权/防环/独立执行核代码；C09实测跨公司父任务拒绝，未独立驱动每个搜索/任意深环UI |
-| Task structure and attributes / Choose time through a mobile web control (`main:439`) | C01,C08,C09,C14,C15,C22 | 静态/部分：当前为Web时/分select；C22真实表单可见，未独立驱动取消/键盘/全天切换全组合 |
-| **Retained: Deadline expiration of pending applications** (`main:848`) | `ExpiryService; TaskController.expireBeforeSubmit; TaskService.decide`；C08,C09,C10 | 静态/部分：刷新到期不复活有执行证据，完整三方截止竞争未单独重跑 |
-| Deadline expiration of pending applications / Reject expired submission and approval before the scan (`main:851`) | C08,C09,C10 | 静态/部分：刷新到期不复活有执行证据，完整三方截止竞争未单独重跑 |
-| Deadline expiration of pending applications / Use the applicable deadline and preserve the effective version (`main:855`) | C08,C09,C10 | 静态/部分：刷新到期不复活有执行证据，完整三方截止竞争未单独重跑 |
-| Deadline expiration of pending applications / Expire and backfill overdue once (`main:859`) | C08,C09,C10 | 静态/部分：刷新到期不复活有执行证据，完整三方截止竞争未单独重跑 |
-| Deadline expiration of pending applications / Resolve the deadline race once (`main:863`) | C08,C09,C10 | 静态/部分：刷新到期不复活有执行证据，完整三方截止竞争未单独重跑 |
+| Task structure and attributes / Search and select a parent task (`main:419`) | C01,C08,C09,C14,C15,C22；GS01,GS02 | 支持：本轮搜索/空态/确认取消/持久化清除、深环拒绝、父子独立执行和独立授权已执行；普通类型由六组API快照确认 |
+| Task structure and attributes / Show no matching parent tasks (`main:423`) | C01,C08,C09,C14,C15,C22；GS01,GS02 | 支持：本轮搜索/空态/确认取消/持久化清除、深环拒绝、父子独立执行和独立授权已执行；普通类型由六组API快照确认 |
+| Task structure and attributes / Inspect a child task (`main:427`) | C01,C08,C09,C14,C15,C22；GS01,GS02 | 支持：本轮搜索/空态/确认取消/持久化清除、深环拒绝、父子独立执行和独立授权已执行；普通类型由六组API快照确认 |
+| Task structure and attributes / Inspect a parent task (`main:431`) | C01,C08,C09,C14,C15,C22；GS01,GS02 | 支持：本轮搜索/空态/确认取消/持久化清除、深环拒绝、父子独立执行和独立授权已执行；普通类型由六组API快照确认 |
+| Task structure and attributes / Inspect an abstract task (`main:435`) | C01,C08,C09,C14,C15,C22；GS01,GS02 | 支持：本轮搜索/空态/确认取消/持久化清除、深环拒绝、父子独立执行和独立授权已执行；普通类型由六组API快照确认 |
+| Task structure and attributes / Choose time through a mobile web control (`main:439`) | C01,C08,C09,C14,C15,C22；GS02,GS03 | FAIL V-002：取消原生时分下拉丢失表单草稿；其余六组时值/全天/校验/保存检查通过 |
+| **Retained: Deadline expiration of pending applications** (`main:848`) | `ExpiryService; TaskController.expireBeforeSubmit; TaskService.decide`；C08,C09,C10；GS01 | 支持：本轮补齐三方九轮竞争、精确截止及锁等待跨截止、持久终态/有效版隔离、重复扫描及重试证据 |
+| Deadline expiration of pending applications / Reject expired submission and approval before the scan (`main:851`) | C08,C09,C10；GS01 | 支持：本轮补齐三方九轮竞争、精确截止及锁等待跨截止、持久终态/有效版隔离、重复扫描及重试证据 |
+| Deadline expiration of pending applications / Use the applicable deadline and preserve the effective version (`main:855`) | C08,C09,C10；GS01 | 支持：本轮补齐三方九轮竞争、精确截止及锁等待跨截止、持久终态/有效版隔离、重复扫描及重试证据 |
+| Deadline expiration of pending applications / Expire and backfill overdue once (`main:859`) | C08,C09,C10；GS01 | 支持：本轮补齐三方九轮竞争、精确截止及锁等待跨截止、持久终态/有效版隔离、重复扫描及重试证据 |
+| Deadline expiration of pending applications / Resolve the deadline race once (`main:863`) | C08,C09,C10；GS01 | 支持：本轮补齐三方九轮竞争、精确截止及锁等待跨截止、持久终态/有效版隔离、重复扫描及重试证据 |
 | **Retained: Proportional schedule reminders** (`main:867`) | `ReminderService.chooseNode; TaskService.applyVersion; EventsWorker`；C01,C08 | 支持；比例节点单测及真实worker轮次/排期去重 |
 | Proportional schedule reminders / Remind a ten hour task (`main:870`) | C01,C08 | 支持；比例节点单测及真实worker轮次/排期去重 |
 | Proportional schedule reminders / Skip stale nodes after a late scan (`main:874`) | C01,C08 | 支持；比例节点单测及真实worker轮次/排期去重 |
 | Proportional schedule reminders / Reset the schedule identity and handle zero duration (`main:878`) | C01,C08 | 支持；比例节点单测及真实worker轮次/排期去重 |
 
-上述静态/部分项是本次证据边界，不作为新的确认缺陷；后续要给PASS时需补足适用的父关联/时间控件/日志筛选及截止三方竞争证据，不能直接把当前套件通过数作为全场景通过。规格没有矛盾到需要planning决定，亦无仍阻止本轮执行的environment问题。
+四组原证据缺口现已由GS01–GS03补验，父关联及截止竞争支持规范，时间取消与日志动态空态分别确认V-002/V-003；整体FAIL。无需要planning决定的规格矛盾，亦无仍阻止这些检查执行的environment问题。无头/键盘占位及物理平台边界如Checks所述保留，不冒充物理设备验收。
 
-Proposal/design/完成任务补充核对：位置为唯一组织事实、固定创始人、共同principal与员工专用FK分离、当前唯一业务责任/原始来源、公司锁原子最终计划、严格登录契约、退休旧授权/username、非破坏显式演示、资源最终覆盖顺序、文档和Android范围分别由R05/R14/R15/R16/R23/R24及I01覆盖。57个完成checkbox只作待验证声明；创建UI的完成声明被V-001推翻。无独立发现的额外范围承诺缺失。
+Proposal/design/完成任务补充核对：位置为唯一组织事实、固定创始人、共同principal与员工专用FK分离、当前唯一业务责任/原始来源、公司锁原子最终计划、严格登录契约、退休旧授权/username、非破坏显式演示、资源最终覆盖顺序、文档和Android范围分别由R05/R14/R15/R16/R23/R24及I01覆盖。57个完成checkbox只作待验证声明；创建UI的完成声明首轮被V-001推翻，本轮RV02确认该缺陷已修复。无独立发现的额外范围承诺缺失。
 
 ## Findings
 
@@ -394,23 +466,50 @@ Proposal/design/完成任务补充核对：位置为唯一组织事实、固定�
 - Category: implementation
 - Severity: medium
 - Requirement: delta `Role-scoped task creation and assignment`（约第310行）；`Remove the creator and preserve selection order`、`Select and order authorized assignees`、`Cancel assignee selection`、`Employee submits a self-created task`明确普通员工初始负责人为本人，其他三层初始为空；本人可以移除且不能被自动补回。
-- Evidence: `潘多拉-交互原型.js:1711`仍使用`a.role === "lower" ? [a.id] : []`；当前`潘多拉-api.js:245`映射真实身份为`employee`；`潘多拉-任务接入.js:176`的最终`taskDraftFrom`调用原草稿但未纠正负责人默认值，`:277`创建入口直接使用该结果。C22用当前JAR、独立MySQL、四种真实账号及Chrome打开实际表单：founder/department_head/team_head均`[]`，普通员工`actor().role === "employee"`且`drafts.task.assigneeIds === []`，DOM“尚未选择负责人”。普通员工稳定ID`4ce9a359-10d8-524d-8232-c73416f398d0`，预期`[该ID]`。原始本轮结构证据见Checks C22及其SHA-256。
+- Evidence: 以下为首轮修复前证据，历史失败保留；本轮当前证据见RV02/RV05。`潘多拉-交互原型.js:1711`仍使用`a.role === "lower" ? [a.id] : []`；当前`潘多拉-api.js:245`映射真实身份为`employee`；`潘多拉-任务接入.js:176`的最终`taskDraftFrom`调用原草稿但未纠正负责人默认值，`:277`创建入口直接使用该结果。C22用当前JAR、独立MySQL、四种真实账号及Chrome打开实际表单：founder/department_head/team_head均`[]`，普通员工`actor().role === "employee"`且`drafts.task.assigneeIds === []`，DOM“尚未选择负责人”。普通员工稳定ID`4ce9a359-10d8-524d-8232-c73416f398d0`，预期`[该ID]`。原始首轮结构证据见Checks C22及其SHA-256。
 - Expected: 普通员工每次打开新建表单，初始有且仅有本人；其他三层为空。之后手工删除本人、另选和取消选择仍保持用户决定，不自动加回；提交仍要求至少一位有效员工。
-- Actual: 四层一律初始为空；普通员工必须额外手工选择自己，未选择则提交被“至少选择一位负责人”拒绝。直接API套件总是显式提供assigneeIds，故现有19组全部通过仍漏检该UI默认值。
+- Actual: 修复后，employee初始仅本人，其他三层为空；后续移除/换序/取消不补回，空列表拒绝，合法实际提交路线正确（RV02，29/29）。首轮修复前：四层一律初始为空；普通员工必须额外手工选择自己，未选择则提交被“至少选择一位负责人”拒绝。直接API套件总是显式提供assigneeIds，故现有19组全部通过仍漏检该UI默认值。
 - Repair guidance: 在实际生效的草稿初始化链按当前固定位置设置新建默认值，并保持后续用户移除/取消/有序多选语义；同步实际HTML缓存版本和打包资源检查。不要通过提交时强行补回本人绕过此问题。
 - Acceptance checks: 当前源码重新构建JAR，用四种真实账号从日程加号打开创建；观察`actor().role`和`drafts.task.assigneeIds`/页面。断言employee初始为本人，founder/department_head/team_head为空；移除本人并选择其他部门员工、换序、打开选择器后取消，确认顺序与移除结果保留；空列表提交拒绝；合法提交按创建者直属上级/固定创始人规则办理。重跑`check_fixed_web.py`及`check_web_resources.py`并独立复验。
-- Repair status: addressed-awaiting-verification
+- Repair status: verified-resolved
 - Repair notes: 在生效的草稿初始化链`潘多拉-任务接入.js`的`window.taskDraftFrom`中新增`creationDefaultAssignees()`：仅`create`模式按当前固定位置设置初始负责人，`employee`为`[本人ID]`，founder/department_head/team_head为`[]`；编辑/重提仍读取有效版或原提议，后续移除、取消和有序多选只由用户草稿决定，渲染与提交均不补回本人。同步更新`潘多拉-交互原型.html`中该脚本的内容哈希缓存版本为`ea0a4d6d3bc3`。在`backend/scripts/check_fixed_employee_browser.js`新增V-001回归段：经日程加号对founder/alpha-head/alpha-two-head/alpha-one-employee四个真实账号断言`actor().role`、`drafts.task.assigneeIds`与DOM；覆盖员工移除本人后跨部门选人、换序、取消还原、空列表提交拒绝、创建预览与实际申请均路由创建人直属上级，以及固定创始人初始为空、直接生效并留`direct`免审原因。修复前以同一隔离fixture复现employee`[]`，修复后为`["4ce9a359-10d8-524d-8232-c73416f398d0"]`。检查结果：`mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test package`89 tests/0 failure；重建JAR后`python3 backend/scripts/check_fixed_web.py`PASS（admin-browser 15/15、employee-browser 128/128、served resources 19/19）；`python3 backend/scripts/check_web_resources.py --repo . --jar backend/target/pandora-backend-0.1.0.jar`14/14；`python3 backend/scripts/check_calendar_drawer.py`86/86；`openspec validate refactor-pandora-organization-and-workflows --type change --strict`valid=true。套件按默认路径更新了`audit/refactor-pandora-organization-and-workflows/`下的浏览器/资源证据（快照基线本就排除`audit/`）。未改proposal/specs/design/tasks/任务勾选或本报告结论。
-- Reverification notes: 首次独立发现，当前基线确认重现；无旧finding/repair notes需要迁移。结论FAIL。
+- Reverification notes: 上轮修复定向复验（下述BLOCKED为当时结论，本轮四组补验已由V-002/V-003确认偏差，V-001仍resolved）：2026-10-29，HEAD `03ac4fc...`。按用户限定只复核修复三文件，以新建隔离库、当前源码新构建JAR及真实Chrome独立执行新增V-001段，29/29通过；四角色draft/DOM、用户后续选择语义及真实创建审核均符合预期，资源14/14和严格校验通过。默认值仅初始化create；编辑/重提路径静态确认不受影响。V-001 verified-resolved；原C22失败保留为修复前历史，不再作为pending缺陷。原要求整套check_fixed_web的复跑按用户范围缩减为其新增修复段及必要setup。整体仍因首轮既有非修复证据缺口BLOCKED。
 
 复现探针无需修改代码：在隔离fixture或显式已准备的演示服务中，以普通员工手机号登录员工Web，点击日程加号；浏览器控制台运行：
 
 ```js
 ({ role: actor().role, id: actor().id, initialAssignees: drafts.task.assigneeIds,
    text: document.getElementById('sheetBody').textContent })
-// 当前：role:'employee', initialAssignees:[]，DOM显示“尚未选择负责人”。
-// 预期：initialAssignees:[actor().id]。
+// 首轮修复前：role:'employee', initialAssignees:[]，DOM显示“尚未选择负责人”。
+// 本轮实测及预期：initialAssignees:[actor().id]，页面显示一个本人chip。
 ```
 
-下一步：`$openspec-e13-fix-change refactor-pandora-organization-and-workflows`；修复及补足上述证据后再次独立verify。当前FAIL不是可归档凭证，任何相关改动均使本报告的基线失效。
+### V-002: 取消原生时分下拉触发表单返回并丢失草稿
 
+- Category: implementation
+- Severity: medium
+- Requirement: 保留主规格 `Task structure and attributes / Choose time through a mobile web control`（main:439）；选时取消 SHALL 保留草稿且不误提交，适用于创建、编辑、重开非全天任务。
+- Evidence: GS02六个创建/编辑/重开×后续定时/全天准备场景中，小时select聚焦后Esc均退出当前表单；创建时`draftPresent=false`且overlay隐藏，编辑/重开回到详情、时间字段消失。由于无头浏览器菜单表现不可靠，追加GS03真实可见Chrome：手机号登录founder→实际创建表单→输入未保存标题→原生鼠标点击小时下拉箭头→Esc；捕获阶段事件target为`tf-start-time-hour`且`expanded:true`（真实`select:open`），随后`overlay:false`、`draft:false`，原始证据及hash见Checks。
+- Expected: 已打开的时间下拉取消时只取消本次选择，仍停留原任务表单，保留先前日期、时分和其他草稿字段，不提交申请。
+- Actual: 同一次Esc同时进入`潘多拉-交互原型.js:2744–2748`的共享处理，不区分原生下拉取消，调用backSheet/closeSheet；`:1485–1494`随之清理草稿。真实菜单仍打开时的取消直接丢失创建草稿。编辑/重开相同共享路径也被GS02观察为退出当前表单。
+- Repair guidance: 让原生时分选择的取消优先在控件内结束，保留所在任务草稿；保持其他弹层既有返回/关闭语义。同步实际HTML缓存版本和打包资源，不通过误提交或自动保存绕过取消。
+- Acceptance checks: 用实际构建JAR与可见Chrome，在创建、编辑、重开表单分别修改标题/说明/原因、日期及精确时分；确认原生下拉已打开，取消后仍是同一表单且所有值保留、无新申请；继续定时跨日/全天切换、倒置拒绝和真实保存。`PANDORA_GAP_HEADFUL=1 python3 /private/tmp/pandora_gap_native.py`可复现原生取消；扩展该同等探针覆盖修复后的三种表单，再跑相关资源检查。
+- Repair status: addressed-awaiting-verification
+- Repair notes: 在`潘多拉-交互原型.js`共享`document keydown`的Esc分支前增加判断：事件目标或当前焦点位于`[data-time-part]`（`Pandora.timeControl`生成的时分select）时直接返回，不`preventDefault`、不调用`backSheet/closeSheet`，把取消交给原生下拉并保留任务草稿；其他元素与弹层的Esc返回语义不变。同步`潘多拉-交互原型.html`中该脚本缓存版本为`4f6d5ebc7711`。在`backend/scripts/check_fixed_employee_browser.js`新增回归：聚焦`tf-start-time-hour`后按Esc断言表单仍开、`drafts.task`及标题保留、时间仍`09:00`；焦点移到说明后按Esc仍关闭表单。验证用当前源码重建JAR，并把修复同步到验证者临时副本后运行其驱动的同名副本：`python3 /tmp/pandora_fix2_browser.py`（`/private/tmp/pandora_gap_browser.py`的路径适配版，断言不变）89/89 PASS，六个create/edit/reopen×timed/all-day取消场景全部通过；`PANDORA_GAP_HEADFUL=1 python3 /tmp/pandora_fix2_native.py`在真实可见Chrome下仍观察到`select:open=true`，Esc后`overlay=true`、`draft=true`且标题保留；`python3 backend/scripts/check_fixed_web.py`PASS（admin 15/15、employee 132/132）；`python3 backend/scripts/check_calendar_drawer.py`86/86；`mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test package`89 tests/0 failure；`check_web_resources.py`14/14；`openspec validate ... --strict`valid=true。
+- Reverification notes: 2026-10-29新增；不是V-001回归。原先无头模拟的疑问已通过GS03真实原生下拉`expanded:true`消除；未声明手机/WebView物理设备行为。
+
+### V-003: 日志动态搜索无匹配时缺少明确空态
+
+- Category: implementation
+- Severity: low
+- Requirement: delta `Log page single-content filtering and scroll return`（delta:536）及`Show no matching authors`（delta:591）：逐层名称搜索没有授权匹配人员时 SHALL 显示明确空态并保留有效输入。
+- Evidence: GS02真实founder日志页，初始部门/团队/作者候选均非空；选择alpha部门和无团队负责人后，依次输入`no-such-department`、`no-such-team`、`no-such-person`。三层候选都只剩“全部”默认项，搜索输入完整保留，但`#logFindingCard .empty`不存在，页面没有“当前权限内没有匹配的部门或人员”提示。GS02 JSON保存完整DOM文本/选项/状态；GS05截图，重复隔离运行一致。
+- Expected: 从有匹配动态变为没有授权匹配时，立即显示明确空态，保留输入；恢复匹配后空态正确消失，候选继续受权限裁剪，不错误更改已选作者或日志正文范围。
+- Actual: `潘多拉-工作区接入.js:200`仅在首次渲染恰好无匹配时插入`.empty`；`:203–220`输入后刷新只尝试切换已存在元素的hidden，初始有候选时没有节点可更新，因此动态无匹配没有提示。
+- Repair guidance: 使动态候选刷新能够创建/更新/清除空态，与初始渲染保持一致；保留当前合法选择、输入、权限和计数语义。
+- Acceptance checks: 在真实服务日志页从有候选输入无匹配部门/团队/姓名（包括全部层均无匹配），断言明确可见空态及输入保留；清除搜索恢复候选和提示状态；重新检查同名/无团队选择、联动清理、回顶保留及账号重置。GS02的`all hierarchy searches retain their values and show an explicit no-match state`应通过。
+- Repair status: addressed-awaiting-verification
+- Repair notes: 将`潘多拉-工作区接入.js`的`refreshLogFindingOptions`从“仅切换已存在空态”改为：筛选卡内没有`.empty`时创建与初始渲染同文案的节点，再按`departments.length>0||people.length>0`设置`hidden`；保留输入值、已选作者、权限裁剪与计数逻辑。同步`潘多拉-交互原型.html`中该脚本缓存版本为`648d4afc4e2d`。在`backend/scripts/check_fixed_employee_browser.js`的founder日志页新增回归：三层输入无匹配值后断言`.empty`可见且文案含“没有匹配”、输入与仅“全部”的候选保留；清空搜索后空态隐藏且候选恢复。验证：`python3 /tmp/pandora_fix2_browser.py`（验证者GS02驱动路径适配版）89/89 PASS，含`all hierarchy searches retain their values and show an explicit no-match state`；`python3 backend/scripts/check_fixed_web.py`PASS（admin 15/15、employee 132/132）；`python3 backend/scripts/check_log_backfill_entry.py`8/8；`check_web_resources.py`14/14；`mvn ... test package`89 tests/0 failure；严格OpenSpec校验valid=true。
+- Reverification notes: 2026-10-29新增；其余日志联动、当前权限/计数、33条真实日志、回顶动画完成后状态保留及账号切换均已通过，不把准备阶段过早读取平滑滚动位置的驱动失败算作实现问题。
+
+下一步：`$openspec-e13-fix-change refactor-pandora-organization-and-workflows`，仅修复pending的V-002/V-003，再独立复验受影响行为。当前FAIL不可归档；V-001修复已确认，无需无依据地重新打开；相关源码修改需重新核对基线与覆盖。

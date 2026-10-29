@@ -295,6 +295,17 @@ async function main(){
     check('actual descendant contact and log entry '+key,await waitFor(b,"!!document.querySelector('[data-action=p-open-person-logs]')&&Pandora.idle()")&&await ev("document.getElementById('sheetBody').textContent.includes('手机号')&&!document.getElementById('sheetBody').textContent.includes('邮箱')"));
     await ev('closeSheet()');
    }
+   if(key==='founder'){
+    await setPage('log');
+    await ev("(()=>{document.getElementById('logFindingCard').open=true;const set=(id,v)=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))};set('logDepartmentSearch','no-such-department');set('logTeamSearch','no-such-team');set('logAuthorInput','no-such-person')})()");
+    await sleep(80);
+    const noMatch=await ev("({visible:Array.from(document.querySelectorAll('#logFindingCard .empty')).some(e=>!e.hidden&&e.getBoundingClientRect().height>0),text:String((document.querySelector('#logFindingCard .empty')||{}).textContent||''),dq:state.logDepartmentQuery,tq:state.logTeamQuery,aq:state.logAuthorQuery,depts:document.getElementById('logDepartmentSelect').options.length,people:document.getElementById('logAuthorSelect').options.length})");
+    check('log hierarchy search shows an explicit no-match state and keeps the input',noMatch.visible&&noMatch.text.indexOf('没有匹配')!==-1&&noMatch.dq==='no-such-department'&&noMatch.tq==='no-such-team'&&noMatch.aq==='no-such-person'&&noMatch.depts===1&&noMatch.people===1,noMatch);
+    await ev("(()=>{const set=(id,v)=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))};set('logDepartmentSearch','');set('logTeamSearch','');set('logAuthorInput','')})()");
+    await sleep(80);
+    const restored=await ev("({visible:Array.from(document.querySelectorAll('#logFindingCard .empty')).some(e=>!e.hidden&&e.getBoundingClientRect().height>0),depts:document.getElementById('logDepartmentSelect').options.length,people:document.getElementById('logAuthorSelect').options.length})");
+    check('clearing the hierarchy search hides the no-match state and restores candidates',!restored.visible&&restored.depts>1&&restored.people>1,restored);
+   }
   }
 
   /* -------- V-001: new-task defaults follow the fixed placement, not the retired role name -------- */
@@ -374,6 +385,17 @@ async function main(){
   check('the founder submission applies directly and publishes the task',await waitFor(b,"document.getElementById('overlay').hidden&&Pandora.idle()",20000)&&await ev("TASKS.some(t=>t.title==='Browser founder direct creation'&&t.status==='todo'&&!t.frozen)"));
   const founderRequest=await ev("Pandora.request('/approval-requests?mine=applicant&limit=100').then(r=>(r.items||[]).find(x=>x.title==='Browser founder direct creation')||null)");
   check('the founder exemption is recorded as direct with a reason, never as a pending self-approval',!!founderRequest&&founderRequest.status==='direct'&&String(founderRequest.exemptionReason||'').length>0,founderRequest);
+
+  /* -------- V-002: cancelling the native hour/minute popup keeps the task form and its draft -------- */
+  async function pressEscape(){await b.send('Input.dispatchKeyEvent',{type:'rawKeyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await b.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await sleep(120);}
+  const cancelOpened=await openCreateFromCalendar();
+  await ev("document.getElementById('tf-title').value='Native cancel keeps the draft';document.getElementById('tf-start-time-hour').focus()");
+  await pressEscape();
+  const afterTimeEscape=await ev("({open:!document.getElementById('overlay').hidden,draft:!!drafts.task,title:(document.getElementById('tf-title')||{}).value,time:Pandora.readTimeControl('tf-start-time'),target:document.activeElement&&document.activeElement.id})");
+  check('Escape inside the native time control keeps the form and its draft',cancelOpened&&afterTimeEscape.open&&afterTimeEscape.draft&&afterTimeEscape.title==='Native cancel keeps the draft'&&afterTimeEscape.time==='09:00',afterTimeEscape);
+  await ev("document.getElementById('tf-desc').focus()");
+  await pressEscape();
+  check('Escape outside the time control still closes the sheet',await waitFor(b,"document.getElementById('overlay').hidden"));
 
   check('employee interactions have no browser exceptions',b.errors.length===0,b.errors);
   report.result='PASS';

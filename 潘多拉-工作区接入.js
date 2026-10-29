@@ -216,8 +216,18 @@ function refreshLogFindingOptions() {
     authorSelect.innerHTML = '<option value="__all__"' + (state.logAll ? ' selected' : '') + '>' + allLabel + '</option>' +
       logOptionsHTML(people.map(row => Object.assign({ selected: !state.logAll && row.id === logAuthorId(), self: row.id === (P.data.me || {}).id }, row)), 'id', row => (row.displayName || '相关成员') + (row.teamName ? ' · ' + row.teamName : ' · 无团队') + (row.self ? '（我）' : ''));
   }
-  const empty = card.querySelector('.empty');
-  if (empty) empty.hidden = departments.length > 0 || people.length > 0;
+  /* The initial render only inserts the no-match node when it starts empty; a later search can turn
+     a populated candidate list into no matches, so the refresh path has to create/update/clear it
+     itself while keeping the typed input and authorized selection intact (chapter 7.3). */
+  let empty = card.querySelector('.empty');
+  if (!empty) {
+    empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = '当前权限内没有匹配的部门或人员';
+    const hint = card.querySelector('p.tiny.muted');
+    card.insertBefore(empty, hint || null);
+  }
+  empty.hidden = departments.length > 0 || people.length > 0;
 }
 document.addEventListener('toggle', event => {
   if (event.target.id === 'logFindingCard') state.logFilterOpen = event.target.open;
