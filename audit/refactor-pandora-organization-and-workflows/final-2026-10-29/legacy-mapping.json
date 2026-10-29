@@ -1,0 +1,721 @@
+{
+  "updated": "2026-10-29T02:10:12.012677+00:00",
+  "database": "pandora_precheck_legacy_67e55dbd6efb4c4b",
+  "result": "PASS",
+  "checks": [
+    {
+      "check": "V20 legacy fields are recognised and produce a plan",
+      "pass": true,
+      "evidence": {
+        "phase": "v20",
+        "status": "ready",
+        "codes": []
+      }
+    },
+    {
+      "check": "V20 plan has no placement row versions and keeps the legacy founder unset",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V20 administrator mapping uses the unique legacy admin without a fake employee placement",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V20 plan excludes the legacy administrator from the post-V22 employee directory",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V20 mapping command is read-only",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V1-V20 files still match Git HEAD",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V1-V20 checksums are unchanged by the rehearsal",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "stable employee IDs and creation times survive V21-V24",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "stable administrator ID and historical rows survive V22",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "task original creators and creation times are unchanged",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V21 leaves every founder unproven",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V21 writes one mapping blocker per company",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V22 creates exactly one administrator for the clean company",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V22 refuses to guess between two legacy administrators",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "mapping command is read-only",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "legal explicit mapping is ready",
+      "pass": true,
+      "evidence": {
+        "status": "ready"
+      }
+    },
+    {
+      "check": "legal mapping produces a submittable plan with If-Match",
+      "pass": true,
+      "evidence": {
+        "ifMatch": "\"1\""
+      }
+    },
+    {
+      "check": "four placement types, company founder and department head without team are present",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "founder is fixed to the explicit stable ID",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator is exactly the explicit independent account",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "one placement per active employee and none for the inactive employee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "expectedEmployees covers active and inactive employees but no administrator",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "generated plan matches the OrganizationPlans/CompanyTree request contract",
+      "pass": true,
+      "evidence": {
+        "errors": []
+      }
+    },
+    {
+      "check": "normalized phones are unique and reported masked only",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "mapping report contains no full contact number",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "mapping subcommand CLI returns the same ready plan",
+      "pass": true,
+      "evidence": {
+        "returncode": 0
+      }
+    },
+    {
+      "check": "missing founder is not inferred from the legacy root",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "FOUNDER_REQUIRED",
+          "ORPHAN_ROOT"
+        ]
+      }
+    },
+    {
+      "check": "missing founder is not inferred from the legacy root (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "missing founder still records the legacy root as diagnostic only",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "cross-company founder is rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "FOUNDER_PLACEMENT_MISMATCH",
+          "FOUNDER_UNKNOWN",
+          "ORPHAN_MANAGER",
+          "ORPHAN_ROOT"
+        ]
+      }
+    },
+    {
+      "check": "cross-company founder is rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "inactive founder is rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "FOUNDER_INACTIVE",
+          "FOUNDER_PLACEMENT_MISMATCH",
+          "ORPHAN_MANAGER",
+          "ORPHAN_ROOT"
+        ]
+      }
+    },
+    {
+      "check": "inactive founder is rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "two department heads are rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "DEPARTMENT_HEAD_REQUIRED",
+          "DUPLICATE_DEPARTMENT_HEAD",
+          "ORPHAN_ROOT"
+        ]
+      }
+    },
+    {
+      "check": "two department heads are rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "cross-company placement is rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "PLACEMENT_EMPLOYEE_UNKNOWN"
+        ]
+      }
+    },
+    {
+      "check": "cross-company placement is rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "duplicate normalized phone is rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "EMPLOYEE_PHONE_MISMATCH",
+          "PHONE_DUPLICATE"
+        ]
+      }
+    },
+    {
+      "check": "duplicate normalized phone is rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "duplicate phone blocker masks the number and keeps stable IDs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "founder forced into a department is rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "FOUNDER_COMPANY_ONLY"
+        ]
+      }
+    },
+    {
+      "check": "founder forced into a department is rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a mapping without a company root is rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "DUPLICATE_DEPARTMENT_HEAD",
+          "FOUNDER_PLACEMENT_REQUIRED",
+          "MANAGEMENT_CYCLE",
+          "ORPHAN_ROOT"
+        ]
+      }
+    },
+    {
+      "check": "a mapping without a company root is rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a derived manager cycle is rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "FOUNDER_PLACEMENT_MISMATCH",
+          "MANAGEMENT_CYCLE",
+          "ORPHAN_ROOT"
+        ]
+      }
+    },
+    {
+      "check": "a derived manager cycle is rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "missing display position is rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "POSITION_REQUIRED"
+        ]
+      }
+    },
+    {
+      "check": "missing display position is rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "missing active employee placement is rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "ORPHAN_ROOT",
+          "PLACEMENT_REQUIRED"
+        ]
+      }
+    },
+    {
+      "check": "missing active employee placement is rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "omitted existing department is rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "DEPARTMENT_OMITTED",
+          "PLACEMENT_DEPARTMENT_UNKNOWN",
+          "PLACEMENT_TEAM_UNKNOWN",
+          "TEAM_DEPARTMENT_UNKNOWN",
+          "TEAM_OMITTED"
+        ]
+      }
+    },
+    {
+      "check": "omitted existing department is rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee cannot be mapped as administrator",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "ADMIN_NOT_FOUND"
+        ]
+      }
+    },
+    {
+      "check": "employee cannot be mapped as administrator (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "missing administrator mapping is rejected",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "ADMIN_MAPPING_REQUIRED"
+        ]
+      }
+    },
+    {
+      "check": "missing administrator mapping is rejected (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator repair marker remains a blocker",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "ADMIN_REPAIR_REQUIRED"
+        ]
+      }
+    },
+    {
+      "check": "administrator repair marker remains a blocker (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "company with two legacy administrators is blocked",
+      "pass": true,
+      "evidence": {
+        "codes": [
+          "ADMIN_MAPPING_UNRESOLVED",
+          "ADMIN_NOT_UNIQUE",
+          "ADMIN_REMAINS_IN_EMPLOYEE_DIRECTORY"
+        ]
+      }
+    },
+    {
+      "check": "a blocked company does not corrupt another company plan",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "mapping still leaves the database untouched after invalid cases",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "plan application keeps every placement SQL-legal",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "four placement types and company-level founder are stored",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "no inactive employee holds a placement",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "every department and team has exactly one head",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V21+ current structure is recognised and the same mapping stays ready",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "re-read plan preserves stored placement row versions and IDs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "stored founder cannot be replaced",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "FOUNDER_FIXED_CONFLICT",
+          "FOUNDER_PLACEMENT_MISMATCH",
+          "MANAGEMENT_CYCLE",
+          "ORPHAN_ROOT"
+        ]
+      }
+    },
+    {
+      "check": "stored founder cannot be replaced (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "stored placement cannot be silently overwritten",
+      "pass": true,
+      "evidence": {
+        "status": "blocked",
+        "codes": [
+          "DUPLICATE_TEAM_HEAD",
+          "EXISTING_PLACEMENT_CONFLICT"
+        ]
+      }
+    },
+    {
+      "check": "stored placement cannot be silently overwritten (no submittable plan)",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "staffed rerun does not change stored placement state",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee stable IDs and creation times survive the applied plan",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator is still the original principal/account ID",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "task original creators and creation times survive the applied plan",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "historical task version, record, history and work log keep their IDs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "retired administrator audit still resolves through the principal",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V23 business ownership keeps every real task creator",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "open mapping findings remain evidence, not silent success",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V1-V20 files still match Git HEAD after the applied plan",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "V1-V20 checksums remain unchanged after the applied plan",
+      "pass": true,
+      "evidence": null
+    }
+  ],
+  "historicalChecksums": {
+    "V1__initial_schema.sql": "71154f0cbfba16b62ffffacea48c4295abad129a6b23a27a8e9942564097b349",
+    "V2__case_sensitive_idempotency.sql": "f6e05c594336303bb92af88998ef21086b76ef8f5da109571d58d3e8f02940ea",
+    "V3__home_item_versions.sql": "977ed329b8d90f523af4e5623b5d7f5b11f24525cd4166c3087507f02e2318d8",
+    "V4__personal_profile.sql": "796b8947b282b93ba3cd4aaaa49e827feed97f1ee543b74cc42efad836ece7f1",
+    "V5__organization_roles_and_account_gate.sql": "f20e0594916f7b5071ea0bb51380c9667d1db9ad8d7ccc7a8feca08c6b534bb2",
+    "V6__ordered_routing_expiration_and_handover.sql": "c8832ec2b410ef8bc85df3290bf52ab052dcfac6dca9c18b8268b5ac53023316",
+    "V7__event_provenance_dispatch_and_pins.sql": "83c66675dcfb7c6015d0ea5caa4f956f6edb48791354fa48da7fc84bd518d0a3",
+    "V8__lossless_work_log_merge_and_unique_day.sql": "b6b82abdbc5092b62dda3340f7d3154929ee23d1d98bd8a3e367a3ff3ac0de83",
+    "V9__organization_row_versions.sql": "0d476af362bfecf6231749a3ec179fb305bf31f01ebfd73d8200909b08bb7995",
+    "V10__retire_superseded_check_constraints.sql": "28b5363aa98ab483d3bd0255e3f7416638dc38c1d67818f6d4b5b733b9f0c6b7",
+    "V11__schedule_snapshots_reminder_nodes_and_notification_lifecycle.sql": "54787d03131305541ab9229d195f03986bfaa4208c2c5489f1ce18b178d2a400",
+    "V12__backfill_task_assignments.sql": "a34c88e3ca66d53a20be96978f9e9cf51cf78a3caea3357419e60f71d4fdd8c4",
+    "V13__mask_undelivered_notification_content.sql": "558d85389850e901605d962a4389f7909e8256f00bc5ec54122b6fb2fd162761",
+    "V14__handover_presets.sql": "c333107e47ddece1a07c98d43163ce6a098281e19f3000b7607c0ad0c68aa0d7",
+    "V15__personal_avatar.sql": "4d29fafc2713a7df1c22a177510c0856f96aabbe584fdb1dd54d17f1f8a9cd76",
+    "V16__work_log_day_slot.sql": "f97c578ec0d042ec4954f88d2d1c69edd0fb77c1a68d90f95e2dfeb6a066f829",
+    "V17__tags_and_task_tag_snapshot.sql": "a1b971c88a69a1591a0bf63c14d7c30f54b4610977c46e5ec9354bf5b89959a1",
+    "V18__flat_comments.sql": "88356b5ba4088eb682c09cc3db6654789896d2e73f4751de8310f967362b50f0",
+    "V19__employee_phone_login.sql": "e62b3b8d49c7b3f2ff4982797c45cbebbfbe34ddc29de5234af2fa8c3eadfdd1",
+    "V20__notification_object_refs.sql": "e9e12751662ebef73d7e6eafa87788b134e0c7179aa6a841ff06b938e6c174f8"
+  },
+  "http": {
+    "exercised": false,
+    "reason": "The check runs the mapping tool and SQL contract checks directly. No JAR was started, so POST /api/v1/admin/organization-plans is not exercised."
+  },
+  "contract": {
+    "source": "backend/src/main/java/cn/pandora/admin/OrganizationPlans.java + CompanyTree.java",
+    "checked": [
+      "request key whitelist",
+      "complete expectedEmployees with row versions",
+      "complete departments/teams with row versions",
+      "placement shapes",
+      "one placement per active employee",
+      "unique department/team heads"
+    ]
+  },
+  "validationLayers": {
+    "sqlConstraints": "SQL executed on the isolated V20+V21-V24 database: foreign keys, CHECK shapes, unique founder/head slots and cross-company rejection.",
+    "toolValidation": "migration_precheck.py mapping: stable IDs, ownership by company, placement types, positions, one placement per active employee, one head per unit, fixed founder, one administrator and normalized phone uniqueness; blockers refuse the plan.",
+    "planContract": "The generated payload is compared in Python with the documented OrganizationPlans/CompanyTree request contract; no Java method is run.",
+    "http": "Not exercised: no application JAR or HTTP request was started by this check."
+  },
+  "validMapping": {
+    "company": "o1",
+    "founderEmployeeId": "founder",
+    "administratorPrincipalId": "admin1",
+    "placementTypes": [
+      "department_head",
+      "employee",
+      "founder",
+      "team_head"
+    ],
+    "placements": 10,
+    "expectedEmployees": 11,
+    "departments": 2,
+    "teams": 4,
+    "phoneEvidence": [
+      {
+        "employeeId": "dh1",
+        "phone": "138***0002"
+      },
+      {
+        "employeeId": "dh2",
+        "phone": "138***0005"
+      },
+      {
+        "employeeId": "e1",
+        "phone": "138***0004"
+      },
+      {
+        "employeeId": "e2",
+        "phone": "138***0008"
+      },
+      {
+        "employeeId": "e3",
+        "phone": "138***0010"
+      },
+      {
+        "employeeId": "founder",
+        "phone": "138***0001"
+      },
+      {
+        "employeeId": "th1",
+        "phone": "138***0003"
+      },
+      {
+        "employeeId": "th2",
+        "phone": "+86***0006"
+      },
+      {
+        "employeeId": "th3",
+        "phone": "138***0007"
+      },
+      {
+        "employeeId": "th4",
+        "phone": "138***0009"
+      }
+    ],
+    "ifMatch": "\"1\""
+  },
+  "invalidMappings": [
+    {
+      "case": "missing founder",
+      "expectedBlocker": "FOUNDER_REQUIRED"
+    },
+    {
+      "case": "cross-company founder",
+      "expectedBlocker": "FOUNDER_UNKNOWN"
+    },
+    {
+      "case": "inactive founder",
+      "expectedBlocker": "FOUNDER_INACTIVE"
+    },
+    {
+      "case": "duplicate department head",
+      "expectedBlocker": "DUPLICATE_DEPARTMENT_HEAD"
+    },
+    {
+      "case": "cross-company placement",
+      "expectedBlocker": "PLACEMENT_EMPLOYEE_UNKNOWN"
+    },
+    {
+      "case": "duplicate normalized phone",
+      "expectedBlocker": "PHONE_DUPLICATE"
+    },
+    {
+      "case": "founder with department",
+      "expectedBlocker": "FOUNDER_COMPANY_ONLY"
+    },
+    {
+      "case": "orphan root",
+      "expectedBlocker": "ORPHAN_ROOT"
+    },
+    {
+      "case": "derived manager cycle",
+      "expectedBlocker": "MANAGEMENT_CYCLE"
+    },
+    {
+      "case": "missing display position",
+      "expectedBlocker": "POSITION_REQUIRED"
+    },
+    {
+      "case": "missing active placement",
+      "expectedBlocker": "PLACEMENT_REQUIRED"
+    },
+    {
+      "case": "omitted department",
+      "expectedBlocker": "DEPARTMENT_OMITTED"
+    },
+    {
+      "case": "employee as administrator",
+      "expectedBlocker": "ADMIN_NOT_FOUND"
+    },
+    {
+      "case": "missing administrator",
+      "expectedBlocker": "ADMIN_MAPPING_REQUIRED"
+    },
+    {
+      "case": "explicit administrator repair",
+      "expectedBlocker": "ADMIN_REPAIR_REQUIRED"
+    },
+    {
+      "case": "two legacy administrators",
+      "expectedBlocker": "ADMIN_NOT_UNIQUE"
+    },
+    {
+      "case": "stored founder replacement",
+      "expectedBlocker": "FOUNDER_FIXED_CONFLICT"
+    },
+    {
+      "case": "stored placement overwrite",
+      "expectedBlocker": "EXISTING_PLACEMENT_CONFLICT"
+    }
+  ],
+  "cleanup": {
+    "databaseDropped": true,
+    "processStarted": false,
+    "keptDatabase": null
+  },
+  "checksTotal": 81,
+  "checksPassed": 81
+}

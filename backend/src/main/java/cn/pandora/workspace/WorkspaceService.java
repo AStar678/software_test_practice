@@ -7,6 +7,8 @@ import cn.pandora.task.Tags;
 import cn.pandora.task.TaskService;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.*;
@@ -45,92 +47,60 @@ public class WorkspaceService {
         this.tags = tags;
     }
 
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> me(Actor a) {
-        var row=db.one("SELECT u.*,o.name AS organization_name,o.time_zone AS organization_time_zone,d.name AS department_name,p.name AS position_name,t.name team_name,m.display_name manager_name "
-            + "FROM users u LEFT JOIN organizations o ON o.id=u.organization_id "
-            + "LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
-            + "LEFT JOIN positions p ON p.organization_id=u.organization_id AND p.id=u.position_id "
-            + "LEFT JOIN teams t ON t.id=u.team_id AND t.organization_id=u.organization_id "
-            + "LEFT JOIN users m ON m.id=u.manager_id AND m.organization_id=u.organization_id "
-            + "WHERE u.id=? AND u.organization_id=? AND u.active=1", a.id(), a.organizationId());
-        var result=safeUser(row);
-        for(String key:List.of("phone","email","avatar","profileVersion","managerName","organizationName","departmentName","positionName","organizationTimeZone")) result.put(key,row.get(key));
-        // Entry visibility only; every team write re-checks the same grant on the server (chapter 9.4).
-        result.put("canManageTeam", a.can("manage_team") && !a.administrator());
+        business(a);
+        var result=safeUser(employee(a,a.id()));
+        var contacts=db.one("SELECT phone,email,avatar,profile_version FROM users WHERE id=? AND organization_id=? AND active=1",a.id(),a.organizationId());
+        for(String key:List.of("phone","email","avatar","profileVersion")) result.put(key,contacts.get(key));
+        var company=db.one("SELECT name,time_zone FROM organizations WHERE id=?",a.organizationId());
+        result.put("organizationName",company.get("name"));
+        result.put("organizationTimeZone",company.get("timeZone"));
+        result.put("canManageTeam",false);
         return result;
     }
 
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> users(Actor a, Map<String,String> filters, boolean admin) {
-        if (admin) access.requireAdmin(a); else business(a);
-        String query = filters.getOrDefault("q", "").trim().toLowerCase(Locale.ROOT);
-        var rows = db.list("SELECT u.*,t.name team_name FROM users u LEFT JOIN teams t ON t.id=u.team_id AND t.organization_id=u.organization_id WHERE u.organization_id=? ORDER BY u.rank_level,u.display_name,u.id", a.organizationId());
-        var allowed = rows.stream().filter(u -> admin || (enabled(u) && !"admin".equals(s(u,"role")) && access.canSeePerson(a,u)))
-            .filter(u -> query.isEmpty() || (s(u,"displayName")+" "+s(u,"username")).toLowerCase(Locale.ROOT).contains(query))
-            .map(this::safeUser).toList();
-        return page(allowed, filters);
+        if(admin) {access.requireAdmin(a);access.requireCurrent(a);} else business(a);
+        String query=filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
+        var allowed=access.employeeDirectory(a,admin).stream()
+                .filter(row->admin || access.canSeePerson(a,row))
+                .filter(row->query.isEmpty() || Objects.toString(row.get("displayName"),"").toLowerCase(Locale.ROOT).contains(query))
+                .map(this::safeUser).toList();
+        return page(allowed,filters);
     }
 
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> person(Actor a, String userId) {
         business(a);
-        var row = db.one("SELECT u.*,o.name AS organization_name,d.name AS department_name,p.name AS position_name,"
-                + "t.name AS team_name,m.display_name AS manager_name FROM users u "
-                + "LEFT JOIN organizations o ON o.id=u.organization_id "
-                + "LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
-                + "LEFT JOIN positions p ON p.organization_id=u.organization_id AND p.id=u.position_id "
-                + "LEFT JOIN teams t ON t.id=u.team_id AND t.organization_id=u.organization_id "
-                + "LEFT JOIN users m ON m.id=u.manager_id AND m.organization_id=u.organization_id "
-                + "WHERE u.id=? AND u.organization_id=? AND u.active=1", userId, a.organizationId());
-        if (!access.canSeePerson(a, row)) throw ApiException.notFound();
-        var result = safeUser(row);
-        for (String key : List.of("organizationName","departmentName","positionName","teamName","managerName")) {
-            result.put(key, row.get(key));
-        }
-        result.put("canReadLogs", access.canReadLogAuthor(a, userId));
-        result.put("canSetHandoverPreset", access.canSetHandoverPreset(a, row));
-        if (access.canReadPhone(a, row)) result.put("phone", row.get("phone"));
+        var row=employee(a,userId);
+        if(!access.canSeePerson(a,row)) throw ApiException.notFound();
+        var result=safeUser(row);
+        result.put("canReadLogs",access.canReadLogAuthor(a,userId));
+        result.put("canSetHandoverPreset",access.canSetHandoverPreset(a,row));
+        if(access.canReadPhone(a,row)) result.put("phone",db.one(
+                "SELECT phone FROM users WHERE id=? AND organization_id=? AND active=1",userId,a.organizationId()).get("phone"));
         return result;
     }
 
-    /**
-     * Subordinates shown from "My": the intersection of the current profile scope and the actual
-     * management chain. Indirect reports are included only when the profile scope itself allows them.
-     */
+    /** Every actual descendant, including team heads and their employees below a department head. */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> reports(Actor a) {
         business(a);
-        var rows = db.list("SELECT u.*,d.name AS department_name,p.name AS position_name,t.name AS team_name,"
-                + "m.display_name AS manager_name FROM users u "
-                + "LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
-                + "LEFT JOIN positions p ON p.organization_id=u.organization_id AND p.id=u.position_id "
-                + "LEFT JOIN teams t ON t.organization_id=u.organization_id AND t.id=u.team_id "
-                + "LEFT JOIN users m ON m.organization_id=u.organization_id AND m.id=u.manager_id "
-                + "WHERE u.organization_id=? AND u.active=1 ORDER BY u.rank_level,u.display_name,u.id", a.organizationId());
-        Map<String,List<Map<String,Object>>> children = new LinkedHashMap<>();
-        for (var row : rows) children.computeIfAbsent(s(row,"managerId"), key -> new ArrayList<>()).add(row);
-        Set<String> visited = new HashSet<>();
-        visited.add(a.id());
-        Deque<String> queue = new ArrayDeque<>();
-        queue.add(a.id());
-        List<Map<String,Object>> items = new ArrayList<>();
-        while (!queue.isEmpty()) {
-            String managerId = queue.removeFirst();
-            for (var row : children.getOrDefault(managerId, List.of())) {
-                String id = s(row,"id");
-                if (!visited.add(id)) continue;
-                queue.addLast(id);
-                if ("admin".equals(s(row,"role")) || !access.canSeePerson(a,row)) continue;
-                Map<String,Object> item = new LinkedHashMap<>();
-                for (String key : List.of("id","displayName","role","rankLevel","departmentId","departmentName",
-                        "positionId","positionName","teamId","teamName","managerId","managerName")) item.put(key,row.get(key));
-                item.put("canReadLogs", access.canReadLogAuthor(a,id));
-                items.add(item);
-            }
-        }
-        items.sort(Comparator.comparingLong((Map<String,Object> row) -> n(row,"rankLevel"))
-                .thenComparing(row -> Objects.toString(row.get("displayName"),""))
-                .thenComparing(row -> Objects.toString(row.get("id"),"")));
-        return Map.of("items", items);
+        var items=access.employeeDirectory(a,false).stream()
+                .filter(row->!a.id().equals(s(row,"id")) && access.isManagerOf(a,s(row,"id")))
+                .map(row->{var item=safeUser(row);item.put("canReadLogs",access.canReadLogAuthor(a,s(row,"id")));return item;})
+                .toList();
+        return Map.of("items",items);
     }
 
+    private Map<String,Object> employee(Actor a,String id) {
+        return access.employeeDirectory(a,false).stream().filter(row->id.equals(s(row,"id")))
+                .findFirst().orElseThrow(ApiException::notFound);
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> logs(Actor a, Map<String,String> filters) {
         business(a);
         String scope = filters.getOrDefault("scope", "self");
@@ -158,6 +128,7 @@ public class WorkspaceService {
      * then team, then person — and every count is computed after the log-authority filter, so an
      * unauthorized colleague can never be inferred from a candidate, a count or a tree edge.
      */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> logAuthors(Actor a, Map<String,String> filters) {
         business(a);
         String query = filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
@@ -166,13 +137,8 @@ public class WorkspaceService {
         String department = optionalId(filters.get("departmentId"), "departmentId");
         String team = optionalId(filters.get("teamId"), "teamId");
         var allowed = new LinkedHashSet<>(access.logAuthorIds(a));
-        var rows = db.list("SELECT u.id,u.username,u.display_name,u.manager_id,u.department_id,u.team_id,"
-                + "d.name AS department_name,t.name AS team_name,t.department_id AS team_department_id "
-                + "FROM users u "
-                + "LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
-                + "LEFT JOIN teams t ON t.organization_id=u.organization_id AND t.id=u.team_id "
-                + "WHERE u.organization_id=? AND u.active=1 ORDER BY u.rank_level,u.display_name,u.id",a.organizationId())
-            .stream().filter(u -> allowed.contains(s(u,"id"))).toList();
+        var rows=access.employeeDirectory(a,false).stream()
+                .filter(u->allowed.contains(s(u,"id"))).toList();
         // The department/team levels themselves are derived from the authorized authors only.
         Map<String,String> departments = new LinkedHashMap<>();
         Map<String,Map<String,Object>> teams = new LinkedHashMap<>();
@@ -189,7 +155,7 @@ public class WorkspaceService {
                 Map<String,Object> node = new LinkedHashMap<>();
                 node.put("id", teamId);
                 node.put("name", s(u,"teamName"));
-                node.put("departmentId", s(u,"teamDepartmentId"));
+                node.put("departmentId", s(u,"departmentId"));
                 teams.put(teamId, node);
                 teamCounts.put(teamId, 0);
             }
@@ -199,11 +165,10 @@ public class WorkspaceService {
             .filter(u -> department == null || department.equals(departmentKey(u)))
             .filter(u -> team == null || team.equals(s(u,"teamId")))
             .filter(u -> query.isEmpty()
-                || s(u,"displayName").toLowerCase(Locale.ROOT).contains(query)
-                || s(u,"username").toLowerCase(Locale.ROOT).contains(query))
+                || s(u,"displayName").toLowerCase(Locale.ROOT).contains(query))
             .map(u -> {
                 Map<String,Object> item = new LinkedHashMap<>();
-                for (String key : List.of("id","username","displayName","managerId","departmentId","departmentName","teamId","teamName")) item.put(key,u.get(key));
+                for (String key : List.of("id","displayName","placementType","positionId","positionName","managerId","departmentId","departmentName","teamId","teamName")) item.put(key,u.get(key));
                 item.put("self", a.id().equals(s(u,"id")));
                 return item;
             }).toList();
@@ -264,6 +229,7 @@ public class WorkspaceService {
         return departmentId == null ? "__none__" : departmentId;
     }
 
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> log(Actor a, String logId) {
         business(a);
         var row = db.one("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.id=? AND w.deleted_at IS NULL",a.organizationId(),logId);
@@ -545,6 +511,14 @@ public class WorkspaceService {
         boolean withinWithdrawal = occurred != null && !now.isBefore(occurred) && now.isBefore(occurred.plusSeconds(180));
         var view = new LinkedHashMap<String,Object>();
         for (String key : List.of("id","eventId","eventType","createdAt","deliveredAt","readAt","readonly","relationLost")) view.put(key,row.get(key));
+        // A copy delivered before a later organization/assignment change keeps only the historical
+        // task entry. Delivery-time flags cannot describe authority lost after delivery.
+        if (!commentEvent && objectOpen && s(row,"taskId")!=null
+                && row.get("deliveredAt")!=null && "event".equals(s(row,"source"))
+                && !canReadTask(a,s(row,"taskId"),true)) {
+            view.put("readonly",true);
+            view.put("relationLost",true);
+        }
         view.put("taskId",objectOpen?row.get("taskId"):null);
         view.put("requestId",objectOpen?row.get("requestId"):null);
         if (revoked) {
@@ -692,6 +666,7 @@ public class WorkspaceService {
                 .stream().map(row -> Map.<String,Object>of("id",s(row,"id"),"displayName",s(row,"displayName"))).toList();
     }
 
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> home(Actor a) {
         business(a);
         var assigned = db.list("SELECT t.id AS task_id,v.title,v.priority,a.assigned_at,a.assigned_source "
@@ -764,6 +739,7 @@ public class WorkspaceService {
         if(company!=null) requireHomeWrite(a,"company");
     }
 
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> statistics(Actor a, Map<String,String> filters) {
         if(!Set.of("scope").containsAll(filters.keySet())) throw bad("统计接口当前仅支持 scope，不支持日期筛选");
         String requested=filters.getOrDefault("scope","auto");
@@ -801,7 +777,7 @@ public class WorkspaceService {
         result.put("statisticsScope",scope.statisticsScope()); result.put("statisticsScopeLabel",scopeLabel(scope.statisticsScope()));
         result.put("keywordScope",scope.statisticsScope()); result.put("suggestionScope",scope.suggestionScope());
         result.put("suggestionScopeLabel",scopeLabel(scope.suggestionScope())); result.put("requestedScope",scope.requestedScope());
-        result.put("authzVersion",a.authzVersion()); result.put("summary",summary); result.put("suggestions",suggestions);
+        result.put("scopeModel","fixed_positions_v1"); result.put("authzVersion",a.authzVersion()); result.put("summary",summary); result.put("suggestions",suggestions);
         result.put("sourceTaskIds",List.copyOf(sourceTaskIds)); result.put("generatedAt",now.toString());
         String jobId = id();
         db.update("INSERT INTO ai_jobs(id,organization_id,requested_by,status,scope_type,result_json,completed_at) VALUES(?,?,?,'completed',?,?,UTC_TIMESTAMP(6))",jobId,a.organizationId(),a.id(),"role_scoped",db.json(result));
@@ -810,28 +786,21 @@ public class WorkspaceService {
         return Map.of("jobId",jobId,"status","completed","mode","rule_based");
     }
 
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> aiJob(Actor a, String jobId) {
         business(a);
         var row = db.one("SELECT * FROM ai_jobs WHERE organization_id=? AND requested_by=? AND id=?",a.organizationId(),a.id(),jobId);
         var result = db.parse(s(row,"resultJson"));
-        Set<String> currentIds;
-        if ("role_scoped".equals(s(row,"scopeType"))) {
-            Object storedVersion=result.get("authzVersion");
-            if (storedVersion instanceof Number number && number.longValue()!=a.authzVersion()) {
-                throw new ApiException(409,"ANALYSIS_SCOPE_CHANGED","授权范围已变化，请重新生成分析");
-            }
-            AnalysisScope current=analysisScope(a,Optional.ofNullable(s(result,"requestedScope")).orElse("auto"));
-            if (!Objects.equals(current.statisticsScope(),s(result,"statisticsScope"))
-                    || !Objects.equals(current.suggestionScope(),s(result,"suggestionScope"))) {
-                throw new ApiException(409,"ANALYSIS_SCOPE_CHANGED","授权范围已变化，请重新生成分析");
-            }
-            currentIds=new HashSet<>();
-            visibleTasks(a,current.statisticsQuery()).forEach(t->currentIds.add(s(t,"id")));
-            visibleTasks(a,current.suggestionQuery()).forEach(t->currentIds.add(s(t,"id")));
-        } else {
-            // Backward compatibility for jobs written before role-scoped analysis was introduced.
-            currentIds=new HashSet<>(visibleTasks(a,s(row,"scopeType")).stream().map(t->s(t,"id")).toList());
-        }
+        if(!"fixed_positions_v1".equals(s(result,"scopeModel")) || !(result.get("authzVersion") instanceof Number stored)
+                || stored.longValue()!=a.authzVersion())
+            throw new ApiException(409,"ANALYSIS_SCOPE_CHANGED","授权范围已变化，请重新生成分析");
+        AnalysisScope current=analysisScope(a,Optional.ofNullable(s(result,"requestedScope")).orElse("auto"));
+        if(!Objects.equals(current.statisticsScope(),s(result,"statisticsScope"))
+                || !Objects.equals(current.suggestionScope(),s(result,"suggestionScope")))
+            throw new ApiException(409,"ANALYSIS_SCOPE_CHANGED","授权范围已变化，请重新生成分析");
+        Set<String> currentIds=new HashSet<>();
+        visibleTasks(a,current.statisticsQuery()).forEach(t->currentIds.add(s(t,"id")));
+        visibleTasks(a,current.suggestionQuery()).forEach(t->currentIds.add(s(t,"id")));
         if (result.get("sourceTaskIds") instanceof Collection<?> ids && !currentIds.containsAll(ids)) {
             throw new ApiException(409,"ANALYSIS_SCOPE_CHANGED","可见范围已变化，请重新生成分析");
         }
@@ -846,7 +815,7 @@ public class WorkspaceService {
 
     public Map<String,Object> audit(Actor a, Map<String,String> filters) {
         access.requireAdmin(a);
-        var list = db.list("SELECT a.*,u.display_name actor_name FROM audit_logs a JOIN users u ON u.id=a.actor_id AND u.organization_id=a.organization_id WHERE a.organization_id=? ORDER BY a.created_at DESC,a.id",a.organizationId()).stream()
+        var list = db.list("SELECT a.*,COALESCE(u.display_name,ad.display_name) AS actor_name,p.account_type AS actor_account_type FROM audit_logs a JOIN principals p ON p.id=a.actor_id AND p.organization_id=a.organization_id LEFT JOIN users u ON u.id=p.id AND u.organization_id=p.organization_id LEFT JOIN admin_accounts ad ON ad.id=p.id AND ad.organization_id=p.organization_id WHERE a.organization_id=? ORDER BY a.created_at DESC,a.id",a.organizationId()).stream()
             .filter(row->!filters.containsKey("action") || filters.get("action").equals(s(row,"action")))
             .filter(row->!filters.containsKey("objectId") || filters.get("objectId").equals(s(row,"objectId")))
             .map(row->{row.put("details",db.parse(s(row,"detailsJson")));row.remove("detailsJson");return row;}).toList();
@@ -878,8 +847,9 @@ public class WorkspaceService {
         }
         if(includeApproval) {
             for(var request:db.list("SELECT id FROM approval_requests WHERE organization_id=? AND task_id=?",a.organizationId(),taskId)) {
-                try {tasks.approval(a,s(request,"id"));return true;}
-                catch(ApiException ignored) { /* Recompute the current reviewer through the task authority. */ }
+                // A plain read probe: the transactional approval projection would mark this worker
+                // transaction rollback-only when an unrelated request is legitimately not visible.
+                if(tasks.canReadRequest(a,s(request,"id"))) return true;
             }
         }
         return false;
@@ -888,7 +858,7 @@ public class WorkspaceService {
     @SuppressWarnings("unchecked")
     private List<Map<String,Object>> visibleTasks(Actor a,String scope) {
         business(a);
-        if (!Set.of("self","visible").contains(scope)) throw bad("scope 只能为 self 或 visible");
+        if (!Set.of("self","visible","company","department","team").contains(scope)) throw bad("分析范围无效");
         var rows = new ArrayList<Map<String,Object>>();
         int offset = 0;
         while (true) {
@@ -900,6 +870,15 @@ public class WorkspaceService {
         }
         if (scope.equals("self")) rows.removeIf(t -> !a.id().equals(s(t,"originalCreatorId"))
                 && !(t.get("assigneeIds") instanceof Collection<?> ids && ids.contains(a.id())));
+        if(Set.of("department","team").contains(scope)) {
+            var members=access.employeeDirectory(a,false).stream()
+                    .filter(person->"department".equals(scope)
+                            ? Objects.equals(a.departmentId(),s(person,"departmentId"))
+                            : Objects.equals(a.teamId(),s(person,"teamId")))
+                    .map(person->s(person,"id")).collect(java.util.stream.Collectors.toSet());
+            rows.removeIf(task->!(task.get("assigneeIds") instanceof Collection<?> ids)
+                    || ids.stream().noneMatch(members::contains));
+        }
         return rows;
     }
 
@@ -927,16 +906,17 @@ public class WorkspaceService {
         String statisticsScope=switch(a.scope("task_view")) {
             case "company" -> "company";
             case "department" -> "department";
+            case "team" -> "team";
             default -> "self";
         };
-        String statisticsQuery="self".equals(statisticsScope)?"self":"visible";
-        String suggestionScope="department".equals(statisticsScope)?"self":statisticsScope;
-        String suggestionQuery="self".equals(suggestionScope)?"self":"visible";
+        String statisticsQuery=statisticsScope;
+        String suggestionScope=Set.of("department","team").contains(statisticsScope)?"self":statisticsScope;
+        String suggestionQuery=suggestionScope;
         return new AnalysisScope(statisticsScope,statisticsQuery,suggestionScope,suggestionQuery,"auto");
     }
 
     private static String scopeLabel(String scope) {
-        return switch(scope) {case "company"->"全公司";case "department"->"本部门";default->"本人";};
+        return switch(scope) {case "company"->"全公司";case "department"->"本部门";case "team"->"本团队";default->"本人";};
     }
 
     /** Real title/description extraction; the vocabulary is learned from the authorized task text. */
@@ -1092,7 +1072,7 @@ public class WorkspaceService {
     public static long notificationVersion(Map<String,Object> row) {return 1+(row.get("readAt")==null?0:1)+(row.get("hiddenAt")==null?0:2);}
     private Map<String,Object> safeUser(Map<String,Object> row) {
         var safe=new LinkedHashMap<String,Object>();
-        for(String key:List.of("id","username","displayName","role","teamId","teamName","managerId","rankLevel","active")) safe.put(key,row.get(key));
+        for(String key:List.of("id","displayName","accountType","role","placementType","departmentId","departmentName","positionId","positionName","teamId","teamName","managerId","managerName","rankLevel","active","avatar")) safe.put(key,row.get(key));
         return safe;
     }
     private ZoneId zone(Actor a) {return ZoneId.of(s(db.one("SELECT time_zone FROM organizations WHERE id=?",a.organizationId()),"timeZone"));}
@@ -1102,7 +1082,7 @@ public class WorkspaceService {
     private static LocalDate optionalDate(String value) {try{return value==null?null:LocalDate.parse(value);}catch(Exception e){throw bad("日期必须为 YYYY-MM-DD");}}
     static Instant instant(String value) {try{return value==null?null:Instant.parse(value);}catch(Exception e){return null;}}
     static boolean enabled(Map<String,Object> row) {Object v=row.get("active");return Boolean.TRUE.equals(v)||"1".equals(String.valueOf(v));}
-    static void business(Actor a) {if("admin".equals(a.role()))throw new ApiException(403,"BUSINESS_ROLE_REQUIRED","管理员请使用管理端接口");}
+    private void business(Actor a) {if(a.administrator())throw new ApiException(403,"BUSINESS_ROLE_REQUIRED","管理员请使用管理端接口");access.requireCurrent(a);}
     static String nullable(Map<String,Object> body,String key) {String value=s(body,key);return value==null||value.isBlank()?null:value.trim();}
     static String required(Map<String,Object> body,String key,int max) {if(!(body.get(key) instanceof String))throw bad(key+" 必须为文字");String value=nullable(body,key);if(value==null||value.length()>max)throw bad(key+" 不能为空且不得超过 "+max+" 字");return value;}
     static void allowed(Map<String,Object> body,Set<String> keys) {if(!keys.containsAll(body.keySet()))throw bad("请求含不支持的字段");}

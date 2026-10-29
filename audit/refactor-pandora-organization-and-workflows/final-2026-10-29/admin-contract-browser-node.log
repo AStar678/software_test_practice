@@ -1,0 +1,46 @@
+--- attempt 1 ---
+PASS independent admin enters real management console
+PASS retired role and manual manager controls are removed
+PASS management console has no role/scope/rank/manual-manager editor
+PASS position catalog is independent display metadata
+PASS real employee identity is readable before the position rename
+PASS admin creates a display position independently
+PASS admin renames a display position independently
+PASS renamed position is shown for assigned staff
+PASS position rename keeps role, placement, manager and position id
+PASS position rename changes no creation route or reviewer
+PASS legacy role data and the new position name do not grant admin access
+PASS employee token is refused by GET /admin/users
+PASS employee token is refused by POST /admin/positions
+PASS employee token is refused by GET /admin/notifications
+PASS administrator still calls management APIs normally
+PASS employee credentials cannot enter the admin console
+PASS company info shows exactly ten managed entries
+PASS company info admin order matches the managed list
+PASS App reads company info in the same admin order
+PASS admin reorders company info through the real console
+PASS admin and App read the reordered company info identically
+PASS eleventh company entry is refused at the ten-item limit
+PASS notification management loads real notification rows
+PASS notification management shows real withdrawn and unread statuses
+PASS browser withdraws a real notification strictly under 180 seconds
+PASS withdrawn notification keeps a placeholder and removes its withdraw action
+PASS browser refuses notification withdrawal at or after 180 seconds
+PASS closed-window notification remains unread and withdrawable
+PASS admin task history lists real tasks
+PASS admin task history opens complete real operation history
+PASS invalid final draft stays open with server error and no write
+PASS cancel local draft restores saved positions
+PASS browser saves full head swap with derived managers
+PASS new employee is a local draft before final save
+PASS new employee full plan returns one-time initial credential
+PASS organization persists across browser reload without redisplaying credential
+PASS founder inventory offers no deactivation control
+PASS departure inventory includes completed work and pending unpublished creation
+PASS browser commits completed responsibility takeover and employee deactivation
+PASS admin account has independent account fields
+PASS admin account save revokes console and requires new login
+PASS renamed administrator logs in with same principal
+PASS real admin interactions have no browser exceptions
+
+--- STDERR ---

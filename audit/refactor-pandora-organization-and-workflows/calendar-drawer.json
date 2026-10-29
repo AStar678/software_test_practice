@@ -1,0 +1,1457 @@
+{
+  "updated": "2026-10-29T03:49:10.088Z",
+  "checks": [
+    {
+      "check": "login form is ready",
+      "pass": true
+    },
+    {
+      "check": "employee signs in with the real phone login",
+      "pass": true
+    },
+    {
+      "check": "drawer overlays the left side of the schedule at 390",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 0,
+          "r": 390,
+          "w": 390,
+          "h": 715.5625
+        },
+        "drawer": {
+          "l": -4.796450614929199,
+          "r": 159.0004243850708,
+          "w": 163.796875,
+          "h": 715.5625
+        },
+        "content": {
+          "w": 390,
+          "h": 650.5625
+        },
+        "ratio": 0.41999198717948716,
+        "visibleRight": 230.9995756149292,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "drawer keeps the underlying calendar size at 390",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "w": 390,
+          "h": 650.5625
+        },
+        "after": {
+          "w": 390,
+          "h": 650.5625
+        },
+        "scroll": [
+          2268,
+          2268
+        ]
+      }
+    },
+    {
+      "check": "drawer wraps and scrolls its own content at 390",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 0,
+          "r": 390,
+          "w": 390,
+          "h": 715.5625
+        },
+        "drawer": {
+          "l": -4.796450614929199,
+          "r": 159.0004243850708,
+          "w": 163.796875,
+          "h": 715.5625
+        },
+        "content": {
+          "w": 390,
+          "h": 650.5625
+        },
+        "ratio": 0.41999198717948716,
+        "visibleRight": 230.9995756149292,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "drawer offers month/day and my applications and drops the removed note at 390",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 0,
+          "r": 390,
+          "w": 390,
+          "h": 715.5625
+        },
+        "drawer": {
+          "l": -4.796450614929199,
+          "r": 159.0004243850708,
+          "w": 163.796875,
+          "h": 715.5625
+        },
+        "content": {
+          "w": 390,
+          "h": 650.5625
+        },
+        "ratio": 0.41999198717948716,
+        "visibleRight": 230.9995756149292,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "drawer receives focus and locks the underlying calendar at 390",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 0,
+          "r": 390,
+          "w": 390,
+          "h": 715.5625
+        },
+        "drawer": {
+          "l": -4.796450614929199,
+          "r": 159.0004243850708,
+          "w": 163.796875,
+          "h": 715.5625
+        },
+        "content": {
+          "w": 390,
+          "h": 650.5625
+        },
+        "ratio": 0.41999198717948716,
+        "visibleRight": 230.9995756149292,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "Tab from the last drawer control wraps back inside the drawer",
+      "pass": true,
+      "evidence": {
+        "focusables": {
+          "count": 5,
+          "last": "schedule-my-applications"
+        },
+        "wrapped": {
+          "inside": true,
+          "action": "schedule-side-close"
+        }
+      }
+    },
+    {
+      "check": "Shift+Tab from the first drawer control wraps to the last one inside the drawer",
+      "pass": true,
+      "evidence": {
+        "inside": true,
+        "action": "schedule-my-applications"
+      }
+    },
+    {
+      "check": "the drawer scrim stops the calendar underneath from scrolling",
+      "pass": true,
+      "evidence": {
+        "wheel": {
+          "scroll": 2268,
+          "drawer": true,
+          "sheet": null
+        }
+      }
+    },
+    {
+      "check": "clicking the covered calendar never opens a sheet or a detail (the scrim takes the click)",
+      "pass": true,
+      "evidence": {
+        "drawer": false,
+        "sheet": null,
+        "overlay": true,
+        "mode": "month",
+        "scroll": 2268
+      }
+    },
+    {
+      "check": "Esc closes the drawer and returns focus to the trigger with the calendar unlocked",
+      "pass": true,
+      "evidence": {
+        "active": "schedule-side-toggle",
+        "inert": false,
+        "scroll": 2268
+      }
+    },
+    {
+      "check": "the scrim closes the drawer and restores the original calendar scroll and trigger focus",
+      "pass": true,
+      "evidence": {
+        "active": "schedule-side-toggle",
+        "scroll": 2268
+      }
+    },
+    {
+      "check": "the drawer back control closes it",
+      "pass": true
+    },
+    {
+      "check": "the drawer close control closes it",
+      "pass": true
+    },
+    {
+      "check": "closing the drawer keeps the month date, density, stream and scroll unchanged",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "anchor": 1793462400000,
+          "rowHeight": "220",
+          "scroll": 2268
+        },
+        "after": {
+          "mode": "month",
+          "anchor": 1793462400000,
+          "rowHeight": "220",
+          "stream": [
+            "2026-09",
+            "2026-10",
+            "2026-11",
+            "2026-12",
+            "2027-01"
+          ],
+          "scroll": 2268,
+          "note": false,
+          "focus": "schedule-side-toggle"
+        }
+      }
+    },
+    {
+      "check": "drawer overlays the left side of the schedule at 320",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 0,
+          "r": 320,
+          "w": 320,
+          "h": 611.5625
+        },
+        "drawer": {
+          "l": -2.7581183910369873,
+          "r": 141.241881608963,
+          "w": 144,
+          "h": 611.5625
+        },
+        "content": {
+          "w": 320,
+          "h": 546.5625
+        },
+        "ratio": 0.45,
+        "visibleRight": 178.758118391037,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "drawer keeps the underlying calendar size at 320",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "w": 320,
+          "h": 546.5625
+        },
+        "after": {
+          "w": 320,
+          "h": 546.5625
+        },
+        "scroll": [
+          2268,
+          2268
+        ]
+      }
+    },
+    {
+      "check": "drawer wraps and scrolls its own content at 320",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 0,
+          "r": 320,
+          "w": 320,
+          "h": 611.5625
+        },
+        "drawer": {
+          "l": -2.7581183910369873,
+          "r": 141.241881608963,
+          "w": 144,
+          "h": 611.5625
+        },
+        "content": {
+          "w": 320,
+          "h": 546.5625
+        },
+        "ratio": 0.45,
+        "visibleRight": 178.758118391037,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "drawer offers month/day and my applications and drops the removed note at 320",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 0,
+          "r": 320,
+          "w": 320,
+          "h": 611.5625
+        },
+        "drawer": {
+          "l": -2.7581183910369873,
+          "r": 141.241881608963,
+          "w": 144,
+          "h": 611.5625
+        },
+        "content": {
+          "w": 320,
+          "h": 546.5625
+        },
+        "ratio": 0.45,
+        "visibleRight": 178.758118391037,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "drawer receives focus and locks the underlying calendar at 320",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 0,
+          "r": 320,
+          "w": 320,
+          "h": 611.5625
+        },
+        "drawer": {
+          "l": -2.7581183910369873,
+          "r": 141.241881608963,
+          "w": 144,
+          "h": 611.5625
+        },
+        "content": {
+          "w": 320,
+          "h": 546.5625
+        },
+        "ratio": 0.45,
+        "visibleRight": 178.758118391037,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "drawer overlays the left side of the schedule at 1440",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 160,
+          "r": 1280,
+          "w": 1120,
+          "h": 766.5625
+        },
+        "drawer": {
+          "l": 150.99032592773438,
+          "r": 621.3809814453125,
+          "w": 470.3906555175781,
+          "h": 766.5625
+        },
+        "content": {
+          "w": 1120,
+          "h": 701.5625
+        },
+        "ratio": 0.41999165671212335,
+        "visibleRight": 658.6190185546875,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "drawer keeps the underlying calendar size at 1440",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "w": 1120,
+          "h": 701.5625
+        },
+        "after": {
+          "w": 1120,
+          "h": 701.5625
+        },
+        "scroll": [
+          2268,
+          2268
+        ]
+      }
+    },
+    {
+      "check": "drawer wraps and scrolls its own content at 1440",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 160,
+          "r": 1280,
+          "w": 1120,
+          "h": 766.5625
+        },
+        "drawer": {
+          "l": 150.99032592773438,
+          "r": 621.3809814453125,
+          "w": 470.3906555175781,
+          "h": 766.5625
+        },
+        "content": {
+          "w": 1120,
+          "h": 701.5625
+        },
+        "ratio": 0.41999165671212335,
+        "visibleRight": 658.6190185546875,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "drawer offers month/day and my applications and drops the removed note at 1440",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 160,
+          "r": 1280,
+          "w": 1120,
+          "h": 766.5625
+        },
+        "drawer": {
+          "l": 150.99032592773438,
+          "r": 621.3809814453125,
+          "w": 470.3906555175781,
+          "h": 766.5625
+        },
+        "content": {
+          "w": 1120,
+          "h": 701.5625
+        },
+        "ratio": 0.41999165671212335,
+        "visibleRight": 658.6190185546875,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "drawer receives focus and locks the underlying calendar at 1440",
+      "pass": true,
+      "evidence": {
+        "card": {
+          "l": 160,
+          "r": 1280,
+          "w": 1120,
+          "h": 766.5625
+        },
+        "drawer": {
+          "l": 150.99032592773438,
+          "r": 621.3809814453125,
+          "w": 470.3906555175781,
+          "h": 766.5625
+        },
+        "content": {
+          "w": 1120,
+          "h": 701.5625
+        },
+        "ratio": 0.41999165671212335,
+        "visibleRight": 658.6190185546875,
+        "wraps": true,
+        "overflow": "auto",
+        "modes": [
+          "month",
+          "day"
+        ],
+        "applications": true,
+        "role": "dialog",
+        "modal": "true",
+        "labelled": "日历面板",
+        "inert": true,
+        "scroll": 2268,
+        "activeInside": true,
+        "activeTag": "返回",
+        "toggleExpanded": "true",
+        "removedNote": true,
+        "notePresent": false
+      }
+    },
+    {
+      "check": "the drawer covers about 40-45% of the schedule region",
+      "pass": true,
+      "evidence": {
+        "320": 0.45,
+        "390": 0.41999198717948716,
+        "1440": 0.41999165671212335
+      }
+    },
+    {
+      "check": "a click on the month date number opens that day sheet",
+      "pass": true,
+      "evidence": {
+        "mode": "month",
+        "overlay": true,
+        "title": "11月1日 周日",
+        "items": 16
+      }
+    },
+    {
+      "check": "a click on the empty part of a month cell opens that day sheet",
+      "pass": true,
+      "evidence": {
+        "blankDate": "2026-12-03",
+        "blankItems": 0
+      }
+    },
+    {
+      "check": "the +N overflow opens the complete day sheet and shows the real hidden count",
+      "pass": true,
+      "evidence": {
+        "overflow": {
+          "date": "2026-11-01",
+          "count": 13,
+          "text": "+13",
+          "label": "11月1日，还有13项日程，打开当日任务清单",
+          "x": 362.1328125,
+          "y": 420.25
+        },
+        "hiddenTruth": {
+          "all": 16,
+          "shown": 3,
+          "hidden": 13
+        }
+      }
+    },
+    {
+      "check": "a cross-week bar opens the sheet of the clicked middle date, not the bar start",
+      "pass": true,
+      "evidence": {
+        "barTarget": {
+          "column": 4,
+          "start": 2,
+          "end": 7,
+          "x": 250.71428571428572,
+          "y": 404.25,
+          "weekStart": "2026-11-09"
+        },
+        "barPoint": {
+          "column": 4,
+          "x": 250.71428571428572,
+          "y": 404.25
+        },
+        "barSheet": {
+          "date": "2026-11-13",
+          "mode": "month",
+          "overlay": true
+        },
+        "expectedBarDate": "2026-11-13"
+      }
+    },
+    {
+      "check": "the cross-month task is drawn in both month sections",
+      "pass": true,
+      "evidence": [
+        {
+          "key": "2026-12",
+          "hidden": false,
+          "start": 0,
+          "end": 4,
+          "week": "2026-12-28"
+        },
+        {
+          "key": "2027-01",
+          "hidden": false,
+          "start": 4,
+          "end": 5,
+          "week": "2026-12-28"
+        }
+      ]
+    },
+    {
+      "check": "a bar that continues into the next month opens the clicked calendar date",
+      "pass": true,
+      "evidence": {
+        "monthRows": [
+          {
+            "key": "2026-12",
+            "hidden": false,
+            "start": 0,
+            "end": 4,
+            "week": "2026-12-28"
+          },
+          {
+            "key": "2027-01",
+            "hidden": false,
+            "start": 4,
+            "end": 5,
+            "week": "2026-12-28"
+          }
+        ],
+        "monthTarget": {
+          "weekStart": "2026-12-28",
+          "month": "2027-01",
+          "column": 4,
+          "x": 250.71428571428572,
+          "y": 404
+        },
+        "monthPoint": {
+          "column": 4,
+          "x": 250.71428571428572,
+          "y": 404
+        },
+        "monthState": {
+          "date": "2027-01-01",
+          "mode": "month"
+        },
+        "monthExpected": "2027-01-01",
+        "nextMonthRow": true
+      }
+    },
+    {
+      "check": "a drag across the month grid never opens the sheet or the day view",
+      "pass": true,
+      "evidence": {
+        "sheet": null,
+        "mode": "month",
+        "overlay": true
+      }
+    },
+    {
+      "check": "the same click opens the sheet once the gesture suppression window ends",
+      "pass": true
+    },
+    {
+      "check": "a two-finger resize gesture never turns the following tap into a sheet",
+      "pass": true,
+      "evidence": {
+        "sheet": null,
+        "mode": "month"
+      }
+    },
+    {
+      "check": "arrow keys pick a covered date on a cross-day bar and Enter opens exactly that day",
+      "pass": true,
+      "evidence": {
+        "keyboardSetup": {
+          "start": 2,
+          "end": 7,
+          "weekStart": "2026-11-09"
+        },
+        "keyboardBar": {
+          "hit": "4",
+          "date": "2026-11-13",
+          "label": "Calendar week span，我负责，待开始，紧急程度中，11月11日 10:00 → 11月19日 12:00，说明：Calendar browser acceptance task，已选择11月13日，回车打开当日清单"
+        },
+        "keyboardDate": "2026-11-13",
+        "keyboardExpected": 4,
+        "beforeEnter": {
+          "active": "91d9339d-cbc9-4468-9c85-3b9fbb1d9f58",
+          "isBar": true,
+          "sheet": false
+        },
+        "enterKey": {
+          "prevented": true,
+          "dispatched": false
+        },
+        "enterDiag": {
+          "active": "SECTION",
+          "sheetDom": true,
+          "errors": []
+        }
+      }
+    },
+    {
+      "check": "activating the focused bar (the native Enter/Space result) opens the same selected day",
+      "pass": true,
+      "evidence": {
+        "nativeDate": "2026-11-13",
+        "keyboardExpected": 4
+      }
+    },
+    {
+      "check": "the day sheet lists every own effective task exactly once in pin/start/id order",
+      "pass": true,
+      "evidence": {
+        "sheetList": {
+          "count": 16,
+          "first": [
+            "75918be9-a9e3-4792-bb4f-89b06045a12f",
+            "704988a8-4e40-423a-89da-6746021488c6",
+            "081a86db-a5b6-42d1-850b-389fbfbdd59b"
+          ]
+        },
+        "dayTruth": {
+          "total": 16,
+          "first": [
+            "75918be9-a9e3-4792-bb4f-89b06045a12f",
+            "704988a8-4e40-423a-89da-6746021488c6",
+            "081a86db-a5b6-42d1-850b-389fbfbdd59b"
+          ]
+        }
+      }
+    },
+    {
+      "check": "the day sheet header shows the date, day view and close entries",
+      "pass": true
+    },
+    {
+      "check": "the day sheet keeps a bottom-sheet height and wraps at 320",
+      "pass": true,
+      "evidence": {
+        "ratio": 0.8,
+        "width": 320,
+        "cardWidth": 320,
+        "wraps": true,
+        "scrollable": true
+      }
+    },
+    {
+      "check": "the sheet only lists own effective ownership and excludes other people tasks",
+      "pass": true,
+      "evidence": {
+        "excluded": [
+          "e3850948-2bd7-417b-80bc-35ed2199fe12",
+          "2d401678-4321-4858-9eb2-17afcb86bfcf",
+          "096eab96-8109-4544-b57f-abb6124b1f16"
+        ]
+      }
+    },
+    {
+      "check": "closing a nested task detail returns to the sheet with its scroll and focus intact",
+      "pass": true,
+      "evidence": {
+        "bodyScroll": {
+          "top": 120,
+          "sh": 1626,
+          "ch": 475
+        },
+        "listTop": 120,
+        "detailState": {
+          "title": "Calendar all day",
+          "sheet": true
+        },
+        "afterDetail": {
+          "top": 120,
+          "sheet": true,
+          "drawer": false,
+          "focus": "704988a8-4e40-423a-89da-6746021488c6"
+        }
+      }
+    },
+    {
+      "check": "closing the sheet restores the month date, density, stream and scroll without leaving an inert page",
+      "pass": true,
+      "evidence": {
+        "monthSnapshot": {
+          "anchor": 1793462400000,
+          "rowHeight": "220",
+          "stream": [
+            "2026-09",
+            "2026-10",
+            "2026-11",
+            "2026-12",
+            "2027-01"
+          ],
+          "scroll": 2151,
+          "mode": "month"
+        },
+        "monthAfter": {
+          "anchor": 1793462400000,
+          "rowHeight": "220",
+          "stream": [
+            "2026-09",
+            "2026-10",
+            "2026-11",
+            "2026-12",
+            "2027-01"
+          ],
+          "scroll": 2151,
+          "mode": "month",
+          "inert": false,
+          "drawer": false,
+          "layers": [],
+          "sheetState": null
+        }
+      }
+    },
+    {
+      "check": "the sheet returns focus to the month trigger that opened it",
+      "pass": true,
+      "evidence": {
+        "date": "2026-11-01",
+        "action": "schedule-month-date",
+        "tag": "BUTTON",
+        "cls": "p-month-date is-selected"
+      }
+    },
+    {
+      "check": "only 查看日视图 switches to the day mode for that date",
+      "pass": true,
+      "evidence": {
+        "anchor": 1793462400000,
+        "mode": "day",
+        "heading": "11月1日 周日",
+        "items": 16
+      }
+    },
+    {
+      "check": "the fixture provides an empty day for the empty state",
+      "pass": true,
+      "evidence": "2026-12-11"
+    },
+    {
+      "check": "an empty day sheet shows the empty state and a create entry",
+      "pass": true,
+      "evidence": {
+        "text": "这一天还没有任务创建任务",
+        "create": true
+      }
+    },
+    {
+      "check": "creating from the empty sheet opens the create form for that date and keeps the sheet",
+      "pass": true,
+      "evidence": {
+        "start": "2026-12-11",
+        "end": "2026-12-11",
+        "sheet": true
+      }
+    },
+    {
+      "check": "cancelling the form returns to the still-open day sheet",
+      "pass": true
+    },
+    {
+      "check": "dragging the sheet handle down closes it",
+      "pass": true
+    },
+    {
+      "check": "a short handle drag snaps back instead of closing",
+      "pass": true,
+      "evidence": {
+        "sheet": true,
+        "transform": ""
+      }
+    },
+    {
+      "check": "a cancelled handle drag restores the sheet without closing it",
+      "pass": true,
+      "evidence": {
+        "sheet": true,
+        "transform": ""
+      }
+    },
+    {
+      "check": "a second finger cancels the drag and keeps the sheet open",
+      "pass": true,
+      "evidence": {
+        "sheet": true,
+        "transform": ""
+      }
+    },
+    {
+      "check": "pulling the body down while it is at the top closes the sheet and takes over the gesture",
+      "pass": true,
+      "evidence": {
+        "pull": {
+          "prevented": true
+        },
+        "pullClosed": true
+      }
+    },
+    {
+      "check": "ordinary body scrolling is never hijacked into a close",
+      "pass": true,
+      "evidence": {
+        "prevented": false,
+        "start": 60,
+        "after": 60,
+        "sheet": true
+      }
+    },
+    {
+      "check": "Esc closes only the topmost layer, then the sheet",
+      "pass": true,
+      "evidence": {
+        "afterFirstEsc": {
+          "sheet": true,
+          "drawer": false
+        }
+      }
+    },
+    {
+      "check": "signing out clears the drawer and sheet overlay state",
+      "pass": true,
+      "evidence": {
+        "layers": 0,
+        "drawer": false,
+        "sheet": null,
+        "inert": 0,
+        "page": "map"
+      }
+    },
+    {
+      "check": "login form is ready",
+      "pass": true
+    },
+    {
+      "check": "employee signs in with the real phone login",
+      "pass": true
+    },
+    {
+      "check": "signing back in reopens the calendar without stale overlays",
+      "pass": true,
+      "evidence": {
+        "layers": 0,
+        "drawer": false,
+        "sheet": null,
+        "months": 5
+      }
+    },
+    {
+      "check": "every all-day and every timed task is rendered exactly once from the real coverage",
+      "pass": true,
+      "evidence": {
+        "expected": {
+          "allday": 22,
+          "timed": 8
+        },
+        "dom": {
+          "allday": 22,
+          "timed": 8
+        }
+      }
+    },
+    {
+      "check": "more than five all-day tasks stay reachable through the compact scroll area",
+      "pass": true,
+      "evidence": {
+        "sh": 370,
+        "ch": 161,
+        "overflow": "auto"
+      }
+    },
+    {
+      "check": "more than five overlapping timed tasks split across the full day width",
+      "pass": true,
+      "evidence": {
+        "overlapCount": 7,
+        "columns": [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ]
+      }
+    },
+    {
+      "check": "the day axis still runs to 24:00 in a real scrollable column",
+      "pass": true,
+      "evidence": {
+        "axisHeight": 1440,
+        "endVisible": true
+      }
+    },
+    {
+      "check": "a timed task fully covering the day is projected without changing its schedule",
+      "pass": true,
+      "evidence": {
+        "allDay": false,
+        "startAt": "2026-11-01T12:00:00Z",
+        "dueAt": "2026-11-03T02:00:00Z",
+        "pinned": false,
+        "tag": null,
+        "tagId": null
+      }
+    },
+    {
+      "check": "the projected task detail keeps the real schedule and no all-day semantics",
+      "pass": true,
+      "evidence": {
+        "title": "Calendar cross",
+        "snippet": "待开始中👤我负责任务名称Calendar cross创建者founder创建时间2026年10月29日 11:49当前业务责任方founder任务排期11月1日 20:00 → 11月3日 10:00截止2026年11月3日 10:00负责人alpha-one-employee审核人founder任务说明Calendar browser acceptance task当前进展暂无评论共 0 条还没有评论，欢迎发表第一条。加载更多发表评论（平铺，不支持回复层级）发表"
+      }
+    },
+    {
+      "check": "displaying the full-day projection never writes task data",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "label colour and pin markers survive the display classification",
+      "pass": true,
+      "evidence": {
+        "crossMonthAppearance": {
+          "bg": "#ffe1ea",
+          "border": "#e39ab4",
+          "hidden": true,
+          "pinnedStar": true,
+          "pinnedBg": "#ffe1ea"
+        },
+        "crossDayAppearance": {
+          "bg": "#ffe1ea",
+          "border": "#e39ab4"
+        },
+        "pinnedDayAppearance": {
+          "bg": "#ffe1ea",
+          "pinnedStar": true
+        }
+      }
+    },
+    {
+      "check": "the month stream starts with consecutive months and unique dates",
+      "pass": true,
+      "evidence": {
+        "stream": [
+          "2026-09",
+          "2026-10",
+          "2026-11",
+          "2026-12",
+          "2027-01"
+        ],
+        "sections": [
+          "2026-09",
+          "2026-10",
+          "2026-11",
+          "2026-12",
+          "2027-01"
+        ],
+        "duplicates": 0
+      }
+    },
+    {
+      "check": "scrolling down appends the next month without duplicating or losing dates",
+      "pass": true,
+      "evidence": {
+        "scroll": [
+          5335,
+          5335
+        ],
+        "stream": [
+          "2026-09",
+          "2026-10",
+          "2026-11",
+          "2026-12",
+          "2027-01",
+          "2027-02"
+        ],
+        "sections": [
+          "2026-09",
+          "2026-10",
+          "2026-11",
+          "2026-12",
+          "2027-01",
+          "2027-02"
+        ]
+      }
+    },
+    {
+      "check": "appending the next month keeps the same scroll offset and visible week",
+      "pass": true,
+      "evidence": {
+        "stableBefore": {
+          "scroll": 3429,
+          "stream": 6
+        },
+        "stableAfter": {
+          "scroll": 3429,
+          "stream": 7
+        },
+        "stableAnchor": "2026-11-23",
+        "stableAnchorAfter": "2026-11-23"
+      }
+    },
+    {
+      "check": "scrolling up prepends the previous month with unique dates",
+      "pass": true,
+      "evidence": {
+        "stream": [
+          "2026-08",
+          "2026-09",
+          "2026-10",
+          "2026-11",
+          "2026-12",
+          "2027-01",
+          "2027-02",
+          "2027-03"
+        ],
+        "scroll": 1358
+      }
+    },
+    {
+      "check": "deep scrolling keeps a bounded, non-repeating mounted window",
+      "pass": true,
+      "evidence": {
+        "streamLength": 12,
+        "sections": 12,
+        "duplicates": 0
+      }
+    },
+    {
+      "check": "a cross-month task is drawn in more than one month section without being lost",
+      "pass": true,
+      "evidence": [
+        {
+          "week": "2026-12-28",
+          "start": "0",
+          "end": "4"
+        },
+        {
+          "week": "2026-12-28",
+          "start": "4",
+          "end": "5"
+        }
+      ]
+    },
+    {
+      "check": "scrolling past December continues into January of the next year",
+      "pass": true,
+      "evidence": {
+        "decemberStream": [
+          "2026-10",
+          "2026-11",
+          "2026-12",
+          "2027-01",
+          "2027-02"
+        ],
+        "keys": [
+          "2027-01",
+          "2027-02",
+          "2027-03"
+        ]
+      }
+    },
+    {
+      "check": "the year/month picker still jumps to a distant month and rebuilds the stream",
+      "pass": true,
+      "evidence": {
+        "picked": {
+          "y": 2027,
+          "m": 3,
+          "stream": [
+            "2027-01",
+            "2027-02",
+            "2027-03",
+            "2027-04",
+            "2027-05"
+          ]
+        },
+        "pickTarget": {
+          "year": 2027,
+          "month": 3
+        }
+      }
+    },
+    {
+      "check": "keyboard resizing changes the visible density and stores it locally",
+      "pass": true,
+      "evidence": {
+        "densityBefore": 220,
+        "densityAfter": {
+          "rowHeight": 228,
+          "stored": 228,
+          "capacity": "3条叠放日程，展开 53%"
+        }
+      }
+    },
+    {
+      "check": "the stored row height really mounts more task lanes",
+      "pass": true,
+      "evidence": {
+        "rowHeight": 340,
+        "shown": 14,
+        "hidden": 36
+      }
+    },
+    {
+      "check": "returning from the task form keeps the month date, stream, density and scroll",
+      "pass": true,
+      "evidence": {
+        "contextBeforeForm": {
+          "anchor": 1793462400000,
+          "stream": [
+            "2026-09",
+            "2026-10",
+            "2026-11",
+            "2026-12",
+            "2027-01",
+            "2027-02"
+          ],
+          "rowHeight": "340",
+          "scroll": 8097
+        },
+        "contextAfterForm": {
+          "anchor": 1793462400000,
+          "stream": [
+            "2026-09",
+            "2026-10",
+            "2026-11",
+            "2026-12",
+            "2027-01",
+            "2027-02"
+          ],
+          "rowHeight": "340",
+          "scroll": 8097,
+          "mode": "month"
+        }
+      }
+    },
+    {
+      "check": "a failed month supplement shows an explicit retry instead of incomplete months",
+      "pass": true,
+      "evidence": {
+        "failure": {
+          "before": 6
+        },
+        "failed": {
+          "stream": 6,
+          "sections": 6,
+          "notice": true,
+          "text": "2027年3月加载失败（模拟月份载入失败），当前只显示已加载的月份。重试",
+          "retry": true
+        },
+        "failedParts": {
+          "notice": true,
+          "retry": true,
+          "stream": true,
+          "sections": true,
+          "loadText": true,
+          "partialText": true
+        }
+      }
+    },
+    {
+      "check": "a retry that keeps failing does not pretend the month loaded",
+      "pass": true,
+      "evidence": {
+        "stream": 6,
+        "notice": true
+      }
+    },
+    {
+      "check": "the retry loads the month once the source recovers and clears the notice",
+      "pass": true,
+      "evidence": {
+        "recovered": {
+          "stream": 7,
+          "notice": false,
+          "sections": 7
+        }
+      }
+    },
+    {
+      "check": "month augmentation stays stable at 320",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "stream": 7,
+          "scroll": 9957
+        },
+        "after": {
+          "stream": 8,
+          "scroll": 9957
+        },
+        "anchor": "2027-02-15",
+        "anchorAfter": "2027-02-15"
+      }
+    },
+    {
+      "check": "month augmentation stays stable at 1440",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "stream": 7,
+          "scroll": 9802
+        },
+        "after": {
+          "stream": 8,
+          "scroll": 9802
+        },
+        "anchor": "2027-02-15",
+        "anchorAfter": "2027-02-15"
+      }
+    },
+    {
+      "check": "the calendar checks raised no browser exception",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "result": "PASS"
+}

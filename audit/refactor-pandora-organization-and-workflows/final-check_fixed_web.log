@@ -1,0 +1,115 @@
+PASS independent admin enters real management console
+PASS retired role and manual manager controls are removed
+PASS invalid final draft stays open with server error and no write
+PASS cancel local draft restores saved positions
+PASS browser saves full head swap with derived managers
+PASS new employee is a local draft before final save
+PASS new employee full plan returns one-time initial credential
+PASS organization persists across browser reload without redisplaying credential
+PASS founder inventory offers no deactivation control
+PASS departure inventory includes completed work and pending unpublished creation
+PASS browser commits completed responsibility takeover and employee deactivation
+PASS admin account has independent account fields
+PASS admin account save revokes console and requires new login
+PASS renamed administrator logs in with same principal
+PASS real admin interactions have no browser exceptions
+PASS login form ready alpha-one-employee
+PASS phone login alpha-one-employee
+PASS dashboard priority and independent quadrants at 320
+PASS dashboard priority and independent quadrants at 390
+PASS dashboard priority and independent quadrants at 1440
+PASS task form opens with a real loading state instead of stale rows
+PASS task form completes the full load with total/page controls
+PASS task form retains more than two pages and removes explanatory statistics
+PASS failed task load shows the error and an explicit retry without claiming partial completeness
+PASS retry after a real network failure restores the complete result
+PASS task form snapshot is complete and cross-day work is counted once
+PASS global task form sort title ascending is stable over the whole result
+PASS global task form sort title continues on the third page
+PASS global task form sort title descending is stable and resets paging
+PASS global task form sort title paging is continuous after direction change
+PASS global task form sort createdAt ascending is stable over the whole result
+PASS global task form sort createdAt continues on the third page
+PASS global task form sort createdAt descending is stable and resets paging
+PASS global task form sort createdAt paging is continuous after direction change
+PASS global task form sort start ascending is stable over the whole result
+PASS global task form sort start continues on the third page
+PASS global task form sort start descending is stable and resets paging
+PASS global task form sort start paging is continuous after direction change
+PASS global task form sort due ascending is stable over the whole result
+PASS global task form sort due continues on the third page
+PASS global task form sort due descending is stable and resets paging
+PASS global task form sort due paging is continuous after direction change
+PASS global task form sort urgency ascending is stable over the whole result
+PASS global task form sort urgency continues on the third page
+PASS global task form sort urgency descending is stable and resets paging
+PASS global task form sort urgency paging is continuous after direction change
+PASS global task form sort status ascending is stable over the whole result
+PASS global task form sort status continues on the third page
+PASS global task form sort status descending is stable and resets paging
+PASS global task form sort status paging is continuous after direction change
+PASS task name column stays fixed while the table scrolls sideways
+PASS combined task form filters recalculate total and page
+PASS date/relation/name filters keep a cross-day task in its single matching row
+PASS detail return setup uses the filtered second page
+PASS task detail opens over the filtered table
+PASS closing task detail preserves filters, page, scroll and the loaded rows
+PASS task form returns to the calendar
+PASS calendar context opens the task form
+PASS closing the task form restores the original calendar mode and date
+PASS real log form offers only company today/yesterday/day-before
+PASS changing the date opens a real backfill form for yesterday
+PASS backfill creates a real yesterday log
+PASS backfill creates a real day-before log with a distinct object id
+PASS the page rejects a future business date
+PASS the page rejects a business date outside the three-day window
+PASS deleting and recreating the day slot restores the same real id and first-creation instant
+PASS a same-day concurrent creation reopens the existing real record instead of duplicating it
+PASS same-day uniqueness keeps one live row for the company business date
+PASS new log for today closes the form and reloads the workspace
+PASS today log is a real record with the company business date
+PASS today log appears once on the workspace and uses the same object id
+PASS log detail edit opens the same record
+PASS log detail edit saves the same real id and keeps its business date
+PASS log detail closes without rewriting the log date
+PASS reopening the same business day edits the existing record instead of a new one
+PASS a stale page cannot write after the real 24-hour freeze
+PASS the frozen log is visibly read-only in the real page
+PASS recreating a deleted slot never resets the first-creation freeze window
+PASS personal item list exposes opening only, not edit/delete actions
+PASS new personal item is saved with a real object id
+PASS workbench detail opens the same personal item with edit/delete
+PASS personal item edit keeps the same id and does not rewrite the source log
+PASS personal item delete asks for confirmation in the real page
+PASS personal item delete removes the real object and keeps logs untouched
+PASS tenth personal item disables the visible create action
+PASS the eleventh personal item is rejected by the real service with a stable error
+PASS login form ready alpha-one-head
+PASS phone login alpha-one-head
+PASS published task with a pending change is still in the task form
+PASS task form lists the effective state and excludes unpublished/proposed work
+PASS pending-completion detail shows the effective version, not the proposal
+PASS login form ready beta-two-employee
+PASS phone login beta-two-employee
+PASS takeover recipient sees reopen on original completed work
+PASS reopen exposes ordered active replacement assignees
+PASS reopen saves new round and replacement without adding business owner
+PASS login form ready founder
+PASS phone login founder
+PASS fixed profile organization fields founder
+PASS fixed manager retains subordinate profile and logs founder
+PASS actual descendant contact and log entry founder
+PASS login form ready alpha-head
+PASS phone login alpha-head
+PASS fixed profile organization fields alpha-head
+PASS fixed manager retains subordinate profile and logs alpha-head
+PASS actual descendant contact and log entry alpha-head
+PASS person log target is an indirect descendant, not only a direct report
+PASS person log entry clears stale department/team/search filters
+PASS person log list contains only the target person records from current authority
+PASS login form ready alpha-two-head
+PASS phone login alpha-two-head
+PASS fixed profile organization fields alpha-two-head
+PASS fixed manager retains subordinate profile and logs alpha-two-head
+PASS actual descendant contact and log entry alpha-two-head
+PASS employee interactions have no browser exceptions

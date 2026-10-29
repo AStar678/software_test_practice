@@ -1,0 +1,232 @@
+{
+  "updated": "2026-10-29T02:11:44.786933+00:00",
+  "checks": [
+    {
+      "check": "alpha-head cannot maintain another company/founder tag",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-head cannot maintain another company/founder tag",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "alpha-one-employee cannot maintain another company/founder tag",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin cannot maintain another company/founder tag",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "other-founder cannot maintain another company/founder tag",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "task tag changes directly when applicant is current business owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "multiple task tags are refused",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "catalog rename/recolor updates current task reference",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "logical tag deletion preserves referenced name/color snapshot",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "deleted tag is absent from selection catalogue",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "new comment delivers exactly one copy to the targeted recipient",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "comment does not notify its author",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "notification exposes current valid comment and its purpose",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "comment hierarchy is rejected",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "non-author cannot edit a comment",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "normal task detail refuses removed employee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "removed employee loses comment reads/writes despite delivered task history",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "comment notification detail masks body and every jump after object revocation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "comment notification cannot grant historical task access",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "ordinary previously delivered notification marks later authority loss for the UI",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "ordinary task notification still opens only current effective read-only data",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "historical-only task remains excluded from normal task list",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "new comment delivers exactly one copy to the targeted recipient",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "deleted comment notification hides old excerpt/jumps while object is otherwise visible",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "deleted comment never grants a notification historical entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "new comment delivers exactly one copy to the targeted recipient",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "missing comment notification hides old excerpt/jumps while object is otherwise visible",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "missing comment never grants a notification historical entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "new comment delivers exactly one copy to the targeted recipient",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "withdrawn summary exception is limited to actual manager and has no jumps",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "manager withdrawn exception cannot revive a deleted comment",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "progress uses current business owner review",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "comment edit neither changes pending business version nor emits another notification",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "immutable publication cursor survives deleted first row/anchor and an edited unseen row",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "new comment delivers exactly one copy to the targeted recipient",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "log comment targets only its author, without broad management delivery",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "log body freezes at its first creation window",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "frozen log comments stay independent of body/version/freeze and support author control",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "opening notification persists read time",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "personal hide ends ordinary historical task exception",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "withdrawal at 179 seconds follows strict 180-second rule",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "withdrawal at 180 seconds follows strict 180-second rule",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "code": "WITHDRAW_WINDOW_CLOSED"
+      }
+    },
+    {
+      "check": "expired notification cannot be read or grant historical entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "notification cleanup leaves business history intact",
+      "pass": true,
+      "evidence": null
+    }
+  ],
+  "result": "PASS"
+}

@@ -46,6 +46,21 @@ public class AuthFilter extends OncePerRequestFilter {
                     "message","首次登录或管理员重置后必须修改密码，当前会话仅可改密或退出"));
             return;
         }
+        if(actor.administrator() && !req.getRequestURI().startsWith("/api/v1/admin/")
+                && !req.getRequestURI().startsWith("/api/v1/auth/")) {
+            res.setStatus(403);res.setContentType("application/json;charset=UTF-8");
+            mapper.writeValue(res.getOutputStream(),Map.of("code","BUSINESS_ROLE_REQUIRED",
+                    "message","管理员请使用独立管理端"));return;
+        }
+        if(actor.business() && req.getRequestURI().startsWith("/api/v1/admin/")) {
+            res.setStatus(403);res.setContentType("application/json;charset=UTF-8");
+            mapper.writeValue(res.getOutputStream(),Map.of("code","FORBIDDEN","message","需要独立管理员身份"));return;
+        }
+        if(actor.business() && "unplaced".equals(actor.role()) && !req.getRequestURI().startsWith("/api/v1/auth/")) {
+            res.setStatus(409);res.setContentType("application/json;charset=UTF-8");
+            mapper.writeValue(res.getOutputStream(),Map.of("code","ORGANIZATION_MAPPING_INCOMPLETE",
+                    "message","固定组织位置尚未就绪，请管理员修复"));return;
+        }
         chain.doFilter(req,res);
     }
 }

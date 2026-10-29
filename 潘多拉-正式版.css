@@ -309,3 +309,8 @@ button{cursor:pointer}
 .notif .npurpose{flex:0 0 auto;padding:1px 6px;border-radius:5px;background:#eef2fb;color:#2c4f8f;font-size:10.5px;line-height:16px;font-weight:700;white-space:nowrap}
 .notif .ntitle{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .notif .nsummary{font-size:12px;line-height:1.5;color:#4b4b52;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+
+/* Reserve room beside the scrollbar and prevent long titles from compressing priorities. */
+.tasks-quad .q-body{padding-inline-end:14px;scrollbar-gutter:stable;scroll-padding-bottom:14px}
+.map-grid .home-task{display:grid;grid-template-columns:minmax(0,1fr) max-content;column-gap:10px}
+.map-grid .home-task-priority{white-space:nowrap;min-width:2em;text-align:right}

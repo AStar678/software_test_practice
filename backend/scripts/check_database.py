@@ -35,9 +35,9 @@ CHECKS = {
     "every_snapshot_has_assignee": """
         SELECT COUNT(*) FROM task_versions v WHERE NOT EXISTS
           (SELECT 1 FROM task_version_assignees a WHERE a.organization_id=v.organization_id AND a.version_id=v.id)""",
-    "direct_requests_have_reason_and_no_fictional_reviewer_decision": """
+    "direct_requests_have_reason_and_actual_applicant_source": """
         SELECT COUNT(*) FROM approval_requests WHERE status='direct'
-          AND (exemption_reason IS NULL OR CHAR_LENGTH(TRIM(exemption_reason))=0 OR decided_by IS NOT NULL)""",
+          AND (exemption_reason IS NULL OR CHAR_LENGTH(TRIM(exemption_reason))=0 OR (decided_by IS NOT NULL AND decided_by<>applicant_id))""",
     "settled_requests_have_decision_timestamp": """
         SELECT COUNT(*) FROM approval_requests WHERE status<>'pending' AND decided_at IS NULL""",
     "pending_requests_have_no_decision_timestamp": """
@@ -54,7 +54,9 @@ CHECKS = {
           GROUP BY event_id,recipient_id HAVING COUNT(*)>1) x""",
     "all_business_foreign_keys_include_organization": """
         SELECT COUNT(*) FROM (SELECT TABLE_NAME,CONSTRAINT_NAME,
-          MAX(REFERENCED_TABLE_NAME) target,SUM(COLUMN_NAME='organization_id') scoped
+          MAX(REFERENCED_TABLE_NAME) target,
+          SUM(COLUMN_NAME='organization_id' OR
+              (TABLE_NAME='organizations' AND COLUMN_NAME='id' AND REFERENCED_COLUMN_NAME='organization_id')) scoped
           FROM information_schema.KEY_COLUMN_USAGE
           WHERE TABLE_SCHEMA=DATABASE() AND REFERENCED_TABLE_NAME IS NOT NULL
           GROUP BY TABLE_NAME,CONSTRAINT_NAME) x WHERE target<>'organizations' AND scoped=0""",

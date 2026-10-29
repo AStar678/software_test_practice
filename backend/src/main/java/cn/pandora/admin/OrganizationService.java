@@ -1,172 +1,104 @@
 package cn.pandora.admin;
 
-import cn.pandora.auth.Access;
-import cn.pandora.auth.Actor;
-import cn.pandora.auth.AuthService;
-import cn.pandora.auth.PhoneNumbers;
+import cn.pandora.auth.*;
 import cn.pandora.common.*;
 import org.springframework.stereotype.Service;
-
-import java.sql.Timestamp;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.*;
 import java.util.*;
 import java.util.regex.Pattern;
-
 import static cn.pandora.common.Db.*;
 
-/**
- * Organization maintenance and account administration (DEV-001, DEV-002, DEV-004, DEV-028).
- *
- * Every command is called from inside {@link Writes#run}, so it already holds the organization lock.
- * Validation is deliberately strict and explicit: employee department and position are required, one
- * department / one team / one manager per person, no manager or department cycles, references stay
- * inside the company, and the company has exactly one administrator. Organization position is always
- * supplied by the administrator and is never inferred from a position name or a team lead.
- */
+/** Independent administration; organization relationships are written only by complete plans. */
 @Service
 public class OrganizationService {
-    private static final Pattern USERNAME = Pattern.compile("^[a-z0-9][a-z0-9._-]{2,79}$");
-    private static final Pattern TIME = Pattern.compile("^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$");
-    private static final Set<String> LEVELS = Set.of("urgent", "high", "medium", "low");
-    private static final int COMPANY_ITEM_LIMIT = 10;
-
+    private static final Pattern TIME=Pattern.compile("^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$");
+    private static final Set<String> LEVELS=Set.of("urgent","high","medium","low");
+    private static final int COMPANY_ITEM_LIMIT=10;
     private final Db db;
     private final Access access;
     private final Events events;
-    private final RoleCatalog roles;
     private final OrganizationConstraints constraints;
     private final AuthService auth;
-    private final cn.pandora.task.TaskService tasks;
-
-    public OrganizationService(Db db, Access access, Events events, RoleCatalog roles,
-                               OrganizationConstraints constraints, AuthService auth,
-                               cn.pandora.task.TaskService tasks) {
-        this.db = db; this.access = access; this.events = events; this.roles = roles;
-        this.constraints = constraints; this.auth = auth; this.tasks = tasks;
+    private final OrganizationPlans plans;
+    public OrganizationService(Db db,Access access,Events events,OrganizationConstraints constraints,AuthService auth,OrganizationPlans plans) {
+        this.db=db;this.access=access;this.events=events;this.constraints=constraints;this.auth=auth;this.plans=plans;
     }
 
-    /**
-     * A real organization change must leave every pending request pointing at a reviewer who can still
-     * decide it, and must record who moved and why (DEV-010). Runs inside the same transaction.
-     */
-    private void refreshPendingRoutes(Actor actor) {
-        tasks.refreshPendingRoutes(actor);
-    }
-
-    // ------------------------------------------------------------------ //
-    // Structure read model
-    // ------------------------------------------------------------------ //
-
-    public Map<String, Object> structure(Actor actor) {
-        access.requireAdmin(actor);
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("organization", db.one("SELECT id,name,time_zone,off_work_time,authz_version FROM organizations WHERE id=?", actor.organizationId()));
-        result.put("departments", db.list("SELECT d.*,p.name AS parent_name,(SELECT COUNT(*) FROM teams t WHERE t.organization_id=d.organization_id AND t.department_id=d.id) AS team_count FROM departments d LEFT JOIN departments p ON p.organization_id=d.organization_id AND p.id=d.parent_id WHERE d.organization_id=? ORDER BY d.name,d.id", actor.organizationId()));
-        result.put("positions", db.list("SELECT * FROM positions WHERE organization_id=? ORDER BY sort_order,name,id", actor.organizationId()));
-        result.put("teams", db.list("SELECT t.*,d.name AS department_name,l.display_name AS lead_name,(SELECT COUNT(*) FROM users u WHERE u.organization_id=t.organization_id AND u.team_id=t.id AND u.active=1) AS member_count FROM teams t LEFT JOIN departments d ON d.organization_id=t.organization_id AND d.id=t.department_id LEFT JOIN users l ON l.organization_id=t.organization_id AND l.id=t.lead_user_id WHERE t.organization_id=? ORDER BY d.name,t.name,t.id", actor.organizationId()));
-        result.put("roles", db.list("SELECT * FROM roles WHERE organization_id=? ORDER BY administrator DESC,code", actor.organizationId()).stream().map(row -> {
-            Map<String, Object> role = new LinkedHashMap<>(row);
-            role.put("capabilities", roles.capabilitiesForRole(actor.organizationId(), s(row, "id")));
-            role.put("scopes", roles.scopesForRole(actor.organizationId(), s(row, "id")));
-            return role;
-        }).toList());
-        result.put("constraints", constraints.status());
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map<String,Object> structure(Actor actor) {
+        access.requireAdmin(actor);access.requireCurrent(actor);
+        var result=new LinkedHashMap<String,Object>(plans.draft(actor));
+        result.put("organization",db.one("SELECT id,name,time_zone,off_work_time,founder_employee_id,authz_version FROM organizations WHERE id=?",actor.organizationId()));
         return result;
     }
+    public boolean applyOrganizationConstraints() {return false;}
+    public List<Map<String,Object>> roles(Actor actor) {access.requireAdmin(actor);throw retiredRoles();}
+    public Map<String,Object> updateRoleScopes(Actor actor,String code,Map<String,Object> input) {access.requireAdmin(actor);throw retiredRoles();}
+    public Map<String,Object> grantRoles(Actor actor,String id,String match,Map<String,Object> input) {access.requireAdmin(actor);throw retiredRoles();}
+    private static ApiException retiredRoles() {return new ApiException(410,"ROLE_AUTHORIZATION_RETIRED","业务权限由固定组织位置推导，不再维护角色授权");}
+    private ApiException planRequired(Actor actor) {access.requireAdmin(actor);return new ApiException(410,"ORGANIZATION_PLAN_REQUIRED","请一次提交完整组织计划，安排单位负责人和所有人员最终位置");}
+    public Map<String,Object> createDepartment(Actor actor,Map<String,Object> input) {throw planRequired(actor);}
+    public Map<String,Object> updateDepartment(Actor actor,String id,String match,Map<String,Object> input) {throw planRequired(actor);}
+    public Map<String,Object> createTeam(Actor actor,Map<String,Object> input) {throw planRequired(actor);}
+    public Map<String,Object> updateTeam(Actor actor,String id,String match,Map<String,Object> input) {throw planRequired(actor);}
+    public Map<String,Object> transferEmployee(Actor actor,String id,String match,Map<String,Object> input) {throw planRequired(actor);}
+    public Map<String,Object> teamManagement(Actor actor) {throw new ApiException(403,"FORBIDDEN","组织由独立管理员通过完整计划维护");}
 
-    /**
-     * Applies the staged NOT NULL tightening after an administrator completes the mapping. The caller
-     * invokes this after the write command has committed, because the DDL implicitly commits and must
-     * not run inside the organization write transaction.
-     */
-    public boolean applyOrganizationConstraints() {
-        return constraints.tryTighten();
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map<String,Object> employees(Actor actor,Map<String,String> filters) {
+        access.requireAdmin(actor);access.requireCurrent(actor);
+        String query=filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
+        var rows=access.employeeDirectory(actor,true).stream().filter(row->query.isEmpty()
+                || Objects.toString(row.get("displayName"),"").toLowerCase(Locale.ROOT).contains(query)
+                || Objects.toString(row.get("departmentName"),"").toLowerCase(Locale.ROOT).contains(query)).toList();
+        return Map.of("items",rows,"total",rows.size());
+    }
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map<String,Object> employee(Actor actor,String id) {
+        access.requireAdmin(actor);access.requireCurrent(actor);
+        return access.employeeDirectory(actor,true).stream().filter(row->id.equals(s(row,"id"))).findFirst().orElseThrow(ApiException::notFound);
+    }
+    public List<Map<String,Object>> departmentMembers(Actor actor,String departmentId) {
+        access.requireAdmin(actor);requireDepartment(actor,departmentId);
+        return access.employeeDirectory(actor,false).stream().filter(row->departmentId.equals(s(row,"departmentId"))).toList();
     }
 
-    public List<Map<String, Object>> roles(Actor actor) {
+    @SuppressWarnings("unchecked")
+    public Writes.Outcome createEmployee(Actor actor,Map<String,Object> input) {
+        access.requireAdmin(actor);allowed(input,Set.of("displayName","phone","placementType","departmentId","teamId","positionId"));
+        var draft=plans.draft(actor);String id=Db.id();
+        var plan=new LinkedHashMap<String,Object>();
+        for(String key:List.of("departments","teams","placements","expectedEmployees")) plan.put(key,draft.get(key));
+        // Draft lists are local copies; cancellation or failed final validation leaves the DB untouched.
+        var places=new ArrayList<>((List<Map<String,Object>>)draft.get("placements"));
+        var placement=new LinkedHashMap<String,Object>();placement.put("employeeId",id);
+        for(String field:List.of("placementType","departmentId","teamId","positionId")) placement.put(field,input.get(field));
+        places.add(placement);plan.put("placements",places);plan.put("reason","新增员工");
+        var addition=new LinkedHashMap<String,Object>();addition.put("id",id);addition.put("displayName",input.get("displayName"));addition.put("phone",input.get("phone"));
+        plan.put("newEmployees",List.of(addition));
+        var outcome=plans.save(actor,"\""+draft.get("rowVersion")+"\"",plan);
+        var passwords=(Map<String,String>)outcome.oneTimeOnly().get("initialPasswords");
+        return new Writes.Outcome(Map.of("userId",id,"rowVersion",2,"mustChangePassword",true),Map.of("initialPassword",passwords.get(id)));
+    }
+
+    public Map<String,Object> administrator(Actor actor) {
         access.requireAdmin(actor);
-        return db.list("SELECT * FROM roles WHERE organization_id=? ORDER BY administrator DESC,code", actor.organizationId());
+        return db.one("SELECT id,account_name,display_name,row_version,must_change_password FROM admin_accounts WHERE organization_id=? AND id=?",actor.organizationId(),actor.id());
     }
-
-    private static final Set<String> SCOPE_TYPES = Set.of("task_view", "task_dispatch", "log_read", "profile_read");
-    private static final Set<String> SCOPE_LEVELS = Set.of("self", "reports", "department", "company");
-
-    /**
-     * Independently configure the ranges of one role definition. View and dispatch stay separate, so
-     * e.g. a company-wide view with self-only dispatch is a real, persisted combination rather than a
-     * hand-built test actor (DEV-002). The authorization version advances, so a stale page, an old
-     * candidate list, a pending approval and an idempotent replay are all rechecked.
-     */
-    public Map<String, Object> updateRoleScopes(Actor actor, String code, Map<String, Object> input) {
-        access.requireCapability(actor, "manage_organization");
-        allowed(input, Set.of("scopes"));
-        Object raw = input.get("scopes");
-        if (!(raw instanceof Map<?, ?> requested)) throw bad("scopes须为范围对象");
-        Map<String, Object> role = db.find("SELECT id,administrator FROM roles WHERE organization_id=? AND code=?",
-                actor.organizationId(), code);
-        if (role == null) throw bad("未知角色代码");
-        boolean administratorRole = Boolean.TRUE.equals(role.get("administrator"))
-                || role.get("administrator") instanceof Number flag && flag.intValue() == 1;
-        if (administratorRole && !requested.isEmpty()) {
-            throw bad("管理员不取得员工查看、派发、日志或资料范围");
-        }
-        Map<String, String> scopes = new LinkedHashMap<>();
-        for (Map.Entry<?, ?> entry : requested.entrySet()) {
-            String type = String.valueOf(entry.getKey());
-            if (!SCOPE_TYPES.contains(type)) throw bad("未知授权范围类型：" + type);
-            if (!(entry.getValue() instanceof String level) || !SCOPE_LEVELS.contains(level)) {
-                throw bad("范围级别须为 self、reports、department 或 company");
-            }
-            scopes.put(type, level);
-        }
-        String roleId = s(role, "id");
-        for (Map.Entry<String, String> entry : scopes.entrySet()) {
-            db.update("INSERT INTO role_scopes(organization_id,role_id,scope_type,scope_level) VALUES(?,?,?,?) "
-                    + "ON DUPLICATE KEY UPDATE scope_level=VALUES(scope_level)",
-                    actor.organizationId(), roleId, entry.getKey(), entry.getValue());
-        }
-        bumpAuthority(actor, "organization.role.scopes_updated",
-                Map.of("roleCode", code, "scopes", scopes));
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("roleCode", code);
-        result.put("scopes", roles.scopesForRole(actor.organizationId(), roleId));
-        result.put("authzVersion", n(db.one("SELECT authz_version FROM organizations WHERE id=?", actor.organizationId()), "authzVersion"));
-        return result;
-    }
-
-    // ------------------------------------------------------------------ //
-    // Departments and positions
-    // ------------------------------------------------------------------ //
-
-    public Map<String, Object> createDepartment(Actor actor, Map<String, Object> input) {
-        access.requireCapability(actor, "manage_organization");
-        allowed(input, Set.of("name", "parentId"));
-        String name = text(input.get("name"), "部门名称", 100);
-        requireUnique("SELECT 1 FROM departments WHERE organization_id=? AND name=?", "部门名称已存在", actor.organizationId(), name);
-        String parentId = optionalId(input.get("parentId"), "parentId");
-        if (parentId != null) requireDepartment(actor, parentId);
-        String id = Db.id();
-        db.update("INSERT INTO departments(id,organization_id,name,parent_id) VALUES(?,?,?,?)", id, actor.organizationId(), name, parentId);
-        bumpAuthority(actor, "organization.department.created", Map.of("departmentId", id, "name", name));
-        return Map.of("departmentId", id, "rowVersion", 1);
-    }
-
-    public Map<String, Object> updateDepartment(Actor actor, String id, String ifMatch, Map<String, Object> input) {
-        access.requireCapability(actor, "manage_organization");
-        allowed(input, Set.of("name", "parentId"));
-        Map<String, Object> row = db.one("SELECT * FROM departments WHERE organization_id=? AND id=? FOR UPDATE", actor.organizationId(), id);
-        Writes.checkVersion(ifMatch, n(row, "rowVersion"));
-        String name = input.containsKey("name") ? text(input.get("name"), "部门名称", 100) : s(row, "name");
-        requireUniqueExcept("SELECT 1 FROM departments WHERE organization_id=? AND name=? AND id<>?", actor.organizationId(), name, id);
-        String parentId = input.containsKey("parentId") ? optionalId(input.get("parentId"), "parentId") : s(row, "parentId");
-        if (Objects.equals(parentId, id)) throw bad("部门不能作为自己的上级部门");
-        if (parentId != null) {
-            requireDepartment(actor, parentId);
-            validateDepartmentChain(actor, id, parentId);
-        }
-        db.update("UPDATE departments SET name=?,parent_id=?,row_version=row_version+1 WHERE organization_id=? AND id=?", name, parentId, actor.organizationId(), id);
-        bumpAuthority(actor, "organization.department.updated", Map.of("departmentId", id, "name", name));
-        return Map.of("departmentId", id, "rowVersion", n(row, "rowVersion") + 1);
+    public Map<String,Object> updateAdministrator(Actor actor,String match,Map<String,Object> input) {
+        access.requireAdmin(actor);allowed(input,Set.of("accountName","displayName"));
+        if(input.isEmpty()) throw bad("请至少修改一项管理员账号资料");
+        var current=administrator(actor);Writes.checkVersion(match,n(current,"rowVersion"));
+        String name=input.containsKey("accountName")?text(input.get("accountName"),"管理员账号名",80):s(current,"accountName");
+        String display=input.containsKey("displayName")?text(input.get("displayName"),"管理员名称",100):s(current,"displayName");
+        if(db.find("SELECT id FROM admin_accounts WHERE account_name=? AND id<>?",name,actor.id())!=null)
+            throw new ApiException(409,"ACCOUNT_NAME_TAKEN","管理员账号名已被使用");
+        db.update("UPDATE admin_accounts SET account_name=?,display_name=?,row_version=row_version+1,credential_version=credential_version+1 WHERE organization_id=? AND id=?",name,display,actor.organizationId(),actor.id());
+        int revoked=auth.revokeSessions(actor.organizationId(),actor.id());
+        events.record(actor,null,"administrator.updated",List.of(),Map.of("fields",input.keySet(),"sessionsRevoked",revoked));
+        return Map.of("id",actor.id(),"rowVersion",n(current,"rowVersion")+1,"reauthenticationRequired",true);
     }
 
     public Map<String, Object> createPosition(Actor actor, Map<String, Object> input) {
@@ -194,236 +126,30 @@ public class OrganizationService {
         return Map.of("positionId", id, "rowVersion", n(row, "rowVersion") + 1);
     }
 
-    // ------------------------------------------------------------------ //
-    // Employees
-    // ------------------------------------------------------------------ //
-
-    public Map<String, Object> employees(Actor actor, Map<String, String> filters) {
+    public Map<String,Object> updateEmployee(Actor actor,String id,String ifMatch,Map<String,Object> input) {
         access.requireAdmin(actor);
-        String query = filters.getOrDefault("q", "").strip().toLowerCase(Locale.ROOT);
-        List<Map<String, Object>> rows = db.list("SELECT u.*,d.name AS department_name,p.name AS position_name,t.name AS team_name,m.display_name AS manager_name "
-                + "FROM users u LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
-                + "LEFT JOIN positions p ON p.organization_id=u.organization_id AND p.id=u.position_id "
-                + "LEFT JOIN teams t ON t.organization_id=u.organization_id AND t.id=u.team_id "
-                + "LEFT JOIN users m ON m.organization_id=u.organization_id AND m.id=u.manager_id "
-                + "WHERE u.organization_id=? ORDER BY u.rank_level,u.display_name,u.id", actor.organizationId())
-            .stream()
-            .filter(row -> query.isEmpty()
-                || s(row, "displayName").toLowerCase(Locale.ROOT).contains(query)
-                || s(row, "username").toLowerCase(Locale.ROOT).contains(query)
-                || Objects.toString(s(row, "departmentName"), "").toLowerCase(Locale.ROOT).contains(query))
-            .map(row -> employeeView(actor, row))
-            .toList();
-        Map<String, Object> page = new LinkedHashMap<>();
-        page.put("items", rows);
-        page.put("total", rows.size());
-        return page;
-    }
-
-    public Map<String, Object> employee(Actor actor, String id) {
-        access.requireAdmin(actor);
-        Map<String, Object> row = db.one("SELECT u.*,d.name AS department_name,p.name AS position_name,t.name AS team_name,m.display_name AS manager_name "
-                + "FROM users u LEFT JOIN departments d ON d.organization_id=u.organization_id AND d.id=u.department_id "
-                + "LEFT JOIN positions p ON p.organization_id=u.organization_id AND p.id=u.position_id "
-                + "LEFT JOIN teams t ON t.organization_id=u.organization_id AND t.id=u.team_id "
-                + "LEFT JOIN users m ON m.organization_id=u.organization_id AND m.id=u.manager_id "
-                + "WHERE u.organization_id=? AND u.id=?", actor.organizationId(), id);
-        return employeeView(actor, row);
-    }
-
-    /**
-     * Administration never echoes another employee's phone number. The caller only learns whether a
-     * number is on file; the owner reads and edits it through /me/profile (DEV-028).
-     */
-    private Map<String, Object> employeeView(Actor actor, Map<String, Object> row) {
-        Map<String, Object> view = new LinkedHashMap<>();
-        for (String key : List.of("id", "username", "displayName", "role", "rankLevel", "active",
-                "departmentId", "departmentName", "positionId", "positionName", "teamId", "teamName",
-                "managerId", "managerName", "reviewerAvailable", "mustChangePassword", "createdAt")) {
-            view.put(key, row.get(key));
+        allowed(input,Set.of("displayName","phone"));
+        if(input.isEmpty()) throw bad("请至少修改姓名或手机号");
+        var row=db.one("SELECT u.* FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id "
+                + "WHERE u.organization_id=? AND u.id=? AND p.account_type='employee' FOR UPDATE",actor.organizationId(),id);
+        Writes.checkVersion(ifMatch,n(row,"orgVersion"));
+        String name=input.containsKey("displayName")?text(input.get("displayName"),"姓名",100):s(row,"displayName");
+        String phone=s(row,"phone"),login=s(row,"loginPhone");
+        if(input.containsKey("phone")) {
+            phone=PhoneNumbers.normalize(optionalPhone(input.get("phone")));
+            if(phone==null) throw bad("员工登录手机号不能为空");
+            requireUniqueExceptLoginKey(actor,id,phone);login=phone;
         }
-        view.put("rowVersion", n(row, "orgVersion"));
-        view.put("hasPhone", row.get("phone") != null);
-        view.put("hasEmail", row.get("email") != null);
-        view.put("roles", roles.grantedCodes(actor.organizationId(), s(row, "id")));
-        view.put("capabilities", roles.capabilities(actor.organizationId(), s(row, "id")));
-        view.put("scopes", roles.scopes(actor.organizationId(), s(row, "id")));
-        view.put("editable", true);
-        return view;
+        boolean phoneChanged=!Objects.equals(login,s(row,"loginPhone"));
+        try {
+            db.update("UPDATE users SET display_name=?,phone=?,login_phone=?,org_version=org_version+1,profile_version=profile_version+1 WHERE organization_id=? AND id=?",
+                    name,phone,login,actor.organizationId(),id);
+        } catch(org.springframework.dao.DuplicateKeyException error) {throw new ApiException(409,"PHONE_TAKEN","该手机号已被使用");}
+        int revoked=phoneChanged?auth.revokeSessions(actor.organizationId(),id):0;
+        bumpAuthority(actor,"organization.employee.identity_updated",Map.of("userId",id,"fields",input.keySet(),"sessionsRevoked",revoked));
+        return Map.of("userId",id,"rowVersion",n(row,"orgVersion")+1,"phoneUpdated",input.containsKey("phone"),"sessionsRevoked",revoked);
     }
 
-    /** Creates an account with a generated initial password that must be changed at first login. */
-    public Writes.Outcome createEmployee(Actor actor, Map<String, Object> input) {
-        access.requireCapability(actor, "manage_accounts");
-        allowed(input, Set.of("username", "displayName", "departmentId", "positionId", "teamId",
-                "managerId", "level", "roleCodes", "phone", "email"));
-        String displayName = text(input.get("displayName"), "姓名", 100);
-        String departmentId = requiredUuid(input.get("departmentId"), "departmentId");
-        requireDepartment(actor, departmentId);
-        String positionId = requiredUuid(input.get("positionId"), "positionId");
-        requirePosition(actor, positionId);
-        String teamId = optionalId(input.get("teamId"), "teamId");
-        if (teamId != null) requireTeamInDepartment(actor, teamId, departmentId);
-        String managerId = optionalId(input.get("managerId"), "managerId");
-        int level = requiredLevel(input.get("level"));
-        List<String> codes = roleCodes(input.get("roleCodes"), false);
-        validateAdministrator(actor, null, codes);
-        boolean administratorAccount = codes.contains(RoleCatalog.ADMIN);
-        // The administrator no longer has to invent a public login name for an employee: the account
-        // authenticates by phone and the username is only an internal, non-identifying handle.
-        String username = input.get("username") == null || "".equals(input.get("username"))
-                ? generatedUsername(actor) : text(input.get("username"), "用户名", 80).toLowerCase(Locale.ROOT);
-        if (!USERNAME.matcher(username).matches()) throw bad("用户名须为3至80位小写字母、数字、点、下划线或短横线");
-        requireUnique("SELECT 1 FROM users WHERE username=?", "用户名已被占用", username);
-        String phone = optionalPhone(input.get("phone"));
-        String loginPhone = null;
-        if (administratorAccount) {
-            if (phone == null) throw bad("管理员账号须保留用户名登录，手机号不得作为员工登录键");
-        } else {
-            if (phone == null) throw bad("员工登录手机号为必填项，请录入本人真实手机号");
-            loginPhone = PhoneNumbers.normalize(phone);
-            if (loginPhone == null) throw bad("员工登录手机号须为3至20位有效号码");
-            requireUnique("SELECT 1 FROM users WHERE login_phone=?", "该手机号已被其他员工账号使用", loginPhone);
-        }
-
-        String userId = Db.id();
-        String password = Credentials.generate();
-        String hash = AuthService.PASSWORDS.encode(password);
-        String legacyRole = RoleCatalog.legacyRoleFor(administratorAccount ? RoleCatalog.ADMIN
-                : codes.isEmpty() ? RoleCatalog.EMPLOYEE : codes.getFirst());
-        db.update("INSERT INTO users(id,organization_id,team_id,department_id,position_id,manager_id,username,password_hash,display_name,role,rank_level,active,must_change_password,credential_version,phone,email,login_phone) VALUES(?,?,?,?,?,?,?,?,?,?,?,TRUE,TRUE,1,?,?,?)",
-                userId, actor.organizationId(), teamId, departmentId, positionId, managerId, username, hash,
-                displayName, legacyRole, level, phone, optionalEmail(input.get("email")), loginPhone);
-        if (managerId != null) validateManagerChain(actor, userId, managerId);
-        roles.revokeAll(actor.organizationId(), userId);
-        for (String code : codes.isEmpty() ? List.of(RoleCatalog.EMPLOYEE) : codes) {
-            roles.grant(actor.organizationId(), userId, code, actor.id());
-        }
-        bumpAuthority(actor, "organization.employee.created", Map.of("userId", userId, "username", username));
-        Map<String, Object> replayable = new LinkedHashMap<>();
-        replayable.put("userId", userId);
-        replayable.put("username", username);
-        replayable.put("mustChangePassword", true);
-        replayable.put("rowVersion", 1);
-        // The generated secret is shown once and is never written to the idempotency cache or audit.
-        return new Writes.Outcome(replayable, Map.of("initialPassword", password));
-    }
-
-    public Map<String, Object> updateEmployee(Actor actor, String id, String ifMatch, Map<String, Object> input) {
-        access.requireCapability(actor, "manage_organization");
-        allowed(input, Set.of("displayName", "departmentId", "positionId", "teamId", "managerId",
-                "level", "active", "reviewerAvailable", "roleCodes", "phone", "email"));
-        Map<String, Object> row = db.one("SELECT * FROM users WHERE organization_id=? AND id=? FOR UPDATE", actor.organizationId(), id);
-        Writes.checkVersion(ifMatch, n(row, "orgVersion"));
-
-        String displayName = input.containsKey("displayName") ? text(input.get("displayName"), "姓名", 100) : s(row, "displayName");
-        String departmentId = input.containsKey("departmentId") ? requiredUuid(input.get("departmentId"), "departmentId") : s(row, "departmentId");
-        if (departmentId == null) throw bad("部门为必填项");
-        requireDepartment(actor, departmentId);
-        String positionId = input.containsKey("positionId") ? requiredUuid(input.get("positionId"), "positionId") : s(row, "positionId");
-        if (positionId == null) throw bad("职位为必填项");
-        requirePosition(actor, positionId);
-        String teamId = input.containsKey("teamId") ? optionalId(input.get("teamId"), "teamId") : s(row, "teamId");
-        if (teamId != null) requireTeamInDepartment(actor, teamId, departmentId);
-        String managerId = input.containsKey("managerId") ? optionalId(input.get("managerId"), "managerId") : s(row, "managerId");
-        if (Objects.equals(managerId, id)) throw bad("员工不能作为自己的直属上级");
-        int level = input.containsKey("level") ? requiredLevel(input.get("level")) : Math.toIntExact(n(row, "rankLevel"));
-        boolean active = input.containsKey("active") ? bool(input.get("active"), "active") : access.enabled(row);
-        boolean reviewerAvailable = input.containsKey("reviewerAvailable") ? bool(input.get("reviewerAvailable"), "reviewerAvailable") : access.enabled(Map.of("active", row.get("reviewerAvailable")));
-        List<String> codes = input.containsKey("roleCodes") ? roleCodes(input.get("roleCodes"), true) : roles.grantedCodes(actor.organizationId(), id);
-        validateAdministrator(actor, id, codes);
-        if (managerId != null) validateManagerChain(actor, id, managerId);
-
-        String legacyRole = RoleCatalog.legacyRoleFor(codes.contains(RoleCatalog.ADMIN) ? RoleCatalog.ADMIN
-                : codes.isEmpty() ? RoleCatalog.EMPLOYEE : codes.getFirst());
-        List<String> changed = new ArrayList<>();
-        for (String field : List.of("displayName", "departmentId", "positionId", "teamId", "managerId", "phone", "email")) {
-            if (input.containsKey(field)) changed.add(field);
-        }
-        String loginPhone = s(row, "loginPhone");
-        if (input.containsKey("phone")) {
-            String supplied = optionalPhone(input.get("phone"));
-            if (RoleCatalog.ADMIN.equals(legacyRole)) {
-                // The administrator keeps the username login; an employee login key is never attached.
-                loginPhone = null;
-            } else {
-                String normalized = PhoneNumbers.normalize(supplied);
-                if (normalized == null) throw bad("员工登录手机号不能清空，请录入3至20位有效号码");
-                requireUniqueExceptLoginKey(actor, id, normalized);
-                loginPhone = normalized;
-            }
-        } else if (!RoleCatalog.ADMIN.equals(legacyRole) && loginPhone == null) {
-            throw bad("员工登录手机号为必填项，请录入本人真实手机号");
-        }
-        db.update("UPDATE users SET display_name=?,department_id=?,position_id=?,team_id=?,manager_id=?,rank_level=?,active=?,reviewer_available=?,role=?,phone=COALESCE(?,phone),email=COALESCE(?,email),login_phone=?,org_version=org_version+1 WHERE organization_id=? AND id=?",
-                displayName, departmentId, positionId, teamId, managerId, level, active, reviewerAvailable,
-                legacyRole, optionalPhone(input.get("phone")), optionalEmail(input.get("email")), loginPhone,
-                actor.organizationId(), id);
-        roles.revokeAll(actor.organizationId(), id);
-        for (String code : codes) roles.grant(actor.organizationId(), id, code, actor.id());
-        bumpAuthority(actor, "organization.employee.updated", Map.of("userId", id, "fields", changed));
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("userId", id);
-        result.put("rowVersion", n(row, "orgVersion") + 1);
-        result.put("changed", changed);
-        // Field-change receipt only: never echo another employee's phone number back.
-        result.put("phoneUpdated", changed.contains("phone"));
-        refreshPendingRoutes(actor);
-        return result;
-    }
-
-    /** 转岗: one command moves department/team/manager/level/authority and invalidates stale authority. */
-    public Map<String, Object> transferEmployee(Actor actor, String id, String ifMatch, Map<String, Object> input) {
-        access.requireCapability(actor, "manage_organization");
-        allowed(input, Set.of("departmentId", "positionId", "teamId", "managerId", "level", "roleCodes", "reason"));
-        Map<String, Object> row = db.one("SELECT * FROM users WHERE organization_id=? AND id=? FOR UPDATE", actor.organizationId(), id);
-        Writes.checkVersion(ifMatch, n(row, "orgVersion"));
-        String reason = text(input.get("reason"), "转岗原因", 500);
-
-        String departmentId = requiredUuid(input.get("departmentId"), "departmentId");
-        requireDepartment(actor, departmentId);
-        String positionId = requiredUuid(input.get("positionId"), "positionId");
-        requirePosition(actor, positionId);
-        String teamId = optionalId(input.get("teamId"), "teamId");
-        if (teamId != null) requireTeamInDepartment(actor, teamId, departmentId);
-        String managerId = optionalId(input.get("managerId"), "managerId");
-        if (Objects.equals(managerId, id)) throw bad("员工不能作为自己的直属上级");
-        int level = requiredLevel(input.get("level"));
-        List<String> codes = roleCodes(input.get("roleCodes"), true);
-        validateAdministrator(actor, id, codes);
-        if (managerId != null) validateManagerChain(actor, id, managerId);
-
-        Map<String, Object> before = new LinkedHashMap<>();
-        for (String key : List.of("departmentId", "positionId", "teamId", "managerId", "rankLevel")) before.put(key, row.get(key));
-        before.put("roleCodes", roles.grantedCodes(actor.organizationId(), id));
-
-        String legacyRole = RoleCatalog.legacyRoleFor(codes.contains(RoleCatalog.ADMIN) ? RoleCatalog.ADMIN
-                : codes.isEmpty() ? RoleCatalog.EMPLOYEE : codes.getFirst());
-        db.update("UPDATE users SET department_id=?,position_id=?,team_id=?,manager_id=?,rank_level=?,role=?,org_version=org_version+1 WHERE organization_id=? AND id=?",
-                departmentId, positionId, teamId, managerId, level, legacyRole, actor.organizationId(), id);
-        roles.revokeAll(actor.organizationId(), id);
-        for (String code : codes) roles.grant(actor.organizationId(), id, code, actor.id());
-
-        Map<String, Object> after = Map.of("departmentId", departmentId, "positionId", positionId,
-                "teamId", Objects.toString(teamId, ""), "managerId", Objects.toString(managerId, ""),
-                "rankLevel", level, "roleCodes", codes);
-        bumpAuthority(actor, "organization.employee.transferred",
-                Map.of("userId", id, "reason", reason, "before", before, "after", after));
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("userId", id);
-        result.put("rowVersion", n(row, "orgVersion") + 1);
-        result.put("transferred", true);
-        result.put("authorizationInvalidated", true);
-        refreshPendingRoutes(actor);
-        return result;
-    }
-
-    /**
-     * Administrator reset (DEV-001, DEV-003). Generates a fresh one-time password, revokes every
-     * existing session and restores the first-login gate. The password travels in the one-time part of
-     * the outcome, so it never reaches the audit trail, the event outbox or the idempotency cache, and a
-     * lost response cannot show it again — the administrator resets again instead.
-     */
     public Writes.Outcome resetPassword(Actor actor, String id) {
         access.requireCapability(actor, "manage_accounts");
         Map<String, Object> row = db.one("SELECT * FROM users WHERE organization_id=? AND id=? FOR UPDATE", actor.organizationId(), id);
@@ -441,63 +167,6 @@ public class OrganizationService {
         replayable.put("credentialVersion", credentialVersion);
         return new Writes.Outcome(replayable, Map.of("initialPassword", password));
     }
-
-    public Map<String, Object> grantRoles(Actor actor, String id, String ifMatch, Map<String, Object> input) {        access.requireCapability(actor, "manage_organization");
-        allowed(input, Set.of("roleCodes"));
-        Map<String, Object> row = db.one("SELECT * FROM users WHERE organization_id=? AND id=? FOR UPDATE", actor.organizationId(), id);
-        Writes.checkVersion(ifMatch, n(row, "orgVersion"));
-        List<String> codes = roleCodes(input.get("roleCodes"), true);
-        validateAdministrator(actor, id, codes);
-        roles.revokeAll(actor.organizationId(), id);
-        for (String code : codes) roles.grant(actor.organizationId(), id, code, actor.id());
-        String legacyRole = RoleCatalog.legacyRoleFor(codes.contains(RoleCatalog.ADMIN) ? RoleCatalog.ADMIN
-                : codes.isEmpty() ? RoleCatalog.EMPLOYEE : codes.getFirst());
-        db.update("UPDATE users SET role=?,org_version=org_version+1 WHERE organization_id=? AND id=?", legacyRole, actor.organizationId(), id);
-        bumpAuthority(actor, "organization.roles.granted", Map.of("userId", id, "roleCodes", codes));
-        refreshPendingRoutes(actor);
-        return Map.of("userId", id, "rowVersion", n(row, "orgVersion") + 1, "roles", codes);
-    }
-
-    // ------------------------------------------------------------------ //
-    // Teams (authorized department lead)
-    // ------------------------------------------------------------------ //
-
-    public Map<String, Object> createTeam(Actor actor, Map<String, Object> input) {
-        allowed(input, Set.of("name", "departmentId", "leadUserId"));
-        String departmentId = requiredUuid(input.get("departmentId"), "departmentId");
-        requireDepartment(actor, departmentId);
-        requireTeamManagement(actor, departmentId);
-        String name = text(input.get("name"), "团队名称", 100);
-        requireUnique("SELECT 1 FROM teams WHERE organization_id=? AND name=?", "团队名称已存在", actor.organizationId(), name);
-        // The creator is the default lead and the lead role grants no business authority by itself.
-        // A company-wide administrator is not a member of the department, so an explicit lead is required.
-        String leadUserId = input.containsKey("leadUserId") ? requiredUuid(input.get("leadUserId"), "leadUserId") : actor.id();
-        requireMemberOfDepartment(actor, leadUserId, departmentId);        String id = Db.id();
-        db.update("INSERT INTO teams(id,organization_id,name,department_id,lead_user_id) VALUES(?,?,?,?,?)", id, actor.organizationId(), name, departmentId, leadUserId);
-        bumpAuthority(actor, "organization.team.created", Map.of("teamId", id, "departmentId", departmentId, "leadUserId", leadUserId));
-        return Map.of("teamId", id, "leadUserId", leadUserId, "rowVersion", 1);
-    }
-
-    public Map<String, Object> updateTeam(Actor actor, String id, String ifMatch, Map<String, Object> input) {
-        allowed(input, Set.of("name", "leadUserId", "departmentId"));
-        Map<String, Object> row = db.one("SELECT * FROM teams WHERE organization_id=? AND id=? FOR UPDATE", actor.organizationId(), id);
-        Writes.checkVersion(ifMatch, n(row, "rowVersion"));
-        String departmentId = input.containsKey("departmentId") ? requiredUuid(input.get("departmentId"), "departmentId") : s(row, "departmentId");
-        if (departmentId == null) throw bad("团队必须归属于一个部门");
-        requireTeamManagement(actor, departmentId);
-        String name = input.containsKey("name") ? text(input.get("name"), "团队名称", 100) : s(row, "name");
-        requireUniqueExcept("SELECT 1 FROM teams WHERE organization_id=? AND name=? AND id<>?", actor.organizationId(), name, id);
-        String leadUserId = input.containsKey("leadUserId") ? requiredUuid(input.get("leadUserId"), "leadUserId") : s(row, "leadUserId");
-        if (leadUserId != null) requireMemberOfDepartment(actor, leadUserId, departmentId);
-        db.update("UPDATE teams SET name=?,department_id=?,lead_user_id=?,row_version=row_version+1 WHERE organization_id=? AND id=?", name, departmentId, leadUserId, actor.organizationId(), id);
-        bumpAuthority(actor, "organization.team.updated", Map.of("teamId", id, "leadUserId", Objects.toString(leadUserId, "")));
-        refreshPendingRoutes(actor);
-        return Map.of("teamId", id, "leadUserId", Objects.toString(leadUserId, ""), "rowVersion", n(row, "rowVersion") + 1);
-    }
-
-    // ------------------------------------------------------------------ //
-    // Company information and the all-day cut-off
-    // ------------------------------------------------------------------ //
 
     public Map<String, Object> companyItems(Actor actor) {
         access.requireAdmin(actor);
@@ -573,10 +242,6 @@ public class OrganizationService {
         return Map.of("offWorkTime", time.toString());
     }
 
-    // ------------------------------------------------------------------ //
-    // Validation helpers
-    // ------------------------------------------------------------------ //
-
     private void bumpAuthority(Actor actor, String action, Map<String, Object> details) {
         // Any real organization or authority change invalidates stale candidates, analytics and
         // cached idempotent responses across the company.
@@ -592,144 +257,14 @@ public class OrganizationService {
         requireExists("SELECT 1 FROM positions WHERE organization_id=? AND id=?", "职位不存在，请选择本公司已创建的职位", actor.organizationId(), id);
     }
 
-    private void requireTeamInDepartment(Actor actor, String teamId, String departmentId) {
-        Map<String, Object> team = db.find("SELECT * FROM teams WHERE organization_id=? AND id=?", actor.organizationId(), teamId);
-        if (team == null) throw bad("团队不存在或不属于本公司");
-        if (!Objects.equals(departmentId, s(team, "departmentId"))) throw bad("员工只能加入其所属部门下的团队");
+    private void requireExists(String sql,String message,Object...args) {
+        if(db.find(sql,args)==null) throw bad(message);
     }
 
-    private void requireMemberOfDepartment(Actor actor, String userId, String departmentId) {
-        Map<String, Object> user = access.activeUser(actor, userId);
-        if (user == null) throw bad("团队成员不存在或已停用");
-        if (!Objects.equals(departmentId, s(user, "departmentId"))) {
-            throw bad(actor.id().equals(userId)
-                    ? "创建者不属于该部门，请指定本部门成员为团队负责人"
-                    : "团队负责人必须属于该部门");
-        }
-    }
-
-    /** Team maintenance is its own authority: an explicit grant plus the same department. */
-    private void requireTeamManagement(Actor actor, String departmentId) {
-        if (actor.can("manage_organization")) return;
-        if (!actor.can("manage_team")) throw new ApiException(403, "FORBIDDEN", "当前账号没有团队管理授权");
-        if (actor.departmentId() == null || !actor.departmentId().equals(departmentId)) {
-            throw new ApiException(403, "FORBIDDEN", "仅可维护本人所属部门的团队");
-        }
-    }
-
-    /** Departments and employees that must be listed in the console's team-lead selector. */
-    public List<Map<String, Object>> departmentMembers(Actor actor, String departmentId) {
-        access.requireAdmin(actor);
-        requireDepartment(actor, departmentId);
-        return db.list("SELECT id,display_name FROM users WHERE organization_id=? AND department_id=? AND active=1 ORDER BY rank_level,display_name,id",
-                actor.organizationId(), departmentId).stream()
-            .map(row -> Map.<String, Object>of("id", s(row, "id"), "displayName", s(row, "displayName")))
-            .toList();
-    }
-
-    /**
-     * Restricted team-management read for an authorized department lead (chapter 9.4).
-     *
-     * <p>It returns only the lead's own department, the teams inside it and that department's active
-     * members as legal lead candidates. It is deliberately not the administration organization read:
-     * there is no company-wide department list, no employee contact field and no administrator data.
-     * Writes continue to use the existing team create/transfer commands, which re-check the same grant
-     * and department on every call.
-     */
-    public Map<String, Object> teamManagement(Actor actor) {
-        access.requireCapability(actor, "manage_team");
-        String departmentId = actor.departmentId();
-        Map<String, Object> result = new LinkedHashMap<>();
-        if (departmentId == null) {
-            result.put("departments", List.of());
-            result.put("teams", List.of());
-            result.put("members", List.of());
-            return result;
-        }
-        Map<String, Object> department = db.find("SELECT id,name FROM departments WHERE organization_id=? AND id=?", actor.organizationId(), departmentId);
-        if (department == null) throw bad("本人所属部门不存在，请联系管理员修复组织关系");
-        result.put("departments", List.of(Map.of("id", s(department, "id"), "name", s(department, "name"))));
-        result.put("teams", db.list("SELECT t.id,t.name,t.department_id,t.lead_user_id,t.row_version,u.display_name AS lead_name,"
-                        + "(SELECT COUNT(*) FROM users m WHERE m.organization_id=t.organization_id AND m.team_id=t.id AND m.active=1) AS member_count "
-                        + "FROM teams t LEFT JOIN users u ON u.organization_id=t.organization_id AND u.id=t.lead_user_id "
-                        + "WHERE t.organization_id=? AND t.department_id=? ORDER BY t.name,t.id", actor.organizationId(), departmentId));
-        result.put("members", departmentMembersForLead(actor, departmentId));
-        return result;
-    }
-
-    /** Active department members as lead candidates: display fields only, no contact data. */
-    private List<Map<String, Object>> departmentMembersForLead(Actor actor, String departmentId) {
-        return db.list("SELECT id,display_name FROM users WHERE organization_id=? AND department_id=? AND active=1 ORDER BY rank_level,display_name,id",
-                actor.organizationId(), departmentId).stream()
-            .map(row -> Map.<String, Object>of("id", s(row, "id"), "displayName", s(row, "displayName")))
-            .toList();
-    }
-
-    private void validateManagerChain(Actor actor, String userId, String managerId) {
-        Set<String> seen = new HashSet<>();
-        String cursor = managerId;
-        while (cursor != null) {
-            if (cursor.equals(userId)) throw bad("上下级关系不能形成循环");
-            if (!seen.add(cursor)) throw bad("上下级关系存在循环");
-            Map<String, Object> row = db.find("SELECT active,manager_id FROM users WHERE organization_id=? AND id=?", actor.organizationId(), cursor);
-            if (row == null) throw bad("直属上级不存在或不属于本公司");
-            cursor = s(row, "managerId");
-        }
-    }
-
-    private void validateDepartmentChain(Actor actor, String departmentId, String parentId) {
-        Set<String> seen = new HashSet<>();
-        String cursor = parentId;
-        while (cursor != null) {
-            if (cursor.equals(departmentId)) throw bad("部门层级不能形成循环");
-            if (!seen.add(cursor)) throw bad("部门层级存在循环");
-            Map<String, Object> row = db.find("SELECT parent_id FROM departments WHERE organization_id=? AND id=?", actor.organizationId(), cursor);
-            if (row == null) throw bad("上级部门不存在");
-            cursor = s(row, "parentId");
-        }
-    }
-
-    private void validateAdministrator(Actor actor, String userId, List<String> codes) {
-        if (!codes.contains(RoleCatalog.ADMIN)) return;
-        Long others = db.jdbc.queryForObject("SELECT COUNT(*) FROM user_role_grants g JOIN roles r ON r.organization_id=g.organization_id AND r.id=g.role_id WHERE g.organization_id=? AND r.administrator=TRUE AND g.user_id<>?",
-                Long.class, actor.organizationId(), userId == null ? "" : userId);
-        if (others != null && others > 0) throw new ApiException(409, "SECOND_ADMINISTRATOR", "公司只能有一个管理员账号");
-    }
-
-    private List<String> roleCodes(Object value, boolean required) {
-        if (value == null) {
-            if (required) throw bad("roleCodes须为角色列表");
-            return List.of();
-        }
-        if (!(value instanceof List<?> list)) throw bad("roleCodes须为角色列表");
-        List<String> codes = new ArrayList<>();
-        for (Object item : list) {
-            if (!(item instanceof String code) || !RoleCatalog.codes().contains(code)) throw bad("存在未知角色代码");
-            if (!codes.contains(code)) codes.add(code);
-        }
-        if (required && codes.isEmpty()) throw bad("至少需要一个角色");
-        return codes;
-    }
-
-    /** The referenced row must already exist inside the company. */
-    private void requireExists(String sql, String message, Object... args) {
-        if (db.find(sql, args) == null) throw new ApiException(400, "INVALID_INPUT", message);
-    }
-
-    /** The referenced row must not exist yet (name uniqueness). */
     private void requireUniqueExceptLoginKey(Actor actor, String userId, String loginPhone) {
         if (db.find("SELECT 1 FROM users WHERE login_phone=? AND NOT (organization_id=? AND id=?)", loginPhone, actor.organizationId(), userId) != null) {
             throw new ApiException(409, "PHONE_TAKEN", "该手机号已被其他员工账号使用");
         }
-    }
-
-    /** An internal, non-identifying handle: it never contains the phone number the person logs in with. */
-    private String generatedUsername(Actor actor) {
-        for (int attempt = 0; attempt < 20; attempt++) {
-            String candidate = "u" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
-            if (db.find("SELECT 1 FROM users WHERE username=?", candidate) == null) return candidate;
-        }
-        throw new ApiException(409, "DATA_CONFLICT", "无法生成账号标识，请重试");
     }
 
     private void requireUnique(String sql, String message, Object... args) {
@@ -740,13 +275,6 @@ public class OrganizationService {
         if (db.find(sql, args) != null) throw new ApiException(409, "DATA_CONFLICT", "名称已存在");
     }
 
-    private static int requiredLevel(Object value) {
-        if (!(value instanceof Number number) || number.intValue() < 0 || number.intValue() > 100) {
-            throw bad("组织层级须为0至100的整数，且必须显式设置");
-        }
-        return number.intValue();
-    }
-
     private static String optionalPhone(Object value) {
         if (value == null) return null;
         String phone = text(value, "联系电话", 32);
@@ -755,18 +283,6 @@ public class OrganizationService {
             throw bad("联系电话须含3至20位数字，可使用开头的+、空格、括号或短横线");
         }
         return phone;
-    }
-
-    private static String optionalEmail(Object value) {
-        if (value == null) return null;
-        String email = text(value, "邮箱", 254);
-        int at = email.indexOf('@');
-        String local = at < 0 ? "" : email.substring(0, at);
-        if (!email.matches("^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$")
-                || local.length() > 64 || local.startsWith(".") || local.endsWith(".") || local.contains("..")) {
-            throw bad("请输入有效的邮箱地址");
-        }
-        return email;
     }
 
     static String text(Object value, String label, int max) {
@@ -816,6 +332,4 @@ public class OrganizationService {
         }
     }
 
-    @SuppressWarnings("unused")
-    private static Timestamp now() { return Timestamp.from(Instant.now()); }
 }

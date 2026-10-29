@@ -1,0 +1,1741 @@
+{
+  "updated": "2026-10-29T03:48:06.559Z",
+  "checks": [
+    {
+      "check": "login form ready alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "dashboard priority and independent quadrants at 320",
+      "pass": true,
+      "evidence": {
+        "quadrants": 4,
+        "scroll": true,
+        "priorities": [
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          }
+        ],
+        "duplicate": false,
+        "longTitle": true
+      }
+    },
+    {
+      "check": "dashboard priority and independent quadrants at 390",
+      "pass": true,
+      "evidence": {
+        "quadrants": 4,
+        "scroll": true,
+        "priorities": [
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          }
+        ],
+        "duplicate": false,
+        "longTitle": true
+      }
+    },
+    {
+      "check": "dashboard priority and independent quadrants at 1440",
+      "pass": true,
+      "evidence": {
+        "quadrants": 4,
+        "scroll": true,
+        "priorities": [
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          }
+        ],
+        "duplicate": false,
+        "longTitle": true
+      }
+    },
+    {
+      "check": "task form opens with a real loading state instead of stale rows",
+      "pass": true,
+      "evidence": {
+        "loading": true,
+        "loaded": false,
+        "error": null,
+        "text": "正在加载当前授权任务…",
+        "pager": "",
+        "rows": 0
+      }
+    },
+    {
+      "check": "task form completes the full load with total/page controls",
+      "pass": true
+    },
+    {
+      "check": "task form retains more than two pages and removes explanatory statistics",
+      "pass": true
+    },
+    {
+      "check": "failed task load shows the error and an explicit retry without claiming partial completeness",
+      "pass": true,
+      "evidence": {
+        "error": "无法连接本地后端，请确认服务已启动。",
+        "loaded": false,
+        "pager": "",
+        "rows": 0,
+        "text": "任务加载失败：无法连接本地后端，请确认服务已启动。重试",
+        "retry": true
+      }
+    },
+    {
+      "check": "retry after a real network failure restores the complete result",
+      "pass": true
+    },
+    {
+      "check": "task form snapshot is complete and cross-day work is counted once",
+      "pass": true
+    },
+    {
+      "check": "global task form sort title ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "title",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "All day original",
+          "Browser task 000 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Calendar midnight",
+          "Calendar point"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort title continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort title descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "title",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "Calendar point",
+          "Calendar midnight"
+        ],
+        "tail": [
+          "Browser task 000 very long title  very long title  very long title",
+          "All day original"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort title paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "global task form sort createdAt ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "createdAt",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "Browser task 000 very long title  very long title  very long title",
+          "Browser task 001 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Calendar point",
+          "All day original"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort createdAt continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort createdAt descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "createdAt",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "All day original",
+          "Calendar point"
+        ],
+        "tail": [
+          "Browser task 001 very long title  very long title  very long title",
+          "Browser task 000 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort createdAt paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "global task form sort start ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "start",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "All day original",
+          "Browser task 018 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Calendar cross",
+          "Calendar point"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort start continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort start descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "start",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "Calendar point",
+          "Calendar cross"
+        ],
+        "tail": [
+          "Browser task 017 very long title  very long title  very long title",
+          "All day original"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort start paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "global task form sort due ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "due",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "Calendar point",
+          "Calendar midnight"
+        ],
+        "tail": [
+          "Browser task 075 very long title  very long title  very long title",
+          "Browser task 017 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort due continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort due descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "due",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "Browser task 018 very long title  very long title  very long title",
+          "Browser task 029 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Calendar point",
+          "Calendar midnight"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort due paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "global task form sort urgency ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "urgency",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "Browser task 018 very long title  very long title  very long title",
+          "Browser task 029 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Browser task 075 very long title  very long title  very long title",
+          "Browser task 017 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort urgency continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort urgency descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "urgency",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "Browser task 018 very long title  very long title  very long title",
+          "Browser task 029 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Browser task 075 very long title  very long title  very long title",
+          "Browser task 017 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort urgency paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "global task form sort status ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "status",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "Browser task 018 very long title  very long title  very long title",
+          "Browser task 029 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Browser task 075 very long title  very long title  very long title",
+          "Browser task 017 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort status continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort status descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "status",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "Browser task 018 very long title  very long title  very long title",
+          "Browser task 029 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Browser task 075 very long title  very long title  very long title",
+          "Browser task 017 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "global task form sort status paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "task name column stays fixed while the table scrolls sideways",
+      "pass": true,
+      "evidence": {
+        "position": "sticky",
+        "before": 13,
+        "after": 13,
+        "left": 13,
+        "scrolled": 0
+      }
+    },
+    {
+      "check": "combined task form filters recalculate total and page",
+      "pass": true
+    },
+    {
+      "check": "date/relation/name filters keep a cross-day task in its single matching row",
+      "pass": true
+    },
+    {
+      "check": "detail return setup uses the filtered second page",
+      "pass": true
+    },
+    {
+      "check": "task detail opens over the filtered table",
+      "pass": true
+    },
+    {
+      "check": "closing task detail preserves filters, page, scroll and the loaded rows",
+      "pass": true,
+      "evidence": {
+        "beforeDetail": {
+          "page": 1,
+          "query": "Browser task 0",
+          "scroll": 420,
+          "ids": [
+            "73e80327-d8f5-4850-b20b-55f00aa73d81",
+            "7af272f5-1a48-4abf-a9b7-42ffcdff1135",
+            "7e255912-1771-4b9c-9de1-c4024762bcc5",
+            "82441a51-304a-420a-9f6a-e14e41304679",
+            "82752cbe-4d4f-4afe-a543-56ebee94007e",
+            "8c5171a3-0212-4b49-94f4-9730220e56ee",
+            "9414899e-f36a-47eb-9ac4-c404e22de670",
+            "94c30f19-b552-4729-9925-1966a488f68c",
+            "9658175d-9090-4b90-b354-e58a4ddac47d",
+            "96743c75-6337-4824-a9e6-7a4f11e1b557",
+            "97dfbe6d-2f23-41e7-9679-3c7b8910bba4",
+            "983443e3-23d7-40be-872c-7a8a39fd9064",
+            "9e080299-0c56-42a8-a62e-3d471891f7d7",
+            "a2af5757-30dd-4a0a-abd9-14b882daaa66",
+            "a44355ce-484d-4340-8db0-6f14efd61360",
+            "a4dc3fc2-42f4-4940-bd62-97a11290c6b5",
+            "a51a1775-805a-4d70-8ef9-8c13227f1130",
+            "a8ff24df-1edf-4a6c-831f-183e0798da4f",
+            "adaace19-9afd-4d24-b5b9-faafd51afec3",
+            "afd78976-5dbd-4b25-9622-650a8b5cc105",
+            "b4ea6714-438e-4f60-9b15-adecc6fc829c",
+            "b5e10d09-25bf-4844-a4b8-2f483d28dc22",
+            "b8803a65-2379-4bca-9aa1-8c21573d0043",
+            "ba108f1c-8533-497b-84c8-265a296ca6d4",
+            "be671dc7-c6c4-4e9a-bdca-e002e48c4e9e",
+            "c4c0b508-9cf3-42aa-8a1c-ec94b7e3627b",
+            "c6349609-b6a4-4285-aec3-815c0672e0b6",
+            "c77736b6-9065-4423-8f85-df129814bcff",
+            "cbf63959-f9f9-4b5a-8859-33d4346632a8",
+            "cf051efd-f0f1-44ac-9c44-054ec657a461",
+            "d11942d0-9bbd-434f-b384-99d13c610fc4",
+            "d510d393-1256-4616-8cb0-004700e137a4",
+            "d52c8c0c-811b-45e1-9841-5006a0ed02c0",
+            "d84dae39-cc74-4244-8366-68c2381abbf5",
+            "d9481cb1-6f43-4231-8c29-ce260658c55a",
+            "e0249efa-777c-4023-9d3a-c7f8551e3a65",
+            "e0f111ee-366b-4cf5-adc5-7cce34f274cd",
+            "e3b01e0e-0114-4848-95e6-a4341408f4b0",
+            "e5860eed-5d3f-4397-adce-d451f96cc52f",
+            "e8b6d843-b4e6-4bcb-83ad-f26214ed8344",
+            "f2c92740-e866-4c78-92f8-3cd6ec99e2f8",
+            "f38f76d6-01ca-4311-8f42-dcd0de8d4feb",
+            "f5c75d2a-aa57-486d-9db0-f023ad18e7f9",
+            "f65bfda6-576c-478c-aea5-0d4719a902d2",
+            "f7bf5b3c-7ec1-43aa-b4ee-9c32d3f656d2",
+            "f84acadd-e513-4756-b0a1-a38082026509",
+            "f9a4cc5c-f527-42d0-8b87-2c36b1946eca",
+            "fa25ec35-d673-47ae-8575-fc7c360863cd",
+            "fb3b2a34-0852-4129-a4bc-310135c500c8",
+            "fe8f765d-4c76-462c-8441-435ca3224e71"
+          ],
+          "first": "73e80327-d8f5-4850-b20b-55f00aa73d81"
+        },
+        "afterDetail": {
+          "page": 1,
+          "query": "Browser task 0",
+          "queryInput": "Browser task 0",
+          "scroll": 420,
+          "ids": [
+            "73e80327-d8f5-4850-b20b-55f00aa73d81",
+            "7af272f5-1a48-4abf-a9b7-42ffcdff1135",
+            "7e255912-1771-4b9c-9de1-c4024762bcc5",
+            "82441a51-304a-420a-9f6a-e14e41304679",
+            "82752cbe-4d4f-4afe-a543-56ebee94007e",
+            "8c5171a3-0212-4b49-94f4-9730220e56ee",
+            "9414899e-f36a-47eb-9ac4-c404e22de670",
+            "94c30f19-b552-4729-9925-1966a488f68c",
+            "9658175d-9090-4b90-b354-e58a4ddac47d",
+            "96743c75-6337-4824-a9e6-7a4f11e1b557",
+            "97dfbe6d-2f23-41e7-9679-3c7b8910bba4",
+            "983443e3-23d7-40be-872c-7a8a39fd9064",
+            "9e080299-0c56-42a8-a62e-3d471891f7d7",
+            "a2af5757-30dd-4a0a-abd9-14b882daaa66",
+            "a44355ce-484d-4340-8db0-6f14efd61360",
+            "a4dc3fc2-42f4-4940-bd62-97a11290c6b5",
+            "a51a1775-805a-4d70-8ef9-8c13227f1130",
+            "a8ff24df-1edf-4a6c-831f-183e0798da4f",
+            "adaace19-9afd-4d24-b5b9-faafd51afec3",
+            "afd78976-5dbd-4b25-9622-650a8b5cc105",
+            "b4ea6714-438e-4f60-9b15-adecc6fc829c",
+            "b5e10d09-25bf-4844-a4b8-2f483d28dc22",
+            "b8803a65-2379-4bca-9aa1-8c21573d0043",
+            "ba108f1c-8533-497b-84c8-265a296ca6d4",
+            "be671dc7-c6c4-4e9a-bdca-e002e48c4e9e",
+            "c4c0b508-9cf3-42aa-8a1c-ec94b7e3627b",
+            "c6349609-b6a4-4285-aec3-815c0672e0b6",
+            "c77736b6-9065-4423-8f85-df129814bcff",
+            "cbf63959-f9f9-4b5a-8859-33d4346632a8",
+            "cf051efd-f0f1-44ac-9c44-054ec657a461",
+            "d11942d0-9bbd-434f-b384-99d13c610fc4",
+            "d510d393-1256-4616-8cb0-004700e137a4",
+            "d52c8c0c-811b-45e1-9841-5006a0ed02c0",
+            "d84dae39-cc74-4244-8366-68c2381abbf5",
+            "d9481cb1-6f43-4231-8c29-ce260658c55a",
+            "e0249efa-777c-4023-9d3a-c7f8551e3a65",
+            "e0f111ee-366b-4cf5-adc5-7cce34f274cd",
+            "e3b01e0e-0114-4848-95e6-a4341408f4b0",
+            "e5860eed-5d3f-4397-adce-d451f96cc52f",
+            "e8b6d843-b4e6-4bcb-83ad-f26214ed8344",
+            "f2c92740-e866-4c78-92f8-3cd6ec99e2f8",
+            "f38f76d6-01ca-4311-8f42-dcd0de8d4feb",
+            "f5c75d2a-aa57-486d-9db0-f023ad18e7f9",
+            "f65bfda6-576c-478c-aea5-0d4719a902d2",
+            "f7bf5b3c-7ec1-43aa-b4ee-9c32d3f656d2",
+            "f84acadd-e513-4756-b0a1-a38082026509",
+            "f9a4cc5c-f527-42d0-8b87-2c36b1946eca",
+            "fa25ec35-d673-47ae-8575-fc7c360863cd",
+            "fb3b2a34-0852-4129-a4bc-310135c500c8",
+            "fe8f765d-4c76-462c-8441-435ca3224e71"
+          ],
+          "loaded": true,
+          "error": null,
+          "total": 100
+        }
+      }
+    },
+    {
+      "check": "task form returns to the calendar",
+      "pass": true
+    },
+    {
+      "check": "calendar context opens the task form",
+      "pass": true
+    },
+    {
+      "check": "closing the task form restores the original calendar mode and date",
+      "pass": true,
+      "evidence": {
+        "contextBefore": {
+          "mode": "day",
+          "anchor": 1793548800000
+        },
+        "contextAfter": {
+          "mode": "day",
+          "anchor": 1793548800000,
+          "day": false
+        }
+      }
+    },
+    {
+      "check": "real log form offers only company today/yesterday/day-before",
+      "pass": true,
+      "evidence": [
+        "2026-10-29",
+        "2026-10-28",
+        "2026-10-27"
+      ]
+    },
+    {
+      "check": "changing the date opens a real backfill form for yesterday",
+      "pass": true,
+      "evidence": {
+        "date": "2026-10-28",
+        "disabled": false,
+        "draft": "2026-10-28",
+        "id": null
+      }
+    },
+    {
+      "check": "backfill creates a real yesterday log",
+      "pass": true,
+      "evidence": {
+        "yesterdaySave": {
+          "overlay": true,
+          "error": "",
+          "errorHidden": true,
+          "notice": "日志已保存。",
+          "draft": null,
+          "page": "log"
+        },
+        "yesterdayLog": {
+          "id": "d64b8496-109c-4882-a078-2c6c2ff776d6",
+          "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessDate": "2026-10-28",
+          "body": "Browser log yesterday backfill",
+          "taskId": null,
+          "rowVersion": 1,
+          "createdAt": "2026-10-29T03:48:09.905374Z",
+          "updatedAt": "2026-10-29T03:48:09.905374Z",
+          "deletedAt": null,
+          "recoveredFrom": "log-row",
+          "tagId": null,
+          "authorName": "alpha-one-employee",
+          "tag": null,
+          "frozen": false,
+          "frozenAt": "2026-10-30T03:48:09.905374Z",
+          "editable": true,
+          "deletable": true
+        },
+        "allSelf": [
+          {
+            "id": "d64b8496-109c-4882-a078-2c6c2ff776d6",
+            "date": "2026-10-28",
+            "body": "Browser log yesterday backfill"
+          }
+        ]
+      }
+    },
+    {
+      "check": "backfill creates a real day-before log with a distinct object id",
+      "pass": true,
+      "evidence": {
+        "id": "6d008f7d-4f49-4e3f-8794-c050a3b7a318",
+        "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "businessDate": "2026-10-27",
+        "body": "Browser log day before backfill",
+        "taskId": null,
+        "rowVersion": 1,
+        "createdAt": "2026-10-29T03:48:10.649085Z",
+        "updatedAt": "2026-10-29T03:48:10.649085Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "tagId": null,
+        "authorName": "alpha-one-employee",
+        "tag": null,
+        "frozen": false,
+        "frozenAt": "2026-10-30T03:48:10.649085Z",
+        "editable": true,
+        "deletable": true
+      }
+    },
+    {
+      "check": "the page rejects a future business date",
+      "pass": true,
+      "evidence": "不能新建未来日期的日志"
+    },
+    {
+      "check": "the page rejects a business date outside the three-day window",
+      "pass": true,
+      "evidence": "只能补写公司今天、昨天和前天的日志"
+    },
+    {
+      "check": "deleting and recreating the day slot restores the same real id and first-creation instant",
+      "pass": true,
+      "evidence": {
+        "restored": {
+          "rowVersion": 3,
+          "logId": "6d008f7d-4f49-4e3f-8794-c050a3b7a318",
+          "businessDate": "2026-10-27",
+          "restored": true
+        },
+        "predayRestored": {
+          "id": "6d008f7d-4f49-4e3f-8794-c050a3b7a318",
+          "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessDate": "2026-10-27",
+          "body": "Browser log day before restored",
+          "taskId": null,
+          "rowVersion": 3,
+          "createdAt": "2026-10-29T03:48:10.649085Z",
+          "updatedAt": "2026-10-29T03:48:11.976126Z",
+          "deletedAt": null,
+          "recoveredFrom": "log-row",
+          "tagId": null,
+          "authorName": "alpha-one-employee",
+          "tag": null,
+          "frozen": false,
+          "frozenAt": "2026-10-30T03:48:10.649085Z",
+          "editable": true,
+          "deletable": true
+        }
+      }
+    },
+    {
+      "check": "a same-day concurrent creation reopens the existing real record instead of duplicating it",
+      "pass": true,
+      "evidence": {
+        "race": {
+          "rowVersion": 5,
+          "logId": "6d008f7d-4f49-4e3f-8794-c050a3b7a318",
+          "businessDate": "2026-10-27",
+          "restored": true
+        },
+        "notice": "该日期已有日志，已打开已有记录继续编辑。",
+        "form": {
+          "date": "2026-10-27",
+          "disabled": true
+        }
+      }
+    },
+    {
+      "check": "same-day uniqueness keeps one live row for the company business date",
+      "pass": true,
+      "evidence": {
+        "id": "6d008f7d-4f49-4e3f-8794-c050a3b7a318",
+        "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "businessDate": "2026-10-27",
+        "body": "Browser same-day race winner",
+        "taskId": null,
+        "rowVersion": 5,
+        "createdAt": "2026-10-29T03:48:10.649085Z",
+        "updatedAt": "2026-10-29T03:48:12.321274Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "tagId": null,
+        "authorName": "alpha-one-employee",
+        "tag": null,
+        "frozen": false,
+        "frozenAt": "2026-10-30T03:48:10.649085Z",
+        "editable": true,
+        "deletable": true
+      }
+    },
+    {
+      "check": "new log for today closes the form and reloads the workspace",
+      "pass": true,
+      "evidence": {
+        "overlay": true,
+        "idle": true,
+        "title": "写日志",
+        "error": "",
+        "errorHidden": true,
+        "notice": "日志已保存。",
+        "page": "log",
+        "draft": null
+      }
+    },
+    {
+      "check": "today log is a real record with the company business date",
+      "pass": true,
+      "evidence": {
+        "id": "e5770913-0e71-48d2-aef5-b0457757ceee",
+        "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "businessDate": "2026-10-29",
+        "body": "Browser log today original",
+        "taskId": null,
+        "rowVersion": 1,
+        "createdAt": "2026-10-29T03:48:12.627463Z",
+        "updatedAt": "2026-10-29T03:48:12.627463Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "tagId": null,
+        "authorName": "alpha-one-employee",
+        "tag": null,
+        "frozen": false,
+        "frozenAt": "2026-10-30T03:48:12.627463Z",
+        "editable": true,
+        "deletable": true
+      }
+    },
+    {
+      "check": "today log appears once on the workspace and uses the same object id",
+      "pass": true
+    },
+    {
+      "check": "log detail edit opens the same record",
+      "pass": true
+    },
+    {
+      "check": "log detail edit saves the same real id and keeps its business date",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "id": "e5770913-0e71-48d2-aef5-b0457757ceee",
+          "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessDate": "2026-10-29",
+          "body": "Browser log today original",
+          "taskId": null,
+          "rowVersion": 1,
+          "createdAt": "2026-10-29T03:48:12.627463Z",
+          "updatedAt": "2026-10-29T03:48:12.627463Z",
+          "deletedAt": null,
+          "recoveredFrom": "log-row",
+          "tagId": null,
+          "authorName": "alpha-one-employee",
+          "tag": null,
+          "frozen": false,
+          "frozenAt": "2026-10-30T03:48:12.627463Z",
+          "editable": true,
+          "deletable": true
+        },
+        "after": {
+          "id": "e5770913-0e71-48d2-aef5-b0457757ceee",
+          "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessDate": "2026-10-29",
+          "body": "Browser log today edited",
+          "taskId": null,
+          "rowVersion": 2,
+          "createdAt": "2026-10-29T03:48:12.627463Z",
+          "updatedAt": "2026-10-29T03:48:13.217918Z",
+          "deletedAt": null,
+          "recoveredFrom": "log-row",
+          "tagId": null,
+          "authorName": "alpha-one-employee",
+          "tag": null,
+          "frozen": false,
+          "frozenAt": "2026-10-30T03:48:12.627463Z",
+          "editable": true,
+          "deletable": true
+        }
+      }
+    },
+    {
+      "check": "log detail closes without rewriting the log date",
+      "pass": true,
+      "evidence": {
+        "detailOpened": true,
+        "detailVisible": {
+          "overlay": true,
+          "title": "日志详情",
+          "idle": true,
+          "cards": 3,
+          "notice": "日志已保存。"
+        },
+        "detailClosed": true
+      }
+    },
+    {
+      "check": "reopening the same business day edits the existing record instead of a new one",
+      "pass": true
+    },
+    {
+      "check": "a stale page cannot write after the real 24-hour freeze",
+      "pass": true,
+      "evidence": {
+        "editReady": true,
+        "frozenPage": {
+          "requests": [
+            {
+              "path": "/work-logs/d64b8496-109c-4882-a078-2c6c2ff776d6",
+              "method": "PATCH",
+              "status": 409,
+              "code": "WORK_LOG_FROZEN",
+              "message": "该日志自首次创建已满24小时，只能查看"
+            },
+            {
+              "path": "/me",
+              "status": 200
+            },
+            {
+              "path": "/work-logs?scope=self&limit=100&offset=0",
+              "status": 200
+            },
+            {
+              "path": "/me/reports",
+              "status": 200
+            },
+            {
+              "path": "/users?limit=100&offset=0",
+              "status": 200
+            },
+            {
+              "path": "/work-log-authors",
+              "status": 200
+            },
+            {
+              "path": "/notifications?limit=100&offset=0",
+              "status": 200
+            },
+            {
+              "path": "/tags",
+              "status": 200
+            },
+            {
+              "path": "/home",
+              "status": 200
+            },
+            {
+              "path": "/approval-requests?mine=all&limit=100&offset=0",
+              "status": 200
+            },
+            {
+              "path": "/tasks?limit=100&offset=0",
+              "status": 200
+            },
+            {
+              "path": "/tasks?limit=100&offset=100",
+              "status": 200
+            },
+            {
+              "path": "/analytics/task-summary?scope=visible",
+              "status": 200
+            }
+          ],
+          "notice": "该日志已满24小时，只能查看。",
+          "error": "",
+          "errorHidden": true,
+          "sheet": "编辑日志",
+          "overlay": true,
+          "draft": null
+        },
+        "yesterdayFrozen": {
+          "id": "d64b8496-109c-4882-a078-2c6c2ff776d6",
+          "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessDate": "2026-10-28",
+          "body": "Browser log yesterday backfill",
+          "taskId": null,
+          "rowVersion": 1,
+          "createdAt": "2026-10-28T02:48:14.140026Z",
+          "updatedAt": "2026-10-29T03:48:09.905374Z",
+          "deletedAt": null,
+          "recoveredFrom": "log-row",
+          "tagId": null,
+          "authorName": "alpha-one-employee",
+          "tag": null,
+          "frozen": true,
+          "frozenAt": "2026-10-29T02:48:14.140026Z",
+          "editable": false,
+          "deletable": false
+        },
+        "createdAtAged": "2026-10-28 02:48:14.140026",
+        "createdAtAfter": "2026-10-28 02:48:14.140026"
+      }
+    },
+    {
+      "check": "the frozen log is visibly read-only in the real page",
+      "pass": true
+    },
+    {
+      "check": "recreating a deleted slot never resets the first-creation freeze window",
+      "pass": true,
+      "evidence": {
+        "before": "e5770913-0e71-48d2-aef5-b0457757ceee\t2026-10-29\t2026-10-29 03:48:14.625534\t2026-10-29 03:48:12.627463",
+        "after": "e5770913-0e71-48d2-aef5-b0457757ceee\t2026-10-29\t2026-10-29 03:48:14.625534\t2026-10-28 02:48:14.652764",
+        "liveToday": "0",
+        "notice": "该日志已满24小时，只能查看。"
+      }
+    },
+    {
+      "check": "personal item list exposes opening only, not edit/delete actions",
+      "pass": true
+    },
+    {
+      "check": "new personal item is saved with a real object id",
+      "pass": true,
+      "evidence": {
+        "id": "ba08ca1a-1432-4b72-b888-89a538972c67",
+        "kind": "personal",
+        "title": "Browser personal item v1",
+        "body": "Browser personal item v1",
+        "sortOrder": 1,
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "workbench detail opens the same personal item with edit/delete",
+      "pass": true
+    },
+    {
+      "check": "personal item edit keeps the same id and does not rewrite the source log",
+      "pass": true,
+      "evidence": {
+        "personalEdited": {
+          "id": "ba08ca1a-1432-4b72-b888-89a538972c67",
+          "kind": "personal",
+          "title": "Browser personal item v1",
+          "body": "Browser personal item v2",
+          "sortOrder": 1,
+          "createdAt": "2026-10-29T03:48:15.281389Z",
+          "rowVersion": 2,
+          "editable": true
+        }
+      }
+    },
+    {
+      "check": "personal item delete asks for confirmation in the real page",
+      "pass": true
+    },
+    {
+      "check": "personal item delete removes the real object and keeps logs untouched",
+      "pass": true
+    },
+    {
+      "check": "tenth personal item disables the visible create action",
+      "pass": true,
+      "evidence": {
+        "count": 10,
+        "disabled": true,
+        "actions": true
+      }
+    },
+    {
+      "check": "the eleventh personal item is rejected by the real service with a stable error",
+      "pass": true,
+      "evidence": {
+        "ok": false,
+        "status": 409,
+        "code": "HOME_ITEM_LIMIT",
+        "message": "每类首页信息最多 10 条，请先删除后再新增"
+      }
+    },
+    {
+      "check": "login form ready alpha-one-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-one-head",
+      "pass": true
+    },
+    {
+      "check": "published task with a pending change is still in the task form",
+      "pass": true
+    },
+    {
+      "check": "task form lists the effective state and excludes unpublished/proposed work",
+      "pass": true,
+      "evidence": {
+        "title": "Effective version pending task",
+        "status": "todo",
+        "proposed": false,
+        "unpublished": false,
+        "pending": "complete",
+        "row": true,
+        "rowText": "Effective version pending task创建待开始审核中完成待审冻结2026-11-04 18:00中beta-one-employee2026-11-01 09:00alpha-one-head2026-10-29 11:47Browser acceptance real task—定时否———"
+      }
+    },
+    {
+      "check": "pending-completion detail shows the effective version, not the proposal",
+      "pass": true
+    },
+    {
+      "check": "login form ready beta-two-employee",
+      "pass": true
+    },
+    {
+      "check": "phone login beta-two-employee",
+      "pass": true
+    },
+    {
+      "check": "takeover recipient sees reopen on original completed work",
+      "pass": true
+    },
+    {
+      "check": "reopen exposes ordered active replacement assignees",
+      "pass": true
+    },
+    {
+      "check": "reopen saves new round and replacement without adding business owner",
+      "pass": true
+    },
+    {
+      "check": "login form ready founder",
+      "pass": true
+    },
+    {
+      "check": "phone login founder",
+      "pass": true
+    },
+    {
+      "check": "fixed profile organization fields founder",
+      "pass": true,
+      "evidence": [
+        "公司",
+        "组织身份",
+        "职位",
+        "直属上级"
+      ]
+    },
+    {
+      "check": "fixed manager retains subordinate profile and logs founder",
+      "pass": true
+    },
+    {
+      "check": "actual descendant contact and log entry founder",
+      "pass": true
+    },
+    {
+      "check": "log hierarchy search shows an explicit no-match state and keeps the input",
+      "pass": true,
+      "evidence": {
+        "visible": true,
+        "text": "当前权限内没有匹配的部门或人员",
+        "dq": "no-such-department",
+        "tq": "no-such-team",
+        "aq": "no-such-person",
+        "depts": 1,
+        "people": 1
+      }
+    },
+    {
+      "check": "clearing the hierarchy search hides the no-match state and restores candidates",
+      "pass": true,
+      "evidence": {
+        "visible": false,
+        "depts": 4,
+        "people": 12
+      }
+    },
+    {
+      "check": "login form ready alpha-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-head",
+      "pass": true
+    },
+    {
+      "check": "fixed profile organization fields alpha-head",
+      "pass": true,
+      "evidence": [
+        "公司",
+        "组织身份",
+        "部门",
+        "职位",
+        "直属上级"
+      ]
+    },
+    {
+      "check": "fixed manager retains subordinate profile and logs alpha-head",
+      "pass": true
+    },
+    {
+      "check": "actual descendant contact and log entry alpha-head",
+      "pass": true
+    },
+    {
+      "check": "person log target is an indirect descendant, not only a direct report",
+      "pass": true,
+      "evidence": {
+        "manager": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+        "me": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+        "isDirect": false,
+        "canRead": true
+      }
+    },
+    {
+      "check": "person log entry clears stale department/team/search filters",
+      "pass": true,
+      "evidence": {
+        "page": "log",
+        "author": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "all": false,
+        "department": "__all__",
+        "team": "__all__",
+        "departmentQuery": "",
+        "teamQuery": "",
+        "authorQuery": "",
+        "cards": [
+          "6d008f7d-4f49-4e3f-8794-c050a3b7a318",
+          "d64b8496-109c-4882-a078-2c6c2ff776d6"
+        ],
+        "filtered": [
+          {
+            "id": "6d008f7d-4f49-4e3f-8794-c050a3b7a318",
+            "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          },
+          {
+            "id": "d64b8496-109c-4882-a078-2c6c2ff776d6",
+            "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          }
+        ]
+      }
+    },
+    {
+      "check": "person log list contains only the target person records from current authority",
+      "pass": true,
+      "evidence": {
+        "expected": [
+          "d64b8496-109c-4882-a078-2c6c2ff776d6",
+          "6d008f7d-4f49-4e3f-8794-c050a3b7a318"
+        ],
+        "cards": [
+          "6d008f7d-4f49-4e3f-8794-c050a3b7a318",
+          "d64b8496-109c-4882-a078-2c6c2ff776d6"
+        ],
+        "filtered": [
+          {
+            "id": "6d008f7d-4f49-4e3f-8794-c050a3b7a318",
+            "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          },
+          {
+            "id": "d64b8496-109c-4882-a078-2c6c2ff776d6",
+            "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          }
+        ]
+      }
+    },
+    {
+      "check": "login form ready alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "fixed profile organization fields alpha-two-head",
+      "pass": true,
+      "evidence": [
+        "公司",
+        "组织身份",
+        "部门",
+        "职位",
+        "团队",
+        "直属上级"
+      ]
+    },
+    {
+      "check": "fixed manager retains subordinate profile and logs alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "actual descendant contact and log entry alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "login form ready founder",
+      "pass": true
+    },
+    {
+      "check": "phone login founder",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement founder",
+      "pass": true,
+      "evidence": {
+        "role": "founder",
+        "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "ids": [],
+        "chips": 0,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期全天（只填写起止日期，起止日期都包含在任务内）开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。标签（单选，可清除）无标签（默认粉色）标签由创始人统一维护，每项任务或日志最多选择一个；删除的标签不能再用于新的关联。紧急程度紧急高中低负责人（可多选）尚未选择负责人选择负责人负责人可选本公司全部有效员工（含其他部门、直属上级与创始人）；至少保留一位，本人可移除且不会自动加回。创建审核只按创建人的直属上级，与负责人选择无关。无需审核：固定创始人创建，记录原因后直接生效；提交后直接生效。"
+      }
+    },
+    {
+      "check": "login form ready alpha-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-head",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement alpha-head",
+      "pass": true,
+      "evidence": {
+        "role": "department_head",
+        "id": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+        "ids": [],
+        "chips": 0,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期全天（只填写起止日期，起止日期都包含在任务内）开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。标签（单选，可清除）无标签（默认粉色）标签由创始人统一维护，每项任务或日志最多选择一个；删除的标签不能再用于新的关联。紧急程度紧急高中低负责人（可多选）尚未选择负责人选择负责人负责人可选本公司全部有效员工（含其他部门、直属上级与创始人）；至少保留一位，本人可移除且不会自动加回。创建审核只按创建人的直属上级，与负责人选择无关。创建审核人：founder（按创建人的直属上级审核；负责人换序、更换或跨部门都不改变审核人）。"
+      }
+    },
+    {
+      "check": "login form ready alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement alpha-two-head",
+      "pass": true,
+      "evidence": {
+        "role": "team_head",
+        "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+        "ids": [],
+        "chips": 0,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期全天（只填写起止日期，起止日期都包含在任务内）开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。标签（单选，可清除）无标签（默认粉色）标签由创始人统一维护，每项任务或日志最多选择一个；删除的标签不能再用于新的关联。紧急程度紧急高中低负责人（可多选）尚未选择负责人选择负责人负责人可选本公司全部有效员工（含其他部门、直属上级与创始人）；至少保留一位，本人可移除且不会自动加回。创建审核只按创建人的直属上级，与负责人选择无关。创建审核人：alpha-head（按创建人的直属上级审核；负责人换序、更换或跨部门都不改变审核人）。"
+      }
+    },
+    {
+      "check": "login form ready alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement alpha-one-employee",
+      "pass": true,
+      "evidence": {
+        "role": "employee",
+        "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "ids": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "chips": 1,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期全天（只填写起止日期，起止日期都包含在任务内）开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。标签（单选，可清除）无标签（默认粉色）标签由创始人统一维护，每项任务或日志最多选择一个；删除的标签不能再用于新的关联。紧急程度紧急高中低负责人（可多选）alpha-one-employee员工 · alpha选择负责人负责人可选本公司全部有效员工（含其他部门、直属上级与创始人）；至少保留一位，本人可移除且不会自动加回。创建审核只按创建人的直属上级，与负责人选择无关。创建审核人：alpha-two-head（按创建人的直属上级审核；负责人换序、更换或跨部门都不改变审核人）。"
+      }
+    },
+    {
+      "check": "the employee draft is the starting point for owner edits",
+      "pass": true
+    },
+    {
+      "check": "new-task owner picker opens from the employee draft",
+      "pass": true
+    },
+    {
+      "check": "removing the initial self and choosing cross-department owners keeps the chosen order",
+      "pass": true,
+      "evidence": [
+        "c446e82b-711b-5d20-8fdd-b878fd0f0890",
+        "df322039-debc-570e-a1e9-b76f2bd8d66f"
+      ]
+    },
+    {
+      "check": "reordering the same owners is preserved instead of restoring the creator",
+      "pass": true,
+      "evidence": [
+        "df322039-debc-570e-a1e9-b76f2bd8d66f",
+        "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+      ]
+    },
+    {
+      "check": "cancelling the owner picker discards its working copy",
+      "pass": true,
+      "evidence": {
+        "reordered": [
+          "df322039-debc-570e-a1e9-b76f2bd8d66f",
+          "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+        ]
+      }
+    },
+    {
+      "check": "the employee can remove every owner without being added back",
+      "pass": true,
+      "evidence": {
+        "ids": [],
+        "empty": true
+      }
+    },
+    {
+      "check": "an empty owner list is rejected without submitting",
+      "pass": true,
+      "evidence": {
+        "text": "至少选择一位负责人。",
+        "ids": [],
+        "overlay": false
+      }
+    },
+    {
+      "check": "the employee creation preview routes to the direct manager",
+      "pass": true,
+      "evidence": {
+        "preview": {
+          "operation": "create",
+          "mode": "creation",
+          "route": {
+            "reviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+            "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "path": [
+              "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+            ],
+            "reason": "direct-manager",
+            "reasonText": "创建按创建人的直属上级审核",
+            "authzVersion": 4,
+            "reviewerAvailable": true,
+            "blocked": false,
+            "creation": true,
+            "participants": [
+              {
+                "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+                "displayName": "alpha-two-head"
+              },
+              {
+                "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+                "displayName": "alpha-one-employee"
+              }
+            ]
+          },
+          "reviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+          "requiresApproval": true,
+          "blocked": false,
+          "exemptionReason": null,
+          "blockedReason": null,
+          "reviewerBasis": "creator",
+          "previewOnly": true
+        },
+        "meInfo": {
+          "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "managerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+        }
+      }
+    },
+    {
+      "check": "the employee submits a real creation request with the chosen owners",
+      "pass": true
+    },
+    {
+      "check": "the created request is pending for the creator direct manager",
+      "pass": true,
+      "evidence": {
+        "requestId": "c99fe225-6fd7-4f0f-b036-43fc6e68978d",
+        "taskId": "424fcf69-fdac-4147-913a-2dc45dec07d7",
+        "kind": "create",
+        "status": "pending",
+        "comment": null,
+        "applicantId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "currentReviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+        "rowVersion": 1,
+        "previousState": "todo",
+        "exemptionReason": null,
+        "createdAt": "2026-10-29T03:48:25.856161Z",
+        "decidedAt": null,
+        "applicableDeadline": "2026-11-01T10:00:00Z",
+        "expiredAt": null,
+        "title": "Browser creation default owner",
+        "versionNo": 1,
+        "route": {
+          "reviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "创建按创建人的直属上级审核",
+          "authzVersion": 4,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": true,
+          "participants": [
+            {
+              "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+              "displayName": "alpha-two-head"
+            },
+            {
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+              "displayName": "alpha-one-employee"
+            }
+          ]
+        },
+        "proposedVersion": {
+          "id": "ada63e06-6a56-4d07-8894-31c64470feaa",
+          "taskId": "424fcf69-fdac-4147-913a-2dc45dec07d7",
+          "versionNo": 1,
+          "title": "Browser creation default owner",
+          "description": "Browser creation default check",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-10-30T01:00:00Z",
+          "dueAt": "2026-11-01T10:00:00Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "proposed",
+          "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "createdAt": "2026-10-29T03:48:25.857195Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+          ],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "participants": [
+          {
+            "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+            "displayName": "alpha-two-head"
+          },
+          {
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "displayName": "alpha-one-employee"
+          },
+          {
+            "id": "c446e82b-711b-5d20-8fdd-b878fd0f0890",
+            "displayName": "beta-one-employee"
+          }
+        ]
+      }
+    },
+    {
+      "check": "login form ready founder",
+      "pass": true
+    },
+    {
+      "check": "phone login founder",
+      "pass": true
+    },
+    {
+      "check": "the fixed founder starts empty and is exempt from creation review",
+      "pass": true,
+      "evidence": {
+        "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "ids": [],
+        "preview": {
+          "operation": "create",
+          "mode": "creation",
+          "route": {
+            "reviewerId": null,
+            "basisAssigneeId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "path": [],
+            "reason": "founder-exempt",
+            "reasonText": "固定创始人创建，记录原因后直接生效",
+            "authzVersion": 4,
+            "reviewerAvailable": false,
+            "blocked": false,
+            "creation": true,
+            "participants": [
+              {
+                "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+                "displayName": "founder"
+              }
+            ]
+          },
+          "reviewerId": null,
+          "requiresApproval": false,
+          "blocked": false,
+          "exemptionReason": "固定创始人创建，记录原因后直接生效",
+          "blockedReason": null,
+          "reviewerBasis": "creator",
+          "previewOnly": true
+        }
+      }
+    },
+    {
+      "check": "the founder owner picker opens",
+      "pass": true
+    },
+    {
+      "check": "the founder submission applies directly and publishes the task",
+      "pass": true
+    },
+    {
+      "check": "the founder exemption is recorded as direct with a reason, never as a pending self-approval",
+      "pass": true,
+      "evidence": {
+        "requestId": "7271c7d6-3605-46a9-bfd7-90da28e5589b",
+        "taskId": "ebbe0b49-a348-4e39-9bbf-f8229d9f9a97",
+        "kind": "create",
+        "status": "direct",
+        "comment": null,
+        "applicantId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "currentReviewerId": null,
+        "rowVersion": 1,
+        "previousState": "todo",
+        "exemptionReason": "固定创始人创建，记录原因后直接生效",
+        "createdAt": "2026-10-29T03:48:27.083293Z",
+        "decidedAt": "2026-10-29T03:48:27.083293Z",
+        "applicableDeadline": "2026-11-01T10:00:00Z",
+        "expiredAt": null,
+        "title": "Browser founder direct creation",
+        "versionNo": 1,
+        "route": {
+          "reviewerId": null,
+          "basisAssigneeId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "path": [],
+          "reason": "founder-exempt",
+          "reasonText": "固定创始人创建，记录原因后直接生效",
+          "authzVersion": 4,
+          "reviewerAvailable": false,
+          "blocked": false,
+          "creation": true,
+          "participants": [
+            {
+              "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+              "displayName": "founder"
+            }
+          ]
+        },
+        "proposedVersion": {
+          "id": "859c8f5a-5743-4768-b190-228569ac04d5",
+          "taskId": "ebbe0b49-a348-4e39-9bbf-f8229d9f9a97",
+          "versionNo": 1,
+          "title": "Browser founder direct creation",
+          "description": "Browser founder default check",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-10-30T01:00:00Z",
+          "dueAt": "2026-11-01T10:00:00Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "applied",
+          "createdBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "createdAt": "2026-10-29T03:48:27.084408Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+          ],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "participants": [
+          {
+            "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "displayName": "founder"
+          }
+        ]
+      }
+    },
+    {
+      "check": "Escape inside the native time control keeps the form and its draft",
+      "pass": true,
+      "evidence": {
+        "open": true,
+        "draft": true,
+        "title": "Native cancel keeps the draft",
+        "time": "09:00",
+        "target": "tf-start-time-hour"
+      }
+    },
+    {
+      "check": "Escape outside the time control still closes the sheet",
+      "pass": true
+    },
+    {
+      "check": "employee interactions have no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "result": "PASS"
+}

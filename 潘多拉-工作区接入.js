@@ -95,7 +95,7 @@
     const weekday = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][today.getDay()];
     document.getElementById("page-map").innerHTML =
       '<section class="workday"><div class="workday-copy"><h2>' + esc(fmtDate(today)) + '</h2><p>' + esc(weekday) + '</p></div>' +
-      '<button type="button" class="btn primary create-task" data-action="new-task"><span aria-hidden="true">＋</span>新建任务</button></section>' +
+      '</section>' +
       '<div class="map-grid">' +
         '<section class="quad company-quad" aria-labelledby="q1"><div class="card-head"><h2 id="q1">公司事项</h2><span class="hint">统一发布</span></div>' +
           '<div class="q-body" tabindex="0" role="region" aria-labelledby="q1">' + (company.length ? company.map((item, index) =>
@@ -148,8 +148,7 @@ function teamOptions() {
 function personOptions() {
   const query = logPersonQuery();
   return visibleDepartmentAuthors().filter(person =>
-    !query || String(person.displayName || '').toLowerCase().includes(query)
-    || String(person.username || '').toLowerCase().includes(query));
+    !query || String(person.displayName || '').toLowerCase().includes(query));
 }
 function logAuthorId() {
   if (state.logAll) return null;
@@ -217,15 +216,26 @@ function refreshLogFindingOptions() {
     authorSelect.innerHTML = '<option value="__all__"' + (state.logAll ? ' selected' : '') + '>' + allLabel + '</option>' +
       logOptionsHTML(people.map(row => Object.assign({ selected: !state.logAll && row.id === logAuthorId(), self: row.id === (P.data.me || {}).id }, row)), 'id', row => (row.displayName || '相关成员') + (row.teamName ? ' · ' + row.teamName : ' · 无团队') + (row.self ? '（我）' : ''));
   }
-  const empty = card.querySelector('.empty');
-  if (empty) empty.hidden = departments.length > 0 || people.length > 0;
+  /* The initial render only inserts the no-match node when it starts empty; a later search can turn
+     a populated candidate list into no matches, so the refresh path has to create/update/clear it
+     itself while keeping the typed input and authorized selection intact (chapter 7.3). */
+  let empty = card.querySelector('.empty');
+  if (!empty) {
+    empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = '当前权限内没有匹配的部门或人员';
+    const hint = card.querySelector('p.tiny.muted');
+    card.insertBefore(empty, hint || null);
+  }
+  empty.hidden = departments.length > 0 || people.length > 0;
 }
 document.addEventListener('toggle', event => {
   if (event.target.id === 'logFindingCard') state.logFilterOpen = event.target.open;
 }, true);
 renderLog = function () {
   document.getElementById("page-log").innerHTML =
-    '<header class="p-log-header"><h2>日志</h2>' + button("new-log", "写日志", null, "primary") + '</header>' +
+    '<header class="p-log-header"><h2>日志</h2><div class="row">' + button("new-log", "写日志", null, "primary") +
+      button("backfill-log", "补写") + '</div></header>' +
     logFindingHTML() +
     '<section class="card p-log-panel" id="p-log-panel"><div class="card-head"><h2>日志</h2>' +
       '<span class="hint" id="logResultsCount">' + esc(logScopeLabel()) + '</span></div>' +
@@ -449,6 +459,20 @@ openLogForm = function (id, date) {
     openSheet(logFormView());
   });
 };
+async function openBackfillLog() {
+  // A user who already wrote today still needs a page entry to backfill yesterday/the day before.
+  for (const option of logDateOptions()) {
+    if (!(await existingLogFor(option.value))) { openLogForm(null, option.value); return; }
+  }
+  P.notice("今天、昨天和前天都已有日志。");
+}
+document.addEventListener('click', function (event) {
+  if (!P.ready || !event.target.closest) return;
+  const trigger = event.target.closest('[data-action="backfill-log"]');
+  if (!trigger) return;
+  event.preventDefault(); event.stopImmediatePropagation();
+  openBackfillLog().catch(error => P.notice(error.message));
+}, true);
 logFormView = function () {
   const d = drafts.log;
   if (!d) return null;
@@ -657,7 +681,8 @@ saveLog = function () {
       ? button("p-open-historical-task", "查看历史只读详情", raw.id)
       : button("p-open-notification-task", "查看相关任务", raw.id));
     if (!revoked && raw.canWithdraw) buttons.push(button("p-withdraw-notification", "撤回通知", raw.id));
-    if (!revoked && raw.objectType && raw.objectId) {
+    if (!revoked && raw.objectType && raw.objectId &&
+        !(raw.objectType === "task" && (raw.relationLost || raw.readonly))) {
       buttons.push(button("p-open-notification-object", raw.focus === "comments" ? "定位到评论区" : "查看相关对象", raw.id));
     }
     if (!revoked) buttons.push(button("p-hide-notification", "删除此消息", raw.id));
@@ -788,7 +813,7 @@ saveLog = function () {
   }
   renderMe = function () {
     const me = P.data.me || {}, superior = personById(me.managerId);
-    const rows = [["姓名",me.displayName],["账号",me.username],["部门",me.teamName || "未分配"],["角色",ROLE_LABEL[me.role] || me.role],["直属上级",superior ? superior.name : me.managerId ? "资料不在当前可见范围" : "无"]];
+    const rows = [["姓名",me.displayName],["部门",me.departmentName || "公司层"],["团队",me.teamName || "无"],["身份",ROLE_LABEL[me.role] || me.role],["直属上级",superior ? superior.name : me.managerId ? "资料不在当前可见范围" : "无"]];
     document.getElementById("page-me").innerHTML = '<section class="card profile-card"><div class="profile-row"><div class="avatar">' +
       esc((me.displayName || "").slice(0,1)) + '</div><div><div class="v">' + esc(me.displayName) + '</div><div class="tiny muted">当前登录账号</div></div></div>' +
       rows.map(([key,value]) => '<div class="profile-row"><span class="k">' + key + '</span><span class="v">' + esc(value) + '</span></div>').join("") +

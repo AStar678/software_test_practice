@@ -17,7 +17,7 @@ import static org.mockito.Mockito.*;
 
 class TaskParticipantSummaryTest {
     private static final String TASK = "20000000-0000-0000-0000-000000000001";
-    private static final Actor ACTOR = new Actor("employee", "org", "lower", "team", "reviewer", 3);
+    private static final Actor ACTOR = new Actor("employee", "org", "employee", "team", "reviewer", 3);
 
     @Test
     void summariesContainOnlyNamesAndIdsWithinTheCurrentOrganization() {
@@ -41,14 +41,14 @@ class TaskParticipantSummaryTest {
         when(db.find(startsWith("SELECT * FROM approval_requests"), eq("org"), eq(TASK)))
                 .thenReturn(Map.of("id", "request", "status", "pending", "applicantId", "creator", "currentReviewerId", "reviewer", "baseVersionId", "effective", "proposedVersionId", "hidden-proposal"));
         when(db.find("SELECT * FROM users WHERE organization_id=? AND id=?", "org", "employee"))
-                .thenReturn(Map.of("id", "employee", "rankLevel", 3, "managerId", "reviewer", "active", true, "role", "lower"));
+                .thenReturn(Map.of("id", "employee", "rankLevel", 3, "managerId", "reviewer", "active", true, "role", "employee"));
         when(db.find("SELECT * FROM users WHERE organization_id=? AND id=?", "org", "reviewer"))
-                .thenReturn(Map.of("id", "reviewer", "rankLevel", 2, "active", true, "role", "middle"));
+                .thenReturn(Map.of("id", "reviewer", "rankLevel", 2, "active", true, "role", "team_head"));
         Set<String> requested = new HashSet<>();
         when(db.list(startsWith("SELECT id,display_name FROM users"), any(Object[].class))).thenAnswer(call -> {
             Object[] args = (Object[]) call.getRawArguments()[1];
             requested.addAll(Arrays.stream(args).map(String::valueOf).toList());
-            return List.of(Map.of("id", "employee", "displayName", "员工"), Map.of("id", "creator", "displayName", "创建者"), Map.of("id", "reviewer", "displayName", "审核人"));
+            return List.of(Map.of("id", "employee", "displayName", "员工"), Map.of("id", "creator", "displayName", "创建者"));
         });
         TaskService service = new TaskService(db, mock(Access.class), mock(Events.class), java.time.Clock.systemUTC(), mock(ExpiryService.class));
         Map<String, Object> task = Map.of("id", TASK, "originalCreatorId", "creator", "rowVersion", 4, "executionRound", 1, "dueVersion", 1);
@@ -58,9 +58,9 @@ class TaskParticipantSummaryTest {
         assertEquals(true, result.get("frozen"));
         assertFalse(result.containsKey("pendingRequestId"));
         assertEquals("旧有效标题", result.get("title"));
-        assertEquals(3, ((List<?>) result.get("participants")).size());
+        assertEquals(2, ((List<?>) result.get("participants")).size());
         // The route projection and the participant list together, but never the hidden proposal.
-        assertEquals(Set.of("org", "employee", "creator", "reviewer"), requested);
+        assertEquals(Set.of("org", "employee", "creator"), requested);
         assertFalse(requested.contains("hidden-proposal"));
         verify(db, never()).list(contains("task_version_assignees"), eq("org"), eq("hidden-proposal"));
     }
@@ -69,6 +69,7 @@ class TaskParticipantSummaryTest {
     void unauthorizedTaskReadDoesNotFetchParticipantIdentities() {
         Db db = mock(Db.class);
         Access access = mock(Access.class);
+        when(access.businessOwner(anyMap())).thenAnswer(call->((Map<?,?>)call.getArgument(0)).get("originalCreatorId"));
         when(db.one("SELECT * FROM tasks WHERE organization_id=? AND id=?", "org", TASK))
                 .thenReturn(Map.of("id", TASK, "currentVersionId", "effective", "originalCreatorId", "another"));
         when(db.one("SELECT * FROM task_versions WHERE organization_id=? AND id=?", "org", "effective"))

@@ -1,0 +1,88 @@
+{
+  "updated": "2026-10-29T02:10:23.360200+00:00",
+  "serverVersion": "9.3.0",
+  "checks": [
+    {
+      "check": "empty database completes the full Flyway chain",
+      "pass": true
+    },
+    {
+      "check": "backup restores an independent V20 database with identical row fingerprints",
+      "pass": true
+    },
+    {
+      "check": "fresh and upgraded columns, FK, indexes, unique keys and CHECK constraints are identical",
+      "pass": true
+    },
+    {
+      "check": "upgrade preserves stable employee/task/log/admin-audit IDs, original hashes, text and creation times",
+      "pass": true
+    },
+    {
+      "check": "independent administrator extraction preserves identity without an employee row",
+      "pass": true
+    },
+    {
+      "check": "historical admin audit still resolves through principals",
+      "pass": true
+    },
+    {
+      "check": "upgrade does not infer an arbitrary founder or placement",
+      "pass": true
+    },
+    {
+      "check": "final employee schema has no username, role, rank or editable organization chain",
+      "pass": true
+    },
+    {
+      "check": "final schema removes old role grants and username mappings",
+      "pass": true
+    },
+    {
+      "check": "SQL rejects a pseudo employee for an admin principal",
+      "pass": true
+    },
+    {
+      "check": "unresolvable admin business history blocks final cleanup",
+      "pass": true
+    },
+    {
+      "check": "blocked cleanup retains old administrator identity and real business source for repair",
+      "pass": true
+    },
+    {
+      "check": "V1-V20 files match the committed historical versions",
+      "pass": true
+    }
+  ],
+  "backupSha256": "d0d60dc26dd9702ae2b3917fea947a6cad88e39f58d27b42588a7119fd708f82",
+  "historicalChecksums": {
+    "V15__personal_avatar.sql": "4d29fafc2713a7df1c22a177510c0856f96aabbe584fdb1dd54d17f1f8a9cd76",
+    "V3__home_item_versions.sql": "977ed329b8d90f523af4e5623b5d7f5b11f24525cd4166c3087507f02e2318d8",
+    "V6__ordered_routing_expiration_and_handover.sql": "c8832ec2b410ef8bc85df3290bf52ab052dcfac6dca9c18b8268b5ac53023316",
+    "V5__organization_roles_and_account_gate.sql": "f20e0594916f7b5071ea0bb51380c9667d1db9ad8d7ccc7a8feca08c6b534bb2",
+    "V20__notification_object_refs.sql": "e9e12751662ebef73d7e6eafa87788b134e0c7179aa6a841ff06b938e6c174f8",
+    "V8__lossless_work_log_merge_and_unique_day.sql": "b6b82abdbc5092b62dda3340f7d3154929ee23d1d98bd8a3e367a3ff3ac0de83",
+    "V13__mask_undelivered_notification_content.sql": "558d85389850e901605d962a4389f7909e8256f00bc5ec54122b6fb2fd162761",
+    "V9__organization_row_versions.sql": "0d476af362bfecf6231749a3ec179fb305bf31f01ebfd73d8200909b08bb7995",
+    "V4__personal_profile.sql": "796b8947b282b93ba3cd4aaaa49e827feed97f1ee543b74cc42efad836ece7f1",
+    "V12__backfill_task_assignments.sql": "a34c88e3ca66d53a20be96978f9e9cf51cf78a3caea3357419e60f71d4fdd8c4",
+    "V17__tags_and_task_tag_snapshot.sql": "a1b971c88a69a1591a0bf63c14d7c30f54b4610977c46e5ec9354bf5b89959a1",
+    "V11__schedule_snapshots_reminder_nodes_and_notification_lifecycle.sql": "54787d03131305541ab9229d195f03986bfaa4208c2c5489f1ce18b178d2a400",
+    "V19__employee_phone_login.sql": "e62b3b8d49c7b3f2ff4982797c45cbebbfbe34ddc29de5234af2fa8c3eadfdd1",
+    "V10__retire_superseded_check_constraints.sql": "28b5363aa98ab483d3bd0255e3f7416638dc38c1d67818f6d4b5b733b9f0c6b7",
+    "V16__work_log_day_slot.sql": "f97c578ec0d042ec4954f88d2d1c69edd0fb77c1a68d90f95e2dfeb6a066f829",
+    "V2__case_sensitive_idempotency.sql": "f6e05c594336303bb92af88998ef21086b76ef8f5da109571d58d3e8f02940ea",
+    "V7__event_provenance_dispatch_and_pins.sql": "83c66675dcfb7c6015d0ea5caa4f956f6edb48791354fa48da7fc84bd518d0a3",
+    "V18__flat_comments.sql": "88356b5ba4088eb682c09cc3db6654789896d2e73f4751de8310f967362b50f0",
+    "V1__initial_schema.sql": "71154f0cbfba16b62ffffacea48c4295abad129a6b23a27a8e9942564097b349",
+    "V14__handover_presets.sql": "c333107e47ddece1a07c98d43163ce6a098281e19f3000b7607c0ad0c68aa0d7"
+  },
+  "databases": [
+    "pandora_precheck_final_c26fd05fa17f",
+    "pandora_precheck_final_fd7a753b590e",
+    "pandora_precheck_final_593cb453eb4a",
+    "pandora_precheck_final_2e516aa8cf9a"
+  ],
+  "result": "PASS"
+}

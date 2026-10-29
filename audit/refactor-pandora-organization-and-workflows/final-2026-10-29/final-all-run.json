@@ -1,0 +1,120 @@
+{
+  "updated": "2026-10-29T02:10:09.999557+00:00",
+  "phase": "all",
+  "checks": [
+    {
+      "command": "python3 backend/scripts/check_fixed_organization_migration.py",
+      "exitCode": 0,
+      "log": "final-check_fixed_organization_migration.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_legacy_mapping.py",
+      "exitCode": 0,
+      "log": "final-check_legacy_mapping.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_final_migration.py",
+      "exitCode": 0,
+      "log": "final-check_final_migration.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_final_demo.py",
+      "exitCode": 0,
+      "log": "final-check_final_demo.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_login_identity_collision.py",
+      "exitCode": 0,
+      "log": "final-check_login_identity_collision.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_profile_phone_matrix.py",
+      "exitCode": 0,
+      "log": "final-check_profile_phone_matrix.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_organization_plans.py",
+      "exitCode": 0,
+      "log": "final-check_organization_plans.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_review_routing.py",
+      "exitCode": 0,
+      "log": "final-check_review_routing.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_auto_apply_authorization.py",
+      "exitCode": 0,
+      "log": "final-check_auto_apply_authorization.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_business_takeover.py",
+      "exitCode": 0,
+      "log": "final-check_business_takeover.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_fixed_workspace_access.py",
+      "exitCode": 0,
+      "log": "final-check_fixed_workspace_access.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_fixed_notifications.py",
+      "exitCode": 0,
+      "log": "final-check_fixed_notifications.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_admin_contract.py",
+      "exitCode": 0,
+      "log": "final-check_admin_contract.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_handover_chain.py",
+      "exitCode": 0,
+      "log": "final-check_handover_chain.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_fixed_web.py",
+      "exitCode": 0,
+      "log": "final-check_fixed_web.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_calendar_drawer.py",
+      "exitCode": 0,
+      "log": "final-check_calendar_drawer.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_fixed_late_response.py",
+      "exitCode": 0,
+      "log": "final-check_fixed_late_response.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_log_backfill_entry.py",
+      "exitCode": 0,
+      "log": "final-check_log_backfill_entry.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_fixed_communication_web.py",
+      "exitCode": 0,
+      "log": "final-check_fixed_communication_web.log",
+      "pass": true
+    }
+  ]
+}

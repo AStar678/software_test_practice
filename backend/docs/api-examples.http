@@ -10,7 +10,7 @@
 @baseUrl = http://localhost:8080
 @password = Demo@123456
 @employeeToken = PASTE_EMPLOYEE_TOKEN
-@managerToken = PASTE_MIDDLE_TOKEN
+@managerToken = PASTE_TEAM_HEAD_TOKEN
 @profileVersion = PASTE_PROFILE_ROW_VERSION
 @employeeId = PASTE_EMPLOYEE_USER_ID
 @taskId = PASTE_TASK_ID
@@ -30,25 +30,30 @@ GET {{baseUrl}}/health
 POST {{baseUrl}}/api/v1/auth/sessions
 Content-Type: application/json
 
-{"username":"13800000004","password":"{{password}}","accountType":"employee"}
+{"phone":"13800000004","password":"{{password}}","accountType":"employee"}
 
 ### Manager login: this manager reviews the example employee's self-created tasks.
 POST {{baseUrl}}/api/v1/auth/sessions
 Content-Type: application/json
 
-{"username":"13800000002","password":"{{password}}","accountType":"employee"}
+{"phone":"13800000011","password":"{{password}}","accountType":"employee"}
 
-### Administrator login uses the original username, even when it is also an employee phone number.
+### Administrator login uses its independent accountName namespace.
 POST {{baseUrl}}/api/v1/auth/sessions
 Content-Type: application/json
 
-{"username":"admin","password":"{{password}}","accountType":"admin"}
+{"accountName":"admin","password":"{{password}}","accountType":"admin"}
 
-# accountType is optional for older clients. Without it, exactly one matching identity/password is
-# required; a shared identifier and password returns 409 LOGIN_IDENTITY_AMBIGUOUS. Use the intended
-# employee/admin entry point instead of relying on lookup order. Duplicate active employee phone keys
-# still return 409 LOGIN_KEY_AMBIGUOUS; only the explicit admin entry bypasses the employee namespace.
-# Unknown accountType values return 400 INVALID_INPUT.
+# accountType is mandatory. Missing type, legacy username, unknown type and mixed identifier
+# fields return 400 INVALID_LOGIN_CONTRACT. No cross-namespace fallback occurs.
+# Duplicate active employee phone keys return 409 LOGIN_KEY_AMBIGUOUS;
+# explicit admin login remains available for repair. This is a breaking contract for old clients.
+
+### Rejected legacy payload: expected 400 INVALID_LOGIN_CONTRACT.
+POST {{baseUrl}}/api/v1/auth/sessions
+Content-Type: application/json
+
+{"accountType":"employee","username":"13800000004","password":"{{password}}"}
 
 ### Discover the current server identity. Do not send a client-selected actor ID.
 GET {{baseUrl}}/api/v1/me
@@ -104,7 +109,7 @@ Content-Type: application/json
 GET {{baseUrl}}/api/v1/tasks/{{taskId}}
 Authorization: Bearer {{employeeToken}}
 
-### Definition change requires original-creator permission and a reason.
+### Definition change requires current-business-owner permission and a reason.
 PATCH {{baseUrl}}/api/v1/tasks/{{taskId}}
 Authorization: Bearer {{employeeToken}}
 Idempotency-Key: {{$guid}}
@@ -113,7 +118,8 @@ Content-Type: application/json
 
 {"command":"change","title":"Local example: supplier review updated","reason":"Clarify scope"}
 
-### Progress requires current-assignee permission and enters review unless exempt.
+### Progress requires current-effective-assignee permission; current business owner reviews.
+# Applicant == reviewer applies directly with reason/history, no pending self review.
 # Finish/withdraw the preceding pending request, then obtain a fresh task ETag.
 PATCH {{baseUrl}}/api/v1/tasks/{{taskId}}
 Authorization: Bearer {{employeeToken}}
@@ -141,7 +147,7 @@ Content-Type: application/json
 
 {"decision":"withdraw"}
 
-### Reopen a done task, original creator only in this local implementation.
+### Reopen a done task: current business owner only, with valid assignees/schedule.
 PATCH {{baseUrl}}/api/v1/tasks/{{taskId}}
 Authorization: Bearer {{employeeToken}}
 Idempotency-Key: {{$guid}}
@@ -160,7 +166,7 @@ Authorization: Bearer {{employeeToken}}
 Idempotency-Key: {{$guid}}
 Content-Type: application/json
 
-{"body":"Reviewed the supplier data and recorded follow-up questions.","businessDate":"2030-01-14","taskId":"{{taskId}}"}
+{"body":"Reviewed the supplier data and recorded follow-up questions.","businessDate":"REPLACE_WITH_COMPANY_TODAY_OR_PREVIOUS_TWO_DATES","taskId":"{{taskId}}"}
 
 ### Read a log and copy its ETag before editing.
 GET {{baseUrl}}/api/v1/work-logs/{{logId}}
@@ -198,7 +204,7 @@ Authorization: Bearer {{employeeToken}}
 
 ### Local rule-based analysis; no external model is called. `auto` derives the
 ### statistics/keyword scope and the (possibly narrower) suggestion scope from
-### the current role grants. A client may request `self`, but cannot broaden it.
+### the fixed current organization position. A client may request `self`, but cannot broaden it.
 POST {{baseUrl}}/api/v1/ai-jobs
 Authorization: Bearer {{employeeToken}}
 Idempotency-Key: {{$guid}}
@@ -242,61 +248,76 @@ Content-Type: application/json
 
 {"currentPassword":"Demo@123456","newPassword":"NewPass12345"}
 
-### Administration overview: departments, positions, teams, roles, constraints.
+### Administration overview: fixed organization, display-only positions and readiness blockers.
 GET {{baseUrl}}/api/v1/admin/organization
 Authorization: Bearer {{adminToken}}
 
-### Employee roster. Phone numbers are never echoed; `hasPhone` only reports presence.
+### Independent administrator identity; no employee organization fields.
+GET {{baseUrl}}/api/v1/admin/account
+Authorization: Bearer {{adminToken}}
+
+### Use rowVersion from the preceding body. Account edits revoke sessions; log in again.
+PATCH {{baseUrl}}/api/v1/admin/account
+Authorization: Bearer {{adminToken}}
+Idempotency-Key: {{$guid}}
+If-Match: "REPLACE_WITH_ADMIN_ROW_VERSION"
+Content-Type: application/json
+
+{"accountName":"local-admin","displayName":"本机管理员"}
+
+### Employee roster: phone is never echoed, hasPhone only reports presence.
 GET {{baseUrl}}/api/v1/admin/employees
 Authorization: Bearer {{adminToken}}
 
-### Create an employee. The generated initial password is returned exactly once.
-POST {{baseUrl}}/api/v1/admin/employees
-Authorization: Bearer {{adminToken}}
-Idempotency-Key: {{$guid}}
-Content-Type: application/json
-
-{"username":"newhire","displayName":"新同事","departmentId":"{{departmentId}}","positionId":"{{positionId}}","level":3,"roleCodes":["employee"]}
-
-### Edit an employee's organization fields. Requires the GET ETag.
+### Identity edit only by administrator. Changing phone keeps ID and revokes all sessions.
 PATCH {{baseUrl}}/api/v1/admin/employees/{{newEmployeeId}}
 Authorization: Bearer {{adminToken}}
 Idempotency-Key: {{$guid}}
 If-Match: {{employeeEtag}}
 Content-Type: application/json
 
-{"teamId":"{{teamId}}"}
+{"displayName":"新同事","phone":"13900000123"}
 
-### Transfer: moves department/position/team/manager/level/authority and bumps the authorization version.
-POST {{baseUrl}}/api/v1/admin/employees/{{newEmployeeId}}/transfer
+### Complete organization draft: includes rowVersion, expectedEmployees, departments, teams,
+### placements and positions. GET latest, edit final result, submit with a reason.
+GET {{baseUrl}}/api/v1/admin/organization-plans
+Authorization: Bearer {{adminToken}}
+
+### Template only: replace EVERY array with the complete final organization from the draft.
+# Keep existing rowVersion for each retained unit/placement and all expectedEmployees.
+# New unit/employee IDs are client-selected stable UUIDs, with no username or editable role grant.
+# Each active employee needs one placement + display position; each unit exactly one head.
+POST {{baseUrl}}/api/v1/admin/organization-plans
 Authorization: Bearer {{adminToken}}
 Idempotency-Key: {{$guid}}
-If-Match: {{employeeEtag}}
+If-Match: "REPLACE_WITH_DRAFT_ROW_VERSION"
 Content-Type: application/json
 
-{"departmentId":"{{departmentId}}","positionId":"{{positionId}}","level":4,"roleCodes":["employee"],"reason":"组织调整"}
+{
+  "reason":"新增员工并安排完整位置",
+  "founderEmployeeId":"REPLACE_WITH_FIXED_FOUNDER_ID",
+  "expectedEmployees":[],
+  "departments":[],
+  "teams":[],
+  "placements":[],
+  "newEmployees":[{"id":"REPLACE_WITH_NEW_UUID","displayName":"新同事","phone":"13900000123"}]
+}
+
+# This incomplete template must be filled before sending; empty arrays do not mean 'unchanged'.
+# Successful newEmployees returns one-time initial passwords; retries do not reveal them again.
+# Deactivation uses this same complete plan with deactivateEmployees/businessTransfers and,
+# if necessary, cancelUnpublishedRequests. First finish employee-side handovers/reviews.
+
+### Current responsibilities and versions before a formal takeover or deactivation.
+GET {{baseUrl}}/api/v1/admin/employees/{{newEmployeeId}}/responsibilities
+Authorization: Bearer {{adminToken}}
 
 ### Administrator password reset. The new initial password is returned exactly once.
 POST {{baseUrl}}/api/v1/admin/employees/{{newEmployeeId}}/password-reset
 Authorization: Bearer {{adminToken}}
 Idempotency-Key: {{$guid}}
 
-### Departments, positions and teams.
-POST {{baseUrl}}/api/v1/admin/departments
-Authorization: Bearer {{adminToken}}
-Idempotency-Key: {{$guid}}
-Content-Type: application/json
-
-{"name":"质检部"}
-
-PATCH {{baseUrl}}/api/v1/admin/departments/{{departmentId}}
-Authorization: Bearer {{adminToken}}
-Idempotency-Key: {{$guid}}
-If-Match: {{departmentEtag}}
-Content-Type: application/json
-
-{"name":"质检一部"}
-
+### Display-only position maintenance; changing this name grants no permissions.
 POST {{baseUrl}}/api/v1/admin/positions
 Authorization: Bearer {{adminToken}}
 Idempotency-Key: {{$guid}}
@@ -304,21 +325,8 @@ Content-Type: application/json
 
 {"name":"质检专员","sortOrder":5}
 
-### Team lead defaults to the creator; an administrator must name an explicit member.
-POST {{baseUrl}}/api/v1/admin/teams
-Authorization: Bearer {{adminToken}}
-Idempotency-Key: {{$guid}}
-Content-Type: application/json
-
-{"name":"质检一组","departmentId":"{{departmentId}}","leadUserId":"{{newEmployeeId}}"}
-
-PATCH {{baseUrl}}/api/v1/admin/teams/{{teamId}}
-Authorization: Bearer {{adminToken}}
-Idempotency-Key: {{$guid}}
-If-Match: "1"
-Content-Type: application/json
-
-{"leadUserId":"{{newEmployeeId}}"}
+# Add/remove/move departments, teams and their heads through the complete organization plan.
+# Retired employee-team and role/grant writes are refused even if called directly.
 
 ### Company information (max 10) and the all-day cut-off.
 GET {{baseUrl}}/api/v1/admin/company
@@ -338,7 +346,7 @@ Content-Type: application/json
 
 {"orderedIds":["{{companyItemId}}"]}
 
-### Stored, validated and audited; the task schedule does not consume it yet (section 6).
+### Company all-day cutoff, validated and audited.
 PUT {{baseUrl}}/api/v1/admin/company/off-work-time
 Authorization: Bearer {{adminToken}}
 Idempotency-Key: {{$guid}}
@@ -346,11 +354,11 @@ Content-Type: application/json
 
 {"offWorkTime":"17:30"}
 
-### Dispatch candidates: the dispatch range only, narrower than what the caller may view.
+### Creation candidates follow fixed dispatch range; later owner changes use their own context.
 GET {{baseUrl}}/api/v1/assignee-candidates?q=张
 Authorization: Bearer {{managerToken}}
 
-### Log author filter (list + tree) limited to self and direct reports.
+### Log author filter (list + tree) limited to self and authorized direct/indirect subordinates.
 GET {{baseUrl}}/api/v1/work-log-authors
 Authorization: Bearer {{managerToken}}
 

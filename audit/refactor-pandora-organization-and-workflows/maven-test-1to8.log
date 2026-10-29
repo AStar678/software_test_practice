@@ -1,0 +1,72 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< cn.pandora:pandora-backend >---------------------
+[INFO] Building Pandora local backend 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ pandora-backend ---
+[INFO] Copying 26 resources from src/main/resources to target/classes
+[INFO] Copying 18 resources from .. to target/classes/static
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ pandora-backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ pandora-backend ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ pandora-backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.6:test (default-test) @ pandora-backend ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running cn.pandora.auth.AuthServiceLoginTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (/Users/watuji/MyGitDev/software_test_practice/backend/.runtime/m2/net/bytebuddy/byte-buddy-agent/1.17.8/byte-buddy-agent-1.17.8.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.113 s -- in cn.pandora.auth.AuthServiceLoginTest
+[INFO] Running cn.pandora.auth.CompanyTreeTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in cn.pandora.auth.CompanyTreeTest
+[INFO] Running cn.pandora.auth.PhoneNumbersTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in cn.pandora.auth.PhoneNumbersTest
+[INFO] Running cn.pandora.auth.AccessTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in cn.pandora.auth.AccessTest
+[INFO] Running cn.pandora.workspace.ProfilePrivacyAndCompanyTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.038 s -- in cn.pandora.workspace.ProfilePrivacyAndCompanyTest
+[INFO] Running cn.pandora.workspace.WithdrawnNotificationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in cn.pandora.workspace.WithdrawnNotificationTest
+[INFO] Running cn.pandora.workspace.WorkspaceAnalysisTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.070 s -- in cn.pandora.workspace.WorkspaceAnalysisTest
+[INFO] Running cn.pandora.workspace.ReminderNodeTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in cn.pandora.workspace.ReminderNodeTest
+[INFO] Running cn.pandora.workspace.NotificationCommentAccessTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in cn.pandora.workspace.NotificationCommentAccessTest
+[INFO] Running cn.pandora.workspace.WorkspaceLogAndReportsTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in cn.pandora.workspace.WorkspaceLogAndReportsTest
+[INFO] Running cn.pandora.admin.CredentialsTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in cn.pandora.admin.CredentialsTest
+[INFO] Running cn.pandora.common.EventsRetentionTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in cn.pandora.common.EventsRetentionTest
+[INFO] Running cn.pandora.profile.ProfileServiceTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.043 s -- in cn.pandora.profile.ProfileServiceTest
+[INFO] Running cn.pandora.task.TaskServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in cn.pandora.task.TaskServiceTest
+[INFO] Running cn.pandora.task.TaskParticipantSummaryTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in cn.pandora.task.TaskParticipantSummaryTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 89, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.055 s
+[INFO] Finished at: 2026-10-28T22:05:43+08:00
+[INFO] ------------------------------------------------------------------------

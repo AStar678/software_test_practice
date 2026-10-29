@@ -1,0 +1,81 @@
+PASS V20 legacy fields are recognised and produce a plan
+PASS V20 plan has no placement row versions and keeps the legacy founder unset
+PASS V20 administrator mapping uses the unique legacy admin without a fake employee placement
+PASS V20 plan excludes the legacy administrator from the post-V22 employee directory
+PASS V20 mapping command is read-only
+PASS V1-V20 files still match Git HEAD
+PASS V1-V20 checksums are unchanged by the rehearsal
+PASS stable employee IDs and creation times survive V21-V24
+PASS stable administrator ID and historical rows survive V22
+PASS task original creators and creation times are unchanged
+PASS V21 leaves every founder unproven
+PASS V21 writes one mapping blocker per company
+PASS V22 creates exactly one administrator for the clean company
+PASS V22 refuses to guess between two legacy administrators
+PASS mapping command is read-only
+PASS legal explicit mapping is ready
+PASS legal mapping produces a submittable plan with If-Match
+PASS four placement types, company founder and department head without team are present
+PASS founder is fixed to the explicit stable ID
+PASS administrator is exactly the explicit independent account
+PASS one placement per active employee and none for the inactive employee
+PASS expectedEmployees covers active and inactive employees but no administrator
+PASS generated plan matches the OrganizationPlans/CompanyTree request contract
+PASS normalized phones are unique and reported masked only
+PASS mapping report contains no full contact number
+PASS mapping subcommand CLI returns the same ready plan
+PASS missing founder is not inferred from the legacy root
+PASS missing founder is not inferred from the legacy root (no submittable plan)
+PASS missing founder still records the legacy root as diagnostic only
+PASS cross-company founder is rejected
+PASS cross-company founder is rejected (no submittable plan)
+PASS inactive founder is rejected
+PASS inactive founder is rejected (no submittable plan)
+PASS two department heads are rejected
+PASS two department heads are rejected (no submittable plan)
+PASS cross-company placement is rejected
+PASS cross-company placement is rejected (no submittable plan)
+PASS duplicate normalized phone is rejected
+PASS duplicate normalized phone is rejected (no submittable plan)
+PASS duplicate phone blocker masks the number and keeps stable IDs
+PASS founder forced into a department is rejected
+PASS founder forced into a department is rejected (no submittable plan)
+PASS a mapping without a company root is rejected
+PASS a mapping without a company root is rejected (no submittable plan)
+PASS a derived manager cycle is rejected
+PASS a derived manager cycle is rejected (no submittable plan)
+PASS missing display position is rejected
+PASS missing display position is rejected (no submittable plan)
+PASS missing active employee placement is rejected
+PASS missing active employee placement is rejected (no submittable plan)
+PASS omitted existing department is rejected
+PASS omitted existing department is rejected (no submittable plan)
+PASS employee cannot be mapped as administrator
+PASS employee cannot be mapped as administrator (no submittable plan)
+PASS missing administrator mapping is rejected
+PASS missing administrator mapping is rejected (no submittable plan)
+PASS administrator repair marker remains a blocker
+PASS administrator repair marker remains a blocker (no submittable plan)
+PASS company with two legacy administrators is blocked
+PASS a blocked company does not corrupt another company plan
+PASS mapping still leaves the database untouched after invalid cases
+PASS plan application keeps every placement SQL-legal
+PASS four placement types and company-level founder are stored
+PASS no inactive employee holds a placement
+PASS every department and team has exactly one head
+PASS V21+ current structure is recognised and the same mapping stays ready
+PASS re-read plan preserves stored placement row versions and IDs
+PASS stored founder cannot be replaced
+PASS stored founder cannot be replaced (no submittable plan)
+PASS stored placement cannot be silently overwritten
+PASS stored placement cannot be silently overwritten (no submittable plan)
+PASS staffed rerun does not change stored placement state
+PASS employee stable IDs and creation times survive the applied plan
+PASS administrator is still the original principal/account ID
+PASS task original creators and creation times survive the applied plan
+PASS historical task version, record, history and work log keep their IDs
+PASS retired administrator audit still resolves through the principal
+PASS V23 business ownership keeps every real task creator
+PASS open mapping findings remain evidence, not silent success
+PASS V1-V20 files still match Git HEAD after the applied plan
+PASS V1-V20 checksums remain unchanged after the applied plan

@@ -1,0 +1,74 @@
+PASS all current Flyway migrations applied to an empty isolated database
+PASS employee phone login establishes the original employee principal
+PASS employee session carries fixed position and no employee username
+PASS independent administrator authenticates without a user row
+PASS administrator has no employee organization placement
+PASS real founder identity comes from fixed placement
+PASS real department_head identity comes from fixed placement
+PASS real team_head identity comes from fixed placement
+PASS old/missing/mixed login payload is rejected without a session: password,username
+PASS old/missing/mixed login payload is rejected without a session: password,phone
+PASS old/missing/mixed login payload is rejected without a session: accountType,password,username
+PASS old/missing/mixed login payload is rejected without a session: accountName,accountType,password,phone
+PASS old/missing/mixed login payload is rejected without a session: accountType,password,phone
+PASS old/missing/mixed login payload is rejected without a session: accountType,password,phone
+PASS same identifier and password explicitly choose admin namespace
+PASS same identifier and password explicitly choose employee namespace
+PASS duplicate employee phone across companies is refused
+PASS duplicate employee keys never prevent explicit admin repair login
+PASS administrator has no employee business API access
+PASS employee has no admin API access
+PASS admin employee lookup remains company isolated
+PASS fixed company and independent admin satisfy readiness without legacy departments
+PASS missing explicit founder blocks normal business even for a previously valid session
+PASS admin repair read remains available while employee organization is blocked
+PASS repair restores business access without runtime DDL or guessed identity
+PASS founder cannot use former employee team maintenance
+PASS founder cannot write old admin team or role interfaces
+PASS alpha-head cannot use former employee team maintenance
+PASS alpha-head cannot write old admin team or role interfaces
+PASS alpha-one-head cannot use former employee team maintenance
+PASS alpha-one-head cannot write old admin team or role interfaces
+PASS alpha-one-employee cannot use former employee team maintenance
+PASS alpha-one-employee cannot write old admin team or role interfaces
+PASS old custom authorization write is retired even for administrators
+PASS self profile shows fixed position and contact only through its authorized endpoint
+PASS employee identity or mixed identity/profile request is rejected: phone
+PASS employee identity or mixed identity/profile request is rejected: displayName
+PASS employee identity or mixed identity/profile request is rejected: email,phone
+PASS self avatar and email remain editable
+PASS admin cannot change another employee email
+PASS admin phone/name change returns a receipt without contact values
+PASS admin phone change revokes existing employee sessions
+PASS old phone no longer logs in after admin change
+PASS normalized new phone logs into the same stable employee ID
+PASS authorization version is checked before replaying an old success
+PASS admin refresh preserves selected account type
+PASS admin refresh consumes its previous token
+PASS admin logout revokes refreshed token
+PASS alpha-one-employee refresh preserves selected account type
+PASS alpha-one-employee refresh consumes its previous token
+PASS alpha-one-employee logout revokes refreshed token
+PASS administrator forced-password gate allows auth maintenance but blocks management
+PASS admin password policy rejects invalid form 6
+PASS admin password policy rejects invalid form 13
+PASS admin password policy rejects invalid form 11
+PASS admin password policy rejects invalid form 27
+PASS admin change requires the correct old password
+PASS admin password change revokes all sessions
+PASS admin old password no longer authenticates
+PASS admin new password authenticates same principal
+PASS alpha-one-employee password policy rejects invalid form 6
+PASS alpha-one-employee password policy rejects invalid form 13
+PASS alpha-one-employee password policy rejects invalid form 11
+PASS alpha-one-employee password policy rejects invalid form 27
+PASS alpha-one-employee change requires the correct old password
+PASS alpha-one-employee password change revokes all sessions
+PASS alpha-one-employee old password no longer authenticates
+PASS alpha-one-employee new password authenticates same principal
+PASS administrator reset returns one initial password
+PASS same reset idempotency key never replays a credential
+PASS reset password requires first-login change
+PASS restricted session can read only its identity and cannot refresh/business-read
+PASS restricted employee can change password and must reauthenticate
+PASS passwords never enter audit or idempotency documents

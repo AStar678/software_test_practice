@@ -2744,6 +2744,12 @@ document.getElementById("toTopBtn").addEventListener("click", function(){
 document.addEventListener("keydown", function(ev){
   if (overlayEl.hidden) return;
   if (ev.key === "Escape"){
+    /* The native hour/minute popup consumes Escape to cancel the opening selection. Closing the
+       shared sheet here would discard the task draft, so leave this cancel to the control
+       (chapter 4.2); every other sheet keeps its existing Escape/back behaviour. */
+    const timePart = (ev.target && ev.target.closest && ev.target.closest("[data-time-part]")) ||
+      (document.activeElement && document.activeElement.closest && document.activeElement.closest("[data-time-part]"));
+    if (timePart) return;
     ev.preventDefault();
     if (sheetStack.length > 1) backSheet(); else closeSheet();
     return;

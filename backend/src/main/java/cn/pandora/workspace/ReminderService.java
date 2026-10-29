@@ -69,7 +69,8 @@ public class ReminderService {
         long round = task.get("executionRound") == null ? 1 : n(task, "executionRound");
 
         LinkedHashSet<String> recipients = new LinkedHashSet<>();
-        recipients.add(s(task, "originalCreatorId"));
+        var responsibility=db.find("SELECT employee_id FROM task_business_owners WHERE organization_id=? AND task_id=?",organizationId,s(task,"id"));
+        recipients.add(responsibility==null?s(task,"originalCreatorId"):s(responsibility,"employeeId"));
         for (Map<String, Object> row : db.list("SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=? ORDER BY ordinal,user_id",
                 organizationId, s(task, "currentVersionId"))) {
             recipients.add(s(row, "userId"));
@@ -140,7 +141,7 @@ public class ReminderService {
     }
 
     private Map<String, Object> activeActor(String organizationId, String userId) {
-        return db.find("SELECT id FROM users WHERE organization_id=? AND id=? AND active=1 AND role<>'admin'", organizationId, userId);
+        return db.find("SELECT u.id FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id AND p.account_type='employee' WHERE u.organization_id=? AND u.id=? AND u.active=1 AND p.active=1", organizationId, userId);
     }
 
     static Instant instant(Object value) {

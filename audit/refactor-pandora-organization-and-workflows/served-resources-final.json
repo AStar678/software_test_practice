@@ -1,0 +1,81 @@
+{
+  "updated": "2026-10-29T03:47:41.996808+00:00",
+  "checks": [
+    {
+      "resource": "admin.html",
+      "pass": true
+    },
+    {
+      "resource": "debug.html",
+      "pass": true
+    },
+    {
+      "resource": "index.html",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-api.js",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-个人资料.js",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-交互原型.css",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-交互原型.html",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-交互原型.js",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-任务接入.js",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-任务表单.css",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-任务表单.js",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-工作区接入.js",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-手账主题.css",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-手账标记.svg",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-日历.css",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-日程视图.js",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-标签评论.js",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-正式版.css",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-界面调整.css",
+      "pass": true
+    }
+  ]
+}

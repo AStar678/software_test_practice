@@ -1,0 +1,57 @@
+PASS preparation refuses missing explicit database/marker arguments
+PASS preparation refuses missing explicit database/marker arguments
+{"database": "pandora_precheck_demo_e4226050acb8", "manifestVersion": 2, "businessDate": "2026-10-29", "counts": {"users": 12, "admin_accounts": 1, "employee_placements": 12, "departments": 2, "teams": 4, "tasks": 144, "task_versions": 153, "approval_requests": 153, "work_logs": 36, "home_items": 22, "task_business_transfers": 1, "handover_requests": 1, "task_log_comments": 2, "notifications": 340}}
+{"database": "pandora_precheck_demo_e4226050acb8", "manifestVersion": 2, "businessDate": "2026-10-29", "counts": {"users": 12, "admin_accounts": 1, "employee_placements": 12, "departments": 2, "teams": 4, "tasks": 144, "task_versions": 153, "approval_requests": 153, "work_logs": 36, "home_items": 22, "task_business_transfers": 1, "handover_requests": 1, "task_log_comments": 2, "notifications": 340}}
+PASS two preparations preserve all business rows, placements, stable seed keys and IDs
+PASS two preparations preserve original business date, seed completion and counts
+PASS mismatched demo marker refuses preparation without business mutation
+PASS startup seed refuses missing/mismatched explicit target without touching business data
+PASS startup seed refuses missing/mismatched explicit target without touching business data
+PASS read-only current precheck accepts the stored fixed organization
+PASS persistent demo satisfies all read-only database integrity checks
+PASS demo has two departments, four teams and complete single-position staff
+PASS every department and team has exactly one head
+PASS administrator is independent and absent from staff/placements
+PASS seed contains approved, direct, pending, rejected, withdrawn and expired applications
+PASS seed has both completed work and a real reopened execution round
+PASS dedicated handover and formal takeover retain real separate histories
+PASS admin authenticates through its real declared account namespace after restart
+PASS colleague authenticates through its real declared account namespace after restart
+PASS employee authenticates through its real declared account namespace after restart
+PASS market authenticates through its real declared account namespace after restart
+PASS market-employee-2 authenticates through its real declared account namespace after restart
+PASS market-head-1 authenticates through its real declared account namespace after restart
+PASS market-head-2 authenticates through its real declared account namespace after restart
+PASS marketing authenticates through its real declared account namespace after restart
+PASS middle authenticates through its real declared account namespace after restart
+PASS product-employee-2 authenticates through its real declared account namespace after restart
+PASS product-head-1 authenticates through its real declared account namespace after restart
+PASS product-head-2 authenticates through its real declared account namespace after restart
+PASS upper authenticates through its real declared account namespace after restart
+PASS upper has the derived fixed position
+PASS middle has the derived fixed position
+PASS product-head-1 has the derived fixed position
+PASS employee has the derived fixed position
+PASS company employee directory excludes admin and all contacts
+PASS admin cannot read employee task business APIs
+PASS employee cannot read admin management APIs
+PASS employee task table has more than two 50-row pages after restart
+PASS company retains ten ordered managed items
+PASS creator-only demo retains original creator and excludes creator from effective assignees
+PASS takeover recipient can read without being rewritten as original creator
+PASS middle log directory includes indirect/direct subordinate demo authors
+PASS product-head-1 log directory includes indirect/direct subordinate demo authors
+PASS frozen log is read-only from its real first creation instant
+PASS deletion/recreation keeps one day slot and first-creation history
+PASS cross-month schedule demo is present and readable as the real employee
+PASS cross-year schedule demo is present and readable as the real employee
+PASS full-coverage schedule demo is present and readable as the real employee
+PASS midnight schedule demo is present and readable as the real employee
+PASS point schedule demo is present and readable as the real employee
+PASS eight real concurrent timed and eight all-day tasks exist
+PASS taken-over task remains directly editable by its business owner
+PASS admin task history can trace takeover after restart
+PASS administrator can persist a real account-name edit before repeat preparation
+{"database": "pandora_precheck_demo_e4226050acb8", "manifestVersion": 2, "businessDate": "2026-10-29", "counts": {"users": 12, "admin_accounts": 1, "employee_placements": 12, "departments": 2, "teams": 4, "tasks": 144, "task_versions": 154, "approval_requests": 154, "work_logs": 36, "home_items": 22, "task_business_transfers": 1, "handover_requests": 1, "task_log_comments": 2, "notifications": 340}}
+PASS repeat preparation preserves a real user edit instead of resetting demo data
+PASS repeat preparation preserves independent administrator account edits

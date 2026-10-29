@@ -1,0 +1,116 @@
+{
+  "updated": "2026-10-28T14:08:52.897200+00:00",
+  "baseRevision": "f6299ad",
+  "dirtyWorktree": true,
+  "completedTasks": 38,
+  "totalTasks": 57,
+  "pausedByUser": false,
+  "phase": "tasks 1-8 complete; independent e13 verification still required",
+  "independentVerification": false,
+  "jarSha256": "9d0268ec4ba7265a7e930ad69eef5d903b7b100a264627e72d7985207c455de5",
+  "reports": {
+    "placement-migration": {
+      "passed": 51,
+      "total": 51,
+      "reportedAt": "2026-10-28T14:03:05.818630+00:00",
+      "sha256": "de11dc90d81dbe2b7bde25dac0099b397f64d02470d0a9f7143703807237ea18"
+    },
+    "legacy-mapping": {
+      "passed": 81,
+      "total": 81,
+      "reportedAt": "2026-10-28T13:59:40.589037+00:00",
+      "sha256": "cb5a16ec8153437d4d8f23ca3210201ac36d20964f59607f18b951377f57fce1"
+    },
+    "organization-plans": {
+      "passed": 30,
+      "total": 30,
+      "reportedAt": "2026-10-28T14:03:15.301962+00:00",
+      "sha256": "324e955c61c82c64924abd442cbe70bbb466d1a6fe6ab49c3bdb467c42bdc97c"
+    },
+    "workspace-access": {
+      "passed": 62,
+      "total": 62,
+      "reportedAt": "2026-10-28T14:00:36.287076+00:00",
+      "sha256": "8eaab08570c3eb7528e96114a4c37dc8b952086b394c160d7655fd4fbd22401a"
+    },
+    "profile-phone-matrix": {
+      "passed": 32,
+      "total": 32,
+      "reportedAt": "2026-10-28T12:17:11.296776+00:00",
+      "sha256": "aaa13359c37b86d5575fc79de64c9c78541f0b0621ec3b232aa951be90a983dc"
+    },
+    "account-contract": {
+      "passed": 74,
+      "total": 74,
+      "reportedAt": "2026-10-28T12:23:58.832455+00:00",
+      "sha256": "9835365fe97102254b604e39d5c6b86aa33be84b631043c148b52226611e008c"
+    },
+    "review-routing": {
+      "passed": 192,
+      "total": 192,
+      "reportedAt": "2026-10-28T14:07:51.798763+00:00",
+      "sha256": "694225fa3508f9b269e09f988e41fc2cfca5089c6a5ff65f858173f7646ba476"
+    },
+    "auto-apply-authorization": {
+      "passed": 18,
+      "total": 18,
+      "reportedAt": "2026-10-28T14:04:51.657067+00:00",
+      "sha256": "5ffd7a6c40d345f1720e96ae875a3b7d54e9b246fe8cfe5543624384d8764a25"
+    },
+    "business-takeover": {
+      "passed": 74,
+      "total": 74,
+      "reportedAt": "2026-10-28T13:57:43.696769+00:00",
+      "sha256": "eb16ad2b44177992b814d6327a7daced8029995aebf0fa1fd73d883363389a3e"
+    },
+    "handover-chain": {
+      "passed": 23,
+      "total": 23,
+      "reportedAt": "2026-10-28T14:05:06.506Z",
+      "sha256": "ae3e4e5ff82ee37bb03643381acf2f0b5099bed868120c39bf45f6fded933c9e"
+    },
+    "late-response": {
+      "passed": 9,
+      "total": 9,
+      "reportedAt": "2026-10-28T14:04:16.583Z",
+      "sha256": "de152242b111676691f3ebf114d6838d8b9a91da778fd8217de0d5939c55f277"
+    },
+    "admin-contract-check": {
+      "passed": 40,
+      "total": 40,
+      "reportedAt": "2026-10-28T14:08:16.336926+00:00",
+      "sha256": "407f1013cdafeecb65529cc400fa81e560eb69f3a77a917f5567d94f4218105e"
+    },
+    "admin-contract-browser": {
+      "passed": 43,
+      "total": 43,
+      "reportedAt": "2026-10-28T14:08:22.621Z",
+      "sha256": "79eb5e1b34ca480f1c0cb5ec37b8808dccebed87ffa7a05fe3a78ab28fa3b318"
+    },
+    "admin-browser": {
+      "passed": 43,
+      "total": 43,
+      "reportedAt": "2026-10-28T14:08:22.621Z",
+      "sha256": "79eb5e1b34ca480f1c0cb5ec37b8808dccebed87ffa7a05fe3a78ab28fa3b318"
+    },
+    "employee-browser": {
+      "passed": 100,
+      "total": 100,
+      "reportedAt": "2026-10-28T14:06:48.777Z",
+      "sha256": "c2c427a0421402a34425ef7ec452942d69ec912127ae71f69c5dfe476167d352"
+    },
+    "log-backfill-entry": {
+      "passed": 8,
+      "total": 8,
+      "reportedAt": "2026-10-28T14:02:36.009Z",
+      "sha256": "ba882b83950143e87bb8fe101ae5f283034f349c730692b3b43c60f031262cda"
+    },
+    "web-resources": {
+      "passed": 14,
+      "total": 14,
+      "reportedAt": null,
+      "sha256": "ff4c103b9bb578332aad9d3c5981824a4ec5f690f60cecff5bacda1073c493f8"
+    }
+  },
+  "note": "Apply evidence only. Sections 9-12 remain unchecked; no verification verdict or archive. See implementation-notes.md for scope and limitations."
+}

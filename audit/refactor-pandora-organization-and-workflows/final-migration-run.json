@@ -1,0 +1,24 @@
+{
+  "updated": "2026-10-29T01:16:17.035829+00:00",
+  "phase": "migration",
+  "checks": [
+    {
+      "command": "python3 backend/scripts/check_fixed_organization_migration.py",
+      "exitCode": 0,
+      "log": "final-check_fixed_organization_migration.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_legacy_mapping.py",
+      "exitCode": 0,
+      "log": "final-check_legacy_mapping.log",
+      "pass": true
+    },
+    {
+      "command": "python3 backend/scripts/check_final_migration.py",
+      "exitCode": 0,
+      "log": "final-check_final_migration.log",
+      "pass": true
+    }
+  ]
+}

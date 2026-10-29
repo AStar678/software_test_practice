@@ -1,0 +1,23 @@
+PASS administrator browser logs into the real console
+PASS administrator loads the departure responsibility inventory
+PASS administrator stages handover, unpublished cancellation and deactivation in one draft
+PASS current owner logs into the real employee app
+PASS current owner opens the dedicated handover entry
+PASS dedicated handover renders a target choice and preview
+PASS handover target list stays in the work circle and refuses the ordinary company-wide candidate
+PASS complete final plan deactivates the employee atomically
+PASS deactivated employee can no longer authenticate
+PASS takeover recipient logs into the employee app
+PASS takeover recipient opens the active written-off task
+PASS takeover recipient reaches the real edit form
+PASS takeover recipient directly edits the active task
+PASS assignee progress waits for the takeover business owner
+PASS takeover recipient opens the real review sheet
+PASS takeover recipient approves the pending progress
+PASS takeover recipient opens the original completed task
+PASS reopen offers ordered replacement assignees
+PASS takeover recipient reopens with a new round and active assignee
+PASS administrator locates the completed task in formal history
+PASS history shows original creator, administrator takeover and continued work
+PASS history keeps the dedicated handover and business applicant separate from the administrator
+PASS administrator console and employee continuation have no browser exceptions

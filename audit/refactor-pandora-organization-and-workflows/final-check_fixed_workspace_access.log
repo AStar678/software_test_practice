@@ -1,0 +1,62 @@
+PASS founder reports include exactly all actual descendants
+PASS founder log author directory includes self and actual descendants
+PASS founder log author directory contains no private fields or username
+PASS founder visible log list uses the same full descendant range
+PASS founder self profile derives fixed identity and retains only own contacts
+PASS alpha-head reports include exactly all actual descendants
+PASS alpha-head log author directory includes self and actual descendants
+PASS alpha-head log author directory contains no private fields or username
+PASS alpha-head visible log list uses the same full descendant range
+PASS alpha-head self profile derives fixed identity and retains only own contacts
+PASS alpha-one-head reports include exactly all actual descendants
+PASS alpha-one-head log author directory includes self and actual descendants
+PASS alpha-one-head log author directory contains no private fields or username
+PASS alpha-one-head visible log list uses the same full descendant range
+PASS alpha-one-head self profile derives fixed identity and retains only own contacts
+PASS alpha-one-employee reports include exactly all actual descendants
+PASS alpha-one-employee log author directory includes self and actual descendants
+PASS alpha-one-employee log author directory contains no private fields or username
+PASS alpha-one-employee visible log list uses the same full descendant range
+PASS alpha-one-employee self profile derives fixed identity and retains only own contacts
+PASS alpha-head profile access to alpha-one-employee matches current chain
+PASS alpha-head log detail access to alpha-one-employee matches current chain
+PASS alpha-head targeted log query cannot broaden authority
+PASS alpha-one-head profile access to alpha-one-employee matches current chain
+PASS alpha-one-head log detail access to alpha-one-employee matches current chain
+PASS alpha-one-head targeted log query cannot broaden authority
+PASS alpha-one-employee profile access to alpha-one-head matches current chain
+PASS alpha-one-employee log detail access to alpha-one-head matches current chain
+PASS alpha-one-employee targeted log query cannot broaden authority
+PASS alpha-one-employee profile access to alpha-two-employee matches current chain
+PASS alpha-one-employee log detail access to alpha-two-employee matches current chain
+PASS alpha-one-employee targeted log query cannot broaden authority
+PASS alpha-head profile access to beta-one-employee matches current chain
+PASS alpha-head log detail access to beta-one-employee matches current chain
+PASS alpha-head targeted log query cannot broaden authority
+PASS alpha-one-head profile access to alpha-two-employee matches current chain
+PASS alpha-one-head log detail access to alpha-two-employee matches current chain
+PASS alpha-one-head targeted log query cannot broaden authority
+PASS founder cannot edit another author log
+PASS alpha-head cannot edit another author log
+PASS alpha-one-head cannot edit another author log
+PASS employee directory excludes independent administrators and contacts
+PASS founder task list uses assignee scope plus personal relations
+PASS founder analysis excludes personal tasks outside its organizational range
+PASS founder analysis job can be created
+PASS founder analysis and suggestions have separate fixed scopes
+PASS alpha-head task list uses assignee scope plus personal relations
+PASS alpha-head analysis excludes personal tasks outside its organizational range
+PASS alpha-head analysis job can be created
+PASS alpha-head analysis and suggestions have separate fixed scopes
+PASS alpha-one-head task list uses assignee scope plus personal relations
+PASS alpha-one-head analysis excludes personal tasks outside its organizational range
+PASS alpha-one-head analysis job can be created
+PASS alpha-one-head analysis and suggestions have separate fixed scopes
+PASS alpha-one-employee task list uses assignee scope plus personal relations
+PASS alpha-one-employee analysis excludes personal tasks outside its organizational range
+PASS alpha-one-employee analysis job can be created
+PASS alpha-one-employee analysis and suggestions have separate fixed scopes
+PASS former department manager loses old subordinate profile immediately
+PASS former department manager loses old subordinate log immediately
+PASS new department manager gains actual subordinate read
+PASS old aggregate is rejected after authorization changes

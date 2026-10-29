@@ -104,7 +104,7 @@
 <main>
   <div id="login" class="card">
     <div class="row">
-      <input id="username" placeholder="管理员用户名" autocomplete="username">
+      <input id="accountName" placeholder="管理员账号" autocomplete="username">
       <input id="password" type="password" placeholder="密码" autocomplete="current-password">
       <button class="primary" id="loginButton">登录</button>
     </div>
@@ -118,43 +118,44 @@
     <section id="tab-employees">
       <h2>员工</h2>
       <div class="row">
-        <input id="employeeQuery" placeholder="搜索姓名/用户名/部门">
+        <input id="employeeQuery" placeholder="搜索姓名/部门">
         <button class="ghost" id="employeeRefresh">刷新</button>
         <button class="primary" id="employeeNew">新增员工</button>
       </div>
       <div id="employeeSecret"></div>
-      <table><thead><tr><th>姓名</th><th>用户名</th><th>部门/职位</th><th>团队</th><th>直属上级</th><th>层级</th><th>角色</th><th>联系方式</th><th></th></tr></thead>
+      <table><thead><tr><th>姓名</th><th>部门/职位</th><th>团队</th><th>直属上级</th><th>组织身份</th><th>状态</th><th></th></tr></thead>
         <tbody id="employeeRows"></tbody></table>
     </section>
 
-    <section id="tab-departments">
-      <h2>部门</h2>
-      <div class="row"><input id="departmentName" placeholder="新部门名称"><button class="primary" id="departmentCreate">新增部门</button></div>
-      <table><thead><tr><th>部门</th><th>上级部门</th><th>团队数</th><th></th></tr></thead><tbody id="departmentRows"></tbody></table>
+    <section id="tab-organization">
+      <h2>组织调整草稿</h2>
+      <p class="muted">准备全部人员的最终位置后统一保存。新单位须同时有负责人，替换负责人时请同时安排原负责人的去向。</p>
+      <div class="row"><button class="ghost" id="planReload">放弃草稿并重新读取</button><button class="primary" id="planNewEmployee">添加新员工</button></div>
+      <div id="planUnits"></div>
+      <h3>人员最终位置</h3><div id="planPeople"></div>
+      <h3>停用与业务责任安排</h3><div id="planDepartures"></div>
+      <label for="planReason">调整原因</label><input id="planReason" placeholder="说明本次完整调整的原因">
+      <div class="error" id="planError" role="alert"></div>
+      <div class="row"><button class="primary" id="planSave">保存完整结果</button></div>
     </section>
-
     <section id="tab-positions">
-      <h2>职位</h2>
+      <h2>展示职位</h2><p class="muted">职位只用于展示，员工权限由组织位置确定。</p>
       <div class="row"><input id="positionName" placeholder="新职位名称"><button class="primary" id="positionCreate">新增职位</button></div>
       <table><thead><tr><th>职位</th><th>排序</th><th></th></tr></thead><tbody id="positionRows"></tbody></table>
     </section>
-
-    <section id="tab-teams">
-      <h2>团队</h2>
-      <div class="row">
-        <select id="teamDepartment"></select>
-        <input id="teamName" placeholder="新团队名称">
-        <select id="teamLead"></select>
-        <button class="primary" id="teamCreate">新增团队</button>
-      </div>
-      <p class="muted">获授权的部门负责人可在本部门建团队并转交负责人；负责人身份不会自动带来派发权。管理员跨部门建团队时必须指定本部门成员为负责人。</p>
-      <table><thead><tr><th>团队</th><th>部门</th><th>负责人</th><th>成员</th><th></th></tr></thead><tbody id="teamRows"></tbody></table>
+    <section id="tab-takeover">
+      <h2>业务责任盘点与接管</h2>
+      <div class="row"><select id="inventoryEmployee" aria-label="盘点员工"></select><button class="ghost" id="inventoryLoad">读取责任盘点</button></div>
+      <div id="inventoryResult"></div><div class="error" id="inventoryError" role="alert"></div>
     </section>
-
-    <section id="tab-roles">
-      <h2>角色与授权</h2>
-      <table><thead><tr><th>角色</th><th>能力</th><th>查看范围</th><th>派发范围</th><th>日志范围</th><th>资料范围</th><th></th></tr></thead><tbody id="roleRows"></tbody></table>
-      <p class="muted">查看范围与派发范围分别配置：可见某部门不等于可向该部门派发。管理员不取得员工业务权限。</p>
+    <section id="tab-account">
+      <h2>管理员账号</h2>
+      <div class="grid2"><div><label for="adminAccountName">账号名</label><input id="adminAccountName" autocomplete="username"></div>
+        <div><label for="adminDisplayName">显示名称</label><input id="adminDisplayName"></div></div>
+      <button class="primary" id="adminAccountSave">保存并重新登录</button>
+      <h3>修改密码</h3><label for="adminCurrentPassword">当前密码</label><input id="adminCurrentPassword" type="password" autocomplete="current-password">
+      <label for="adminNewPassword">新密码（至少10字符，含字母和数字，最多72字节）</label><input id="adminNewPassword" type="password" autocomplete="new-password">
+      <button class="primary" id="adminPasswordSave">修改密码并重新登录</button><div class="error" id="adminAccountError" role="alert"></div>
     </section>
 
     <section id="tab-history">
@@ -213,46 +214,18 @@
 </main>
 
 <dialog id="employeeDialog">
-  <h2 id="employeeDialogTitle">员工</h2>
-  <input type="hidden" id="employeeId">
-  <div class="grid2">
-    <div><label>姓名</label><input id="fDisplayName"></div>
-    <div><label>部门</label><select id="fDepartment"></select></div>
-    <div><label>职位</label><select id="fPosition"></select></div>
-    <div><label>团队（可空）</label><select id="fTeam"></select></div>
-    <div><label>直属上级（可空）</label><select id="fManager"></select></div>
-    <div><label>组织层级 0–100（顶层为0，必须显式设置）</label><input id="fLevel" type="number" min="0" max="100"></div>
-    <div><label>角色</label><select id="fRoles" multiple size="4"></select></div>
-    <div><label>手机号（员工登录用；仅写入，不回显。新增必填，编辑留空表示不修改）</label><input id="fPhone" inputmode="tel" placeholder="如 13800000007"></div>
-  </div>
-  <div class="row" style="margin-top:14px">
-    <button class="primary" id="employeeSave">保存</button>
-    <button class="ghost" id="employeeTransfer">转岗…</button>
-    <button class="ghost" id="employeeCancel">取消</button>
-  </div>
-  <div class="error" id="employeeError"></div>
-</dialog>
-
-<dialog id="transferDialog">
-  <h2>转岗</h2>
-  <p class="muted">转岗会递增组织授权版本，使旧页面、旧候选、旧分析和旧幂等回放失效。</p>
-  <div class="grid2">
-    <div><label>新部门</label><select id="tDepartment"></select></div>
-    <div><label>新职位</label><select id="tPosition"></select></div>
-    <div><label>新团队（可空）</label><select id="tTeam"></select></div>
-    <div><label>新直属上级（可空）</label><select id="tManager"></select></div>
-    <div><label>组织层级</label><input id="tLevel" type="number" min="0" max="100"></div>
-    <div><label>角色</label><select id="tRoles" multiple size="4"></select></div>
-  </div>
-  <label>原因</label><input id="tReason" placeholder="转岗原因（必填）">
-  <div class="row" style="margin-top:14px"><button class="primary" id="transferSave">提交转岗</button><button class="ghost" id="transferCancel">取消</button></div>
-  <div class="error" id="transferError"></div>
+  <h2 id="employeeDialogTitle">员工身份资料</h2><input type="hidden" id="employeeId">
+  <label for="fDisplayName">姓名</label><input id="fDisplayName">
+  <label for="fPhone">登录手机号（仅写入；编辑留空表示不修改）</label><input id="fPhone" inputmode="tel" autocomplete="off">
+  <p id="employeeNewHint" class="muted">新员工加入组织草稿后，请安排完整位置与职位，再统一保存。</p>
+  <div class="row"><button class="primary" id="employeeSave">保存</button><button class="ghost" id="employeeCancel">取消</button></div>
+  <div class="error" id="employeeError" role="alert"></div>
 </dialog>
 
 <script>
 const state = { token: null, user: null, structure: null, employees: [], editing: null, transferring: null, history: { offset: 0, total: 0 }, notifications: { offset: 0, total: 0 }, tabs: [
-  ['employees','员工'], ['departments','部门'], ['positions','职位'], ['teams','团队'],
-  ['roles','角色与授权'], ['company','公司信息'], ['health','组织完整性'],
+  ['employees','员工'], ['organization','组织调整'], ['positions','展示职位'],
+  ['takeover','停用与接管'], ['account','管理员账号'], ['company','公司信息'], ['health','组织完整性'],
   ['history','任务历史'], ['notifications','通知管理']
 ] };
 
@@ -264,10 +237,12 @@ async function api(method, path, body, options = {}) {
   if (state.token) headers.Authorization = 'Bearer ' + state.token;
   if (options.key) headers['Idempotency-Key'] = options.key;
   if (options.ifMatch) headers['If-Match'] = options.ifMatch;
+  const epoch=state.epoch||0;
   const response = await fetch(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   const text = await response.text();
   const payload = text ? JSON.parse(text) : {};
-  if (!response.ok) { const error = new Error(payload.message || ('请求失败 ' + response.status)); error.status = response.status; error.code = payload.code; throw error; }
+  if(epoch!==(state.epoch||0))throw new Error('账号已切换，请重新读取');
+  if (!response.ok) { const error = new Error(payload.message || ('请求失败 ' + response.status)); error.status = response.status; error.code = payload.code;error.details=payload; throw error; }
   return { body: payload, headers: response.headers };
 }
 
@@ -279,11 +254,11 @@ function login() {
   $('loginError').textContent = '';
   fetch('/api/v1/auth/sessions', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: $('username').value.trim(), password: $('password').value, accountType: 'admin' })
+    body: JSON.stringify({ accountName: $('accountName').value.trim(), password: $('password').value, accountType: 'admin' })
   }).then(async (response) => {
     const payload = await response.json();
     if (!response.ok) { $('loginError').textContent = payload.message || '登录失败'; return; }
-    state.token = payload.token;
+    state.epoch=(state.epoch||0)+1;state.planDraft=null;state.token = payload.token;
     state.user = payload.user;
     localStorage.setItem('pandora.admin.token', payload.token);
     enterConsole();
@@ -293,9 +268,9 @@ function login() {
 function enterConsole() {
   $('login').hidden = true;
   $('console').hidden = false;
-  $('who').textContent = (state.user.displayName || state.user.username) + '（' + (state.user.role || '') + '）';
+  $('who').textContent = (state.user.displayName || "管理员") + '（' + (state.user.role || '') + '）';
   renderTabs();
-  reloadAll();
+  if(state.user.mustChangePassword){selectTab('account',document.querySelector('[data-tab="account"]'));$('adminAccountSave').hidden=true;}else{$('adminAccountSave').hidden=false;reloadAll();}
 }
 
 function renderTabs() {
@@ -303,7 +278,7 @@ function renderTabs() {
   nav.innerHTML = '';
   state.tabs.forEach(([id, label], index) => {
     const button = document.createElement('button');
-    button.textContent = label;
+    button.textContent = label;button.dataset.tab=id;
     button.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
     button.onclick = () => selectTab(id, button);
     nav.appendChild(button);
@@ -318,6 +293,7 @@ function selectTab(id, button) {
   $('tab-' + id).classList.add('active');
   if (id === 'history') loadHistory(0);
   if (id === 'notifications') loadNotifications(0);
+  if (id === 'account') loadAdminAccount();
 }
 
 async function reloadAll() {
@@ -327,7 +303,7 @@ async function reloadAll() {
     state.employees = (await api('GET', '/api/v1/admin/employees')).body.items || [];
     renderStructure();
     renderEmployees();
-    renderRoles();
+    if (!state.planDraft) resetPlan();
     await renderCompany();
   } catch (error) {
     fail(error.message + (error.status === 403 ? '：该账号没有管理端权限' : ''));
@@ -341,122 +317,30 @@ function options(select, items, { value = 'id', label = 'name', empty = null } =
   items.forEach((item) => { const option = document.createElement('option'); option.value = item[value]; option.textContent = item[label]; select.appendChild(option); });
 }
 
+const PLACEMENT_LABELS = {founder:'创始人',department_head:'部门负责人',team_head:'团队负责人',employee:'员工'};
 function renderStructure() {
-  const { departments, positions, teams, roles, organization, constraints } = state.structure;
-  $('scope').textContent = organization.name + ' · 授权版本 v' + organization.authzVersion;
-
-  options($('teamDepartment'), departments, { label: 'name' });
-  options($('fDepartment'), departments);
-  options($('fPosition'), positions);
-  options($('fTeam'), teams, { label: 'name', empty: '（不加入团队）' });
-  options($('fManager'), state.employees, { label: 'displayName', empty: '（无直属上级）' });
-  options($('fRoles'), roles, { value: 'code', label: 'name' });
-  options($('tDepartment'), departments);
-  options($('tPosition'), positions);
-  options($('tTeam'), teams, { empty: '（不加入团队）' });
-  options($('tManager'), state.employees, { label: 'displayName', empty: '（无直属上级）' });
-  options($('tRoles'), roles, { value: 'code', label: 'name' });
-
-  $('departmentRows').innerHTML = departments.map((d) =>
-    `<tr><td>${d.name}</td><td>${d.parentName || '—'}</td><td>${d.teamCount}</td>
-     <td><button class="ghost" data-rename-department="${d.id}" data-name="${d.name}" data-version="${d.rowVersion}">重命名</button></td></tr>`).join('');
-
-  $('positionRows').innerHTML = positions.map((p) =>
-    `<tr><td>${p.name}</td><td>${p.sortOrder}</td>
-     <td><button class="ghost" data-rename-position="${p.id}" data-name="${p.name}" data-version="${p.rowVersion}">重命名</button></td></tr>`).join('');
-
-  $('teamRows').innerHTML = teams.map((t) => {
-    const members = state.employees.filter((e) => e.teamId === t.id).map((e) => e.displayName).join('、') || '—';
-    return `<tr><td>${t.name}</td><td>${t.departmentName || '—'}</td><td>${t.leadName || '—'}</td><td>${members}</td>
-      <td><select data-team-lead="${t.id}">${state.employees.map((e) => `<option value="${e.id}" ${e.id === t.leadUserId ? 'selected' : ''}>${e.displayName}</option>`).join('')}</select>
-      <button class="ghost" data-save-team-lead="${t.id}" data-version="${t.rowVersion}">转交负责人</button></td></tr>`;
-  }).join('');
-
-  document.querySelectorAll('[data-rename-department]').forEach((button) => button.onclick = async () => {
-    const name = prompt('新的部门名称', button.dataset.name);
-    if (!name) return;
-    try { await api('PATCH', '/api/v1/admin/departments/' + button.dataset.renameDepartment, { name }, { key: newKey(), ifMatch: '"' + button.dataset.version + '"' }); ok('部门已更新'); reloadAll(); }
-    catch (error) { fail(error.message); }
+  const {positions,organization,constraints}=state.structure;
+  $('scope').textContent=organization.name+' · 权限版本 v'+organization.authzVersion;
+  $('positionRows').innerHTML=positions.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.sortOrder||0)}</td><td><button class="ghost" data-position="${esc(p.id)}">重命名</button></td></tr>`).join('');
+  document.querySelectorAll('[data-position]').forEach(button=>button.onclick=async()=>{
+    const p=positions.find(row=>row.id===button.dataset.position),name=prompt('新的展示职位名称',p.name);if(!name)return;
+    try {await api('PATCH','/api/v1/admin/positions/'+p.id,{name},{key:newKey(),ifMatch:'"'+p.rowVersion+'"'});await reloadAll();}catch(error){fail(error.message);}
   });
-  document.querySelectorAll('[data-rename-position]').forEach((button) => button.onclick = async () => {
-    const name = prompt('新的职位名称', button.dataset.name);
-    if (!name) return;
-    try { await api('PATCH', '/api/v1/admin/positions/' + button.dataset.renamePosition, { name }, { key: newKey(), ifMatch: '"' + button.dataset.version + '"' }); ok('职位已更新'); reloadAll(); }
-    catch (error) { fail(error.message); }
-  });
-  document.querySelectorAll('[data-save-team-lead]').forEach((button) => button.onclick = async () => {
-    const teamId = button.dataset.saveTeamLead;
-    const leadUserId = document.querySelector(`[data-team-lead="${teamId}"]`).value;
-    try { await api('PATCH', '/api/v1/admin/teams/' + teamId, { leadUserId }, { key: newKey(), ifMatch: '"' + button.dataset.version + '"' }); ok('团队负责人已转交'); reloadAll(); }
-    catch (error) { fail(error.message); }
-  });
-
-  $('health').innerHTML = `
-    <div class="card">正式业务写入：${constraints.formalWritesReady ? '映射已完成，可用' : '暂不可用（须先补齐部门/职位映射）'}。
-    待收紧约束：员工缺部门 ${constraints.usersMissingDepartment} 人，缺职位 ${constraints.usersMissingPosition} 人，团队缺部门 ${constraints.teamsMissingDepartment} 个；
-    部门和职位必填约束${constraints.tighteningApplied ? '已收紧' : '尚未收紧（映射未完成）'}。</div>
-    ${(constraints.openBlockers || []).map((b) => `<div class="card"><b>${b.category}</b><div class="muted">${b.detail}</div></div>`).join('') || '<div class="card">没有未解决的阻断项。</div>'}`;
-  loadTeamLeads();
+  $('health').textContent=constraints.formalWritesReady?'固定组织完整，正常业务可用。':(constraints.blockers||[]).join('；');
+  options($('inventoryEmployee'),state.employees,{label:'displayName'});
 }
-
 function renderEmployees() {
-  const query = $('employeeQuery').value.trim().toLowerCase();
-  const rows = state.employees.filter((e) => !query || [e.displayName, e.username, e.departmentName].some((v) => (v || '').toLowerCase().includes(query)));
-  $('employeeRows').innerHTML = rows.map((e) => `<tr>
-    <td>${e.displayName}</td><td>${e.username}</td><td>${e.departmentName || '—'} / ${e.positionName || '—'}</td>
-    <td>${e.teamName || '—'}</td><td>${e.managerName || '—'}</td><td>${e.rankLevel}</td>
-    <td>${(e.roles || []).map((r) => `<span class="tag">${r}</span>`).join('')}</td>
-    <td>${e.hasPhone ? '已登记' : '—'}</td>
-    <td><button class="ghost" data-edit="${e.id}">编辑</button>
-        <button class="ghost" data-reset="${e.id}">重置密码</button></td></tr>`).join('');
-  document.querySelectorAll('[data-edit]').forEach((button) => button.onclick = () => openEmployee(button.dataset.edit));
-  document.querySelectorAll('[data-reset]').forEach((button) => button.onclick = async () => {
-    if (!confirm('重置该员工密码？该账号的全部会话会立即失效，并重新要求首次改密。')) return;
-    try {
-      const result = await api('POST', '/api/v1/admin/employees/' + button.dataset.reset + '/password-reset', undefined, { key: newKey() });
-      if (result.body.initialPassword) {
-        $('employeeSecret').innerHTML = '<div class="card">新的初始密码仅显示一次，请立即交付本人：<span class="secret">' + result.body.initialPassword +
-          '</span><div class="muted">已撤销 ' + result.body.sessionsRevoked + ' 个旧会话；刷新或重试都不会再次显示，需要时请再次重置。</div></div>';
-      } else {
-        $('employeeSecret').innerHTML = '<div class="card">该重置请求已处理过，出于安全考虑不再回显密码。如未收到密码，请再次重置生成新的初始密码。</div>';
-      }
-      ok('密码已重置');
-    } catch (error) { fail(error.message); }
+  const query=$('employeeQuery').value.trim().toLowerCase();
+  $('employeeRows').innerHTML=state.employees.filter(e=>!query||[e.displayName,e.departmentName].some(v=>(v||'').toLowerCase().includes(query))).map(e=>`<tr>
+    <td>${esc(e.displayName)}</td><td>${esc(e.departmentName||'公司')} / ${esc(e.positionName||'—')}</td><td>${esc(e.teamName||'—')}</td>
+    <td>${esc(e.managerName||'—')}</td><td>${esc(PLACEMENT_LABELS[e.placementType]||'—')}</td><td>${e.active?'在任':'已停用'}</td>
+    <td><button class="ghost" data-edit="${esc(e.id)}">姓名/手机号</button>${e.active?`<button class="ghost" data-reset="${esc(e.id)}">重置密码</button>`:''}</td></tr>`).join('');
+  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEmployee(b.dataset.edit));
+  document.querySelectorAll('[data-reset]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('重置密码并撤销此员工全部会话？'))return;
+    try {const r=(await api('POST','/api/v1/admin/employees/'+b.dataset.reset+'/password-reset',undefined,{key:newKey()})).body;
+      $('employeeSecret').textContent=r.initialPassword?'初始密码仅显示一次：'+r.initialPassword:'请求已处理；密码不再回显。';}catch(error){fail(error.message);}
   });
-}
-
-const SCOPE_TYPES = [['task_view', '查看范围'], ['task_dispatch', '派发范围'], ['log_read', '日志范围'], ['profile_read', '资料范围']];
-const SCOPE_LEVELS = [['self', '本人'], ['reports', '直属下属'], ['department', '本部门'], ['company', '公司']];
-
-function scopeSelect(role, type) {
-  const current = (role.scopes || {})[type] || '';
-  return `<select data-scope-role="${role.code}" data-scope-type="${type}" aria-label="${role.name}${SCOPE_TYPES.find(([key]) => key === type)[1]}">` +
-    `<option value="">—</option>` +
-    SCOPE_LEVELS.map(([value, label]) => `<option value="${value}"${current === value ? ' selected' : ''}>${label}</option>`).join('') +
-    '</select>';
-}
-
-function renderRoles() {
-  $('roleRows').innerHTML = state.structure.roles.map((r) => `<tr>
-    <td>${r.name}<div class="muted">${r.code}${r.administrator ? ' · 管理员' : ''}</div></td>
-    <td>${(r.capabilities || []).map((c) => `<span class="tag">${c}</span>`).join('') || '—'}</td>
-    ${SCOPE_TYPES.map(([type]) => `<td>${r.administrator ? (r.scopes[type] || '—') : scopeSelect(r, type)}</td>`).join('')}
-    <td>${r.administrator ? '—' : `<button class="ghost" data-save-scopes="${r.code}">保存范围</button>`}</td></tr>`).join('');
-  document.querySelectorAll('[data-save-scopes]').forEach((button) => button.onclick = () => saveRoleScopes(button.dataset.saveScopes));
-}
-
-async function saveRoleScopes(code) {
-  const button = document.querySelector(`[data-save-scopes="${code}"]`);
-  const row = button.closest('tr');
-  const scopes = {};
-  row.querySelectorAll('select[data-scope-type]').forEach((select) => {
-    if (select.value) scopes[select.dataset.scopeType] = select.value;
-  });
-  try {
-    await api('PATCH', '/api/v1/admin/roles/' + code + '/scopes', { scopes }, { key: newKey() });
-    ok('授权范围已保存，旧页面、旧候选与旧幂等回放已失效');
-    await reloadAll();
-  } catch (error) { fail(error.message); }
 }
 
 async function renderCompany() {
@@ -618,6 +502,7 @@ async function openTaskHistory(taskId) {
     const reassignments = (history.reassignments || []).map((row) => `<tr>
       <td>${esc(formatTime(row.createdAt))}</td><td>${esc(personName(people, row.previousReviewerId))}</td>
       <td>${esc(personName(people, row.newReviewerId))}</td><td>${esc(row.reason || '—')}</td><td>${esc(row.source || '—')}</td></tr>`).join('');
+    const transfers=(history.businessTransfers||[]).map(row=>`<tr><td>${esc(formatTime(row.occurredAt))}</td><td>${esc(personName(people,row.previousEmployeeId))}</td><td>${esc(personName(people,row.nextEmployeeId))}</td><td>${esc(row.administratorName||personName(people,row.administratorId))}</td><td>${esc(row.reason)}</td></tr>`).join('');
     const handovers = (history.handovers || []).map((row) => `<tr>
       <td>${esc(formatTime(row.createdAt))}</td><td>${esc(personName(people, row.sourceUserId))}</td>
       <td>${esc(personName(people, row.targetUserId))}</td><td>${esc(personName(people, row.setByUserId))}</td></tr>`).join('');
@@ -633,6 +518,7 @@ async function openTaskHistory(taskId) {
       <table><thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>前值</th><th>后值</th><th>说明</th></tr></thead><tbody>${entries || '<tr><td colspan="6">暂无操作记录。</td></tr>'}</tbody></table>
       <h3 style="margin-top:18px">改派（审核人变化）</h3>
       <table><thead><tr><th>时间</th><th>原审核人</th><th>新审核人</th><th>原因</th><th>来源</th></tr></thead><tbody>${reassignments || '<tr><td colspan="5">无改派记录。</td></tr>'}</tbody></table>
+      <h3 style="margin-top:18px">正式业务接管</h3><table><thead><tr><th>时间</th><th>原责任方</th><th>接管人</th><th>管理员办理人</th><th>原因</th></tr></thead><tbody>${transfers||'<tr><td colspan="5">无接管记录。</td></tr>'}</tbody></table>
       <h3 style="margin-top:18px">交接</h3>
       <table><thead><tr><th>时间</th><th>原负责人</th><th>新负责人</th><th>经办人</th></tr></thead><tbody>${handovers || '<tr><td colspan="4">无交接记录。</td></tr>'}</tbody></table>
     </div>`;
@@ -692,84 +578,150 @@ async function withdrawEvent(eventId) {
 }
 
 function openEmployee(id) {
-  const employee = id ? state.employees.find((e) => e.id === id) : null;
-  state.editing = employee;
-  $('employeeDialogTitle').textContent = employee ? '编辑员工' : '新增员工';
-  $('employeeId').value = employee ? employee.id : '';
-  $('fDisplayName').value = employee ? employee.displayName : '';
-  $('fDepartment').value = employee ? employee.departmentId : ($('fDepartment').options[0] || {}).value;
-  $('fPosition').value = employee ? employee.positionId : ($('fPosition').options[0] || {}).value;
-  $('fTeam').value = employee ? (employee.teamId || '') : '';
-  $('fManager').value = employee ? (employee.managerId || '') : '';
-  $('fLevel').value = employee ? employee.rankLevel : 3;
-  $('fPhone').value = '';
-  Array.from($('fRoles').options).forEach((option) => { option.selected = employee ? (employee.roles || []).includes(option.value) : option.value === 'employee'; });
-  $('employeeError').textContent = '';
-  $('employeeTransfer').hidden = !employee;
-  $('employeeDialog').showModal();
+  const employee=id?state.employees.find(e=>e.id===id):null;state.editing=employee;
+  $('employeeId').value=id||'';$('fDisplayName').value=employee?.displayName||'';$('fPhone').value='';
+  $('employeeDialogTitle').textContent=employee?'编辑姓名/登录手机号':'添加新员工到草稿';$('employeeNewHint').hidden=!!employee;
+  $('employeeError').textContent='';$('employeeDialog').showModal();
 }
-
 async function saveEmployee() {
-  const roles = Array.from($('fRoles').selectedOptions).map((o) => o.value);
-  const id = $('employeeId').value;
-  const common = {
-    displayName: $('fDisplayName').value.trim(), departmentId: $('fDepartment').value,
-    positionId: $('fPosition').value, teamId: $('fTeam').value || null,
-    managerId: $('fManager').value || null, level: Number($('fLevel').value), roleCodes: roles
-  };
-  const phone = $('fPhone').value.trim();
-  if (phone) common.phone = phone;
+  const id=$('employeeId').value,displayName=$('fDisplayName').value.trim(),phone=$('fPhone').value.trim();
   try {
-    if (id) {
-      const detail = await api('GET', '/api/v1/admin/employees/' + id);
-      await api('PATCH', '/api/v1/admin/employees/' + id, common, { key: newKey(), ifMatch: detail.headers.get('ETag') });
-      ok('员工已更新');
-    } else {
-      /* The employee authenticates with this number, so it is required at creation. The server
-         generates an internal, non-identifying username; the administrator never invents one. */
-      if (!phone) { $('employeeError').textContent = '请填写员工手机号，员工将使用该号码登录。'; return; }
-      const created = await api('POST', '/api/v1/admin/employees', common, { key: newKey() });
-      if (created.body.initialPassword) {
-        $('employeeSecret').innerHTML = '<div class="card">初始密码仅显示一次，请立即交付本人：<span class="secret">' + created.body.initialPassword + '</span><div class="muted">刷新或重试都不会再次显示；忘记时请重置密码。</div></div>';
-      }
-      ok('员工已创建');
+    if(!displayName)throw new Error('请填写姓名');
+    if(id){const detail=(await api('GET','/api/v1/admin/employees/'+id)).body;
+      await api('PATCH','/api/v1/admin/employees/'+id,{displayName,...(phone?{phone}:{})},{key:newKey(),ifMatch:'"'+detail.rowVersion+'"'});
+      await reloadAll();
+    }else{
+      if(!phone)throw new Error('新员工须填写有效手机号');
+      if(!state.planDraft)resetPlan();const employeeId=crypto.randomUUID();
+      state.planDraft.newEmployees.push({id:employeeId,displayName,phone});
+      state.planDraft.placements.push({employeeId,placementType:'employee',departmentId:null,teamId:null,positionId:null});
+      renderPlan();selectTab('organization',document.querySelector('[data-tab="organization"]'));
     }
     $('employeeDialog').close();
-    reloadAll();
-  } catch (error) { $('employeeError').textContent = error.message; }
+  }catch(error){$('employeeError').textContent=error.message;}
 }
 
-function openTransfer() {
-  const employee = state.editing;
-  if (!employee) return;
-  state.transferring = employee;
-  $('tDepartment').value = employee.departmentId || '';
-  $('tPosition').value = employee.positionId || '';
-  $('tTeam').value = employee.teamId || '';
-  $('tManager').value = employee.managerId || '';
-  $('tLevel').value = employee.rankLevel;
-  $('tReason').value = '';
-  Array.from($('tRoles').options).forEach((option) => { option.selected = (employee.roles || []).includes(option.value); });
-  $('transferError').textContent = '';
-  $('employeeDialog').close();
-  $('transferDialog').showModal();
+function resetPlan() {
+  if(!state.structure)return;
+  const source=state.structure;
+  state.planVersion=source.rowVersion;
+  state.planDraft={reason:'',departments:structuredClone(source.departments),teams:structuredClone(source.teams),
+    placements:structuredClone(source.placements),expectedEmployees:structuredClone(source.expectedEmployees),
+    newEmployees:[],businessTransfers:[],deactivateEmployees:[],cancelUnpublishedRequests:[]};
+  // Invalid legacy mappings are deliberately presented as unfilled positions for controlled repair.
+  source.employees.filter(e=>e.active&&!state.planDraft.placements.some(p=>p.employeeId===e.id)).forEach(e=>
+    state.planDraft.placements.push({employeeId:e.id,placementType:e.id===source.organization.founderEmployeeId?'founder':'employee',departmentId:null,teamId:null,positionId:null}));
+  $('planReason').value='';$('planError').textContent='';renderPlan();
 }
-
-async function saveTransfer() {
-  const employee = state.transferring;
+function planSelect(items,value,label,attrs,empty='请选择') {
+  const entries=[{id:'',name:empty},...items];
+  if(value&&!items.some(i=>i.id===value))entries.push({id:value,name:'原归属已删除，请选择去向'});
+  return `<select ${attrs}>${entries.map(i=>`<option value="${esc(i.id)}"${i.id===(value||'')?' selected':''}>${esc(i[label]||i.name)}</option>`).join('')}</select>`;
+}
+function renderPlan() {
+  const draft=state.planDraft;if(!draft)return;
+  $('planUnits').innerHTML=['departments','teams'].map(kind=>`<h3>${kind==='teams'?'团队':'部门'}</h3>
+    <button class="ghost" data-add-unit="${kind}">添加${kind==='teams'?'团队':'部门'}</button>
+    <table><thead><tr><th>名称</th>${kind==='teams'?'<th>所属部门</th>':''}<th>负责人</th><th></th></tr></thead><tbody>${draft[kind].map(unit=>{
+      const head=draft.placements.find(p=>p.placementType===(kind==='teams'?'team_head':'department_head')&&p[kind==='teams'?'teamId':'departmentId']===unit.id);
+      const person=head&&[...state.employees,...draft.newEmployees].find(e=>e.id===head.employeeId);
+      return `<tr><td><input data-unit="${unit.id}" data-kind="${kind}" value="${esc(unit.name)}" aria-label="单位名称"></td>
+      ${kind==='teams'?`<td>${planSelect(draft.departments,unit.departmentId,'name',`data-team-department="${unit.id}"`)}</td>`:''}
+      <td>${esc(person?.displayName||'请在下方安排负责人')}</td><td><button class="ghost" data-remove-unit="${unit.id}" data-kind="${kind}">从草稿删除</button></td></tr>`;
+    }).join('')}</tbody></table>`).join('');
+  document.querySelectorAll('[data-add-unit]').forEach(button=>button.onclick=()=>{
+    const name=prompt('新单位名称');if(!name?.trim())return;
+    draft[button.dataset.addUnit].push({id:crypto.randomUUID(),name:name.trim(),...(button.dataset.addUnit==='teams'?{departmentId:null}:{})});renderPlan();
+  });
+  document.querySelectorAll('[data-remove-unit]').forEach(button=>button.onclick=()=>{
+    draft[button.dataset.kind]=draft[button.dataset.kind].filter(u=>u.id!==button.dataset.removeUnit);renderPlan();
+  });
+  document.querySelectorAll('[data-unit]').forEach(input=>input.oninput=()=>{draft[input.dataset.kind].find(u=>u.id===input.dataset.unit).name=input.value;});
+  document.querySelectorAll('[data-team-department]').forEach(select=>select.onchange=()=>{draft.teams.find(u=>u.id===select.dataset.teamDepartment).departmentId=select.value||null;renderPlan();});
+  $('planPeople').innerHTML=`<table><thead><tr><th>员工</th><th>组织身份</th><th>部门</th><th>团队</th><th>展示职位（必填）</th></tr></thead><tbody>${draft.placements.map(p=>{
+    const person=[...state.employees,...draft.newEmployees].find(e=>e.id===p.employeeId);
+    const fixed=p.employeeId===state.structure.organization.founderEmployeeId;
+    return `<tr><td>${esc(person?.displayName||p.employeeId)}${draft.newEmployees.some(e=>e.id===p.employeeId)?'（新增）':''}</td>
+      <td>${fixed?'创始人（固定）':planSelect(Object.entries(PLACEMENT_LABELS).filter(([id])=>id!=='founder').map(([id,name])=>({id,name})),p.placementType,'name',`data-place="${p.employeeId}" data-field="placementType"`)}</td>
+      <td>${p.placementType==='founder'?'公司':planSelect(draft.departments,p.departmentId,'name',`data-place="${p.employeeId}" data-field="departmentId"`)}</td>
+      <td>${['founder','department_head'].includes(p.placementType)?'—':planSelect(draft.teams.filter(t=>t.departmentId===p.departmentId),p.teamId,'name',`data-place="${p.employeeId}" data-field="teamId"`)}</td>
+      <td>${planSelect(state.structure.positions,p.positionId,'name',`data-place="${p.employeeId}" data-field="positionId"`)}</td></tr>`;
+  }).join('')}</tbody></table>`;
+  document.querySelectorAll('[data-place]').forEach(select=>select.onchange=()=>{
+    const p=draft.placements.find(row=>row.employeeId===select.dataset.place),field=select.dataset.field;p[field]=select.value||null;
+    if(field==='placementType'&&p.placementType==='founder'){p.departmentId=null;p.teamId=null;}
+    if(field==='placementType'&&p.placementType==='department_head')p.teamId=null;
+    if(field==='departmentId')p.teamId=null;
+    if(field==='teamId'){const team=draft.teams.find(t=>t.id===p.teamId);p.departmentId=team?.departmentId||p.departmentId;}
+    renderPlan();
+  });
+  $('planDepartures').textContent=`待停用 ${draft.deactivateEmployees.length} 人，业务责任接管 ${draft.businessTransfers.length} 项，管理撤销未发布创建 ${draft.cancelUnpublishedRequests.length} 项。`;
+  for(const item of draft.deactivateEmployees){const line=document.createElement('p');line.textContent=(state.employees.find(e=>e.id===item.employeeId)?.displayName||item.employeeId)+'：'+item.reason;$('planDepartures').appendChild(line);}
+}
+async function savePlan() {
+  const draft=state.planDraft;if(!draft)return;
+  draft.reason=$('planReason').value.trim();$('planError').textContent='';$('planSave').disabled=true;
   try {
-    const detail = await api('GET', '/api/v1/admin/employees/' + employee.id);
-    await api('POST', '/api/v1/admin/employees/' + employee.id + '/transfer', {
-      departmentId: $('tDepartment').value, positionId: $('tPosition').value,
-      teamId: $('tTeam').value || null, managerId: $('tManager').value || null,
-      level: Number($('tLevel').value), roleCodes: Array.from($('tRoles').selectedOptions).map((o) => o.value),
-      reason: $('tReason').value.trim()
-    }, { key: newKey(), ifMatch: detail.headers.get('ETag') });
-    $('transferDialog').close();
-    ok('转岗已生效，旧页面与旧授权缓存已失效');
-    reloadAll();
-  } catch (error) { $('transferError').textContent = error.message; }
+    const result=(await api('POST','/api/v1/admin/organization-plans',draft,{key:newKey(),ifMatch:'"'+state.planVersion+'"'})).body;
+    if(result.initialPasswords)$('employeeSecret').textContent='初始密码仅显示一次：'+Object.entries(result.initialPasswords).map(([id,password])=>(draft.newEmployees.find(e=>e.id===id)?.displayName||id)+'：'+password).join('；');
+    state.planDraft=null;await reloadAll();ok('完整组织结果已保存');
+  }catch(error){$('planError').textContent=error.message+(error.details?.blockers?'：'+error.details.blockers.join('；'):'');}
+  finally{$('planSave').disabled=false;}
 }
+async function loadInventory() {
+  $('inventoryError').textContent='';
+  try {
+    const employeeId=$('inventoryEmployee').value;
+    const inv=(await api('GET','/api/v1/admin/employees/'+employeeId+'/responsibilities')).body;
+    state.inventory=inv;
+    const people=state.employees.filter(e=>e.active&&e.id!==employeeId);
+    $('inventoryResult').innerHTML=`<p>未完成任务负责人交接 ${inv.unfinishedAssignments.length} 项：${inv.unfinishedAssignments.map(t=>esc(t.title)).join('、')||'无'}。请员工或其直属上级从员工端办理，所需审批须先通过。</p>
+      <h3>已发布任务后续业务责任（含已完成）</h3>
+      <table><thead><tr><th>任务</th><th>状态</th><th>业务接管人</th></tr></thead><tbody>${inv.businessTasks.map(t=>`<tr><td>${esc(t.title)}</td><td>${esc(STATE_LABELS[t.executionState]||t.executionState)}</td><td>${planSelect(people,null,'displayName',`data-takeover-task="${t.id}"`,'暂不接管')}</td></tr>`).join('')}</tbody></table>
+      <h3>待审</h3>${inv.pendingRequests.map(r=>`<p>${esc(r.kind)} · ${esc(r.id)} ${r.kind==='create'&&r.applicantId===employeeId?`<label><input type="checkbox" data-cancel-request="${r.id}">停用时管理撤销此未发布创建</label>`:'须由业务方办结或按新责任方承接'}</p>`).join('')||'<p>无待审。</p>'}
+      <label for="takeoverReason">接管/停用原因</label><input id="takeoverReason" placeholder="填写实际原因">
+      <div class="row"><button class="primary" id="stageTakeover">将选定接管加入组织草稿</button>${inv.placement?.placementType!=='founder'?'<button class="ghost" id="stageDeactivate">准备停用并加入完整草稿</button>':''}</div>`;
+    function stage(disable){
+      const reason=$('takeoverReason').value.trim();if(!reason){$('inventoryError').textContent='请填写原因';return;}
+      if(!state.planDraft)resetPlan();
+      if(state.planVersion!==inv.rowVersion){$('inventoryError').textContent='组织版本已变化，请重新读取组织草稿与责任盘点';return;}
+      const draft=state.planDraft;
+      document.querySelectorAll('[data-takeover-task]').forEach(select=>{
+        if(!select.value)return;const task=inv.businessTasks.find(t=>t.id===select.dataset.takeoverTask);
+        draft.businessTransfers=draft.businessTransfers.filter(t=>t.taskId!==task.id);
+        draft.businessTransfers.push({taskId:task.id,taskVersion:task.rowVersion,ownerVersion:task.ownerVersion,previousEmployeeId:employeeId,nextEmployeeId:select.value,reason});
+      });
+      if(disable){
+        const person=draft.expectedEmployees.find(e=>e.id===employeeId);
+        draft.deactivateEmployees=draft.deactivateEmployees.filter(e=>e.employeeId!==employeeId);
+        draft.deactivateEmployees.push({employeeId,rowVersion:person.rowVersion,reason});
+        draft.placements=draft.placements.filter(p=>p.employeeId!==employeeId);
+        document.querySelectorAll('[data-cancel-request]:checked').forEach(input=>{
+          const request=inv.pendingRequests.find(r=>r.id===input.dataset.cancelRequest);
+          draft.cancelUnpublishedRequests=draft.cancelUnpublishedRequests.filter(r=>r.requestId!==request.id);
+          draft.cancelUnpublishedRequests.push({requestId:request.id,rowVersion:request.rowVersion,reason});
+        });
+      }
+      renderPlan();selectTab('organization',document.querySelector('[data-tab="organization"]'));ok('已加入草稿，请安排全部岗位去向后统一保存');
+    }
+    $('stageTakeover').onclick=()=>stage(false);if($('stageDeactivate'))$('stageDeactivate').onclick=()=>stage(true);
+  }catch(error){$('inventoryError').textContent=error.message;}
+}
+async function loadAdminAccount() {
+  if(state.user?.mustChangePassword)return;
+  try{const account=(await api('GET','/api/v1/admin/account')).body;state.adminAccount=account;$('adminAccountName').value=account.accountName;$('adminDisplayName').value=account.displayName;}
+  catch(error){$('adminAccountError').textContent=error.message;}
+}
+$('planReload').onclick=async()=>{if(confirm('放弃全部未保存调整？')){state.planDraft=null;await reloadAll();}};
+$('planSave').onclick=savePlan;$('planNewEmployee').onclick=()=>openEmployee(null);$('inventoryLoad').onclick=loadInventory;
+$('adminAccountSave').onclick=async()=>{
+  try{await api('PATCH','/api/v1/admin/account',{accountName:$('adminAccountName').value.trim(),displayName:$('adminDisplayName').value.trim()},{key:newKey(),ifMatch:'"'+state.adminAccount.rowVersion+'"'});logout();$('loginError').textContent='管理员账号已更新，请使用新账号重新登录';}
+  catch(error){$('adminAccountError').textContent=error.message;}
+};
+$('adminPasswordSave').onclick=async()=>{
+  try{await api('POST','/api/v1/auth/password',{currentPassword:$('adminCurrentPassword').value,newPassword:$('adminNewPassword').value},{key:newKey()});$('adminCurrentPassword').value='';$('adminNewPassword').value='';logout();$('loginError').textContent='密码已更新，请重新登录';}
+  catch(error){$('adminAccountError').textContent=error.message;}
+};
 
 $('loginButton').onclick = login;
 $('password').addEventListener('keydown', (event) => { if (event.key === 'Enter') login(); });
@@ -786,33 +738,11 @@ $('notificationQuery').oninput = () => loadNotifications(0);
 $('notificationState').onchange = () => loadNotifications(0);
 $('employeeNew').onclick = () => openEmployee(null);
 $('employeeSave').onclick = saveEmployee;
-$('employeeTransfer').onclick = openTransfer;
 $('employeeCancel').onclick = () => $('employeeDialog').close();
-$('transferSave').onclick = saveTransfer;
-$('transferCancel').onclick = () => $('transferDialog').close();
-$('departmentCreate').onclick = async () => {
-  try { await api('POST', '/api/v1/admin/departments', { name: $('departmentName').value.trim() }, { key: newKey() }); $('departmentName').value = ''; ok('部门已创建'); reloadAll(); }
-  catch (error) { fail(error.message); }
-};
 $('positionCreate').onclick = async () => {
   try { await api('POST', '/api/v1/admin/positions', { name: $('positionName').value.trim() }, { key: newKey() }); $('positionName').value = ''; ok('职位已创建'); reloadAll(); }
   catch (error) { fail(error.message); }
 };
-$('teamCreate').onclick = async () => {
-  const payload = { name: $('teamName').value.trim(), departmentId: $('teamDepartment').value };
-  if ($('teamLead').value) payload.leadUserId = $('teamLead').value;
-  try { await api('POST', '/api/v1/admin/teams', payload, { key: newKey() }); $('teamName').value = ''; ok('团队已创建，创建者为默认负责人'); reloadAll(); }
-  catch (error) { fail(error.message); }
-};
-$('teamDepartment').onchange = loadTeamLeads;
-async function loadTeamLeads() {
-  const departmentId = $('teamDepartment').value;
-  if (!departmentId) { $('teamLead').innerHTML = ''; return; }
-  try {
-    const members = (await api('GET', '/api/v1/admin/departments/' + departmentId + '/members')).body.items || [];
-    options($('teamLead'), members, { label: 'displayName', empty: '（创建者默认负责）' });
-  } catch (error) { $('teamLead').innerHTML = ''; }
-}
 $('companyCreate').onclick = async () => {
   try { await api('POST', '/api/v1/admin/company/items', { title: $('companyTitle').value.trim() || undefined, body: $('companyBody').value.trim() }, { key: newKey() }); $('companyTitle').value = ''; $('companyBody').value = ''; ok('公司信息已创建'); renderCompany(); }
   catch (error) { fail(error.message); }
@@ -823,7 +753,9 @@ $('offWorkSave').onclick = async () => {
 };
 
 function logout() {
-  state.token = null; state.user = null;
+  if(state.token)fetch('/api/v1/auth/sessions/current',{method:'DELETE',headers:{Authorization:'Bearer '+state.token}}).catch(()=>{});
+  state.epoch=(state.epoch||0)+1;state.token = null; state.user = null;state.planDraft=null;state.structure=null;state.employees=[];
+  document.querySelectorAll('dialog[open]').forEach(d=>d.close());$('employeeSecret').textContent='';$('inventoryResult').textContent='';$('historyDetail').textContent='';
   localStorage.removeItem('pandora.admin.token');
   $('console').hidden = true; $('login').hidden = false;
   $('password').value = '';
@@ -834,11 +766,11 @@ function logout() {
   if (!saved) return;
   try {
     // Verify the saved session first; the console is only entered for a real authenticated identity.
-    const response = await fetch('/api/v1/me', { headers: { Authorization: 'Bearer ' + saved } });
+    const response = await fetch('/api/v1/auth/session', { headers: { Authorization: 'Bearer ' + saved } });
     if (!response.ok) { localStorage.removeItem('pandora.admin.token'); return; }
     const me = await response.json();
     state.token = saved;
-    state.user = { displayName: me.displayName, username: me.username, role: me.role };
+    state.user = { displayName: me.displayName, accountType: me.accountType, role: me.role, mustChangePassword: me.mustChangePassword };
     enterConsole();
   } catch (error) { localStorage.removeItem('pandora.admin.token'); }
 })();

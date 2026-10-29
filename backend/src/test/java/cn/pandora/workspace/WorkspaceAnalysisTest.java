@@ -91,18 +91,26 @@ class WorkspaceAnalysisTest {
         pendingComplete.put("pending", true);
         pendingComplete.put("pendingKind", "complete");
         pendingComplete.put("frozen", true);
-        List<Map<String, Object>> rows = List.of(personal, department, pendingComplete);
+        Map<String,Object> outside=task("outside","范围外本人创建任务","privateoutsideword","urgent",
+                "2026-10-20T08:00:00Z","2026-10-20T20:00:00Z");
+        outside.put("originalCreatorId","manager");outside.put("assigneeIds",List.of("outside-employee"));
+        List<Map<String, Object>> rows = List.of(personal, department, pendingComplete,outside);
 
         MemoryDb db = new MemoryDb();
         TaskService tasks = mock(TaskService.class);
         when(tasks.list(any(), anyMap())).thenReturn(Map.of("items", rows));
         Actor manager = actor(7);
-        WorkspaceService service = new WorkspaceService(db, mock(Access.class), tasks, mock(Events.class),
+        Access access=mock(Access.class);
+        when(access.employeeDirectory(any(),org.mockito.ArgumentMatchers.eq(false))).thenReturn(List.of(
+                Map.of("id","manager","departmentId","department","teamId","team"),
+                Map.of("id","employee","departmentId","department","teamId","team")));
+        WorkspaceService service = new WorkspaceService(db, access, tasks, mock(Events.class),
                 Clock.fixed(NOW, ZoneOffset.UTC));
 
         Map<String, Object> statistics = service.statistics(manager, Map.of("scope", "visible"));
         assertEquals("department", statistics.get("scope"));
         assertEquals(3, statistics.get("total"));
+        assertTrue(keywordRows(statistics).stream().noneMatch(row->"privateoutsideword".equals(row.get("word"))));
         assertEquals(1L, statistics.get("pendingComplete"));
         assertTrue(keywordRows(statistics).stream().anyMatch(row -> "部门机密议题".equals(row.get("word"))));
 
@@ -111,7 +119,7 @@ class WorkspaceAnalysisTest {
         assertEquals("department", result.get("statisticsScope"));
         assertEquals("self", result.get("suggestionScope"));
         assertTrue(suggestionRows(result).stream().flatMap(row -> ((List<?>) row.get("sourceTaskIds")).stream())
-                .allMatch("personal"::equals));
+                .allMatch(id->List.of("personal","outside").contains(id)));
         assertTrue(suggestionRows(result).stream().noneMatch(row -> "部门机密议题".equals(row.get("title"))));
     }
 
@@ -124,7 +132,11 @@ class WorkspaceAnalysisTest {
         MemoryDb db = new MemoryDb();
         TaskService tasks = mock(TaskService.class);
         when(tasks.list(any(), anyMap())).thenReturn(Map.of("items", List.of(personal)));
-        WorkspaceService service = new WorkspaceService(db, mock(Access.class), tasks, mock(Events.class),
+        Access access=mock(Access.class);
+        when(access.employeeDirectory(any(),org.mockito.ArgumentMatchers.eq(false))).thenReturn(List.of(
+                Map.of("id","manager","departmentId","department","teamId","team"),
+                Map.of("id","employee","departmentId","department","teamId","team")));
+        WorkspaceService service = new WorkspaceService(db, access, tasks, mock(Events.class),
                 Clock.fixed(NOW, ZoneOffset.UTC));
         Map<String, Object> created = service.createAiJob(actor(7), Map.of("scopeType", "auto"));
 
@@ -149,7 +161,7 @@ class WorkspaceAnalysisTest {
     }
 
     private static Actor actor(long authzVersion) {
-        return new Actor("manager", "org", "middle", "team", "upper", 2, "department", "position",
+        return new Actor("manager", "org", "department_head", "team", "upper", 2, "department", "position",
                 Set.of("create_task"), Map.of("task_view", "department"), authzVersion,
                 true, false, 1L);
     }

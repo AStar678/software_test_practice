@@ -41,13 +41,13 @@ public class Writes {
         return tx.execute(status->{
             // Local single-company commands deliberately serialize here; this also fixes parent-cycle races.
             var org=db.one("SELECT * FROM organizations WHERE id=? FOR UPDATE",actor.organizationId());
-            var user=db.one("SELECT * FROM users WHERE id=? AND organization_id=? AND active=1",actor.id(),actor.organizationId());
+            var user=auth.account(actor);
             if(!actor.equals(auth.actor(user))) throw new ApiException(409,"AUTHORIZATION_CHANGED","权限已更新，请重新读取后操作");
             // A reviewed V4 mapping must be complete before formal business writes start. Administration
             // repair scopes stay available so the mapping can be finished through the console, and old
             // idempotency replays cannot bypass the gate because it runs before the cache lookup
             // (Migration Plan §2, DEV-001/002).
-            if(!scope.contains("/admin/") && !constraints.formalWritesReady())
+            if(!scope.contains("/admin/") && !constraints.formalWritesReady(actor.organizationId()))
                 throw new ApiException(409,"ORGANIZATION_MAPPING_INCOMPLETE",
                         "组织部门/职位映射尚未完成，正式业务写入暂不可用，请管理员在管理端补齐映射");
             var previous=db.find("SELECT * FROM idempotency_keys WHERE organization_id=? AND user_id=? AND scope=? AND key_value=?",actor.organizationId(),actor.id(),scope,key);

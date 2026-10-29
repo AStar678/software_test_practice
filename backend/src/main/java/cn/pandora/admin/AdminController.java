@@ -92,6 +92,19 @@ public class AdminController {
         return organization.structure(actor);
     }
 
+    @GetMapping("/account")
+    public Map<String,Object> administrator(@RequestAttribute("actor") Actor actor) {
+        return organization.administrator(actor);
+    }
+
+    @PatchMapping("/account")
+    public Map<String,Object> updateAdministrator(@RequestAttribute("actor") Actor actor,
+            @RequestHeader(value="Idempotency-Key",required=false) String key,
+            @RequestHeader(value="If-Match",required=false) String match,
+            @RequestBody Map<String,Object> input) {
+        return writes.run(actor,key,"PATCH /admin/account",input,match,()->organization.updateAdministrator(actor,match,input));
+    }
+
     @GetMapping("/roles")
     public Map<String, Object> roles(@RequestAttribute("actor") Actor actor) {
         return Map.of("items", organization.roles(actor));

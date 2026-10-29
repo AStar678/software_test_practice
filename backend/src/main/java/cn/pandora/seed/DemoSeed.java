@@ -1,142 +1,229 @@
 package cn.pandora.seed;
 
-import cn.pandora.admin.RoleCatalog;
+import cn.pandora.admin.BusinessTakeovers;
+import cn.pandora.admin.OrganizationService;
+import org.springframework.beans.factory.ObjectProvider;
 import cn.pandora.auth.*;
 import cn.pandora.common.*;
-import cn.pandora.task.Tags;
 import cn.pandora.task.TaskService;
-import cn.pandora.workspace.CommentService;
+import cn.pandora.workspace.*;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
+import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.*;
 import static cn.pandora.common.Db.*;
 
-/** Seed once in a single transaction. Restarting never resets edited business data. */
+/** Explicit, marker-guarded, transactional preparation. Never deletes or resets existing data. */
 @Component
-@Order(DemoSeed.ORDER)
+@Order(0)
 @ConditionalOnProperty(name="pandora.seed",havingValue="true")
 public class DemoSeed implements ApplicationRunner {
-    /** Before {@link cn.pandora.admin.OrganizationConstraints} so a seeded database is already mapped. */
-    public static final int ORDER = 0;
+    public static final int ORDER=0;
     private static final String ORG="10000000-0000-0000-0000-000000000001";
-    private final Db db; private final TaskService tasks;private final TransactionTemplate tx;private final String password;
-    private final RoleCatalog roles;
-    private final cn.pandora.auth.Access access;
-    private final Tags tags;
+    private static final int MANIFEST=2;
+    private final Db db;
+    private final TaskService tasks;
+    private final WorkspaceService workspace;
     private final CommentService comments;
+    private final BusinessTakeovers takeovers;
+    private final Access access;
+    private final OrganizationService organization;
+    private final ObjectProvider<EventsWorker> worker;
+    private final TransactionTemplate tx;
+    private final Clock clock;
+    private final String password,target,marker;
+    private final boolean initialize;
+    private LocalDate today;
     private final Map<String,Actor> actors=new LinkedHashMap<>();
-    private final LocalDate today=LocalDate.now(ZoneId.of("Asia/Shanghai"));
-    public DemoSeed(Db db,TaskService tasks,TransactionTemplate tx,@Value("${pandora.demo-password}") String password,RoleCatalog roles,cn.pandora.auth.Access access,Tags tags,CommentService comments) {this.db=db;this.tasks=tasks;this.tx=tx;this.password=password;this.roles=roles;this.access=access;this.tags=tags;this.comments=comments;}
+    public DemoSeed(Db db,TaskService tasks,WorkspaceService workspace,CommentService comments,
+                    BusinessTakeovers takeovers,Access access,OrganizationService organization,ObjectProvider<EventsWorker> worker,TransactionTemplate tx,Clock clock,
+                    @Value("${pandora.demo-password}") String password,
+                    @Value("${pandora.demo-target:}") String target,
+                    @Value("${pandora.demo-marker:}") String marker,
+                    @Value("${pandora.demo-initialize:false}") boolean initialize) {
+        this.db=db;this.tasks=tasks;this.workspace=workspace;this.comments=comments;
+        this.takeovers=takeovers;this.access=access;this.organization=organization;this.worker=worker;this.tx=tx;this.clock=clock;
+        this.password=password;this.target=target;this.marker=marker;this.initialize=initialize;
+    }
     @Override public void run(ApplicationArguments args) {
         tx.executeWithoutResult(status->{
-            db.update("INSERT IGNORE INTO organizations(id,name,time_zone) VALUES(?,?,?)",ORG,"潘多拉演示公司","Asia/Shanghai");
+            String actual=s(db.one("SELECT DATABASE() AS name"),"name");
+            if(target.isBlank() || marker.isBlank() || !target.equals(actual))
+                throw new IllegalStateException("Demo preparation requires an explicit matching database and demo marker");
+            var identity=db.find("SELECT * FROM demo_database_identity WHERE singleton=1 FOR UPDATE");
+            if(identity==null) {
+                if(!initialize || n(db.one("SELECT COUNT(*) AS c FROM organizations"),"c")!=0)
+                    throw new IllegalStateException("Refusing to initialize a demo marker on an existing business database");
+                today=LocalDate.now(clock.withZone(ZoneId.of("Asia/Shanghai")));
+                db.update("INSERT INTO demo_database_identity(singleton,database_name,marker,manifest_version,business_date) VALUES(1,?,?,?,?)",target,marker,MANIFEST,today);
+            } else {
+                if(!target.equals(s(identity,"databaseName")) || !marker.equals(s(identity,"marker")) || n(identity,"manifestVersion")!=MANIFEST)
+                    throw new IllegalStateException("Demo database identity or manifest does not match");
+                if(identity.get("preparedAt")!=null) return;
+                today=LocalDate.parse(s(identity,"businessDate"));
+            }
+            db.update("INSERT INTO organizations(id,name,time_zone) VALUES(?,?,'Asia/Shanghai')",ORG,"潘多拉演示公司");
             db.one("SELECT id FROM organizations WHERE id=? FOR UPDATE",ORG);
-            if(db.jdbc.queryForObject("SELECT COUNT(*) FROM users WHERE organization_id=?",Long.class,ORG)>0) return;
-            String managementDepartment=department("管理层"), productDepartment=department("产品部"), marketingDepartment=department("市场部");
-            String generalManager=position("总经理"), departmentManager=position("部门经理"), specialist=position("专员"), administrator=position("系统管理员");
-            String management=team("公司管理层",managementDepartment), product=team("产品部",productDepartment), marketing=team("市场部",marketingDepartment);
-            roles.ensureDefaults(ORG);
-            String hash=AuthService.PASSWORDS.encode(password);
-            user("upper","王海", "upper",management,managementDepartment,generalManager,null,1,hash,"13800000001");
-            // The independent administrator keeps the username login and therefore has no employee key.
-            user("admin","系统管理员","admin",management,managementDepartment,administrator,null,0,hash,null);
-            user("middle","李敏","middle",product,productDepartment,departmentManager,actors.get("upper").id(),2,hash,"13800000002");
-            user("market","陈冲","middle",marketing,marketingDepartment,departmentManager,actors.get("upper").id(),2,hash,"13800000003");
-            user("employee","张涛","lower",product,productDepartment,specialist,actors.get("middle").id(),3,hash,"13800000004");
-            user("colleague","赵蕾","lower",product,productDepartment,specialist,actors.get("middle").id(),3,hash,"13800000005");
-            user("marketing","孙悦","lower",marketing,marketingDepartment,specialist,actors.get("market").id(),3,hash,"13800000006");
-            lead(management,actors.get("upper").id());
-            lead(product,actors.get("middle").id());
-            lead(marketing,actors.get("market").id());
-            String parent=create("upper","季度产品目标",List.of("middle"),-3,15,false,true);
-            String doing=create("middle","上线素材校对",List.of("employee","colleague"),-2,2,false,true);
-            command("employee",doing,Map.of("command","progress","progressNote","已完成第一轮校对，等待产品确认。"),true);
-            String completed=create("middle","客户反馈整理",List.of("employee"),-5,-1,false,true);
-            command("employee",completed,Map.of("command","complete","completionNote","已按分类整理并复核全部反馈。"),true);
-            create("employee","个人研究计划 待创建审核",List.of("employee"),0,5,false,false);
-            String pendingComplete=create("middle","产品验收 待完成审核",List.of("employee"),-2,1,false,true);
-            command("employee",pendingComplete,Map.of("command","complete","completionNote","验收清单已逐项核对，请审核。"),false);
-            String pendingChange=create("upper","跨层派发 待排期变更",List.of("employee"),-1,6,false,true);
-            command("upper",pendingChange,Map.of("command","change","title","排期变更后的标题 尚未生效","reason","协调资源，更新任务名称。"),false);
-            create("market","市场活动方案",List.of("marketing"),-2,4,false,true);
-            create("middle","预算核对",List.of("employee"),-4,1,false,true);
-            create("middle","全天部门培训",List.of("employee","colleague"),0,0,true,true);
-            String reopen=create("middle","数据清单复核",List.of("colleague"),-3,3,false,true);
-            command("colleague",reopen,Map.of("command","complete","completionNote","首轮复核已完成。"),true);
-            command("middle",reopen,Map.of("command","reopen","reason","补充数据后需再复核。"),true);
-            Map<String,Object> childInput=input("产品资料 子任务",List.of("employee"),0,3,false);
-            childInput.put("parentTaskId",parent);
-            var child=tasks.create(actors.get("upper"),childInput); approve(child);
-            for(int i=1;i<=6;i++) create("middle","今日排期事项 "+i,List.of("employee"),0,0,false,true);
-            // Historical rows keep a completion criterion even though the creation form no longer
-            // offers one (chapter 4.1): it must stay displayed, editable and auditable.
-            for(String historical:List.of(parent,completed)) {
-                db.update("UPDATE task_versions SET acceptance_criteria=? WHERE organization_id=? AND id=(SELECT current_version_id FROM tasks WHERE organization_id=? AND id=?)","材料完整、结果可复核，并经审核确认。",ORG,ORG,historical);
-            }
-            for(var entry:actors.entrySet()) {
-                Actor a=entry.getValue();if(a.role().equals("admin")) continue;
-                for(int i=0;i<3;i++) {
-                    db.update("INSERT INTO work_logs(id,organization_id,author_id,business_date,body,task_id) VALUES(?,?,?,?,?,?)",id(),ORG,a.id(),today.minusDays(i),i==0?"完成本日工作整理，记录待办与协作问题。":"复盘工作进展并补充后续计划。",entry.getKey().equals("employee")?doing:null);
-                }
-                db.update("INSERT INTO home_items(id,organization_id,owner_id,kind,title,body,sort_order) VALUES(?,?,?,'personal',?,?,0)",id(),ORG,a.id(),"本周关注","明确完成标准，及时同步阻塞事项。");
-            }
-            for(int i=1;i<=3;i++) db.update("INSERT INTO home_items(id,organization_id,kind,title,body,sort_order) VALUES(?,?,'company',?,?,?)",id(),ORG,"公司目标 "+i,List.of("按计划交付并保障质量","及时处理客户反馈","完善协作与知识记录").get(i-1),i);
-            // Chapter 8 demo content: one shared catalogue, a task tag, a log tag and flat comments.
-            String important=predefinedTag("重点", "#F6D5D2", "#C05B52");
-            String routine=predefinedTag("例行", "#D8EAF4", "#4C87A3");
-            db.update("UPDATE task_versions SET tag_id=?,tag_name_snapshot=?,tag_color_snapshot=? WHERE organization_id=? AND id=(SELECT current_version_id FROM tasks WHERE organization_id=? AND id=?)",
-                    important,"重点","#F6D5D2",ORG,ORG,parent);
-            db.update("UPDATE work_logs SET tag_id=? WHERE organization_id=? AND author_id=? AND business_date=?",
-                    routine,ORG,actors.get("employee").id(),today);
-            comments.create(actors.get("middle"),"task",doing,Map.of("body","请同步确认最终交付清单，评论独立于任务审核。"));
-            var employeeLog=db.find("SELECT id FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?",ORG,actors.get("employee").id(),today);
-            if(employeeLog!=null) comments.create(actors.get("middle"),"log",s(employeeLog,"id"),
-                    Map.of("body","这条日志的后续计划请补充时间点。"));
+            prepareOrganization();
+            prepareBusiness();
+            db.update("UPDATE demo_database_identity SET prepared_at=UTC_TIMESTAMP(6) WHERE singleton=1");
         });
     }
-    private String predefinedTag(String name,String color,String border) {
-        var existing=db.find("SELECT id FROM tags WHERE organization_id=? AND name=?",ORG,name);
-        if(existing!=null) return s(existing,"id");
-        String tagId=id();
-        db.update("INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,?,?)",tagId,ORG,name,color);
-        return tagId;
+    private static String stable(String key) {
+        return UUID.nameUUIDFromBytes(("pandora.demo.v2/"+key).getBytes(StandardCharsets.UTF_8)).toString();
     }
-    private String department(String name) {String id=id();db.update("INSERT INTO departments(id,organization_id,name) VALUES(?,?,?)",id,ORG,name);return id;}
-    private String position(String name) {String id=id();db.update("INSERT INTO positions(id,organization_id,name) VALUES(?,?,?)",id,ORG,name);return id;}
-    private String team(String name,String departmentId) {String id=id();db.update("INSERT INTO teams(id,organization_id,name,department_id) VALUES(?,?,?,?)",id,ORG,name,departmentId);return id;}
-    private void lead(String teamId,String userId) {db.update("UPDATE teams SET lead_user_id=? WHERE organization_id=? AND id=?",userId,ORG,teamId);}
-    private void user(String username,String name,String role,String team,String department,String position,String manager,int rank,String hash,String loginPhone) {
-        String uid=id();db.update("INSERT INTO users(id,organization_id,team_id,department_id,position_id,manager_id,username,password_hash,display_name,role,rank_level,phone,login_phone) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",uid,ORG,team,department,position,manager,username,hash,name,role,rank,loginPhone,loginPhone);
-        roles.grant(ORG,uid,RoleCatalog.codeForLegacyRole(role),null);
-        // The seeded actors carry their real capabilities and ranges, exactly like a logged-in one.
-        actors.put(username,access.actor(db.one("SELECT * FROM users WHERE id=?",uid)));
+    private void remember(String key,String type,String value) {
+        db.update("INSERT INTO demo_seed_keys(seed_key,organization_id,object_type,object_id) VALUES(?,?,?,?)",key,ORG,type,value);
     }
-    private Map<String,Object> input(String title,List<String> owners,int start,int due,boolean allDay) {
-        // Seeding runs through the real submission path, which refuses an already-expired schedule.
-        // Demo rows therefore use a future deadline; tasks become overdue only as the controlled clock advances.
-        int effectiveDue=Math.max(due,1);
-        Map<String,Object> body=new LinkedHashMap<>();body.put("title",title);body.put("description","本地演示任务，用于核对任务流转与人员权限。");body.put("priority",due<0?"urgent":"medium");body.put("allDay",allDay);body.put("assigneeIds",owners.stream().map(k->actors.get(k).id()).toList());
-        if(allDay) { body.put("startDate",today.plusDays(start).toString());body.put("dueDate",today.plusDays(effectiveDue).toString()); }
-        else {body.put("startAt",today.plusDays(start).atTime(9,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());body.put("dueAt",today.plusDays(effectiveDue).atTime(18,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());}
-        return body;
+    private String unit(String table,String key,String name,String department) {
+        String value=stable(key);
+        if(table.equals("teams")) db.update("INSERT INTO teams(id,organization_id,name,department_id) VALUES(?,?,?,?)",value,ORG,name,department);
+        else db.update("INSERT INTO "+table+"(id,organization_id,name) VALUES(?,?,?)",value,ORG,name);
+        remember(key,table,value);return value;
     }
-    private String create(String creator,String title,List<String> owners,int start,int due,boolean allDay,boolean approve) {
-        var result=tasks.create(actors.get(creator),input(title,owners,start,due,allDay));if(approve) approve(result);return s(result,"taskId");
+    private void prepareOrganization() {
+        String founderTitle=unit("positions","title-founder","创始人",null);
+        String departmentTitle=unit("positions","title-department","部门负责人",null);
+        String headTitle=unit("positions","title-team","团队负责人",null);
+        String employeeTitle=unit("positions","title-employee","业务专员",null);
+        String hash=AuthService.PASSWORDS.encode(password);
+        employee("upper","王海","13800000001","founder",null,null,founderTitle,hash);
+        for(String dep:List.of("product","market")) {
+            String department=unit("departments","department-"+dep,dep.equals("product")?"产品部":"市场部",null);
+            employee(dep.equals("product")?"middle":"market",dep.equals("product")?"李敏":"陈冲",dep.equals("product")?"13800000002":"13800000003","department_head",department,null,departmentTitle,hash);
+            for(int i=1;i<=2;i++) {
+                String team=unit("teams","team-"+dep+"-"+i,(dep.equals("product")?"产品":"市场")+i+"组",department);
+                employee(dep+"-head-"+i,(dep.equals("product")?"产品":"市场")+"组长"+i,"138000000"+(dep.equals("product")?10+i:20+i),"team_head",department,team,headTitle,hash);
+                if(dep.equals("product") && i==1) {
+                    employee("employee","张涛","13800000004","employee",department,team,employeeTitle,hash);
+                    employee("colleague","赵蕾","13800000005","employee",department,team,employeeTitle,hash);
+                } else employee(dep.equals("market") && i==1?"marketing":dep+"-employee-"+i,
+                        (dep.equals("product")?"产品":"市场")+"专员"+i,dep.equals("market") && i==1?"13800000006":"138000000"+(dep.equals("product")?30+i:40+i),"employee",department,team,employeeTitle,hash);
+            }
+        }
+        db.update("UPDATE organizations SET founder_employee_id=? WHERE id=?",stable("upper"),ORG);
+        String adminId=stable("admin");
+        db.update("INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'admin')",adminId,ORG);
+        db.update("INSERT INTO admin_accounts(id,organization_id,account_name,password_hash,display_name) VALUES(?,?,'admin',?,'系统管理员')",adminId,ORG,hash);
+        remember("admin","admin",adminId);
+        refreshActors();
     }
-    private void command(String username,String taskId,Map<String,Object> body,boolean approve) {
-        long version=db.jdbc.queryForObject("SELECT row_version FROM tasks WHERE id=?",Long.class,taskId);
-        var result=tasks.change(actors.get(username),taskId,"\""+version+"\"",body);if(approve) approve(result);
+    private void employee(String key,String name,String phone,String kind,String dep,String team,String title,String hash) {
+        String employeeId=stable(key);
+        db.update("INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'employee')",employeeId,ORG);
+        db.update("INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,email) VALUES(?,?,?,?,?,?,?)",employeeId,ORG,hash,name,phone,phone,key+"@demo.example.test");
+        db.update("INSERT INTO employee_placements(organization_id,employee_id,placement_type,department_id,team_id,position_id) VALUES(?,?,?,?,?,?)",ORG,employeeId,kind,dep,team,title);
+        remember(key,"employee",employeeId);
+    }
+    private void refreshActors() {
+        actors.clear();
+        for(var row:db.list("SELECT u.*,'employee' AS account_type,k.seed_key FROM users u JOIN demo_seed_keys k ON k.object_id=u.id AND k.object_type='employee' WHERE u.organization_id=?",ORG))
+            actors.put(s(row,"seedKey"),access.actor(row));
+        actors.put("admin",access.actor(db.one("SELECT a.*,'admin' AS account_type FROM admin_accounts a WHERE a.organization_id=?",ORG)));
+    }
+    private void prepareBusiness() {
+        for(int i=1;i<=10;i++) {
+            var item=organization.createCompanyItem(actors.get("admin"),Map.of("title","公司事项 "+i,"body","公司重要事项 "+i+"：交付、质量与协作。"));
+            remember("company-item-"+i,"home-item",s(item,"id"));
+        }
+        for(String key:actors.keySet()) if(!key.equals("admin")) {
+            for(int offset=0;offset<3;offset++) {
+                var log=workspace.createLog(actors.get(key),Map.of("businessDate",today.minusDays(offset).toString(),"body","演示日志："+key+" / 业务日 "+today.minusDays(offset)));
+                remember("log-"+key+"-"+offset,"log",s(log,"logId"));
+            }
+            workspace.createHomeItem(actors.get(key),Map.of("kind","personal","title","本周关注","body","明确完成标准，及时同步阻塞。"));
+        }
+        // Recreated slot retains its first creation instant. Another log demonstrates a real frozen row.
+        var deleted=db.one("SELECT * FROM work_logs WHERE author_id=? AND business_date=?",stable("colleague"),today.minusDays(1));
+        workspace.deleteLog(actors.get("colleague"),s(deleted,"id"),"\""+n(deleted,"rowVersion")+"\"");
+        workspace.createLog(actors.get("colleague"),Map.of("businessDate",today.minusDays(1).toString(),"body","删除后重建，首次创建时间保持不变。"));
+        db.update("UPDATE work_logs SET created_at=UTC_TIMESTAMP(6)-INTERVAL 25 HOUR WHERE author_id=? AND business_date=?",stable("marketing"),today.minusDays(2));
+        for(int i=1;i<=110;i++) create("page-"+i,"upper","分页事项 "+String.format("%03d",i),List.of("employee"),input(today.plusDays(i%20),9,today.plusDays(30),18),true);
+        create("cross-department","middle","跨部门多负责人",List.of("employee","marketing"),schedule(),true);
+        create("creator-only","employee","本人仅创建不负责",List.of("marketing"),schedule(),true);
+        String doing=create("doing","middle","上线素材校对",List.of("employee","colleague"),schedule(),true);
+        command("employee",doing,Map.of("command","progress","progressNote","第一轮校对完成，等待确认。"),true);
+        String pending=create("pending-complete","middle","产品验收 待完成审核",List.of("employee"),schedule(),true);
+        command("employee",pending,Map.of("command","complete","completionNote","验收清单已核对，请审核。"),false);
+        for(String outcome:List.of("pending","rejected","withdrawn","expired")) {
+            String task=create("creation-"+outcome,"employee","创建申请 "+outcome,List.of("employee"),schedule(),false);
+            var request=db.one("SELECT * FROM approval_requests WHERE task_id=?",task);
+            if(outcome.equals("rejected")) decide(request,"reject","product-head-1");
+            if(outcome.equals("withdrawn")) decide(request,"withdraw","employee");
+            if(outcome.equals("expired")) {
+                // Explicit seed fixture age, not an inferred record date; exercise the real expiry path.
+                db.update("UPDATE approval_requests SET applicable_deadline=UTC_TIMESTAMP(6)-INTERVAL 1 SECOND WHERE id=?",s(request,"id"));
+                tasks.refreshPendingRoutes(actors.get("admin"));
+            }
+        }
+        String complete=create("completed","employee","已完成可重开",List.of("employee"),schedule(),true);
+        command("employee",complete,Map.of("command","complete","completionNote","已完成并复核。"),true);
+        String reopen=create("reopened","employee","完成后已重开",List.of("employee"),schedule(),true);
+        command("employee",reopen,Map.of("command","complete","completionNote","首轮完成。"),true);
+        var reopenBody=schedule();reopenBody.put("command","reopen");reopenBody.put("reason","补充资料，重新执行。");
+        command("employee",reopen,reopenBody,true);
+        String handover=create("handover","upper","专用交接保留创建来源",List.of("employee"),schedule(),true);
+        approve(tasks.handover(actors.get("employee"),handover,etag(handover),Map.of("sourceUserId",stable("employee"),"targetUserId",stable("colleague"),"reason","同部门协作交接")));
+        String takeover=create("takeover","middle","正式业务接管",List.of("employee"),schedule(),true);
+        takeovers.transfer(actors.get("admin"),"\"1\"",Map.of("transfers",List.of(Map.of("taskId",takeover,"taskVersion",version(takeover),"ownerVersion",1,"previousEmployeeId",stable("middle"),"nextEmployeeId",stable("colleague"),"reason","业务责任正式接管演示"))));
+        refreshActors();
+        command("colleague",takeover,Map.of("command","change","title","正式接管后由新责任方维护","reason","接管后直接生效"),true);
+        LocalDate dense=today.plusDays(3);
+        for(int i=1;i<=8;i++) {
+            create("overlap-"+i,"upper","并发定时 "+i,List.of("employee"),input(dense,10,dense,12),true);
+            create("all-day-"+i,"upper","全天事项 "+i,List.of("employee"),new LinkedHashMap<>(Map.of("allDay",true,"startDate",dense.toString(),"dueDate",dense.toString())),true);
+        }
+        LocalDate monthEnd=today.withDayOfMonth(today.lengthOfMonth());
+        if(!monthEnd.isAfter(today)) monthEnd=today.plusMonths(1).withDayOfMonth(today.plusMonths(1).lengthOfMonth());
+        create("cross-month","upper","跨月整日覆盖",List.of("employee"),input(monthEnd.minusDays(1),20,monthEnd.plusDays(1),10),true);
+        create("full-coverage","upper","中间日仅全天投影",List.of("employee"),input(dense.minusDays(1),20,dense.plusDays(1),10),true);
+        create("midnight","upper","午夜截止无次日副本",List.of("employee"),input(dense,10,dense.plusDays(1),0),true);
+        create("point","upper","午夜零时长",List.of("employee"),input(dense.plusDays(1),0,dense.plusDays(1),0),true);
+        LocalDate yearEnd=LocalDate.of(today.getYear(),12,31);
+        create("cross-year","upper","跨年事项",List.of("employee"),input(yearEnd,20,yearEnd.plusDays(1),10),true);
+        String tag=stable("tag-focus");
+        db.update("INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,'重点','#F6D5D2')",tag,ORG);
+        remember("tag-focus","tag",tag);
+        db.update("UPDATE work_logs SET tag_id=? WHERE author_id=? AND business_date=?",tag,stable("employee"),today);
+        command("middle",doing,Map.of("command","change","tagId",tag,"reason","重点跟进"),true);
+        comments.create(actors.get("middle"),"task",doing,Map.of("body","评论独立于任务进展与审核，请确认清单。"));
+        String revoked=create("comment-revoked","upper","评论撤权边界",List.of("employee"),schedule(),true);
+        comments.create(actors.get("upper"),"task",revoked,Map.of("body","撤权后旧评论通知不得恢复此正文。"));
+        var delivery=worker.getIfAvailable();
+        if(delivery!=null) for(int i=0;i<10 && n(db.one("SELECT COUNT(*) AS c FROM domain_events WHERE status='pending'"),"c")>0;i++) delivery.runOnce();
+        command("upper",revoked,Map.of("command","change","assigneeIds",List.of(stable("marketing")),"reason","转交其他部门，保留普通历史消息例外"),true);
+    }
+    private Map<String,Object> schedule() {return input(today,9,today.plusDays(7),18);}
+    private Map<String,Object> input(LocalDate start,int hour,LocalDate due,int dueHour) {
+        var result=new LinkedHashMap<String,Object>();result.put("allDay",false);
+        result.put("startAt",start.atTime(hour,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());
+        result.put("dueAt",due.atTime(dueHour,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());return result;
+    }
+    private String create(String key,String creator,String title,List<String> owners,Map<String,Object> schedule,boolean approve) {
+        var body=new LinkedHashMap<>(schedule);body.put("title",title);body.put("description","真实持久演示数据："+title);
+        body.put("priority",List.of("urgent","high","medium","low").get(Math.floorMod(key.hashCode(),4)));
+        body.put("assigneeIds",owners.stream().map(DemoSeed::stable).toList());
+        var result=tasks.create(actors.get(creator),body);if(approve) approve(result);
+        remember("task-"+key,"task",s(result,"taskId"));return s(result,"taskId");
+    }
+    private long version(String task) {return n(db.one("SELECT row_version FROM tasks WHERE id=?",task),"rowVersion");}
+    private String etag(String task) {return "\""+version(task)+"\"";}
+    private void command(String who,String task,Map<String,Object> body,boolean approve) {
+        var result=tasks.change(actors.get(who),task,etag(task),body);if(approve) approve(result);
+    }
+    private void decide(Map<String,Object> request,String decision,String who) {
+        tasks.decide(actors.get(who),s(request,"id"),"\""+n(request,"rowVersion")+"\"",Map.of("decision",decision,"comment","演示业务决定："+decision));
     }
     private void approve(Map<String,Object> result) {
-        String rid=s(result,"requestId");if(rid==null) return;
-        var r=db.one("SELECT * FROM approval_requests WHERE id=?",rid);if(!"pending".equals(s(r,"status"))) return;
-        Actor reviewer=actors.values().stream().filter(a->a.id().equals(s(r,"currentReviewerId"))).findFirst().orElseThrow();
-        tasks.decide(reviewer,rid,"\""+n(r,"rowVersion")+"\"",Map.of("decision","approve","comment","演示初始化审核通过"));
+        String rid=s(result,"requestId");if(rid==null)return;
+        var request=db.one("SELECT * FROM approval_requests WHERE id=?",rid);
+        if(!"pending".equals(s(request,"status")))return;
+        String reviewer=actors.entrySet().stream().filter(e->e.getValue().id().equals(s(request,"currentReviewerId"))).findFirst().orElseThrow().getKey();
+        decide(request,"approve",reviewer);
     }
 }

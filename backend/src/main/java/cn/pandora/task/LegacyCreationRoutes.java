@@ -45,13 +45,12 @@ public class LegacyCreationRoutes implements ApplicationRunner {
             String organizationId = s(organization, "id");
             // The administrator identity performs the same maintenance the console would; it grants no
             // business authority, and only the route metadata is rewritten.
-            Map<String, Object> admin = db.find(
-                    "SELECT * FROM users WHERE organization_id=? AND role='admin' AND active=1 ORDER BY created_at,id LIMIT 1",
-                    organizationId);
-            if (admin == null) continue;
-            Actor actor = access.actor(admin);
             try {
-                tx.executeWithoutResult(status -> tasks.refreshLegacyCreationRoutes(actor));
+                tx.executeWithoutResult(status -> {
+                    db.one("SELECT * FROM organizations WHERE id=? FOR UPDATE",organizationId);
+                    Map<String,Object> admin=db.find("SELECT a.*,'admin' AS account_type FROM admin_accounts a JOIN principals p ON p.organization_id=a.organization_id AND p.id=a.id AND p.account_type='admin' WHERE a.organization_id=? AND a.active=1 AND p.active=1",organizationId);
+                    if(admin!=null) tasks.refreshLegacyCreationRoutes(access.actor(admin));
+                });
             } catch (ApiException blocked) {
                 // A damaged organization must not stop the application from starting; the pending
                 // requests stay blocked and the repair is recorded for the administrator.

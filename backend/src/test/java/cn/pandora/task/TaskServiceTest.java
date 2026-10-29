@@ -2,6 +2,7 @@ package cn.pandora.task;
 
 import cn.pandora.auth.Access;
 import cn.pandora.auth.Actor;
+import cn.pandora.auth.CompanyTree;
 import cn.pandora.common.ApiException;
 import cn.pandora.common.Db;
 import cn.pandora.common.Events;
@@ -23,7 +24,7 @@ class TaskServiceTest {
     private static final String MANAGER_A = "10000000-0000-0000-0000-000000000004";
     private static final String MANAGER_B = "10000000-0000-0000-0000-000000000005";
     private static final String UPPER = "10000000-0000-0000-0000-000000000006";
-    private static final Actor ACTOR = new Actor(CREATOR, "org", "upper", "team", null, 1);
+    private static final Actor ACTOR = new Actor(CREATOR, "org", "founder", "team", null, 1);
 
     @Test
     void validatesUnicodeTextLengthsAndRequiredValues() {
@@ -78,117 +79,66 @@ class TaskServiceTest {
     }
 
     @Test
-    void theFirstHighestAssigneeInSavedOrderDecidesTheRoute() {
-        TaskService service = service(Map.of(
-                CREATOR, user(CREATOR, "upper", 1, null, true),
-                EMPLOYEE_A, user(EMPLOYEE_A, "lower", 3, MANAGER_A, true),
-                EMPLOYEE_B, user(EMPLOYEE_B, "lower", 3, MANAGER_B, true),
-                MANAGER_A, user(MANAGER_A, "middle", 2, UPPER, true),
-                MANAGER_B, user(MANAGER_B, "middle", 2, UPPER, true),
-                UPPER, user(UPPER, "upper", 1, null, true)));
-        // Same level, different chains: the saved order alone selects the reviewer (DEV-006).
-        assertEquals(MANAGER_A, route(service, List.of(EMPLOYEE_A, EMPLOYEE_B)).reviewerId());
-        assertEquals(MANAGER_B, route(service, List.of(EMPLOYEE_B, EMPLOYEE_A)).reviewerId());
-        assertEquals(EMPLOYEE_A, route(service, List.of(EMPLOYEE_A, EMPLOYEE_B)).basisAssigneeId());
-        assertEquals("manager-chain", route(service, List.of(EMPLOYEE_A, EMPLOYEE_B)).reason());
+    void assigneeOrderAndHierarchyNeverChangeBusinessOwnerReview() {
+        var people=Map.of(CREATOR,user(CREATOR,"employee",4,MANAGER_A,true),
+                EMPLOYEE_A,user(EMPLOYEE_A,"employee",4,MANAGER_A,true),
+                EMPLOYEE_B,user(EMPLOYEE_B,"employee",4,MANAGER_B,true),
+                UPPER,user(UPPER,"founder",1,null,true));
+        var service=service(people);
+        for(var owners:List.of(List.of(EMPLOYEE_A,EMPLOYEE_B),List.of(EMPLOYEE_B,EMPLOYEE_A),List.of(UPPER,EMPLOYEE_A))) {
+            var route=service.route(ACTOR,owners,CREATOR);
+            assertEquals(CREATOR,route.reviewerId());assertEquals("business-owner",route.reason());
+            assertTrue(route.directFor(CREATOR));assertFalse(route.directFor(EMPLOYEE_A));
+        }
     }
 
     @Test
-    void aLowerLevelAssigneeListedFirstDoesNotOutrankTheHighestLevel() {
-        TaskService service = service(Map.of(
-                CREATOR, user(CREATOR, "upper", 1, null, true),
-                EMPLOYEE_A, user(EMPLOYEE_A, "lower", 3, MANAGER_A, true),
-                MANAGER_A, user(MANAGER_A, "middle", 2, UPPER, true),
-                UPPER, user(UPPER, "upper", 1, null, true)));
-        TaskService.Route route = route(service, List.of(EMPLOYEE_A, UPPER));
-        assertEquals(UPPER, route.basisAssigneeId(), "the highest organization level wins regardless of position in the list");
-        assertEquals(CREATOR, route.reviewerId(), "the top level has no manager, so the creator reviews");
-        assertEquals("creator-fallback", route.reason());
+    void formalTakeoverHasTheOnlyCurrentReviewerAndOriginalCreatorIsNotAFallback() {
+        var service=service(Map.of(CREATOR,user(CREATOR,"employee",4,null,true),
+                EMPLOYEE_A,user(EMPLOYEE_A,"employee",4,null,true),EMPLOYEE_B,user(EMPLOYEE_B,"employee",4,null,true)));
+        assertEquals(EMPLOYEE_B,service.route(ACTOR,List.of(EMPLOYEE_A),EMPLOYEE_B).reviewerId());
+        var unavailable=user(EMPLOYEE_B,"employee",4,null,true);unavailable.put("reviewerAvailable",false);
+        var blocked=service(Map.of(CREATOR,user(CREATOR,"employee",4,null,true),
+                EMPLOYEE_A,user(EMPLOYEE_A,"employee",4,null,true),EMPLOYEE_B,unavailable))
+                .route(ACTOR,List.of(EMPLOYEE_A),EMPLOYEE_B);
+        assertTrue(blocked.blocked());assertFalse(blocked.directFor(CREATOR));
+        assertFalse(blocked.directFor(EMPLOYEE_B));
     }
 
     @Test
-    void anUnavailableOrInactiveManagerIsSkippedAndTheChainContinues() {
-        Map<String, Map<String, Object>> onLeave = new HashMap<>(Map.of(
-                CREATOR, user(CREATOR, "upper", 1, null, true),
-                EMPLOYEE_A, user(EMPLOYEE_A, "lower", 3, MANAGER_A, true),
-                MANAGER_A, user(MANAGER_A, "middle", 2, UPPER, true),
-                UPPER, user(UPPER, "upper", 1, null, true)));
-        // The direct manager is on leave (reviewer_available = FALSE) but still in the chain.
-        onLeave.get(MANAGER_A).put("reviewerAvailable", false);
-        assertEquals(UPPER, route(service(onLeave), List.of(EMPLOYEE_A)).reviewerId());
-
-        // An inactive manager is skipped as well.
-        assertEquals(UPPER, route(service(Map.of(
-                CREATOR, user(CREATOR, "upper", 1, null, true),
-                EMPLOYEE_A, user(EMPLOYEE_A, "lower", 3, MANAGER_A, true),
-                MANAGER_A, user(MANAGER_A, "middle", 2, UPPER, false),
-                UPPER, user(UPPER, "upper", 1, null, true))), List.of(EMPLOYEE_A)).reviewerId());
+    void inactiveAdminOrMissingOwnersCannotEnterBusinessRouting() {
+        var service=service(Map.of(CREATOR,user(CREATOR,"employee",4,null,true),
+                EMPLOYEE_A,user(EMPLOYEE_A,"admin",0,null,true),EMPLOYEE_B,user(EMPLOYEE_B,"employee",4,null,false)));
+        for(var owner:List.of(EMPLOYEE_A,EMPLOYEE_B,MANAGER_A))
+            assertThrows(ApiException.class,()->service.route(ACTOR,List.of(owner),CREATOR));
     }
 
     @Test
-    void aReviewerIsAlwaysRequiredEvenWhenTheCreatorIsTheBasis() {
-        TaskService service = service(Map.of(
-                CREATOR, user(CREATOR, "upper", 1, MANAGER_A, true),
-                MANAGER_A, user(MANAGER_A, "middle", 0, null, true)));
-        // The creator is also the only assignee: a higher manager reviews instead of an exemption (DEV-007).
-        TaskService.Route route = route(service, List.of(CREATOR));
-        assertEquals(MANAGER_A, route.reviewerId());
-        assertTrue(route.hasReviewer());
-
-        // With no acceptable manager at all the creator still reviews, never the applicant exemption.
-        TaskService selfManaged = service(Map.of(
-                CREATOR, user(CREATOR, "upper", 1, null, true)));
-        assertEquals(CREATOR, route(selfManaged, List.of(CREATOR)).reviewerId());
+    void creationUsesOnlyFixedFounderOrTheDerivedDirectManager() {
+        Db db=mock(Db.class);var tree=mock(CompanyTree.class);
+        Map<String,Map<String,Object>> people=new HashMap<>();
+        people.put(CREATOR,user(CREATOR,"founder",1,null,true));
+        people.put(EMPLOYEE_A,user(EMPLOYEE_A,"employee",4,MANAGER_A,true));
+        people.put(MANAGER_A,user(MANAGER_A,"team_head",3,CREATOR,true));
+        when(tree.of("org")).thenReturn(new CompanyTree.Tree(people,List.of(CREATOR),Set.of(),Set.of(),CREATOR,true,List.of()));
+        var service=new TaskService(db,mock(Access.class),mock(Events.class),java.time.Clock.systemUTC(),mock(ExpiryService.class),tree,mock(Tags.class));
+        assertEquals("founder-exempt",service.creationRoute(ACTOR,CREATOR).reason());
+        assertEquals(MANAGER_A,service.creationRoute(ACTOR,EMPLOYEE_A).reviewerId());
+        people.get(MANAGER_A).put("reviewerAvailable",false);
+        assertTrue(service.creationRoute(ACTOR,EMPLOYEE_A).blocked());
+        people.get(EMPLOYEE_A).put("managerId",null);
+        assertTrue(service.creationRoute(ACTOR,EMPLOYEE_A).blocked());
+        when(tree.of("org")).thenReturn(new CompanyTree.Tree(people,List.of(),Set.of(),Set.of(),null,false,List.of("FIXED_FOUNDER_REQUIRED")));
+        assertTrue(service.creationRoute(ACTOR,CREATOR).blocked());
     }
 
-    @Test
-    void aUsableCreatorIsTheFallbackAndOnlyNoReviewerAtAllIsAnExemption() {
-        TaskService service = service(Map.of(
-                CREATOR, user(CREATOR, "upper", 1, null, true),
-                UPPER, user(UPPER, "upper", 1, null, true)));
-        assertEquals(CREATOR, route(service, List.of(UPPER)).reviewerId());
-
-        TaskService unusableCreator = service(Map.of(
-                CREATOR, user(CREATOR, "upper", 1, null, false),
-                UPPER, user(UPPER, "upper", 1, null, true)));
-        TaskService.Route exempt = route(unusableCreator, List.of(UPPER));
-        assertFalse(exempt.hasReviewer(), "a genuinely unreachable reviewer is an exemption, not an error");
-        assertEquals("no-reviewer", exempt.reason());
-        assertEquals(UPPER, exempt.basisAssigneeId());
-    }
-
-    @Test
-    void corruptOrganizationDataBlocksRoutingInsteadOfExemptingIt() {
-        TaskService cycle = service(Map.of(
-                CREATOR, user(CREATOR, "upper", 1, null, true),
-                EMPLOYEE_A, user(EMPLOYEE_A, "lower", 3, MANAGER_A, true),
-                MANAGER_A, user(MANAGER_A, "middle", 2, EMPLOYEE_A, true)));
-        ApiException cyclic = assertThrows(ApiException.class, () -> route(cycle, List.of(EMPLOYEE_A)));
-        assertEquals("ROUTE_BLOCKED", cyclic.code);
-
-        TaskService dangling = service(Map.of(
-                CREATOR, user(CREATOR, "upper", 1, null, true),
-                EMPLOYEE_A, user(EMPLOYEE_A, "lower", 3, MANAGER_A, true)));
-        ApiException missing = assertThrows(ApiException.class, () -> route(dangling, List.of(EMPLOYEE_A)));
-        assertEquals("ROUTE_BLOCKED", missing.code);
-
-        TaskService unknownAssignee = service(Map.of(CREATOR, user(CREATOR, "upper", 1, null, true)));
-        assertThrows(ApiException.class, () -> route(unknownAssignee, List.of(EMPLOYEE_A)));
-        TaskService administrator = service(Map.of(
-                CREATOR, user(CREATOR, "upper", 1, null, true),
-                EMPLOYEE_A, user(EMPLOYEE_A, "admin", 0, null, true)));
-        assertThrows(ApiException.class, () -> route(administrator, List.of(EMPLOYEE_A)),
-                "an administrator never takes business ownership");
-    }
-
-    private static TaskService.Route route(TaskService service, List<String> owners) {
-        return service.route(ACTOR, owners, CREATOR);
-    }
-
-    private static TaskService service(Map<String, Map<String, Object>> people) {
-        Db db = mock(Db.class);
-        when(db.find(anyString(), any(), any())).thenAnswer(call -> people.get(call.getArgument(2)));
-        return new TaskService(db, mock(Access.class), mock(Events.class), java.time.Clock.systemUTC(), mock(ExpiryService.class));
+    private static TaskService service(Map<String,Map<String,Object>> people) {
+        var access=mock(Access.class);
+        when(access.activeUser(any(),any())).thenAnswer(call->{
+            var person=people.get(call.getArgument(1));
+            return person!=null && Boolean.TRUE.equals(person.get("active")) && !"admin".equals(person.get("role"))?person:null;
+        });
+        return new TaskService(mock(Db.class),access,mock(Events.class),java.time.Clock.systemUTC(),mock(ExpiryService.class));
     }
 
     @Test
@@ -200,9 +150,9 @@ class TaskServiceTest {
         Access access = mock(Access.class);
         when(db.list(startsWith("SELECT user_id FROM task_version_assignees"), eq("org"), eq("version")))
                 .thenReturn(List.of(Map.of("userId", "owner")));
-        when(access.activeUser(any(), eq("owner"))).thenReturn(user("owner", "lower", 3, null, true));
-        when(access.user(any(), eq("applicant"))).thenReturn(user("applicant", "upper", 0, null, true));
-        when(access.actor(any())).thenReturn(new Actor("applicant", "org", "upper", null, null, 0));
+        when(access.activeUser(any(), eq("owner"))).thenReturn(user("owner", "employee", 3, null, true));
+        when(access.user(any(), eq("applicant"))).thenReturn(user("applicant", "founder", 0, null, true));
+        when(access.actor(any())).thenReturn(new Actor("applicant", "org", "founder", null, null, 0));
         doThrow(new ApiException(400, "INVALID_INPUT", "负责人不可用"))
                 .when(access).requireCreationCandidate(any(), eq("owner"));
         TaskService service = new TaskService(db, access, mock(Events.class),
@@ -226,7 +176,7 @@ class TaskServiceTest {
         assertThrows(cn.pandora.common.ApiException.class,
                 () -> TaskService.optionalTextValue("x".repeat(2001), "acceptanceCriteria", 2000));
         assertEquals("创建按创建人的直属上级审核", TaskService.routeReasonText("direct-manager"));
-        assertEquals("创建人为员工组织树唯一根节点（创始人），记录原因后免审生效",
+        assertEquals("固定创始人创建，记录原因后直接生效",
                 TaskService.routeReasonText("founder-exempt"));
         assertTrue(TaskService.routeReasonText("manager-unavailable").contains("阻断"));
     }
@@ -237,10 +187,10 @@ class TaskServiceTest {
         TaskService.Route route = new TaskService.Route(null, "basis", List.of(), "no-reviewer",
                 TaskService.routeReasonText("no-reviewer"), 3L, false, false);
         Object[] args = TaskService.noReviewerApplyArgs(route, java.sql.Timestamp.from(Instant.EPOCH),
-                "org", "request", 7L);
+                "org", "request", 7L,"applicant");
         long placeholders = TaskService.NO_REVIEWER_APPLY_SQL.chars().filter(c -> c == '?').count();
         assertEquals(placeholders, args.length);
-        assertEquals(8, args.length);
+        assertEquals(9, args.length);
     }
 
     private static Map<String, Object> user(String id, String role, int rank, String manager, boolean active) {

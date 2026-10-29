@@ -105,7 +105,7 @@
   window.visibleTasks = function () { return TASKS.slice(); };
 
   /* Creation/modification candidates come from the server's real company directory (chapter 3.1):
-     creation is every active business member, modification keeps the historical dispatch range. */
+     creation and modification both use every active business member. */
   const candidateCache = { epoch: null, create: null, edit: null };
   let activePickerPurpose = "create";
   function pickerPurpose() { return drafts.task && drafts.task.mode === "edit" ? "edit" : "create"; }
@@ -155,12 +155,12 @@
     });
   };
   window.canEditTask = function (account, task) {
-    return !!(account && task && account.role !== "admin" && task.creatorId === account.id && !task.frozen && (task.status === "todo" || task.status === "doing"));
+    return !!(account && task && account.role !== "admin" && task.businessOwnerId === account.id && !task.frozen && (task.status === "todo" || task.status === "doing"));
   };
   window.canUpdateTaskNote = function (account, task) {
     return !!(account && task && account.role !== "admin" && !task.frozen && task.assigneeIds.indexOf(account.id) !== -1 && (task.status === "todo" || task.status === "doing"));
   };
-  function canReopen(task) { return !!(me() && task && task.creatorId === me().id && !task.frozen && task.status === "done"); }
+  function canReopen(task) { return !!(me() && task && task.businessOwnerId === me().id && !task.frozen && task.status === "done"); }
   window.completionReviewer = window.createReviewer = function (task) {
     const id = task && task.raw && task.raw.reviewerId;
     return id ? { id: id, name: personName(id, task.raw) } : null;
@@ -173,9 +173,18 @@
     return '<span class="badge ' + (STATUS_CLASS[task.status] || "b-normal") + '">' + esc(STATUS_LABEL[task.status] || "待开始") + '</span>' + (task.frozen ? '<span class="badge b-pending">审核中</span>' : '');
   };
 
+  /* The fixed placement decides the one-time default of a brand-new draft: an ordinary
+     employee starts with themselves as the only assignee, while founder, department head and
+     team head start empty. It is only the initial value, so a later removal or cancelled
+     selection stays a user decision instead of being corrected back (chapter 3.2). */
+  function creationDefaultAssignees() {
+    const account = me();
+    return account && account.role === "employee" ? [account.id] : [];
+  }
   window.taskDraftFrom = function (mode, id) {
     const value = originalDraft(mode, id);
     if (!value) return null;
+    if (mode === "create") value.assigneeIds = creationDefaultAssignees();
     const task = id && taskById(id);
     value.acceptanceCriteria = task && task.raw ? task.raw.acceptanceCriteria || "" : "";
     value.reason = "";
@@ -217,10 +226,10 @@
         ? "创建审核人：" + who + "（按创建人的直属上级审核；负责人换序、更换或跨部门都不改变审核人）。"
         : "本次审核人：" + who + "；提交后由该审核人处理。";
     }
-    const reason = preview.exemptionReason || (preview.route && preview.route.reasonText) || "无可用审核人";
+    const reason = preview.exemptionReason || (preview.route && preview.route.reasonText) || "申请人即审核人";
     return kind === "creation"
       ? "无需审核：" + reason + "；提交后直接生效。"
-      : "无可用审核人：" + reason + "；提交后记录原因直接生效。";
+      : "直接生效：" + reason + "；提交后记录原因直接生效。";
   }
   function creationMode(mode) { return mode === "create" || mode === "resubmit"; }
   /* Named distinctly: a local `taskFormView` declaration would shadow the captured base function
@@ -348,7 +357,7 @@
     const raw = task.raw || {};
     let body = '<div class="row wrap">' + statusBadge(task) + urgencyBadge(task.urgency) + allDayBadge(task) + kindTag(task, actor()) +
       (raw.tag && P.tagPillHTML ? P.tagPillHTML(raw.tag) : '') + '</div>';
-    body += '<div class="kv">' + kv("任务名称", task.title) + kv("创建者", personName(task.creatorId, raw)) + kv("创建时间", when(raw.createdAt)) +
+    body += '<div class="kv">' + kv("任务名称", task.title) + kv("创建者", personName(task.creatorId, raw)) + kv("创建时间", when(raw.createdAt)) + kv("当前业务责任方",personName(task.businessOwnerId,raw)) +
       kv("任务排期", fmtSchedule(task)) + kv("截止", when(raw.dueAt) + (isOverdue(task) ? " · 已逾期" : "")) +
       kv("负责人", peopleText(task.assigneeIds, raw)) + kv("审核人", raw.reviewerId ? personName(raw.reviewerId, raw) : "待配置") +
       kv("任务说明", task.desc || "暂无") + (raw.acceptanceCriteria ? kv("完成标准", raw.acceptanceCriteria) : "") + kv("当前进展", task.progressNote || "暂无") + '</div>';
@@ -422,6 +431,13 @@
         '<div class="field" style="flex:1" id="rp-end-time-field"' + (d.allDay ? " hidden" : "") + '><label for="rp-end-time-hour">截止时刻</label>' +
         P.timeControl("rp-end-time", d.endTime) + "</div></div></div>";
   }
+  function reopenOwnersHTML() {
+    const selected=reopenDraft.assigneeIds;
+    return '<div class="field"><label for="rp-owner-add">负责人（按添加顺序）</label><ol id="rp-owner-list">'+selected.map((id,index)=>'<li>'+esc(personName(id))+' <button type="button" class="btn tiny-btn" data-action="rp-owner-remove" data-index="'+index+'">移除</button></li>').join('')+'</ol><select id="rp-owner-add"><option value="">选择要添加的员工</option>'+(candidateCache.edit||[]).filter(p=>!selected.includes(p.id)).map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('')+'</select><button type="button" class="btn" data-action="rp-owner-add">添加负责人</button></div>';
+  }
+  function refreshReopenOwners() {
+    const list=document.getElementById('rp-owner-list');if(list)list.closest('.field').outerHTML=reopenOwnersHTML();
+  }
   function actionView(command, id) {
     const task = taskById(id);
     if (!task || (command === "reopen" ? !canReopen(task) : !canUpdateTaskNote(actor(), task))) return null;
@@ -436,10 +452,10 @@
     const buttonAction = command === "progress" ? "save-note" : command === "complete" ? "confirm-complete" : "p-confirm-reopen";
     let body;
     if (command === "reopen") {
-      reopenDraft = reopenSchedule(task);
-      body = '<div class="callout info">仅原创建者可发起重开；原因与新排期一并提交审核。通过后发布新排期、回到进行中并进入新的执行轮次；拒绝、撤销或失效保留原已完成状态。</div>' +
+      reopenDraft = Object.assign(reopenSchedule(task),{assigneeIds:task.assigneeIds.slice()});
+      body = '<div class="callout info">当前业务责任方可重开，并同步安排新的有效负责人；保存后进入新执行轮次。</div>' +
         '<div class="callout info">' + esc(previewHint(context.preview, "non-creation")) + '</div>' +
-        reopenScheduleHTML() + textField("reopen-reason", "重开原因（必填，最多500字）", "", 500, true) + errorBox(errorId);
+        reopenScheduleHTML() + reopenOwnersHTML() + textField("reopen-reason", "重开原因（必填，最多500字）", "", 500, true) + errorBox(errorId);
     } else {
       body = '<div class="callout info">' + hint + '</div>' +
         '<div class="callout info">' + esc(previewHint(context.preview, "non-creation")) + '</div>' +
@@ -457,6 +473,7 @@
       if (!stillHere(mark)) return;
       if (!raw.currentVersionId) throw new Error("任务尚未发布，不能执行该操作。");
       P.upsertTask(raw);
+      if(command==="reopen")await loadCandidates("edit");
       actionPreviews.set(command + ":" + id, await previewOperation({ taskId: id, operation: command }));
       if (!stillHere(mark)) return;
       const view = actionView(command, id);
@@ -473,6 +490,8 @@
       const body = { command: command };
       if (command === "reopen") {
         body.reason = required(inputValue("reopen-reason"), "重开原因", 500);
+        body.assigneeIds=reopenDraft.assigneeIds.slice();
+        if(!body.assigneeIds.length)throw new Error("重开须选择至少一位有效负责人。");
         const draft = reopenDraft;
         if (!draft) throw new Error("重开表单已失效，请重新打开。");
         draft.allDay = !!(document.getElementById("rp-allday") || {}).checked;
@@ -655,7 +674,9 @@
     return owners;
   }
   function requestHandoverPreview(taskId, owners) {
-    return P.request("/tasks/reviewer-preview", { method: "POST", body: { taskId: taskId, assigneeIds: owners } });
+    // A handover is not a business-owner edit: without the explicit operation the preview validates
+    // the change rule and reports "applicant no longer allowed" for the owner who is only handing over.
+    return P.request("/tasks/reviewer-preview", { method: "POST", body: { taskId: taskId, assigneeIds: owners, operation: "handover" } });
   }
   function handoverPreviewText(preview) {
     if (!preview) return "正在计算审核人…";
@@ -663,7 +684,7 @@
     if (preview.requiresApproval) {
       return "审核人：" + personName(preview.reviewerId, preview.route || {}) + "（提交后由该审核人处理）";
     }
-    const reason = preview.route && preview.route.reasonText ? preview.route.reasonText : "无可用审核人";
+    const reason = preview.route && preview.route.reasonText ? preview.route.reasonText : "申请人即审核人";
     return "无需审核人：" + reason + "；提交后直接生效。";
   }
   function handoverPreviewFor(ctx, source) {
@@ -850,6 +871,9 @@
   }
 
   window.runAction = function (element) {
+    if(element.dataset.action==='rp-owner-add'&&reopenDraft){const id=inputValue('rp-owner-add');if(id&&!reopenDraft.assigneeIds.includes(id))reopenDraft.assigneeIds.push(id);refreshReopenOwners();return;}
+    if(element.dataset.action==='rp-owner-remove'&&reopenDraft){reopenDraft.assigneeIds.splice(Number(element.dataset.index),1);refreshReopenOwners();return;}
+
     const action = element.dataset.action, id = element.dataset.id;
     if (action === "p-open-handover") return openHandoverSheet(id);
     if (action === "p-open-handover-preset") return P.openHandoverPreset(id, element.dataset.name);

@@ -1,0 +1,23 @@
+PASS login form ready founder
+PASS real phone session founder
+PASS founder can open real catalogue management
+PASS tag create persists from UI
+PASS tag rename and selected color persist
+PASS logical delete removes selectable catalogue entry
+PASS task detail retains deleted tag name and marker
+PASS real comment submit renders author controls
+PASS comment edit preserves author controls and edited state
+PASS second independent comment appears
+PASS comment delete removes its body from the actual detail
+PASS login form ready alpha-one-employee
+PASS real phone session alpha-one-employee
+PASS ordinary employee has no catalogue management entry
+PASS recipient can read but cannot edit another author comment
+PASS targeted comment and ordinary task notifications delivered
+PASS notification list uses header close without footer actions
+PASS comment notification offers a live comment focus jump
+PASS notification jump opens the correct object comment section
+PASS revoked comment UI cannot recover excerpt or any task/comment jump
+PASS ordinary task notification preserves historical-only button
+PASS historical task UI is read only without comment/approval/edit controls
+PASS communication UI has no runtime exceptions

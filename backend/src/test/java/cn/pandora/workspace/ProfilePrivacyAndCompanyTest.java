@@ -13,13 +13,13 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class ProfilePrivacyAndCompanyTest {
-    private static final Actor UPPER = new Actor("upper", "org", "upper", "team", null, 1);
+    private static final Actor UPPER = new Actor("upper", "org", "founder", null, null, 1);
 
     @Test
     void everyBusinessRoleIsRejectedBeforeCreatingCompanyInformation() {
         Db db = mock(Db.class);
         WorkspaceService service = new WorkspaceService(db, mock(Access.class), mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
-        for (String role : List.of("upper", "middle", "lower")) {
+        for (String role : List.of("founder", "department_head", "team_head", "employee")) {
             Actor actor = new Actor(role, "org", role, "team", null, 1);
             ApiException error = assertThrows(ApiException.class, () -> service.createHomeItem(actor, Map.of("kind", "company", "body", "公司信息")));
             assertEquals(403, error.status);
@@ -55,15 +55,17 @@ class ProfilePrivacyAndCompanyTest {
     void contactFieldsAreOnlyIncludedInSelfProfileNotUserDirectories() {
         Db db = mock(Db.class);
         Access access = mock(Access.class);
-        Map<String, Object> row = new LinkedHashMap<>(Map.of("id", "upper", "username", "upper", "displayName", "本人", "role", "upper", "active", true,
+        Map<String, Object> row = new LinkedHashMap<>(Map.of("id", "upper", "displayName", "本人", "role", "founder", "active", true,
                 "phone", "13800000000", "email", "private@example.test", "profileVersion", 2L));
         when(db.one(anyString(), eq("upper"), eq("org"))).thenReturn(row);
-        when(db.list(anyString(), eq("org"))).thenReturn(List.of(row));
+        when(access.employeeDirectory(eq(UPPER), anyBoolean())).thenReturn(List.of(row));
+        when(db.one(startsWith("SELECT name,time_zone"),eq("org"))).thenReturn(Map.of("name","潘多拉","timeZone","Asia/Shanghai"));
         when(access.canSeePerson(eq(UPPER), anyMap())).thenReturn(true);
         WorkspaceService service = new WorkspaceService(db, access, mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         assertEquals("private@example.test", service.me(UPPER).get("email"));
         for (boolean admin : List.of(false, true)) {
             Map<String, Object> person = ((List<Map<String, Object>>) service.users(UPPER, Map.of(), admin).get("items")).getFirst();
+            assertFalse(person.containsKey("username"));
             assertFalse(person.containsKey("phone"));
             assertFalse(person.containsKey("email"));
             assertFalse(person.containsKey("profileVersion"));
@@ -77,7 +79,8 @@ class ProfilePrivacyAndCompanyTest {
         Map<String, Object> raw = Map.of("id", "report", "phone", "13800000000", "email", "private@example.test",
                 "passwordHash", "secret", "departmentName", "产品部", "positionName", "专员",
                 "teamName", "产品部", "managerName", "李敏");
-        when(db.one(anyString(), eq("report"), eq("org"))).thenReturn(raw);
+        when(access.employeeDirectory(UPPER,false)).thenReturn(List.of(raw));
+        when(db.one(startsWith("SELECT phone"),eq("report"),eq("org"))).thenReturn(raw);
         when(access.canSeePerson(UPPER, raw)).thenReturn(true);
         WorkspaceService service = new WorkspaceService(db, access, mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         assertFalse(service.person(UPPER, "report").containsKey("phone"));
@@ -97,10 +100,11 @@ class ProfilePrivacyAndCompanyTest {
     void meAddsTheReadOnlyCompanyTimeZoneWithoutWideningContactFields() {
         Db db = mock(Db.class);
         Access access = mock(Access.class);
-        Map<String, Object> row = new LinkedHashMap<>(Map.of("id", "upper", "username", "upper", "displayName", "本人",
-                "role", "upper", "active", true, "organizationName", "潘多拉", "organizationTimeZone", "Asia/Shanghai"));
+        Map<String, Object> row = new LinkedHashMap<>(Map.of("id", "upper", "displayName", "本人",
+                "role", "founder", "active", true, "organizationName", "潘多拉", "organizationTimeZone", "Asia/Shanghai"));
         when(db.one(anyString(), eq("upper"), eq("org"))).thenReturn(row);
-        when(db.list(anyString(), eq("org"))).thenReturn(List.of(row));
+        when(access.employeeDirectory(eq(UPPER), anyBoolean())).thenReturn(List.of(row));
+        when(db.one(startsWith("SELECT name,time_zone"),eq("org"))).thenReturn(Map.of("name","潘多拉","timeZone","Asia/Shanghai"));
         WorkspaceService service = new WorkspaceService(db, access, mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         Map<String, Object> me = service.me(UPPER);
         assertEquals("Asia/Shanghai", me.get("organizationTimeZone"));

@@ -1,0 +1,134 @@
+{
+  "updated": "2026-10-29T02:11:23.108784+00:00",
+  "checks": [
+    {
+      "check": "fixed founder creates directly without a pending request",
+      "pass": true,
+      "evidence": [
+        201,
+        {
+          "taskId": "5591726f-b603-46e7-b91c-4422badef208",
+          "requestId": "b571d445-ee07-4211-ba1e-5c579ca76f7d",
+          "outcome": "direct",
+          "rowVersion": 2
+        }
+      ]
+    },
+    {
+      "check": "self change applies directly with a documented reason",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct request stores applicant decision and exemption reason",
+      "pass": true,
+      "evidence": [
+        [
+          "direct",
+          "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "申请人即当前业务责任方，记录原因后直接生效"
+        ]
+      ]
+    },
+    {
+      "check": "direct change records no self-review entry",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct change history is durable",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "detail exposes no re-approval entry for the direct change",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct apply cannot bypass the task version",
+      "pass": true,
+      "evidence": {
+        "status": 412
+      }
+    },
+    {
+      "check": "direct apply requires If-Match",
+      "pass": true,
+      "evidence": {
+        "status": 428
+      }
+    },
+    {
+      "check": "direct apply refuses an empty effective owner list",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "负责人须为1至100个账号"
+      }
+    },
+    {
+      "check": "direct apply refuses a cross-company owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct apply rechecks the parent-task relationship",
+      "pass": true,
+      "evidence": {
+        "status": 400
+      }
+    },
+    {
+      "check": "direct change succeeds with an idempotency key",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "same-key replay returns the cached direct result without a new version",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "replay": {
+          "taskId": "5591726f-b603-46e7-b91c-4422badef208",
+          "outcome": "direct",
+          "requestId": "8f7f6298-ef6e-4f32-bbd0-bf49cd2089a4",
+          "rowVersion": 4
+        },
+        "version": 4
+      }
+    },
+    {
+      "check": "different applicant and reviewer stays pending without direct publication",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "pending request leaves the old effective progress",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct apply cannot bypass the unique pending freeze",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "direct self change cannot bypass the applicable deadline",
+      "pass": true,
+      "evidence": {
+        "code": "DEADLINE_PASSED",
+        "message": "提交的排期或当前有效截止时间已到，请调整后重提"
+      }
+    },
+    {
+      "check": "a second operation cannot bypass an existing pending freeze",
+      "pass": true,
+      "evidence": {
+        "code": "TASK_FROZEN",
+        "message": "任务有待审核申请，请先处理或撤销"
+      }
+    }
+  ],
+  "result": "PASS"
+}
