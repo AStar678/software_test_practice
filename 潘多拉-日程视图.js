@@ -645,7 +645,7 @@
   }
   function dayHTML() {
     const d = state.viewAnchor;
-    const heading = '<header class="p-day-view-heading"><h2 tabindex="-1">' + dayLabel(d) + ' <span>' + weekday(d) + '</span></h2><div class="p-day-display-modes" role="group" aria-label="当日日程显示方式">' +
+    const heading = '<header class="p-day-view-heading"><div class="p-day-heading-main"><button type="button" class="p-day-month-return" data-action="schedule-return-month">' + icons.left + '<span>返回月视图</span></button><h2 tabindex="-1">' + dayLabel(d) + ' <span>' + weekday(d) + '</span></h2></div><div class="p-day-display-modes" role="group" aria-label="当日日程显示方式">' +
       [['timeline','时间轴'],['list','任务清单']].map(([mode,label]) => '<button type="button" data-action="schedule-day-mode" data-day-mode="' + mode + '" aria-pressed="' + (dayDisplay===mode) + '" aria-controls="p-day-panel">' + label + '</button>').join('') + '</div></header>';
     const panel = dayDisplay==='list' ? dayListHTML(d) : '<section id="p-day-panel" class="p-time-panel" aria-label="'+dayLabel(d)+'日程时间轴">' +
       '<div class="p-day-allday"><span class="p-allday-label">全天</span><div class="p-allday-scroll">' + allDayHTML(d) + '</div></div>' +
@@ -932,6 +932,17 @@
     updateView();
     document.querySelector('.p-day-view-heading h2')?.focus({preventScroll:true});
   }
+  function returnToMonth() {
+    sideOpen = false;
+    daySheet = null;
+    pendingDrawerFocus = false;
+    if (!monthStream.includes(monthKey(state.viewAnchor))) resetStream(state.viewAnchor);
+    state.viewMode = 'month';
+    updateView();
+    requestAnimationFrame(function () {
+      document.querySelector('.p-month-date.is-selected')?.focus({preventScroll:true});
+    });
+  }
   /* 从某一天创建时，等表单完成异步准备后再写入该业务日；不传日期时保留表单默认值。 */
   function createTask(date) {
     const d = date ? parseDateInput(date) : null;
@@ -968,6 +979,7 @@
     }
     if (action==='schedule-side-close') { closeDrawer(); return; }
     if (action==='schedule-day-close') { closeDaySheet(); return; }
+    if (action==='schedule-return-month') { returnToMonth(); return; }
     if (action==='schedule-day-view') {
       const date = daySheet ? daySheet.date : el.dataset.date;
       daySheet = null;

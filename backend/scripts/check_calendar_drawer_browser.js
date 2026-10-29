@@ -44,7 +44,7 @@ async function main() {
     return rect;
   };
   const key = async (name, code, keyCode, modifiers = 0) => {
-    await send('Input.dispatchKeyEvent', { type: 'keyDown', key: name, code, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode, modifiers });
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key: name, code, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode, modifiers, ...(name === 'Enter' ? { text: '\r', unmodifiedText: '\r' } : {}) });
     await send('Input.dispatchKeyEvent', { type: 'keyUp', key: name, code, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode, modifiers });
     await sleep(60);
   };
@@ -330,6 +330,35 @@ async function main() {
     const dayView = await waitFor(b, "state.viewMode==='day'&&!document.querySelector('.p-day-sheet')");
     const dayState = await ev("({anchor:+state.viewAnchor,mode:state.viewMode,heading:document.querySelector('.p-day-view-heading h2')&&document.querySelector('.p-day-view-heading h2').textContent,items:document.querySelectorAll('.p-axis-event,.p-all-day-event').length})");
     check('only 查看日视图 switches to the day mode for that date', dayView && dayState.anchor === +(await ev(`+parseDateInput(${js(fixture.day)})`)) && dayState.items > 0, dayState);
+
+    /* A direct return is always available, without reopening the view drawer. */
+    for (const [width, height] of [[390, 844], [320, 740], [768, 900], [1440, 900]]) {
+      await b.viewport({ width, height, mobile: width < 1000 });
+      await setView(fixture.day);
+      await reveal(`.p-month-date[data-date="${fixture.day}"]`);
+      const beforeDay = await stateSnapshot();
+      await click(`.p-month-date[data-date="${fixture.day}"]`);
+      await waitFor(b, "!!Pandora.calendar.currentDaySheet()");
+      await click('[data-action=schedule-day-view]');
+      await waitFor(b, "state.viewMode==='day'&&!document.querySelector('.p-day-sheet')");
+      const returnGeometry = await ev("(()=>{const button=document.querySelector('[data-action=schedule-return-month]'),r=button.getBoundingClientRect(),heading=document.querySelector('.p-day-view-heading'),h=heading.getBoundingClientRect();return {label:button.textContent.trim(),width:r.width,height:r.height,visible:r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight,headingFits:heading.scrollWidth<=heading.clientWidth+1,drawer:Pandora.calendar.drawerOpen(),headingTop:h.top}})()");
+      check('the day view exposes a visible, touch-sized return to month at ' + width, returnGeometry.label === '返回月视图' && returnGeometry.width >= 44 && returnGeometry.height >= 44 && returnGeometry.visible && returnGeometry.headingFits && !returnGeometry.drawer, returnGeometry);
+      await b.screenshot(output.replace('calendar-drawer.json', 'calendar-return-month-' + width + '.png'));
+      await ev("document.querySelector('.p-timeline-scroll').scrollTop=1000");
+      const fixedHeading = await rectOf('.p-day-view-heading');
+      check('return to month stays visible while the day timeline scrolls at ' + width, Math.abs(fixedHeading.top - returnGeometry.headingTop) < 1, fixedHeading);
+      if (width === 320 || width === 768) await click('[data-action=schedule-day-mode][data-day-mode=list]');
+      if (width === 390) {
+        await ev("document.querySelector('[data-action=schedule-return-month]').focus()");
+        await key('Enter', 'Enter', 13);
+      } else await click('[data-action=schedule-return-month]');
+      await waitFor(b, "state.viewMode==='month'&&!!document.querySelector('.p-month-date.is-selected')");
+      const afterDay = await stateSnapshot();
+      const returnFocus = await ev("({date:document.activeElement&&document.activeElement.dataset.date,selected:!!document.activeElement&&document.activeElement.matches('.p-month-date.is-selected'),button:!!document.querySelector('[data-action=schedule-return-month]')})");
+      check('return to month preserves date, density, month stream and scroll at ' + width, afterDay.mode === 'month' && afterDay.anchor === beforeDay.anchor && afterDay.rowHeight === beforeDay.rowHeight && JSON.stringify(afterDay.stream) === JSON.stringify(beforeDay.stream) && Math.abs(afterDay.scroll - beforeDay.scroll) < 1 && !afterDay.sheet && !afterDay.drawer, { beforeDay, afterDay });
+      check('return to month restores focus to the selected date at ' + width, returnFocus.date === fixture.day && returnFocus.selected && !returnFocus.button, returnFocus);
+    }
+    await b.viewport({ width: 390, height: 844, mobile: true });
 
     /* empty day creates for that date */
     await setView(fixture.day);
