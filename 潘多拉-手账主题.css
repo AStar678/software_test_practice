@@ -235,17 +235,6 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
 .notif .nmeta { color: var(--muted); }
 .review-item, .pick-item, .child-task { border-color: var(--line); }
 
-/* Wide task tables remain tables; sticky headers retain opaque surfaces. */
-.p-table-header, .p-table-pager { background: var(--card); border-color: var(--line); }
-.p-task-table-card .p-table-filters { background: var(--bg); border-color: var(--line-2); }
-.p-task-table-card .p-table-counts { background: #f5effa; border-color: var(--line); }
-.p-task-table caption { background: var(--card); }
-.p-task-table thead th { background: #f4eaf1; color: var(--ink-2); }
-.p-task-table thead th[aria-sort="ascending"], .p-task-table thead th[aria-sort="descending"] { background: var(--brand-soft); }
-.p-task-table tbody tr:hover td, .p-task-table tbody tr:hover th { background: var(--bg); }
-.p-table-tag.is-created { background: var(--journal-mint); color: var(--ok); }
-.p-table-tag.is-pending { background: var(--journal-butter); color: var(--warn); }
-
 /* The management console shares the journal's controls, with no navigation changes. */
 .pandora-admin { background: var(--bg); }
 .pandora-admin > header { background: var(--card); border-color: var(--line); }
@@ -409,18 +398,6 @@ body { font-size: 17px; line-height: 1.65; }
 .avatar-upload input[type="file"] { padding: 8px; font-size: 14px; }
 .avatar-upload input::file-selector-button { min-height: 34px; border: 0; border-radius: 8px; margin-right: 8px; padding: 4px 10px; color: var(--brand); background: var(--brand-soft); font: inherit; }
 
-.p-task-table, .p-task-table-card .p-table-field, .p-table-pager { font-size: 14px; }
-.p-task-table-card .p-table-heading h2 { font-size: 21px; }
-.p-table-source, .p-task-table-card .p-table-source { font-size: 14px; }
-.p-task-table caption, .p-task-table thead th, .p-table-sort { font-size: 13px; }
-.p-task-table td[data-field="start"], .p-task-table td[data-field="due"], .p-task-table td[data-field="createdAt"] { font-size: 13px; }
-.p-table-back, .p-table-field input, .p-table-field select { font-size: 16px; }
-.p-task-table-card .p-table-count { font-size: 12px; }
-.p-task-table-card .p-table-count b { font-size: 20px; }
-.p-table-tag { font-size: 12px; line-height: 19px; }
-.p-table-arrow { font-size: 12px; }
-.p-table-empty-body { font-size: 15px; }
-.p-task-table th, .p-task-table td { padding: 8px; }
 .pandora-admin { font-size: 17px; }
 .pandora-admin header h1 { font-size: 22px; }
 .pandora-admin th, .pandora-admin td, .pandora-admin nav button, .pandora-admin button.primary, .pandora-admin button.ghost { font-size: 15px; }
@@ -442,12 +419,6 @@ body { font-size: 17px; line-height: 1.65; }
   .p-schedule-toolbar .p-schedule-create { grid-column: 4; grid-row: 1; }
   .p-calendar-tools { grid-column: 1 / -1; grid-row: 2; display: flex; }
   .p-calendar-tools .p-text-button { min-height: 32px; padding-block: 3px; }
-}
-@media (max-width: 640px) {
-  .p-table-heading .p-table-source { display: none; }
-  .p-task-table-card .p-table-header, .p-task-table-card .p-table-filters, .p-task-table-card .p-table-counts { padding-inline: 10px; }
-  .p-task-table-card .p-table-count { font-size: 11px; }
-  .p-task-table-card .p-table-count b { font-size: 18px; }
 }
 @media (max-width: 359px) {
   .app-header .who { font-size: 13px; }

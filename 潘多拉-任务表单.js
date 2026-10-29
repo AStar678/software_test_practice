@@ -13,13 +13,22 @@
   const URGENCY_RANK = { "紧急": 0, "高": 1, "中": 2, "低": 3 };
   const STATUS_RANK = { todo: 0, doing: 1, done: 2 };
   const PENDING_LABEL = { create: "待创建审核", change: "修改资料待审", progress: "更新进展待审", complete: "完成待审", reopen: "重开待审", handover: "交接待审" };
+  const COLUMN_VIEWS = {
+    overview: { label: "概览", fields: ["title", "summary", "schedule", "assignees", "description"] },
+    schedule: { label: "排期", fields: ["title", "start", "due", "urgency", "status", "allDay", "overdue"] },
+    details: { label: "资料", fields: ["title", "assignees", "creator", "createdAt", "description", "acceptance", "progress", "parent"] },
+    all: { label: "全部列", fields: ["title", "relation", "status", "pending", "due", "urgency", "assignees", "start", "creator", "createdAt", "description", "acceptance", "allDay", "done", "progress", "overdue", "parent"] }
+  };
+  const FIELD_LABEL = { title: "任务", relation: "本人关系", status: "执行状态", pending: "待审 / 冻结", due: "截止时间", urgency: "紧急程度", assignees: "负责人", start: "开始时间", creator: "创建者", createdAt: "创建时间", description: "任务说明", acceptance: "完成标准", allDay: "排期类型", done: "是否完成", progress: "进展备注", overdue: "逾期", parent: "上级任务", summary: "状态", schedule: "排期" };
+  const FIELD_WIDTH = { title: "var(--p-title-width)", summary: "var(--p-summary-width)", schedule: "var(--p-schedule-width)", start: "136px", due: "136px", createdAt: "136px", assignees: "150px", creator: "150px", description: "220px", acceptance: "220px", progress: "220px", parent: "200px" };
 
   function defaultFilters() { return { relation: "all", completion: "all", query: "", from: "", to: "" }; }
   const T = {
     active: false, rows: [], loaded: false, loading: false, error: null,
     filters: defaultFilters(), sort: { key: "start", dir: "asc" },
     page: 0, queryTimer: 0, loadId: 0, result: null,
-    returnContext: null, discarding: false, scrollMemory: null
+    returnContext: null, discarding: false, scrollMemory: null,
+    columns: "overview", filtersOpen: false
   };
 
   /* ---------- 纯结果管线：不依赖会话状态，可由 node 检查脚本直接加载 ---------- */
@@ -166,6 +175,7 @@
     T.loadId += 1;
     T.active = false; T.rows = []; T.loaded = false; T.loading = false; T.error = null;
     T.returnContext = null; T.discarding = false;
+    T.columns = "overview"; T.filtersOpen = false; T.scrollMemory = null;
     resetFormState();
     state.viewPage = "calendar";
   }
@@ -211,6 +221,31 @@
     if (task.allDay) return raw.dueDate ? raw.dueDate + '（全天）' : "—";
     return companyDateTime(raw.dueAt, zone);
   }
+  function dateCell(task, zone, key) {
+    const value = key === "createdAt" ? companyDateTime(taskRaw(task).createdAt, zone) : scheduleCell(task, zone, key);
+    const match = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})$/.exec(value);
+    return '<td data-field="' + key + '"><span class="p-table-date">' + (match
+      ? '<span>' + match[1] + '</span><strong>' + match[2] + '</strong>' : esc(value)) + '</span></td>';
+  }
+  function compactSchedule(task, zone, key) {
+    const raw = taskRaw(task), value = scheduleCell(task, zone, key);
+    if (value === "—") return value;
+    const today = companyDateKey(new Date(), zone);
+    const short = today && value.slice(0, 4) === today.slice(0, 4) ? value.slice(5).replace(/-/g, "/") : value;
+    const parts = short.replace("（全天）", "").split(" ");
+    return '<time datetime="' + esc(task.allDay ? raw[key === "start" ? "startDate" : "dueDate"] : raw[key === "start" ? "startAt" : "dueAt"]) + '" title="' + esc(value) + '" aria-label="' + esc(value) + '">' + parts.map(part => '<span>' + esc(part) + '</span>').join("") + '</time>';
+  }
+  function titleCell(task) {
+    return '<th scope="row" data-field="title"><button type="button" class="p-table-title" data-task="' + esc(task.id) + '" title="' + esc(task.title || "任务") + '"><span class="p-table-title-text">' + esc(task.title || "任务") + '</span></button>' +
+      (T.columns === "overview" ? '<div class="p-table-title-meta">' + relationTags(task) + '<span class="p-table-priority" data-priority="' + esc(task.urgency || "中") + '">' + esc(task.urgency || "中") + '</span></div>' : '') + '</th>';
+  }
+  function summaryCell(task) {
+    const raw = taskRaw(task), kind = task.pendingKind || raw.pendingKind;
+    return '<td data-field="summary"><div class="p-table-cell-stack">' + statusBadge(task) +
+      (kind ? '<span class="p-table-pending">' + esc(PENDING_LABEL[kind] || "待审") + '</span>' : '') +
+      (task.frozen || raw.frozen ? '<span class="p-table-frozen">冻结</span>' : '') +
+      (taskIsOverdue(task) ? '<span class="p-table-overdue">已逾期</span>' : '') + '</div></td>';
+  }
   function pendingCell(task) {
     const raw = taskRaw(task);
     const kind = task.pendingKind || raw.pendingKind;
@@ -225,50 +260,47 @@
     if (!parent) return '<td data-field="parent">—</td>';
     return '<td data-field="parent"><button type="button" class="p-table-link" data-task="' + esc(parent.id) + '">' + esc(parent.title) + '</button></td>';
   }
-  /* 手机首屏优先任务识别与处理信息；低优先级资料仍完整保留在右侧。
-     表头与单元格顺序逐列一致，筛选/排序/计数管线不变（第六章 6.2）。 */
-  function rowHTML(task, zone) {
+  function cellHTML(task, zone, field) {
     const raw = taskRaw(task);
-    const overdue = taskIsOverdue(task);
-    return '<tr data-task-row="' + esc(task.id) + '">' +
-      '<th scope="row" data-field="title"><button type="button" class="p-table-title" data-task="' + esc(task.id) + '">' + esc(task.title || "任务") + '</button></th>' +
-      '<td data-field="relation">' + relationTags(task) + '</td>' +
-      '<td data-field="status">' + statusBadge(task) + '</td>' +
-      pendingCell(task) +
-      '<td data-field="due">' + esc(scheduleCell(task, zone, "due")) + '</td>' +
-      '<td data-field="urgency">' + urgencyBadge(task.urgency) + '</td>' +
-      '<td data-field="assignees">' + esc(namesText(task.assigneeIds, raw)) + '</td>' +
-      '<td data-field="start">' + esc(scheduleCell(task, zone, "start")) + '</td>' +
-      '<td data-field="creator">' + esc(personLabel(task.creatorId, raw)) + '</td>' +
-      '<td data-field="createdAt">' + esc(companyDateTime(raw.createdAt, zone)) + '</td>' +
-      previewCell(task.desc, "description") +
-      previewCell(task.acceptanceCriteria || raw.acceptanceCriteria, "acceptance") +
-      '<td data-field="allDay">' + (task.allDay ? "全天" : "定时") + '</td>' +
-      '<td data-field="done">' + (taskIsDone(task) ? "是" : "否") + '</td>' +
-      previewCell(task.progressNote, "progress") +
-      '<td data-field="overdue">' + (overdue ? '<span class="badge b-urgent">已逾期</span>' : "—") + '</td>' +
-      parentCell(task) +
-      '</tr>';
+    if (field === "title") return titleCell(task);
+    if (field === "summary") return summaryCell(task);
+    if (field === "schedule") return '<td data-field="schedule"><div class="p-table-schedule-stack"><span><small>起</small>' + compactSchedule(task, zone, "start") + '</span><span><small>止</small>' + compactSchedule(task, zone, "due") + '</span>' + (task.allDay ? '<span class="p-table-schedule-kind">全天</span>' : raw.startAt === raw.dueAt ? '<span class="p-table-schedule-kind">时间点</span>' : '') + '</div></td>';
+    if (["start", "due", "createdAt"].includes(field)) return dateCell(task, zone, field);
+    if (field === "description") return previewCell(task.desc, field);
+    if (field === "acceptance") return previewCell(task.acceptanceCriteria || raw.acceptanceCriteria, field);
+    if (field === "progress") return previewCell(task.progressNote, field);
+    if (field === "pending") return pendingCell(task);
+    if (field === "parent") return parentCell(task);
+    const values = {
+      relation: relationTags(task), status: statusBadge(task), urgency: urgencyBadge(task.urgency),
+      assignees: esc(namesText(task.assigneeIds, raw)), creator: esc(personLabel(task.creatorId, raw)),
+      allDay: task.allDay ? "全天" : "定时", done: taskIsDone(task) ? "是" : "否",
+      overdue: taskIsOverdue(task) ? '<span class="p-table-overdue">已逾期</span>' : "—"
+    };
+    return '<td data-field="' + field + '">' + values[field] + '</td>';
   }
-  function sortHeader(key, zone) {
+  function fields() { return COLUMN_VIEWS[T.columns].fields; }
+  function rowHTML(task, zone) {
+    return '<tr data-task-row="' + esc(task.id) + '">' + fields().map(field => cellHTML(task, zone, field)).join("") + '</tr>';
+  }
+  function sortButton(key, label) {
     const active = T.sort.key === key;
-    const direction = active ? T.sort.dir : "none";
     const arrow = active ? (T.sort.dir === "asc" ? "▲" : "▼") : "↕";
-    return '<th scope="col" aria-sort="' + (active ? (T.sort.dir === "asc" ? "ascending" : "descending") : "none") + '">' +
-      '<button type="button" class="p-table-sort" data-action="task-table-sort" data-key="' + key + '" aria-label="按' + SORT_LABEL[key] + '排序' +
-      (active ? '，当前' + (T.sort.dir === "asc" ? "升序" : "降序") : '') + '">' + SORT_LABEL[key] +
-      '<span class="p-table-arrow" aria-hidden="true">' + arrow + '</span></button></th>';
+    return '<button type="button" class="p-table-sort' + (active ? ' is-sorted' : '') + '" data-action="task-table-sort" data-key="' + key + '" aria-label="按' + SORT_LABEL[key] + '排序' +
+      (active ? '，当前' + (T.sort.dir === "asc" ? "升序" : "降序") : '') + '">' + (label || SORT_LABEL[key]) +
+      '<span class="p-table-arrow" aria-hidden="true">' + arrow + '</span></button>';
   }
   function headHTML() {
-    return '<tr>' + sortHeader("title") + '<th scope="col">本人关系</th>' + sortHeader("status") +
-      '<th scope="col">待审/冻结</th>' + sortHeader("due") + sortHeader("urgency") +
-      '<th scope="col">负责人</th>' + sortHeader("start") + '<th scope="col">创建者</th>' +
-      sortHeader("createdAt") + '<th scope="col">任务说明</th><th scope="col">完成标准</th>' +
-      '<th scope="col">排期类型</th>' + '<th scope="col">是否完成</th>' +
-      '<th scope="col">进展备注</th><th scope="col">逾期</th><th scope="col">上级任务</th></tr>';
+    return '<tr>' + fields().map(function (field) {
+      const key = field === "summary" ? "status" : field === "schedule" && ["start", "due"].includes(T.sort.key) ? T.sort.key : field;
+      const active = key === T.sort.key;
+      const label = field === "schedule" ? '<div class="p-table-schedule-sorts">' + sortButton("start", "开始") + sortButton("due", "截止") + '</div>'
+        : SORT_LABEL[key] ? sortButton(key, FIELD_LABEL[field]) : FIELD_LABEL[field];
+      return '<th scope="col" data-field="' + field + '"' + (SORT_LABEL[key] ? ' aria-sort="' + (active ? (T.sort.dir === "asc" ? "ascending" : "descending") : "none") + '"' : '') + '>' + label + '</th>';
+    }).join("") + '</tr>';
   }
   function emptyRow(message, action) {
-    return '<tr class="p-table-empty"><td colspan="17"><div class="p-table-empty-body">' + message + (action || "") + '</div></td></tr>';
+    return '<tr class="p-table-empty"><td colspan="' + fields().length + '"><div class="p-table-empty-body">' + message + (action || "") + '</div></td></tr>';
   }
   function pagerHTML(result) {
     if (!result || !T.loaded || T.error) return "";
@@ -280,16 +312,19 @@
   }
   function filterBarHTML() {
     return '<div class="p-table-filters" role="search" aria-label="任务表单筛选">' +
+      '<div class="p-table-filter-top"><label class="p-table-field p-table-search"><span class="sr-only">任务名称</span><input id="p-filter-query" type="search" autocomplete="off" maxlength="' + QUERY_MAX + '" placeholder="搜索任务名称" value="' + esc(T.filters.query) + '"></label>' +
+      '<button type="button" class="p-table-filter-toggle" id="p-table-filter-toggle" data-action="task-table-filters" aria-controls="p-table-filter-panel" aria-expanded="' + T.filtersOpen + '">筛选</button></div>' +
+      '<div class="p-table-filter-summary" id="p-table-filter-summary" hidden></div>' +
+      '<div class="p-table-filter-panel" id="p-table-filter-panel"' + (T.filtersOpen ? '' : ' hidden') + '>' +
       '<label class="p-table-field">关系<select id="p-filter-relation">' + Object.keys(RELATION_LABEL).map(function (key) {
         return '<option value="' + key + '"' + (T.filters.relation === key ? " selected" : "") + '>' + RELATION_LABEL[key] + '</option>';
       }).join("") + '</select></label>' +
       '<label class="p-table-field">完成<select id="p-filter-completion">' + Object.keys(COMPLETION_LABEL).map(function (key) {
         return '<option value="' + key + '"' + (T.filters.completion === key ? " selected" : "") + '>' + COMPLETION_LABEL[key] + '</option>';
       }).join("") + '</select></label>' +
-      '<label class="p-table-field p-table-search">任务名称<input id="p-filter-query" type="search" autocomplete="off" maxlength="' + QUERY_MAX + '" placeholder="输入名称片段" value="' + esc(T.filters.query) + '"></label>' +
-      '<label class="p-table-field">开始日期起<input id="p-filter-from" type="date" value="' + esc(T.filters.from) + '"></label>' +
-      '<label class="p-table-field">截止日期止<input id="p-filter-to" type="date" value="' + esc(T.filters.to) + '"></label>' +
-      '<button type="button" class="btn tiny-btn" data-action="task-table-clear-filters">清空筛选</button></div>' +
+      '<label class="p-table-field">日期从<input id="p-filter-from" type="date" value="' + esc(T.filters.from) + '"></label>' +
+      '<label class="p-table-field">日期至<input id="p-filter-to" type="date" value="' + esc(T.filters.to) + '"></label>' +
+      '<button type="button" class="btn tiny-btn" data-action="task-table-clear-filters">清空筛选</button></div></div>' +
       '<div class="callout reject" id="p-table-filter-error" role="alert" hidden></div>';
   }
   function pageHTML() {
@@ -297,10 +332,14 @@
       '<header class="p-table-header"><div class="p-table-heading">' +
         '<button type="button" class="p-table-back" data-action="task-table-close">返回日历</button>' +
         '<h2>任务表单</h2></div>' +
-        '<div class="p-table-tools"><button type="button" class="btn tiny-btn primary" data-action="task-table-refresh">刷新任务</button></div></header>' +
+        '<div class="p-table-tools"><button type="button" class="btn tiny-btn" data-action="task-table-refresh" aria-label="刷新任务">刷新</button></div></header>' +
       filterBarHTML() +
+      '<div class="p-table-column-views" id="p-table-column-views" role="group" aria-label="查看任务列">' + Object.keys(COLUMN_VIEWS).map(function (key) {
+        return '<button type="button" class="p-table-view-switch" data-action="task-table-columns" data-columns="' + key + '" aria-pressed="' + (T.columns === key) + '">' + COLUMN_VIEWS[key].label + '</button>';
+      }).join('') + '</div>' +
+      '<div class="p-table-column-nav"><span id="p-table-column-hint">左右滑动查看更多</span><div><button type="button" class="p-table-pan" data-action="task-table-pan" data-direction="-1" aria-label="向左查看任务列">‹</button><button type="button" class="p-table-pan" data-action="task-table-pan" data-direction="1" aria-label="向右查看更多任务列">›</button></div></div>' +
       '<div class="p-table-scroll" id="p-table-scroll" tabindex="0" role="region" aria-label="任务表，可纵向和横向滚动">' +
-        '<table class="p-task-table">' +
+        '<table class="p-task-table"><colgroup id="p-table-cols"></colgroup>' +
         '<thead id="p-table-head"></thead><tbody id="p-table-body"></tbody></table></div>' +
       '<nav class="p-table-pager" id="p-table-pager" aria-label="任务分页"></nav></section>';
   }
@@ -311,15 +350,75 @@
     box.hidden = !message;
   }
 
+  function syncFilterControls() {
+    const selected = [];
+    if (T.filters.relation !== "all") selected.push(RELATION_LABEL[T.filters.relation]);
+    if (T.filters.completion !== "all") selected.push(COMPLETION_LABEL[T.filters.completion]);
+    if (T.filters.from || T.filters.to) selected.push((T.filters.from || "不限开始") + " 至 " + (T.filters.to || "不限结束"));
+    const toggle = document.getElementById("p-table-filter-toggle"), panel = document.getElementById("p-table-filter-panel"), summary = document.getElementById("p-table-filter-summary");
+    if (toggle) { toggle.textContent = (T.filtersOpen ? "收起筛选" : "筛选") + (selected.length ? " · " + selected.length : ""); toggle.setAttribute("aria-expanded", String(T.filtersOpen)); }
+    if (panel) panel.hidden = !T.filtersOpen;
+    if (summary) { summary.textContent = selected.join(" · "); summary.title = selected.join(" · "); summary.hidden = !selected.length || T.filtersOpen; }
+    document.querySelectorAll(".p-table-view-switch").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.columns === T.columns)));
+  }
+  function scrollPosition(scroller) {
+    if (!scroller) return { top: 0, left: 0 };
+    const top = scroller.scrollTop, left = scroller.scrollLeft;
+    const edge = scroller.getBoundingClientRect().top + (document.getElementById("p-table-head")?.getBoundingClientRect().height || 0);
+    const row = top > 0 && Array.from(scroller.querySelectorAll("[data-task-row]")).find(item => item.getBoundingClientRect().bottom > edge + 1);
+    return { top, left, anchor: row ? row.dataset.taskRow : null, offset: row ? row.getBoundingClientRect().top - edge : 0 };
+  }
+  function restoreScroll(scroller, position) {
+    if (!scroller || !position) return;
+    scroller.scrollTop = position.top; scroller.scrollLeft = position.left;
+    const row = position.anchor && Array.from(scroller.querySelectorAll("[data-task-row]")).find(item => item.dataset.taskRow === position.anchor);
+    if (row) {
+      const edge = scroller.getBoundingClientRect().top + document.getElementById("p-table-head").getBoundingClientRect().height;
+      scroller.scrollTop += row.getBoundingClientRect().top - edge - position.offset;
+    }
+  }
+  function syncPanControls() {
+    const scroller = document.getElementById("p-table-scroll");
+    if (!scroller || !tableActive()) return;
+    const max = Math.max(0, scroller.scrollWidth - scroller.clientWidth), left = scroller.scrollLeft;
+    const card = scroller.closest(".p-task-table-card");
+    card.classList.toggle("is-panned", left > 1);
+    card.style.setProperty("--p-table-viewport-width", scroller.clientWidth + "px");
+    const prev = card.querySelector('[data-action="task-table-pan"][data-direction="-1"]'), next = card.querySelector('[data-action="task-table-pan"][data-direction="1"]');
+    if (prev) prev.disabled = left < 1;
+    if (next) next.disabled = max - left < 1;
+    const hint = document.getElementById("p-table-column-hint");
+    if (hint) hint.textContent = max < 2 ? "全部列已显示" : left < 1 ? "左右滑动查看更多" : max - left < 2 ? "已到最后一列" : "左右滑动，任务名称固定";
+  }
+  function layoutColumns() {
+    const table = document.querySelector(".p-task-table"), cols = document.getElementById("p-table-cols");
+    if (!table || !cols) return;
+    const width = field => FIELD_WIDTH[field] || "112px";
+    cols.innerHTML = fields().map(field => '<col data-field="' + field + '" style="width:' + width(field) + '">').join("");
+    table.dataset.columns = T.columns;
+    table.style.width = "calc(" + fields().map(width).join(" + ") + ")";
+    syncFilterControls();
+    requestAnimationFrame(syncPanControls);
+  }
+  function paintFromStart() {
+    const scroller = document.getElementById("p-table-scroll");
+    T.scrollMemory = { top: 0, left: scroller ? scroller.scrollLeft : 0 };
+    paintResults();
+  }
+
   function paintResults() {
     if (!tableActive()) return;
+    // A synchronous filter, sort, page or column change already consumes the latest query.
+    // Do not let its old debounce repaint reset the position after the reader has moved on.
+    clearTimeout(T.queryTimer); T.queryTimer = 0;
     const head = document.getElementById("p-table-head");
     const body = document.getElementById("p-table-body");
     if (!head || !body) return;
     const scroller = document.getElementById("p-table-scroll");
-    const keepScroll = T.scrollMemory != null ? T.scrollMemory : (scroller ? scroller.scrollTop : 0);
+    const keepScroll = T.scrollMemory != null ? T.scrollMemory : scrollPosition(scroller);
     T.scrollMemory = null;
     const pager = document.getElementById("p-table-pager");
+    layoutColumns();
 
     if (T.loading) {
       head.innerHTML = headHTML();
@@ -359,12 +458,13 @@
       body.innerHTML = result.paged.items.map(function (task) { return rowHTML(task, zone); }).join("");
     }
     if (pager) pager.innerHTML = pagerHTML(result);
-    if (scroller) scroller.scrollTop = keepScroll;
+    restoreScroll(scroller, keepScroll);
+    syncPanControls();
   }
 
   function renderTaskTablePage() {
     const previous = document.getElementById("p-table-scroll");
-    if (previous) T.scrollMemory = previous.scrollTop;
+    if (previous && !T.scrollMemory) T.scrollMemory = scrollPosition(previous);
     document.getElementById("page-view").innerHTML = pageHTML();
     paintResults();
   }
@@ -412,6 +512,7 @@
         stream: P.calendar && P.calendar.currentStream ? P.calendar.currentStream() : [],
         anchorKey: companyDateKey(state.viewAnchor, companyZone() || "UTC") };
       resetFormState();
+      T.columns = "overview"; T.filtersOpen = false; T.scrollMemory = null;
     }
     state.viewPage = "table";
     T.active = true; T.loaded = false; T.loading = true; T.error = null;
@@ -427,6 +528,7 @@
     restoreCalendarContext(context);
     resetFormState();
     T.rows = []; T.loaded = false; T.loading = false; T.error = null;
+    T.scrollMemory = null;
     renderAll();
     // Returning must rebuild the calendar projection from the latest effective owners.
     P.refreshTasks().then(function () {
@@ -457,15 +559,30 @@
     if (action === "task-table-open") { openTable(); return; }
     if (action === "task-table-close") { closeTable(); return; }
     if (action === "task-table-refresh" || action === "task-table-retry") { refreshTable(); return; }
+    if (action === "task-table-columns") {
+      if (!COLUMN_VIEWS[element.dataset.columns] || T.columns === element.dataset.columns) return;
+      T.scrollMemory = T.scrollMemory || scrollPosition(document.getElementById("p-table-scroll"));
+      T.scrollMemory.left = 0;
+      T.columns = element.dataset.columns; paintResults(); return;
+    }
+    if (action === "task-table-filters") { T.filtersOpen = !T.filtersOpen; syncFilterControls(); requestAnimationFrame(syncPanControls); return; }
+    if (action === "task-table-pan") {
+      const scroller = document.getElementById("p-table-scroll"), title = document.querySelector('#p-table-head [data-field="title"]');
+      if (scroller) scroller.scrollBy({ left: Number(element.dataset.direction) * Math.max(96, scroller.clientWidth - (title?.getBoundingClientRect().width || 136) - 12), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      return;
+    }
     if (action === "task-table-sort") {
       const key = element.dataset.key;
       if (!SORT_LABEL[key]) return;
       if (T.sort.key === key) T.sort.dir = T.sort.dir === "asc" ? "desc" : "asc";
       else T.sort = { key: key, dir: "asc" };
-      T.page = 0; paintResults(); return;
+      const restoreFocus = document.activeElement === element;
+      T.page = 0; paintFromStart();
+      if (restoreFocus) document.querySelector('.p-table-sort[data-key="' + key + '"]')?.focus({ preventScroll: true });
+      return;
     }
-    if (action === "task-table-prev") { T.page = Math.max(0, T.page - 1); paintResults(); return; }
-    if (action === "task-table-next") { T.page = T.page + 1; paintResults(); return; }
+    if (action === "task-table-prev") { T.page = Math.max(0, T.page - 1); paintFromStart(); return; }
+    if (action === "task-table-next") { T.page = T.page + 1; paintFromStart(); return; }
     if (action === "task-table-clear-filters") {
       resetFormState();
       const relation = document.getElementById("p-filter-relation"), completion = document.getElementById("p-filter-completion");
@@ -476,28 +593,37 @@
       if (from) from.value = "";
       if (to) to.value = "";
       setTableError("");
-      paintResults();
+      paintFromStart();
       if (query) query.focus();
       return;
     }
     return previousAction(element);
   };
 
+  document.addEventListener("scroll", function (event) { if (event.target?.id === "p-table-scroll") syncPanControls(); }, true);
+  window.addEventListener("resize", syncPanControls);
+  document.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape" || !tableActive() || !T.filtersOpen || !document.getElementById("overlay")?.hidden) return;
+    event.preventDefault(); event.stopPropagation();
+    T.filtersOpen = false; syncFilterControls();
+    document.getElementById("p-table-filter-toggle")?.focus({ preventScroll: true });
+  }, true);
+
   document.addEventListener("input", function (event) {
     if (!tableActive() || !event.target || event.target.id !== "p-filter-query") return;
     T.filters.query = String(event.target.value || "").slice(0, QUERY_MAX);
     T.page = 0;
     clearTimeout(T.queryTimer);
-    T.queryTimer = setTimeout(function () { if (tableActive()) paintResults(); }, QUERY_DELAY);
+    T.queryTimer = setTimeout(function () { if (tableActive()) paintFromStart(); }, QUERY_DELAY);
   });
   document.addEventListener("change", function (event) {
     if (!tableActive() || !event.target) return;
     const id = event.target.id, value = event.target.value;
     if (id === "p-filter-relation" && RELATION_LABEL[value]) {
-      T.filters.relation = value; T.page = 0; paintResults(); return;
+      T.filters.relation = value; T.page = 0; paintFromStart(); return;
     }
     if (id === "p-filter-completion" && COMPLETION_LABEL[value]) {
-      T.filters.completion = value; T.page = 0; paintResults(); return;
+      T.filters.completion = value; T.page = 0; paintFromStart(); return;
     }
     if (id === "p-filter-from" || id === "p-filter-to") {
       const from = document.getElementById("p-filter-from"), to = document.getElementById("p-filter-to");
@@ -510,7 +636,7 @@
         setTableError("结束日期不能早于开始日期，仍显示上一次有效结果。"); return;
       }
       setTableError("");
-      T.filters.from = start; T.filters.to = end; T.page = 0; paintResults();
+      T.filters.from = start; T.filters.to = end; T.page = 0; paintFromStart();
     }
   });
 
@@ -581,6 +707,7 @@
      previous rows never appear as current results while the query is in flight. */
   const previousSetPage = setPage;
   setPage = function (page) {
+    if (tableActive() && page !== "view") T.scrollMemory = scrollPosition(document.getElementById("p-table-scroll"));
     const returningToTable = page === "view" && state.page !== "view" && state.viewPage === "table" && !!P.ready;
     if (returningToTable) { T.loading = true; T.error = null; }
     previousSetPage(page);
