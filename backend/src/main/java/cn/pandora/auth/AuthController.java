@@ -2,13 +2,20 @@ package cn.pandora.auth;
 
 import cn.pandora.common.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.boot.availability.ApplicationAvailability;
+import org.springframework.boot.availability.ReadinessState;
 import java.util.Map;
 
 @RestController
 public class AuthController {
     private final AuthService auth; private final Db db;
-    public AuthController(AuthService auth,Db db) {this.auth=auth;this.db=db;}
+    private final ApplicationAvailability availability;
+    public AuthController(AuthService auth,Db db,ApplicationAvailability availability) {
+        this.auth=auth;this.db=db;this.availability=availability;
+    }
     @GetMapping("/health") public Map<String,Object> health() {
+        if (availability.getReadinessState()!=ReadinessState.ACCEPTING_TRAFFIC)
+            throw new ApiException(503,"NOT_READY","服务尚未就绪，请稍后重试");
         db.jdbc.queryForObject("SELECT 1",Integer.class);
         return Map.of("status","UP","application","pandora-backend","database","MySQL");
     }

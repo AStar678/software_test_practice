@@ -3,6 +3,7 @@ package cn.pandora.admin;
 import cn.pandora.common.Db;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
@@ -27,6 +28,8 @@ public class LoginKeyConstraints implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(LoginKeyConstraints.class);
 
+    @Value("${pandora.startup-maintenance-enabled:true}")
+    private boolean startupMaintenanceEnabled = true;
     private final Db db;
 
     public LoginKeyConstraints(Db db) {
@@ -35,6 +38,7 @@ public class LoginKeyConstraints implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        if (!startupMaintenanceEnabled) return;
         try {
             if (tighten()) {
                 log.info("Employee login-key uniqueness is established; duplicate V19 blockers resolved");

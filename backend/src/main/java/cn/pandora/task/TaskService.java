@@ -1105,10 +1105,19 @@ public class TaskService {
         if (id != null && !id.isBlank()) ids.add(id);
     }
 
+    /** Startup migration is deliberately narrower than an explicit organization-plan route refresh. */
+    static final String LEGACY_CREATION_ROUTES = "status='pending' AND kind='create' "
+            + "AND route_reason IN ('manager-chain','creator-fallback','no-reviewer')";
+
     /** Refresh under the company lock: expire first, then validate applicant and current route. */
     public int refreshPendingRoutes(Actor actor) {
+        return refreshRoutes(actor,"status='pending'");
+    }
+
+    private int refreshRoutes(Actor actor,String predicate) {
         int moved=0;
-        for(var request:db.list("SELECT * FROM approval_requests WHERE organization_id=? AND status='pending' ORDER BY created_at,id FOR UPDATE",actor.organizationId())) {
+        for(var request:db.list("SELECT * FROM approval_requests WHERE organization_id=? AND " + predicate
+                + " ORDER BY created_at,id FOR UPDATE",actor.organizationId())) {
             var task=db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?",actor.organizationId(),s(request,"taskId"));
             if(task==null) continue;
             Instant deadline=applicableDeadline(actor,request);
@@ -1141,7 +1150,7 @@ public class TaskService {
      * relationship became a legitimate exemption is applied with the recorded reason and version guard.
      */
     public int refreshLegacyCreationRoutes(Actor actor) {
-        return refreshPendingRoutes(actor);
+        return refreshRoutes(actor,LEGACY_CREATION_ROUTES);
     }
 
     /**
