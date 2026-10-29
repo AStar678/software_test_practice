@@ -2,23 +2,45 @@
 
 - Change: refactor-pandora-organization-and-workflows
 - Schema: spec-driven
-- Verdict: FAIL
-- Verified at: 2026-10-29T03:39:58.164088+00:00
+- Verdict: PASS
+- Verified at: 2026-10-29T04:03:32.900617+00:00
 - Implementation roots: /Users/watuji/MyGitDev/software_test_practice
-- Verified revision: `03ac4fcf4416bd113874e59d03733f7478990de9`; 开始及结束时仅本报告有未提交变更，源文件前后清单及哈希相同。
-- Verification scope: 本轮用户授权补齐四组既有证据缺口；父任务及截止竞争通过；时间选择取消与日志无匹配空态发现V-002/V-003；V-001保持verified-resolved。
+- Verified revision: `45b20931665e57c959cce3e03404a1dcf32e73d2`; 工作区差异为已验证的主规格同步及本报告；274文件清单及哈希在本轮同步复核前后相同。
+- Verification scope: FR轮已验证V-002/V-003修复；本轮仅复核归档前主规格同步的语义等价性、完整覆盖及当前指纹，保留实现未变的独立执行证据。
 
 ## Summary
 
-四组既有缺口已补充执行证据，整体结论 **FAIL**，新增两个明确implementation finding：V-002（medium）原生时间下拉打开后按Esc，事件继续触发表单级返回/关闭，丢失草稿；V-003（low）日志层级搜索从有结果变为无匹配时不创建空态提示。V-001负责人默认值修复仍为 `verified-resolved`，本轮没有重新打开该问题。
+归档前同步复核（SV轮）仍为 **PASS**：主规格现在逐字包含此前已验证的24项delta要求/208个场景，另外6项/32个场景和Purpose原文不变。全部30项要求/240个场景仍由下方完整矩阵覆盖，未新增实现义务；只有主规格发生预期同步，后端/前端/测试/规划全部未变。严格主规格及change校验通过，FR02 79/79、FR03 7/7及FR04 14/14独立结果文件指纹重新核对一致，本轮没有重新执行这些浏览器或构建检查。最终基线见下表SV记录；以下FR叙述保留其执行范围。
 
-当前源码JAR、真实MySQL隔离库和Chrome下，GS01补充API检查50/50通过，包括1/6/24层循环拒绝、截止前/恰好截止/截止后九轮审批—撤销—扫描竞争，以及排队等组织锁期间跨截止、错误响应不回滚失效、同键/旧页重试与重复扫描不二次生效、逾期按收件人去重。GS02页面89项断言完成，82通过、7失败：6个创建/编辑/重开×定时/全天准备场景的取消失败归V-002，1个日志动态空态失败归V-003；父任务14项全部通过，其他时间保存/全天切换/倒置校验/原始来源、日志权限/联动/同名及无团队人员/回顶/账号切换通过。GS03另用独立的可见Chrome窗口确认原生下拉在Esc捕获时 `select:open === true`，随后创建表单关闭且草稿清空，排除了仅因无头浏览器没有打开原生菜单而误报V-002的可能。
+本次修复独立复验 **PASS**。V-002、V-003均为`verified-resolved`，V-001保持已解决，无待处理finding或既有证据缺口。结论结合本轮受影响路径的执行结果，以及源码未变区域的先前独立证据；没有全量重跑声明。
 
-严格OpenSpec校验通过；274文件manifest与上轮完全相同，前后不变。原89个Maven测试、19组隔离套件和RV修复复验保留为先前独立证据，本轮只补上述缺口，没有重复宣称全量重跑。完整覆盖矩阵按本轮结果更新；此前仅为静态/部分的四组现在有实际通过或明确失败的证据，不再以原四组缺证为由保留BLOCKED。
+FR02真实JAR/MySQL/Chrome定向检查79/79通过：创建、编辑、重开×定时/全天的取消、精确时分、键盘/小视口、全天切换、倒置拒绝、实际保存及原始来源；日志动态无匹配、恢复候选、已选作者/正文/计数、权限、联动、同名/无团队、回顶及账号切换；三种表单普通文本焦点下Esc仍按原语义关闭/返回。
 
-执行根为源码逐字节相同的临时副本 `/var/folders/4p/qcjpbnz56m15bct40fb6pnn00000gn/T/pandora-v001-reverify-xq21wu5s`，复用RV01生成且源码匹配的JAR。新增探针只在 `/tmp`，真实fixture拥有并清理随机数据库、服务和Chrome进程。普通开发库、业务代码、项目测试、计划、任务勾选、implementation-notes和既有audit均未修改；只更新本报告，V-001 Repair notes原文保留。
+FR03另用可见Chrome分别验证创建、编辑、重开，7/7通过。三次均在Esc捕获时实测`select:open=true`，取消后保留同一表单及全部input/textarea/select值，未增加申请或改任务版本。创建/编辑的`drafts.task`仍存在；重开使用独立reopenDraft而非drafts.task，完整表单值及后续保存由FR02/FR03确认。资源14/14、严格OpenSpec校验、修复相关JS语法及差异检查均通过。
+
+使用全新逐字节匹配的临时副本独立重建JAR，没有复用被修复者同步过的旧副本/JAR。只更新本报告，所有Repair notes原文保留；项目实现、测试、规划、handoff及audit未改。物理手机/WebView、其他浏览器和数据库版本仍无验收声明。
 
 ## Verification Basis
+
+**SV最终基线（取代下方FR历史基线）**：274文件，HEAD `45b20931665e57c959cce3e03404a1dcf32e73d2`；SHA-256 manifest `d0ec312fe1fa53bde3b33d83b8724431ac9c8c6e9d763b9133bbbda83c3aba18`；`/tmp/pandora-sync-reverify-basis-before.json`及`/tmp/pandora-sync-reverify-basis-after.json`字节相同。复算沿用下方SNAPSHOT代码。相对FR最终基线只有`openspec/specs/pandora-requirements-aligned-prototype/spec.md`变化，新SHA-256为`f263cdd3a62241f64e38308a542c9cb9530444ec3a43e72a87663113a80ac1e3`；完整路径集合无增删，其他273文件相同。该变化为用户选择的规格同步，24个delta块逐字一致、6个保留块逐字不变，逐场景完整矩阵已重新核对；实现证据继续有效。归档移动前再次比较本manifest；随后将整个change目录（含handoff/report/.openspec.yaml）移动到`openspec/changes/archive/2026-10-29-refactor-pandora-organization-and-workflows/`是预期归档路径变换，不改变文件内容。归档后的历史指纹比较须先将该路径映回本记录的活动change路径；Git提交仅记录此已验证状态。
+
+以下FR最终基线是同步前历史记录：
+
+本轮最终基线：HEAD `45b20931665e57c959cce3e03404a1dcf32e73d2`，274文件，执行前后manifest完全相同。对上轮GS最终manifest逐项比较，只有下表四个文件变化，无增删；后端、规划、主规格、V-001实现和其他资源均未变。先前覆盖证据只在其相关实现仍相同、且本次共享Esc/日志刷新影响已由FR02/FR03覆盖的前提下保留。
+
+| Path or scope | Revision / content fingerprint / file inventory |
+| ------------- | ---------------------------------------------- |
+| 当前项目根/HEAD | `/Users/watuji/MyGitDev/software_test_practice`; `45b20931665e57c959cce3e03404a1dcf32e73d2` |
+| 本轮完整源码清单 | 274文件；SHA-256 manifest `5623458f1d60b05ff6e27b6a8f8934db788d09f9c8586af6cc1b5215464d5dd9`；`/tmp/pandora-fix2-reverify-basis-before.json`与`/tmp/pandora-fix2-reverify-basis-after.json`字节完全相同 |
+| `潘多拉-交互原型.js` | `4f6d5ebc771159c68a0d8b3680b0184096d81859ac095eb08caae8d26487dac2` |
+| `潘多拉-工作区接入.js` | `648d4afc4e2d9acae5a345bef1c268fae59221eb9ac74ff1d4d4f0e15b6cd277` |
+| `潘多拉-交互原型.html` | `6e4b2166d974756fb90f38a102baa65cc3a8a2b590c3a0644a4c65d96277538d` |
+| `backend/scripts/check_fixed_employee_browser.js` | `88eee5fb9ad9421b805e1dbdbc661c9865c73ef29d6cf139aa2345d132b78c91` |
+| 全新执行副本 | `/var/folders/4p/qcjpbnz56m15bct40fb6pnn00000gn/T/pandora-fix2-reverify-0a_26mip`；274文件逐项对照差异0；仅副本额外runtime/target/audit；Maven缓存只读复用，当前资源重新打包 |
+
+复算方法沿用下方SNAPSHOT代码；在当前根执行应得到上列274及`5623458f1d60b05ff6e27b6a8f8934db788d09f9c8586af6cc1b5215464d5dd9`。清单包含当前Git跟踪及非忽略未跟踪文件、删除哨兵；排除项不变。修复前GS基线摘要为`d24681e9bbc2ebb9c63298e47d93d221f3f12198ca3b1eca42d13384e4387a1a`。
+
+以下为先前轮次的历史基线及复算方法；其中“本轮/当前”均指当时验证，不是本轮HEAD：
 
 本轮四组补验基线与上轮修复复验相同；`/tmp/pandora-gap-basis-before.json`及`/tmp/pandora-gap-basis-after.json`逐项相同，274文件manifest仍为`d24681e9bbc2ebb9c63298e47d93d221f3f12198ca3b1eca42d13384e4387a1a`，新增/删除/改变源码0。开始时本报告已有上轮未提交更新；本轮仅继续修改报告。下方原manifest复算命令同样适用。
 
@@ -64,6 +86,10 @@ SNAPSHOT
 
 ## Apply Handoff Review
 
+本轮重新读取OpenSpec返回的proposal/design/tasks/delta spec、当前handoff和三项Repair notes。change/schema/root匹配；handoff仍为历史revision元数据，内容未变。全部既有提醒处置继续保留；与本次修复相关的原生控件方法限制已由FR03三种真实打开菜单补证，其他物理平台限制不变。修复者的89/89、Maven89及整套浏览器PASS均只作线索，未充当本轮独立结果。FR01–FR05与当前manifest独立建立本轮结论。
+
+以下为先前handoff审查记录，“本轮”指当时轮次：
+
 四组补验补充处置：当前planning/handoff与上轮内容一致，revision声明仍是历史元数据。按delta日志约束及主规格保留的任务结构/时间/截止场景执行GS01–GS03；对应提醒现在由真实证据覆盖。原native/手势方法限制不泛化为物理设备验收；GS03只新增本机可见Chrome的原生select取消证据。所有既有提醒及先前处置继续保留，未从apply自报PASS推导本轮结论。
 
 以下为前两轮handoff审查记录：
@@ -86,6 +112,36 @@ SNAPSHOT
 | 日历空日异步草稿、pointer清理、全天滚动、inert重同步 | C16当前服务重跑相关路径通过；额外C22发现的是草稿默认负责人的独立缺陷V-001 |
 
 ## Checks
+
+归档前同步定向复核（SV）：`openspec validate --specs --strict --json --no-interactive`与`openspec validate refactor-pandora-organization-and-workflows --type change --strict --json --no-interactive`均valid=true；主规格仅有长要求文本INFO提示，无warning/error。独立解析主规格、同步前副本及delta：24个要求块逐字等于delta，6个保留块及Purpose原文不变；完整240场景均存在于原完整覆盖矩阵，FR执行证据文件hash仍匹配。SV前后274文件指纹一致；没有以任务勾选或修复者自报代替执行证据，也没有修改实现或缩减规范。
+
+本轮第二次修复定向复验（FR编号），真实独立重跑：
+
+| ID / command or inspection | Result | Evidence / SHA-256 |
+| -------------------------- | ------ | ------------------ |
+| FR00: `openspec validate refactor-pandora-organization-and-workflows --type change --strict --json --no-interactive` | valid=true; issues=[]; exit0 | 当前项目根 |
+| FR01: `mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 -DskipTests package` | BUILD SUCCESS；后端源码未变，明确跳过单元测试 | `/tmp/pandora-fix2-reverify-build.log`; `6c58b1538f16fe411a567f94b04e40d12293f01c72396e74d7f138fd5dfcefe2` |
+| FR02: `python3 /tmp/pandora_fix2_reverify_browser.py` | PASS；79/79；8组全部完成；浏览器异常0 | `/tmp/pandora-fix2-reverify-browser.json`; `7b12c8b4570aecbc2c2ffeb3e9d36e8f0ce36e1e0609677d56178d98abcd5a0a` |
+| FR03: `python3 /tmp/pandora_fix2_reverify_native.py` | PASS；7/7；可见Chrome的create/edit/reopen三组完成；实际native popup展开后Esc保留全字段且无提交 | `/tmp/pandora-fix2-reverify-native.json`; `5bcb103ec199864990d83d38b9035d924392cf5c6865ee98ffbfdcbf5f10d9e4` |
+| FR04: `python3 backend/scripts/check_web_resources.py --repo . --jar backend/target/pandora-backend-0.1.0.jar --output /tmp/pandora-fix2-reverify-resources.json` | 14/14；HTML缓存hash/顺序/白名单/JAR字节一致 | `/tmp/pandora-fix2-reverify-resources.json`; `499890cd5e92e0bd703dc84d7431ec6b4b4bfde1ced706396a0b1ead1bf63858` |
+| FR05: 修复四文件diff、共享Esc/timeControl及日志刷新追踪；三个修改JS的`node --check`；`git diff --check 03ac4fc -- <四文件>`；源码前后manifest | 全部exit0；仅时分控件内Esc提前返回，其余返回保留；动态空态创建/hidden恢复实际可见性通过；源码未变 | 最终清单见Verification Basis |
+
+FR01/FR04在全新副本执行。FR02/FR03通过`/tmp/pandora-fix2-reverify-root`定位同一副本，分别使用Fixture(port18218/18219)，拥有随机隔离数据库、服务及私有临时Chrome profile，正常结束后清理。脚本未访问普通业务库。沙箱首次localhost连接被拒后，按权限规则提升重跑成功；该准备失败不计实现失败。没有修改原项目测试来获得通过。
+
+FR02复用先前独立GS02驱动，移除未受影响的父关联分组及其造数，仅保留六组时间与日志；补充空态恢复/单节点/选择及日志不变、三种普通Esc语义。FR03复用独立helper，每种表单用新可见Chrome，实际鼠标点原生箭头，再用CDP rawKeyDown/keyUp取消；捕获监听仅观察，不拦截事件。三次`expanded=true`，全部字段前后相同，无新申请、现有任务rowVersion不变。FR02不是原项目新增回归的自报结果，而是独立探针执行。
+
+FR stdout: `/tmp/pandora-fix2-reverify-browser.log`; `aedf045acd5e467a73a756c8034905f7cdeb86e45364c61dd1cc8f2d9ea70c40`。
+
+FR stdout: `/tmp/pandora-fix2-reverify-native.log`; `10dba4572a1760dc107c2a03262eff0eaf2bf350632ce384650b04a0226ad7ad`。
+
+临时复现驱动指纹：
+
+- `/tmp/pandora_fix2_reverify_browser.py`: `66804c0151907e6a8032e1b900ccdc83868029264f552cf86eb73933907b4929`
+- `/tmp/pandora_fix2_reverify_browser.js`: `968d4a2618673d7a9c2e0a82c0c374fa323cfc812e4888f0947f0e546a714bcc`
+- `/tmp/pandora_fix2_reverify_native.py`: `668876bb4c938251b3d73e5a4171c55952dcc897bf9712998a57348270e64a6f`
+- `/tmp/pandora_fix2_reverify_native.js`: `8f85edc46e5fe19d67e515337a11c762c086381fe59be0a383151e0ca43a5cf3`
+
+以下GS/RV/C检查均为先前独立执行的历史记录；未在本轮全量重跑。历史失败由本轮对应FR结果及finding状态取代，不作为当前失败：
 
 本轮补齐缺口的检查（GS编号）：
 
@@ -179,7 +235,9 @@ C22决定性输出（退出0表示探针成功运行，不表示断言通过；�
 
 ## Requirement Coverage
 
-证据ID见Checks。本轮GS01–GS03补充R10及保留任务结构/时间/截止的四组缺口；R06沿用RV修复复验，其他未变区域保留首轮独立证据，未重新执行。以下每个R行列出实现路径、验收证据和已观察行为；其后的场景行继承相同R的实现路径。`支持`表示相应实现已核查并有列出的当前执行证据支持，不能替代整体PASS；`静态/部分`明确说明未独立执行的细节。重复场景名称按当前WHEN/THEN处理，未按名称恢复旧规则。
+SV说明：下表delta/main行号为FR验证时的历史定位；归档同步后按相同requirement/scenario标题定位。24项delta已逐字合入主规格，6项原main保持逐字不变，矩阵各行证据及结论继续覆盖当前主规格的全部30项/240场景。
+
+证据ID见Checks。本轮FR02/FR03重新验证R10及保留任务结构中的时间取消与直接受影响交互；其余未变区域保留GS/RV/C的先前独立覆盖，不声称本轮重跑。以下矩阵仍逐一列出24个delta requirement/208个场景及6个保留requirement/32个场景，未缩减验收范围；只缩减此次重复执行范围。每个R行的实现路径由下属场景继承，重复名称按当前WHEN/THEN判定。
 
 | Requirement / scenario | Evidence | Result |
 | ---------------------- | -------- | ------ |
@@ -309,22 +367,22 @@ C22决定性输出（退出0表示探针成功运行，不表示断言通过；�
 | R09 / Write an unlinked log (`delta:524`) | C11,C12,C15,C18 | 支持 |
 | R09 / Superior reads a subordinate log (`delta:528`) | C11,C12,C15,C18 | 支持 |
 | R09 / Regress actual log entry and the selected editor (`delta:532`) | C11,C12,C15,C18 | 支持 |
-| **R10: Log page single-content filtering and scroll return** (`delta:536`) | `WorkspaceService.logs/logAuthors; 工作区接入.js`；C11,C15,C17,C18；本轮GS02。真实层级联动、同名及无团队搜索、授权计数、回顶和账号隔离通过；从有候选搜索到无匹配时空态缺失。 | FAIL V-003 |
-| R10 / Search each hierarchy within authorization (`delta:543`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
-| R10 / Reset invalid children and restore self (`delta:547`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
+| **R10: Log page single-content filtering and scroll return** (`delta:536`) | `WorkspaceService.logs/logAuthors; 工作区接入.js`；C11,C15,C17,C18；GS02及FR02。动态无匹配明确空态、恢复候选、已选作者/日志及权限/联动/计数/回顶/账号切换均通过。 | 支持；V-003 verified-resolved |
+| R10 / Search each hierarchy within authorization (`delta:543`) | C11,C15,C17,C18；GS02,FR02 | 支持：FR02当前真实页面复验通过；V-003已解决 |
+| R10 / Reset invalid children and restore self (`delta:547`) | C11,C15,C17,C18；GS02,FR02 | 支持：FR02当前真实页面复验通过；V-003已解决 |
 | R10 / Use consistent names and the selected log date (`delta:551`) | C11,C15,C17,C18 | 支持 |
-| R10 / Enter with self and filter a direct report (`delta:555`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
-| R10 / Return to the top without mixing workflows (`delta:559`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
+| R10 / Enter with self and filter a direct report (`delta:555`) | C11,C15,C17,C18；GS02,FR02 | 支持：FR02当前真实页面复验通过；V-003已解决 |
+| R10 / Return to the top without mixing workflows (`delta:559`) | C11,C15,C17,C18；GS02,FR02 | 支持：FR02当前真实页面复验通过；V-003已解决 |
 | R10 / Enter the log page (`delta:563`) | C11,C15,C17,C18 | 支持 |
 | R10 / Select pending reviews (`delta:567`) | C11,C15,C17,C18 | 支持 |
-| R10 / Switch between role-specific content filters (`delta:571`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
+| R10 / Switch between role-specific content filters (`delta:571`) | C11,C15,C17,C18；GS02,FR02 | 支持：FR02当前真实页面复验通过；V-003已解决 |
 | R10 / Invoke a log-page command (`delta:575`) | C11,C15,C17,C18 | 支持 |
-| R10 / Toggle own logs (`delta:579`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
-| R10 / Restore the visible log scope (`delta:583`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
-| R10 / Search logs by author (`delta:587`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
-| R10 / Show no matching authors (`delta:591`) | C11,C15,C17,C18；GS02 | FAIL V-003：真实搜索无匹配后缺少明确空态 |
-| R10 / Keep log finding separate and scoped (`delta:595`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
-| R10 / Return to the top of log content (`delta:599`) | C11,C15,C17,C18；GS02 | 支持：本轮真实页面补验通过；明确无匹配空态另见V-003 |
+| R10 / Toggle own logs (`delta:579`) | C11,C15,C17,C18；GS02,FR02 | 支持：FR02当前真实页面复验通过；V-003已解决 |
+| R10 / Restore the visible log scope (`delta:583`) | C11,C15,C17,C18；GS02,FR02 | 支持：FR02当前真实页面复验通过；V-003已解决 |
+| R10 / Search logs by author (`delta:587`) | C11,C15,C17,C18；GS02,FR02 | 支持：FR02当前真实页面复验通过；V-003已解决 |
+| R10 / Show no matching authors (`delta:591`) | C11,C15,C17,C18；GS02,FR02 | 支持：FR02无匹配提示可见、输入保留，清空后提示隐藏且授权候选恢复 |
+| R10 / Keep log finding separate and scoped (`delta:595`) | C11,C15,C17,C18；GS02,FR02 | 支持：FR02当前真实页面复验通过；V-003已解决 |
+| R10 / Return to the top of log content (`delta:599`) | C11,C15,C17,C18；GS02,FR02 | 支持：FR02当前真实页面复验通过；V-003已解决 |
 | R10 / Reset old filters when opening logs from a person profile (`delta:603`) | C11,C15,C17,C18 | 支持 |
 | **R11: Role-scoped AI map** (`delta:607`) | `WorkspaceService.statistics/createAiJob/aiJob/visibleTasks; WorkspaceAnalysisTest`；C01,C11。四层真实任务统计范围与建议分离、旧分析失权通过；真实中文提词/规则指标由单测和实现核查支持。 | 支持；见各场景证据范围 |
 | R11 / Generate personal and department results separately (`delta:610`) | C01,C11 | 支持 |
@@ -430,7 +488,7 @@ C22决定性输出（退出0表示探针成功运行，不表示断言通过；�
 | Task table refresh and account isolation / Revoke all normal access (`main:294`) | C08,C15,C17 | 支持 |
 | Task table refresh and account isolation / Fail a later page and retry (`main:298`) | C08,C15,C17 | 支持 |
 | Task table refresh and account isolation / Ignore stale account and refresh responses (`main:302`) | C08,C15,C17 | 支持 |
-| **Retained: Task structure and attributes** (`main:382`) | `TaskService.validateForm/validateParent; 任务接入.js; 正式版.css`；C01,C08,C09,C14,C15,C22 | FAIL V-002（时间取消）；其余见GS01/GS02及既有证据 |
+| **Retained: Task structure and attributes** (`main:382`) | `TaskService.validateForm/validateParent; 任务接入.js; 正式版.css`；C01,C08,C09,C14,C15,C22；GS01,GS02,FR02,FR03 | 支持；V-002 verified-resolved；其余保留未变路径的既有证据 |
 | Task structure and attributes / Edit task text in expanded fields (`main:387`) | C01,C08,C09,C14,C15,C22 | 支持（部分细节见场景行） |
 | Task structure and attributes / Validate schedules and preserve provenance (`main:391`) | C01,C08,C09,C14,C15,C22 | 支持（部分细节见场景行） |
 | Task structure and attributes / Search, clear or reject a parent relation (`main:395`) | C01,C08,C09,C14,C15,C22；GS01,GS02 | 支持：本轮搜索/空态/确认取消/持久化清除、深环拒绝、父子独立执行和独立授权已执行；普通类型由六组API快照确认 |
@@ -444,7 +502,7 @@ C22决定性输出（退出0表示探针成功运行，不表示断言通过；�
 | Task structure and attributes / Inspect a child task (`main:427`) | C01,C08,C09,C14,C15,C22；GS01,GS02 | 支持：本轮搜索/空态/确认取消/持久化清除、深环拒绝、父子独立执行和独立授权已执行；普通类型由六组API快照确认 |
 | Task structure and attributes / Inspect a parent task (`main:431`) | C01,C08,C09,C14,C15,C22；GS01,GS02 | 支持：本轮搜索/空态/确认取消/持久化清除、深环拒绝、父子独立执行和独立授权已执行；普通类型由六组API快照确认 |
 | Task structure and attributes / Inspect an abstract task (`main:435`) | C01,C08,C09,C14,C15,C22；GS01,GS02 | 支持：本轮搜索/空态/确认取消/持久化清除、深环拒绝、父子独立执行和独立授权已执行；普通类型由六组API快照确认 |
-| Task structure and attributes / Choose time through a mobile web control (`main:439`) | C01,C08,C09,C14,C15,C22；GS02,GS03 | FAIL V-002：取消原生时分下拉丢失表单草稿；其余六组时值/全天/校验/保存检查通过 |
+| Task structure and attributes / Choose time through a mobile web control (`main:439`) | C01,C08,C09,C14,C15,C22；GS02,GS03,FR02,FR03 | 支持：三种实际打开的原生菜单取消保留全字段且无提交，六组时值/全天/校验/保存和普通Esc均通过 |
 | **Retained: Deadline expiration of pending applications** (`main:848`) | `ExpiryService; TaskController.expireBeforeSubmit; TaskService.decide`；C08,C09,C10；GS01 | 支持：本轮补齐三方九轮竞争、精确截止及锁等待跨截止、持久终态/有效版隔离、重复扫描及重试证据 |
 | Deadline expiration of pending applications / Reject expired submission and approval before the scan (`main:851`) | C08,C09,C10；GS01 | 支持：本轮补齐三方九轮竞争、精确截止及锁等待跨截止、持久终态/有效版隔离、重复扫描及重试证据 |
 | Deadline expiration of pending applications / Use the applicable deadline and preserve the effective version (`main:855`) | C08,C09,C10；GS01 | 支持：本轮补齐三方九轮竞争、精确截止及锁等待跨截止、持久终态/有效版隔离、重复扫描及重试证据 |
@@ -455,7 +513,7 @@ C22决定性输出（退出0表示探针成功运行，不表示断言通过；�
 | Proportional schedule reminders / Skip stale nodes after a late scan (`main:874`) | C01,C08 | 支持；比例节点单测及真实worker轮次/排期去重 |
 | Proportional schedule reminders / Reset the schedule identity and handle zero duration (`main:878`) | C01,C08 | 支持；比例节点单测及真实worker轮次/排期去重 |
 
-四组原证据缺口现已由GS01–GS03补验，父关联及截止竞争支持规范，时间取消与日志动态空态分别确认V-002/V-003；整体FAIL。无需要planning决定的规格矛盾，亦无仍阻止这些检查执行的environment问题。无头/键盘占位及物理平台边界如Checks所述保留，不冒充物理设备验收。
+四组原证据缺口已由GS01–GS03补验；当时确认的V-002/V-003现由FR02/FR03独立复验解决。父关联及截止竞争实现未变，保留通过证据；整体PASS。无需要planning决定的规格矛盾，亦无仍阻止这些检查执行的environment问题。无头/键盘占位及物理平台边界如Checks所述保留，不冒充物理设备验收。
 
 Proposal/design/完成任务补充核对：位置为唯一组织事实、固定创始人、共同principal与员工专用FK分离、当前唯一业务责任/原始来源、公司锁原子最终计划、严格登录契约、退休旧授权/username、非破坏显式演示、资源最终覆盖顺序、文档和Android范围分别由R05/R14/R15/R16/R23/R24及I01覆盖。57个完成checkbox只作待验证声明；创建UI的完成声明首轮被V-001推翻，本轮RV02确认该缺陷已修复。无独立发现的额外范围承诺缺失。
 
@@ -489,27 +547,27 @@ Proposal/design/完成任务补充核对：位置为唯一组织事实、固定�
 - Category: implementation
 - Severity: medium
 - Requirement: 保留主规格 `Task structure and attributes / Choose time through a mobile web control`（main:439）；选时取消 SHALL 保留草稿且不误提交，适用于创建、编辑、重开非全天任务。
-- Evidence: GS02六个创建/编辑/重开×后续定时/全天准备场景中，小时select聚焦后Esc均退出当前表单；创建时`draftPresent=false`且overlay隐藏，编辑/重开回到详情、时间字段消失。由于无头浏览器菜单表现不可靠，追加GS03真实可见Chrome：手机号登录founder→实际创建表单→输入未保存标题→原生鼠标点击小时下拉箭头→Esc；捕获阶段事件target为`tf-start-time-hour`且`expanded:true`（真实`select:open`），随后`overlay:false`、`draft:false`，原始证据及hash见Checks。
+- Evidence: 修复前历史证据（本轮当前证据见FR02/FR03/FR04及Reverification notes）：GS02六个创建/编辑/重开×后续定时/全天准备场景中，小时select聚焦后Esc均退出当前表单；创建时`draftPresent=false`且overlay隐藏，编辑/重开回到详情、时间字段消失。由于无头浏览器菜单表现不可靠，追加GS03真实可见Chrome：手机号登录founder→实际创建表单→输入未保存标题→原生鼠标点击小时下拉箭头→Esc；捕获阶段事件target为`tf-start-time-hour`且`expanded:true`（真实`select:open`），随后`overlay:false`、`draft:false`，原始证据及hash见Checks。
 - Expected: 已打开的时间下拉取消时只取消本次选择，仍停留原任务表单，保留先前日期、时分和其他草稿字段，不提交申请。
-- Actual: 同一次Esc同时进入`潘多拉-交互原型.js:2744–2748`的共享处理，不区分原生下拉取消，调用backSheet/closeSheet；`:1485–1494`随之清理草稿。真实菜单仍打开时的取消直接丢失创建草稿。编辑/重开相同共享路径也被GS02观察为退出当前表单。
+- Actual: 修复后FR02六组时间流程通过，FR03创建/编辑/重开实际下拉均`expanded=true`且Esc后同一表单全字段不变、无新增申请/版本变化；普通文本焦点的Esc仍关闭/返回。修复前历史：共享Esc处理调用backSheet/closeSheet，丢失草稿，见GS02/GS03。
 - Repair guidance: 让原生时分选择的取消优先在控件内结束，保留所在任务草稿；保持其他弹层既有返回/关闭语义。同步实际HTML缓存版本和打包资源，不通过误提交或自动保存绕过取消。
 - Acceptance checks: 用实际构建JAR与可见Chrome，在创建、编辑、重开表单分别修改标题/说明/原因、日期及精确时分；确认原生下拉已打开，取消后仍是同一表单且所有值保留、无新申请；继续定时跨日/全天切换、倒置拒绝和真实保存。`PANDORA_GAP_HEADFUL=1 python3 /private/tmp/pandora_gap_native.py`可复现原生取消；扩展该同等探针覆盖修复后的三种表单，再跑相关资源检查。
-- Repair status: addressed-awaiting-verification
+- Repair status: verified-resolved
 - Repair notes: 在`潘多拉-交互原型.js`共享`document keydown`的Esc分支前增加判断：事件目标或当前焦点位于`[data-time-part]`（`Pandora.timeControl`生成的时分select）时直接返回，不`preventDefault`、不调用`backSheet/closeSheet`，把取消交给原生下拉并保留任务草稿；其他元素与弹层的Esc返回语义不变。同步`潘多拉-交互原型.html`中该脚本缓存版本为`4f6d5ebc7711`。在`backend/scripts/check_fixed_employee_browser.js`新增回归：聚焦`tf-start-time-hour`后按Esc断言表单仍开、`drafts.task`及标题保留、时间仍`09:00`；焦点移到说明后按Esc仍关闭表单。验证用当前源码重建JAR，并把修复同步到验证者临时副本后运行其驱动的同名副本：`python3 /tmp/pandora_fix2_browser.py`（`/private/tmp/pandora_gap_browser.py`的路径适配版，断言不变）89/89 PASS，六个create/edit/reopen×timed/all-day取消场景全部通过；`PANDORA_GAP_HEADFUL=1 python3 /tmp/pandora_fix2_native.py`在真实可见Chrome下仍观察到`select:open=true`，Esc后`overlay=true`、`draft=true`且标题保留；`python3 backend/scripts/check_fixed_web.py`PASS（admin 15/15、employee 132/132）；`python3 backend/scripts/check_calendar_drawer.py`86/86；`mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test package`89 tests/0 failure；`check_web_resources.py`14/14；`openspec validate ... --strict`valid=true。
-- Reverification notes: 2026-10-29新增；不是V-001回归。原先无头模拟的疑问已通过GS03真实原生下拉`expanded:true`消除；未声明手机/WebView物理设备行为。
+- Reverification notes: 本轮FR02 79/79及FR03 7/7独立通过；2026-10-29，HEAD `45b20931665e57c959cce3e03404a1dcf32e73d2`。原生菜单真实打开的三种表单均保留全部值、日期/时分/标题/说明/原因及有效排期，未误提交。后续定时/全天/倒置拒绝/实际保存正常，普通Esc语义保留。FR04资源14/14，FR00严格校验通过。V-002 verified-resolved。 先前记录：2026-10-29新增；不是V-001回归。原先无头模拟的疑问已通过GS03真实原生下拉`expanded:true`消除；未声明手机/WebView物理设备行为。
 
 ### V-003: 日志动态搜索无匹配时缺少明确空态
 
 - Category: implementation
 - Severity: low
 - Requirement: delta `Log page single-content filtering and scroll return`（delta:536）及`Show no matching authors`（delta:591）：逐层名称搜索没有授权匹配人员时 SHALL 显示明确空态并保留有效输入。
-- Evidence: GS02真实founder日志页，初始部门/团队/作者候选均非空；选择alpha部门和无团队负责人后，依次输入`no-such-department`、`no-such-team`、`no-such-person`。三层候选都只剩“全部”默认项，搜索输入完整保留，但`#logFindingCard .empty`不存在，页面没有“当前权限内没有匹配的部门或人员”提示。GS02 JSON保存完整DOM文本/选项/状态；GS05截图，重复隔离运行一致。
+- Evidence: 修复前历史证据（本轮当前证据见FR02/FR03/FR04及Reverification notes）：GS02真实founder日志页，初始部门/团队/作者候选均非空；选择alpha部门和无团队负责人后，依次输入`no-such-department`、`no-such-team`、`no-such-person`。三层候选都只剩“全部”默认项，搜索输入完整保留，但`#logFindingCard .empty`不存在，页面没有“当前权限内没有匹配的部门或人员”提示。GS02 JSON保存完整DOM文本/选项/状态；GS05截图，重复隔离运行一致。
 - Expected: 从有匹配动态变为没有授权匹配时，立即显示明确空态，保留输入；恢复匹配后空态正确消失，候选继续受权限裁剪，不错误更改已选作者或日志正文范围。
-- Actual: `潘多拉-工作区接入.js:200`仅在首次渲染恰好无匹配时插入`.empty`；`:203–220`输入后刷新只尝试切换已存在元素的hidden，初始有候选时没有节点可更新，因此动态无匹配没有提示。
+- Actual: 修复后FR02从有候选动态输入三层无匹配时显示明确可见提示，完整保留输入、已选作者及日志正文；清空搜索后单一空态节点隐藏、授权候选恢复。权限/计数/联动/同名和无团队/回顶/账号切换通过。修复前历史：初始有候选不生成节点，后续refresh只切换已存在节点，导致动态无匹配缺提示，见GS02。
 - Repair guidance: 使动态候选刷新能够创建/更新/清除空态，与初始渲染保持一致；保留当前合法选择、输入、权限和计数语义。
 - Acceptance checks: 在真实服务日志页从有候选输入无匹配部门/团队/姓名（包括全部层均无匹配），断言明确可见空态及输入保留；清除搜索恢复候选和提示状态；重新检查同名/无团队选择、联动清理、回顶保留及账号重置。GS02的`all hierarchy searches retain their values and show an explicit no-match state`应通过。
-- Repair status: addressed-awaiting-verification
+- Repair status: verified-resolved
 - Repair notes: 将`潘多拉-工作区接入.js`的`refreshLogFindingOptions`从“仅切换已存在空态”改为：筛选卡内没有`.empty`时创建与初始渲染同文案的节点，再按`departments.length>0||people.length>0`设置`hidden`；保留输入值、已选作者、权限裁剪与计数逻辑。同步`潘多拉-交互原型.html`中该脚本缓存版本为`648d4afc4e2d`。在`backend/scripts/check_fixed_employee_browser.js`的founder日志页新增回归：三层输入无匹配值后断言`.empty`可见且文案含“没有匹配”、输入与仅“全部”的候选保留；清空搜索后空态隐藏且候选恢复。验证：`python3 /tmp/pandora_fix2_browser.py`（验证者GS02驱动路径适配版）89/89 PASS，含`all hierarchy searches retain their values and show an explicit no-match state`；`python3 backend/scripts/check_fixed_web.py`PASS（admin 15/15、employee 132/132）；`python3 backend/scripts/check_log_backfill_entry.py`8/8；`check_web_resources.py`14/14；`mvn ... test package`89 tests/0 failure；严格OpenSpec校验valid=true。
-- Reverification notes: 2026-10-29新增；其余日志联动、当前权限/计数、33条真实日志、回顶动画完成后状态保留及账号切换均已通过，不把准备阶段过早读取平滑滚动位置的驱动失败算作实现问题。
+- Reverification notes: 本轮FR02 79/79独立通过，覆盖动态无匹配、清空恢复且不改变已选作者/正文、权限/计数/层级联动及账号重置；FR04资源14/14与FR00严格校验通过。2026-10-29，HEAD `45b20931665e57c959cce3e03404a1dcf32e73d2`。V-003 verified-resolved。 先前记录：2026-10-29新增；其余日志联动、当前权限/计数、33条真实日志、回顶动画完成后状态保留及账号切换均已通过，不把准备阶段过早读取平滑滚动位置的驱动失败算作实现问题。
 
-下一步：`$openspec-e13-fix-change refactor-pandora-organization-and-workflows`，仅修复pending的V-002/V-003，再独立复验受影响行为。当前FAIL不可归档；V-001修复已确认，无需无依据地重新打开；相关源码修改需重新核对基线与覆盖。
+下一步：`$openspec-e13-archive-change refactor-pandora-organization-and-workflows`。本报告PASS仅适用于上述最终基线；相关源码/规格变动后需重新验证。
