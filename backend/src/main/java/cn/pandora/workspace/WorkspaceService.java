@@ -49,6 +49,10 @@ public class WorkspaceService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> me(Actor a) {
+        return access.readScope(a.organizationId(), () -> meRead(a));
+    }
+
+    private Map<String,Object> meRead(Actor a) {
         business(a);
         var result=safeUser(employee(a,a.id()));
         var contacts=db.one("SELECT phone,email,avatar,profile_version FROM users WHERE id=? AND organization_id=? AND active=1",a.id(),a.organizationId());
@@ -62,6 +66,10 @@ public class WorkspaceService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> users(Actor a, Map<String,String> filters, boolean admin) {
+        return access.readScope(a.organizationId(), () -> usersRead(a,filters,admin));
+    }
+
+    private Map<String,Object> usersRead(Actor a, Map<String,String> filters, boolean admin) {
         if(admin) {access.requireAdmin(a);access.requireCurrent(a);} else business(a);
         String query=filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
         var allowed=access.employeeDirectory(a,admin).stream()
@@ -73,6 +81,10 @@ public class WorkspaceService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> person(Actor a, String userId) {
+        return access.readScope(a.organizationId(), () -> personRead(a,userId));
+    }
+
+    private Map<String,Object> personRead(Actor a, String userId) {
         business(a);
         var row=employee(a,userId);
         if(!access.canSeePerson(a,row)) throw ApiException.notFound();
@@ -87,6 +99,10 @@ public class WorkspaceService {
     /** Every actual descendant, including team heads and their employees below a department head. */
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> reports(Actor a) {
+        return access.readScope(a.organizationId(), () -> reportsRead(a));
+    }
+
+    private Map<String,Object> reportsRead(Actor a) {
         business(a);
         var items=access.employeeDirectory(a,false).stream()
                 .filter(row->!a.id().equals(s(row,"id")) && access.isManagerOf(a,s(row,"id")))
@@ -102,6 +118,10 @@ public class WorkspaceService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> logs(Actor a, Map<String,String> filters) {
+        return access.readScope(a.organizationId(), () -> logsRead(a,filters));
+    }
+
+    private Map<String,Object> logsRead(Actor a, Map<String,String> filters) {
         business(a);
         String scope = filters.getOrDefault("scope", "self");
         if (!Set.of("self","visible","log").contains(scope)) throw bad("scope 只能为 self 或 visible");
@@ -114,12 +134,25 @@ public class WorkspaceService {
         if (author != null) allowedIds.retainAll(Set.of(author));
         LocalDate from = optionalDate(filters.get("from")), to = optionalDate(filters.get("to"));
         if (from != null && to != null && from.isAfter(to)) throw bad("开始日期不得晚于结束日期");
-        var result = db.list("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.deleted_at IS NULL ORDER BY w.business_date DESC,w.created_at DESC,w.id",a.organizationId()).stream()
+        var result = db.list("SELECT w.id,w.author_id,w.business_date FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.deleted_at IS NULL ORDER BY w.business_date DESC,w.created_at DESC,w.id",a.organizationId()).stream()
             .filter(row -> allowedIds.contains(s(row,"authorId")))
             .filter(row -> from == null || !LocalDate.parse(s(row,"businessDate")).isBefore(from))
             .filter(row -> to == null || !LocalDate.parse(s(row,"businessDate")).isAfter(to))
-            .map(row -> safeLog(a,row)).toList();
-        return page(result,filters);
+            .toList();
+        var paged = page(result,filters);
+        @SuppressWarnings("unchecked") var selectedMetadata = (List<Map<String,Object>>) paged.get("items");
+        var logRows = new HashMap<String,Map<String,Object>>();
+        if(!selectedMetadata.isEmpty()) {
+            var args=new ArrayList<Object>();args.add(a.organizationId());selectedMetadata.forEach(row->args.add(s(row,"id")));
+            for(var row:db.list("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id "
+                    +"WHERE w.organization_id=? AND w.id IN ("+String.join(",",Collections.nCopies(selectedMetadata.size(),"?"))+")",args.toArray())) logRows.put(s(row,"id"),row);
+        }
+        var selected=selectedMetadata.stream().map(row->logRows.get(s(row,"id"))).filter(Objects::nonNull).toList();
+        var linked = selected.stream().map(row -> s(row,"taskId")).filter(Objects::nonNull).toList();
+        Set<String> readable = linked.isEmpty() ? Set.of() : tasks.readableTaskIds(a,linked);
+        var tagRows = rowsById(a,"tags","*",selected.stream().map(row -> s(row,"tagId")).toList());
+        paged.put("items",selected.stream().map(row -> safeLog(a,new LinkedHashMap<>(row),readable,tagRows)).toList());
+        return paged;
     }
 
     /**
@@ -130,6 +163,10 @@ public class WorkspaceService {
      */
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> logAuthors(Actor a, Map<String,String> filters) {
+        return access.readScope(a.organizationId(), () -> logAuthorsRead(a,filters));
+    }
+
+    private Map<String,Object> logAuthorsRead(Actor a, Map<String,String> filters) {
         business(a);
         String query = filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
         String departmentQuery = filters.getOrDefault("departmentQ","").strip().toLowerCase(Locale.ROOT);
@@ -231,6 +268,10 @@ public class WorkspaceService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> log(Actor a, String logId) {
+        return access.readScope(a.organizationId(), () -> logRead(a,logId));
+    }
+
+    private Map<String,Object> logRead(Actor a, String logId) {
         business(a);
         var row = db.one("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.id=? AND w.deleted_at IS NULL",a.organizationId(),logId);
         if (!access.canReadLogAuthor(a, s(row,"authorId"))) throw ApiException.notFound();
@@ -319,18 +360,34 @@ public class WorkspaceService {
         return Map.of("logId",logId,"deleted",true,"rowVersion",n(row,"rowVersion")+1);
     }
 
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> notifications(Actor a, Map<String,String> filters) {
+        return access.readScope(a.organizationId(), () -> notificationsRead(a,filters));
+    }
+
+    private Map<String,Object> notificationsRead(Actor a, Map<String,String> filters) {
         boolean unread = "true".equals(filters.get("unread"));
         Instant now = clock.instant();
-        var visible = db.list("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND hidden_at IS NULL ORDER BY created_at DESC,id",a.organizationId(),a.id()).stream()
-            .filter(row -> notificationVisible(a,row,now)).map(row -> safeNotification(a,row,now)).toList();
+        var rows = notificationMetadata(a,false);
+        var readable = notificationReadableTasks(a,rows);
+        var visible = rows.stream().filter(row -> notificationVisible(row,now,readable)).toList();
         var result = page(visible.stream().filter(row -> !unread || row.get("readAt")==null).toList(),filters);
+        @SuppressWarnings("unchecked") var selected = (List<Map<String,Object>>) result.get("items");
+        var complete = rowsById(a,"notifications","*",selected.stream().map(row -> s(row,"id")).toList());
+        var selectedRows = selected.stream().map(row -> complete.get(s(row,"id"))).filter(Objects::nonNull).toList();
+        var batch = notificationBatch(a,selectedRows);
+        result.put("items",selectedRows.stream().map(row -> safeNotification(a,row,now,batch)).toList());
         result.put("unreadCount",visible.stream().filter(row -> row.get("readAt")==null).count());
         return result;
     }
 
     /** Non-mutating detail read; opening a message goes through {@link #openNotification}. */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> notification(Actor a, String notificationId) {
+        return access.readScope(a.organizationId(), () -> notificationRead(a,notificationId));
+    }
+
+    private Map<String,Object> notificationRead(Actor a, String notificationId) {
         var row = db.one("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=? AND hidden_at IS NULL",a.organizationId(),a.id(),notificationId);
         Instant now = clock.instant();
         if (!notificationVisible(a,row,now)) throw ApiException.notFound();
@@ -440,7 +497,12 @@ public class WorkspaceService {
      * delivered, non-deleted, non-withdrawn, unexpired message; it returns the current effective task
      * only and never a proposal, diff, contact, log, route or business action.
      */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> notificationTask(Actor a, String notificationId) {
+        return access.readScope(a.organizationId(), () -> notificationTaskRead(a,notificationId));
+    }
+
+    private Map<String,Object> notificationTaskRead(Actor a, String notificationId) {
         var row = db.one("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=? AND hidden_at IS NULL",a.organizationId(),a.id(),notificationId);
         Instant now = clock.instant();
         if (!notificationVisible(a,row,now)) throw ApiException.notFound();
@@ -478,22 +540,28 @@ public class WorkspaceService {
     }
 
     private long unreadCount(Actor a, Instant now) {
-        return db.list("SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND hidden_at IS NULL",a.organizationId(),a.id())
-                .stream().filter(row -> notificationVisible(a,row,now) && row.get("readAt")==null).count();
+        var rows = notificationMetadata(a,true);
+        var readable = notificationReadableTasks(a,rows);
+        return rows.stream().filter(row -> notificationVisible(row,now,readable)).count();
     }
 
     private Map<String,Object> safeNotification(Actor a, Map<String,Object> row, Instant now) {
-        var event = db.find("SELECT * FROM domain_events WHERE organization_id=? AND id=?",a.organizationId(),s(row,"eventId"));
+        return safeNotification(a,row,now,null);
+    }
+
+    private Map<String,Object> safeNotification(Actor a, Map<String,Object> row, Instant now, NotificationBatch batch) {
+        var event = batch == null ? db.find("SELECT * FROM domain_events WHERE organization_id=? AND id=?",a.organizationId(),s(row,"eventId"))
+                : batch.events.get(s(row,"eventId"));
         String objectType = s(row,"objectType"), objectId = s(row,"objectId");
         if (objectType == null && s(row,"taskId") != null) { objectType = "task"; objectId = s(row,"taskId"); }
         String eventType = s(row,"eventType");
         Map<String,Object> objectDetails = event == null || event.get("detailsJson")==null ? Map.of() : db.parse(s(event,"detailsJson"));
         // A comment message must be re-verified against the current object authority every time it is
         // read; a deleted comment keeps a placeholder and never exposes its excerpt (chapter 8.5).
-        boolean objectReadable = objectType == null || canReadEventObject(a,objectType,objectId,objectDetails);
+        boolean objectReadable = objectType == null || (batch == null ? canReadEventObject(a,objectType,objectId,objectDetails) : batchObjectReadable(a,objectType,objectId,objectDetails,batch));
         boolean commentEvent = eventType != null && eventType.startsWith("comment.");
         // A deleted comment keeps a placeholder; a mere loss of authority uses the generic message.
-        boolean commentGone = commentEvent && eventObjectDeleted(a,objectType,objectId,objectDetails);
+        boolean commentGone = commentEvent && (batch == null ? eventObjectDeleted(a,objectType,objectId,objectDetails) : batchObjectDeleted(objectType,objectId,objectDetails,batch));
         // Comments have no historical-notification exception: losing the object authority now masks the
         // excerpt, while an ordinary task message keeps its delivered read-only historical entry.
         boolean commentMasked = commentEvent && !objectReadable;
@@ -515,7 +583,7 @@ public class WorkspaceService {
         // task entry. Delivery-time flags cannot describe authority lost after delivery.
         if (!commentEvent && objectOpen && s(row,"taskId")!=null
                 && row.get("deliveredAt")!=null && "event".equals(s(row,"source"))
-                && !canReadTask(a,s(row,"taskId"),true)) {
+                && !(batch == null ? canReadTask(a,s(row,"taskId"),true) : batch.readableWithApprovals.contains(s(row,"taskId")))) {
             view.put("readonly",true);
             view.put("relationLost",true);
         }
@@ -556,10 +624,11 @@ public class WorkspaceService {
         view.put("focus",objectOpen && commentEvent ? "comments" : null);
         view.put("commentId",objectOpen && objectDetails.get("commentId") instanceof String id ? id : null);
         view.put("purpose",notificationPurpose(eventType));
-        view.put("objectName",objectOpen?objectName(a,objectType,objectId,row,event):null);
+        view.put("objectName",objectOpen ? (batch == null ? objectName(a,objectType,objectId,row,event) : batchObjectName(objectType,objectId,row,event,batch)) : null);
         String requestId = objectOpen ? s(row,"requestId") : null;
         if (requestId != null) {
-            var request = db.find("SELECT id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline FROM approval_requests WHERE organization_id=? AND id=?",a.organizationId(),requestId);
+            var request = batch == null ? db.find("SELECT id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline FROM approval_requests WHERE organization_id=? AND id=?",a.organizationId(),requestId)
+                    : batch.requests.get(requestId);
             if (request != null) {
                 view.put("requestStatus",s(request,"status"));
                 view.put("requestKind",s(request,"kind"));
@@ -572,6 +641,128 @@ public class WorkspaceService {
             }
         }
         return view;
+    }
+
+    /** Inbox counts and page boundaries need lifecycle metadata, never message bodies. */
+    private List<Map<String,Object>> notificationMetadata(Actor a,boolean unreadOnly) {
+        return db.list("SELECT n.id,n.event_id,n.task_id,n.hidden_at,n.expires_at,n.read_at,n.source,n.delivered_at,"
+                + "e.revoked_at AS event_revoked_at,e.expires_at AS event_expires_at FROM notifications n "
+                + "LEFT JOIN domain_events e ON e.organization_id=n.organization_id AND e.id=n.event_id "
+                + "WHERE n.organization_id=? AND n.recipient_id=? AND n.hidden_at IS NULL"
+                + (unreadOnly ? " AND n.read_at IS NULL" : "") + " ORDER BY n.created_at DESC,n.id",a.organizationId(),a.id());
+    }
+
+    private Set<String> notificationReadableTasks(Actor a,List<Map<String,Object>> rows) {
+        var ids=rows.stream().filter(row -> row.get("eventRevokedAt")==null)
+                .filter(row -> row.get("deliveredAt")==null || !"event".equals(s(row,"source")))
+                .map(row -> s(row,"taskId")).filter(Objects::nonNull).toList();
+        return ids.isEmpty() ? Set.of() : tasks.readableTaskIds(a,ids,true);
+    }
+
+    private static boolean notificationVisible(Map<String,Object> row,Instant now,Set<String> readable) {
+        if(row.get("hiddenAt")!=null) return false;
+        Object expires=row.get("expiresAt")!=null?row.get("expiresAt"):row.get("eventExpiresAt");
+        if(expires!=null && !now.isBefore(Instant.parse(String.valueOf(expires)))) return false;
+        return row.get("eventRevokedAt")!=null || s(row,"taskId")==null || readable.contains(s(row,"taskId"))
+                || (row.get("deliveredAt")!=null && "event".equals(s(row,"source")));
+    }
+
+    /** Only this page's projections; mutable content and authority never survive the request. */
+    private static final class NotificationBatch {
+        Map<String,Map<String,Object>> events,requests,logs,comments,taskRows;
+        Set<String> readableTasks,readableWithApprovals;
+    }
+
+    private NotificationBatch notificationBatch(Actor a,List<Map<String,Object>> rows) {
+        var batch=new NotificationBatch();
+        batch.events=rowsById(a,"domain_events","id,revoked_at,occurred_at,expires_at,initiator_id,title,change_summary,details_json",
+                rows.stream().map(row -> s(row,"eventId")).toList());
+        batch.requests=rowsById(a,"approval_requests","id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline",
+                rows.stream().map(row -> s(row,"requestId")).toList());
+        var taskIds=new LinkedHashSet<String>();
+        var logIds=new LinkedHashSet<String>();
+        var commentIds=new LinkedHashSet<String>();
+        for(var row:rows) {
+            String taskId=s(row,"taskId"),type=s(row,"objectType"),objectId=s(row,"objectId");
+            if(taskId!=null) taskIds.add(taskId);
+            if("task".equals(type) && objectId!=null) taskIds.add(objectId);
+            if("log".equals(type) && objectId!=null) logIds.add(objectId);
+            var event=batch.events.get(s(row,"eventId"));
+            if(event!=null && event.get("detailsJson")!=null) {
+                Object commentId=db.parse(s(event,"detailsJson")).get("commentId");
+                if(commentId instanceof String id) commentIds.add(id);
+            }
+        }
+        batch.logs=rowsById(a,"work_logs","id,author_id,business_date,deleted_at",logIds);
+        batch.comments=rowsById(a,"task_log_comments","id,deleted_at",commentIds);
+        batch.taskRows=rowsById(a,"tasks","id,current_version_id",taskIds);
+        var versionRows=rowsById(a,"task_versions","id,title",batch.taskRows.values().stream().map(row->s(row,"currentVersionId")).toList());
+        for(var task:batch.taskRows.values()) {
+            var version=versionRows.get(s(task,"currentVersionId"));
+            task.put("title",version==null?null:version.get("title"));
+        }
+        batch.readableTasks=taskIds.isEmpty()?Set.of():tasks.readableTaskIds(a,taskIds);
+        batch.readableWithApprovals=taskIds.isEmpty()?Set.of():tasks.readableTaskIds(a,taskIds,true);
+        return batch;
+    }
+
+    /** Company-bound, parameterized reads; chunking also bounds the maximum SQL placeholder count. */
+    private Map<String,Map<String,Object>> rowsById(Actor a,String table,String projection,Collection<String> ids) {
+        var selected=new ArrayList<>(new LinkedHashSet<>(ids.stream().filter(Objects::nonNull).toList()));
+        Map<String,Map<String,Object>> result=new HashMap<>();
+        for(int start=0;start<selected.size();start+=500) {
+            var chunk=selected.subList(start,Math.min(start+500,selected.size()));
+            var args=new ArrayList<Object>();args.add(a.organizationId());args.addAll(chunk);
+            for(var row:db.list("SELECT "+projection+" FROM "+table+" WHERE organization_id=? AND id IN ("
+                    +String.join(",",Collections.nCopies(chunk.size(),"?"))+")",args.toArray())) result.put(s(row,"id"),new LinkedHashMap<>(row));
+        }
+        return result;
+    }
+
+    private boolean batchObjectReadable(Actor a,String type,String id,Map<String,Object> details,NotificationBatch batch) {
+        if("task".equals(type)) {
+            var task=batch.taskRows.get(id);
+            return task!=null && (s(task,"currentVersionId")==null ? batch.readableWithApprovals : batch.readableTasks).contains(id);
+        }
+        if("log".equals(type)) {
+            var log=batch.logs.get(id);
+            if(log==null || log.get("deletedAt")!=null) return false;
+            if(details.get("commentId") instanceof String commentId) {
+                var comment=batch.comments.get(commentId);
+                if(comment==null || comment.get("deletedAt")!=null) return false;
+            }
+            return access.canReadLogAuthor(a,s(log,"authorId"));
+        }
+        return true;
+    }
+
+    private static boolean batchObjectDeleted(String type,String id,Map<String,Object> details,NotificationBatch batch) {
+        if(id==null) return false;
+        if(details.get("commentId") instanceof String commentId) {
+            var comment=batch.comments.get(commentId);
+            return comment==null || comment.get("deletedAt")!=null;
+        }
+        if("log".equals(type)) {
+            var log=batch.logs.get(id);
+            return log==null || log.get("deletedAt")!=null;
+        }
+        return "task".equals(type) && !batch.taskRows.containsKey(id);
+    }
+
+    private static String batchObjectName(String type,String id,Map<String,Object> row,Map<String,Object> event,NotificationBatch batch) {
+        if(id==null) return null;
+        if("log".equals(type)) {
+            var log=batch.logs.get(id);
+            return log==null?"日志":"日志 · "+s(log,"businessDate");
+        }
+        if("task".equals(type)) {
+            String title=s(row,"title");
+            if(title==null && event!=null) title=s(event,"title");
+            if(title!=null) return title;
+            var task=batch.taskRows.get(s(row,"taskId")==null?id:s(row,"taskId"));
+            return task==null?null:s(task,"title");
+        }
+        return null;
     }
 
     /** Readable identity of the object a message is about; never a restricted proposal or body. */
@@ -668,6 +859,10 @@ public class WorkspaceService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> home(Actor a) {
+        return access.readScope(a.organizationId(), () -> homeRead(a));
+    }
+
+    private Map<String,Object> homeRead(Actor a) {
         business(a);
         var assigned = db.list("SELECT t.id AS task_id,v.title,v.priority,a.assigned_at,a.assigned_source "
                 + "FROM task_assignments a JOIN tasks t ON t.organization_id=a.organization_id AND t.id=a.task_id "
@@ -741,6 +936,10 @@ public class WorkspaceService {
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> statistics(Actor a, Map<String,String> filters) {
+        return access.readScope(a.organizationId(), () -> statisticsRead(a,filters));
+    }
+
+    private Map<String,Object> statisticsRead(Actor a, Map<String,String> filters) {
         if(!Set.of("scope").containsAll(filters.keySet())) throw bad("统计接口当前仅支持 scope，不支持日期筛选");
         String requested=filters.getOrDefault("scope","auto");
         AnalysisScope scope=analysisScope(a,requested);
@@ -859,15 +1058,7 @@ public class WorkspaceService {
     private List<Map<String,Object>> visibleTasks(Actor a,String scope) {
         business(a);
         if (!Set.of("self","visible","company","department","team").contains(scope)) throw bad("分析范围无效");
-        var rows = new ArrayList<Map<String,Object>>();
-        int offset = 0;
-        while (true) {
-            var result = tasks.list(a,Map.of("limit","100","offset",Integer.toString(offset)));
-            var items = (List<Map<String,Object>>) result.getOrDefault("items",List.of());
-            rows.addAll(items);
-            if (items.size()<100) break;
-            offset+=items.size();
-        }
+        var rows = new ArrayList<>(tasks.statisticsTasks(a,Map.of()));
         if (scope.equals("self")) rows.removeIf(t -> !a.id().equals(s(t,"originalCreatorId"))
                 && !(t.get("assigneeIds") instanceof Collection<?> ids && ids.contains(a.id())));
         if(Set.of("department","team").contains(scope)) {
@@ -1027,10 +1218,13 @@ public class WorkspaceService {
         return db.one("SELECT * FROM work_logs WHERE organization_id=? AND author_id=? AND id=? AND deleted_at IS NULL FOR UPDATE",a.organizationId(),a.id(),logId);
     }
     private Map<String,Object> safeLog(Actor a,Map<String,Object> row) {
+        return safeLog(a,row,null,null);
+    }
+    private Map<String,Object> safeLog(Actor a,Map<String,Object> row,Set<String> readable,Map<String,Map<String,Object>> tagRows) {
         row.remove("organizationId");
         String taskId=s(row,"taskId");
-        if (taskId!=null && !canReadTask(a,taskId,false)) row.remove("taskId");
-        Map<String,Object> tag = tags.view(a,s(row,"tagId"));
+        if (taskId!=null && !(readable == null ? canReadTask(a,taskId,false) : readable.contains(taskId))) row.remove("taskId");
+        Map<String,Object> tag = tagRows == null ? tags.view(a,s(row,"tagId")) : tags.view(tagRows.get(s(row,"tagId")));
         row.put("tagId", tag == null ? null : s(tag,"id"));
         row.put("tag", tag);
         Instant freezeAt = freezeAt(row);

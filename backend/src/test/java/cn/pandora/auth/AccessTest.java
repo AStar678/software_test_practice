@@ -124,4 +124,33 @@ class AccessTest {
         assertFalse(f.access.canReadPhone(actor,f.people.get("a1e")));
         assertFalse(f.access.isCreationCandidate(actor,"a1e"));
     }
+    @Test void oneReadScopeReusesTreeWithoutKeepingItAcrossCallsOrFailures() {
+        var f=new Fixture();Actor manager=f.actor("a");clearInvocations(f.db);
+        f.access.readScope("org",()-> {
+            for(int i=0;i<500;i++) assertTrue(f.access.canReadLogAuthor(manager,"a1e"));
+            f.access.readScope("org",()->{assertTrue(f.access.canReadLogAuthor(manager,"a2e"));return null;});
+            return null;
+        });
+        verify(f.db,times(1)).find("SELECT founder_employee_id FROM organizations WHERE id=?","org");
+        assertThrows(IllegalStateException.class,()->f.access.readScope("org",()-> {
+            assertTrue(f.access.canReadLogAuthor(manager,"a1e"));throw new IllegalStateException("projection failed");
+        }));
+        f.people.get("a1e").put("active",false);
+        assertFalse(f.access.readScope("org",()->f.access.canReadLogAuthor(manager,"a1e")));
+        verify(f.db,times(3)).find("SELECT founder_employee_id FROM organizations WHERE id=?","org");
+    }
+    @Test void businessOwnershipBatchDoesNotLeakIntoFollowingReadOrWriteChecks() {
+        var f=new Fixture();var task=f.task("f");
+        when(f.db.list(startsWith("SELECT task_id,employee_id FROM task_business_owners"),any(Object[].class)))
+                .thenReturn(List.of(Map.of("taskId","task","employeeId","a1e")));
+        f.access.readScope("org",()-> {
+            f.access.primeBusinessOwners("org",List.of("task"));
+            assertEquals("a1e",f.access.businessOwner(task));assertEquals("a1e",f.access.businessOwner(task));return null;
+        });
+        verify(f.db,never()).find("SELECT employee_id FROM task_business_owners WHERE organization_id=? AND task_id=?","org","task");
+        when(f.db.find("SELECT employee_id FROM task_business_owners WHERE organization_id=? AND task_id=?","org","task"))
+                .thenReturn(Map.of("employeeId","b1e"));
+        assertEquals("b1e",f.access.businessOwner(task));
+    }
+
 }

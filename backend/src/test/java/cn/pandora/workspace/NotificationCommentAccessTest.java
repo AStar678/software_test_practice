@@ -28,7 +28,7 @@ class NotificationCommentAccessTest {
     private WorkspaceService service(String eventType, boolean canReadTask, Map<String,Object> comment,
                                      boolean withdrawn, boolean managerOfInitiator) {
         Db db = mock(Db.class);
-        Access access = mock(Access.class);
+        Access access = WorkspaceTestSupport.access();
         Map<String,Object> row = new LinkedHashMap<>();
         row.put("id", "notice");
         row.put("eventId", "event");

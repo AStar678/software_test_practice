@@ -17,6 +17,7 @@ import java.sql.Time;
 import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static cn.pandora.common.Db.s;
 import static cn.pandora.common.Db.n;
@@ -45,6 +46,7 @@ public class TaskService {
     private final ExpiryService expiry;
     private final CompanyTree companyTree;
     private final Tags tags;
+    private final ThreadLocal<ReadBatch> batchReads = new ThreadLocal<>();
 
     /** Test seam: the real dependencies are derived from the same Db when constructed directly. */
     public TaskService(Db db, Access access, Events events, Clock clock, ExpiryService expiry) {
@@ -66,46 +68,108 @@ public class TaskService {
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> list(Actor actor, Map<String, String> filters) {
         requireBusiness(actor);access.requireCurrent(actor);
-        int limit = integer(filters.get("limit"), 50, 1, 100, "limit");
-        int offset = integer(filters.get("offset"), 0, 0, Integer.MAX_VALUE, "offset");
-        String state = filters.get("state");
-        String priority = filters.get("priority");
-        if (state != null && !STATES.contains(state)) throw bad("无效的任务状态");
-        if (priority != null && !PRIORITIES.contains(priority)) throw bad("无效的紧急程度");
-        String assignee = optionalId(filters.get("assigneeId"), "assigneeId");
-        String creator = optionalId(filters.get("creatorId"), "creatorId");
-        String query = filters.getOrDefault("q", "").trim();
-        if (query.length() > 200) throw bad("搜索内容最多200字");
-        LocalDate from = optionalDate(filters.get("from"), "from");
-        LocalDate to = optionalDate(filters.get("to"), "to");
-        if (from != null && to != null && to.isBefore(from)) throw bad("结束日期不得早于开始日期");
-        ZoneId zone = organizationZone(actor);
-        Set<String> pinned = pinnedIds(actor);
-        List<Map<String, Object>> visible = new ArrayList<>();
-        for (Map<String, Object> task : db.list("SELECT * FROM tasks WHERE organization_id=? AND current_version_id IS NOT NULL ORDER BY created_at DESC,id", actor.organizationId())) {
-            Map<String, Object> version = version(actor, s(task, "currentVersionId"));
-            List<String> owners = assignees(actor, s(version, "id"));
-            if (!access.canSeeTask(actor, task, version, owners)) continue;
-            if (state != null && !state.equals(s(task, "executionState"))) continue;
-            if (priority != null && !priority.equals(s(version, "priority"))) continue;
-            if (assignee != null && !owners.contains(assignee)) continue;
-            if (creator != null && !creator.equals(s(task, "originalCreatorId"))) continue;
-            if (!query.isEmpty() && !s(version, "title").toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT))) continue;
-            LocalDate start = instant(version.get("startAt"), "startAt").atZone(zone).toLocalDate();
-            LocalDate due = instant(version.get("dueAt"), "dueAt").atZone(zone).toLocalDate();
-            if (from != null && due.isBefore(from) || to != null && start.isAfter(to)) continue;
-            Map<String, Object> view = taskView(actor, task, version, owners);
-            view.put("pinned", pinned.contains(s(task, "id")));
-            visible.add(view);
-        }
-        int begin = Math.min(offset, visible.size());
-        int end = (int) Math.min((long) begin + limit, visible.size());
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("items", visible.subList(begin, end));
-        result.put("total", visible.size());
-        result.put("nextCursor", end < visible.size() ? Integer.toString(end) : null);
-        return result;
+        int limit=integer(filters.get("limit"),50,1,100,"limit");
+        int offset=integer(filters.get("offset"),0,0,Integer.MAX_VALUE,"offset");
+        return access.readScope(actor.organizationId(),()->withReadBatch(loadTaskBatch(actor),()-> {
+            List<VisibleTask> visible=filteredTasks(actor,filters);
+            int begin=Math.min(offset,visible.size());
+            int end=(int)Math.min((long)begin+limit,visible.size());
+            Set<String> pinned=pinnedIds(actor);
+            List<Map<String,Object>> items=new ArrayList<>();
+            for(VisibleTask row:visible.subList(begin,end)) {
+                Map<String,Object> view=taskView(actor,row.task(),row.version(),row.owners());
+                view.put("pinned",pinned.contains(s(row.task(),"id")));items.add(view);
+            }
+            Map<String,Object> result=new LinkedHashMap<>();result.put("items",items);
+            result.put("total",visible.size());result.put("nextCursor",end<visible.size()?Integer.toString(end):null);
+            return result;
+        }));
     }
+
+    /** Analytics needs one effective snapshot, not full route projections repeated once per page. */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public List<Map<String,Object>> statisticsTasks(Actor actor,Map<String,String> filters) {
+        requireBusiness(actor);access.requireCurrent(actor);
+        return access.readScope(actor.organizationId(),()->withReadBatch(loadTaskBatch(actor),()->
+                filteredTasks(actor,filters).stream().map(row->{
+                    Map<String,Object> view=new LinkedHashMap<>(row.version());
+                    view.put("id",s(row.task(),"id"));view.put("taskId",s(row.task(),"id"));
+                    view.put("originalCreatorId",s(row.task(),"originalCreatorId"));
+                    view.put("businessOwnerId",access.businessOwner(row.task()));
+                    Map<String,Object> pending=currentBatch(actor).pending.get(s(row.task(),"id"));
+                    view.put("pending",pending!=null);view.put("frozen",pending!=null);
+                    view.put("pendingKind",pending==null?null:s(pending,"kind"));
+                    view.put("assigneeIds",row.owners());return view;
+                }).toList()));
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Set<String> readableTaskIds(Actor actor,Collection<String> requestedIds) {
+        return readableTaskIds(actor,requestedIds,false);
+    }
+
+    /** includeApproval is only for ordinary notification links; comments never inherit that access. */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Set<String> readableTaskIds(Actor actor,Collection<String> requestedIds,boolean includeApproval) {
+        if(!actor.business() || requestedIds==null || requestedIds.isEmpty()) return Set.of();
+        access.requireCurrent(actor);
+        Set<String> ids=new LinkedHashSet<>(requestedIds);ids.remove(null);if(ids.isEmpty()) return Set.of();
+        return access.readScope(actor.organizationId(),()-> {
+            ReadBatch batch=baseReadBatch(actor);loadTasks(batch,ids);loadCurrentVersions(batch);
+            access.primeBusinessOwners(actor.organizationId(),batch.tasks.keySet());
+            return withReadBatch(batch,()-> {
+                Set<String> visible=new LinkedHashSet<>();
+                for(var task:batch.tasks.values()) {
+                    String current=s(task,"currentVersionId");
+                    if(current!=null && access.canSeeTask(actor,task,version(actor,current),assignees(actor,current)))
+                        visible.add(s(task,"id"));
+                }
+                if(includeApproval) {
+                    for(List<String> part:chunks(new ArrayList<>(ids))) {
+                        List<Object> args=new ArrayList<>();args.add(actor.organizationId());args.addAll(part);
+                        args.add(actor.id());args.add(actor.id());
+                        for(var request:db.list("SELECT * FROM approval_requests WHERE organization_id=? AND task_id IN ("+marks(part.size())
+                                +") AND (applicant_id=? OR current_reviewer_id=? OR status='pending')",args.toArray())) {
+                            var task=batch.tasks.get(s(request,"taskId"));
+                            if(task!=null && !visible.contains(s(task,"id"))) {
+                                // Match canReadRequest's non-authoritative probe: one broken route must not fail an inbox.
+                                try {if(canSeeRequest(actor,request,task)) visible.add(s(task,"id"));}
+                                catch(RuntimeException ignored) { /* unavailable request grants no historical access */ }
+                            }
+                        }
+                    }
+                }
+                return visible;
+            });
+        });
+    }
+
+    private List<VisibleTask> filteredTasks(Actor actor,Map<String,String> filters) {
+        String state=filters.get("state"),priority=filters.get("priority");
+        if(state!=null && !STATES.contains(state)) throw bad("无效的任务状态");
+        if(priority!=null && !PRIORITIES.contains(priority)) throw bad("无效的紧急程度");
+        String assignee=optionalId(filters.get("assigneeId"),"assigneeId"),creator=optionalId(filters.get("creatorId"),"creatorId");
+        String query=filters.getOrDefault("q","").trim();if(query.length()>200) throw bad("搜索内容最多200字");
+        LocalDate from=optionalDate(filters.get("from"),"from"),to=optionalDate(filters.get("to"),"to");
+        if(from!=null && to!=null && to.isBefore(from)) throw bad("结束日期不得早于开始日期");
+        ZoneId zone=organizationZone(actor);List<VisibleTask> visible=new ArrayList<>();
+        for(var task:currentBatch(actor).tasks.values()) {
+            Map<String,Object> version=version(actor,s(task,"currentVersionId"));
+            List<String> owners=assignees(actor,s(version,"id"));
+            if(!access.canSeeTask(actor,task,version,owners)) continue;
+            if(state!=null && !state.equals(s(task,"executionState"))) continue;
+            if(priority!=null && !priority.equals(s(version,"priority"))) continue;
+            if(assignee!=null && !owners.contains(assignee)) continue;
+            if(creator!=null && !creator.equals(s(task,"originalCreatorId"))) continue;
+            if(!query.isEmpty() && !s(version,"title").toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT))) continue;
+            LocalDate start=instant(version.get("startAt"),"startAt").atZone(zone).toLocalDate();
+            LocalDate due=instant(version.get("dueAt"),"dueAt").atZone(zone).toLocalDate();
+            if(from!=null && due.isBefore(from) || to!=null && start.isAfter(to)) continue;
+            visible.add(new VisibleTask(task,version,owners));
+        }
+        return visible;
+    }
+    private record VisibleTask(Map<String,Object> task,Map<String,Object> version,List<String> owners) {}
 
     /**
      * Administration task locator (chapter 9.1): a paginated, company-wide minimum projection used by
@@ -118,6 +182,10 @@ public class TaskService {
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> adminTasks(Actor actor, Map<String, String> filters) {
         access.requireCapability(actor, "view_task_history");access.requireCurrent(actor);
+        return access.readScope(actor.organizationId(),()->withReadBatch(loadAdminBatch(actor),()->adminTasksRead(actor,filters)));
+    }
+
+    private Map<String,Object> adminTasksRead(Actor actor,Map<String,String> filters) {
         int limit = integer(filters.get("limit"), 50, 1, 100, "limit");
         int offset = integer(filters.get("offset"), 0, 0, Integer.MAX_VALUE, "offset");
         String state = filters.get("state");
@@ -133,12 +201,9 @@ public class TaskService {
         if (from != null && to != null && to.isBefore(from)) throw bad("结束日期不得早于开始日期");
         ZoneId zone = organizationZone(actor);
         Map<String, String> names = userNameMap(actor);
-        Map<String, Map<String, Object>> latestRequests = new LinkedHashMap<>();
-        for (Map<String, Object> row : db.list("SELECT * FROM approval_requests WHERE organization_id=? ORDER BY created_at,id", actor.organizationId())) {
-            latestRequests.put(s(row, "taskId"), row);
-        }
+        Map<String,Map<String,Object>> latestRequests=currentBatch(actor).latestRequests;
         List<Map<String, Object>> visible = new ArrayList<>();
-        for (Map<String, Object> task : db.list("SELECT * FROM tasks WHERE organization_id=? ORDER BY created_at DESC,id", actor.organizationId())) {
+        for (Map<String,Object> task:currentBatch(actor).tasks.values()) {
             String taskId = s(task, "id");
             String current = s(task, "currentVersionId");
             Map<String, Object> request = latestRequests.get(taskId);
@@ -452,22 +517,34 @@ public class TaskService {
         if ("submitted".equals(mine)) mine = "applicant";
         if ("reviewing".equals(mine)) mine = "reviewer";
         if (!Set.of("all", "reviewer", "applicant").contains(mine)) throw bad("mine须为all、reviewer或applicant");
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (Map<String, Object> request : db.list("SELECT * FROM approval_requests WHERE organization_id=? ORDER BY created_at DESC,id", actor.organizationId())) {
-            Map<String, Object> task = task(actor, s(request, "taskId"), false);
-            if (!canSeeRequest(actor, request, task)) continue;
-            boolean applicant = actor.id().equals(s(request, "applicantId"));
-            String reviewer = requestReviewer(actor,request,task);
-            if ("applicant".equals(mine) && !applicant || "reviewer".equals(mine) && !actor.id().equals(reviewer)) continue;
-            result.add(requestView(actor, request, task, false));
-        }
-        int begin = Math.min(offset, result.size());
-        int end = (int) Math.min((long) begin + limit, result.size());
-        Map<String, Object> page = new LinkedHashMap<>();
-        page.put("items", result.subList(begin, end));
-        page.put("total", result.size());
-        page.put("nextCursor", end < result.size() ? Integer.toString(end) : null);
-        return page;
+        String selectedMine=mine;
+        return access.readScope(actor.organizationId(),()-> {
+            // A pending review is routed from the current organization/business owner, never its stale stored reviewer.
+            List<Map<String,Object>> candidates=db.list("SELECT * FROM approval_requests WHERE organization_id=? "
+                    +"AND (applicant_id=? OR current_reviewer_id=? OR status='pending') ORDER BY created_at DESC,id",
+                    actor.organizationId(),actor.id(),actor.id());
+            ReadBatch batch=baseReadBatch(actor);
+            Set<String> taskIds=new LinkedHashSet<>();candidates.forEach(row->taskIds.add(s(row,"taskId")));
+            loadTasks(batch,taskIds);loadCurrentVersions(batch);access.primeBusinessOwners(actor.organizationId(),batch.tasks.keySet());
+            return withReadBatch(batch,()-> {
+                List<Map<String,Object>> visible=new ArrayList<>();
+                for(var request:candidates) {
+                    var task=task(actor,s(request,"taskId"),false);
+                    if(!canSeeRequest(actor,request,task)) continue;
+                    boolean applicant=actor.id().equals(s(request,"applicantId"));String reviewer=requestReviewer(actor,request,task);
+                    if("applicant".equals(selectedMine) && !applicant || "reviewer".equals(selectedMine) && !actor.id().equals(reviewer)) continue;
+                    visible.add(request);
+                }
+                int begin=Math.min(offset,visible.size()),end=(int)Math.min((long)begin+limit,visible.size());
+                List<Map<String,Object>> pageRequests=visible.subList(begin,end);Set<String> versions=new LinkedHashSet<>();
+                for(var request:pageRequests) {versions.add(s(request,"proposedVersionId"));versions.add(s(request,"baseVersionId"));}
+                loadVersions(batch,versions);
+                List<Map<String,Object>> items=new ArrayList<>();
+                for(var request:pageRequests) items.add(requestView(actor,request,task(actor,s(request,"taskId"),false),false));
+                Map<String,Object> page=new LinkedHashMap<>();page.put("items",items);page.put("total",visible.size());
+                page.put("nextCursor",end<visible.size()?Integer.toString(end):null);return page;
+            });
+        });
     }
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
@@ -1558,6 +1635,9 @@ public class TaskService {
         Set<String> ids = new LinkedHashSet<>(requestedIds);
         ids.removeIf(id -> id == null || id.isBlank());
         if (ids.isEmpty()) return List.of();
+        ReadBatch batch=currentBatch(actor);
+        if(batch!=null) return ids.stream().sorted().map(batch.people::get).filter(Objects::nonNull)
+                .map(person->Map.<String,Object>of("id",s(person,"id"),"displayName",s(person,"displayName"))).toList();
         List<Object> args = new ArrayList<>();
         args.add(actor.organizationId());
         args.addAll(ids);
@@ -1573,7 +1653,7 @@ public class TaskService {
         result.put("assigneeIds", assignees(actor, s(version, "id")));
         // The live catalogue supplies the current name and colour; the stored snapshot is only a
         // fallback (and the immutable audit value) when the catalogue row is no longer readable.
-        Map<String, Object> liveTag = tags.view(actor, s(version, "tagId"));
+        Map<String, Object> liveTag = readTag(actor,s(version,"tagId"));
         if (liveTag == null && s(version, "tagNameSnapshot") != null) {
             liveTag = new LinkedHashMap<>();
             liveTag.put("id", s(version, "tagId"));
@@ -1592,6 +1672,12 @@ public class TaskService {
     }
 
     private boolean canSeeEffective(Actor actor, String id) {
+        ReadBatch batch=currentBatch(actor);
+        if(batch!=null && batch.completeVisibleTasks) {
+            var task=batch.tasks.get(id);if(task==null) return false;
+            var version=version(actor,s(task,"currentVersionId"));
+            return access.canSeeTask(actor,task,version,assignees(actor,s(version,"id")));
+        }
         Map<String, Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?", actor.organizationId(), id);
         if (task == null || s(task, "currentVersionId") == null) return false;
         Map<String, Object> v = version(actor, s(task, "currentVersionId"));
@@ -1641,7 +1727,7 @@ public class TaskService {
     public Route route(Actor context,List<String> owners,String businessOwnerId) {
         if(owners==null || owners.isEmpty()) throw bad("至少需要一位负责人");
         validateActiveOwners(context,owners);
-        var owner=access.activeUser(context,businessOwnerId);
+        var owner=routePerson(context,businessOwnerId);
         if(businessOwnerId==null || owner==null || !availableForReview(owner))
             return new Route(null,businessOwnerId,List.of(),"business-owner-unavailable",
                     routeReasonText("business-owner-unavailable"),context.authzVersion(),true,false);
@@ -1651,7 +1737,8 @@ public class TaskService {
 
     /** Only the company's explicit fixed founder is exempt; all other creations use the direct manager. */
     public Route creationRoute(Actor context,String creatorId) {
-        CompanyTree.Tree tree=companyTree.of(context.organizationId());
+        ReadBatch batch=currentBatch(context);
+        CompanyTree.Tree tree=batch==null?companyTree.of(context.organizationId()):batch.tree;
         if(!tree.valid()) return Route.blocked(creatorId,"organization-tree",context.authzVersion());
         var creator=tree.nodes().get(creatorId);
         if(creator==null) return Route.blocked(creatorId,"creator-unavailable",context.authzVersion());
@@ -1764,7 +1851,7 @@ public class TaskService {
 
     private void validateActiveOwners(Actor actor, List<String> owners) {
         for (String id : owners) {
-            Map<String, Object> user = access.activeUser(actor, id);
+            Map<String, Object> user = routePerson(actor, id);
             if (user == null || "admin".equals(s(user, "role"))) throw bad("管理员账号不能担任业务负责人");
         }
     }
@@ -1860,12 +1947,126 @@ public class TaskService {
         return ids;
     }
 
+    /** Batch state lives only inside one read transaction and is removed even when projection fails. */
+    private static final class ReadBatch {
+        final String organizationId;
+        final CompanyTree.Tree tree;
+        final Map<String,Map<String,Object>> tasks=new LinkedHashMap<>(),versions=new HashMap<>(),people=new HashMap<>(),tags=new HashMap<>();
+        final Map<String,List<String>> owners=new HashMap<>();
+        Map<String,Map<String,Object>> pending;
+        final Map<String,Map<String,Object>> latestRequests=new LinkedHashMap<>();
+        boolean completeVisibleTasks;
+        ReadBatch(String organizationId,CompanyTree.Tree tree) {this.organizationId=organizationId;this.tree=tree;}
+    }
+    private ReadBatch baseReadBatch(Actor actor) {
+        ReadBatch batch=new ReadBatch(actor.organizationId(),companyTree.of(actor.organizationId()));
+        // Display-only participants may be inactive, but routes always use the active fixed tree.
+        for(var row:db.list("SELECT id,display_name FROM users WHERE organization_id=? ORDER BY id",actor.organizationId()))
+            batch.people.put(s(row,"id"),row);
+        return batch;
+    }
+    private ReadBatch loadAdminBatch(Actor actor) {
+        ReadBatch batch=baseReadBatch(actor);
+        for(var row:db.list("SELECT * FROM tasks WHERE organization_id=? ORDER BY created_at DESC,id",actor.organizationId()))
+            batch.tasks.put(s(row,"id"),row);
+        for(var row:db.list("SELECT id,task_id,proposed_version_id,status,kind FROM approval_requests WHERE organization_id=? ORDER BY created_at,id",actor.organizationId()))
+            batch.latestRequests.put(s(row,"taskId"),row);
+        Set<String> versions=new LinkedHashSet<>();
+        for(var task:batch.tasks.values()) {
+            String current=s(task,"currentVersionId");var request=batch.latestRequests.get(s(task,"id"));
+            versions.add(current!=null?current:request==null?null:s(request,"proposedVersionId"));
+        }
+        loadVersions(batch,versions);return batch;
+    }
+    private ReadBatch loadTaskBatch(Actor actor) {
+        ReadBatch batch=baseReadBatch(actor);
+        List<Object> args=new ArrayList<>();args.add(actor.organizationId());
+        String visibility=candidateTaskVisibility(actor,batch.tree,args);
+        for(var row:db.list("SELECT t.* FROM tasks t WHERE t.organization_id=? AND t.current_version_id IS NOT NULL AND ("
+                +visibility+") ORDER BY t.created_at DESC,t.id",args.toArray())) batch.tasks.put(s(row,"id"),row);
+        batch.completeVisibleTasks=true;
+        loadCurrentVersions(batch);access.primeBusinessOwners(actor.organizationId(),batch.tasks.keySet());
+        batch.pending=new HashMap<>();
+        for(List<String> part:chunks(new ArrayList<>(batch.tasks.keySet()))) {
+            List<Object> pendingArgs=new ArrayList<>();pendingArgs.add(actor.organizationId());pendingArgs.addAll(part);
+            for(var row:db.list("SELECT * FROM approval_requests WHERE organization_id=? AND status='pending' AND task_id IN ("
+                    +marks(part.size())+")",pendingArgs.toArray())) batch.pending.put(s(row,"taskId"),row);
+        }
+        return batch;
+    }
+    /** Same fixed-placement relationships as Access.canSeeTask, repeated in memory after the SQL prefilter. */
+    private String candidateTaskVisibility(Actor actor,CompanyTree.Tree tree,List<Object> args) {
+        if(!actor.business() || !Set.of("founder","department_head","team_head","employee").contains(actor.role())) return "1=0";
+        if("founder".equals(actor.role())) return "1=1";
+        args.add(actor.id());args.add(actor.id());args.add(actor.id());
+        String visibility="t.original_creator_id=? OR EXISTS (SELECT 1 FROM task_version_assignees a WHERE a.organization_id=t.organization_id AND a.version_id=t.current_version_id AND a.user_id=?)"
+                +" OR EXISTS (SELECT 1 FROM task_business_owners b WHERE b.organization_id=t.organization_id AND b.task_id=t.id AND b.employee_id=?)";
+        String unit="department_head".equals(actor.role())?"department_id":"team_head".equals(actor.role())?"team_id":null;
+        String unitId="department_id".equals(unit)?actor.departmentId():actor.teamId();
+        if(unit!=null && unitId!=null && tree.valid()) {
+            visibility+=" OR EXISTS (SELECT 1 FROM task_version_assignees a JOIN employee_placements ep ON ep.organization_id=a.organization_id AND ep.employee_id=a.user_id "
+                    +"JOIN users u ON u.organization_id=ep.organization_id AND u.id=ep.employee_id JOIN principals pr ON pr.organization_id=u.organization_id AND pr.id=u.id "
+                    +"WHERE a.organization_id=t.organization_id AND a.version_id=t.current_version_id AND u.active=1 AND pr.active=1 AND pr.account_type='employee' AND ep."+unit+"=?)";
+            args.add(unitId);
+        }
+        return visibility;
+    }
+    private void loadTasks(ReadBatch batch,Collection<String> ids) {
+        List<String> unique=ids.stream().filter(Objects::nonNull).distinct().filter(id->!batch.tasks.containsKey(id)).toList();
+        for(List<String> part:chunks(unique)) {
+            List<Object> args=new ArrayList<>();args.add(batch.organizationId);args.addAll(part);
+            for(var row:db.list("SELECT * FROM tasks WHERE organization_id=? AND id IN ("+marks(part.size())+")",args.toArray()))
+                batch.tasks.put(s(row,"id"),row);
+        }
+    }
+    private void loadCurrentVersions(ReadBatch batch) {
+        Set<String> ids=new LinkedHashSet<>();batch.tasks.values().forEach(task->ids.add(s(task,"currentVersionId")));
+        loadVersions(batch,ids);
+    }
+    private void loadVersions(ReadBatch batch,Collection<String> ids) {
+        List<String> missing=ids.stream().filter(Objects::nonNull).distinct().filter(id->!batch.versions.containsKey(id)).toList();
+        for(List<String> part:chunks(missing)) {
+            List<Object> args=new ArrayList<>();args.add(batch.organizationId);args.addAll(part);
+            String placeholders=marks(part.size());
+            for(var row:db.list("SELECT * FROM task_versions WHERE organization_id=? AND id IN ("+placeholders+")",args.toArray()))
+                batch.versions.put(s(row,"id"),row);
+            for(var row:db.list("SELECT version_id,user_id FROM task_version_assignees WHERE organization_id=? AND version_id IN ("
+                    +placeholders+") ORDER BY version_id,ordinal,user_id",args.toArray()))
+                batch.owners.computeIfAbsent(s(row,"versionId"),ignored->new ArrayList<>()).add(s(row,"userId"));
+        }
+    }
+    private static List<List<String>> chunks(List<String> ids) {
+        List<List<String>> result=new ArrayList<>();
+        for(int start=0;start<ids.size();start+=500) result.add(ids.subList(start,Math.min(start+500,ids.size())));
+        return result;
+    }
+    private static String marks(int size) {return String.join(",",Collections.nCopies(size,"?"));}
+    private <T> T withReadBatch(ReadBatch batch,Supplier<T> work) {
+        ReadBatch previous=batchReads.get();batchReads.set(batch);
+        try {return work.get();}
+        finally {if(previous==null) batchReads.remove();else batchReads.set(previous);}
+    }
+    private ReadBatch currentBatch(Actor actor) {
+        ReadBatch batch=batchReads.get();return batch!=null && batch.organizationId.equals(actor.organizationId())?batch:null;
+    }
+    private Map<String,Object> routePerson(Actor actor,String id) {
+        ReadBatch batch=currentBatch(actor);
+        return batch==null?access.activeUser(actor,id):batch.tree.valid()?batch.tree.nodes().get(id):null;
+    }
+    private Map<String,Object> readTag(Actor actor,String id) {
+        ReadBatch batch=currentBatch(actor);if(batch==null || id==null) return tags.view(actor,id);
+        if(!batch.tags.containsKey(id)) batch.tags.put(id,tags.view(actor,id));
+        return batch.tags.get(id);
+    }
+
     private Map<String, Object> task(Actor actor, String id, boolean lock) {
         requiredId(id, "taskId");
+        ReadBatch batch=currentBatch(actor);if(!lock && batch!=null && batch.tasks.containsKey(id)) return batch.tasks.get(id);
         return db.one("SELECT * FROM tasks WHERE organization_id=? AND id=?" + (lock ? " FOR UPDATE" : ""), actor.organizationId(), id);
     }
 
     private Map<String, Object> version(Actor actor, String id) {
+        ReadBatch batch=currentBatch(actor);if(batch!=null && batch.versions.containsKey(id)) return batch.versions.get(id);
         return db.one("SELECT * FROM task_versions WHERE organization_id=? AND id=?", actor.organizationId(), id);
     }
 
@@ -1875,10 +2076,12 @@ public class TaskService {
     }
 
     private Map<String, Object> pending(Actor actor, String taskId, boolean lock) {
+        ReadBatch batch=currentBatch(actor);if(!lock && batch!=null && batch.pending!=null) return batch.pending.get(taskId);
         return db.find("SELECT * FROM approval_requests WHERE organization_id=? AND task_id=? AND status='pending'" + (lock ? " FOR UPDATE" : ""), actor.organizationId(), taskId);
     }
 
     private List<String> assignees(Actor actor, String versionId) {
+        ReadBatch batch=currentBatch(actor);if(batch!=null && batch.versions.containsKey(versionId)) return batch.owners.getOrDefault(versionId,List.of());
         // Saved submission order drives reviewer routing (DEV-006); legacy rows keep the deterministic
         // compatibility order with order_source='legacy-order-unknown'.
         return db.list("SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=? ORDER BY ordinal,user_id", actor.organizationId(), versionId).stream().map(row -> s(row, "userId")).toList();

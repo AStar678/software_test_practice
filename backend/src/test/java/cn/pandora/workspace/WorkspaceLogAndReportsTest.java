@@ -36,7 +36,7 @@ class WorkspaceLogAndReportsTest {
     @Test
     void createAllowsOnlyTheCompanyThreeDayWindow() {
         Db db = timezone(mock(Db.class));
-        WorkspaceService service = service(db, mock(Access.class));
+        WorkspaceService service = service(db, WorkspaceTestSupport.access());
 
         // Beyond the two backfill days: rejected without touching an existing slot.
         ApiException tooOld = assertThrows(ApiException.class,
@@ -59,7 +59,7 @@ class WorkspaceLogAndReportsTest {
     @Test
     void createStillReturnsTheExistingLiveRecordForTheSameDay() {
         Db db = timezone(mock(Db.class));
-        WorkspaceService service = service(db, mock(Access.class));
+        WorkspaceService service = service(db, WorkspaceTestSupport.access());
 
         when(db.find(startsWith("SELECT id,row_version,business_date"), eq("org"), eq("u"), any()))
                 .thenReturn(Map.of("id", "log-1", "rowVersion", 2L, "businessDate", "2026-10-20"));
@@ -76,7 +76,7 @@ class WorkspaceLogAndReportsTest {
         when(db.find(startsWith("SELECT id,row_version,business_date"), eq("org"), eq("u"), any()))
                 .thenReturn(null);
         when(db.update(contains("INSERT INTO work_logs"), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
-        WorkspaceService service = service(db, mock(Access.class));
+        WorkspaceService service = service(db, WorkspaceTestSupport.access());
 
         Map<String, Object> result = service.createLog(EMPLOYEE, Map.of("body", "today"));
         assertEquals("2026-10-20", result.get("businessDate"));
@@ -87,7 +87,7 @@ class WorkspaceLogAndReportsTest {
     @Test
     void aLogStaysEditableAcrossMidnightUntilItsOwnTwentyFourHours() {
         Db db = timezone(mock(Db.class));
-        Access access = mock(Access.class);
+        Access access = WorkspaceTestSupport.access();
         when(access.canReadLogAuthor(EMPLOYEE, "u")).thenReturn(true);
         // Real first creation: 2026-10-20 00:00 Asia/Shanghai, i.e. the previous company day.
         Map<String, Object> row = new LinkedHashMap<>(Map.of("id", "log-1", "organizationId", "org",
@@ -120,7 +120,7 @@ class WorkspaceLogAndReportsTest {
     @Test
     void aFrozenSlotCannotBeRecreatedAndADateCannotBeChanged() {
         Db db = timezone(mock(Db.class));
-        WorkspaceService service = service(db, mock(Access.class));
+        WorkspaceService service = service(db, WorkspaceTestSupport.access());
         // The day slot survives a delete, but only its original first creation decides the freeze.
         Map<String, Object> deleted = Map.of("id", "log-1", "rowVersion", 3L, "businessDate", "2026-10-19",
                 "deletedAt", "2026-10-19T16:05:00Z", "createdAt", "2026-10-18T16:00:00Z");
@@ -141,7 +141,7 @@ class WorkspaceLogAndReportsTest {
     @Test
     void logDetailDropsATaskTheReaderCannotSee() {
         Db db = timezone(mock(Db.class));
-        Access access = mock(Access.class);
+        Access access = WorkspaceTestSupport.access();
         when(access.canReadLogAuthor(EMPLOYEE, "u")).thenReturn(true);
         Map<String, Object> row = new LinkedHashMap<>(Map.of("id", "log-1", "authorId", "u",
                 "businessDate", "2026-10-20", "rowVersion", 1L, "taskId", "task-1"));
@@ -156,7 +156,7 @@ class WorkspaceLogAndReportsTest {
     @Test
     void reportsIncludeAllActualDescendantsButNoOtherChain() {
         Db db = mock(Db.class);
-        Access access = mock(Access.class);
+        Access access = WorkspaceTestSupport.access();
         List<Map<String, Object>> rows = List.of(
                 person("m", "exec", "m", 2),
                 person("e", "m", "e", 3),
