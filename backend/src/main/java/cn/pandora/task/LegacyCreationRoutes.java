@@ -4,6 +4,7 @@ import cn.pandora.auth.Access;
 import cn.pandora.auth.Actor;
 import cn.pandora.common.ApiException;
 import cn.pandora.common.Db;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
@@ -27,6 +28,8 @@ import static cn.pandora.common.Db.s;
 public class LegacyCreationRoutes implements ApplicationRunner {
     /** After the seed, the organization constraints and the log-slot backfill. */
     public static final int ORDER = 30;
+    @Value("${pandora.startup-maintenance-enabled:true}")
+    private boolean startupMaintenanceEnabled = true;
     private final Db db;
     private final Access access;
     private final TaskService tasks;
@@ -41,7 +44,10 @@ public class LegacyCreationRoutes implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        for (Map<String, Object> organization : db.list("SELECT id FROM organizations ORDER BY id")) {
+        if (!startupMaintenanceEnabled) return;
+        // Most starts have no legacy work. Do not serialize them behind business writes or another instance.
+        for (Map<String, Object> organization : db.list("SELECT DISTINCT organization_id AS id FROM approval_requests WHERE "
+                + TaskService.LEGACY_CREATION_ROUTES + " ORDER BY organization_id")) {
             String organizationId = s(organization, "id");
             // The administrator identity performs the same maintenance the console would; it grants no
             // business authority, and only the route metadata is rewritten.

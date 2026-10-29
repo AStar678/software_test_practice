@@ -1,6 +1,7 @@
 package cn.pandora.workspace;
 
 import cn.pandora.common.Db;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
@@ -38,6 +39,8 @@ import static cn.pandora.common.Db.s;
 public class WorkLogSlots implements ApplicationRunner {
     /** After the seed (0) and the organization constraints, on every start; the work is idempotent. */
     public static final int ORDER = 20;
+    @Value("${pandora.startup-maintenance-enabled:true}")
+    private boolean startupMaintenanceEnabled = true;
     private final Db db;
     private final TransactionTemplate tx;
 
@@ -48,6 +51,7 @@ public class WorkLogSlots implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        if (!startupMaintenanceEnabled) return;
         tx.executeWithoutResult(status -> {
             for (Map<String, Object> organization : db.list("SELECT id,time_zone FROM organizations ORDER BY id")) {
                 String organizationId = s(organization, "id");

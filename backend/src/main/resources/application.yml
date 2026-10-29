@@ -24,5 +24,6 @@ spring:
       enabled: false
 pandora:
   seed: ${PANDORA_SEED:false}
+  startup-maintenance-enabled: ${PANDORA_STARTUP_MAINTENANCE_ENABLED:true}
   worker-enabled: ${PANDORA_WORKER_ENABLED:true}
   demo-password: ${PANDORA_DEMO_PASSWORD:Demo@123456}
