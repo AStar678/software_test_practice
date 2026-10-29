@@ -173,9 +173,18 @@
     return '<span class="badge ' + (STATUS_CLASS[task.status] || "b-normal") + '">' + esc(STATUS_LABEL[task.status] || "待开始") + '</span>' + (task.frozen ? '<span class="badge b-pending">审核中</span>' : '');
   };
 
+  /* The fixed placement decides the one-time default of a brand-new draft: an ordinary
+     employee starts with themselves as the only assignee, while founder, department head and
+     team head start empty. It is only the initial value, so a later removal or cancelled
+     selection stays a user decision instead of being corrected back (chapter 3.2). */
+  function creationDefaultAssignees() {
+    const account = me();
+    return account && account.role === "employee" ? [account.id] : [];
+  }
   window.taskDraftFrom = function (mode, id) {
     const value = originalDraft(mode, id);
     if (!value) return null;
+    if (mode === "create") value.assigneeIds = creationDefaultAssignees();
     const task = id && taskById(id);
     value.acceptanceCriteria = task && task.raw ? task.raw.acceptanceCriteria || "" : "";
     value.reason = "";

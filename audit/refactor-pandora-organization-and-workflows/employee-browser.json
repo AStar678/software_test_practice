@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-29T02:13:21.149Z",
+  "updated": "2026-10-29T02:59:25.715Z",
   "checks": [
     {
       "check": "login form ready alpha-one-employee",
@@ -313,7 +313,7 @@
         "total": 109,
         "head": [
           "All day original",
-          "Browser task 005 very long title  very long title  very long title"
+          "Browser task 012 very long title  very long title  very long title"
         ],
         "tail": [
           "Calendar cross",
@@ -343,7 +343,7 @@
           "Calendar cross"
         ],
         "tail": [
-          "Browser task 014 very long title  very long title  very long title",
+          "Browser task 026 very long title  very long title  very long title",
           "All day original"
         ]
       }
@@ -365,8 +365,8 @@
           "Calendar midnight"
         ],
         "tail": [
-          "Browser task 067 very long title  very long title  very long title",
-          "Browser task 014 very long title  very long title  very long title"
+          "Browser task 029 very long title  very long title  very long title",
+          "Browser task 026 very long title  very long title  very long title"
         ]
       }
     },
@@ -388,8 +388,8 @@
         "dir": "desc",
         "total": 109,
         "head": [
-          "Browser task 005 very long title  very long title  very long title",
-          "Browser task 077 very long title  very long title  very long title"
+          "Browser task 012 very long title  very long title  very long title",
+          "Browser task 074 very long title  very long title  very long title"
         ],
         "tail": [
           "Calendar point",
@@ -410,12 +410,12 @@
         "dir": "asc",
         "total": 109,
         "head": [
-          "Browser task 005 very long title  very long title  very long title",
-          "Browser task 077 very long title  very long title  very long title"
+          "Browser task 012 very long title  very long title  very long title",
+          "Browser task 074 very long title  very long title  very long title"
         ],
         "tail": [
-          "Browser task 067 very long title  very long title  very long title",
-          "Browser task 014 very long title  very long title  very long title"
+          "Browser task 026 very long title  very long title  very long title",
+          "Calendar midnight"
         ]
       }
     },
@@ -437,12 +437,12 @@
         "dir": "desc",
         "total": 109,
         "head": [
-          "Browser task 005 very long title  very long title  very long title",
-          "Browser task 077 very long title  very long title  very long title"
+          "Browser task 012 very long title  very long title  very long title",
+          "Browser task 074 very long title  very long title  very long title"
         ],
         "tail": [
-          "Browser task 067 very long title  very long title  very long title",
-          "Browser task 014 very long title  very long title  very long title"
+          "Browser task 026 very long title  very long title  very long title",
+          "Calendar midnight"
         ]
       }
     },
@@ -459,12 +459,12 @@
         "dir": "asc",
         "total": 109,
         "head": [
-          "Browser task 005 very long title  very long title  very long title",
-          "Browser task 077 very long title  very long title  very long title"
+          "Browser task 012 very long title  very long title  very long title",
+          "Browser task 074 very long title  very long title  very long title"
         ],
         "tail": [
-          "Browser task 067 very long title  very long title  very long title",
-          "Browser task 014 very long title  very long title  very long title"
+          "Browser task 026 very long title  very long title  very long title",
+          "Calendar midnight"
         ]
       }
     },
@@ -486,12 +486,12 @@
         "dir": "desc",
         "total": 109,
         "head": [
-          "Browser task 005 very long title  very long title  very long title",
-          "Browser task 077 very long title  very long title  very long title"
+          "Browser task 012 very long title  very long title  very long title",
+          "Browser task 074 very long title  very long title  very long title"
         ],
         "tail": [
-          "Browser task 067 very long title  very long title  very long title",
-          "Browser task 014 very long title  very long title  very long title"
+          "Browser task 026 very long title  very long title  very long title",
+          "Calendar midnight"
         ]
       }
     },
@@ -535,58 +535,58 @@
           "query": "Browser task 0",
           "scroll": 420,
           "ids": [
-            "74bf5051-fef2-40db-b5fb-f52ea25aff36",
-            "75057caa-e77c-4f06-837c-1a81eb228fe4",
-            "7c67e2a9-0b61-4ff1-968a-ddcddd601250",
-            "8249d957-c8dd-4653-9868-a58936f90d24",
-            "82ac66f5-f818-499e-a6e2-c20bc47781a4",
-            "8eb609f4-95b7-46df-9f57-ad3dcbe6ddf3",
-            "8ee41543-d203-4496-b1e7-78cba3318efd",
-            "9019f3af-37d9-4750-b26c-82a0b7d1b5e4",
-            "91ddbfff-86e8-49ac-afc5-30c1a0d5fab4",
-            "9fc15180-d525-452b-966c-9f64a4ec86b2",
-            "a0bdf888-7e4e-45a2-b671-0ed380be6958",
-            "a2223764-2cf4-470c-867b-e9542c994083",
-            "a2adaf5a-9b2f-46dc-8f05-020a8c4f434a",
-            "a45cfa9c-07ce-4144-90e5-1d8d1a0bbebd",
-            "a516eb3c-6a3e-4892-a673-04312aabd73d",
-            "a54c073a-d0d7-4db3-9f17-74e3857a7662",
-            "aa7ed874-d89b-4283-8e07-769263072529",
-            "ae10e8bc-c2f5-45cf-b773-8f28523424e4",
-            "b27db5a5-459f-4983-984f-c18e1c200eba",
-            "bc0f7180-16f7-4390-9847-000206d50cd6",
-            "bc457a44-997a-4c79-a7ba-fa563992558e",
-            "bcde9076-e180-4756-99ab-d420dbbb03fd",
-            "bdfcd971-6af0-4400-a50e-60679f581ff1",
-            "c0758fec-a001-43ca-84b0-9768a0800d8c",
-            "c2b26d50-1975-4289-97a6-672eea26327c",
-            "c2fec8ec-033b-4a97-9a10-006cf633fbbc",
-            "c3e97ef6-aeff-4861-b451-2c22643da6a4",
-            "c48dc0a0-bf99-498c-b1b6-835d0cec9230",
-            "c55c3cc4-e60d-4a6c-b3dd-550f39a76635",
-            "c836b44a-5d6e-47ba-987d-5817b57d451c",
-            "cba7e350-d141-4951-9581-ce3d0335f08d",
-            "cdf9d5e0-441e-4c96-9678-0fec9098fad5",
-            "cee67986-581c-49ab-8a2a-2776b9c820ac",
-            "ceeb9a90-b9fe-4f11-a9e7-9e36bb43e0d5",
-            "d316ef56-c64c-4bba-bd60-3a1ff8693341",
-            "d79e034b-c900-46d4-8d9d-d2c063eb3fc6",
-            "db207c53-6b8a-45c9-b3f7-d9dd053690cd",
-            "db53e099-c97e-43ea-b020-66404fe2feed",
-            "ddf4eaff-2173-4e26-b0fc-19d88b143d6b",
-            "e13eb399-ec39-4576-a080-2d7dbea4c22b",
-            "e2b2ea07-224f-44b3-8f9e-504deb98e26d",
-            "e37b3a38-51cd-49d2-af92-5c11776c053f",
-            "e71f775e-64e8-41a8-846c-792fe9aec59c",
-            "e843f0da-1af0-4b69-a2ec-4de6e8b29621",
-            "e8afb2a6-5671-423e-939d-bec06bcfb3d3",
-            "eda239c8-1ff7-4b9f-95cb-ed2f3ce3b7bc",
-            "ee1a3701-6cd1-4d48-a2a4-c5513b8e6d4e",
-            "ee22759a-dee9-44e6-bf3c-c6812acca0af",
-            "f066c864-12a7-4f23-ab91-4e750eb8b17e",
-            "f9e27ad0-3d5a-4537-a7d5-174d9fc83b2e"
+            "7731da8a-50f7-44f3-a119-429b4d1271d4",
+            "78a43def-f846-46a0-8332-edd4d5a6087d",
+            "7951f72b-be91-4b34-9736-b6d84d673f58",
+            "7a6be818-836e-4e84-b2df-c7af7986a4dc",
+            "7d4f45f4-cf2a-4ed1-bf01-31b8c7aea51c",
+            "7fbb63e0-1019-4da8-a0eb-a567414b9c05",
+            "876255a0-b050-4048-9a74-78f0d8abb43f",
+            "879f3187-55e1-47e7-8095-ebe5515a9619",
+            "8b4dd982-ce70-4889-ae22-3b1a900a669b",
+            "8cd9b46d-66da-41a9-b693-3b78fb43248b",
+            "8cee6dcb-0bbe-4d3a-bd81-66ff7741c813",
+            "8cf6f566-d7a4-4bf1-b2e6-9af428f900ef",
+            "8eef1538-ac2e-496c-a5d6-94fbe091de4e",
+            "901cf105-ebeb-427c-9397-dda5ce26bdfd",
+            "9b111bce-aab1-49c1-890c-30da2eb923ed",
+            "9bc91844-ee7d-46e0-94bf-db4bb1f04e6b",
+            "9f87ad9c-d032-4c10-9002-4d36615b4a04",
+            "9fe64665-9278-41a5-a8ca-f7a981649db1",
+            "a34e96c8-ced4-4385-a6dd-48f5710f7be1",
+            "a3aa3c50-3d27-4e99-809d-dd331ce42ac9",
+            "a43e1687-e435-4d50-be1e-b5e80576ddfc",
+            "a44f2099-787e-47cc-8301-bac20b56c573",
+            "aaba8cdc-2f70-4950-a3a8-3c6a5ff6eb09",
+            "acbc6321-604e-4473-8059-c82af2b3b213",
+            "ad41ca91-72b6-408a-bb89-680ee4236aa1",
+            "b8761f2c-730c-474c-abc4-33d3277d04ec",
+            "b879bc47-1628-4151-979c-b7e34d6e38aa",
+            "bb49155d-7113-493f-991f-a5b9427bfa2e",
+            "bbc748c0-94c0-4a08-8995-8bc2164ca598",
+            "c05ccd2d-73fa-4fba-878a-6a599fd08c97",
+            "c0a2a9fa-f669-4985-a7ef-7a0af009154b",
+            "c361387c-cf9a-454c-afd8-cd0fbaa9fead",
+            "c8dcf4ef-868c-451d-95e4-4cadd9ec34d7",
+            "d2f434ce-bf4e-446b-bbfb-78b72483f6e2",
+            "d9a14426-682b-4cc0-90dc-b6aa2cfc3562",
+            "ddcf6ef2-807a-4485-9a4e-70397ab23648",
+            "e156eb8a-282c-4e2e-823e-f8f37a4b2f64",
+            "e27616b3-0f48-4955-a9ce-0e70852f0e2f",
+            "e3f55487-0c4b-4791-94bc-886d0e0c5e22",
+            "e52dd25d-9d40-4a74-8329-6941629b7233",
+            "e85de63b-ccd4-47b6-b280-9efd667d485e",
+            "e8b57d06-da5a-47ed-9969-8b2780097cd8",
+            "ec73d59a-e72b-41bd-a3be-c8024ede361c",
+            "ed4c7617-c57e-46be-92f8-4e626c554bb4",
+            "ee62ae3e-5e58-4cd6-892c-fa7de402d762",
+            "f12a2a05-9ac8-4b13-bf46-a3c7b4d98072",
+            "f13b5f3c-52be-4ef0-bdb8-cc1af10cb56d",
+            "f3116a02-ed6b-48f9-9e0c-b8ad1954add2",
+            "f3213ed2-c3dc-4423-aac4-dfdb34c54ebb",
+            "f893c6dc-2935-4331-86e9-9552a843dd28"
           ],
-          "first": "74bf5051-fef2-40db-b5fb-f52ea25aff36"
+          "first": "7731da8a-50f7-44f3-a119-429b4d1271d4"
         },
         "afterDetail": {
           "page": 1,
@@ -594,56 +594,56 @@
           "queryInput": "Browser task 0",
           "scroll": 420,
           "ids": [
-            "74bf5051-fef2-40db-b5fb-f52ea25aff36",
-            "75057caa-e77c-4f06-837c-1a81eb228fe4",
-            "7c67e2a9-0b61-4ff1-968a-ddcddd601250",
-            "8249d957-c8dd-4653-9868-a58936f90d24",
-            "82ac66f5-f818-499e-a6e2-c20bc47781a4",
-            "8eb609f4-95b7-46df-9f57-ad3dcbe6ddf3",
-            "8ee41543-d203-4496-b1e7-78cba3318efd",
-            "9019f3af-37d9-4750-b26c-82a0b7d1b5e4",
-            "91ddbfff-86e8-49ac-afc5-30c1a0d5fab4",
-            "9fc15180-d525-452b-966c-9f64a4ec86b2",
-            "a0bdf888-7e4e-45a2-b671-0ed380be6958",
-            "a2223764-2cf4-470c-867b-e9542c994083",
-            "a2adaf5a-9b2f-46dc-8f05-020a8c4f434a",
-            "a45cfa9c-07ce-4144-90e5-1d8d1a0bbebd",
-            "a516eb3c-6a3e-4892-a673-04312aabd73d",
-            "a54c073a-d0d7-4db3-9f17-74e3857a7662",
-            "aa7ed874-d89b-4283-8e07-769263072529",
-            "ae10e8bc-c2f5-45cf-b773-8f28523424e4",
-            "b27db5a5-459f-4983-984f-c18e1c200eba",
-            "bc0f7180-16f7-4390-9847-000206d50cd6",
-            "bc457a44-997a-4c79-a7ba-fa563992558e",
-            "bcde9076-e180-4756-99ab-d420dbbb03fd",
-            "bdfcd971-6af0-4400-a50e-60679f581ff1",
-            "c0758fec-a001-43ca-84b0-9768a0800d8c",
-            "c2b26d50-1975-4289-97a6-672eea26327c",
-            "c2fec8ec-033b-4a97-9a10-006cf633fbbc",
-            "c3e97ef6-aeff-4861-b451-2c22643da6a4",
-            "c48dc0a0-bf99-498c-b1b6-835d0cec9230",
-            "c55c3cc4-e60d-4a6c-b3dd-550f39a76635",
-            "c836b44a-5d6e-47ba-987d-5817b57d451c",
-            "cba7e350-d141-4951-9581-ce3d0335f08d",
-            "cdf9d5e0-441e-4c96-9678-0fec9098fad5",
-            "cee67986-581c-49ab-8a2a-2776b9c820ac",
-            "ceeb9a90-b9fe-4f11-a9e7-9e36bb43e0d5",
-            "d316ef56-c64c-4bba-bd60-3a1ff8693341",
-            "d79e034b-c900-46d4-8d9d-d2c063eb3fc6",
-            "db207c53-6b8a-45c9-b3f7-d9dd053690cd",
-            "db53e099-c97e-43ea-b020-66404fe2feed",
-            "ddf4eaff-2173-4e26-b0fc-19d88b143d6b",
-            "e13eb399-ec39-4576-a080-2d7dbea4c22b",
-            "e2b2ea07-224f-44b3-8f9e-504deb98e26d",
-            "e37b3a38-51cd-49d2-af92-5c11776c053f",
-            "e71f775e-64e8-41a8-846c-792fe9aec59c",
-            "e843f0da-1af0-4b69-a2ec-4de6e8b29621",
-            "e8afb2a6-5671-423e-939d-bec06bcfb3d3",
-            "eda239c8-1ff7-4b9f-95cb-ed2f3ce3b7bc",
-            "ee1a3701-6cd1-4d48-a2a4-c5513b8e6d4e",
-            "ee22759a-dee9-44e6-bf3c-c6812acca0af",
-            "f066c864-12a7-4f23-ab91-4e750eb8b17e",
-            "f9e27ad0-3d5a-4537-a7d5-174d9fc83b2e"
+            "7731da8a-50f7-44f3-a119-429b4d1271d4",
+            "78a43def-f846-46a0-8332-edd4d5a6087d",
+            "7951f72b-be91-4b34-9736-b6d84d673f58",
+            "7a6be818-836e-4e84-b2df-c7af7986a4dc",
+            "7d4f45f4-cf2a-4ed1-bf01-31b8c7aea51c",
+            "7fbb63e0-1019-4da8-a0eb-a567414b9c05",
+            "876255a0-b050-4048-9a74-78f0d8abb43f",
+            "879f3187-55e1-47e7-8095-ebe5515a9619",
+            "8b4dd982-ce70-4889-ae22-3b1a900a669b",
+            "8cd9b46d-66da-41a9-b693-3b78fb43248b",
+            "8cee6dcb-0bbe-4d3a-bd81-66ff7741c813",
+            "8cf6f566-d7a4-4bf1-b2e6-9af428f900ef",
+            "8eef1538-ac2e-496c-a5d6-94fbe091de4e",
+            "901cf105-ebeb-427c-9397-dda5ce26bdfd",
+            "9b111bce-aab1-49c1-890c-30da2eb923ed",
+            "9bc91844-ee7d-46e0-94bf-db4bb1f04e6b",
+            "9f87ad9c-d032-4c10-9002-4d36615b4a04",
+            "9fe64665-9278-41a5-a8ca-f7a981649db1",
+            "a34e96c8-ced4-4385-a6dd-48f5710f7be1",
+            "a3aa3c50-3d27-4e99-809d-dd331ce42ac9",
+            "a43e1687-e435-4d50-be1e-b5e80576ddfc",
+            "a44f2099-787e-47cc-8301-bac20b56c573",
+            "aaba8cdc-2f70-4950-a3a8-3c6a5ff6eb09",
+            "acbc6321-604e-4473-8059-c82af2b3b213",
+            "ad41ca91-72b6-408a-bb89-680ee4236aa1",
+            "b8761f2c-730c-474c-abc4-33d3277d04ec",
+            "b879bc47-1628-4151-979c-b7e34d6e38aa",
+            "bb49155d-7113-493f-991f-a5b9427bfa2e",
+            "bbc748c0-94c0-4a08-8995-8bc2164ca598",
+            "c05ccd2d-73fa-4fba-878a-6a599fd08c97",
+            "c0a2a9fa-f669-4985-a7ef-7a0af009154b",
+            "c361387c-cf9a-454c-afd8-cd0fbaa9fead",
+            "c8dcf4ef-868c-451d-95e4-4cadd9ec34d7",
+            "d2f434ce-bf4e-446b-bbfb-78b72483f6e2",
+            "d9a14426-682b-4cc0-90dc-b6aa2cfc3562",
+            "ddcf6ef2-807a-4485-9a4e-70397ab23648",
+            "e156eb8a-282c-4e2e-823e-f8f37a4b2f64",
+            "e27616b3-0f48-4955-a9ce-0e70852f0e2f",
+            "e3f55487-0c4b-4791-94bc-886d0e0c5e22",
+            "e52dd25d-9d40-4a74-8329-6941629b7233",
+            "e85de63b-ccd4-47b6-b280-9efd667d485e",
+            "e8b57d06-da5a-47ed-9969-8b2780097cd8",
+            "ec73d59a-e72b-41bd-a3be-c8024ede361c",
+            "ed4c7617-c57e-46be-92f8-4e626c554bb4",
+            "ee62ae3e-5e58-4cd6-892c-fa7de402d762",
+            "f12a2a05-9ac8-4b13-bf46-a3c7b4d98072",
+            "f13b5f3c-52be-4ef0-bdb8-cc1af10cb56d",
+            "f3116a02-ed6b-48f9-9e0c-b8ad1954add2",
+            "f3213ed2-c3dc-4423-aac4-dfdb34c54ebb",
+            "f893c6dc-2935-4331-86e9-9552a843dd28"
           ],
           "loaded": true,
           "error": null,
@@ -706,27 +706,27 @@
           "page": "log"
         },
         "yesterdayLog": {
-          "id": "46de0123-3897-4357-9313-db909f3326b6",
+          "id": "d38fc8ed-6da2-4f87-91ae-0a7a470ff596",
           "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
           "businessDate": "2026-10-28",
           "body": "Browser log yesterday backfill",
           "taskId": null,
           "rowVersion": 1,
-          "createdAt": "2026-10-29T02:13:24.608837Z",
-          "updatedAt": "2026-10-29T02:13:24.608837Z",
+          "createdAt": "2026-10-29T02:59:29.212527Z",
+          "updatedAt": "2026-10-29T02:59:29.212527Z",
           "deletedAt": null,
           "recoveredFrom": "log-row",
           "tagId": null,
           "authorName": "alpha-one-employee",
           "tag": null,
           "frozen": false,
-          "frozenAt": "2026-10-30T02:13:24.608837Z",
+          "frozenAt": "2026-10-30T02:59:29.212527Z",
           "editable": true,
           "deletable": true
         },
         "allSelf": [
           {
-            "id": "46de0123-3897-4357-9313-db909f3326b6",
+            "id": "d38fc8ed-6da2-4f87-91ae-0a7a470ff596",
             "date": "2026-10-28",
             "body": "Browser log yesterday backfill"
           }
@@ -737,21 +737,21 @@
       "check": "backfill creates a real day-before log with a distinct object id",
       "pass": true,
       "evidence": {
-        "id": "8d819a4e-1afb-4997-b00c-e212d141b8fc",
+        "id": "4926b808-ba99-4301-b438-91ab7daf74e3",
         "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
         "businessDate": "2026-10-27",
         "body": "Browser log day before backfill",
         "taskId": null,
         "rowVersion": 1,
-        "createdAt": "2026-10-29T02:13:25.355784Z",
-        "updatedAt": "2026-10-29T02:13:25.355784Z",
+        "createdAt": "2026-10-29T02:59:29.962405Z",
+        "updatedAt": "2026-10-29T02:59:29.962405Z",
         "deletedAt": null,
         "recoveredFrom": "log-row",
         "tagId": null,
         "authorName": "alpha-one-employee",
         "tag": null,
         "frozen": false,
-        "frozenAt": "2026-10-30T02:13:25.355784Z",
+        "frozenAt": "2026-10-30T02:59:29.962405Z",
         "editable": true,
         "deletable": true
       }
@@ -772,26 +772,26 @@
       "evidence": {
         "restored": {
           "restored": true,
-          "businessDate": "2026-10-27",
-          "logId": "8d819a4e-1afb-4997-b00c-e212d141b8fc",
-          "rowVersion": 3
+          "rowVersion": 3,
+          "logId": "4926b808-ba99-4301-b438-91ab7daf74e3",
+          "businessDate": "2026-10-27"
         },
         "predayRestored": {
-          "id": "8d819a4e-1afb-4997-b00c-e212d141b8fc",
+          "id": "4926b808-ba99-4301-b438-91ab7daf74e3",
           "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
           "businessDate": "2026-10-27",
           "body": "Browser log day before restored",
           "taskId": null,
           "rowVersion": 3,
-          "createdAt": "2026-10-29T02:13:25.355784Z",
-          "updatedAt": "2026-10-29T02:13:26.686001Z",
+          "createdAt": "2026-10-29T02:59:29.962405Z",
+          "updatedAt": "2026-10-29T02:59:31.306384Z",
           "deletedAt": null,
           "recoveredFrom": "log-row",
           "tagId": null,
           "authorName": "alpha-one-employee",
           "tag": null,
           "frozen": false,
-          "frozenAt": "2026-10-30T02:13:25.355784Z",
+          "frozenAt": "2026-10-30T02:59:29.962405Z",
           "editable": true,
           "deletable": true
         }
@@ -803,9 +803,9 @@
       "evidence": {
         "race": {
           "restored": true,
-          "businessDate": "2026-10-27",
-          "logId": "8d819a4e-1afb-4997-b00c-e212d141b8fc",
-          "rowVersion": 5
+          "rowVersion": 5,
+          "logId": "4926b808-ba99-4301-b438-91ab7daf74e3",
+          "businessDate": "2026-10-27"
         },
         "notice": "该日期已有日志，已打开已有记录继续编辑。",
         "form": {
@@ -818,21 +818,21 @@
       "check": "same-day uniqueness keeps one live row for the company business date",
       "pass": true,
       "evidence": {
-        "id": "8d819a4e-1afb-4997-b00c-e212d141b8fc",
+        "id": "4926b808-ba99-4301-b438-91ab7daf74e3",
         "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
         "businessDate": "2026-10-27",
         "body": "Browser same-day race winner",
         "taskId": null,
         "rowVersion": 5,
-        "createdAt": "2026-10-29T02:13:25.355784Z",
-        "updatedAt": "2026-10-29T02:13:27.024516Z",
+        "createdAt": "2026-10-29T02:59:29.962405Z",
+        "updatedAt": "2026-10-29T02:59:31.660163Z",
         "deletedAt": null,
         "recoveredFrom": "log-row",
         "tagId": null,
         "authorName": "alpha-one-employee",
         "tag": null,
         "frozen": false,
-        "frozenAt": "2026-10-30T02:13:25.355784Z",
+        "frozenAt": "2026-10-30T02:59:29.962405Z",
         "editable": true,
         "deletable": true
       }
@@ -855,21 +855,21 @@
       "check": "today log is a real record with the company business date",
       "pass": true,
       "evidence": {
-        "id": "14d8fce0-7cf0-4566-b9bb-07765446519a",
+        "id": "576e9af8-4fc7-4175-af8f-a033a1ca47c0",
         "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
         "businessDate": "2026-10-29",
         "body": "Browser log today original",
         "taskId": null,
         "rowVersion": 1,
-        "createdAt": "2026-10-29T02:13:27.330240Z",
-        "updatedAt": "2026-10-29T02:13:27.330240Z",
+        "createdAt": "2026-10-29T02:59:31.971650Z",
+        "updatedAt": "2026-10-29T02:59:31.971650Z",
         "deletedAt": null,
         "recoveredFrom": "log-row",
         "tagId": null,
         "authorName": "alpha-one-employee",
         "tag": null,
         "frozen": false,
-        "frozenAt": "2026-10-30T02:13:27.330240Z",
+        "frozenAt": "2026-10-30T02:59:31.971650Z",
         "editable": true,
         "deletable": true
       }
@@ -887,40 +887,40 @@
       "pass": true,
       "evidence": {
         "before": {
-          "id": "14d8fce0-7cf0-4566-b9bb-07765446519a",
+          "id": "576e9af8-4fc7-4175-af8f-a033a1ca47c0",
           "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
           "businessDate": "2026-10-29",
           "body": "Browser log today original",
           "taskId": null,
           "rowVersion": 1,
-          "createdAt": "2026-10-29T02:13:27.330240Z",
-          "updatedAt": "2026-10-29T02:13:27.330240Z",
+          "createdAt": "2026-10-29T02:59:31.971650Z",
+          "updatedAt": "2026-10-29T02:59:31.971650Z",
           "deletedAt": null,
           "recoveredFrom": "log-row",
           "tagId": null,
           "authorName": "alpha-one-employee",
           "tag": null,
           "frozen": false,
-          "frozenAt": "2026-10-30T02:13:27.330240Z",
+          "frozenAt": "2026-10-30T02:59:31.971650Z",
           "editable": true,
           "deletable": true
         },
         "after": {
-          "id": "14d8fce0-7cf0-4566-b9bb-07765446519a",
+          "id": "576e9af8-4fc7-4175-af8f-a033a1ca47c0",
           "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
           "businessDate": "2026-10-29",
           "body": "Browser log today edited",
           "taskId": null,
           "rowVersion": 2,
-          "createdAt": "2026-10-29T02:13:27.330240Z",
-          "updatedAt": "2026-10-29T02:13:27.916405Z",
+          "createdAt": "2026-10-29T02:59:31.971650Z",
+          "updatedAt": "2026-10-29T02:59:32.561803Z",
           "deletedAt": null,
           "recoveredFrom": "log-row",
           "tagId": null,
           "authorName": "alpha-one-employee",
           "tag": null,
           "frozen": false,
-          "frozenAt": "2026-10-30T02:13:27.330240Z",
+          "frozenAt": "2026-10-30T02:59:31.971650Z",
           "editable": true,
           "deletable": true
         }
@@ -953,7 +953,7 @@
         "frozenPage": {
           "requests": [
             {
-              "path": "/work-logs/46de0123-3897-4357-9313-db909f3326b6",
+              "path": "/work-logs/d38fc8ed-6da2-4f87-91ae-0a7a470ff596",
               "method": "PATCH",
               "status": 409,
               "code": "WORK_LOG_FROZEN",
@@ -1000,11 +1000,11 @@
               "status": 200
             },
             {
-              "path": "/analytics/task-summary?scope=visible",
+              "path": "/tasks?limit=100&offset=100",
               "status": 200
             },
             {
-              "path": "/tasks?limit=100&offset=100",
+              "path": "/analytics/task-summary?scope=visible",
               "status": 200
             }
           ],
@@ -1016,26 +1016,26 @@
           "draft": null
         },
         "yesterdayFrozen": {
-          "id": "46de0123-3897-4357-9313-db909f3326b6",
+          "id": "d38fc8ed-6da2-4f87-91ae-0a7a470ff596",
           "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
           "businessDate": "2026-10-28",
           "body": "Browser log yesterday backfill",
           "taskId": null,
           "rowVersion": 1,
-          "createdAt": "2026-10-28T01:13:28.833858Z",
-          "updatedAt": "2026-10-29T02:13:24.608837Z",
+          "createdAt": "2026-10-28T01:59:33.487686Z",
+          "updatedAt": "2026-10-29T02:59:29.212527Z",
           "deletedAt": null,
           "recoveredFrom": "log-row",
           "tagId": null,
           "authorName": "alpha-one-employee",
           "tag": null,
           "frozen": true,
-          "frozenAt": "2026-10-29T01:13:28.833858Z",
+          "frozenAt": "2026-10-29T01:59:33.487686Z",
           "editable": false,
           "deletable": false
         },
-        "createdAtAged": "2026-10-28 01:13:28.833858",
-        "createdAtAfter": "2026-10-28 01:13:28.833858"
+        "createdAtAged": "2026-10-28 01:59:33.487686",
+        "createdAtAfter": "2026-10-28 01:59:33.487686"
       }
     },
     {
@@ -1046,8 +1046,8 @@
       "check": "recreating a deleted slot never resets the first-creation freeze window",
       "pass": true,
       "evidence": {
-        "before": "14d8fce0-7cf0-4566-b9bb-07765446519a\t2026-10-29\t2026-10-29 02:13:29.309081\t2026-10-29 02:13:27.330240",
-        "after": "14d8fce0-7cf0-4566-b9bb-07765446519a\t2026-10-29\t2026-10-29 02:13:29.309081\t2026-10-28 01:13:29.330931",
+        "before": "576e9af8-4fc7-4175-af8f-a033a1ca47c0\t2026-10-29\t2026-10-29 02:59:33.974473\t2026-10-29 02:59:31.971650",
+        "after": "576e9af8-4fc7-4175-af8f-a033a1ca47c0\t2026-10-29\t2026-10-29 02:59:33.974473\t2026-10-28 01:59:34.004256",
         "liveToday": "0",
         "notice": "该日志已满24小时，只能查看。"
       }
@@ -1060,7 +1060,7 @@
       "check": "new personal item is saved with a real object id",
       "pass": true,
       "evidence": {
-        "id": "02414746-6d7b-4c13-92c8-2a57c94018db",
+        "id": "3073a31e-86fd-435e-8db3-de2d523d004c",
         "kind": "personal",
         "title": "Browser personal item v1",
         "body": "Browser personal item v1",
@@ -1077,12 +1077,12 @@
       "pass": true,
       "evidence": {
         "personalEdited": {
-          "id": "02414746-6d7b-4c13-92c8-2a57c94018db",
+          "id": "3073a31e-86fd-435e-8db3-de2d523d004c",
           "kind": "personal",
           "title": "Browser personal item v1",
           "body": "Browser personal item v2",
           "sortOrder": 1,
-          "createdAt": "2026-10-29T02:13:29.947246Z",
+          "createdAt": "2026-10-29T02:59:34.633265Z",
           "rowVersion": 2,
           "editable": true
         }
@@ -1137,7 +1137,7 @@
         "unpublished": false,
         "pending": "complete",
         "row": true,
-        "rowText": "Effective version pending task创建待开始审核中完成待审冻结2026-11-04 18:00中beta-one-employee2026-11-01 09:00alpha-one-head2026-10-29 10:12Browser acceptance real task—定时否———"
+        "rowText": "Effective version pending task创建待开始审核中完成待审冻结2026-11-04 18:00中beta-one-employee2026-11-01 09:00alpha-one-head2026-10-29 10:59Browser acceptance real task—定时否———"
       }
     },
     {
@@ -1240,16 +1240,16 @@
         "teamQuery": "",
         "authorQuery": "",
         "cards": [
-          "8d819a4e-1afb-4997-b00c-e212d141b8fc",
-          "46de0123-3897-4357-9313-db909f3326b6"
+          "4926b808-ba99-4301-b438-91ab7daf74e3",
+          "d38fc8ed-6da2-4f87-91ae-0a7a470ff596"
         ],
         "filtered": [
           {
-            "id": "8d819a4e-1afb-4997-b00c-e212d141b8fc",
+            "id": "4926b808-ba99-4301-b438-91ab7daf74e3",
             "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
           },
           {
-            "id": "46de0123-3897-4357-9313-db909f3326b6",
+            "id": "d38fc8ed-6da2-4f87-91ae-0a7a470ff596",
             "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
           }
         ]
@@ -1260,20 +1260,20 @@
       "pass": true,
       "evidence": {
         "expected": [
-          "46de0123-3897-4357-9313-db909f3326b6",
-          "8d819a4e-1afb-4997-b00c-e212d141b8fc"
+          "d38fc8ed-6da2-4f87-91ae-0a7a470ff596",
+          "4926b808-ba99-4301-b438-91ab7daf74e3"
         ],
         "cards": [
-          "8d819a4e-1afb-4997-b00c-e212d141b8fc",
-          "46de0123-3897-4357-9313-db909f3326b6"
+          "4926b808-ba99-4301-b438-91ab7daf74e3",
+          "d38fc8ed-6da2-4f87-91ae-0a7a470ff596"
         ],
         "filtered": [
           {
-            "id": "8d819a4e-1afb-4997-b00c-e212d141b8fc",
+            "id": "4926b808-ba99-4301-b438-91ab7daf74e3",
             "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
           },
           {
-            "id": "46de0123-3897-4357-9313-db909f3326b6",
+            "id": "d38fc8ed-6da2-4f87-91ae-0a7a470ff596",
             "author": "4ce9a359-10d8-524d-8232-c73416f398d0"
           }
         ]
@@ -1306,6 +1306,393 @@
     {
       "check": "actual descendant contact and log entry alpha-two-head",
       "pass": true
+    },
+    {
+      "check": "login form ready founder",
+      "pass": true
+    },
+    {
+      "check": "phone login founder",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement founder",
+      "pass": true,
+      "evidence": {
+        "role": "founder",
+        "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "ids": [],
+        "chips": 0,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期全天（只填写起止日期，起止日期都包含在任务内）开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。标签（单选，可清除）无标签（默认粉色）标签由创始人统一维护，每项任务或日志最多选择一个；删除的标签不能再用于新的关联。紧急程度紧急高中低负责人（可多选）尚未选择负责人选择负责人负责人可选本公司全部有效员工（含其他部门、直属上级与创始人）；至少保留一位，本人可移除且不会自动加回。创建审核只按创建人的直属上级，与负责人选择无关。无需审核：固定创始人创建，记录原因后直接生效；提交后直接生效。"
+      }
+    },
+    {
+      "check": "login form ready alpha-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-head",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement alpha-head",
+      "pass": true,
+      "evidence": {
+        "role": "department_head",
+        "id": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+        "ids": [],
+        "chips": 0,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期全天（只填写起止日期，起止日期都包含在任务内）开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。标签（单选，可清除）无标签（默认粉色）标签由创始人统一维护，每项任务或日志最多选择一个；删除的标签不能再用于新的关联。紧急程度紧急高中低负责人（可多选）尚未选择负责人选择负责人负责人可选本公司全部有效员工（含其他部门、直属上级与创始人）；至少保留一位，本人可移除且不会自动加回。创建审核只按创建人的直属上级，与负责人选择无关。创建审核人：founder（按创建人的直属上级审核；负责人换序、更换或跨部门都不改变审核人）。"
+      }
+    },
+    {
+      "check": "login form ready alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement alpha-two-head",
+      "pass": true,
+      "evidence": {
+        "role": "team_head",
+        "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+        "ids": [],
+        "chips": 0,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期全天（只填写起止日期，起止日期都包含在任务内）开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。标签（单选，可清除）无标签（默认粉色）标签由创始人统一维护，每项任务或日志最多选择一个；删除的标签不能再用于新的关联。紧急程度紧急高中低负责人（可多选）尚未选择负责人选择负责人负责人可选本公司全部有效员工（含其他部门、直属上级与创始人）；至少保留一位，本人可移除且不会自动加回。创建审核只按创建人的直属上级，与负责人选择无关。创建审核人：alpha-head（按创建人的直属上级审核；负责人换序、更换或跨部门都不改变审核人）。"
+      }
+    },
+    {
+      "check": "login form ready alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement alpha-one-employee",
+      "pass": true,
+      "evidence": {
+        "role": "employee",
+        "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "ids": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "chips": 1,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期全天（只填写起止日期，起止日期都包含在任务内）开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。标签（单选，可清除）无标签（默认粉色）标签由创始人统一维护，每项任务或日志最多选择一个；删除的标签不能再用于新的关联。紧急程度紧急高中低负责人（可多选）alpha-one-employee员工 · alpha选择负责人负责人可选本公司全部有效员工（含其他部门、直属上级与创始人）；至少保留一位，本人可移除且不会自动加回。创建审核只按创建人的直属上级，与负责人选择无关。创建审核人：alpha-two-head（按创建人的直属上级审核；负责人换序、更换或跨部门都不改变审核人）。"
+      }
+    },
+    {
+      "check": "the employee draft is the starting point for owner edits",
+      "pass": true
+    },
+    {
+      "check": "new-task owner picker opens from the employee draft",
+      "pass": true
+    },
+    {
+      "check": "removing the initial self and choosing cross-department owners keeps the chosen order",
+      "pass": true,
+      "evidence": [
+        "c446e82b-711b-5d20-8fdd-b878fd0f0890",
+        "df322039-debc-570e-a1e9-b76f2bd8d66f"
+      ]
+    },
+    {
+      "check": "reordering the same owners is preserved instead of restoring the creator",
+      "pass": true,
+      "evidence": [
+        "df322039-debc-570e-a1e9-b76f2bd8d66f",
+        "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+      ]
+    },
+    {
+      "check": "cancelling the owner picker discards its working copy",
+      "pass": true,
+      "evidence": {
+        "reordered": [
+          "df322039-debc-570e-a1e9-b76f2bd8d66f",
+          "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+        ]
+      }
+    },
+    {
+      "check": "the employee can remove every owner without being added back",
+      "pass": true,
+      "evidence": {
+        "ids": [],
+        "empty": true
+      }
+    },
+    {
+      "check": "an empty owner list is rejected without submitting",
+      "pass": true,
+      "evidence": {
+        "text": "至少选择一位负责人。",
+        "ids": [],
+        "overlay": false
+      }
+    },
+    {
+      "check": "the employee creation preview routes to the direct manager",
+      "pass": true,
+      "evidence": {
+        "preview": {
+          "operation": "create",
+          "mode": "creation",
+          "route": {
+            "reviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+            "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "path": [
+              "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+            ],
+            "reason": "direct-manager",
+            "reasonText": "创建按创建人的直属上级审核",
+            "authzVersion": 4,
+            "reviewerAvailable": true,
+            "blocked": false,
+            "creation": true,
+            "participants": [
+              {
+                "displayName": "alpha-two-head",
+                "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+              },
+              {
+                "displayName": "alpha-one-employee",
+                "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+              }
+            ]
+          },
+          "reviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+          "requiresApproval": true,
+          "blocked": false,
+          "exemptionReason": null,
+          "blockedReason": null,
+          "reviewerBasis": "creator",
+          "previewOnly": true
+        },
+        "meInfo": {
+          "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "managerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+        }
+      }
+    },
+    {
+      "check": "the employee submits a real creation request with the chosen owners",
+      "pass": true
+    },
+    {
+      "check": "the created request is pending for the creator direct manager",
+      "pass": true,
+      "evidence": {
+        "requestId": "96d61c86-7eff-44a5-b77c-cf103a64b33e",
+        "taskId": "dd218de2-942c-42f8-bbde-542313ed076a",
+        "kind": "create",
+        "status": "pending",
+        "comment": null,
+        "applicantId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "currentReviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+        "rowVersion": 1,
+        "previousState": "todo",
+        "exemptionReason": null,
+        "createdAt": "2026-10-29T02:59:45.940864Z",
+        "decidedAt": null,
+        "applicableDeadline": "2026-11-01T10:00:00Z",
+        "expiredAt": null,
+        "title": "Browser creation default owner",
+        "versionNo": 1,
+        "route": {
+          "reviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "创建按创建人的直属上级审核",
+          "authzVersion": 4,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": true,
+          "participants": [
+            {
+              "displayName": "alpha-two-head",
+              "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+            },
+            {
+              "displayName": "alpha-one-employee",
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          ]
+        },
+        "proposedVersion": {
+          "id": "598f3779-5132-4b1b-95ea-56b45632c17e",
+          "taskId": "dd218de2-942c-42f8-bbde-542313ed076a",
+          "versionNo": 1,
+          "title": "Browser creation default owner",
+          "description": "Browser creation default check",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-10-30T01:00:00Z",
+          "dueAt": "2026-11-01T10:00:00Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "proposed",
+          "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "createdAt": "2026-10-29T02:59:45.942812Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+          ],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "participants": [
+          {
+            "displayName": "alpha-two-head",
+            "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+          },
+          {
+            "displayName": "alpha-one-employee",
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          },
+          {
+            "displayName": "beta-one-employee",
+            "id": "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+          }
+        ]
+      }
+    },
+    {
+      "check": "login form ready founder",
+      "pass": true
+    },
+    {
+      "check": "phone login founder",
+      "pass": true
+    },
+    {
+      "check": "the fixed founder starts empty and is exempt from creation review",
+      "pass": true,
+      "evidence": {
+        "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "ids": [],
+        "preview": {
+          "operation": "create",
+          "mode": "creation",
+          "route": {
+            "reviewerId": null,
+            "basisAssigneeId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "path": [],
+            "reason": "founder-exempt",
+            "reasonText": "固定创始人创建，记录原因后直接生效",
+            "authzVersion": 4,
+            "reviewerAvailable": false,
+            "blocked": false,
+            "creation": true,
+            "participants": [
+              {
+                "displayName": "founder",
+                "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+              }
+            ]
+          },
+          "reviewerId": null,
+          "requiresApproval": false,
+          "blocked": false,
+          "exemptionReason": "固定创始人创建，记录原因后直接生效",
+          "blockedReason": null,
+          "reviewerBasis": "creator",
+          "previewOnly": true
+        }
+      }
+    },
+    {
+      "check": "the founder owner picker opens",
+      "pass": true
+    },
+    {
+      "check": "the founder submission applies directly and publishes the task",
+      "pass": true
+    },
+    {
+      "check": "the founder exemption is recorded as direct with a reason, never as a pending self-approval",
+      "pass": true,
+      "evidence": {
+        "requestId": "1ec3e300-71cd-4d55-80cb-dbbae0afc41f",
+        "taskId": "3299c865-825c-4d38-987d-19eba314d2ef",
+        "kind": "create",
+        "status": "direct",
+        "comment": null,
+        "applicantId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "currentReviewerId": null,
+        "rowVersion": 1,
+        "previousState": "todo",
+        "exemptionReason": "固定创始人创建，记录原因后直接生效",
+        "createdAt": "2026-10-29T02:59:47.341782Z",
+        "decidedAt": "2026-10-29T02:59:47.341782Z",
+        "applicableDeadline": "2026-11-01T10:00:00Z",
+        "expiredAt": null,
+        "title": "Browser founder direct creation",
+        "versionNo": 1,
+        "route": {
+          "reviewerId": null,
+          "basisAssigneeId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "path": [],
+          "reason": "founder-exempt",
+          "reasonText": "固定创始人创建，记录原因后直接生效",
+          "authzVersion": 4,
+          "reviewerAvailable": false,
+          "blocked": false,
+          "creation": true,
+          "participants": [
+            {
+              "displayName": "founder",
+              "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+            }
+          ]
+        },
+        "proposedVersion": {
+          "id": "5bb75675-4d74-4a1e-b35f-cb83fe72a03a",
+          "taskId": "3299c865-825c-4d38-987d-19eba314d2ef",
+          "versionNo": 1,
+          "title": "Browser founder direct creation",
+          "description": "Browser founder default check",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-10-30T01:00:00Z",
+          "dueAt": "2026-11-01T10:00:00Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "applied",
+          "createdBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "createdAt": "2026-10-29T02:59:47.343110Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+          ],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "participants": [
+          {
+            "displayName": "founder",
+            "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+          }
+        ]
+      }
     },
     {
       "check": "employee interactions have no browser exceptions",

@@ -296,6 +296,85 @@ async function main(){
     await ev('closeSheet()');
    }
   }
+
+  /* -------- V-001: new-task defaults follow the fixed placement, not the retired role name -------- */
+  const employeeId=ids['alpha-one-employee'].id;
+  /* The preceding administrator suite deactivates alpha-two-employee, so owner edits use two
+     business employees that remain active for the rest of this shared fixture. */
+  const crossDeptOwner=ids['beta-one-employee'].id,secondOwner=ids['beta-two-employee'].id;
+  async function openCreateFromCalendar(){await setPage('view');await ev("document.querySelector('.p-schedule-fab[data-action=schedule-create]').click()");return waitFor(b,"!document.getElementById('overlay').hidden&&!!drafts.task&&drafts.task.mode==='create'&&Pandora.idle()");}
+  async function openOwnerPicker(){await ev("document.querySelector('[data-action=pick-assignees]').click()");return waitFor(b,"document.getElementById('sheetTitle').textContent==='选择负责人'&&Pandora.idle()");}
+  async function pickDeptFor(id){
+   const dept=await ev(`(()=>{const p=assignablePeople(actor()).find(p=>p.id===${js(id)});return p&&p.dept})()`);
+   if(!dept)throw new Error('candidate is not assignable: '+id);
+   await ev(`(()=>{const b=Array.from(document.querySelectorAll('[data-pick-dept]')).find(x=>x.dataset.pickDept===${js(dept)});if(!b)throw new Error('department missing');b.click()})()`);
+   await sleep(80);
+   if(!await waitFor(b,`!!document.querySelector('[data-pick-person="${id}"]')`))throw new Error('candidate row missing: '+id);
+   return dept;
+  }
+  async function setPerson(id,checked){
+   await pickDeptFor(id);
+   await ev(`(()=>{const e=document.querySelector('[data-pick-person="${id}"]');if(!!e.checked!==${js(checked)})e.click()})()`);
+   await sleep(60);
+  }
+  async function confirmOwners(){await ev("document.querySelector('[data-action=picker-assignee-confirm]').click()");await waitFor(b,"!document.getElementById('overlay').hidden&&!!drafts.task&&Pandora.idle()");}
+  for(const [key,expected] of [['founder',[]],['alpha-head',[]],['alpha-two-head',[]],['alpha-one-employee',[employeeId]]]){
+   await ev('Pandora.logout()');await login(key);
+   const opened=await openCreateFromCalendar();
+   const state=await ev("({role:actor().role,id:actor().id,ids:drafts.task.assigneeIds.slice(),chips:document.querySelectorAll('#sheetBody .chip-row .chip').length,text:document.getElementById('sheetBody').textContent})");
+   check('calendar plus starts a new task from the fixed placement '+key,opened&&state.role===(key==='alpha-one-employee'?'employee':key==='founder'?'founder':key==='alpha-head'?'department_head':'team_head')&&state.ids.length===expected.length&&expected.every((id,index)=>state.ids[index]===id)&&state.chips===expected.length&&(expected.length?state.text.indexOf('尚未选择负责人')===-1:state.text.indexOf('尚未选择负责人')!==-1),state);
+  }
+  check('the employee draft is the starting point for owner edits',await ev("Pandora.data.me.id==="+js(employeeId)));
+  check('new-task owner picker opens from the employee draft',await openOwnerPicker());
+  await setPerson(employeeId,false);
+  await setPerson(crossDeptOwner,true);
+  await setPerson(secondOwner,true);
+  await confirmOwners();
+  const chosen=await ev("drafts.task.assigneeIds.slice()");
+  check('removing the initial self and choosing cross-department owners keeps the chosen order',chosen.length===2&&chosen[0]===crossDeptOwner&&chosen[1]===secondOwner&&chosen.indexOf(employeeId)===-1,chosen);
+  await openOwnerPicker();
+  await setPerson(crossDeptOwner,false);
+  await setPerson(crossDeptOwner,true);
+  await confirmOwners();
+  const reordered=await ev("drafts.task.assigneeIds.slice()");
+  check('reordering the same owners is preserved instead of restoring the creator',reordered.length===2&&reordered[0]===secondOwner&&reordered[1]===crossDeptOwner,reordered);
+  await openOwnerPicker();
+  await setPerson(secondOwner,false);
+  await setPerson(employeeId,true);
+  await ev("document.querySelector('[data-action=sheet-back]').click()");
+  check('cancelling the owner picker discards its working copy',await waitFor(b,"document.getElementById('sheetTitle').textContent==='创建任务'&&Pandora.idle()")&&await ev("JSON.stringify(drafts.task.assigneeIds)==="+js(JSON.stringify(reordered))),{reordered});
+  await openOwnerPicker();
+  await setPerson(secondOwner,false);
+  await setPerson(crossDeptOwner,false);
+  await confirmOwners();
+  const emptyDraft=await ev("({ids:drafts.task.assigneeIds.slice(),empty:document.getElementById('sheetBody').textContent.indexOf('尚未选择负责人')!==-1})");
+  check('the employee can remove every owner without being added back',emptyDraft.ids.length===0&&emptyDraft.empty,emptyDraft);
+  await ev("document.getElementById('tf-title').value='Browser creation without owners';document.getElementById('tf-desc').value='Browser creation default check';document.querySelector('[data-action=save-task]').click()");
+  const rejected=await waitFor(b,"!document.getElementById('tf-error').hidden&&document.getElementById('tf-error').textContent.length>0&&Pandora.idle()");
+  const rejectedState=await ev("({text:document.getElementById('tf-error').textContent,ids:drafts.task.assigneeIds.slice(),overlay:document.getElementById('overlay').hidden})");
+  check('an empty owner list is rejected without submitting',rejected&&rejectedState.text.indexOf('至少选择一位负责人')!==-1&&rejectedState.ids.length===0&&rejectedState.overlay===false,rejectedState);
+  await openOwnerPicker();
+  await setPerson(crossDeptOwner,true);
+  await confirmOwners();
+  const meInfo=await ev("({id:Pandora.data.me.id,managerId:Pandora.data.me.managerId})");
+  const preview=await ev("drafts.task.preview");
+  check('the employee creation preview routes to the direct manager',!!preview&&preview.requiresApproval===true&&preview.reviewerId===meInfo.managerId,{preview,meInfo});
+  await ev("document.getElementById('tf-title').value='Browser creation default owner';document.getElementById('tf-desc').value='Browser creation default check';document.querySelector('[data-action=save-task]').click()");
+  check('the employee submits a real creation request with the chosen owners',await waitFor(b,"document.getElementById('overlay').hidden&&Pandora.idle()",20000));
+  const createdRequest=await ev("Pandora.request('/approval-requests?mine=applicant&limit=100').then(r=>(r.items||[]).find(x=>x.title==='Browser creation default owner')||null)");
+  check('the created request is pending for the creator direct manager',!!createdRequest&&createdRequest.status==='pending'&&createdRequest.kind==='create'&&createdRequest.applicantId===meInfo.id&&createdRequest.currentReviewerId===meInfo.managerId,createdRequest);
+  await logout();await login('founder');
+  const founderOpened=await openCreateFromCalendar();
+  const founderState=await ev("({id:Pandora.data.me.id,ids:drafts.task.assigneeIds.slice(),preview:drafts.task.preview})");
+  check('the fixed founder starts empty and is exempt from creation review',founderOpened&&founderState.ids.length===0&&!!founderState.preview&&founderState.preview.requiresApproval===false&&String(founderState.preview.exemptionReason||'').length>0,founderState);
+  check('the founder owner picker opens',await openOwnerPicker());
+  await setPerson(founderState.id,true);
+  await confirmOwners();
+  await ev("document.getElementById('tf-title').value='Browser founder direct creation';document.getElementById('tf-desc').value='Browser founder default check';document.querySelector('[data-action=save-task]').click()");
+  check('the founder submission applies directly and publishes the task',await waitFor(b,"document.getElementById('overlay').hidden&&Pandora.idle()",20000)&&await ev("TASKS.some(t=>t.title==='Browser founder direct creation'&&t.status==='todo'&&!t.frozen)"));
+  const founderRequest=await ev("Pandora.request('/approval-requests?mine=applicant&limit=100').then(r=>(r.items||[]).find(x=>x.title==='Browser founder direct creation')||null)");
+  check('the founder exemption is recorded as direct with a reason, never as a pending self-approval',!!founderRequest&&founderRequest.status==='direct'&&String(founderRequest.exemptionReason||'').length>0,founderRequest);
+
   check('employee interactions have no browser exceptions',b.errors.length===0,b.errors);
   report.result='PASS';
  }finally{b.kill();fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n');}
