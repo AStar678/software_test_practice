@@ -25,7 +25,72 @@
     if (message) noticeTimer = setTimeout(() => { note.hidden = true; }, 5000);
   };
 
+  /* Network feedback is separate from success/error notices. Every request owns its token, so a
+     slow sibling or a stale session response cannot clear another operation's loading state. */
+  const networkStatus = document.getElementById("networkStatus");
+  const loading = new Map(), buttonHolds = new Map(), requests = new Set();
+  let interactionTrigger = null, activeCommand = null, triggerTimer, slowTimer;
+  function holdButton(button) {
+    if (!button || !(button instanceof HTMLButtonElement || button instanceof HTMLInputElement)) return () => {};
+    let hold = buttonHolds.get(button);
+    if (!hold) {
+      hold = { count: 0, disabled: button.getAttribute("aria-disabled"), busy: button.getAttribute("aria-busy") };
+      buttonHolds.set(button, hold);
+      // Keep the opener focusable while waiting: dialogs capture it after their request completes.
+      // Capture-phase click/submit guards below provide the disabled behavior without losing focus.
+      button.classList.add("is-network-busy"); button.setAttribute("aria-busy", "true"); button.setAttribute("aria-disabled", "true");
+    }
+    hold.count++;
+    let released = false;
+    return () => {
+      if (released) return; released = true;
+      if (buttonHolds.get(button) !== hold || --hold.count > 0) return;
+      buttonHolds.delete(button); button.classList.remove("is-network-busy");
+      if (hold.disabled == null) button.removeAttribute("aria-disabled"); else button.setAttribute("aria-disabled", hold.disabled);
+      if (hold.busy == null) button.removeAttribute("aria-busy"); else button.setAttribute("aria-busy", hold.busy);
+    };
+  }
+  function paintLoading() {
+    clearTimeout(slowTimer);
+    const current = [...loading.values()].filter(item => item.epoch === P.epoch);
+    const app = document.querySelector(".app");
+    if (working || current.length) app.setAttribute("aria-busy", "true"); else app.removeAttribute("aria-busy");
+    if (!networkStatus) return;
+    networkStatus.hidden = !current.length;
+    networkStatus.dataset.pending = String(current.length);
+    if (!current.length) return;
+    const elapsed = Date.now() - Math.min(...current.map(item => item.started));
+    const saving = current.some(item => item.saving);
+    const label = elapsed >= 8000 ? (saving ? "仍在等待保存结果，请勿重复提交…" : "正在等待服务器响应，请稍候…")
+      : saving ? "正在保存，请稍候…" : (current.find(item => item.label)?.label || "正在加载，请稍候…");
+    const text = networkStatus.querySelector(".network-status-text");
+    if (text.textContent !== label) text.textContent = label;
+    if (elapsed < 8000) slowTimer = setTimeout(paintLoading, 8000 - elapsed);
+  }
+  function startLoading(label, saving) {
+    if (activeCommand?.trigger && !activeCommand.releaseButton) activeCommand.releaseButton = holdButton(activeCommand.trigger);
+    const id = Symbol("loading"), releaseButton = holdButton(interactionTrigger);
+    loading.set(id, { epoch: P.epoch, started: Date.now(), label, saving: !!saving, releaseButton });
+    paintLoading();
+    return () => { const item = loading.get(id); if (!item) return; loading.delete(id); item.releaseButton(); paintLoading(); };
+  }
+  function resetLoading() {
+    requests.forEach(controller => controller.abort()); requests.clear();
+    loading.forEach(item => item.releaseButton()); loading.clear();
+    if (activeCommand?.releaseButton) { activeCommand.releaseButton(); activeCommand.releaseButton = null; }
+    interactionTrigger = null; clearTimeout(triggerTimer); paintLoading();
+  }
+  async function loadingGroup(label, fn) {
+    const finish = startLoading(label, false);
+    try { return await fn(); } finally { finish(); }
+  }
+  function rememberTrigger(button) {
+    clearTimeout(triggerTimer); interactionTrigger = button;
+    triggerTimer = setTimeout(() => { interactionTrigger = null; }, 0);
+  }
+
   function clearData() {
+    resetLoading();
     P.ready = false; P.data = {};
     reloadSequence++; taskSequence++;
     [PEOPLE, TASKS, LOGS, NOTIFICATIONS, CONSULTATIONS, COMPANY_ITEMS].forEach(a => a.splice(0));
@@ -174,28 +239,47 @@
     if (opts.body != null && typeof opts.body !== "string") {
       headers.set("Content-Type", "application/json"); opts.body = JSON.stringify(opts.body);
     } else if (opts.body != null) headers.set("Content-Type", "application/json");
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
-    let response;
-    try { response = await fetch("/api/v1" + path, Object.assign(opts, { headers, signal: controller.signal, cache: "no-store" })); }
-    catch (error) {
-      if (epoch !== P.epoch) throw cancelled();
-      throw new Error(error.name === "AbortError" ? "请求超时。请重试，已提交的操作不会重复保存。" : "无法连接本地后端，请确认服务已启动。");
-    } finally { clearTimeout(timeout); }
-    const result = await response.json().catch(() => ({}));
-    if (epoch !== P.epoch) throw cancelled();
-    if (!response.ok) {
-      if (response.status === 401 && path !== "/auth/sessions") expire();
-      // The forced-change gate is enforced by the server; react to it instead of showing business UI.
-      if (response.status === 403 && result.code === "PASSWORD_CHANGE_REQUIRED" && path !== "/auth/password") {
-        P.ready = false; gate(); clearData();
-        passwordPage("", "请先修改初始密码，修改成功后再进入业务页面。");
-      }
-      let message = result.message || "请求失败，请稍后重试。";
-      if (response.status === 412) message = "这条记录已被更新。请关闭后重新打开，再提交修改。";
-      throw Object.assign(new Error(message), { status: response.status, code: result.code, body: result });
+    const controller = new AbortController(), externalSignal = opts.signal;
+    const method = String(opts.method || "GET").toUpperCase();
+    const saving = !["GET", "HEAD"].includes(method) && !path.startsWith("/auth/") && path !== "/tasks/reviewer-preview";
+    const label = path === "/auth/sessions" && method === "POST" ? "正在登录，请稍候…"
+      : path === "/auth/sessions/current" ? "正在退出登录…" : "正在加载，请稍候…";
+    const finish = startLoading(label, saving);
+    requests.add(controller);
+    let timedOut = false;
+    const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 20000);
+    const abort = () => controller.abort();
+    if (externalSignal) {
+      if (externalSignal.aborted) controller.abort(); else externalSignal.addEventListener("abort", abort, { once: true });
     }
-    return result;
+    try {
+      let response, result;
+      try {
+        response = await fetch("/api/v1" + path, Object.assign(opts, { headers, signal: controller.signal, cache: "no-store" }));
+        // Keep feedback and the timeout active while the response body is still arriving.
+        try { result = await response.json(); }
+        catch (error) { if (error.name === "AbortError") throw error; result = {}; }
+      } catch (error) {
+        if (epoch !== P.epoch || externalSignal?.aborted || (controller.signal.aborted && !timedOut)) throw cancelled();
+        throw new Error(timedOut ? "请求超时。请重试，已提交的操作不会重复保存。" : "无法连接后端，请检查网络后重试。");
+      }
+      if (epoch !== P.epoch) throw cancelled();
+      if (!response.ok) {
+        if (response.status === 401 && path !== "/auth/sessions") expire();
+        // The forced-change gate is enforced by the server; react to it instead of showing business UI.
+        if (response.status === 403 && result.code === "PASSWORD_CHANGE_REQUIRED" && path !== "/auth/password") {
+          P.ready = false; gate(); clearData();
+          passwordPage("", "请先修改初始密码，修改成功后再进入业务页面。");
+        }
+        let message = result.message || "请求失败，请稍后重试。";
+        if (response.status === 412) message = "这条记录已被更新。请关闭后重新打开，再提交修改。";
+        throw Object.assign(new Error(message), { status: response.status, code: result.code, body: result });
+      }
+      return result;
+    } finally {
+      clearTimeout(timeout); externalSignal?.removeEventListener("abort", abort);
+      requests.delete(controller); finish();
+    }
   };
   P.mutation = async function (slot, method, path, body, etag) {
     const signature = JSON.stringify([method, path, body, etag]);
@@ -208,11 +292,12 @@
     return P.request(path, { method, body, headers });
   };
   /* Test/UX helper: a page command is idle when no P.busy operation owns the UI. */
-  P.idle = function () { return !working; };
+  P.idle = function () { return !working && ![...loading.values()].some(item => item.epoch === P.epoch); };
   P.busy = async function (fn, errorId) {
     if (working) return;
     working = true;
-    document.querySelector(".app").setAttribute("aria-busy", "true");
+    const command = activeCommand = { trigger: interactionTrigger, releaseButton: null };
+    paintLoading();
     const errorEl = errorId && document.getElementById(errorId);
     if (errorEl) errorEl.hidden = true;
     try { return await fn(); }
@@ -225,7 +310,11 @@
         el.textContent = error.message; sheetBodyEl.prepend(el);
       }
       P.notice(error.message);
-    } finally { working = false; document.querySelector(".app").removeAttribute("aria-busy"); }
+    } finally {
+      command.releaseButton?.();
+      if (activeCommand === command) activeCommand = null;
+      working = false; paintLoading();
+    }
   };
   async function all(path) {
     const items = [];
@@ -312,12 +401,14 @@
   }
   /* Independent refresh for the task form and calendar re-queries. It shares the epoch and the task
      request sequence with the initial load, so an older response can never replace a newer one. */
-  P.refreshTasks = async function () {
-    const snapshot = await loadTaskRows();
-    if (!taskSnapshotIsCurrent(snapshot)) throw cancelled();
-    return commitTaskRows(snapshot.rows);
+  P.refreshTasks = function () {
+    return loadingGroup("正在更新任务，请稍候…", async () => {
+      const snapshot = await loadTaskRows();
+      if (!taskSnapshotIsCurrent(snapshot)) throw cancelled();
+      return commitTaskRows(snapshot.rows);
+    });
   };
-  P.reload = async function () {
+  P.reload = function () { return loadingGroup("正在加载工作台，请稍候…", async () => {
     const epoch = P.epoch, sequence = ++reloadSequence;
     const me = await P.request("/me");
     if (me.role === "admin") throw new Error("此页面供业务账号使用。管理员请使用 /admin.html 管理端。");
@@ -351,7 +442,7 @@
     [[approvals, P.approvalEtags], [logs, P.logEtags], [notifications, P.notificationEtags]].forEach(([rows, map]) => { map.clear(); rows.forEach(row => map.set(row.id || row.taskId, version(row))); });
     retries.clear(); P.ready = true; gate(); renderAll();
     return P.data;
-  };
+  }); };
   P.logout = async function () {
     if (P.token) await P.request("/auth/sessions/current", { method: "DELETE" });
     P.epoch++; P.token = ""; sessionStorage.removeItem(SESSION_KEY);
@@ -369,8 +460,15 @@
   const originalRender = renderAll;
   renderAll = function () { if (P.ready && actor()) originalRender(); };
   setRole = function (role) { P.busy(() => P.logout(({ upper: "upper", middle: "middle", lower: "employee" })[role])); };
+  document.addEventListener("submit", function (event) {
+    const submitter = event.submitter || event.target.querySelector("button[type=submit],input[type=submit]");
+    if (working || buttonHolds.has(submitter)) { event.preventDefault(); event.stopImmediatePropagation(); return; }
+    rememberTrigger(submitter);
+  }, true);
   document.addEventListener("click", function (event) {
-    if (working && event.target.closest("button,a,input[type=submit]")) { event.preventDefault(); event.stopImmediatePropagation(); return; }
+    const button = event.target.closest("button,input[type=submit]");
+    if ((working && event.target.closest("button,a,input[type=submit]")) || buttonHolds.has(button)) { event.preventDefault(); event.stopImmediatePropagation(); return; }
+    rememberTrigger(button);
     if (event.target.closest("[data-backend-logout]")) { event.stopImmediatePropagation(); P.busy(() => P.logout()); }
     if (event.target.closest("[data-backend-retry]")) { event.stopImmediatePropagation(); P.busy(async () => { try { await P.reload(); } catch (e) { loadFailure(e); throw e; } }); }
   }, true);

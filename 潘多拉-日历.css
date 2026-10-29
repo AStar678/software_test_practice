@@ -70,7 +70,13 @@
 .p-day-strip .is-selected strong{background:#29292e;color:#fff;box-shadow:none}
 .p-day-strip .is-today strong{background:#ff3b30;color:#fff;box-shadow:none}
 .p-day-layout{display:flex;flex-direction:column;grid-template-columns:none;height:100%;min-height:0;min-width:0;overflow:hidden}
-.p-day-view-heading{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;gap:10px;padding:8px 12px;border-bottom:1px solid #eeeef0;background:#fff}
+.p-day-view-heading{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;flex-wrap:wrap;gap:10px;padding:8px 12px;border-bottom:1px solid #eeeef0;background:#fff}
+.p-day-heading-main{display:flex;align-items:center;gap:12px;min-width:0}
+.p-day-month-return{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;gap:4px;min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--brand-soft);color:var(--brand);font-size:14px;font-weight:600;line-height:1.4;white-space:nowrap;cursor:pointer;touch-action:manipulation}
+.p-day-month-return svg{flex:0 0 auto;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.p-day-month-return:hover{border-color:var(--brand)}
+.p-day-month-return:active{background:var(--card)}
+.p-day-month-return:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .p-day-view-heading h2{min-width:0;margin:0;font-size:16px;font-weight:600;line-height:1.4;color:#1c1c1e}
 .p-day-view-heading h2>span{display:block;margin-top:2px;font-size:11px;font-weight:400;color:#8e8e93}
 .p-day-view-heading h2:focus{outline:none}
@@ -320,4 +326,10 @@
   .p-day-sheet-head h2{font-size:14px}
   .p-day-sheet-tools .p-text-button{font-size:11px;padding-inline:3px}
   .p-day-sheet-body{padding-inline:10px}
+}
+
+@media(max-width:600px){
+  .p-day-heading-main{flex:1 0 100%;justify-content:space-between}
+  .p-day-heading-main h2{text-align:right}
+  .p-day-view-heading .p-day-display-modes{flex-basis:100%}
 }

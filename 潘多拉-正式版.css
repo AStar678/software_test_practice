@@ -314,3 +314,16 @@ button{cursor:pointer}
 .tasks-quad .q-body{padding-inline-end:14px;scrollbar-gutter:stable;scroll-padding-bottom:14px}
 .map-grid .home-task{display:grid;grid-template-columns:minmax(0,1fr) max-content;column-gap:10px}
 .map-grid .home-task-priority{white-space:nowrap;min-width:2em;text-align:right}
+
+/* Network feedback remains visible above sheets and never covers success/error notices. */
+.network-status{position:absolute;z-index:55;top:calc(76px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;width:max-content;max-width:calc(100% - 24px);padding:9px 13px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);box-shadow:var(--shadow);font-size:13px;line-height:1.5;pointer-events:none}
+.network-status-text{min-width:0;overflow-wrap:anywhere}
+.app.is-auth~.network-status{top:calc(12px + env(safe-area-inset-top))}
+.network-status-spinner,.is-network-busy::after{width:18px;height:18px;box-sizing:border-box;border:2px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:p-network-spin .8s linear infinite;flex:none}
+.is-network-busy{position:relative;color:transparent!important;cursor:progress!important}
+.is-network-busy:disabled{opacity:1}
+.is-network-busy>*{opacity:0}
+.is-network-busy::after{content:"";position:absolute;left:calc(50% - 9px);top:calc(50% - 9px);visibility:visible}
+.btn.primary.is-network-busy::after{border-color:#ffffff66;border-top-color:#fff}
+@keyframes p-network-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.network-status-spinner,.is-network-busy::after{animation:none;border-right-color:var(--brand)}}
