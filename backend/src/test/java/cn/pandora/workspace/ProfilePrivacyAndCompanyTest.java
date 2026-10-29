@@ -18,7 +18,7 @@ class ProfilePrivacyAndCompanyTest {
     @Test
     void everyBusinessRoleIsRejectedBeforeCreatingCompanyInformation() {
         Db db = mock(Db.class);
-        WorkspaceService service = new WorkspaceService(db, mock(Access.class), mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
+        WorkspaceService service = new WorkspaceService(db, WorkspaceTestSupport.access(), mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         for (String role : List.of("founder", "department_head", "team_head", "employee")) {
             Actor actor = new Actor(role, "org", role, "team", null, 1);
             ApiException error = assertThrows(ApiException.class, () -> service.createHomeItem(actor, Map.of("kind", "company", "body", "公司信息")));
@@ -33,7 +33,7 @@ class ProfilePrivacyAndCompanyTest {
         Db db = mock(Db.class);
         when(db.find(anyString(), eq("org"), eq("company-item"))).thenReturn(Map.of("kind", "company"));
         Writes writes = mock(Writes.class);
-        WorkspaceService service = new WorkspaceService(db, mock(Access.class), mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
+        WorkspaceService service = new WorkspaceService(db, WorkspaceTestSupport.access(), mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         WorkspaceController controller = new WorkspaceController(service, writes);
         assertEquals(403, assertThrows(ApiException.class, () -> controller.changeHomeItem(UPPER, "company-item", "old-key-123", "\"1\"", Map.of("body", "changed"))).status);
         assertEquals(403, assertThrows(ApiException.class, () -> controller.deleteHomeItem(UPPER, "company-item", "old-key-123", "\"1\"")).status);
@@ -45,7 +45,7 @@ class ProfilePrivacyAndCompanyTest {
     void alreadyDeletedPersonalItemsStillReachIdempotencyReplay() {
         Db db = mock(Db.class);
         when(db.find(anyString(), eq("org"), eq("already-deleted-personal"))).thenReturn(null);
-        WorkspaceService service = new WorkspaceService(db, mock(Access.class), mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
+        WorkspaceService service = new WorkspaceService(db, WorkspaceTestSupport.access(), mock(TaskService.class), mock(Events.class), java.time.Clock.systemUTC());
         assertDoesNotThrow(() -> service.checkHomeItemWriteAccess(UPPER, "already-deleted-personal"));
         verify(db).find(anyString(), eq("org"), eq("already-deleted-personal"));
     }
@@ -54,7 +54,7 @@ class ProfilePrivacyAndCompanyTest {
     @SuppressWarnings("unchecked")
     void contactFieldsAreOnlyIncludedInSelfProfileNotUserDirectories() {
         Db db = mock(Db.class);
-        Access access = mock(Access.class);
+        Access access = WorkspaceTestSupport.access();
         Map<String, Object> row = new LinkedHashMap<>(Map.of("id", "upper", "displayName", "本人", "role", "founder", "active", true,
                 "phone", "13800000000", "email", "private@example.test", "profileVersion", 2L));
         when(db.one(anyString(), eq("upper"), eq("org"))).thenReturn(row);
@@ -75,7 +75,7 @@ class ProfilePrivacyAndCompanyTest {
     @Test
     void personDetailChecksBothProfileAndPhoneAccessWithoutReturningOtherPrivateFields() {
         Db db = mock(Db.class);
-        Access access = mock(Access.class);
+        Access access = WorkspaceTestSupport.access();
         Map<String, Object> raw = Map.of("id", "report", "phone", "13800000000", "email", "private@example.test",
                 "passwordHash", "secret", "departmentName", "产品部", "positionName", "专员",
                 "teamName", "产品部", "managerName", "李敏");
@@ -99,7 +99,7 @@ class ProfilePrivacyAndCompanyTest {
     @Test
     void meAddsTheReadOnlyCompanyTimeZoneWithoutWideningContactFields() {
         Db db = mock(Db.class);
-        Access access = mock(Access.class);
+        Access access = WorkspaceTestSupport.access();
         Map<String, Object> row = new LinkedHashMap<>(Map.of("id", "upper", "displayName", "本人",
                 "role", "founder", "active", true, "organizationName", "潘多拉", "organizationTimeZone", "Asia/Shanghai"));
         when(db.one(anyString(), eq("upper"), eq("org"))).thenReturn(row);

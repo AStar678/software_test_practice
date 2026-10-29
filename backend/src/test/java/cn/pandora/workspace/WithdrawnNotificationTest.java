@@ -17,7 +17,7 @@ class WithdrawnNotificationTest {
 
     private Map<String,Object> read(boolean manager, boolean masked) {
         Db db = mock(Db.class);
-        Access access = mock(Access.class);
+        Access access = WorkspaceTestSupport.access();
         var row = new LinkedHashMap<String,Object>();
         row.put("id", "notice"); row.put("eventId", "event");
         row.put("contentMasked", masked); row.put("summary", "该通知已被撤回。");

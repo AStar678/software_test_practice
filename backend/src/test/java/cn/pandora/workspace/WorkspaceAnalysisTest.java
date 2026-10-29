@@ -98,9 +98,9 @@ class WorkspaceAnalysisTest {
 
         MemoryDb db = new MemoryDb();
         TaskService tasks = mock(TaskService.class);
-        when(tasks.list(any(), anyMap())).thenReturn(Map.of("items", rows));
+        when(tasks.statisticsTasks(any(), anyMap())).thenReturn(rows);
         Actor manager = actor(7);
-        Access access=mock(Access.class);
+        Access access=WorkspaceTestSupport.access();
         when(access.employeeDirectory(any(),org.mockito.ArgumentMatchers.eq(false))).thenReturn(List.of(
                 Map.of("id","manager","departmentId","department","teamId","team"),
                 Map.of("id","employee","departmentId","department","teamId","team")));
@@ -131,8 +131,8 @@ class WorkspaceAnalysisTest {
         personal.put("assigneeIds", List.of("manager"));
         MemoryDb db = new MemoryDb();
         TaskService tasks = mock(TaskService.class);
-        when(tasks.list(any(), anyMap())).thenReturn(Map.of("items", List.of(personal)));
-        Access access=mock(Access.class);
+        when(tasks.statisticsTasks(any(), anyMap())).thenReturn(List.of(personal));
+        Access access=WorkspaceTestSupport.access();
         when(access.employeeDirectory(any(),org.mockito.ArgumentMatchers.eq(false))).thenReturn(List.of(
                 Map.of("id","manager","departmentId","department","teamId","team"),
                 Map.of("id","employee","departmentId","department","teamId","team")));

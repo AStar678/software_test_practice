@@ -4,6 +4,7 @@ import cn.pandora.common.ApiException;
 import cn.pandora.common.Db;
 import org.springframework.stereotype.Component;
 import java.util.*;
+import java.util.function.Supplier;
 import static cn.pandora.common.Db.*;
 
 /** Fixed organization positions and current object relationships are the only business authority. */
@@ -11,7 +12,45 @@ import static cn.pandora.common.Db.*;
 public class Access {
     private final Db db;
     public Access(Db db) {this.db=db;}
-    private CompanyTree.Tree tree(String org) {return new CompanyTree(db).of(org);}
+    /** A single read operation owns these snapshots; no authorization is retained between calls. */
+    private final ThreadLocal<ReadScope> reads = new ThreadLocal<>();
+    private static final class ReadScope {
+        final String organizationId;
+        CompanyTree.Tree tree;
+        final Map<String,String> businessOwners = new HashMap<>();
+        ReadScope(String organizationId) { this.organizationId=organizationId; }
+    }
+    public <T> T readScope(String organizationId,Supplier<T> work) {
+        ReadScope previous=reads.get();
+        if(previous!=null && previous.organizationId.equals(organizationId)) return work.get();
+        reads.set(new ReadScope(organizationId));
+        try { return work.get(); }
+        finally { if(previous==null) reads.remove(); else reads.set(previous); }
+    }
+    private ReadScope currentRead(String org) {
+        ReadScope scope=reads.get();
+        return scope!=null && scope.organizationId.equals(org)?scope:null;
+    }
+    private CompanyTree.Tree tree(String org) {
+        ReadScope scope=currentRead(org);
+        if(scope==null) return new CompanyTree(db).of(org);
+        if(scope.tree==null) scope.tree=new CompanyTree(db).of(org);
+        return scope.tree;
+    }
+    /** Preload only task identities required by this read, including absent ownership rows. */
+    public void primeBusinessOwners(String org,Collection<String> taskIds) {
+        ReadScope scope=currentRead(org);if(scope==null || taskIds==null) return;
+        List<String> missing=taskIds.stream().filter(Objects::nonNull).distinct()
+                .filter(id->!scope.businessOwners.containsKey(id)).toList();
+        for(int start=0;start<missing.size();start+=500) {
+            List<String> part=missing.subList(start,Math.min(start+500,missing.size()));
+            List<Object> args=new ArrayList<>();args.add(org);args.addAll(part);
+            for(String id:part) scope.businessOwners.put(id,null);
+            for(var row:db.list("SELECT task_id,employee_id FROM task_business_owners WHERE organization_id=? AND task_id IN ("
+                    +String.join(",",Collections.nCopies(part.size(),"?"))+")",args.toArray()))
+                scope.businessOwners.put(s(row,"taskId"),s(row,"employeeId"));
+        }
+    }
     private static final Set<String> MANAGEMENT=Set.of("manage_organization","manage_accounts","manage_company_info","manage_notifications","view_task_history");
     private static boolean manager(Actor a) {return Set.of("founder","department_head","team_head").contains(a.role());}
     private static boolean placed(Actor a) {return a.business() && Set.of("founder","department_head","team_head","employee").contains(a.role());}
@@ -102,7 +141,11 @@ public class Access {
         return false;
     }
     public String businessOwner(Map<String,Object> task) {
-        var owner=db.find("SELECT employee_id FROM task_business_owners WHERE organization_id=? AND task_id=?",s(task,"organizationId"),s(task,"id"));
+        String org=s(task,"organizationId"),id=s(task,"id");ReadScope scope=currentRead(org);
+        if(scope!=null && scope.businessOwners.containsKey(id))
+            return Objects.requireNonNullElse(scope.businessOwners.get(id),s(task,"originalCreatorId"));
+        var owner=db.find("SELECT employee_id FROM task_business_owners WHERE organization_id=? AND task_id=?",org,id);
+        if(scope!=null) scope.businessOwners.put(id,owner==null?null:s(owner,"employeeId"));
         return owner==null?s(task,"originalCreatorId"):s(owner,"employeeId");
     }
     public boolean canDispatchTo(Actor a,Map<String,Object> target) {
@@ -143,8 +186,10 @@ public class Access {
         return isManagerOf(a,id);
     }
     public List<String> logAuthorIds(Actor a) {
-        var snapshot=tree(a.organizationId());if(!snapshot.valid()) return List.of();
-        return snapshot.nodes().keySet().stream().filter(id->canReadLogAuthor(a,id)).toList();
+        return readScope(a.organizationId(),()-> {
+            var snapshot=tree(a.organizationId());if(!snapshot.valid()) return List.of();
+            return snapshot.nodes().keySet().stream().filter(id->canReadLogAuthor(a,id)).toList();
+        });
     }
     public boolean canSeePerson(Actor a,Map<String,Object> person) {
         if(!placed(a) || person==null || !a.organizationId().equals(s(person,"organizationId")) || !enabled(person)) return false;
