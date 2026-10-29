@@ -50,6 +50,14 @@ async function main(){
   return waitFor(b,`!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='日志详情'&&Pandora.idle()`);
  }
  async function closeSheet(){await ev("document.getElementById('sheetClose').click()");await waitFor(b,"document.getElementById('overlay').hidden");}
+ async function settle(){await ev("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");}
+ async function clickVisible(selector){
+  const point=await ev(`(()=>{const e=document.querySelector(${js(selector)});if(!e)throw new Error('Missing visible control');e.scrollIntoView({block:'nearest',inline:'center'});const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()`);
+  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',...point,button:'left',clickCount:1});
+  await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',...point,button:'left',clickCount:1});
+  await settle();
+ }
+ async function tablePosition(){return ev(`(()=>{const s=document.getElementById('p-table-scroll'),edge=s.getBoundingClientRect().top+document.getElementById('p-table-head').getBoundingClientRect().height,row=Array.from(s.querySelectorAll('[data-task-row]')).find(r=>r.getBoundingClientRect().bottom>edge+1);return {top:s.scrollTop,left:s.scrollLeft,anchor:row?.dataset.taskRow,offset:row?row.getBoundingClientRect().top-edge:0,page:Pandora.taskForm.state.page,filters:JSON.stringify(Pandora.taskForm.state.filters),sort:JSON.stringify(Pandora.taskForm.state.sort),columns:Pandora.taskForm.state.columns,ids:Array.from(s.querySelectorAll('[data-task-row]')).map(r=>r.dataset.taskRow)}})()`);}
  try{
   await login('alpha-one-employee');
   for(const width of [320,390,1440]){
@@ -77,6 +85,70 @@ async function main(){
   await ev("document.querySelector('[data-action=task-table-retry]').click()");
   check('retry after a real network failure restores the complete result',await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.error&&Pandora.taskForm.current().paged.total===109&&document.querySelectorAll('[data-task-row]').length===50",20000));
   check('task form snapshot is complete and cross-day work is counted once',await ev(`(()=>{const rows=Pandora.taskForm.current().sorted;return rows.length===109&&new Set(rows.map(t=>t.id)).size===109&&rows.filter(t=>t.id===${js(fixture.special.cross)}).length===1})()`));
+  const overview=await ev("({columns:Pandora.taskForm.state.columns,fields:Array.from(document.querySelector('[data-task-row]').children).map(e=>e.dataset.field),filterHidden:document.getElementById('p-table-filter-panel').hidden,expanded:document.getElementById('p-table-filter-toggle').getAttribute('aria-expanded'),metadata:!!document.querySelector('[data-task-row] .p-table-title-meta .p-table-tag'),priority:!!document.querySelector('[data-task-row] .p-table-priority'),schedule:document.querySelectorAll('[data-task-row] .p-table-schedule-stack time').length})");
+  check('the default comparison groups task identity status and schedule with collapsed filters',overview.columns==='overview'&&JSON.stringify(overview.fields)===JSON.stringify(['title','summary','schedule','assignees','description'])&&overview.filterHidden&&overview.expanded==='false'&&overview.metadata&&overview.priority&&overview.schedule===100,overview);
+  await waitFor(b,"document.getElementById('appNotice').hidden",6500);
+  for(const width of [320,390,768,1440]){
+   await b.viewport({width,height:width<400?844:900,mobile:width<760});await settle();
+   const layout=await ev(`(()=>{const table=document.querySelector('.p-task-table'),s=document.getElementById('p-table-scroll'),title=document.querySelector('.p-table-title-text'),date=document.querySelector('.p-table-schedule-stack time'),badge=document.querySelector('.p-table-cell-stack .badge'),sort=document.querySelector('.p-table-sort'),input=document.getElementById('p-filter-query'),pager=document.getElementById('p-table-pager');return {viewport:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth+1,tableFont:parseFloat(getComputedStyle(table).fontSize),titleFont:parseFloat(getComputedStyle(title).fontSize),dateFont:parseFloat(getComputedStyle(date).fontSize),badgeFont:parseFloat(getComputedStyle(badge).fontSize),sortFont:parseFloat(getComputedStyle(sort).fontSize),inputFont:parseFloat(getComputedStyle(input).fontSize),tableHeight:s.clientHeight,pagerBottom:pager.getBoundingClientRect().bottom,navTop:document.getElementById('tabbar').getBoundingClientRect().top,headCount:document.querySelectorAll('#p-table-head th').length,primaryVisible:['title','summary','schedule'].every(field=>{const r=document.querySelector('#p-table-head [data-field='+field+']').getBoundingClientRect();return r.left>=s.getBoundingClientRect().left-1&&r.right<=s.getBoundingClientRect().right+1}),aligned:Array.from(document.querySelector('[data-task-row]').children).every((cell,i)=>Math.abs(cell.getBoundingClientRect().left-document.querySelectorAll('#p-table-head th')[i].getBoundingClientRect().left)<1)}})()`);
+   check('readable aligned comparison and visible pagination at '+width,!layout.overflow&&layout.tableFont>=14&&layout.titleFont>=15&&layout.dateFont>=14&&layout.badgeFont>=12&&layout.sortFont>=12&&layout.inputFont>=16&&layout.tableHeight>=250&&layout.pagerBottom<=layout.navTop+1&&layout.primaryVisible&&layout.aligned,layout);
+   await b.screenshot(output.replace('employee-browser.json','task-comparison-overview-'+width+'.png'));
+  }
+  await b.viewport({width:844,height:390,mobile:true});await settle();
+  const landscape=await ev(`(()=>{const s=document.getElementById('p-table-scroll'),pager=document.getElementById('p-table-pager'),nav=document.getElementById('tabbar'),controls=Array.from(document.querySelectorAll('.p-table-header button,.p-table-filter-top input,.p-table-filter-top button,.p-table-column-views button,.p-table-pan,.p-table-page-actions button')).map(e=>({name:e.getAttribute('aria-label')||e.textContent,rect:e.getBoundingClientRect()}));return {tableHeight:s.clientHeight,tableFont:parseFloat(getComputedStyle(document.querySelector('.p-task-table')).fontSize),titleFont:parseFloat(getComputedStyle(document.querySelector('.p-table-title-text')).fontSize),tableBottom:s.getBoundingClientRect().bottom,pagerTop:pager.getBoundingClientRect().top,pagerBottom:pager.getBoundingClientRect().bottom,navTop:nav.getBoundingClientRect().top,navVisible:nav.getBoundingClientRect().height>0,overflow:document.documentElement.scrollWidth>innerWidth+1,controlsVisible:controls.every(c=>c.rect.width>0&&c.rect.height>=24&&c.rect.left>=0&&c.rect.right<=innerWidth+1&&c.rect.top>=0&&c.rect.bottom<=nav.getBoundingClientRect().top+1),overlap:controls.some((a,i)=>controls.some((b,j)=>i<j&&Math.min(a.rect.right,b.rect.right)-Math.max(a.rect.left,b.rect.left)>1&&Math.min(a.rect.bottom,b.rect.bottom)-Math.max(a.rect.top,b.rect.top)>1))}})()`);
+  check('short landscape keeps a readable table and reachable nonoverlapping controls',landscape.tableHeight>=180&&landscape.tableFont>=14&&landscape.titleFont>=15&&landscape.tableBottom<=landscape.pagerTop+1&&landscape.pagerBottom<=landscape.navTop+1&&landscape.navVisible&&!landscape.overflow&&landscape.controlsVisible&&!landscape.overlap,landscape);
+  await b.screenshot(output.replace('employee-browser.json','task-comparison-landscape-844.png'));
+  await clickVisible('[data-action="task-table-filters"]');
+  const landscapeFilters=await ev(`(()=>{const p=document.getElementById('p-table-filter-panel'),r=p.getBoundingClientRect(),nav=document.getElementById('tabbar').getBoundingClientRect();return {open:!p.hidden,expanded:document.getElementById('p-table-filter-toggle').getAttribute('aria-expanded'),tableHeight:document.getElementById('p-table-scroll').clientHeight,inside:r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=nav.top+1,inputFonts:Array.from(p.querySelectorAll('input,select')).map(e=>parseFloat(getComputedStyle(e).fontSize))}})()`);
+  check('landscape filters float within the screen without reducing the reading area',landscapeFilters.open&&landscapeFilters.expanded==='true'&&landscapeFilters.inside&&Math.abs(landscapeFilters.tableHeight-landscape.tableHeight)<2&&landscapeFilters.inputFonts.every(font=>font>=16),landscapeFilters);
+  await b.screenshot(output.replace('employee-browser.json','task-comparison-landscape-filters-844.png'));
+  await ev("document.getElementById('p-filter-relation').focus()");
+  await b.send('Input.dispatchKeyEvent',{type:'rawKeyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await b.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await settle();
+  check('Escape closes landscape filters and restores focus to their trigger',await ev("document.getElementById('p-table-filter-panel').hidden&&document.getElementById('p-table-filter-toggle').getAttribute('aria-expanded')==='false'&&document.activeElement===document.getElementById('p-table-filter-toggle')&&document.getElementById('p-table-scroll').clientHeight>=180"));
+  const landscapeBefore=await tablePosition();
+  await clickVisible('[data-action="task-table-columns"][data-columns="details"]');
+  await clickVisible('[data-action="task-table-columns"][data-columns="overview"]');
+  const landscapeAfter=await tablePosition();
+  check('landscape column switching keeps the same result and available table height',landscapeAfter.columns==='overview'&&landscapeAfter.page===landscapeBefore.page&&landscapeAfter.filters===landscapeBefore.filters&&landscapeAfter.sort===landscapeBefore.sort&&JSON.stringify(landscapeAfter.ids)===JSON.stringify(landscapeBefore.ids)&&await ev("document.getElementById('p-table-scroll').clientHeight>=180"));
+  await b.viewport({width:390,height:844,mobile:true});await settle();
+  // Render a cloned projection to exercise a future year without creating fixture/cloud records.
+  const futureLayout=await ev(`(()=>{const form=Pandora.taskForm,oldRows=form.state.rows,oldPage=form.state.page,task=structuredClone(oldRows[0]),futureDate=(Number(form.companyDateKey(new Date(),form.companyZone()).slice(0,4))+2)+'-01-01';try{task.allDay=false;task.raw.startAt=futureDate+'T01:00:00Z';task.raw.dueAt=futureDate+'T02:00:00Z';form.state.rows=[task];form.state.page=0;form.paint();const cell=document.querySelector('[data-task-row] [data-field=schedule]'),bounds=cell.getBoundingClientRect();return {date:futureDate,dates:Array.from(cell.querySelectorAll('time')).map(time=>({parts:Array.from(time.children).map(part=>part.textContent),font:parseFloat(getComputedStyle(time).fontSize),inside:Array.from(time.children).every(part=>part.getBoundingClientRect().left>=bounds.left&&part.getBoundingClientRect().right<=bounds.right),wrapped:time.children.length===2&&time.children[1].getBoundingClientRect().top>time.children[0].getBoundingClientRect().top})),overflow:document.documentElement.scrollWidth>innerWidth+1}}finally{form.state.rows=oldRows;form.state.page=oldPage;form.paint()}})()`);
+  check('cross-year schedule dates wrap as readable units without entering the next column',!futureLayout.overflow&&futureLayout.dates.length===2&&futureLayout.dates.every(date=>date.parts[0]===futureLayout.date&&date.parts.length===2&&date.inside&&date.wrapped&&date.font>=14),futureLayout);
+  const initialPan=await tablePosition();
+  await clickVisible('[data-action="task-table-pan"][data-direction="1"]');
+  check('a visible arrow reveals more columns without moving task names',await waitFor(b,"document.getElementById('p-table-scroll').scrollLeft>100")&&await ev("(()=>{const s=document.getElementById('p-table-scroll'),cell=document.querySelector('[data-task-row] th');return getComputedStyle(cell).position==='sticky'&&Math.abs(cell.getBoundingClientRect().left-s.getBoundingClientRect().left)<2&&!document.querySelector('[data-action=task-table-pan][data-direction=\"-1\"]').disabled})()"),initialPan);
+  await ev("(()=>{const s=document.getElementById('p-table-scroll');s.scrollLeft=s.scrollWidth})()");await settle();
+  check('the right edge is explicit and disables only the unavailable direction',await waitFor(b,"document.querySelector('[data-action=task-table-pan][data-direction=\"1\"]').disabled&&document.getElementById('p-table-column-hint').textContent.includes('最后')"));
+  await clickVisible('[data-action="task-table-pan"][data-direction="-1"]');
+  check('the left arrow returns from the last columns',await waitFor(b,"(()=>{const s=document.getElementById('p-table-scroll');return s.scrollLeft<s.scrollWidth-s.clientWidth-50})()"));
+  await clickVisible('[data-action="task-table-filters"]');
+  check('the filter disclosure exposes readable controls and its expanded state',await ev("!document.getElementById('p-table-filter-panel').hidden&&document.getElementById('p-table-filter-toggle').getAttribute('aria-expanded')==='true'&&parseFloat(getComputedStyle(document.getElementById('p-filter-relation')).fontSize)>=16"));
+  await ev("document.getElementById('p-filter-query').value='Browser task 0';document.getElementById('p-filter-query').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('p-filter-relation').value='own';document.getElementById('p-filter-relation').dispatchEvent(new Event('change',{bubbles:true}))");
+  await waitFor(b,"Pandora.taskForm.current().paged.total===100");
+  await clickVisible('[data-action="task-table-filters"]');
+  check('active filters stay visible as a summary after collapsing',await ev("document.getElementById('p-table-filter-panel').hidden&&!document.getElementById('p-table-filter-summary').hidden&&document.getElementById('p-table-filter-summary').textContent.includes('我负责')&&document.getElementById('p-filter-query').value==='Browser task 0'"));
+  await clickVisible('[data-action="task-table-next"]');
+  await ev("document.getElementById('p-table-scroll').scrollTop=440");await settle();
+  let groupPosition=await tablePosition();
+  for(const columns of ['schedule','details','all','overview']){
+   await clickVisible('[data-action="task-table-columns"][data-columns="'+columns+'"]');
+   const next=await tablePosition();
+   check('switching to '+columns+' preserves rows filters page order and the reading anchor',next.columns===columns&&next.filters===groupPosition.filters&&next.sort===groupPosition.sort&&next.page===groupPosition.page&&JSON.stringify(next.ids)===JSON.stringify(groupPosition.ids)&&next.anchor===groupPosition.anchor&&Math.abs(next.offset-groupPosition.offset)<2&&next.left===0,{before:groupPosition,after:next});
+   groupPosition=next;
+  }
+  await sleep(260);
+  const afterSearchDelay=await tablePosition();
+  check('a completed quick filter change cannot later reset the comparison position',afterSearchDelay.page===groupPosition.page&&afterSearchDelay.anchor===groupPosition.anchor&&Math.abs(afterSearchDelay.offset-groupPosition.offset)<2,{groupPosition,afterSearchDelay});
+  await clickVisible('[data-action="task-table-columns"][data-columns="all"]');
+  const completeFields=await ev("({head:Array.from(document.querySelectorAll('#p-table-head th')).map(e=>e.dataset.field),rows:Array.from(document.querySelectorAll('[data-task-row]')).map(r=>Array.from(r.children).map(e=>e.dataset.field)),sorts:Array.from(document.querySelectorAll('#p-table-head [data-action=task-table-sort]')).map(e=>e.dataset.key)})");
+  const requiredFields=['title','relation','status','pending','due','urgency','assignees','start','creator','createdAt','description','acceptance','allDay','done','progress','overdue','parent'];
+  check('all columns retain every field and all six sortable headings',JSON.stringify(completeFields.head)===JSON.stringify(requiredFields)&&completeFields.rows.every(fields=>JSON.stringify(fields)===JSON.stringify(requiredFields))&&['title','createdAt','start','due','urgency','status'].every(key=>completeFields.sorts.includes(key)),completeFields.head);
+  const fullFonts=await ev("({cells:Array.from(document.querySelector('[data-task-row]').children).map(e=>({field:e.dataset.field,font:parseFloat(getComputedStyle(e).fontSize)})),badges:Array.from(document.querySelector('[data-task-row]').querySelectorAll('.badge,.p-table-tag')).map(e=>parseFloat(getComputedStyle(e).fontSize))})");
+  check('the full table keeps readable data and status badge sizes',fullFonts.cells.every(cell=>cell.font>=14)&&fullFonts.badges.every(font=>font>=12),fullFonts);
+  await clickVisible('[data-action="task-table-filters"]');
+  await clickVisible('[data-action="task-table-clear-filters"]');
+  await clickVisible('[data-action="task-table-filters"]');
   const ranks={urgency:{'紧急':0,'高':1,'中':2,'低':3},status:{todo:0,doing:1,done:2}};
   const sortEvidence=async(key,dir)=>{
    return ev(`(()=>{const state=Pandora.taskForm.state,rows=state.result.sorted,collator=new Intl.Collator('zh-Hans-CN');
@@ -86,13 +158,14 @@ async function main(){
     return {ok:true,key:state.sort.key,dir:state.sort.dir,total:rows.length,head:rows.slice(0,2).map(t=>t.title),tail:rows.slice(-2).map(t=>t.title)}})()`);
   };
   for(const key of ['title','createdAt','start','due','urgency','status']){
-   await ev(`document.querySelector('[data-action="task-table-sort"][data-key="${key}"]').click()`);
+   await clickVisible(`[data-action="task-table-sort"][data-key="${key}"]`);
    const ascending=await sortEvidence(key,'asc');
    check('global task form sort '+key+' ascending is stable over the whole result',ascending.ok&&await ev("Pandora.taskForm.state.sort.dir==='asc'&&Pandora.taskForm.state.page===0"),ascending);
+   check('sorting keeps focus on the rebuilt '+key+' heading',await ev("document.activeElement?.dataset.key==="+js(key)));
    await ev("document.querySelector('[data-action=task-table-next]').click();document.querySelector('[data-action=task-table-next]').click()");
    const lastPage=await ev(`(()=>{const rows=Pandora.taskForm.state.result.sorted,shown=Array.from(document.querySelectorAll('[data-task-row]')).map(e=>e.dataset.taskRow);return {same:JSON.stringify(shown)===JSON.stringify(rows.slice(100).map(t=>t.id)),shown:shown.length,page:Pandora.taskForm.state.page}})()`);
    check('global task form sort '+key+' continues on the third page',lastPage.same&&lastPage.shown===9&&lastPage.page===2,lastPage);
-   await ev(`document.querySelector('[data-action="task-table-sort"][data-key="${key}"]').click()`);
+   await clickVisible(`[data-action="task-table-sort"][data-key="${key}"]`);
    const descending=await sortEvidence(key,'desc');
    check('global task form sort '+key+' descending is stable and resets paging',descending.ok&&await ev("Pandora.taskForm.state.sort.dir==='desc'&&Pandora.taskForm.state.page===0"),descending);
    await ev("document.querySelector('[data-action=task-table-next]').click();document.querySelector('[data-action=task-table-next]').click()");
@@ -102,6 +175,7 @@ async function main(){
   }
   const fixed=await ev(`(()=>{const scroller=document.getElementById('p-table-scroll'),cell=document.querySelector('[data-task-row] th'),head=document.querySelector('#p-table-head th:first-child');const before=cell.getBoundingClientRect().left;scroller.scrollLeft=280;const after=cell.getBoundingClientRect().left,left=scroller.getBoundingClientRect().left;const position=getComputedStyle(cell).position;scroller.scrollLeft=0;return {position,before,after,left,scrolled:after-left}})()`);
   check('task name column stays fixed while the table scrolls sideways',fixed.position==='sticky'&&Math.abs(fixed.after-fixed.left)<2&&fixed.before===fixed.after,fixed);
+  await clickVisible('[data-action="task-table-filters"]');
   await ev("document.querySelector('[data-action=task-table-clear-filters]').click()");
   await ev("document.getElementById('p-filter-query').value='Browser task 10';document.getElementById('p-filter-query').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('p-filter-relation').value='own';document.getElementById('p-filter-relation').dispatchEvent(new Event('change',{bubbles:true}))");
   check('combined task form filters recalculate total and page',await waitFor(b,"Pandora.taskForm.current().paged.total===5&&Pandora.taskForm.state.page===0"));
@@ -110,13 +184,24 @@ async function main(){
   check('date/relation/name filters keep a cross-day task in its single matching row',dateFiltered);
   await ev("document.querySelector('[data-action=task-table-clear-filters]').click();document.getElementById('p-filter-query').value='Browser task 0';document.getElementById('p-filter-query').dispatchEvent(new Event('input',{bubbles:true}))");
   check('detail return setup uses the filtered second page',await waitFor(b,"Pandora.taskForm.current().paged.total===100&&Pandora.taskForm.state.page===0"));
+  await clickVisible('[data-action="task-table-filters"]');
   await ev("document.querySelector('[data-action=task-table-next]').click()");
-  const beforeDetail=await ev(`(()=>{const scroller=document.getElementById('p-table-scroll');scroller.scrollTop=420;const row=document.querySelector('[data-task-row]');return {page:Pandora.taskForm.state.page,query:Pandora.taskForm.state.filters.query,scroll:scroller.scrollTop,ids:Array.from(document.querySelectorAll('[data-task-row]')).map(e=>e.dataset.taskRow),first:row&&row.dataset.taskRow}})()`);
+  const beforeDetail=await ev(`(()=>{const scroller=document.getElementById('p-table-scroll');scroller.scrollTop=420;scroller.scrollLeft=460;const row=document.querySelector('[data-task-row]');return {page:Pandora.taskForm.state.page,query:Pandora.taskForm.state.filters.query,scroll:scroller.scrollTop,left:scroller.scrollLeft,columns:Pandora.taskForm.state.columns,ids:Array.from(document.querySelectorAll('[data-task-row]')).map(e=>e.dataset.taskRow),first:row&&row.dataset.taskRow}})()`);
   await ev(`document.querySelector('[data-task-row="${beforeDetail.first}"] [data-task="${beforeDetail.first}"]').click()`);
   check('task detail opens over the filtered table',await waitFor(b,"!document.getElementById('overlay').hidden&&Pandora.idle()&&document.getElementById('sheetTitle').textContent.length>0"));
   await closeSheet();
-  const afterDetail=await ev(`(()=>{const scroller=document.getElementById('p-table-scroll');return {page:Pandora.taskForm.state.page,query:Pandora.taskForm.state.filters.query,queryInput:document.getElementById('p-filter-query').value,scroll:scroller.scrollTop,ids:Array.from(document.querySelectorAll('[data-task-row]')).map(e=>e.dataset.taskRow),loaded:Pandora.taskForm.state.loaded,error:Pandora.taskForm.state.error,total:Pandora.taskForm.current().paged.total}})()`);
-  check('closing task detail preserves filters, page, scroll and the loaded rows',afterDetail.page===beforeDetail.page&&afterDetail.query===beforeDetail.query&&afterDetail.queryInput===beforeDetail.query&&afterDetail.scroll===beforeDetail.scroll&&JSON.stringify(afterDetail.ids)===JSON.stringify(beforeDetail.ids)&&afterDetail.loaded&&!afterDetail.error&&afterDetail.total===100,{beforeDetail,afterDetail});
+  await settle();
+  const afterDetail=await ev(`(()=>{const scroller=document.getElementById('p-table-scroll');return {page:Pandora.taskForm.state.page,query:Pandora.taskForm.state.filters.query,queryInput:document.getElementById('p-filter-query').value,scroll:scroller.scrollTop,left:scroller.scrollLeft,columns:Pandora.taskForm.state.columns,ids:Array.from(document.querySelectorAll('[data-task-row]')).map(e=>e.dataset.taskRow),loaded:Pandora.taskForm.state.loaded,error:Pandora.taskForm.state.error,total:Pandora.taskForm.current().paged.total}})()`);
+  check('closing task detail preserves filters page both scroll axes columns and loaded rows',afterDetail.page===beforeDetail.page&&afterDetail.query===beforeDetail.query&&afterDetail.queryInput===beforeDetail.query&&afterDetail.scroll===beforeDetail.scroll&&afterDetail.left===beforeDetail.left&&afterDetail.columns===beforeDetail.columns&&JSON.stringify(afterDetail.ids)===JSON.stringify(beforeDetail.ids)&&afterDetail.loaded&&!afterDetail.error&&afterDetail.total===100,{beforeDetail,afterDetail});
+  const beforeRefresh=await tablePosition();
+  await clickVisible('[data-action="task-table-refresh"]');
+  check('manual refresh restores both axes and the filtered comparison after loading',await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading&&!Pandora.taskForm.state.error&&Pandora.idle()",20000));
+  await settle();const afterRefresh=await tablePosition();
+  check('manual refresh preserves page filters sorting columns and reading position',afterRefresh.page===beforeRefresh.page&&afterRefresh.filters===beforeRefresh.filters&&afterRefresh.sort===beforeRefresh.sort&&afterRefresh.columns===beforeRefresh.columns&&Math.abs(afterRefresh.top-beforeRefresh.top)<2&&Math.abs(afterRefresh.left-beforeRefresh.left)<2&&JSON.stringify(afterRefresh.ids)===JSON.stringify(beforeRefresh.ids),{beforeRefresh,afterRefresh});
+  await setPage('map');await setPage('view');
+  check('returning through the main navigation reloads the full comparison',await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading&&!Pandora.taskForm.state.error&&Pandora.idle()",20000));
+  await settle();const afterNavigation=await tablePosition();
+  check('main navigation return preserves columns filters page order and both scroll axes',afterNavigation.columns===afterRefresh.columns&&afterNavigation.page===afterRefresh.page&&afterNavigation.filters===afterRefresh.filters&&afterNavigation.sort===afterRefresh.sort&&Math.abs(afterNavigation.top-afterRefresh.top)<2&&Math.abs(afterNavigation.left-afterRefresh.left)<2&&JSON.stringify(afterNavigation.ids)===JSON.stringify(afterRefresh.ids),{afterRefresh,afterNavigation});
   await ev("document.querySelector('[data-action=task-table-close]').click()");
   check('task form returns to the calendar',await waitFor(b,"Pandora.taskForm.state.active===false&&state.viewPage==='calendar'&&Pandora.idle()"));
   await ev("state.viewMode='day';state.viewAnchor=addDays(parseDateInput("+js(fixture.day)+"),1);renderAll()");
@@ -129,6 +214,15 @@ async function main(){
   const contextAfter=await ev("({mode:state.viewMode,anchor:state.viewAnchor.getTime(),day:!!document.querySelector('#p-schedule-main .p-day-list, .p-day-list')})");
   check('closing the task form restores the original calendar mode and date',contextRestored&&contextAfter.mode===contextBefore.mode&&contextAfter.anchor===contextBefore.anchor&&contextBefore.mode==='day',{contextBefore,contextAfter});
   await b.screenshot(output.replace('employee-browser.json','employee-task-table.png'));
+  await ev("document.querySelector('.p-table-entry').click()");
+  await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading&&Pandora.idle()",20000);
+  await clickVisible('[data-action="task-table-columns"][data-columns="details"]');
+  await clickVisible('[data-action="task-table-filters"]');
+  await ev("document.getElementById('p-filter-query').value='Browser';document.getElementById('p-filter-query').dispatchEvent(new Event('input',{bubbles:true}))");
+  await logout();
+  const cleared=await ev("({active:Pandora.taskForm.state.active,rows:Pandora.taskForm.state.rows.length,columns:Pandora.taskForm.state.columns,filtersOpen:Pandora.taskForm.state.filtersOpen,query:Pandora.taskForm.state.filters.query,scroll:Pandora.taskForm.state.scrollMemory,result:Pandora.taskForm.state.result})");
+  check('logout clears task rows filters column choice and saved reading position',!cleared.active&&cleared.rows===0&&cleared.columns==='overview'&&!cleared.filtersOpen&&cleared.query===''&&cleared.scroll===null&&cleared.result===null,cleared);
+  await login('alpha-one-employee');
 
   /* -------- 8.4: real log creation/backfill/detail/edit/save/close -------- */
   const today=await ev("Pandora.data.home.businessDate"),yesterday=shiftDate(today,-1),preday=shiftDate(today,-2);
