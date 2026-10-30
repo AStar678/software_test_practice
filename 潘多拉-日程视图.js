@@ -126,6 +126,7 @@
       '<div class="p-schedule-navigation"><button type="button" class="p-icon-button" data-action="schedule-prev" aria-label="上一' + ({month:'月',day:'天'})[state.viewMode] + '">' + icons.left + '</button>' +
       '<button type="button" class="p-today-button" data-action="schedule-today">今天</button><button type="button" class="p-icon-button" data-action="schedule-next" aria-label="下一' + ({month:'月',day:'天'})[state.viewMode] + '">' + icons.right + '</button></div>' +
       '<button type="button" class="p-table-entry" data-action="task-table-open">任务表单</button></div>' +
+      (P.calendarTagsHTML ? P.calendarTagsHTML() : '') +
       (state.viewMode === 'day' ? dayStrip() : '') + '</header>';
   }
   /* 覆盖式抽屉：只占日程卡片左侧约 42%，底层日历尺寸不变，右侧始终保留可见日历。 */

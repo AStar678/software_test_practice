@@ -48,7 +48,7 @@ async function main(){
   await ev("document.querySelectorAll('[data-action=p-comment-delete]')[1].click()");
   check('comment delete removes its body from the actual detail',await waitFor(b,"Pandora.idle()&&document.querySelectorAll('.p-comment').length===1&&!document.querySelector('.p-comment-list').textContent.includes('Delete this browser comment')"));
   await close();await ev('Pandora.logout()');await login('alpha-one-employee');
-  await ev("setPage('me')");check('ordinary employee has no catalogue management entry',await ev("!document.querySelector('[data-action=p-manage-tags]')"));
+  await ev("setPage('me')");check('ordinary employee has a private catalogue entry',await ev("!!document.querySelector('[data-action=p-manage-tags]')"));
   await ev(`openTaskDetail(${js(fixture.taskId)})`);
   check('recipient can read but cannot edit another author comment',await waitFor(b,"document.querySelector('.p-comment-list')&&document.querySelector('.p-comment-list').textContent.includes('Browser edited secret')&&!document.querySelector('[data-action=p-comment-edit]')"));
   await close();

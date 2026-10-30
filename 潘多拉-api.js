@@ -360,7 +360,7 @@
       urgency: ({ urgent: "紧急", high: "高", medium: "中", low: "低" })[t.priority] || "中",
       status: t.executionState || "todo", progressNote: t.progressNote || "", reviewNote: "",
       frozen: !!t.frozen || !!t.pending, pinned: !!t.pinned, assignedAt: t.assignedAt || null,
-      pendingKind: t.pendingKind || null, tag: t.tag || null, tagId: t.tagId || null,
+      pendingKind: t.pendingKind || null, tag: t.personalTag || t.tag || null, tagId: t.tagId || null,
       rowVersion: t.rowVersion, acceptanceCriteria: t.acceptanceCriteria || "", raw: t };
   };
   P.rememberPeople = function (rows) {

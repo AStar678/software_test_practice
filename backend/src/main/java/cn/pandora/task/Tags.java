@@ -17,8 +17,8 @@ import static cn.pandora.common.Db.*;
 /**
  * The company tag catalogue shared by tasks and logs (chapters 8.1—8.3).
  *
- * Only the proven unique root of the employee tree maintains the catalogue; an administrator or any
- * other upper identity can only pick from it while editing an object they already own. A business
+ * The founder maintains shared tags; each employee separately owns their personal tags and marks.
+ * Private names never enter shared task versions, logs, notifications or audit snapshots. A business
  * object holds at most one tag through a single nullable column, so a multi-tag submission is not
  * representable and is rejected before any write. Deleting a tag is logical: the row keeps the name and
  * colour that current references must keep displaying, the candidate list drops it, and new references
@@ -69,7 +69,7 @@ public class Tags {
     public Map<String, Object> view(Actor a, String tagId) {
         if (tagId == null || tagId.isBlank()) return null;
         Map<String, Object> row = db.find("SELECT * FROM tags WHERE organization_id=? AND id=?", a.organizationId(), tagId);
-        if (row == null) return null;
+        if (row == null || s(row,"ownerId") != null && !a.id().equals(s(row,"ownerId"))) return null;
         return view(row);
     }
 
@@ -78,6 +78,7 @@ public class Tags {
         Map<String, Object> item = new LinkedHashMap<>();
         String color = s(row, "color");
         item.put("id", s(row, "id"));
+        item.put("scope", s(row,"ownerId") == null ? "shared" : "personal");
         item.put("name", s(row, "name"));
         item.put("color", color);
         item.put("border", borderOf(color));
@@ -95,7 +96,7 @@ public class Tags {
         String wanted = tagId == null || tagId.isBlank() ? null : tagId.trim();
         if (wanted == null) return null;
         Map<String, Object> row = db.find("SELECT * FROM tags WHERE organization_id=? AND id=?", a.organizationId(), wanted);
-        if (row == null) throw new ApiException(400, "INVALID_TAG", "标签不存在或不属于本公司");
+        if (row == null || s(row,"ownerId") != null) throw new ApiException(400, "INVALID_TAG", "请选择公司共用标签；私人标签请在任务详情中单独设置");
         if (row.get("deletedAt") != null && !wanted.equals(currentTagId)) {
             throw conflict("TAG_DELETED", "该标签已删除，不能再用于新的关联");
         }
@@ -106,43 +107,49 @@ public class Tags {
         business(a);
         String query = filters.getOrDefault("q", "").strip().toLowerCase(Locale.ROOT);
         boolean includeDeleted = "true".equals(filters.get("includeDeleted"));
-        var items = db.list("SELECT * FROM tags WHERE organization_id=? ORDER BY deleted_at IS NOT NULL,name,id", a.organizationId())
+        var items = db.list("SELECT * FROM tags WHERE organization_id=? AND (owner_id IS NULL OR owner_id=?) ORDER BY owner_id IS NULL,deleted_at IS NOT NULL,name,id", a.organizationId(),a.id())
                 .stream()
                 .filter(row -> includeDeleted || row.get("deletedAt") == null)
                 .filter(row -> query.isEmpty() || s(row, "name").toLowerCase(Locale.ROOT).contains(query))
-                .map(this::view).toList();
+                .map(row -> {var item=view(row);item.put("canEdit",s(row,"ownerId") == null ? companyTree.isFounder(a) : a.id().equals(s(row,"ownerId")));return item;}).toList();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("items", items);
         result.put("palette", palette());
         result.put("canManage", companyTree.isFounder(a));
+        result.put("canCreatePersonal", true);
         result.put("defaultColor", "#FFE1EA");
         result.put("empty", items.isEmpty());
         return result;
     }
 
     public Map<String, Object> create(Actor a, Map<String, Object> body) {
-        requireFounder(a);
+        business(a);access.requireCurrent(a);
         Map<String, Object> input = copy(body);
+        if (!input.keySet().stream().allMatch(key -> Set.of("name","color","scope").contains(key))) throw bad("请求含不支持的字段");
+        Object scope=input.getOrDefault("scope","shared");
+        if (!(scope instanceof String) || !Set.of("shared","personal").contains(scope)) throw bad("请选择共用或私人标签");
+        String owner="personal".equals(scope)?a.id():null;
+        if(owner==null) requireFounder(a);
         String name = name(input);
         String color = color(input);
-        requireNameFree(a, name, null);
+        requireNameFree(a, name, null,owner);
         String tagId = id();
-        db.update("INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,?,?)", tagId, a.organizationId(), name, color);
+        db.update("INSERT INTO tags(id,organization_id,name,color,owner_id) VALUES(?,?,?,?,?)", tagId, a.organizationId(), name, color,owner);
         return Map.of("tagId", tagId, "rowVersion", 1, "tag", view(a, tagId));
     }
 
     public Map<String, Object> change(Actor a, String tagId, String ifMatch, Map<String, Object> body) {
-        requireFounder(a);
+        business(a);access.requireCurrent(a);
         Map<String, Object> input = copy(body);
         if (input.isEmpty()) throw bad("请提供要修改的标签字段");
         if (!input.keySet().stream().allMatch(key -> Set.of("name", "color").contains(key))) throw bad("请求含不支持的字段");
-        Map<String, Object> row = db.one("SELECT * FROM tags WHERE organization_id=? AND id=? FOR UPDATE", a.organizationId(), tagId);
+        Map<String, Object> row = editable(a,tagId);
         if (row.get("deletedAt") != null) throw conflict("TAG_DELETED", "该标签已删除，不能再修改");
         long version = n(row, "rowVersion");
         Writes.checkVersion(ifMatch, version);
         String name = input.containsKey("name") ? name(input) : s(row, "name");
         String color = input.containsKey("color") ? color(input) : s(row, "color");
-        requireNameFree(a, name, tagId);
+        requireNameFree(a, name, tagId,s(row,"ownerId"));
         db.update("UPDATE tags SET name=?,color=?,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) WHERE organization_id=? AND id=?",
                 name, color, a.organizationId(), tagId);
         // Current references resolve the catalogue, so a rename or recolour is visible immediately; the
@@ -151,11 +158,12 @@ public class Tags {
     }
 
     public Map<String, Object> delete(Actor a, String tagId, String ifMatch) {
-        requireFounder(a);
-        Map<String, Object> row = db.one("SELECT * FROM tags WHERE organization_id=? AND id=? FOR UPDATE", a.organizationId(), tagId);
+        business(a);access.requireCurrent(a);
+        Map<String, Object> row = editable(a,tagId);
         long version = n(row, "rowVersion");
         Writes.checkVersion(ifMatch, version);
         if (row.get("deletedAt") == null) {
+            if(s(row,"ownerId")!=null) db.update("DELETE FROM personal_task_tags WHERE organization_id=? AND user_id=? AND tag_id=?",a.organizationId(),a.id(),tagId);
             db.update("UPDATE tags SET deleted_at=UTC_TIMESTAMP(6),row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) WHERE organization_id=? AND id=?",
                     a.organizationId(), tagId);
             version += 1;
@@ -170,8 +178,28 @@ public class Tags {
         }
     }
 
-    private void requireNameFree(Actor a, String name, String selfId) {
-        Map<String, Object> existing = db.find("SELECT id FROM tags WHERE organization_id=? AND name=?", a.organizationId(), name);
+    private Map<String,Object> editable(Actor a,String id) {
+        var row=db.find("SELECT * FROM tags WHERE organization_id=? AND id=? AND (owner_id IS NULL OR owner_id=?) FOR UPDATE",a.organizationId(),id,a.id());
+        if(row==null) throw ApiException.notFound();
+        if(s(row,"ownerId")==null) requireFounder(a);
+        return row;
+    }
+
+    public Map<String,Object> personalForWrite(Actor a,String id) {
+        var row=db.find("SELECT * FROM tags WHERE organization_id=? AND owner_id=? AND id=?",a.organizationId(),a.id(),id);
+        if(row==null) throw ApiException.notFound();
+        if(row.get("deletedAt")!=null) throw conflict("TAG_DELETED","该私人标签已删除");
+        return view(row);
+    }
+
+    public Map<String,Map<String,Object>> personalTaskTags(Actor a) {
+        Map<String,Map<String,Object>> result=new HashMap<>();
+        for(var row:db.list("SELECT t.*,p.task_id FROM personal_task_tags p JOIN tags t ON t.organization_id=p.organization_id AND t.owner_id=p.user_id AND t.id=p.tag_id WHERE p.organization_id=? AND p.user_id=? AND t.deleted_at IS NULL",a.organizationId(),a.id())) result.put(s(row,"taskId"),view(row));
+        return result;
+    }
+
+    private void requireNameFree(Actor a, String name, String selfId,String ownerId) {
+        Map<String, Object> existing = db.find("SELECT id FROM tags WHERE organization_id=? AND owner_id <=> ? AND name=?", a.organizationId(),ownerId, name);
         if (existing != null && !s(existing, "id").equals(selfId)) {
             throw conflict("TAG_NAME_TAKEN", "已有同名标签，请换一个名称");
         }

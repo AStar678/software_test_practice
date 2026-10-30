@@ -21,7 +21,7 @@ public class TaskController {
         this.writes = writes;
     }
 
-    /** Company tag catalogue. Reading is available to every business account; maintenance is root-only. */
+    /** Shared catalogue plus only the requesting employee's private tags. */
     @GetMapping("/tags")
     public Map<String, Object> tags(@RequestAttribute("actor") Actor actor, @RequestParam Map<String, String> filters) {
         return tags.list(actor, filters);
@@ -52,6 +52,14 @@ public class TaskController {
     @GetMapping("/tasks")
     public Map<String, Object> list(@RequestAttribute("actor") Actor actor, @RequestParam Map<String, String> filters) {
         return tasks.list(actor, filters);
+    }
+
+    @PutMapping("/tasks/{id}/personal-tag")
+    public Map<String,Object> personalTag(@RequestAttribute("actor") Actor actor,@PathVariable String id,
+            @RequestHeader(value="Idempotency-Key",required=false) String key,
+            @RequestBody Map<String,Object> input) {
+        return writes.run(actor,key,"PUT /tasks/"+id+"/personal-tag",input,null,
+                () -> tasks.setPersonalTag(actor,id,input));
     }
 
     /** Authorized assignee candidates; reading a department never puts its people in this list. */
