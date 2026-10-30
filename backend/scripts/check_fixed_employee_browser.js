@@ -76,7 +76,7 @@ async function main(){
   check('task form completes the full load with total/page controls',await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading&&!Pandora.taskForm.state.error&&document.querySelectorAll('[data-task-row]').length===50",20000));
   check('task form retains more than two pages and removes explanatory statistics',await ev("Pandora.taskForm.current().paged.pages>=3&&!document.querySelector('.p-table-source,.p-task-table caption,.p-table-counts')&&document.getElementById('p-table-pager').textContent.includes('共')"));
   await b.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0,connectionType:'none'});
-  await ev("document.querySelector('[data-action=task-table-refresh]').click()");
+  await ev("setPage('map');setPage('view')");
   const failed=await waitFor(b,"Pandora.taskForm.state.error&&!Pandora.taskForm.state.loading&&!Pandora.taskForm.state.loaded",15000);
   const failure=await ev("({error:Pandora.taskForm.state.error,loaded:Pandora.taskForm.state.loaded,pager:document.getElementById('p-table-pager').textContent,rows:document.querySelectorAll('[data-task-row]').length,text:document.getElementById('p-table-body').textContent,retry:!!document.querySelector('[data-action=task-table-retry]')})");
   check('failed task load shows the error and an explicit retry without claiming partial completeness',failed&&failure.pager===''&&failure.rows===0&&failure.retry&&failure.text.includes('任务加载失败')&&failure.loaded===false,failure);
@@ -193,15 +193,12 @@ async function main(){
   await settle();
   const afterDetail=await ev(`(()=>{const scroller=document.getElementById('p-table-scroll');return {page:Pandora.taskForm.state.page,query:Pandora.taskForm.state.filters.query,queryInput:document.getElementById('p-filter-query').value,scroll:scroller.scrollTop,left:scroller.scrollLeft,columns:Pandora.taskForm.state.columns,ids:Array.from(document.querySelectorAll('[data-task-row]')).map(e=>e.dataset.taskRow),loaded:Pandora.taskForm.state.loaded,error:Pandora.taskForm.state.error,total:Pandora.taskForm.current().paged.total}})()`);
   check('closing task detail preserves filters page both scroll axes columns and loaded rows',afterDetail.page===beforeDetail.page&&afterDetail.query===beforeDetail.query&&afterDetail.queryInput===beforeDetail.query&&afterDetail.scroll===beforeDetail.scroll&&afterDetail.left===beforeDetail.left&&afterDetail.columns===beforeDetail.columns&&JSON.stringify(afterDetail.ids)===JSON.stringify(beforeDetail.ids)&&afterDetail.loaded&&!afterDetail.error&&afterDetail.total===100,{beforeDetail,afterDetail});
-  const beforeRefresh=await tablePosition();
-  await clickVisible('[data-action="task-table-refresh"]');
-  check('manual refresh restores both axes and the filtered comparison after loading',await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading&&!Pandora.taskForm.state.error&&Pandora.idle()",20000));
-  await settle();const afterRefresh=await tablePosition();
-  check('manual refresh preserves page filters sorting columns and reading position',afterRefresh.page===beforeRefresh.page&&afterRefresh.filters===beforeRefresh.filters&&afterRefresh.sort===beforeRefresh.sort&&afterRefresh.columns===beforeRefresh.columns&&Math.abs(afterRefresh.top-beforeRefresh.top)<2&&Math.abs(afterRefresh.left-beforeRefresh.left)<2&&JSON.stringify(afterRefresh.ids)===JSON.stringify(beforeRefresh.ids),{beforeRefresh,afterRefresh});
+  const beforeNavigation=await tablePosition();
+  check('task table has no manual refresh button',await ev("!document.querySelector('.p-table-header [data-action=task-table-refresh]')"));
   await setPage('map');await setPage('view');
   check('returning through the main navigation reloads the full comparison',await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading&&!Pandora.taskForm.state.error&&Pandora.idle()",20000));
   await settle();const afterNavigation=await tablePosition();
-  check('main navigation return preserves columns filters page order and both scroll axes',afterNavigation.columns===afterRefresh.columns&&afterNavigation.page===afterRefresh.page&&afterNavigation.filters===afterRefresh.filters&&afterNavigation.sort===afterRefresh.sort&&Math.abs(afterNavigation.top-afterRefresh.top)<2&&Math.abs(afterNavigation.left-afterRefresh.left)<2&&JSON.stringify(afterNavigation.ids)===JSON.stringify(afterRefresh.ids),{afterRefresh,afterNavigation});
+  check('main navigation return preserves columns filters page order and both scroll axes',afterNavigation.columns===beforeNavigation.columns&&afterNavigation.page===beforeNavigation.page&&afterNavigation.filters===beforeNavigation.filters&&afterNavigation.sort===beforeNavigation.sort&&Math.abs(afterNavigation.top-beforeNavigation.top)<2&&Math.abs(afterNavigation.left-beforeNavigation.left)<2&&JSON.stringify(afterNavigation.ids)===JSON.stringify(beforeNavigation.ids),{beforeNavigation,afterNavigation});
   await ev("document.querySelector('[data-action=task-table-close]').click()");
   check('task form returns to the calendar',await waitFor(b,"Pandora.taskForm.state.active===false&&state.viewPage==='calendar'&&Pandora.idle()"));
   await ev("state.viewMode='day';state.viewAnchor=addDays(parseDateInput("+js(fixture.day)+"),1);renderAll()");
