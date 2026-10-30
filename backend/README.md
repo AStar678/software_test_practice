@@ -13,6 +13,21 @@ cd backend
 
 服务默认 http://127.0.0.1:8080，项目 MySQL 端口13306。普通启动 `PANDORA_SEED=false`，迁移保留已有数据，不自动初始化或清理。`./scripts/stop.sh` 停止应用但保留数据库。已有旧库先执行 [升级/恢复流程](docs/fixed-model-upgrade.md)。数据库凭据保存在本机 `.runtime`，不提交。
 
+### 演示：每次启动都是同一份初始数据
+
+演示统一用 `pandora_demo` 库，占 8080。脚本默认**整库重建**：停掉占用 8080 的本项目后端 → drop 并重建 `pandora_demo` → 重新授权 → 构建 JAR → `--initialize` 首次准备 → 以 `PANDORA_DB_URL` 指向演示库启动。普通库 `pandora` 不受影响。
+
+```sh
+cd backend
+./scripts/start-demo.sh          # 重建为初始状态后启动
+./scripts/start-demo.sh --keep   # 沿用上次演示数据（保留界面编辑）
+./scripts/stop.sh                # 同时停止演示实例
+```
+
+种子 UUID 由 seed key 确定性派生（`UUID.nameUUIDFromBytes("pandora.demo.v2/"+key)`），因此每次重建得到**逐位一致**的员工/任务/日志 ID，只有业务日期随启动当天取值。这也是本脚本选择「整库重建」而不是「清表」的原因：`DemoSeed` 的契约是幂等且**绝不删除或重置**已有数据，并拒绝在无标识的非空库上初始化；要拿到干净初始态只能重建库，不能在活动 schema 里清行。`PANDORA_DEMO_DB`、`PANDORA_DEMO_MARKER`、`PANDORA_PORT`、`PANDORA_SKIP_BUILD=1` 可覆盖默认值。
+
+### 手工分步准备
+
 演示准备只接受**已存在、明确指定的空库**，应用数据库账号须已有该库 DDL/DML 权限。下面的 `pandora_demo` 是需要事先单独创建和授权的演示库，不应替换成普通业务库。先构建 JAR，再从仓库根目录执行：
 
 ```sh
