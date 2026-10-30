@@ -131,6 +131,7 @@
       <h2>组织调整草稿</h2>
       <p class="muted">准备全部人员的最终位置后统一保存。新单位须同时有负责人，替换负责人时请同时安排原负责人的去向。</p>
       <div class="row"><button class="ghost" id="planReload">放弃草稿并重新读取</button><button class="primary" id="planNewEmployee">添加新员工</button></div>
+      <div class="card" id="planFounder" aria-label="公司创始人"></div>
       <div id="planUnits"></div>
       <h3>人员最终位置</h3><div id="planPeople"></div>
       <h3>停用与业务责任安排</h3><div id="planDepartures"></div>
@@ -577,10 +578,17 @@ async function withdrawEvent(eventId) {
   } catch (error) { fail(error.message); }
 }
 
-function openEmployee(id) {
+function plannedFounderId() {
+  return state.structure?.organization.founderEmployeeId||state.planDraft?.founderEmployeeId||null;
+}
+function openEmployee(id,placementType='employee') {
+  if(!id&&placementType==='founder'&&plannedFounderId()){fail('公司已有创始人安排，请查看组织调整草稿。');return;}
   const employee=id?state.employees.find(e=>e.id===id):null;state.editing=employee;
+  state.newEmployeePlacement=!id&&placementType==='founder'?'founder':'employee';
   $('employeeId').value=id||'';$('fDisplayName').value=employee?.displayName||'';$('fPhone').value='';
-  $('employeeDialogTitle').textContent=employee?'编辑姓名/登录手机号':'添加新员工到草稿';$('employeeNewHint').hidden=!!employee;
+  $('employeeDialogTitle').textContent=employee?'编辑姓名/登录手机号':state.newEmployeePlacement==='founder'?'新增创始人到草稿':'添加新员工到草稿';$('employeeNewHint').hidden=!!employee;
+  $('employeeNewHint').textContent=state.newEmployeePlacement==='founder'?'加入草稿后，请在下方选择展示职位，再保存完整组织结果。保存后成为公司唯一固定创始人。':'新员工加入组织草稿后，请安排完整位置与职位，再统一保存。';
+  $('employeeSave').textContent=employee?'保存':'加入草稿';
   $('employeeError').textContent='';$('employeeDialog').showModal();
 }
 async function saveEmployee() {
@@ -592,9 +600,13 @@ async function saveEmployee() {
       await reloadAll();
     }else{
       if(!phone)throw new Error('新员工须填写有效手机号');
-      if(!state.planDraft)resetPlan();const employeeId=crypto.randomUUID();
+      if(!state.planDraft)resetPlan();
+      const placementType=state.newEmployeePlacement==='founder'?'founder':'employee';
+      if(placementType==='founder'&&plannedFounderId())throw new Error('公司已有创始人安排，不能重复新增。');
+      const employeeId=crypto.randomUUID();
       state.planDraft.newEmployees.push({id:employeeId,displayName,phone});
-      state.planDraft.placements.push({employeeId,placementType:'employee',departmentId:null,teamId:null,positionId:null});
+      state.planDraft.placements.push({employeeId,placementType,departmentId:null,teamId:null,positionId:null});
+      if(placementType==='founder')state.planDraft.founderEmployeeId=employeeId;
       renderPlan();selectTab('organization',document.querySelector('[data-tab="organization"]'));
     }
     $('employeeDialog').close();
@@ -620,6 +632,17 @@ function planSelect(items,value,label,attrs,empty='请选择') {
 }
 function renderPlan() {
   const draft=state.planDraft;if(!draft)return;
+  const fixedFounderId=state.structure.organization.founderEmployeeId,founderId=plannedFounderId();
+  const founder=[...state.employees,...draft.newEmployees].find(e=>e.id===founderId);
+  $('planFounder').innerHTML='<h3>公司创始人</h3>'+(founderId?
+    `<p><strong>${esc(founder?.displayName||'姓名待确认')}</strong> · ${fixedFounderId?'固定创始人':'待保存'}</p><p class="muted">${fixedFounderId?'公司唯一创始人已设置。组织调整保留此身份。':'尚未创建账号。请在人员最终位置中选择展示职位，再保存完整结果。'}</p>${fixedFounderId?'':'<button class="ghost" id="planCancelFounder">取消新增创始人</button>'}`:
+    '<p class="muted">尚未设置创始人。先将创始人加入草稿，再统一保存完整组织结果。</p><button class="primary" id="planNewFounder">新增创始人</button>');
+  if($('planNewFounder'))$('planNewFounder').onclick=()=>openEmployee(null,'founder');
+  if($('planCancelFounder'))$('planCancelFounder').onclick=()=>{
+    draft.newEmployees=draft.newEmployees.filter(e=>e.id!==founderId);
+    draft.placements=draft.placements.filter(p=>p.employeeId!==founderId);
+    delete draft.founderEmployeeId;renderPlan();
+  };
   $('planUnits').innerHTML=['departments','teams'].map(kind=>`<h3>${kind==='teams'?'团队':'部门'}</h3>
     <button class="ghost" data-add-unit="${kind}">添加${kind==='teams'?'团队':'部门'}</button>
     <table><thead><tr><th>名称</th>${kind==='teams'?'<th>所属部门</th>':''}<th>负责人</th><th></th></tr></thead><tbody>${draft[kind].map(unit=>{
@@ -640,9 +663,9 @@ function renderPlan() {
   document.querySelectorAll('[data-team-department]').forEach(select=>select.onchange=()=>{draft.teams.find(u=>u.id===select.dataset.teamDepartment).departmentId=select.value||null;renderPlan();});
   $('planPeople').innerHTML=`<table><thead><tr><th>员工</th><th>组织身份</th><th>部门</th><th>团队</th><th>展示职位（必填）</th></tr></thead><tbody>${draft.placements.map(p=>{
     const person=[...state.employees,...draft.newEmployees].find(e=>e.id===p.employeeId);
-    const fixed=p.employeeId===state.structure.organization.founderEmployeeId;
+    const isFounder=p.employeeId===founderId;
     return `<tr><td>${esc(person?.displayName||p.employeeId)}${draft.newEmployees.some(e=>e.id===p.employeeId)?'（新增）':''}</td>
-      <td>${fixed?'创始人（固定）':planSelect(Object.entries(PLACEMENT_LABELS).filter(([id])=>id!=='founder').map(([id,name])=>({id,name})),p.placementType,'name',`data-place="${p.employeeId}" data-field="placementType"`)}</td>
+      <td>${isFounder?(fixedFounderId?'创始人（固定）':'创始人（待保存）'):planSelect(Object.entries(PLACEMENT_LABELS).filter(([id])=>id!=='founder').map(([id,name])=>({id,name})),p.placementType,'name',`data-place="${p.employeeId}" data-field="placementType"`)}</td>
       <td>${p.placementType==='founder'?'公司':planSelect(draft.departments,p.departmentId,'name',`data-place="${p.employeeId}" data-field="departmentId"`)}</td>
       <td>${['founder','department_head'].includes(p.placementType)?'—':planSelect(draft.teams.filter(t=>t.departmentId===p.departmentId),p.teamId,'name',`data-place="${p.employeeId}" data-field="teamId"`)}</td>
       <td>${planSelect(state.structure.positions,p.positionId,'name',`data-place="${p.employeeId}" data-field="positionId"`)}</td></tr>`;
