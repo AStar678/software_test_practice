@@ -124,7 +124,6 @@
       '<div class="callout" id="login-error" role="alert"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
       '<button type="submit" class="btn primary auth-submit">登录工作台</button></form>' +
       '<p class="auth-help">员工使用本人手机号登录，初始密码由公司管理员提供；忘记密码请联系管理员。管理员请通过下方“进入管理后台”入口使用管理账号登录。</p>' +
-      '<p class="auth-help auth-demo">演示员工手机号 13800000001—13800000006；管理员账号 admin。</p>' +
       '<a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
     gate();
     document.getElementById("backend-login").addEventListener("submit", event => {
