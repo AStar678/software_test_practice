@@ -59,7 +59,7 @@
       '<button type="button" class="p-tag-color" data-action="p-tag-color" data-color="' + esc(entry.color) + '" aria-pressed="' + (entry.color === selected) + '" aria-label="' + esc(entry.label) + '" style="background:' + esc(entry.color) + ';border-color:' + esc(entry.border) + '"></button>').join('') + '</div>';
   }
   function tagFormHTML(draft) {
-    const scope = draft.id ? '<p class="tiny muted">' + (draft.scope === 'personal' ? '私人标签，仅自己可见' : '公司共用标签') + '</p>' : '<div class="field"><label for="p-tag-scope">可见范围</label><select id="p-tag-scope">' + (canManageTags() ? '<option value="shared">公司共用</option>' : '') + '<option value="personal"' + (!canManageTags() ? ' selected' : '') + '>私人 · 仅自己可见</option></select></div>';
+    const scope = draft.id ? '<p class="tiny muted">' + (draft.scope === 'personal' ? '私人标签，仅自己可见' : '公司共用标签') + '</p>' : '';
     return scope + '<div class="field"><label for="p-tag-name">标签名称（1—40字）</label><input id="p-tag-name" type="text" maxlength="40" value="' + esc(draft.name || '') + '" data-autofocus></div>' +
       '<div class="field"><label>颜色</label>' + paletteHTML(draft.color) + '</div>' +
       '<div class="callout" id="p-tag-error" hidden></div>';
@@ -96,7 +96,7 @@
     P.busy(async function () {
       const etag = row ? '"' + row.rowVersion + '"' : null;
       await P.mutation('tag:' + (id || 'new'), id ? 'PATCH' : 'POST', '/tags' + (id ? '/' + encodeURIComponent(id) : ''),
-        id ? { name: name, color: color } : { name: name, color: color, scope: document.getElementById('p-tag-scope')?.value || 'personal' }, etag);
+        id ? { name: name, color: color } : { name: name, color: color, scope: canManageTags() ? 'shared' : 'personal' }, etag);
       tagEditing = null; pendingColor = null;
       await P.reload();
       closeSheet();

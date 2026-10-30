@@ -331,8 +331,7 @@
     return '<section class="card p-task-table-card" aria-label="任务表单">' +
       '<header class="p-table-header"><div class="p-table-heading">' +
         '<button type="button" class="p-table-back" data-action="task-table-close">返回日历</button>' +
-        '<h2>任务表单</h2></div>' +
-        '<div class="p-table-tools"><button type="button" class="btn tiny-btn" data-action="task-table-refresh" aria-label="刷新任务">刷新</button></div></header>' +
+        '<h2>任务表单</h2></div></header>' +
       filterBarHTML() +
       '<div class="p-table-column-views" id="p-table-column-views" role="group" aria-label="查看任务列">' + Object.keys(COLUMN_VIEWS).map(function (key) {
         return '<button type="button" class="p-table-view-switch" data-action="task-table-columns" data-columns="' + key + '" aria-pressed="' + (T.columns === key) + '">' + COLUMN_VIEWS[key].label + '</button>';

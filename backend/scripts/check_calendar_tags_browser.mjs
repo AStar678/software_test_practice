@@ -23,7 +23,7 @@ try{
  await login(f.phone);
  check('month view has visible edit tags button',await page.locator('.p-edit-tags').isVisible());
  await page.locator('.p-edit-tags').click();
- check('employee creates personal tags only',await page.locator('#p-tag-scope option').count()===1&&await page.locator('#p-tag-scope').inputValue()==='personal');
+ check('new tag form omits visibility selector',await page.locator('#p-tag-scope').count()===0);
  check('shared tag is readable but has no edit button',await page.locator(`[data-tag-row="${f.sharedTag}"]`).getByText('创始人维护').isVisible()&&await page.locator(`[data-tag-row="${f.sharedTag}"] [data-action=p-tag-edit]`).count()===0);
  await page.locator('#p-tag-name').fill('我的重要事项');
  await page.locator('[data-action=p-tag-color][data-color="#E4DEF3"]').click();
@@ -37,12 +37,16 @@ try{
  const tag=await page.evaluate(()=>Pandora.data.tags.items.find(t=>t.name==='我的重要事项'));
  check('new personal tag appears in calendar colour legend',await page.locator('.p-calendar-tag-legend').textContent().then(t=>t.includes('我的重要事项 · 私人')));
  await page.evaluate(id=>openTaskDetail(id),f.taskId);await page.locator('#p-personal-task-tag').waitFor();
+ check('comment composer is readable and taller',await page.locator('#p-comment-input').evaluate(e=>e.getBoundingClientRect().height>=160&&parseFloat(getComputedStyle(e).fontSize)>=16));
  await page.locator('#p-personal-task-tag').selectOption(tag.id);
  await page.locator('[data-action=p-personal-tag-save]').click();await idle();
  await page.waitForFunction(()=>document.querySelector('.p-tag-pill')&&document.querySelector('#sheetBody').textContent.includes('我的重要事项 · 仅我'));
  await shot('mobile-personal-task');await close();
  await page.waitForFunction(id=>Array.from(document.querySelectorAll('[data-task]')).some(e=>e.dataset.task===id&&e.style.getPropertyValue('--tc-bg')==='#E4DEF3'),f.taskId);
  await shot('mobile-month');await fit('mobile month fits viewport');
+ await page.locator('[data-action=task-table-open]').click();await page.locator('.p-task-table-card').waitFor();
+ check('task table header omits refresh button',await page.locator('.p-table-header [data-action=task-table-refresh]').count()===0);
+ await shot('mobile-table');await page.locator('[data-action=task-table-close]').click();await idle();
  await page.locator('[data-action=schedule-side-toggle]').click();await page.locator('[data-action=schedule-mode][data-mode=day]').click();await page.locator('[data-action=schedule-side-close]').last().click();
  check('day view keeps edit tags and return to month visible',await page.locator('.p-edit-tags').isVisible()&&await page.locator('[data-action=schedule-return-month]').isVisible());
  await shot('mobile-day');await page.locator('[data-action=schedule-return-month]').click();
