@@ -356,11 +356,12 @@
     if (!task || !me()) return null;
     const raw = task.raw || {};
     let body = '<div class="row wrap">' + statusBadge(task) + urgencyBadge(task.urgency) + allDayBadge(task) + kindTag(task, actor()) +
-      (raw.tag && P.tagPillHTML ? P.tagPillHTML(raw.tag) : '') + '</div>';
+      (raw.tag && P.tagPillHTML ? P.tagPillHTML(raw.tag) : '') + (raw.personalTag && P.tagPillHTML ? P.tagPillHTML(raw.personalTag) : '') + '</div>';
     body += '<div class="kv">' + kv("任务名称", task.title) + kv("创建者", personName(task.creatorId, raw)) + kv("创建时间", when(raw.createdAt)) + kv("当前业务责任方",personName(task.businessOwnerId,raw)) +
       kv("任务排期", fmtSchedule(task)) + kv("截止", when(raw.dueAt) + (isOverdue(task) ? " · 已逾期" : "")) +
       kv("负责人", peopleText(task.assigneeIds, raw)) + kv("审核人", raw.reviewerId ? personName(raw.reviewerId, raw) : "待配置") +
       kv("任务说明", task.desc || "暂无") + (raw.acceptanceCriteria ? kv("完成标准", raw.acceptanceCriteria) : "") + kv("当前进展", task.progressNote || "暂无") + '</div>';
+    if (P.personalTagHTML) body += P.personalTagHTML(raw);
     if (raw.parentUnavailable) body += '<div class="callout info">上级任务不可查看。关联关系不扩大访问权限。</div>';
     else if (task.parentId) body += '<div class="divider"></div><div class="card-head"><h2>上级任务</h2></div>' + taskLink(task.parentId, taskName(task.parentId));
     const children = Array.isArray(raw.children) ? raw.children : childrenOf(id).map(function (child) { return { id: child.id, title: child.title, executionState: child.status }; });

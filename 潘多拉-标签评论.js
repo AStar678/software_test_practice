@@ -1,5 +1,5 @@
 "use strict";
-/* 共用单选标签与平铺评论（第八章 8.2—8.4）：标签目录由创始人维护，任务/日志只持有一个标签；
+/* 标签与平铺评论：创始人维护共用标签；每位员工独立维护私人标签和自己的任务颜色。
    评论是对象详情底部的独立聚合，按发表时间稳定分页，作者可随时管理自己的评论。 */
 (function () {
   const P = window.Pandora;
@@ -20,17 +20,18 @@
   function tags() { return ((P.data && P.data.tags) || {}).items || []; }
   function canManageTags() { return !!((P.data && P.data.tags) || {}).canManage; }
   function tagById(id) { return tags().find(tag => tag.id === id) || null; }
+  function canEditTag(tag) { return !!tag && (tag.canEdit === true || tag.scope !== 'personal' && canManageTags()); }
   function palette() { return ((P.data && P.data.tags) || {}).palette || []; }
 
   /* ---------- 标签呈现与表单控件 ---------- */
   P.tagPillHTML = function (tag) {
     if (!tag) return '';
     return '<span class="p-tag-pill' + (tag.deleted ? ' is-deleted' : '') + '" style="--tag-bg:' + esc(tag.color || '#ffe1ea') + ';--tag-bd:' + esc(tag.border || '#8a8f98') + '">' +
-      esc(tag.name || '标签') + (tag.deleted ? '（已删除）' : '') + '</span>';
+      esc(tag.name || '标签') + (tag.scope === 'personal' ? ' · 仅我' : '') + (tag.deleted ? '（已删除）' : '') + '</span>';
   };
   P.tagSelectHTML = function (prefix, current) {
-    const list = tags().filter(tag => !tag.deleted || tag.id === current);
-    return '<div class="field p-tag-field"><label for="' + prefix + '-tag">标签（单选，可清除）</label><select id="' + prefix + '-tag">' +
+    const list = tags().filter(tag => tag.scope !== 'personal' && (!tag.deleted || tag.id === current));
+    return '<div class="field p-tag-field"><label for="' + prefix + '-tag">共用标签（全员可见）</label><select id="' + prefix + '-tag">' +
       '<option value=""' + (!current ? ' selected' : '') + '>无标签（默认粉色）</option>' +
       list.map(tag => '<option value="' + esc(tag.id) + '"' + (tag.id === current ? ' selected' : '') + '>' + esc(tag.name) + (tag.deleted ? '（已删除）' : '') + '</option>').join('') +
       '</select><span class="tiny muted">标签由创始人统一维护，每项任务或日志最多选择一个；删除的标签不能再用于新的关联。</span></div>';
@@ -40,15 +41,15 @@
     return node ? (node.value || null) : null;
   };
 
-  /* ---------- 我的 → 标签管理（仅创始人） ---------- */
+  /* ---------- 日程 / 我的 → 共用与私人标签管理 ---------- */
   function tagRowsHTML() {
-    if (!tags().length) return '<div class="empty">还没有标签，可在下方新建并选择预定义颜色。</div>';
+    if (!tags().length) return '<div class="empty">还没有标签，可在上方新建并选择颜色。</div>';
     return '<div class="stack">' + tags().map(tag =>
       '<div class="p-tag-row" data-tag-row="' + esc(tag.id) + '">' +
         '<span class="p-tag-swatch" style="background:' + esc(tag.color) + ';border-color:' + esc(tag.border) + '"></span>' +
-        '<span class="p-tag-name">' + esc(tag.name) + (tag.deleted ? '（已删除）' : '') + '</span>' +
+        '<span class="p-tag-name">' + esc(tag.name) + '<small class="p-tag-scope-label">' + (tag.scope === 'personal' ? '私人 · 仅自己可见' : '公司共用') + '</small>' + (tag.deleted ? '（已删除）' : '') + '</span>' +
         '<span class="spacer"></span>' +
-        (tag.deleted ? '<span class="tiny muted">已删除，保留既有引用</span>' :
+        (tag.deleted ? '<span class="tiny muted">已删除</span>' : !canEditTag(tag) ? '<span class="tiny muted">创始人维护</span>' :
           '<button type="button" class="btn tiny-btn" data-action="p-tag-edit" data-id="' + esc(tag.id) + '">改名/改色</button>' +
           '<button type="button" class="btn tiny-btn danger" data-action="p-tag-delete" data-id="' + esc(tag.id) + '">删除</button>') +
       '</div>').join('') + '</div>';
@@ -58,27 +59,28 @@
       '<button type="button" class="p-tag-color" data-action="p-tag-color" data-color="' + esc(entry.color) + '" aria-pressed="' + (entry.color === selected) + '" aria-label="' + esc(entry.label) + '" style="background:' + esc(entry.color) + ';border-color:' + esc(entry.border) + '"></button>').join('') + '</div>';
   }
   function tagFormHTML(draft) {
-    return '<div class="field"><label for="p-tag-name">标签名称（1—40字）</label><input id="p-tag-name" type="text" maxlength="40" value="' + esc(draft.name || '') + '" data-autofocus></div>' +
+    const scope = draft.id ? '<p class="tiny muted">' + (draft.scope === 'personal' ? '私人标签，仅自己可见' : '公司共用标签') + '</p>' : '<div class="field"><label for="p-tag-scope">可见范围</label><select id="p-tag-scope">' + (canManageTags() ? '<option value="shared">公司共用</option>' : '') + '<option value="personal"' + (!canManageTags() ? ' selected' : '') + '>私人 · 仅自己可见</option></select></div>';
+    return scope + '<div class="field"><label for="p-tag-name">标签名称（1—40字）</label><input id="p-tag-name" type="text" maxlength="40" value="' + esc(draft.name || '') + '" data-autofocus></div>' +
       '<div class="field"><label>颜色</label>' + paletteHTML(draft.color) + '</div>' +
       '<div class="callout" id="p-tag-error" hidden></div>';
   }
   function manageView() {
     return {
-      title: '标签管理',
-      body: '<p class="tiny muted">标签为全公司共用，任务和日志都可选择一个；改名改色会立即反映到当前引用，删除会保留既有引用的删除时名称与颜色。</p>' +
-        tagRowsHTML() + '<div class="divider"></div><div class="card-head"><h2>新建标签</h2></div>' + tagFormHTML({ name: '', color: (palette()[0] || {}).color || '' }),
+      title: '编辑标签',
+      body: '<p class="tiny muted">私人标签只对自己可见，可在任务详情中设置。共用标签由创始人维护，所有人都可在任务和日志中使用。</p>' +
+        '<div class="card-head"><h2>新建标签</h2></div>' + tagFormHTML({ name: '', color: (palette()[0] || {}).color || '' }) + '<div class="divider"></div><div class="card-head"><h2>已有标签</h2></div>' + tagRowsHTML(),
       foot: '<button type="button" class="btn primary" data-action="p-tag-create">新建标签</button>' + withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>')
     };
   }
   function openTagManagement() {
-    if (!canManageTags()) { P.notice('只有公司员工组织树唯一根节点（创始人）可以维护标签。'); return; }
-    tagEditing = null;
+    if (!P.ready) return;
+    tagEditing = null; pendingColor = null;
     openSheet(manageView());
   }
   function openTagEdit(id) {
     const tag = tagById(id);
-    if (!tag || !canManageTags()) return;
-    tagEditing = { id, name: tag.name, color: tag.color, rowVersion: tag.rowVersion };
+    if (!canEditTag(tag)) return;
+    tagEditing = { id, name: tag.name, color: tag.color, rowVersion: tag.rowVersion, scope: tag.scope }; pendingColor = null;
     openSheet({ title: '编辑标签', body: tagFormHTML(tagEditing), foot: '<button type="button" class="btn primary" data-action="p-tag-save" data-id="' + esc(id) + '">保存</button>' + withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>') });
   }
   function saveTag(id) {
@@ -88,13 +90,13 @@
     const name = nameNode.value.trim();
     if (!name) { errorNode.textContent = '请填写标签名称。'; errorNode.hidden = false; return; }
     const pressed = document.querySelector('.p-tag-color[aria-pressed="true"]');
-    const color = (tagEditing && tagEditing.color) || pendingColor || (pressed && pressed.dataset.color) || null;
+    const color = (pressed && pressed.dataset.color) || null;
     if (!color) { errorNode.textContent = '请选择标签颜色。'; errorNode.hidden = false; return; }
     const row = id ? tagById(id) : null;
     P.busy(async function () {
       const etag = row ? '"' + row.rowVersion + '"' : null;
       await P.mutation('tag:' + (id || 'new'), id ? 'PATCH' : 'POST', '/tags' + (id ? '/' + encodeURIComponent(id) : ''),
-        id ? { name: name, color: color } : { name: name, color: color }, etag);
+        id ? { name: name, color: color } : { name: name, color: color, scope: document.getElementById('p-tag-scope')?.value || 'personal' }, etag);
       tagEditing = null; pendingColor = null;
       await P.reload();
       closeSheet();
@@ -109,9 +111,34 @@
       await P.mutation('tag-delete:' + id, 'DELETE', '/tags/' + encodeURIComponent(id), null, '"' + row.rowVersion + '"');
       await P.reload();
       closeSheet();
-      P.notice('标签已删除，既有引用保留并标记为已删除。');
+      P.notice(row.scope === 'personal' ? '私人标签已删除，任务恢复共用标签颜色。' : '标签已删除，既有引用保留并标记为已删除。');
       if (state.page === 'me') renderAll();
     }, 'p-tag-error');
+  }
+
+  P.calendarTagsHTML = function () {
+    const list = tags().filter(tag => !tag.deleted);
+    return '<div class="p-schedule-tags"><button type="button" class="p-table-entry p-edit-tags" data-action="p-manage-tags">编辑标签</button><ul class="p-calendar-tag-legend" aria-label="日程标签颜色" tabindex="0">' +
+      (list.length ? list.map(tag => '<li title="' + esc(tag.name) + (tag.scope === 'personal' ? ' · 仅自己可见' : ' · 公司共用') + '"><span class="p-calendar-tag-dot" style="background:' + esc(tag.border || tag.color) + '"></span><span>' + esc(tag.name) + (tag.scope === 'personal' ? ' · 私人' : '') + '</span></li>').join('') : '<li class="muted">添加标签，为日程分类</li>') + '</ul></div>';
+  };
+  P.personalTagHTML = function (task) {
+    if (task.published === false || !task.currentVersionId) return '';
+    const list = tags().filter(tag => tag.scope === 'personal' && !tag.deleted);
+    return '<section class="p-personal-tag"><div class="field"><label for="p-personal-task-tag">我的标签 · 仅自己可见</label><select id="p-personal-task-tag"><option value="">跟随共用标签</option>' +
+      list.map(tag => '<option value="' + esc(tag.id) + '"' + (task.personalTag?.id === tag.id ? ' selected' : '') + '>' + esc(tag.name) + '</option>').join('') + '</select></div>' +
+      '<div class="row wrap"><button type="button" class="btn tiny-btn" data-action="p-personal-tag-save" data-id="' + esc(task.id) + '">保存我的标签</button><button type="button" class="btn ghost tiny-btn" data-action="p-manage-tags">编辑标签</button></div><p class="tiny muted">只改变自己的日程颜色，同事仍看到共用标签。</p></section>';
+  };
+  function savePersonalTag(id) {
+    const selected = document.getElementById('p-personal-task-tag');
+    if (!selected) return;
+    const tagId = selected.value || null;
+    P.busy(async function () {
+      await P.mutation('personal-tag:' + id, 'PUT', '/tasks/' + encodeURIComponent(id) + '/personal-tag', { tagId });
+      await P.reload();
+      const view = taskDetailView(id);
+      if (view) replaceTopSheet(view); else closeSheet();
+      P.notice('我的标签已保存。');
+    });
   }
 
   /* ---------- 平铺评论 ---------- */
@@ -285,9 +312,11 @@
 
   runAction = function (element) {
     const action = element.dataset.action;
+    if (action === 'p-personal-tag-save') { savePersonalTag(element.dataset.id); return; }
     if (action === 'p-manage-tags') { openTagManagement(); return; }
     if (action === 'p-tag-edit') { openTagEdit(element.dataset.id); return; }
     if (action === 'p-tag-create') {
+      tagEditing = null;
       const pressed = document.querySelector('.p-tag-color[aria-pressed="true"]');
       pendingColor = pendingColor || (pressed && pressed.dataset.color) || (palette()[0] || {}).color || null;
       saveTag(null);
@@ -329,16 +358,16 @@
     if (comment) comment.editBody = event.target.value;
   });
 
-  /* “我的”页入口：仅创始人可见，但每次写入仍在服务端重新鉴权。 */
+  /* 每位员工均可维护自己的标签，共用标签写入仍由服务器鉴权。 */
   renderMe = function () {
     previousRenderMe();
-    if (!canManageTags()) return;
+    if (!P.ready) return;
     const page = document.getElementById('page-me');
     if (!page) return;
     const card = document.createElement('section');
     card.className = 'card';
-    card.innerHTML = '<div class="card-head"><h2>标签管理</h2><span class="hint">创始人维护</span></div>' +
-      '<p class="tiny muted">维护全公司共用的任务/日志标签与配色，删除会保留既有引用。</p>' +
+    card.innerHTML = '<div class="card-head"><h2>标签管理</h2><span class="hint">私人 / 共用</span></div>' +
+      '<p class="tiny muted">创建仅自己可见的标签，为日程分类。共用标签由创始人维护。</p>' +
       '<button type="button" class="btn" data-action="p-manage-tags">打开标签管理</button>';
     page.appendChild(card);
   };

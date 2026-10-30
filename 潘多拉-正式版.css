@@ -251,6 +251,14 @@ button{cursor:pointer}
 .p-tag-palette{display:flex;flex-wrap:wrap;gap:8px}
 .p-tag-color{width:40px;height:40px;border:2px solid #8a8f98;border-radius:12px;cursor:pointer;padding:0}
 .p-tag-color[aria-pressed="true"]{outline:3px solid #1c1c1e;outline-offset:2px}
+.p-tag-scope-label{display:block;font-size:12px;font-weight:400;color:var(--muted);line-height:1.5}
+.p-tag-name{flex:1}
+.p-tag-row .spacer{display:none}
+.p-tag-row .btn{flex:0 0 auto}
+#p-tag-name,#p-tag-scope,#p-personal-task-tag{font-size:16px;min-height:44px}
+.p-tag-color{min-width:40px;min-height:40px}
+.p-personal-tag{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.p-personal-tag select{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--card);color:var(--ink)}
 .p-comments{display:flex;flex-direction:column;gap:8px;padding-top:4px}
 .p-comments .card-head{margin:0}
 .p-comment-list{display:flex;flex-direction:column;gap:6px}

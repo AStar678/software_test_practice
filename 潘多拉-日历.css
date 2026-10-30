@@ -202,6 +202,12 @@
 .p-side-toggle{color:#1c1c1e;background:transparent;border:0}
 .p-table-entry{min-height:40px;padding:0 10px;border:1px solid var(--line,#e5e5e9);border-radius:10px;background:#fff;color:#1c1c1e;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
 .p-table-entry:focus-visible,.p-side-toggle:focus-visible,.p-schedule-fab:focus-visible{outline:2px solid #e63730;outline-offset:2px}
+.p-schedule-tags{display:flex;align-items:center;gap:10px;min-width:0;padding:0 10px 6px}
+.p-edit-tags{flex:0 0 auto;color:var(--brand,#a34470);font-size:14px}
+.p-calendar-tag-legend{display:flex;align-items:center;gap:14px;min-width:0;flex:1;margin:0;padding:6px 2px;overflow-x:auto;list-style:none;overscroll-behavior-x:contain;scrollbar-width:thin}
+.p-calendar-tag-legend li{display:flex;align-items:center;gap:5px;flex:0 0 auto;font-size:13px;line-height:24px;white-space:nowrap}
+.p-calendar-tag-dot{width:9px;height:9px;flex:0 0 auto;border-radius:50%}
+.p-calendar-tag-legend:focus-visible{outline:2px solid var(--brand,#a34470);outline-offset:1px}
 .p-schedule-side{display:grid;gap:4px;padding:4px 14px 10px;border-top:1px solid var(--line,#eeeef0);background:#fff}
 .p-schedule-side[hidden]{display:none!important}
 .p-side-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px}

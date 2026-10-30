@@ -1566,6 +1566,27 @@ public class TaskService {
                 actor.organizationId(), actor.id(), taskId) != null;
     }
 
+    /** A private colour mark changes neither the shared version nor its approval route. */
+    public Map<String,Object> setPersonalTag(Actor actor,String taskId,Map<String,Object> input) {
+        requireBusiness(actor);
+        if(input==null || !input.keySet().equals(Set.of("tagId")) || input.get("tagId")!=null && !(input.get("tagId") instanceof String))
+            throw bad("请提供私人标签 tagId，或空值以清除");
+        var task=task(actor,taskId,false);
+        String current=s(task,"currentVersionId");
+        if(current==null) throw conflict("TASK_NOT_PUBLISHED","未发布任务不能设置私人标签");
+        var version=version(actor,current);
+        if(!access.canSeeTask(actor,task,version,assignees(actor,current))) throw ApiException.notFound();
+        String tagId=(String)input.get("tagId");
+        Map<String,Object> tag=null;
+        if(tagId==null || tagId.isBlank()) {
+            db.update("DELETE FROM personal_task_tags WHERE organization_id=? AND user_id=? AND task_id=?",actor.organizationId(),actor.id(),taskId);
+        } else {
+            tag=tags.personalForWrite(actor,tagId);
+            db.update("INSERT INTO personal_task_tags(organization_id,user_id,task_id,tag_id) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE tag_id=VALUES(tag_id)",actor.organizationId(),actor.id(),taskId,tagId);
+        }
+        var result=new LinkedHashMap<String,Object>();result.put("taskId",taskId);result.put("personalTag",tag);return result;
+    }
+
     public Map<String, Object> setPinned(Actor actor, String taskId, boolean pinned) {
         requireBusiness(actor);
         Map<String, Object> task = task(actor, taskId, false);
@@ -1607,6 +1628,8 @@ public class TaskService {
 
     private Map<String, Object> taskView(Actor actor, Map<String, Object> task, Map<String, Object> version, List<String> owners) {
         Map<String, Object> result = snapshotView(actor, version);
+        ReadBatch batch=currentBatch(actor);
+        result.put("personalTag",(batch==null?tags.personalTaskTags(actor):batch.personalTags).get(s(task,"id")));
         result.put("versionId", s(version, "id"));
         result.put("currentVersionId", s(version, "id"));
         result.put("id", s(task, "id"));
@@ -1962,6 +1985,7 @@ public class TaskService {
         final CompanyTree.Tree tree;
         final Map<String,Map<String,Object>> tasks=new LinkedHashMap<>(),versions=new HashMap<>(),people=new HashMap<>(),tags=new HashMap<>();
         final Map<String,List<String>> owners=new HashMap<>();
+        Map<String,Map<String,Object>> personalTags=Map.of();
         Map<String,Map<String,Object>> pending;
         final Map<String,Map<String,Object>> latestRequests=new LinkedHashMap<>();
         boolean completeVisibleTasks;
@@ -1969,6 +1993,7 @@ public class TaskService {
     }
     private ReadBatch baseReadBatch(Actor actor) {
         ReadBatch batch=new ReadBatch(actor.organizationId(),companyTree.of(actor.organizationId()));
+        batch.personalTags=tags.personalTaskTags(actor);
         // Display-only participants may be inactive, but routes always use the active fixed tree.
         for(var row:db.list("SELECT id,display_name FROM users WHERE organization_id=? ORDER BY id",actor.organizationId()))
             batch.people.put(s(row,"id"),row);
