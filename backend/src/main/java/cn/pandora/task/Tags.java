@@ -19,8 +19,7 @@ import static cn.pandora.common.Db.*;
  *
  * The founder maintains shared tags; each employee separately owns their personal tags and marks.
  * Private names never enter shared task versions, logs, notifications or audit snapshots. A business
- * object holds at most one tag through a single nullable column, so a multi-tag submission is not
- * representable and is rejected before any write. Deleting a tag is logical: the row keeps the name and
+ * log holds at most one shared tag; task versions hold ordered shared tag collections. Deleting a tag is logical: the row keeps the name and
  * colour that current references must keep displaying, the candidate list drops it, and new references
  * are refused while an existing reference can still be cleared or replaced.
  */
@@ -111,7 +110,7 @@ public class Tags {
                 .stream()
                 .filter(row -> includeDeleted || row.get("deletedAt") == null)
                 .filter(row -> query.isEmpty() || s(row, "name").toLowerCase(Locale.ROOT).contains(query))
-                .map(row -> {var item=view(row);item.put("canEdit",s(row,"ownerId") == null ? companyTree.isFounder(a) : a.id().equals(s(row,"ownerId")));return item;}).toList();
+                .map(row -> {var item=view(row);item.put("canEdit",companyTree.isFounder(a));return item;}).toList();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("items", items);
         result.put("palette", palette());
@@ -123,7 +122,7 @@ public class Tags {
     }
 
     public Map<String, Object> create(Actor a, Map<String, Object> body) {
-        business(a);access.requireCurrent(a);
+        business(a);access.requireCurrent(a);requireFounder(a);
         Map<String, Object> input = copy(body);
         if (!input.keySet().stream().allMatch(key -> Set.of("name","color","scope").contains(key))) throw bad("请求含不支持的字段");
         Object scope=input.getOrDefault("scope","shared");
@@ -139,7 +138,7 @@ public class Tags {
     }
 
     public Map<String, Object> change(Actor a, String tagId, String ifMatch, Map<String, Object> body) {
-        business(a);access.requireCurrent(a);
+        business(a);access.requireCurrent(a);requireFounder(a);
         Map<String, Object> input = copy(body);
         if (input.isEmpty()) throw bad("请提供要修改的标签字段");
         if (!input.keySet().stream().allMatch(key -> Set.of("name", "color").contains(key))) throw bad("请求含不支持的字段");
@@ -179,6 +178,7 @@ public class Tags {
     }
 
     private Map<String,Object> editable(Actor a,String id) {
+        requireFounder(a);
         var row=db.find("SELECT * FROM tags WHERE organization_id=? AND id=? AND (owner_id IS NULL OR owner_id=?) FOR UPDATE",a.organizationId(),id,a.id());
         if(row==null) throw ApiException.notFound();
         if(s(row,"ownerId")==null) requireFounder(a);

@@ -1,10 +1,24 @@
 # 旧套壳：沿用网站主题
 
-此目录更新手机上的“潘多拉”旧套壳（`cn.pandora.mobile.debug`），版本为 0.2.2。页面、按钮、卡片、字体和背景沿用根目录网站样式；顶部和底部原生控件的颜色由同一份 `潘多拉-手账主题.css` 生成。
+此目录更新手机上的“潘多拉”旧套壳（`cn.pandora.mobile.debug`）。页面、按钮、卡片、字体和背景沿用根目录网站样式；顶部和底部原生控件的颜色由同一份 `潘多拉-手账主题.css` 生成。
 
 `theme/website-shell.css` 仅适配容器宽高和隐藏由原生导航替代的网页导航，不定义配色。
 
-## 构建
+## 在线加载版（0.2.3）
+
+`build_online.py` 构建在线加载版：应用直接打开服务器上的 `潘多拉-交互原型.html`，前端更新后无需重新打包。改动点：
+
+- `appUrl()`/`bundledPage()` 的页面路径由 `/__android__/index.html` 改为在线原型页，原生导航、返回键与通知联动逻辑不变；
+- 页面加载完成后注入 `assets/app/android-runtime.js` 与 `assets/app/website-shell.css`（仍由 `/__android__/` 请求拦截器从 APK 提供）；
+- APK 内不再打包整套前端，assets 仅保留上述两个适配文件。
+
+```sh
+python3 android-shell/build_online.py
+```
+
+输出为 `output/android-shell-online/pandora-shell-0.2.3-online.apk`，与 0.2.2 相同签名和包名，可直接覆盖安装。断网时应用会显示“暂时无法连接网站”的重试页，恢复网络后重试即可。
+
+## 构建主题版（0.2.2）
 
 旧 0.2.1 的 Java 源码已不在当前 Git 历史中。`baseline/pandora-shell-0.2.1.apk` 是从用户手机备份的原始包，作为可校验的重建输入；脚本在独立的 `.build/` 内解码并仅替换展示层，不改当前 `android/` 原生新版工程。
 

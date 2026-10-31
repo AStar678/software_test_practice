@@ -89,13 +89,13 @@
     const times = defaultTimedTimes(mapped);
     return {
       mode: mode, id: raw.taskId || raw.id, title: mapped.title, desc: mapped.desc,
-      acceptanceCriteria: raw.acceptanceCriteria || "", reason: "", allDay: !!raw.allDay,
-      startDate: raw.allDay ? raw.startDate : toDateInput(mapped.start), startTime: times.start,
-      endDate: raw.allDay ? raw.dueDate : toDateInput(mapped.due), endTime: times.end,
+      acceptanceCriteria: raw.acceptanceCriteria || "", reason: "", allDay: false,
+      startDate: toDateInput(new Date(raw.startAt)), startTime: times.start,
+      endDate: toDateInput(new Date(raw.dueAt)), endTime: times.end,
       urgency: mapped.urgency, parentId: raw.parentTaskId || null,
       parentUnavailable: !!raw.parentUnavailable, parentTouched: false,
       assigneeIds: (raw.assigneeIds || []).slice(),
-      tagId: Object.prototype.hasOwnProperty.call(raw, 'tagId') ? raw.tagId : null, tagTouched: false,
+      tagIds: (raw.tagIds || (raw.tagId ? [raw.tagId] : [])).slice(), tagSnapshots: raw.tags || (raw.tag ? [raw.tag] : []), tagTouched: false,
       etag: taskTag(raw),
       reviewerId: raw.reviewerId || null, mark: mark, slot: newSlot(mode)
     };
@@ -117,7 +117,11 @@
     if (!candidateCache[mode]) {
       const data = await P.request("/assignee-candidates?purpose=" + mode);
       P.rememberPeople(data.items || []);
-      const people = (data.items || []).map(function (item) { return personById(item.id); }).filter(Boolean);
+      const people = (data.items || []).map(function (item) {
+        const person = personById(item.id);
+        if (person) { person.superiorId = item.managerId || null; person.raw = Object.assign({}, person.raw, item); }
+        return person;
+      }).filter(Boolean);
       if (candidateCache.epoch === P.epoch) candidateCache[mode] = people;
     }
     return candidateCache[mode] || [];
@@ -144,10 +148,8 @@
       await loadCandidates(purpose);
       if (!stillHere(mark)) return;
       activePickerPurpose = purpose;
-      const departments = assignableDepartments(account);
-      const firstSelected = drafts.task.assigneeIds.map(personById).filter(Boolean)[0];
-      assigneePicker.dept = firstSelected && departments.indexOf(firstSelected.dept) !== -1
-        ? firstSelected.dept : (departments[0] || "");
+      assigneePicker.dept = "";
+      assigneePicker.expanded = new Set();
       assigneePicker.query = "";
       /* The working copy starts from the draft: switching departments keeps it, cancel discards it. */
       assigneePicker.selected = drafts.task.assigneeIds.slice();
@@ -192,7 +194,8 @@
     value.parentTouched = false;
     value.etag = task && task.raw ? taskTag(task.raw) : null;
     value.reviewerId = task && task.raw && task.raw.reviewerId;
-    value.tagId = task && task.raw && Object.prototype.hasOwnProperty.call(task.raw, 'tagId') ? task.raw.tagId : null;
+    value.tagIds = task && task.raw ? (task.raw.tagIds || (task.raw.tagId ? [task.raw.tagId] : [])).slice() : [];
+    value.tagSnapshots = task && task.raw ? task.raw.tags || (task.raw.tag ? [task.raw.tag] : []) : [];
     value.tagTouched = false;
     value.preview = null;
     value.mark = session();
@@ -202,6 +205,7 @@
   window.syncTaskDraft = function () {
     originalSync();
     if (!drafts.task) return;
+    drafts.task.allDay = false;
     [ ["tf-acceptance", "acceptanceCriteria"], ["tf-reason", "reason"] ].forEach(function (pair) {
       const node = document.getElementById(pair[0]);
       if (node) drafts.task[pair[1]] = node.value;
@@ -214,7 +218,6 @@
     // The hour/minute control is two selects, read through the shared helper.
     drafts.task.startTime = P.readTimeControl("tf-start-time") || drafts.task.startTime;
     drafts.task.endTime = P.readTimeControl("tf-end-time") || drafts.task.endTime;
-    if (P.readTagSelect) { const tagId = P.readTagSelect("tf"); if (document.getElementById("tf-tag")) { drafts.task.tagId = tagId; drafts.task.tagTouched = true; } }
   };
   function previewHint(preview, kind) {
     if (!preview) return "正在确认本次审核路线…";
@@ -244,10 +247,10 @@
       .replace('<textarea id="tf-desc">', '<textarea id="tf-desc" maxlength="5000">')
       .replace('说明</label>', '任务说明（必填）</label>')
       .replace('创建时间在保存时单独记录，编辑排期不会改变创建时间。', '全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。');
-    /* One shared single-select tag per task, chosen from the company catalogue (chapter 8.2). */
-    if (P.tagSelectHTML) {
+    /* Ordered company tags belong to the proposed task version. */
+    if (P.taskTagsHTML) {
       view.body = view.body.replace('<div class="field"><label>紧急程度</label>',
-        P.tagSelectHTML("tf", draft.tagId) + '<div class="field"><label>紧急程度</label>');
+        P.taskTagsHTML(draft.tagIds || [], draft.tagSnapshots) + '<div class="field"><label>紧急程度</label>');
     }
     /* A creation (and its resubmission) has no completion criterion input. Only a historical task
        keeps the field, so its value can still be displayed, edited and audited (chapter 4.1). */
@@ -269,11 +272,6 @@
     return view;
   }
   window.taskFormView = adapterTaskFormView;
-  document.addEventListener('change', function (event) {
-    if (!event.target || event.target.id !== 'tf-tag' || !drafts.task) return;
-    drafts.task.tagId = event.target.value || null;
-    drafts.task.tagTouched = true;
-  });
   window.confirmTaskPicker = function () {
     if (taskPicker.kind === "parent" && drafts.task) drafts.task.parentTouched = true;
     originalPickerConfirm();
@@ -318,7 +316,7 @@
       const creation = creationMode(draft.mode);
       const body = {
         title: required(draft.title, "任务名称", 80), description: required(draft.desc, "任务说明", 5000),
-        priority: priorityCode[draft.urgency], allDay: !!draft.allDay, assigneeIds: unique(draft.assigneeIds.slice())
+        priority: priorityCode[draft.urgency], allDay: false, assigneeIds: unique(draft.assigneeIds.slice())
       };
       if (!creation) body.acceptanceCriteria = String(draft.acceptanceCriteria == null ? "" : draft.acceptanceCriteria).trim();
       if (!body.priority) throw new Error("请选择紧急程度。");
@@ -330,13 +328,12 @@
       }
       draft.startTime = P.readTimeControl("tf-start-time") || draft.startTime;
       draft.endTime = P.readTimeControl("tf-end-time") || draft.endTime;
-      const start = draft.allDay ? strictDate(draft.startDate) : timedValue(draft.startDate, draft.startTime);
-      const due = draft.allDay ? strictDate(draft.endDate) : timedValue(draft.endDate, draft.endTime);
+      const start = timedValue(draft.startDate, draft.startTime);
+      const due = timedValue(draft.endDate, draft.endTime);
       if (!start || !due || due < start) throw new Error("请填写有效的起止日期和时刻，截止不得早于开始。");
-      if (draft.allDay) { body.startDate = draft.startDate; body.dueDate = draft.endDate; }
-      else { body.startAt = start.toISOString(); body.dueAt = due.toISOString(); }
-      // The tag is part of the version snapshot; a cleared selection is submitted as null.
-      body.tagId = draft.tagId || null;
+      body.startAt = start.toISOString(); body.dueAt = due.toISOString();
+      // The full ordered collection is submitted; an empty array clears every shared tag.
+      body.tagIds = (draft.tagIds || []).slice();
       if (!draft.parentUnavailable || draft.parentTouched) body.parentTaskId = draft.parentId || null;
       if (body.parentTaskId && (body.parentTaskId === draft.id || isDescendant(body.parentTaskId, draft.id))) throw new Error("上级任务不能是自己或自己的子任务。");
       if (draft.mode === "edit") { body.command = "change"; body.reason = required(draft.reason, "变更原因", 500); }
@@ -345,6 +342,38 @@
       const result = await P.mutation(draft.slot, draft.mode === "create" ? "POST" : "PATCH", path, body, draft.etag);
       await finish(result, draft.mark);
     }, "tf-error");
+  };
+
+  // Fill explicit instants without introducing a second kind of schedule.
+  function fillFullDay(prefix) {
+    const draft = prefix === 'tf' ? drafts.task : reopenDraft;
+    if (!draft) return;
+    if (prefix === 'tf') syncTaskDraft();
+    const start = inputValue(prefix + '-start-date'), end = inputValue(prefix + '-end-date');
+    if (!strictDate(start) || !strictDate(end) || end < start) { P.notice('请先填写有效的起止日期。'); return; }
+    const fingerprint = [start, end, P.readTimeControl(prefix+'-start-time'), P.readTimeControl(prefix+'-end-time')].join('|');
+    if (draft.fullDayFill === fingerprint) return;
+    const next = toDateInput(addDays(strictDate(end), 1));
+    document.getElementById(prefix+'-end-date').value = next;
+    ['start','end'].forEach(side => ['hour','minute'].forEach(part => {
+      document.getElementById(prefix+'-'+side+'-time-'+part).value = '00';
+    }));
+    Object.assign(draft, {allDay:false, startDate:start, endDate:next, startTime:'00:00', endTime:'00:00', fullDayFill:[start,next,'00:00','00:00'].join('|')});
+  }
+
+  // The existing edit form is the confirmation and submission boundary for a drag.
+  P.openScheduleChange = async function (id, start, due, rowVersion) {
+    const mark = session(), previousDraft = drafts.task;
+    await openTaskForm('edit', id);
+    if (!stillHere(mark) || !drafts.task || drafts.task === previousDraft || drafts.task.id !== id || !document.getElementById('tf-start-date')) return;
+    if (drafts.task.etag !== '"' + rowVersion + '"') {
+      showError('tf-error', '任务已被更新，已加载最新内容；请重新调整排期。'); return;
+    }
+    if (!Number.isFinite(+start) || !Number.isFinite(+due) || due < start) { showError('tf-error','截止不得早于开始。'); return; }
+    Object.assign(drafts.task, {allDay:false, startDate:toDateInput(start), startTime:toTimeInput(start), endDate:toDateInput(due), endTime:toTimeInput(due)});
+    replaceTopSheet(taskFormView());
+    document.getElementById('tf-start-date')?.scrollIntoView({block:'center'});
+    document.getElementById('tf-reason')?.setAttribute('placeholder','说明调整排期的原因，确认后提交');
   };
 
   function kv(label, value) { return '<span class="k">' + label + '</span><span class="v" style="white-space:pre-wrap">' + esc(value) + '</span>'; }
@@ -356,7 +385,7 @@
     if (!task || !me()) return null;
     const raw = task.raw || {};
     let body = '<div class="row wrap">' + statusBadge(task) + urgencyBadge(task.urgency) + allDayBadge(task) + kindTag(task, actor()) +
-      (raw.tag && P.tagPillHTML ? P.tagPillHTML(raw.tag) : '') + (raw.personalTag && P.tagPillHTML ? P.tagPillHTML(raw.personalTag) : '') + '</div>';
+      (P.tagPillHTML ? (raw.tags || (raw.tag ? [raw.tag] : [])).map(P.tagPillHTML).join('') : '') + (raw.personalTag && P.tagPillHTML ? P.tagPillHTML(raw.personalTag) : '') + '</div>';
     body += '<div class="kv">' + kv("任务名称", task.title) + kv("创建者", personName(task.creatorId, raw)) + kv("创建时间", when(raw.createdAt)) + kv("当前业务责任方",personName(task.businessOwnerId,raw)) +
       kv("任务排期", fmtSchedule(task)) + kv("截止", when(raw.dueAt) + (isOverdue(task) ? " · 已逾期" : "")) +
       kv("负责人", peopleText(task.assigneeIds, raw)) + kv("审核人", raw.reviewerId ? personName(raw.reviewerId, raw) : "待配置") +
@@ -408,9 +437,9 @@
   /* A reopen must propose a valid schedule. The completed task's old schedule is reused only when it
      is still in the future; otherwise the form starts from a future default (chapter 4.3). */
   function reopenSchedule(task) {
-    const allDay = !!task.allDay;
-    const startDate = toDateInput(task.start);
-    const dueDate = toDateInput(task.due);
+    const allDay = false;
+    const startDate = toDateInput(new Date(task.raw.startAt));
+    const dueDate = toDateInput(new Date(task.raw.dueAt));
     const times = defaultTimedTimes(task);
     if (task.due && task.due.getTime() > Date.now()) {
       return { allDay: allDay, startDate: startDate, startTime: times.start, endDate: dueDate, endTime: times.end };
@@ -421,15 +450,14 @@
   }
   function reopenScheduleHTML() {
     const d = reopenDraft;
-    return '<div class="field"><label class="checkline" for="rp-allday"><input type="checkbox" id="rp-allday"' + (d.allDay ? " checked" : "") +
-      ' />全天（只填写起止日期，起止日期都包含在任务内）</label>' +
+    return '<div class="field p-task-schedule"><label>任务排期</label><button type="button" class="btn tiny-btn ghost p-full-day-shortcut" data-action="p-schedule-full-day" data-prefix="rp">设为全天</button><span class="tiny muted">开始日00:00至截止日次日00:00，可继续修改。</span>' +
       '<div class="row" style="margin-top:6px"><div class="field" style="flex:1"><label for="rp-start-date">开始日期</label>' +
         '<input id="rp-start-date" type="date" value="' + esc(d.startDate) + '" /></div>' +
-        '<div class="field" style="flex:1" id="rp-start-time-field"' + (d.allDay ? " hidden" : "") + '><label for="rp-start-time-hour">开始时刻</label>' +
+        '<div class="field" style="flex:1" id="rp-start-time-field"' + '><label for="rp-start-time-hour">开始时刻</label>' +
         P.timeControl("rp-start-time", d.startTime) + "</div></div>" +
       '<div class="row" style="margin-top:6px"><div class="field" style="flex:1"><label for="rp-end-date">截止日期</label>' +
         '<input id="rp-end-date" type="date" value="' + esc(d.endDate) + '" /></div>' +
-        '<div class="field" style="flex:1" id="rp-end-time-field"' + (d.allDay ? " hidden" : "") + '><label for="rp-end-time-hour">截止时刻</label>' +
+        '<div class="field" style="flex:1" id="rp-end-time-field"' + '><label for="rp-end-time-hour">截止时刻</label>' +
         P.timeControl("rp-end-time", d.endTime) + "</div></div></div>";
   }
   function reopenOwnersHTML() {
@@ -495,14 +523,13 @@
         if(!body.assigneeIds.length)throw new Error("重开须选择至少一位有效负责人。");
         const draft = reopenDraft;
         if (!draft) throw new Error("重开表单已失效，请重新打开。");
-        draft.allDay = !!(document.getElementById("rp-allday") || {}).checked;
+        draft.allDay = false;
         const startText = inputValue("rp-start-date");
         const dueText = inputValue("rp-end-date");
-        const start = draft.allDay ? strictDate(startText) : timedValue(startText, P.readTimeControl("rp-start-time"));
-        const due = draft.allDay ? strictDate(dueText) : timedValue(dueText, P.readTimeControl("rp-end-time"));
+        const start = timedValue(startText, P.readTimeControl("rp-start-time"));
+        const due = timedValue(dueText, P.readTimeControl("rp-end-time"));
         if (!start || !due || due < start) throw new Error("请填写有效的重开起止日期和时刻，截止不得早于开始。");
-        if (draft.allDay) { body.allDay = true; body.startDate = startText; body.dueDate = dueText; }
-        else { body.allDay = false; body.startAt = start.toISOString(); body.dueAt = due.toISOString(); }
+        body.allDay = false; body.startAt = start.toISOString(); body.dueAt = due.toISOString();
       } else {
         body[command === "progress" ? "progressNote" : "completionNote"] =
           required(inputValue(field), command === "complete" ? "完成说明" : "进展", 2000);
@@ -540,11 +567,11 @@
   function snapshotHTML(snapshot, request) {
     if (!snapshot) return '<div class="empty">尚无有效版本</div>';
     let schedule = snapshot.allDay ? snapshot.startDate + " 至 " + snapshot.dueDate + "（全天；截止日18:00）" : when(snapshot.startAt) + " → " + when(snapshot.dueAt);
-    return '<div class="kv">' + kv("名称", snapshot.title) + kv("任务说明", snapshot.description) + kv("完成标准", snapshot.acceptanceCriteria) + kv("负责人", peopleText(snapshot.assigneeIds, request)) + kv("排期", schedule) + kv("紧急程度", priorityName[snapshot.priority] || snapshot.priority) + kv("执行状态", STATUS_LABEL[snapshot.executionState] || snapshot.executionState) + kv("进展", snapshot.progressNote || "暂无") + kv("上级任务", snapshot.parentUnavailable ? "关联任务不可查看" : snapshot.parentTaskId ? taskName(snapshot.parentTaskId) : "无") + '</div>';
+    return '<div class="kv">' + kv("名称", snapshot.title) + kv("标签", (snapshot.tags || []).map(tag => tag.name + (tag.deleted ? "（已删除）" : "")).join("、") || "无") + kv("任务说明", snapshot.description) + kv("完成标准", snapshot.acceptanceCriteria) + kv("负责人", peopleText(snapshot.assigneeIds, request)) + kv("排期", schedule) + kv("紧急程度", priorityName[snapshot.priority] || snapshot.priority) + kv("执行状态", STATUS_LABEL[snapshot.executionState] || snapshot.executionState) + kv("进展", snapshot.progressNote || "暂无") + kv("上级任务", snapshot.parentUnavailable ? "关联任务不可查看" : snapshot.parentTaskId ? taskName(snapshot.parentTaskId) : "无") + '</div>';
   }
   const diffLabels = { title: "名称", description: "任务说明", acceptanceCriteria: "完成标准", assigneeIds: "负责人",
     allDay: "全天标记", startAt: "开始时间", dueAt: "截止时间", startDate: "开始日期", dueDate: "截止日期",
-    priority: "紧急程度", executionState: "执行状态", progressNote: "进展", parentTaskId: "上级任务" };
+    tagIds: "标签", priority: "紧急程度", executionState: "执行状态", progressNote: "进展", parentTaskId: "上级任务" };
   function diffText(field, value, request) {
     if (field === "assigneeIds") {
       const ids = String(value == null ? "" : value).split(",").map(function (v) { return v.trim(); }).filter(Boolean);
@@ -876,6 +903,7 @@
     if(element.dataset.action==='rp-owner-remove'&&reopenDraft){reopenDraft.assigneeIds.splice(Number(element.dataset.index),1);refreshReopenOwners();return;}
 
     const action = element.dataset.action, id = element.dataset.id;
+    if (action === "p-schedule-full-day") return fillFullDay(element.dataset.prefix);
     if (action === "p-open-handover") return openHandoverSheet(id);
     if (action === "p-open-handover-preset") return P.openHandoverPreset(id, element.dataset.name);
     if (action === "p-confirm-handover") return confirmHandover(id);
@@ -907,16 +935,6 @@
   document.addEventListener("change", function (event) {
     const target = event.target;
     if (!target) return;
-    /* The reopen all-day switch only changes which schedule inputs are visible; both values stay in
-       the draft so toggling back never loses the entered time. */
-    if (target.id === "rp-allday" && reopenDraft) {
-      reopenDraft.allDay = !!target.checked;
-      const startField = document.getElementById("rp-start-time-field");
-      const endField = document.getElementById("rp-end-time-field");
-      if (startField) startField.hidden = reopenDraft.allDay;
-      if (endField) endField.hidden = reopenDraft.allDay;
-      return;
-    }
     if (typeof target.closest !== "function") return;
     const select = target.closest("[data-handover-target]");
     if (select) refreshHandoverPreview(select.dataset.handoverTarget);

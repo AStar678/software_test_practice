@@ -20,7 +20,7 @@
   function tags() { return ((P.data && P.data.tags) || {}).items || []; }
   function canManageTags() { return !!((P.data && P.data.tags) || {}).canManage; }
   function tagById(id) { return tags().find(tag => tag.id === id) || null; }
-  function canEditTag(tag) { return !!tag && (tag.canEdit === true || tag.scope !== 'personal' && canManageTags()); }
+  function canEditTag(tag) { return !!tag && canManageTags() && tag.canEdit !== false; }
   function palette() { return ((P.data && P.data.tags) || {}).palette || []; }
 
   /* ---------- 标签呈现与表单控件 ---------- */
@@ -34,7 +34,14 @@
     return '<div class="field p-tag-field"><label for="' + prefix + '-tag">共用标签（全员可见）</label><select id="' + prefix + '-tag">' +
       '<option value=""' + (!current ? ' selected' : '') + '>无标签（默认粉色）</option>' +
       list.map(tag => '<option value="' + esc(tag.id) + '"' + (tag.id === current ? ' selected' : '') + '>' + esc(tag.name) + (tag.deleted ? '（已删除）' : '') + '</option>').join('') +
-      '</select><span class="tiny muted">标签由创始人统一维护，每项任务或日志最多选择一个；删除的标签不能再用于新的关联。</span></div>';
+      '</select><span class="tiny muted">标签由创始人统一维护，日志最多选择一个，任务支持多选；删除的标签不能再用于新的关联。</span></div>';
+  };
+  P.taskTagsHTML = function (selected, snapshots) {
+    const known = new Map(tags().map(tag => [tag.id, tag]));
+    (snapshots || []).forEach(tag => { if (selected.includes(tag.id) && !known.has(tag.id)) known.set(tag.id, tag); });
+    const list = [...known.values()].filter(tag => tag.scope !== 'personal' && (!tag.deleted || selected.includes(tag.id)));
+    return '<div class="field"><label>共用标签（可多选）</label><div id="tf-tags" class="p-task-tags" role="group" aria-label="任务标签">' +
+      (list.length ? list.map(tag => '<button type="button" class="p-task-tag" data-action="p-task-tag" data-id="' + esc(tag.id) + '" aria-pressed="' + selected.includes(tag.id) + '"' + (tag.deleted ? ' data-deleted="true"' : '') + '><span class="p-task-tag-color" style="--tag-bg:' + esc(tag.color) + ';--tag-bd:' + esc(tag.border) + '"><span aria-hidden="true">✓</span></span><span class="p-task-tag-label">' + esc(tag.name) + (tag.deleted ? '（已删除）' : '') + '</span></button>').join('') : '<span class="tiny muted">暂无共用标签</span>') + '</div></div>';
   };
   P.readTagSelect = function (prefix) {
     const node = document.getElementById(prefix + '-tag');
@@ -67,13 +74,13 @@
   function manageView() {
     return {
       title: '编辑标签',
-      body: '<p class="tiny muted">私人标签只对自己可见，可在任务详情中设置。共用标签由创始人维护，所有人都可在任务和日志中使用。</p>' +
+      body: '<p class="tiny muted">标签由创始人维护，员工在编辑任务或日志时选择和清除标签。</p>' +
         '<div class="card-head"><h2>新建标签</h2></div>' + tagFormHTML({ name: '', color: (palette()[0] || {}).color || '' }) + '<div class="divider"></div><div class="card-head"><h2>已有标签</h2></div>' + tagRowsHTML(),
       foot: '<button type="button" class="btn primary" data-action="p-tag-create">新建标签</button>' + withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>')
     };
   }
   function openTagManagement() {
-    if (!P.ready) return;
+    if (!P.ready || !canManageTags()) return;
     tagEditing = null; pendingColor = null;
     openSheet(manageView());
   }
@@ -84,6 +91,7 @@
     openSheet({ title: '编辑标签', body: tagFormHTML(tagEditing), foot: '<button type="button" class="btn primary" data-action="p-tag-save" data-id="' + esc(id) + '">保存</button>' + withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>') });
   }
   function saveTag(id) {
+    if (!canManageTags()) return;
     const nameNode = document.getElementById('p-tag-name');
     const errorNode = document.getElementById('p-tag-error');
     if (!nameNode) return;
@@ -106,7 +114,7 @@
   }
   function deleteTag(id) {
     const row = tagById(id);
-    if (!row) return;
+    if (!row || !canManageTags()) return;
     P.busy(async function () {
       await P.mutation('tag-delete:' + id, 'DELETE', '/tags/' + encodeURIComponent(id), null, '"' + row.rowVersion + '"');
       await P.reload();
@@ -116,18 +124,8 @@
     }, 'p-tag-error');
   }
 
-  P.calendarTagsHTML = function () {
-    const list = tags().filter(tag => !tag.deleted);
-    return '<div class="p-schedule-tags"><button type="button" class="p-table-entry p-edit-tags" data-action="p-manage-tags">编辑标签</button><ul class="p-calendar-tag-legend" aria-label="日程标签颜色" tabindex="0">' +
-      (list.length ? list.map(tag => '<li title="' + esc(tag.name) + (tag.scope === 'personal' ? ' · 仅自己可见' : ' · 公司共用') + '"><span class="p-calendar-tag-dot" style="background:' + esc(tag.border || tag.color) + '"></span><span>' + esc(tag.name) + (tag.scope === 'personal' ? ' · 私人' : '') + '</span></li>').join('') : '<li class="muted">添加标签，为日程分类</li>') + '</ul></div>';
-  };
-  P.personalTagHTML = function (task) {
-    if (task.published === false || !task.currentVersionId) return '';
-    const list = tags().filter(tag => tag.scope === 'personal' && !tag.deleted);
-    return '<section class="p-personal-tag"><div class="field"><label for="p-personal-task-tag">我的标签 · 仅自己可见</label><select id="p-personal-task-tag"><option value="">跟随共用标签</option>' +
-      list.map(tag => '<option value="' + esc(tag.id) + '"' + (task.personalTag?.id === tag.id ? ' selected' : '') + '>' + esc(tag.name) + '</option>').join('') + '</select></div>' +
-      '<div class="row wrap"><button type="button" class="btn tiny-btn" data-action="p-personal-tag-save" data-id="' + esc(task.id) + '">保存我的标签</button><button type="button" class="btn ghost tiny-btn" data-action="p-manage-tags">编辑标签</button></div><p class="tiny muted">只改变自己的日程颜色，同事仍看到共用标签。</p></section>';
-  };
+  P.calendarTagsHTML = function () { return ''; };
+  P.personalTagHTML = function () { return ''; };
   function savePersonalTag(id) {
     const selected = document.getElementById('p-personal-task-tag');
     if (!selected) return;
@@ -312,6 +310,15 @@
 
   runAction = function (element) {
     const action = element.dataset.action;
+    if (action === 'p-task-tag' && drafts.task) {
+      const ids = drafts.task.tagIds || (drafts.task.tagIds = []), id = element.dataset.id;
+      const index = ids.indexOf(id);
+      if (index >= 0) ids.splice(index, 1); else if (!element.dataset.deleted) ids.push(id);
+      drafts.task.tagTouched = true;
+      element.setAttribute('aria-pressed', String(ids.includes(id)));
+      if (element.dataset.deleted && !ids.includes(id)) element.disabled = true;
+      return;
+    }
     if (action === 'p-personal-tag-save') { savePersonalTag(element.dataset.id); return; }
     if (action === 'p-manage-tags') { openTagManagement(); return; }
     if (action === 'p-tag-edit') { openTagEdit(element.dataset.id); return; }
@@ -363,11 +370,11 @@
     previousRenderMe();
     if (!P.ready) return;
     const page = document.getElementById('page-me');
-    if (!page) return;
+    if (!page || !canManageTags()) return;
     const card = document.createElement('section');
     card.className = 'card';
     card.innerHTML = '<div class="card-head"><h2>标签管理</h2><span class="hint">私人 / 共用</span></div>' +
-      '<p class="tiny muted">创建仅自己可见的标签，为日程分类。共用标签由创始人维护。</p>' +
+      '<p class="tiny muted">维护公司共用标签，员工在编辑任务或日志时选择使用。</p>' +
       '<button type="button" class="btn" data-action="p-manage-tags">打开标签管理</button>';
     page.appendChild(card);
   };

@@ -121,188 +121,36 @@
   }
 
   LOG_FILTER_LABEL.logs = "日志";
-/* ---------- 日志：本人 + 授权范围，部门 → 团队 → 人员逐层搜索（第七章 7.3） ---------- */
-function logDirectory() { return P.data.logAuthors || {}; }
-function logAuthors() { return logDirectory().items || []; }
-function logDepartmentKey(person) { return person.departmentId || '__none__'; }
-function logDepartment() { return state.logDepartmentId || '__all__'; }
-function logTeam() { return state.logTeamId || '__all__'; }
-function logPersonQuery() { return String(state.logAuthorQuery || '').trim().toLowerCase(); }
-function logDepartmentQuery() { return String(state.logDepartmentQuery || '').trim().toLowerCase(); }
-function logTeamQuery() { return String(state.logTeamQuery || '').trim().toLowerCase(); }
-function visibleDepartmentAuthors() {
-  return logAuthors()
-    .filter(person => logDepartment() === '__all__' || logDepartmentKey(person) === logDepartment())
-    .filter(person => logTeam() === '__all__' || person.teamId === logTeam());
-}
-function departmentOptions() {
-  const query = logDepartmentQuery();
-  return (logDirectory().departments || []).filter(row => !query || String(row.name || '').toLowerCase().includes(query));
-}
-function teamOptions() {
-  const query = logTeamQuery();
-  return (logDirectory().teams || [])
-    .filter(row => logDepartment() === '__all__' || (row.departmentId || '__none__') === logDepartment())
-    .filter(row => !query || String(row.name || '').toLowerCase().includes(query));
-}
-function personOptions() {
-  const query = logPersonQuery();
-  return visibleDepartmentAuthors().filter(person =>
-    !query || String(person.displayName || '').toLowerCase().includes(query));
-}
-function logAuthorId() {
-  if (state.logAll) return null;
-  return state.logAuthorId || (P.data.me || {}).id || null;
-}
-function logScopeLabel() {
-  const total = filteredLogs(actor()).length;
-  if (state.logAll) {
-    const parts = [];
-    const department = (logDirectory().departments || []).find(row => row.id === logDepartment());
-    const team = (logDirectory().teams || []).find(row => row.id === logTeam());
-    if (department) parts.push(department.name);
-    if (team) parts.push(team.name);
-    return (parts.length ? parts.join(' · ') : '权限内全部') + ' · ' + total + ' 条';
-  }
-  const id = logAuthorId();
-  if (id && id === (P.data.me || {}).id) return '本人日志 · ' + total + ' 条';
-  const person = logAuthors().find(row => row.id === id);
-  return (person ? person.displayName : '所选人员') + ' 的日志 · ' + total + ' 条';
-}
+/* ---------- 日志页固定展示本人；人员资料中的授权阅读独立打开。 ---------- */
+function logAuthorId() { return (P.data.me || {}).id || null; }
+function logScopeLabel() { return '本人日志 · ' + filteredLogs(actor()).length + ' 条'; }
 filteredLogs = function () {
-  const authorId = logAuthorId();
-  const allowed = visibleDepartmentAuthors();
-  return visibleLogs(actor())
-    .filter(l => !authorId || l.authorId === authorId)
-    .filter(l => allowed.some(person => person.id === l.authorId))
-    .slice().sort((x, y) => y.time.getTime() - x.time.getTime());
+  return LOGS.filter(log => log.authorId === logAuthorId())
+    .slice().sort((x,y) => y.time.getTime()-x.time.getTime());
 };
-function logOptionsHTML(rows, valueKey, label) {
-  return rows.map(row => '<option value="' + esc(row[valueKey]) + '"' + (row.selected ? ' selected' : '') + '>' + esc(label(row)) + '</option>').join('');
-}
-function logFindingHTML() {
-  const departments = departmentOptions();
-  const teams = teamOptions();
-  const people = personOptions();
-  const allLabel = logDepartment() === '__all__' ? '权限内全部人员' : '该部门全部人员';
-  return '<details class="card log-author-filter" id="logFindingCard"' + (state.logFilterOpen ? ' open' : '') + '><summary>人员筛选<span class="tiny muted">先选部门，再选团队和人员</span></summary>' +
-    '<div class="log-filter-grid">' +
-      '<div class="field"><label for="logDepartmentSearch">部门搜索</label><input id="logDepartmentSearch" type="search" autocomplete="off" placeholder="输入部门名称" value="' + esc(state.logDepartmentQuery || '') + '">' +
-        '<label for="logDepartmentSelect">部门</label><select id="logDepartmentSelect"><option value="__all__"' + (logDepartment() === '__all__' ? ' selected' : '') + '>全部可见部门</option>' +
-        logOptionsHTML(departments.map(row => Object.assign({ selected: row.id === logDepartment() }, row)), 'id', row => row.name + '（' + row.count + '人）') + '</select></div>' +
-      '<div class="field"><label for="logTeamSearch">团队搜索</label><input id="logTeamSearch" type="search" autocomplete="off" placeholder="输入团队名称" value="' + esc(state.logTeamQuery || '') + '">' +
-        '<label for="logTeamSelect">团队</label><select id="logTeamSelect"><option value="__all__"' + (logTeam() === '__all__' ? ' selected' : '') + '>全部团队（含无团队）</option>' +
-        logOptionsHTML(teams.map(row => Object.assign({ selected: row.id === logTeam() }, row)), 'id', row => (row.name || '未命名团队') + '（' + row.count + '人）') + '</select></div>' +
-      '<div class="field"><label for="logAuthorInput">人员搜索</label><input id="logAuthorInput" type="search" autocomplete="off" placeholder="输入姓名或登录名" value="' + esc(state.logAuthorQuery || '') + '">' +
-        '<label for="logAuthorSelect">人员</label><select id="logAuthorSelect"><option value="__all__"' + (state.logAll ? ' selected' : '') + '>' + allLabel + '</option>' +
-        logOptionsHTML(people.map(row => Object.assign({ selected: !state.logAll && row.id === logAuthorId(), me: row.id === (P.data.me || {}).id }, row)), 'id', row => (row.displayName || '相关成员') + (row.teamName ? ' · ' + row.teamName : ' · 无团队') + (row.self ? '（我）' : '')) + '</select></div>' +
-    '</div>' +
-    (departments.length || people.length ? '' : '<div class="empty">当前权限内没有匹配的部门或人员</div>') +
-    '<p class="tiny muted">仅显示你有权限查看日志的部门和人员；切换部门或团队会清理不匹配的下级选择。</p></details>';
-}
-function refreshLogFindingOptions() {
-  const card = document.getElementById('logFindingCard');
-  if (!card) return;
-  const departments = departmentOptions(), teams = teamOptions(), people = personOptions();
-  const deptSelect = document.getElementById('logDepartmentSelect');
-  if (deptSelect) deptSelect.innerHTML = '<option value="__all__"' + (logDepartment() === '__all__' ? ' selected' : '') + '>全部可见部门</option>' +
-    logOptionsHTML(departments.map(row => Object.assign({ selected: row.id === logDepartment() }, row)), 'id', row => row.name + '（' + row.count + '人）');
-  const teamSelect = document.getElementById('logTeamSelect');
-  if (teamSelect) teamSelect.innerHTML = '<option value="__all__"' + (logTeam() === '__all__' ? ' selected' : '') + '>全部团队（含无团队）</option>' +
-    logOptionsHTML(teams.map(row => Object.assign({ selected: row.id === logTeam() }, row)), 'id', row => (row.name || '未命名团队') + '（' + row.count + '人）');
-  const authorSelect = document.getElementById('logAuthorSelect');
-  if (authorSelect) {
-    const allLabel = logDepartment() === '__all__' ? '权限内全部人员' : '该部门全部人员';
-    authorSelect.innerHTML = '<option value="__all__"' + (state.logAll ? ' selected' : '') + '>' + allLabel + '</option>' +
-      logOptionsHTML(people.map(row => Object.assign({ selected: !state.logAll && row.id === logAuthorId(), self: row.id === (P.data.me || {}).id }, row)), 'id', row => (row.displayName || '相关成员') + (row.teamName ? ' · ' + row.teamName : ' · 无团队') + (row.self ? '（我）' : ''));
-  }
-  /* The initial render only inserts the no-match node when it starts empty; a later search can turn
-     a populated candidate list into no matches, so the refresh path has to create/update/clear it
-     itself while keeping the typed input and authorized selection intact (chapter 7.3). */
-  let empty = card.querySelector('.empty');
-  if (!empty) {
-    empty = document.createElement('div');
-    empty.className = 'empty';
-    empty.textContent = '当前权限内没有匹配的部门或人员';
-    const hint = card.querySelector('p.tiny.muted');
-    card.insertBefore(empty, hint || null);
-  }
-  empty.hidden = departments.length > 0 || people.length > 0;
-}
-document.addEventListener('toggle', event => {
-  if (event.target.id === 'logFindingCard') state.logFilterOpen = event.target.open;
-}, true);
+logsListHTML = function (account) {
+  const logs=filteredLogs(account);
+  return logs.length?'<div class="stack log-list">'+logs.map(log=>logCardHTML(log,account)).join('')+'</div>':'<div class="empty">暂无个人日志</div>';
+};
 renderLog = function () {
   document.getElementById("page-log").innerHTML =
-    '<header class="p-log-header"><h2>日志</h2><div class="row">' + button("new-log", "写日志", null, "primary") +
-      button("backfill-log", "补写") + '</div></header>' +
-    logFindingHTML() +
-    '<section class="card p-log-panel" id="p-log-panel"><div class="card-head"><h2>日志</h2>' +
-      '<span class="hint" id="logResultsCount">' + esc(logScopeLabel()) + '</span></div>' +
-      '<div id="logResults">' + logsListHTML(actor()) + '</div></section>';
+    '<header class="p-log-header"><h2>日志</h2><div class="row">' + button("new-log", "写日志", null, "primary") + '</div></header>' +
+    '<section class="card p-log-panel" id="p-log-panel"><div class="card-head"><h2>我的日志</h2><span class="hint" id="logResultsCount">'+esc(logScopeLabel())+'</span></div><div id="logResults">'+logsListHTML(actor())+'</div></section>';
 };
 refreshLogResults = function () {
-  const results = document.getElementById("logResults");
-  if (results) results.innerHTML = logsListHTML(actor());
-  const count = document.getElementById("logResultsCount");
-  if (count) count.textContent = logScopeLabel();
-  const select = document.getElementById("logAuthorSelect");
-  if (select) select.value = state.logAll ? "__all__" : (logAuthorId() || "__all__");
+  const results=document.getElementById('logResults'), count=document.getElementById('logResultsCount');
+  if(results) results.innerHTML=logsListHTML(actor());
+  if(count) count.textContent=logScopeLabel();
 };
-/* 候选列表只由已授权作者派生；切换上级条件立即清理不再匹配的下级选择。 */
-function reconcileLogSelection() {
-  const departmentIds = (logDirectory().departments || []).map(row => row.id);
-  if (logDepartment() !== '__all__' && departmentIds.indexOf(logDepartment()) === -1) state.logDepartmentId = '__all__';
-  const teamIds = (logDirectory().teams || []).map(row => row.id);
-  if (logTeam() !== '__all__' && teamIds.indexOf(logTeam()) === -1) state.logTeamId = '__all__';
-  const allowed = visibleDepartmentAuthors();
-  if (!state.logAll && !allowed.some(person => person.id === logAuthorId())) {
-    state.logAuthorId = (P.data.me || {}).id;
-    state.logAll = !allowed.some(person => person.id === (P.data.me || {}).id);
-  }
-}
-document.addEventListener('input', function (event) {
-  if (!P.ready || state.page !== 'log' || !event.target) return;
-  const id = event.target.id;
-  if (id === 'logDepartmentSearch') { state.logDepartmentQuery = event.target.value; refreshLogFindingOptions(); }
-  if (id === 'logTeamSearch') { state.logTeamQuery = event.target.value; refreshLogFindingOptions(); }
-  if (id === 'logAuthorInput') { state.logAuthorQuery = event.target.value; refreshLogFindingOptions(); }
-});
-document.addEventListener("change", function (event) {
-  if (!P.ready || state.page !== "log" || !event.target) return;
-  const id = event.target.id;
-  if (!['logAuthorSelect', 'logDepartmentSelect', 'logTeamSelect'].includes(id)) return;
-  const value = event.target.value;
-  const next = { department: logDepartment(), team: logTeam(), author: logAuthorId(), all: state.logAll };
-  if (id === 'logDepartmentSelect') { next.department = value; next.team = '__all__'; }
-  if (id === 'logTeamSelect') next.team = value;
-  if (id === 'logAuthorSelect') { next.all = value === '__all__'; next.author = value === '__all__' ? null : value; }
-  state.logDepartmentId = next.department;
-  state.logTeamId = next.team;
-  if (id === 'logAuthorSelect') {
-    state.logAll = !!next.all;
-    state.logAuthorId = next.author || (P.data.me || {}).id;
-  }
-  reconcileLogSelection();
-  const all = state.logAll;
-  const author = all ? null : logAuthorId();
-  const scope = all || author !== (P.data.me || {}).id ? 'visible' : 'self';
-  document.querySelectorAll('#logFindingCard select').forEach(select => { select.disabled = true; });
-  P.busy(async () => {
-    try {
-      const items = await loadLogs("/work-logs?scope=" + scope + (author ? "&authorId=" + endpoint(author) : ""));
-      replaceLogs(items);
-      state.logAll = !!all;
-      state.logAuthorId = author || (P.data.me || {}).id;
-      state.logFilterOpen = true;
-      if (state.page === 'log') renderLog();
-    } catch (error) {
-      state.logDepartmentId = next.department ? logDepartment() : '__all__';
-      throw error;
-    } finally {
-      if (state.page === 'log') renderLog();
-    }
-  });
+// Card activation leaves nested edit and task controls to their own handlers.
+document.addEventListener('click',event=>{
+  const card=event.target.closest?.('[data-log-card]');
+  if(!card||event.target.closest('button,a,input,select,textarea'))return;
+  event.preventDefault();event.stopImmediatePropagation();openLogDetail(card.dataset.logCard);
+},true);
+document.addEventListener('keydown',event=>{
+  if(!event.target.matches?.('[data-log-card]')||!['Enter',' '].includes(event.key))return;
+  event.preventDefault();event.stopPropagation();openLogDetail(event.target.dataset.logCard);
 });
 
 /* 日志卡片：显示标签与冻结状态（第七章/第八章 8.2）。 */
@@ -316,7 +164,7 @@ logCardHTML = function (l, a) {
   const mine = l.authorId === a.id;
   const raw = l.raw || {};
   const frozen = raw.frozen === true || (raw.editable === false && mine);
-  return '<article class="log-card" data-log-card="' + esc(l.id) + '">' +
+  return '<article class="log-card" role="link" tabindex="0" aria-label="查看日志详情与评论" data-log-card="' + esc(l.id) + '">' +
     "<header><span class=\"who\">" + esc(personById(l.authorId) ? personById(l.authorId).name : (raw.authorName || '相关成员')) + "</span>" +
       "<span>" + esc(fmtDateTime(l.time)) + "</span>" +
       "<span>" + esc(relativeDayLabel(l.time)) + "</span>" +
@@ -328,7 +176,6 @@ logCardHTML = function (l, a) {
     '<div class="row wrap">' + logTagHTML(raw) + '</div>' +
     "<p>" + esc(l.content) + "</p>" +
     (t ? '<button type="button" class="btn ghost tiny-btn log-link" data-task="' + esc(t.id) + '">关联任务：' + esc(t.title) + '</button>' : '<span class="tiny muted">未关联任务</span>') +
-    '<div class="row"><button type="button" class="btn tiny-btn" data-action="p-open-log" data-id="' + esc(l.id) + '">查看与评论</button></div>' +
   "</article>";
 };
 
@@ -383,30 +230,19 @@ function logDateOptions() {
 }
 function tagSelectHTML(kind, current) {
   const items = ((P.data.tags || {}).items || []).filter(tag => !tag.deleted || tag.id === current);
-  return '<label class="p-tag-select"><span>标签（单选，可清除）</span><select id="' + kind + '-tag"><option value=""' + (!current ? ' selected' : '') + '>无标签</option>' +
+  return '<div class="field p-log-tag"><label for="' + kind + '-tag">标签（单选，可清除）</label><select id="' + kind + '-tag"><option value=""' + (!current ? ' selected' : '') + '>无标签</option>' +
     items.map(tag => '<option value="' + esc(tag.id) + '"' + (tag.id === current ? ' selected' : '') + '>' + esc(tag.name) + (tag.deleted ? '（已删除）' : '') + '</option>').join('') +
-    '</select></label>';
+    '</select></div>';
 }
 /* 日志分页读取与整体替换：授权边界仍由服务端裁决，页面只替换已授权的完整结果。 */
-async function applyLogAuthor(id, all) {
-  const me = (P.data.me || {}).id;
-  const authorId = all ? null : id;
-  const scope = all || authorId !== me ? "visible" : "self";
-  const items = await loadLogs("/work-logs?scope=" + scope + (authorId ? "&authorId=" + endpoint(authorId) : ""));
-  replaceLogs(items);
-  state.logAll = !!all;
-  state.logAuthorId = authorId || me;
-  refreshLogResults();
+async function applyLogAuthor() {
+  const items=await loadLogs('/work-logs?scope=self');
+  replaceLogs(items);state.logAll=false;state.logAuthorId=logAuthorId();refreshLogResults();
 }
-/* 从人员资料进入某人的日志：清空先前的人员筛选，仍按日志权限重新查询。 */
 P.openLogsFor = async function (id) {
-  state.logDepartmentId = "__all__";
-  state.logTeamId = "__all__";
-  state.logDepartmentQuery = "";
-  state.logTeamQuery = "";
-  state.logAuthorQuery = "";
-  await applyLogAuthor(id, false);
-  setPage("log");
+  if(!id || id===logAuthorId()) { await applyLogAuthor(); setPage('log'); return; }
+  const items=await loadLogs('/work-logs?scope=visible&authorId='+endpoint(id));
+  openSheet({title:'人员日志',body:items.length?items.map(raw=>logCardHTML({id:raw.id,authorId:raw.authorId,time:new Date(raw.createdAt),content:raw.body,taskId:raw.taskId,raw},actor())).join(''):'<div class="empty">暂无日志</div>',foot:withBack(button('sheet-close','关闭'))});
 };
 async function loadLogs(path) {
   const items = [];
@@ -434,53 +270,36 @@ async function existingLogFor(date) {
   return (result.items || [])[0] || null;
 }
 openLogForm = function (id, date) {
-  P.busy(async () => {
-    let raw = null;
+  return P.busy(async () => {
+    let raw = null, availableDates = null;
     if (id) {
       raw = logSnapshot && logSnapshot.epoch === P.epoch && logSnapshot.raw.id === id && sheetTitleEl.textContent === "日志详情"
         ? logSnapshot.raw : await P.request("/work-logs/" + endpoint(id));
       if (!raw.editable) throw new Error("该日志已冻结或不是本人日志，不能再编辑。");
       putLog(raw);
     } else {
-      const selected = date || companyBusinessDate();
-      raw = await existingLogFor(selected);
-      if (raw) {
-        putLog(raw);
-        if (!raw.editable) {
-          // 已冻结的当日日志只读展示，不提供正文写入口。
-          logSnapshot = { raw, epoch: P.epoch };
-          openSheet(logDetailView(raw.id));
-          P.notice("该日日志已冻结，只能查看。");
-          return;
-        }
+      const options = logDateOptions();
+      const existing = await Promise.all(options.map(option => existingLogFor(option.value)));
+      availableDates = options.filter((option, index) => !existing[index]);
+      if (!availableDates.length) { P.notice("今天、昨天和前天都已有日志，请从日志详情进入编辑。"); return; }
+      if (date && !availableDates.some(option => option.value === date)) {
+        P.notice("该日期不可创建或已有日志，请从日志详情进入编辑。"); return;
       }
+      date = date || availableDates[0].value;
     }
-    drafts.log = logDraft(raw, raw ? raw.businessDate : (date || companyBusinessDate()));
+    drafts.log = logDraft(raw, raw ? raw.businessDate : date);
+    drafts.log.availableDates = availableDates;
     openSheet(logFormView());
   });
 };
-async function openBackfillLog() {
-  // A user who already wrote today still needs a page entry to backfill yesterday/the day before.
-  for (const option of logDateOptions()) {
-    if (!(await existingLogFor(option.value))) { openLogForm(null, option.value); return; }
-  }
-  P.notice("今天、昨天和前天都已有日志。");
-}
-document.addEventListener('click', function (event) {
-  if (!P.ready || !event.target.closest) return;
-  const trigger = event.target.closest('[data-action="backfill-log"]');
-  if (!trigger) return;
-  event.preventDefault(); event.stopImmediatePropagation();
-  openBackfillLog().catch(error => P.notice(error.message));
-}, true);
 logFormView = function () {
   const d = drafts.log;
   if (!d) return null;
   const linked = d.taskId ? taskById(d.taskId) : null;
-  const dates = logDateOptions();
+  const dates = d.id ? logDateOptions() : (d.availableDates || []);
   if (!dates.some(row => row.value === d.businessDate)) dates.push({ value: d.businessDate, label: d.businessDate });
   const body = '<div class="p-log-meta">' +
-      '<div class="field"><label for="lf-date">日志日期（公司今天、昨天、前天）</label><select id="lf-date"' + (d.id ? ' disabled' : '') + '>' +
+      '<div class="field"><label for="lf-date">日志日期</label><select id="lf-date"' + (d.id ? ' disabled' : '') + '>' +
         dates.map(row => '<option value="' + esc(row.value) + '"' + (row.value === d.businessDate ? ' selected' : '') + '>' + esc(row.label) + '</option>').join('') +
       '</select></div>' + tagSelectHTML('lf', d.tagId) + '</div>' +
     '<div class="field log-content-field"><label for="lf-content">日志内容</label><textarea id="lf-content" maxlength="10000" data-autofocus>' + esc(d.content) + '</textarea></div>' +
@@ -535,11 +354,8 @@ saveLog = function () {
         "/work-logs" + (d.id ? "/" + endpoint(d.id) : ""), body, d.etag);
     } catch (error) {
       if (!d.id && error.code === "WORK_LOG_EXISTS" && error.body && error.body.logId) {
-        const raw = await P.request("/work-logs/" + endpoint(error.body.logId));
-        putLog(raw);
-        drafts.log = logDraft(raw, raw.businessDate);
-        replaceTopSheet(logFormView());
-        P.notice("该日期已有日志，已打开已有记录继续编辑。");
+        P.notice("该日期刚刚已有日志，请关闭创建页，从日志详情进入编辑。");
+        showError("lf-error", "该日期已有日志，未覆盖原内容；请从日志详情进入编辑。");
         return;
       }
       if (error.code === "WORK_LOG_FROZEN") {
@@ -632,23 +448,33 @@ saveLog = function () {
     if (type.startsWith("comment.")) return PURPOSE_FALLBACK.comment;
     return PURPOSE_FALLBACK.task;
   }
-  /* 列表直接说明用途、对象名称和实际摘要；长标题只截断标题行，不会遮住用途。 */
+  let noticeFilters = { read: "all", category: "all", mode: "compact", epoch: -1 };
+  const NOTICE_CATEGORIES = { all: "全部类型", review: "需我审核", result: "结果告知", reminder: "提醒", comment: "评论", other: "其他" };
+  function noticeSelect(id, label, value, options) {
+    return '<label class="field" for="' + id + '"><span>' + label + '</span><select id="' + id + '">' + Object.entries(options).map(([key,text]) => '<option value="' + key + '"' + (value === key ? ' selected' : '') + '>' + text + '</option>').join('') + '</select></div>';
+  }
   notificationsView = function () {
-    const list = notificationsFor();
-    return { title: "通知", notification: true, body: list.length ? list.map(n => {
-      const raw = n.raw;
-      const purpose = notificationPurpose(raw);
-      const objectName = raw.objectName || raw.title || "";
-      const summary = raw.summary || "";
-      const state = raw.revoked ? "已撤回" : raw.relationLost ? "权限已变化" : raw.readAt ? "已读" : "未读";
-      return '<button type="button" class="notif' + (raw.readAt ? ' is-read' : '') + (raw.revoked ? ' is-withdrawn' : '') +
-        '" data-action="open-notif" data-id="' + esc(n.id) + '"><span class="ndot" aria-hidden="true"></span>' +
-        '<span class="nbody"><span class="ntop"><span class="npurpose">' + esc(purpose) + '</span>' +
-        (objectName ? '<span class="ntitle">' + esc(objectName) + '</span>' : '') + '</span>' +
-        (summary && summary !== objectName ? '<span class="nsummary">' + esc(summary) + '</span>' : '') +
-        '<span class="nmeta">' + esc(timeText(raw.createdAt)) + " · " + esc(state) + '</span></span></button>';
-    }).join("") : '<div class="empty">暂无通知</div>' };
+    if (noticeFilters.epoch !== P.epoch) noticeFilters = { read: "all", category: "all", mode: "compact", epoch: P.epoch };
+    const all = notificationsFor();
+    const list = all.filter(n => (noticeFilters.read === "all" || (noticeFilters.read === "unread") === !n.raw.readAt) && (noticeFilters.category === "all" || n.raw.category === noticeFilters.category));
+    const controls = '<div class="p-notice-filters">' + noticeSelect('pn-read','已读状态',noticeFilters.read,{all:'全部',unread:'未读',read:'已读'}) + noticeSelect('pn-category','通知类型',noticeFilters.category,NOTICE_CATEGORIES) + noticeSelect('pn-mode','显示方式',noticeFilters.mode,{compact:'精简',full:'完整'}) + '</div><div class="row"><span class="tiny muted">' + list.length + ' 条通知</span><button type="button" class="btn tiny-btn ghost" data-action="p-notice-clear">清空筛选</button></div>';
+    const rows = list.map(n => {
+      const raw = n.raw, category = NOTICE_CATEGORIES[raw.category] || '其他';
+      const name = raw.objectName || raw.title || (raw.taskId ? '关联任务不可查看' : '无关联任务');
+      const summary = raw.summary || '';
+      return '<button type="button" class="notif p-notice-row' + (raw.readAt ? ' is-read' : '') + '" data-action="open-notif" data-id="' + esc(n.id) + '"><span class="nbody"><span class="ntop"><span class="ntitle">' + esc(name) + '</span><span class="npurpose">' + esc(category) + '</span></span>' +
+        (noticeFilters.mode === 'full' ? '<span class="nsummary">' + esc(notificationPurpose(raw)) + ' · ' + esc(summary) + '</span>' : '') +
+        '<span class="nmeta"><span>' + (raw.readAt ? '已读' : '未读') + '</span><time>' + esc(timeText(raw.createdAt)) + '</time></span></span></button>';
+    }).join('');
+    return { title: '通知', notification: true, body: controls + (rows || '<div class="empty">' + (all.length ? '没有符合筛选条件的通知' : '暂无通知') + '</div>'), rebuild: notificationsView };
   };
+  document.addEventListener('change', function (event) {
+    const field = { 'pn-read':'read', 'pn-category':'category', 'pn-mode':'mode' }[event.target.id];
+    if (!field) return;
+    noticeFilters[field] = event.target.value;
+    replaceTopSheet(notificationsView());
+    document.getElementById(event.target.id)?.focus();
+  });
   openNotifications = function () {
     P.busy(async () => { await P.reload(); openSheet(notificationsView()); });
   };
@@ -844,6 +670,7 @@ saveLog = function () {
         if (taskPicker.kind === "log" && drafts.log) drafts.log.relationshipChanged = true;
         oldActions(el); return;
       case "p-open-log": openLogDetail(el.dataset.id); return;
+      case "p-notice-clear": noticeFilters.read = "all"; noticeFilters.category = "all"; replaceTopSheet(notificationsView()); return;
       case "p-hide-notification": deleteNotification(el.dataset.id); return;
       case "p-withdraw-notification": withdrawNotification(el.dataset.id); return;
       case "p-open-notification-task": openNotificationTask(el.dataset.id); return;

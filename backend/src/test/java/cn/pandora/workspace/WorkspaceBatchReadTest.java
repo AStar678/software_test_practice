@@ -91,6 +91,40 @@ class WorkspaceBatchReadTest {
     }
 
     @Test
+    void combinedFiltersApplyBeforePagingAndKeepGlobalUnreadCount() {
+        var f=new Fixture();
+        f.add("comment","comment.created",true,false,false);
+        f.add("result-read","task.change.approved",true,false,false).put("readAt",NOW.toString());
+        f.add("result-one","task.change.approved",true,false,false);
+        f.add("result-two","task.complete.approved",true,false,false);
+        var result=f.service.notifications(VIEWER,Map.of("readStatus","unread","category","result","limit","1","offset","1"));
+        assertEquals(2,result.get("total"));
+        assertEquals(3L,result.get("unreadCount"));
+        assertEquals("result-two",items(result).getFirst().get("id"));
+        assertEquals("result",items(result).getFirst().get("category"));
+        assertEquals("result-read",items(f.service.notifications(VIEWER,Map.of("readStatus","read","category","result"))).getFirst().get("id"));
+    }
+
+    @Test
+    void reviewCategoryTracksReassignmentDeadlineWithdrawalAndTerminalState() {
+        var f=new Fixture();
+        for(String id:List.of("live","reassigned","expired","withdrawn","finished")) {
+            f.add(id,"task.progress.submitted",true,false,"withdrawn".equals(id));
+            var request=f.db.row("approval_requests","r-"+id);
+            request.put("status","finished".equals(id)?"approved":"pending");
+            request.put("currentReviewerId","reassigned".equals(id)?"someone-else":VIEWER.id());
+            request.put("applicableDeadline",("expired".equals(id)?NOW:NOW.plusSeconds(60)).toString());
+        }
+        var review=items(f.service.notifications(VIEWER,Map.of("category","review")));
+        assertEquals(List.of("live"),review.stream().map(r->r.get("id")).toList());
+        assertTrue((boolean)review.getFirst().get("canReview"));
+        assertEquals(4,f.service.notifications(VIEWER,Map.of("category","other")).get("total"));
+        assertEquals(0,f.service.notifications(VIEWER,Map.of("category","result")).get("total"));
+        for(var row:items(f.service.notifications(VIEWER,Map.of())))
+            assertEquals(f.service.notification(VIEWER,Db.s(row,"id")).get("category"),row.get("category"));
+    }
+
+    @Test
     void logsProjectOnlyTheSelectedPageAndNeverExposeUnreadableLinkedTasks() {
         var f=new Fixture();
         when(f.access.logAuthorIds(VIEWER)).thenReturn(List.of("viewer"));
@@ -158,7 +192,10 @@ class WorkspaceBatchReadTest {
             if(sql.startsWith("SELECT n.id,")) return source.stream().filter(r->r.get("hiddenAt")==null)
                     .filter(r->!sql.contains("n.read_at IS NULL") || r.get("readAt")==null).map(r->{
                         var value=new LinkedHashMap<>(r);var event=row("domain_events",Db.s(r,"eventId"));
-                        value.put("eventRevokedAt",event.get("revokedAt"));value.put("eventExpiresAt",event.get("expiresAt"));return (Map<String,Object>)value;}).toList();
+                        value.put("eventRevokedAt",event.get("revokedAt"));value.put("eventExpiresAt",event.get("expiresAt"));
+                        var request=row("approval_requests",Db.s(r,"requestId"));
+                        value.put("requestStatus",request.get("status"));value.put("reviewerId",request.get("currentReviewerId"));value.put("applicableDeadline",request.get("applicableDeadline"));
+                        return (Map<String,Object>)value;}).toList();
             if(sql.contains("task_version_assignees"))return List.of();
             if(sql.startsWith("SELECT w.id,"))return source.stream().map(LinkedHashMap::new).map(r->(Map<String,Object>)r).toList();
             Set<Object> ids=new HashSet<>(Arrays.asList(args));

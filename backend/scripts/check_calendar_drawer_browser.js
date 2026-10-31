@@ -66,6 +66,7 @@ async function main() {
   }
   const setView = async (date, mode = 'month') => {
     await ev(`setPage('view');state.viewMode=${js(mode)};state.viewAnchor=parseDateInput(${js(date)});Pandora.calendar.resetStream(state.viewAnchor);renderAll()`);
+    if(mode==='day') await ev("document.querySelector('[data-action=schedule-day-mode][data-day-mode=timeline]').click()");
     await sleep(260);
   };
   const revealSection = async date => {
@@ -328,7 +329,7 @@ async function main() {
     await waitFor(b, "!!Pandora.calendar.currentDaySheet()");
     await click('[data-action=schedule-day-view]');
     const dayView = await waitFor(b, "state.viewMode==='day'&&!document.querySelector('.p-day-sheet')");
-    const dayState = await ev("({anchor:+state.viewAnchor,mode:state.viewMode,heading:document.querySelector('.p-day-view-heading h2')&&document.querySelector('.p-day-view-heading h2').textContent,items:document.querySelectorAll('.p-axis-event,.p-all-day-event').length})");
+    const dayState = await ev("({anchor:+state.viewAnchor,mode:state.viewMode,heading:document.querySelector('.p-day-view-heading h2')&&document.querySelector('.p-day-view-heading h2').textContent,items:document.querySelectorAll('.p-horizontal-task,.p-axis-event,.p-all-day-event').length})");
     check('only 查看日视图 switches to the day mode for that date', dayView && dayState.anchor === +(await ev(`+parseDateInput(${js(fixture.day)})`)) && dayState.items > 0, dayState);
 
     /* A direct return is always available, without reopening the view drawer. */

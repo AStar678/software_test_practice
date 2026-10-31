@@ -8,7 +8,7 @@ import uuid
 from fixed_model_fixture import Fixture, quote
 from migration_precheck import BASE
 
-OUTPUT=BASE.parent/'audit/refactor-pandora-organization-and-workflows/review-routing.json'
+OUTPUT=BASE.parent/'output/task-creation-refinement/review-routing.json'
 
 def main():
     report={'updated':dt.datetime.now(dt.timezone.utc).isoformat(),'checks':[]}
@@ -70,31 +70,33 @@ def main():
             task=pending['taskId']
             for owners in (['beta-one-employee','alpha-two-employee'],['alpha-two-employee','beta-one-employee']):
                 status,result=preview('alpha-one-employee',owners,'change',task)
-                check('non-creation routes solely to current business owner with self direct application',status==200 and result['reviewerId']==ids['alpha-one-employee'] and result['requiresApproval'] is False and result['route']['reason']=='self-reviewer')
+                check('non-creation routes to operator manager regardless of owner order',status==200 and result['reviewerId']==ids['alpha-one-head'] and result['requiresApproval'] is True and result['route']['reason']=='direct-manager')
             check('viewing authority does not grant basic edit preview',preview('founder',['beta-one-employee'],'change',task)[0]==409)
-            changed=change(task,'alpha-one-employee',{'command':'change','title':'Owner changed cross department','reason':'Current owner maintenance','assigneeIds':[ids['beta-one-employee'],ids['alpha-two-employee']]})
-            check('direct change is not left pending',f.db.scalar('SELECT COUNT(*) FROM approval_requests WHERE task_id='+quote(task)+" AND status='pending'")==0)
+            changed=change(task,'alpha-one-employee',{'command':'change','title':'Owner changed cross department','reason':'Current owner maintenance','assigneeIds':[ids['beta-one-employee'],ids['alpha-two-employee']]},'pending')
+            check('manager approves creator change',decide(changed['requestId'],'alpha-one-head')[0]==200)
+            check('approved creator change is not left pending',f.db.scalar('SELECT COUNT(*) FROM approval_requests WHERE task_id='+quote(task)+" AND status='pending'")==0)
             current=detail(task,'alpha-one-employee')['rowVersion']
             status,_=call('PATCH','/tasks/'+task,{'command':'change','title':'Stale overwrite','reason':'stale'},'alpha-one-employee',current-1)
-            check('self direct apply cannot bypass task version',status==412)
+            check('creator change cannot bypass task version',status==412)
             status,_=call('PATCH','/tasks/'+task,{'command':'change','assigneeIds':[],'reason':'empty'},'alpha-one-employee',current)
-            check('self direct apply cannot remove every assignee',status==400)
+            check('creator change cannot remove every assignee',status==400)
             status,_=call('PATCH','/tasks/'+task,{'command':'progress','progressNote':'Creator is not assignee'},'alpha-one-employee',current)
             check('business owner is not automatically entitled to submit progress',status==403)
-            check('direct history records actual applicant and exemption reason',f.db.scalar('SELECT COUNT(*) FROM approval_requests WHERE id='+quote(changed['requestId'])+" AND status='direct' AND decided_by=applicant_id AND exemption_reason IS NOT NULL")==1)
+            check('creator change records applicant and actual manager',f.db.scalar('SELECT COUNT(*) FROM approval_requests WHERE id='+quote(changed['requestId'])+" AND status='approved' AND decided_by<>applicant_id AND exemption_reason IS NULL")==1)
             progress=change(task,'beta-one-employee',{'command':'progress','progressNote':'Progress requires current owner review'},'pending')
             check('pending progress keeps old effective content',detail(task,'beta-one-employee')['progressNote']=='')
             status,_=call('PATCH','/tasks/'+task,{'command':'change','title':'Frozen overwrite','reason':'frozen'},'alpha-one-employee',detail(task,'alpha-one-employee')['rowVersion'])
-            check('self direct apply cannot bypass unique pending freeze',status==409)
+            check('creator change cannot bypass unique pending freeze',status==409)
             check('unrelated scope viewer cannot obtain proposal',call('GET','/approval-requests/'+progress['requestId'])[0]==404)
-            check('current business owner approves cross-department progress',decide(progress['requestId'],'alpha-one-employee')[0]==200)
+            check('operator manager approves cross-department progress',decide(progress['requestId'],'beta-one-head')[0]==200)
             check('approved progress becomes effective',detail(task,'beta-one-employee')['progressNote']=='Progress requires current owner review')
             completed=change(task,'beta-one-employee',{'command':'complete','completionNote':'Ready'},'pending')
-            check('business owner approves completion',decide(completed['requestId'],'alpha-one-employee')[0]==200 and detail(task,'alpha-one-employee')['executionState']=='done')
+            check('operator manager approves completion',decide(completed['requestId'],'beta-one-head')[0]==200 and detail(task,'alpha-one-employee')['executionState']=='done')
             status,_=call('PATCH','/tasks/'+task,{'command':'reopen','reason':'Missing schedule'},'alpha-one-employee',detail(task,'alpha-one-employee')['rowVersion'])
             check('self reopen requires a complete explicit schedule',status==400)
-            reopened=change(task,'alpha-one-employee',{'command':'reopen','reason':'New execution round',**{k:v for k,v in form([]).items() if k in ('allDay','startAt','dueAt')}})
-            check('self reopen publishes doing state and advances round',detail(task,'alpha-one-employee')['executionState']=='doing' and detail(task,'alpha-one-employee')['executionRound']==2)
+            reopened=change(task,'alpha-one-employee',{'command':'reopen','reason':'New execution round',**{k:v for k,v in form([]).items() if k in ('allDay','startAt','dueAt')}},'pending')
+            check('operator manager approves reopen',decide(reopened['requestId'],'alpha-one-head')[0]==200)
+            check('approved reopen publishes doing state and advances round',detail(task,'alpha-one-employee')['executionState']=='doing' and detail(task,'alpha-one-employee')['executionRound']==2)
             own=create('founder',['founder'])
             change(own['taskId'],'founder',{'command':'progress','progressNote':'Self progress'})
             change(own['taskId'],'founder',{'command':'complete','completionNote':'Self complete'})
@@ -107,8 +109,8 @@ def main():
             status,_=call('POST','/tasks/'+target['taskId']+'/handover',{'sourceUserId':ids['alpha-one-employee'],'targetUserId':ids['beta-one-employee']},'alpha-one-head',detail(target['taskId'],'alpha-one-head')['rowVersion'])
             check('direct manager cannot use company-wide edit scope for dedicated handover',status==400)
             status,handed=call('POST','/tasks/'+target['taskId']+'/handover',{'sourceUserId':ids['alpha-one-employee'],'targetUserId':ids['alpha-two-employee']},'alpha-one-head',detail(target['taskId'],'alpha-one-head')['rowVersion'])
-            check('direct manager handover awaits business owner approval',status==200 and handed['outcome']=='pending')
-            check('business owner approves dedicated handover',decide(handed['requestId'],'founder')[0]==200 and detail(target['taskId'])['assigneeIds']==[ids['alpha-two-employee']])
+            check('direct manager handover awaits their own manager',status==200 and handed['outcome']=='pending')
+            check('operator manager approves dedicated handover',decide(handed['requestId'],'alpha-head')[0]==200 and detail(target['taskId'])['assigneeIds']==[ids['alpha-two-employee']])
 
             # ---------- 4.1 fixed-position task visibility matrix ----------
             def listed(task_id, who):
@@ -229,30 +231,30 @@ def main():
             approval_task = create('founder', ['beta-two-employee'])
             status, preview_progress = call('POST', '/tasks/reviewer-preview',
                                             {'operation': 'progress', 'taskId': approval_task['taskId'], 'assigneeIds': [ids['beta-two-employee']]}, 'beta-two-employee')
-            check('progress preview shows the current business owner as reviewer', status == 200 and preview_progress['reviewerId'] == ids['founder'] and preview_progress['requiresApproval'] is True)
-            check('detail route matches the preview for the applicant', detail(approval_task['taskId'], 'beta-two-employee')['reviewerId'] == ids['founder'])
+            check('progress preview shows operator manager', status == 200 and preview_progress['reviewerId'] == ids['beta-two-head'] and preview_progress['requiresApproval'] is True)
+            check('detail route matches the preview for the applicant', detail(approval_task['taskId'], 'beta-two-employee')['reviewerId'] == ids['beta-two-head'])
             status, progress_pending = call('PATCH', '/tasks/' + approval_task['taskId'],
                                             {'command': 'progress', 'progressNote': 'Matrix pending progress'}, 'beta-two-employee',
                                             detail(approval_task['taskId'], 'beta-two-employee')['rowVersion'])
             check('progress by a non-owner-business assignee becomes pending', status == 200 and progress_pending['outcome'] == 'pending')
             applicant_view = call('GET', '/approval-requests/' + progress_pending['requestId'], who='beta-two-employee')[1]
-            reviewer_view = call('GET', '/approval-requests/' + progress_pending['requestId'], who='founder')[1]
+            reviewer_view = call('GET', '/approval-requests/' + progress_pending['requestId'], who='beta-two-head')[1]
             outsider_status = call('GET', '/approval-requests/' + progress_pending['requestId'], who='beta-head')[0]
             check('applicant sees submitted content but no reviewer comparison', 'diff' not in applicant_view and applicant_view['status'] == 'pending')
-            check('only the actual reviewer receives the field-by-field diff', 'diff' in reviewer_view and reviewer_view['currentReviewerId'] == ids['founder'])
+            check('only the actual reviewer receives the field-by-field diff', 'diff' in reviewer_view and reviewer_view['currentReviewerId'] == ids['beta-two-head'])
             check('a task viewer outside the request cannot obtain proposal content', outsider_status == 404)
             event_rows = f.db.rows('SELECT event_type,recipients_json FROM domain_events WHERE organization_id=' + quote('fixture-company') + ' AND task_id=' + quote(approval_task['taskId']) + " AND event_type='task.progress.submitted'")
             recipients = json.loads(event_rows[-1][1]) if event_rows else []
-            check('published submission notifies only the reviewer of record', recipients == [ids['founder']], recipients)
+            check('published submission notifies only the reviewer of record', recipients == [ids['beta-two-head']], recipients)
             status, _ = call('PATCH', '/approval-requests/' + progress_pending['requestId'], {'decision': 'approve'}, 'beta-two-employee', reviewer_view['rowVersion'])
             check('applicant cannot decide their own reviewed request', status in (403, 404, 409), {'status': status})
-            check('reviewer decides and the effective version changes', decide(progress_pending['requestId'], 'founder')[0] == 200
+            check('reviewer decides and the effective version changes', decide(progress_pending['requestId'], 'beta-two-head')[0] == 200
                   and detail(approval_task['taskId'], 'beta-two-employee')['progressNote'] == 'Matrix pending progress')
             approved_rows = f.db.rows('SELECT event_type,recipients_json FROM domain_events WHERE organization_id=' + quote('fixture-company') + ' AND task_id=' + quote(approval_task['taskId']) + " AND event_type='task.progress.approved'")
             approved_recipients = set(json.loads(approved_rows[-1][1])) if approved_rows else set()
             check('approval result reaches applicant, business owner and current owner only', {ids['founder'], ids['beta-two-employee']}.issubset(approved_recipients)
                   and not ({ids['alpha-head'], ids['alpha-one-employee']} & approved_recipients), sorted(approved_recipients))
-            check('self direct operation leaves no pending record or re-approval entry', 'pendingRequestId' not in detail(approval_task['taskId'], 'founder')
+            check('approved operation leaves no pending record or re-approval entry', 'pendingRequestId' not in detail(approval_task['taskId'], 'founder')
                   and f.db.scalar('SELECT COUNT(*) FROM approval_requests WHERE task_id=' + quote(approval_task['taskId']) + " AND status='pending'") == 0)
 
             # ---------- 5.5 pending-route refresh after takeover/organization change ----------
@@ -271,17 +273,21 @@ def main():
 
             reroute_task = create('founder', ['beta-two-employee'])
             _, reroute_pending = call('PATCH', '/tasks/' + reroute_task['taskId'], {'command': 'progress', 'progressNote': 'Reroute review'}, 'beta-two-employee', detail(reroute_task['taskId'], 'beta-two-employee')['rowVersion'])
-            old_view = call('GET', '/approval-requests/' + reroute_pending['requestId'], who='founder')[1]
-            check('takeover reassigns an active request to the new business owner', takeover(arrangement(reroute_task['taskId'], 'founder', 'alpha-one-employee'))[0] == 200)
-            check('old reviewer loses read and decision after reassignment', call('GET', '/approval-requests/' + reroute_pending['requestId'], who='founder')[0] == 404
-                  and call('PATCH', '/approval-requests/' + reroute_pending['requestId'], {'decision': 'approve'}, 'founder', old_view['rowVersion'])[0] in (404, 412))
-            check('new current business owner can decide the refreshed request', decide(reroute_pending['requestId'], 'alpha-one-employee')[0] == 200)
+            old_view = call('GET', '/approval-requests/' + reroute_pending['requestId'], who='beta-two-head')[1]
+            check('takeover does not replace operator manager', takeover(arrangement(reroute_task['taskId'], 'founder', 'alpha-one-employee'))[0] == 200
+                  and call('GET', '/approval-requests/' + reroute_pending['requestId'], who='beta-two-head')[1]['currentReviewerId']==ids['beta-two-head'])
+            check('organization change reassigns actual applicant manager',move('beta-two-employee','fixture-company-beta','fixture-company-beta-one')[0]==200)
+            check('old reviewer loses read and decision after reassignment', call('GET', '/approval-requests/' + reroute_pending['requestId'], who='beta-two-head')[0] == 404
+                  and call('PATCH', '/approval-requests/' + reroute_pending['requestId'], {'decision': 'approve'}, 'beta-two-head', old_view['rowVersion'])[0] in (403,404,412))
+            check('new direct manager can decide refreshed request', decide(reroute_pending['requestId'], 'beta-one-head')[0] == 200)
+            check('restore applicant placement',move('beta-two-employee','fixture-company-beta','fixture-company-beta-two')[0]==200)
 
             direct_task = create('founder', ['beta-two-employee'])
-            _, direct_pending = call('PATCH', '/tasks/' + direct_task['taskId'], {'command': 'progress', 'progressNote': 'Applicant becomes reviewer'}, 'beta-two-employee', detail(direct_task['taskId'], 'beta-two-employee')['rowVersion'])
-            check('takeover to the applicant refreshes and directly applies', takeover(arrangement(direct_task['taskId'], 'founder', 'beta-two-employee'))[0] == 200
-                  and f.db.scalar('SELECT COUNT(*) FROM approval_requests WHERE id=' + quote(direct_pending['requestId']) + " AND status='direct' AND decided_by=applicant_id AND exemption_reason IS NOT NULL") == 1)
-            check('direct refresh applies the proposal exactly once', detail(direct_task['taskId'], 'beta-two-employee')['progressNote'] == 'Applicant becomes reviewer')
+            _, direct_pending = call('PATCH', '/tasks/' + direct_task['taskId'], {'command': 'progress', 'progressNote': 'Applicant becomes business owner'}, 'beta-two-employee', detail(direct_task['taskId'], 'beta-two-employee')['rowVersion'])
+            check('takeover by applicant still requires own manager', takeover(arrangement(direct_task['taskId'], 'founder', 'beta-two-employee'))[0] == 200
+                  and f.db.scalar('SELECT COUNT(*) FROM approval_requests WHERE id=' + quote(direct_pending['requestId']) + " AND status='pending' AND current_reviewer_id="+quote(ids['beta-two-head'])) == 1)
+            check('takeover cannot publish pending proposal', detail(direct_task['taskId'], 'beta-two-employee')['progressNote'] == '')
+            check('manager approves after takeover',decide(direct_pending['requestId'],'beta-two-head')[0]==200)
 
             expired_task = create('founder', ['beta-two-employee'])
             _, expired_pending = call('PATCH', '/tasks/' + expired_task['taskId'], {'command': 'progress', 'progressNote': 'Never revive'}, 'beta-two-employee', detail(expired_task['taskId'], 'beta-two-employee')['rowVersion'])
@@ -292,19 +298,19 @@ def main():
 
             blocked_task = create('founder', ['beta-two-employee'])
             _, blocked_pending = call('PATCH', '/tasks/' + blocked_task['taskId'], {'command': 'progress', 'progressNote': 'Blocked reviewer'}, 'beta-two-employee', detail(blocked_task['taskId'], 'beta-two-employee')['rowVersion'])
-            f.db.server_side('UPDATE users SET reviewer_available=0 WHERE id=' + quote(ids['alpha-one-employee']))
-            check('refresh keeps a request blocked when the business owner cannot review', takeover(arrangement(blocked_task['taskId'], 'founder', 'alpha-one-employee'))[0] == 200
-                  and f.db.scalar('SELECT COUNT(*) FROM approval_requests WHERE id=' + quote(blocked_pending['requestId']) + " AND status='pending' AND current_reviewer_id IS NULL AND route_reason='business-owner-unavailable'") == 1)
+            f.db.server_side('UPDATE users SET reviewer_available=0 WHERE id=' + quote(ids['beta-two-head']))
+            check('refresh blocks when operator manager cannot review', takeover(arrangement(blocked_task['taskId'], 'founder', 'alpha-one-employee'))[0] == 200
+                  and f.db.scalar('SELECT COUNT(*) FROM approval_requests WHERE id=' + quote(blocked_pending['requestId']) + " AND status='pending' AND current_reviewer_id IS NULL AND route_reason='manager-unavailable'") == 1)
             blocked_detail = detail(blocked_task['taskId'], 'beta-two-employee')
             check('blocked route is visible and never fabricated as an exemption', blocked_detail.get('pendingRoute', {}).get('blocked') is True
                   and blocked_detail.get('frozen') is True and detail(blocked_task['taskId'], 'beta-two-employee')['progressNote'] == '')
-            f.db.server_side('UPDATE users SET reviewer_available=1 WHERE id=' + quote(ids['alpha-one-employee']))
+            f.db.server_side('UPDATE users SET reviewer_available=1 WHERE id=' + quote(ids['beta-two-head']))
 
             race_task = create('founder', ['beta-two-employee'])
             _, race_pending = call('PATCH', '/tasks/' + race_task['taskId'], {'command': 'progress', 'progressNote': 'One terminal only'}, 'beta-two-employee', detail(race_task['taskId'], 'beta-two-employee')['rowVersion'])
-            race_view = call('GET', '/approval-requests/' + race_pending['requestId'], who='founder')[1]
+            race_view = call('GET', '/approval-requests/' + race_pending['requestId'], who='beta-two-head')[1]
             def approve_once(_):
-                return call('PATCH', '/approval-requests/' + race_pending['requestId'], {'decision': 'approve'}, 'founder', race_view['rowVersion'])[0]
+                return call('PATCH', '/approval-requests/' + race_pending['requestId'], {'decision': 'approve'}, 'beta-two-head', race_view['rowVersion'])[0]
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                 race_results = list(executor.map(approve_once, range(2)))
             check('concurrent decisions produce exactly one terminal result',
@@ -315,7 +321,7 @@ def main():
             status, manager_handover = call('POST', '/tasks/' + handover_task['taskId'] + '/handover',
                                              {'sourceUserId': ids['alpha-one-employee'], 'targetUserId': ids['alpha-two-employee']},
                                              'alpha-one-head', detail(handover_task['taskId'], 'alpha-one-head')['rowVersion'])
-            check('direct-manager handover is pending for the business owner', status == 200 and manager_handover['outcome'] == 'pending')
+            check('direct-manager handover is pending for own manager', status == 200 and manager_handover['outcome'] == 'pending')
             check('organization move blocks a handover whose setter is no longer the direct manager',
                   move('alpha-one-employee', 'fixture-company-beta', 'fixture-company-beta-one')[0] == 200
                   and f.db.scalar('SELECT COUNT(*) FROM approval_requests WHERE id=' + quote(manager_handover['requestId']) + " AND status='pending' AND current_reviewer_id IS NULL AND route_reason='applicant-unavailable'") == 1)
@@ -399,10 +405,10 @@ def main():
                                      detail(review_task['taskId'], 'beta-two-employee')['rowVersion'])
             submitted_event = event_rows(review_task['taskId'], 'task.progress.submitted')
             check('published submission event carries only the current reviewer', submitted_event
-                  and set(json.loads(submitted_event[-1][1])) == {ids['founder']}, [json.loads(row[1]) for row in submitted_event])
+                  and set(json.loads(submitted_event[-1][1])) == {ids['beta-two-head']}, [json.loads(row[1]) for row in submitted_event])
             run_worker()
             check('applicant receives no early proposal copy while the request is pending', not notifications_for('beta-two-employee', 'task.progress.submitted'))
-            decide(review_pending['requestId'], 'founder')
+            decide(review_pending['requestId'], 'beta-two-head')
             run_worker()
             check('approval result is delivered to applicant and current business owner', notifications_for('beta-two-employee', 'task.progress.approved')
                   and notifications_for('founder', 'task.progress.approved'))
@@ -416,15 +422,15 @@ def main():
             status, takeover_pending = call('PATCH', '/tasks/' + takeover_task['taskId'],
                                             {'command': 'progress', 'progressNote': 'After takeover responsibility'}, 'alpha-one-employee',
                                             detail(takeover_task['taskId'], 'alpha-one-employee')['rowVersion'])
-            check('after takeover the active reviewer is the takeover owner', status == 200 and takeover_pending['outcome'] == 'pending')
+            check('after takeover the active reviewer remains operator manager', status == 200 and takeover_pending['outcome'] == 'pending')
             takeover_submitted = event_rows(takeover_task['taskId'], 'task.progress.submitted')
             check('takeover review notification excludes the original creator', takeover_submitted
-                  and set(json.loads(takeover_submitted[-1][1])) == {ids['beta-two-employee']},
+                  and set(json.loads(takeover_submitted[-1][1])) == {ids['beta-one-head']},
                   [json.loads(row[1]) for row in takeover_submitted])
             run_worker()
             check('original creator receives no new review request after takeover', not notifications_for('founder', 'task.progress.submitted') or
                   all(row.get('taskId') != takeover_task['taskId'] for row in notifications_for('founder', 'task.progress.submitted')))
-            decide(takeover_pending['requestId'], 'beta-two-employee')
+            decide(takeover_pending['requestId'], 'beta-one-head')
             run_worker()
             check('takeover result reaches the current responsibility chain', notifications_for('alpha-one-employee', 'task.progress.approved')
                   and notifications_for('beta-two-employee', 'task.progress.approved'))
@@ -458,10 +464,10 @@ def main():
             status, _ = call('PATCH', '/tasks/' + reminder_task,
                              {'command': 'complete', 'completionNote': 'Reminder work complete'}, 'alpha-one-employee',
                              detail(reminder_task, 'alpha-one-employee')['rowVersion'])
-            check('effective assignee completes and awaits the current business owner', status == 200)
+            check('effective assignee completes and awaits their own manager', status == 200)
             pending_id = f.db.rows('SELECT id FROM approval_requests WHERE task_id=' + quote(reminder_task) + " AND status='pending'")
-            check('completion request is pending for the takeover owner', bool(pending_id))
-            decide(pending_id[-1][0], 'beta-two-employee')
+            check('completion request is pending for operator manager', bool(pending_id))
+            decide(pending_id[-1][0], 'beta-one-head')
             reopen_now = dt.datetime.fromisoformat(call('GET', '/admin/clock', who='admin')[1]['now'].replace('Z', '+00:00'))
             status, reopened_reminder = call('PATCH', '/tasks/' + reminder_task,
                                              {'command': 'reopen', 'reason': 'New reminder round',
@@ -470,7 +476,8 @@ def main():
                                               'dueAt': (reopen_now + dt.timedelta(seconds=110)).isoformat(),
                                               'assigneeIds': [ids['alpha-one-employee']]},
                                              'beta-two-employee', detail(reminder_task, 'beta-two-employee')['rowVersion'])
-            check('takeover owner reopens directly with a new round and schedule', status == 200 and reopened_reminder['outcome'] == 'direct')
+            check('takeover owner reopen needs own manager', status == 200 and reopened_reminder['outcome'] == 'pending')
+            check('takeover owner manager approves reopen',decide(reopened_reminder['requestId'],'beta-two-head')[0]==200)
             call('POST', '/admin/clock/advance', {'seconds': 95}, 'admin')
             run_worker()
             new_receipts = f.db.rows('SELECT recipient_id,execution_round,schedule_version,node FROM reminder_receipts WHERE organization_id='
@@ -479,7 +486,7 @@ def main():
                   and {row[0] for row in new_receipts} == {ids['beta-two-employee'], ids['alpha-one-employee']}
                   and all(int(row[1]) == 2 for row in new_receipts), new_receipts)
             check('completion and reopen write real result events', 'task.complete.approved' in task_events(reminder_task)
-                  and 'task.reopen.applied' in task_events(reminder_task))
+                  and 'task.reopen.approved' in task_events(reminder_task))
 
 
             # A frozen task must not emit a reminder for a reached node until its request is terminal.
@@ -499,7 +506,7 @@ def main():
             run_worker()
             frozen_receipts = f.db.scalar('SELECT COUNT(*) FROM reminder_receipts WHERE task_id=' + quote(frozen_task))
             check('no reminder is emitted while the task is frozen by a pending request', frozen_receipts == 0)
-            check('current reviewer can release the freeze', decide(frozen_pending['requestId'], 'founder')[0] == 200)
+            check('current reviewer can release the freeze', decide(frozen_pending['requestId'], 'beta-two-head')[0] == 200)
             run_worker()
             released_receipts = f.db.scalar('SELECT COUNT(*) FROM reminder_receipts WHERE task_id=' + quote(frozen_task))
             check('the reached node is emitted once after the pending request ends', released_receipts >= 1)

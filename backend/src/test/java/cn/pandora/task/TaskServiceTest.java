@@ -79,30 +79,25 @@ class TaskServiceTest {
     }
 
     @Test
-    void assigneeOrderAndHierarchyNeverChangeBusinessOwnerReview() {
-        var people=Map.of(CREATOR,user(CREATOR,"employee",4,MANAGER_A,true),
-                EMPLOYEE_A,user(EMPLOYEE_A,"employee",4,MANAGER_A,true),
-                EMPLOYEE_B,user(EMPLOYEE_B,"employee",4,MANAGER_B,true),
-                UPPER,user(UPPER,"founder",1,null,true));
+    void assigneeOrderAndTakeoverNeverChangeOperatorManagerReview() {
+        var people=new HashMap<String,Map<String,Object>>();
+        people.put(CREATOR,user(CREATOR,"founder",1,null,true));
+        people.put(MANAGER_A,user(MANAGER_A,"team_head",3,CREATOR,true));
+        people.put(MANAGER_B,user(MANAGER_B,"team_head",3,CREATOR,true));
+        people.put(EMPLOYEE_A,user(EMPLOYEE_A,"employee",4,MANAGER_A,true));
+        people.put(EMPLOYEE_B,user(EMPLOYEE_B,"employee",4,MANAGER_B,true));
         var service=service(people);
-        for(var owners:List.of(List.of(EMPLOYEE_A,EMPLOYEE_B),List.of(EMPLOYEE_B,EMPLOYEE_A),List.of(UPPER,EMPLOYEE_A))) {
-            var route=service.route(ACTOR,owners,CREATOR);
-            assertEquals(CREATOR,route.reviewerId());assertEquals("business-owner",route.reason());
-            assertTrue(route.directFor(CREATOR));assertFalse(route.directFor(EMPLOYEE_A));
+        for(var owners:List.of(List.of(EMPLOYEE_A,EMPLOYEE_B),List.of(EMPLOYEE_B,EMPLOYEE_A),List.of(CREATOR))) {
+            var route=service.route(ACTOR,owners,EMPLOYEE_A);
+            assertEquals(MANAGER_A,route.reviewerId());assertEquals("direct-manager",route.reason());
+            assertFalse(route.directFor(EMPLOYEE_A));
+            assertEquals(MANAGER_B,service.route(ACTOR,owners,EMPLOYEE_B).reviewerId());
+            assertTrue(service.route(ACTOR,owners,CREATOR).directFor(CREATOR));
         }
-    }
-
-    @Test
-    void formalTakeoverHasTheOnlyCurrentReviewerAndOriginalCreatorIsNotAFallback() {
-        var service=service(Map.of(CREATOR,user(CREATOR,"employee",4,null,true),
-                EMPLOYEE_A,user(EMPLOYEE_A,"employee",4,null,true),EMPLOYEE_B,user(EMPLOYEE_B,"employee",4,null,true)));
-        assertEquals(EMPLOYEE_B,service.route(ACTOR,List.of(EMPLOYEE_A),EMPLOYEE_B).reviewerId());
-        var unavailable=user(EMPLOYEE_B,"employee",4,null,true);unavailable.put("reviewerAvailable",false);
-        var blocked=service(Map.of(CREATOR,user(CREATOR,"employee",4,null,true),
-                EMPLOYEE_A,user(EMPLOYEE_A,"employee",4,null,true),EMPLOYEE_B,unavailable))
-                .route(ACTOR,List.of(EMPLOYEE_A),EMPLOYEE_B);
-        assertTrue(blocked.blocked());assertFalse(blocked.directFor(CREATOR));
-        assertFalse(blocked.directFor(EMPLOYEE_B));
+        people.get(MANAGER_A).put("reviewerAvailable",false);
+        assertTrue(service.route(ACTOR,List.of(EMPLOYEE_B),EMPLOYEE_A).blocked());
+        people.get(EMPLOYEE_A).put("managerId",null);
+        assertTrue(service.route(ACTOR,List.of(EMPLOYEE_B),EMPLOYEE_A).blocked());
     }
 
     @Test
@@ -138,7 +133,9 @@ class TaskServiceTest {
             var person=people.get(call.getArgument(1));
             return person!=null && Boolean.TRUE.equals(person.get("active")) && !"admin".equals(person.get("role"))?person:null;
         });
-        return new TaskService(mock(Db.class),access,mock(Events.class),java.time.Clock.systemUTC(),mock(ExpiryService.class));
+        var tree=mock(CompanyTree.class);
+        when(tree.of("org")).thenReturn(new CompanyTree.Tree(people,List.of(CREATOR),Set.of(),Set.of(),CREATOR,true,List.of()));
+        return new TaskService(mock(Db.class),access,mock(Events.class),java.time.Clock.systemUTC(),mock(ExpiryService.class),tree,mock(Tags.class));
     }
 
     @Test
@@ -175,10 +172,22 @@ class TaskServiceTest {
         assertEquals("材料完整", TaskService.optionalTextValue(" 材料完整 ", "acceptanceCriteria", 2000));
         assertThrows(cn.pandora.common.ApiException.class,
                 () -> TaskService.optionalTextValue("x".repeat(2001), "acceptanceCriteria", 2000));
-        assertEquals("创建按创建人的直属上级审核", TaskService.routeReasonText("direct-manager"));
-        assertEquals("固定创始人创建，记录原因后直接生效",
+        assertEquals("按本次操作者的直属上级审核", TaskService.routeReasonText("direct-manager"));
+        assertEquals("固定创始人操作，记录原因后直接生效",
                 TaskService.routeReasonText("founder-exempt"));
         assertTrue(TaskService.routeReasonText("manager-unavailable").contains("阻断"));
+    }
+
+    @Test
+    void distinctTagIdentitiesCannotDisappearFromReviewDiffEvenWhenNamesMatch() {
+        var service=service(Map.of());
+        var before=Map.<String,Object>of("id","before","tagIds",List.of(EMPLOYEE_A),
+                "tagSnapshots",List.of(Map.of("tagId",EMPLOYEE_A,"tagNameSnapshot","相同名称")));
+        var after=Map.<String,Object>of("id","after","tagIds",List.of(EMPLOYEE_B),
+                "tagSnapshots",List.of(Map.of("tagId",EMPLOYEE_B,"tagNameSnapshot","相同名称")));
+        List<Map<String,Object>> diff=ReflectionTestUtils.invokeMethod(service,"diff",ACTOR,before,after);
+        assertNotNull(diff);
+        assertEquals(1,diff.size());assertEquals("tagIds",diff.getFirst().get("field"));
     }
 
     @Test

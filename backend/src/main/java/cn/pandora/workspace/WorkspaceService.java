@@ -366,17 +366,26 @@ public class WorkspaceService {
     }
 
     private Map<String,Object> notificationsRead(Actor a, Map<String,String> filters) {
-        boolean unread = "true".equals(filters.get("unread"));
+        String legacy=filters.get("unread");
+        if(legacy!=null && !Set.of("true","false").contains(legacy)) throw new ApiException(400,"INVALID_NOTIFICATION_FILTER","unread须为true或false");
+        String read=filters.getOrDefault("readStatus","true".equals(legacy)?"unread":"all");
+        String category=filters.getOrDefault("category","all");
+        if(!Set.of("all","unread","read").contains(read) || !Set.of("all","review","result","reminder","comment","other").contains(category))
+            throw new ApiException(400,"INVALID_NOTIFICATION_FILTER","无效的通知筛选条件");
+        if(legacy!=null && filters.containsKey("readStatus") && !("true".equals(legacy)?"unread":"all").equals(read))
+            throw new ApiException(400,"INVALID_NOTIFICATION_FILTER","通知已读筛选条件冲突");
         Instant now = clock.instant();
         var rows = notificationMetadata(a,false);
         var readable = notificationReadableTasks(a,rows);
         var visible = rows.stream().filter(row -> notificationVisible(row,now,readable)).toList();
-        var result = page(visible.stream().filter(row -> !unread || row.get("readAt")==null).toList(),filters);
-        @SuppressWarnings("unchecked") var selected = (List<Map<String,Object>>) result.get("items");
-        var complete = rowsById(a,"notifications","*",selected.stream().map(row -> s(row,"id")).toList());
-        var selectedRows = selected.stream().map(row -> complete.get(s(row,"id"))).filter(Objects::nonNull).toList();
-        var batch = notificationBatch(a,selectedRows);
-        result.put("items",selectedRows.stream().map(row -> safeNotification(a,row,now,batch)).toList());
+        var filtered=visible.stream().filter(row -> "all".equals(read) || ("unread".equals(read)==(row.get("readAt")==null)))
+                .filter(row -> "all".equals(category) || category.equals(notificationMetadataCategory(a,row,now,readable))).toList();
+        var result=page(filtered,filters);
+        @SuppressWarnings("unchecked") var selected=(List<Map<String,Object>>)result.get("items");
+        var complete=rowsById(a,"notifications","*",selected.stream().map(row->s(row,"id")).toList());
+        var selectedRows=selected.stream().map(row->complete.get(s(row,"id"))).filter(Objects::nonNull).toList();
+        var batch=notificationBatch(a,selectedRows);
+        result.put("items",selectedRows.stream().map(row->safeNotification(a,row,now,batch)).toList());
         result.put("unreadCount",visible.stream().filter(row -> row.get("readAt")==null).count());
         return result;
     }
@@ -640,21 +649,24 @@ public class WorkspaceService {
                         && a.id().equals(s(request,"currentReviewerId")));
             }
         }
+        view.put("category",notificationCategory(view));
         return view;
     }
 
     /** Inbox counts and page boundaries need lifecycle metadata, never message bodies. */
     private List<Map<String,Object>> notificationMetadata(Actor a,boolean unreadOnly) {
-        return db.list("SELECT n.id,n.event_id,n.task_id,n.hidden_at,n.expires_at,n.read_at,n.source,n.delivered_at,"
+        return db.list("SELECT n.id,n.event_id,n.task_id,n.hidden_at,n.expires_at,n.read_at,n.source,n.delivered_at,n.event_type,n.request_id,"
+                + "r.status AS request_status,r.current_reviewer_id AS reviewer_id,r.applicable_deadline,"
                 + "e.revoked_at AS event_revoked_at,e.expires_at AS event_expires_at FROM notifications n "
                 + "LEFT JOIN domain_events e ON e.organization_id=n.organization_id AND e.id=n.event_id "
+                + "LEFT JOIN approval_requests r ON r.organization_id=n.organization_id AND r.id=n.request_id "
                 + "WHERE n.organization_id=? AND n.recipient_id=? AND n.hidden_at IS NULL"
                 + (unreadOnly ? " AND n.read_at IS NULL" : "") + " ORDER BY n.created_at DESC,n.id",a.organizationId(),a.id());
     }
 
     private Set<String> notificationReadableTasks(Actor a,List<Map<String,Object>> rows) {
         var ids=rows.stream().filter(row -> row.get("eventRevokedAt")==null)
-                .filter(row -> row.get("deliveredAt")==null || !"event".equals(s(row,"source")))
+                .filter(row -> "pending".equals(s(row,"requestStatus")) || row.get("deliveredAt")==null || !"event".equals(s(row,"source")))
                 .map(row -> s(row,"taskId")).filter(Objects::nonNull).toList();
         return ids.isEmpty() ? Set.of() : tasks.readableTaskIds(a,ids,true);
     }
@@ -781,6 +793,23 @@ public class WorkspaceService {
             return task == null ? null : s(task,"title");
         }
         return null;
+    }
+
+    private String notificationMetadataCategory(Actor actor,Map<String,Object> row,Instant now,Set<String> readable) {
+        Map<String,Object> classification=new HashMap<>(row);
+        boolean deadlineOpen=row.get("applicableDeadline")==null || now.isBefore(Instant.parse(String.valueOf(row.get("applicableDeadline"))));
+        classification.put("canReview",row.get("eventRevokedAt")==null && "pending".equals(s(row,"requestStatus"))
+                && actor.id().equals(s(row,"reviewerId")) && deadlineOpen && readable.contains(s(row,"taskId")));
+        return notificationCategory(classification);
+    }
+
+    static String notificationCategory(Map<String,Object> view) {
+        if(Boolean.TRUE.equals(view.get("canReview"))) return "review";
+        String type=Objects.toString(view.get("eventType"),"");
+        if(type.startsWith("comment.")) return "comment";
+        if(type.startsWith("reminder.") || type.startsWith("task.deadline.")) return "reminder";
+        if(type.startsWith("task.") && (type.endsWith(".approved") || type.endsWith(".rejected") || type.endsWith(".withdrawn") || type.endsWith(".expired") || type.endsWith(".direct") || type.endsWith(".applied"))) return "result";
+        return "other";
     }
 
     /** Human purpose of a message, independent of its body (chapter 8.6). */

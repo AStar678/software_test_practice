@@ -698,7 +698,7 @@ function paletteIndexOf(t){
 /* 无标签任务的统一默认粉色：只在未标记时使用，且刻意不进入标签色板 */
 const DEFAULT_TASK_COLOR = { bg: "#ffe1ea", bd: "#e39ab4" };
 const TAG_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
-/* 任务或日志的填充色来自唯一标签；无标签时使用默认粉色。删除的标签保留删除时颜色。 */
+/* 任务底色优先私人标签，否则取首个共用标签；日志仍单选，无标签用默认粉色。 */
 function taskColorVars(t){
   const tag = t && t.tag;
   if (tag && TAG_COLOR_PATTERN.test(String(tag.color || ""))) {
@@ -1690,7 +1690,7 @@ function unique(list){
 function timeControl(prefix, value){ return window.Pandora && Pandora.timeControl ? Pandora.timeControl(prefix, value) : ""; }
 function readTimeValue(prefix){ return window.Pandora && Pandora.readTimeControl ? Pandora.readTimeControl(prefix) : ""; }
 function defaultTimedTimes(t){
-  if (t && !t.allDay) return { start: toTimeInput(t.start), end: toTimeInput(t.due) };
+  if (t) return { start: toTimeInput(new Date(t.raw?.startAt || t.start)), end: toTimeInput(new Date(t.raw?.dueAt || t.due)) };
   return { start: "09:00", end: "18:00" };
 }
 function taskDraftFrom(mode, id){
@@ -1703,7 +1703,7 @@ function taskDraftFrom(mode, id){
   return {
     mode: mode, id: t ? t.id : null,
     title: t ? t.title : "", desc: t ? t.desc : "",
-    allDay: t ? !!t.allDay : false,
+    allDay: false,
     startDate: toDateInput(startAt), startTime: times.start,
     endDate: toDateInput(dueAt), endTime: times.end,
     urgency: t ? t.urgency : "中",
@@ -1771,23 +1771,22 @@ function taskFormView(){
       (d.parentId ? '<button type="button" class="btn tiny-btn ghost" data-action="clear-parent">清空</button>' : "") +
     "</div></div>";
 
-  /* 全天开关只切换日期/时刻输入的可见性，草稿始终保留两类值 */
-  body += '<div class="field"><label>任务排期</label>' +
-    '<label class="checkline" for="tf-allday"><input type="checkbox" id="tf-allday"' + (d.allDay ? " checked" : "") +
-      " />全天（只填写起止日期，起止日期都包含在任务内）</label>" +
+  /* 排期始终明确到日期与时刻；全天仅是填写快捷方式。 */
+  body += '<div class="field p-task-schedule"><label>任务排期</label>' +
+    '<button type="button" class="btn tiny-btn ghost p-full-day-shortcut" data-action="p-schedule-full-day" data-prefix="tf">设为全天</button>' +
     '<div class="row" style="margin-top:6px">' +
       '<div class="field" style="flex:1"><label for="tf-start-date">开始日期</label>' +
         '<input id="tf-start-date" type="date" value="' + esc(d.startDate) + '" /></div>' +
-      '<div class="field" style="flex:1" id="tf-start-time-field"' + (d.allDay ? " hidden" : "") + '><label for="tf-start-time-hour">开始时刻</label>' +
+      '<div class="field" style="flex:1" id="tf-start-time-field"' + '><label for="tf-start-time-hour">开始时刻</label>' +
         timeControl("tf-start-time", d.startTime) + '</div>' +
     "</div>" +
     '<div class="row" style="margin-top:6px">' +
       '<div class="field" style="flex:1"><label for="tf-end-date">截止日期</label>' +
         '<input id="tf-end-date" type="date" value="' + esc(d.endDate) + '" /></div>' +
-      '<div class="field" style="flex:1" id="tf-end-time-field"' + (d.allDay ? " hidden" : "") + '><label for="tf-end-time-hour">截止时刻</label>' +
+      '<div class="field" style="flex:1" id="tf-end-time-field"' + '><label for="tf-end-time-hour">截止时刻</label>' +
         timeControl("tf-end-time", d.endTime) + '</div>' +
     "</div>" +
-    '<span class="tiny muted">创建时间在保存时单独记录，编辑排期不会改变创建时间。</span></div>';
+    '<span class="tiny muted">均按组织时区填写。全天快捷：开始日00:00至截止日次日00:00，可继续修改。</span></div>';
 
   body += '<div class="field"><label>紧急程度</label><div class="choice-row" id="tf-urgency">' +
     ["紧急", "高", "中", "低"].map(function(u){
@@ -1925,7 +1924,7 @@ function confirmTaskPicker(){
 }
 
 /* ---------- 二级界面：负责人选择器（部门范围 + 姓名搜索 + 持久多选） ---------- */
-const assigneePicker = { dept: "", query: "", selected: [] };
+const assigneePicker = { dept: "", query: "", selected: [], expanded: new Set() };
 function assignableDepartments(a){
   const out = [];
   assignablePeople(a).forEach(function(p){ if (out.indexOf(p.dept) === -1) out.push(p.dept); });
@@ -1941,32 +1940,47 @@ function assigneeDeptHTML(a){
   }).join("") + "</div>";
 }
 function assigneePeopleHTML(a){
-  const q = normalizeQuery(assigneePicker.query);
-  const list = peopleInDept(assigneePicker.dept, a).filter(function(p){
-    return !q || p.name.toLowerCase().indexOf(q) !== -1;
+  const all = assignablePeople(a), byId = new Map(all.map(p => [p.id,p]));
+  const q = normalizeQuery(assigneePicker.query), children = new Map();
+  const expanded = assigneePicker.expanded || (assigneePicker.expanded = new Set());
+  const visible = new Set();
+  all.forEach(p => {
+    const parent = byId.has(p.superiorId) ? p.superiorId : null;
+    if (!children.has(parent)) children.set(parent, []);
+    children.get(parent).push(p);
+    if ((!q || p.name.toLowerCase().includes(q)) && (!assigneePicker.dept || p.dept === assigneePicker.dept)) {
+      let current = p; const visited = new Set();
+      while (current && !visited.has(current.id)) { visible.add(current.id); visited.add(current.id); current = byId.get(current.superiorId); }
+    }
   });
-  if (!list.length) return '<div class="empty" id="apEmpty">当前部门没有匹配的人员，可修改姓名或切换部门</div>';
-  return '<div class="stack">' + list.map(function(p){
-    const on = assigneePicker.selected.indexOf(p.id) !== -1;
-    return '<label class="checkline"><input type="checkbox" data-pick-person="' + p.id + '"' + (on ? " checked" : "") + " />" +
-      '<span class="pick-person">' + esc(p.name) + "</span>" +
-      '<span class="meta">' + esc(ROLE_LABEL[p.role]) + " · " + esc(p.dept) + "</span></label>";
-  }).join("") + "</div>";
+  function branch(parent, seen) {
+    return '<ul class="p-people-tree">' + (children.get(parent) || []).filter(p => visible.has(p.id)).map(p => {
+      if (seen.has(p.id)) return '';
+      const next = new Set(seen); next.add(p.id);
+      const hasChildren = (children.get(p.id) || []).some(child => visible.has(child.id));
+      const open = !!q || !!assigneePicker.dept || expanded.has(p.id);
+      return '<li><div class="p-people-node">' + (hasChildren ? '<button type="button" class="p-tree-toggle" data-action="p-tree-toggle" data-id="' + esc(p.id) + '" aria-expanded="' + open + '" aria-label="' + (open ? '收起' : '展开') + esc(p.name) + '的下属">' + (open ? '▾' : '▸') + '</button>' : '<span class="p-tree-spacer"></span>') +
+        '<label class="checkline"><input type="checkbox" data-pick-person="' + esc(p.id) + '"' + (assigneePicker.selected.includes(p.id) ? ' checked' : '') + '><span><strong>' + esc(p.name) + '</strong><small>' + esc([...new Set([ROLE_LABEL[p.role], p.raw && p.raw.positionName, p.dept, p.raw && p.raw.teamName].filter(Boolean))].join(' · ')) + '</small></span></label></div>' + (hasChildren && open ? branch(p.id, next) : '') + '</li>';
+    }).join('') + '</ul>';
+  }
+  return visible.size ? branch(null,new Set()) : '<div class="empty" id="apEmpty">没有匹配的人员</div>';
 }
 function assigneeSelectedHTML(){
   const people = assigneePicker.selected.map(personById).filter(Boolean);
   const head = '<div class="tiny muted" id="apSelectedCount">已选 ' + people.length + " 人（可跨部门）</div>";
-  if (!people.length) return head + '<div class="empty">尚未选择负责人，请先选择部门并勾选人员</div>';
-  return head + '<div class="chip-row">' + people.map(function(p){
+  if (!people.length) return head + '<div class="empty">尚未选择负责人，展开组织节点并勾选人员</div>';
+  return head + '<div class="chip-row">' + people.map(function(p,index){
     return '<span class="chip">' + esc(p.name) +
+      '<button type="button" class="chip-x" data-action="p-person-move" data-id="' + esc(p.id) + '" data-step="-1" aria-label="前移负责人 ' + esc(p.name) + '"' + (index === 0 ? ' disabled' : '') + '>←</button>' +
+      '<button type="button" class="chip-x" data-action="p-person-move" data-id="' + esc(p.id) + '" data-step="1" aria-label="后移负责人 ' + esc(p.name) + '"' + (index === people.length - 1 ? ' disabled' : '') + '>→</button>' +
       '<button type="button" class="chip-x" data-remove-person="' + p.id + '" aria-label="移除负责人 ' + esc(p.name) + '">✕</button></span>';
   }).join("") + "</div>";
 }
 function assigneePickerView(){
   const a = actor();
   const body =
-    '<div class="field"><label>部门</label>' + assigneeDeptHTML(a) + "</div>" +
-    '<div class="field"><label for="ap-search">按姓名搜索（当前部门）</label>' +
+    '<div class="field"><label for="ap-department">部门</label><select id="ap-department"><option value="">全部部门</option>' + assignableDepartments(a).map(d => '<option value="' + esc(d) + '"' + (assigneePicker.dept === d ? ' selected' : '') + '>' + esc(d) + '</option>').join('') + '</select></div>' +
+    '<div class="field"><label for="ap-search">按姓名搜索</label>' +
       '<div class="row">' +
         '<input id="ap-search" type="search" autocomplete="off" placeholder="输入姓名片段" value="' + esc(assigneePicker.query) + '" data-autofocus />' +
         '<button type="button" class="btn tiny-btn" data-action="picker-assignee-clear-query"' + (assigneePicker.query ? "" : " disabled") + ' aria-label="清除姓名搜索">清除</button>' +
@@ -2519,6 +2533,21 @@ function runAction(el){
       refreshTaskPicker();
       return;
     }
+    case "p-person-move": {
+      const from = assigneePicker.selected.indexOf(el.dataset.id), to = from + Number(el.dataset.step);
+      if (from >= 0 && to >= 0 && to < assigneePicker.selected.length) {
+        const moved = assigneePicker.selected.splice(from, 1)[0]; assigneePicker.selected.splice(to, 0, moved);
+        refreshAssigneePicker();
+      }
+      return;
+    }
+    case "p-tree-toggle": {
+      const id = el.dataset.id;
+      if (assigneePicker.expanded.has(id)) assigneePicker.expanded.delete(id); else assigneePicker.expanded.add(id);
+      refreshAssigneePicker();
+      document.querySelector('[data-action="p-tree-toggle"][data-id="' + CSS.escape(id) + '"]')?.focus();
+      return;
+    }
     case "picker-assignee-confirm": confirmAssigneePicker(); return;
     case "picker-assignee-clear-query": {
       assigneePicker.query = "";
@@ -2617,17 +2646,7 @@ document.addEventListener("input", function(ev){
 document.addEventListener("change", function(ev){
   const target = ev.target;
   if (!target || typeof target.closest !== "function") return;
-  if (target.id === "tf-allday"){
-    syncTaskDraft();
-    if (!drafts.task) return;
-    drafts.task.allDay = !!target.checked;
-    /* 只切换时刻输入的可见性，草稿中的日期与时刻都保留，切回时恢复原有值 */
-    const sf = document.getElementById("tf-start-time-field");
-    const ef = document.getElementById("tf-end-time-field");
-    if (sf) sf.hidden = drafts.task.allDay;
-    if (ef) ef.hidden = drafts.task.allDay;
-    return;
-  }
+  if (target.id === "ap-department") { assigneePicker.dept = target.value; refreshAssigneePicker(); return; }
   const personEl = target.closest("[data-pick-person]");
   if (personEl){
     const pid = personEl.dataset.pickPerson;

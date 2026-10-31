@@ -1,5 +1,5 @@
 "use strict";
-/* 日程界面：仅投影本人有效负责的正常任务；月模式连续滚动相邻月份，日模式使用纵向 00:00—24:00 日轴。
+/* 日程界面：仅投影本人有效负责的正常任务；月模式连续滚动相邻月份，日模式提供横向排期和纵向 00:00—24:00 日轴。
    全局授权任务集（TASKS / 任务表单）保持独立，日历过滤只在投影层发生。
    封面抽屉与当天清单都是覆盖在日程卡片上的独立层：不重排底层日历，关闭后日期/密度/滚动保持不变。 */
 (function () {
@@ -10,7 +10,7 @@
   const MAX_MOUNTED_MONTHS = 12;
   const scheduleScroll = new Map();
 
-  let monthHeight = 220, suppressCalendarClickUntil = 0, dayDisplay = 'timeline', sideOpen = false;
+  let monthHeight = 220, suppressCalendarClickUntil = 0, dayDisplay = 'horizontal', sideOpen = false;
   let monthStream = [], axisEvents = [];
   /* 当天清单：{date, scroll, scrollLeft, trigger, pendingFocus}；null 表示清单关闭。 */
   let daySheet = null, pendingDrawerFocus = false, streamError = null;
@@ -193,11 +193,16 @@
     const hidden = days.map((d,col) => segments.filter(s => s.lane >= capacity && s.start <= col && s.end > col).map(s => s.task));
     return {days,shown,hidden,segments};
   }
+  function resizeHandle(task, edge, mode) {
+    if (!canEditTask(actor(),task)) return '';
+    return '<button type="button" class="p-resize-handle p-resize-'+edge+'" data-resize="'+edge+'" data-resize-mode="'+mode+'" data-resize-task="'+esc(task.id)+'" aria-label="调整'+(edge==='start'?'开始':'截止')+'时间：'+esc(task.title)+'" title="横向拖动，或按左右方向键调整">↔</button>';
+  }
   function connectedTaskHTML(s, hidden, key) {
     const t=s.task, classes=(s.before?' continues-before':'')+(s.after?' continues-after':'')+(t.status==='done'?' is-done':'');
     const detail='<small class="p-month-event-time">'+esc(t.allDay?'全天':s.before?'延续':fmtTime(t.start))+'</small>';
-    return '<button type="button"'+(hidden?' hidden':'')+' class="p-month-event'+classes+'" data-task="'+esc(t.id)+'" data-month-key="'+esc(key)+'" data-start-column="'+s.start+'" data-end-column="'+s.end+'" data-lane="'+s.lane+'" data-span="'+(s.end-s.start)+
-      '" style="grid-column:'+(s.start+1)+' / '+(s.end+1)+';grid-row:'+(s.lane+1)+';'+taskColorVars(t)+'" aria-label="'+esc(taskAriaLabel(t,actor()))+'" title="'+esc(t.title+' · '+fmtSchedule(t))+'">'+(t.pinned?'<span class="p-pin" aria-label="已置顶">★</span>':'')+'<span class="p-month-event-title">'+esc(t.title)+'</span>'+detail+'</button>';
+    return '<div role="group" tabindex="0"'+(hidden?' hidden':'')+' class="p-month-event'+classes+'" data-task="'+esc(t.id)+'" data-month-key="'+esc(key)+'" data-start-column="'+s.start+'" data-end-column="'+s.end+'" data-lane="'+s.lane+'" data-span="'+(s.end-s.start)+
+      '" style="grid-column:'+(s.start+1)+' / '+(s.end+1)+';grid-row:'+(s.lane+1)+';'+taskColorVars(t)+'" aria-label="'+esc(taskAriaLabel(t,actor()))+'" title="'+esc(t.title+' · '+fmtSchedule(t))+'">'+(t.pinned?'<span class="p-pin" aria-label="已置顶">★</span>':'')+'<span class="p-month-event-title">'+esc(t.title)+'</span>'+detail+
+      (!s.before?resizeHandle(t,'start','month'):'')+(!s.after?resizeHandle(t,'end','month'):'')+'</div>';
   }
   function monthMetrics(height = monthHeight) {
     const track = 52, gap = 5;
@@ -311,6 +316,7 @@
       scroller.scrollTop += scroller.scrollHeight - height;
     }
     trimStream(scroller);
+    bindScheduleResize();
     return true;
   }
   /* 远处月份用等高占位替换：卸载只改变 DOM 体积，不移动可视日期。 */
@@ -406,6 +412,7 @@
     if (persist) saveMonthDensity();
   }
   function bindMonthGestures() {
+    bindScheduleResize();
     const view=document.querySelector('.p-month-view');
     if(!view) return;
     const scroller=view.querySelector('.p-month-scroll'),handle=view.querySelector('.p-month-resize-handle');
@@ -521,6 +528,7 @@
     if (!target||typeof target.closest!=='function') return;
     const week=target.closest('.p-month-week');
     if (!week) return;
+    if (target.closest('[data-resize]')) { event.preventDefault(); event.stopImmediatePropagation(); return; }
     if (Date.now()<suppressCalendarClickUntil) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -534,6 +542,7 @@
   },true);
   /* 跨日条的键盘日期选择：左右方向键在同一任务条的覆盖日内移动，回车/空格打开该日清单。 */
   document.addEventListener('keydown',event=>{
+    if (event.target.closest?.('[data-resize]')) return;
     const bar=event.target.closest&&event.target.closest('.p-month-event');
     if (!bar) return;
     if (event.key==='Enter'||event.key===' '||event.key==='Spacebar') {
@@ -644,11 +653,100 @@
     return '<div class="p-allday-list">' + tasks.map(t =>
       '<button type="button" class="p-all-day-event" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '" aria-label="' + esc(taskAriaLabel(t,actor())) + '">' + esc(t.title) + '</button>').join('') + '</div>';
   }
+  function horizontalDayHTML(d) {
+    const bounds=businessBounds(d), tasks=sortedDay(d);
+    const hours=Array.from({length:25},(_,h)=>'<span style="left:'+h*60+'px">'+pad2(h)+':00</span>').join('');
+    const rows=tasks.map(task=>{
+      const timed=Object.assign({},task,{allDay:false}), coverage=dayCoverage(timed,d), range=calendarRange(timed);
+      const left=coverage.start, width=Math.max(1,coverage.end-coverage.start);
+      return '<div class="p-horizontal-row" style="'+taskColorVars(task)+'"><button type="button" class="p-horizontal-label" data-task="'+esc(task.id)+'"><strong>'+(task.pinned?'★ ':'')+esc(task.title)+'</strong><small>'+esc(scheduleText(timed,d))+'</small></button><div class="p-horizontal-bar" data-task="'+esc(task.id)+'" style="left:'+left+'px;width:'+width+'px">'+
+        '<button type="button" class="p-horizontal-task" data-task="'+esc(task.id)+'" aria-label="'+esc(taskAriaLabel(task,actor())+' '+scheduleText(timed,d))+'"><strong>'+esc(task.title)+'</strong><small>'+esc(scheduleText(timed,d))+'</small></button>'+
+        (range.start>=bounds.start?resizeHandle(task,'start','day'):'')+(range.end<=bounds.end?resizeHandle(task,'end','day'):'')+'</div></div>';
+    }).join('');
+    return '<section id="p-day-panel" class="p-horizontal-panel"><p class="p-drag-hint">横向拖动任务两端调整时间，松开后确认提交；每格1小时，调整步长15分钟。</p><div class="p-timeline-scroll p-horizontal-scroll" tabindex="0" aria-label="横向排期，00:00至24:00，可左右滚动"><div class="p-horizontal-axis"><div class="p-horizontal-ruler">'+hours+'</div>'+(rows||'<div class="p-horizontal-empty">当天暂无任务</div>')+'</div></div></section>';
+  }
+
+  // Drag changes only a proposal. The original form owns validation, review and persistence.
+  let scheduleDrag=null;
+  function proposedRange(task, edge, steps, mode) {
+    const start=new Date(task.raw.startAt), due=new Date(task.raw.dueAt);
+    const original=edge==='start'?start:due;
+    let next;
+    if (mode==='month') {
+      const date=addDays(parseDateInput(toDateInput(original)),steps);
+      next=parseDateTime(toDateInput(date),toTimeInput(original));
+    } else next=new Date(+original+steps*15*60000);
+    return {start:edge==='start'?next:start,due:edge==='end'?next:due};
+  }
+  function clearScheduleDrag() {
+    if (!scheduleDrag) return;
+    const drag=scheduleDrag; scheduleDrag=null;
+    drag.tip.remove(); drag.ghost.remove();
+    try { if(drag.handle.hasPointerCapture(drag.pointer)) drag.handle.releasePointerCapture(drag.pointer); } catch (_) {}
+    suppressCalendarClickUntil=Date.now()+450;
+  }
+  function completeScheduleDrag(event) {
+    const drag=scheduleDrag;
+    if(!drag||event.pointerId!==drag.pointer)return;
+    const apply=event.type==='pointerup'&&drag.steps!==0;
+    clearScheduleDrag();
+    if(!apply)return;
+    if(drag.range.due<drag.range.start) {P.notice('截止不得早于开始，本次调整未保存。');return;}
+    P.openScheduleChange(drag.task.id,drag.range.start,drag.range.due,drag.version);
+  }
+  function bindScheduleResize() {
+    document.querySelectorAll('[data-resize]').forEach(handle=>{
+      if(handle.dataset.resizeBound)return;
+      handle.dataset.resizeBound='1';
+      handle.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();});
+      handle.addEventListener('pointerdown',event=>{
+        if(!event.isPrimary||event.button!==0||!P.idle())return;
+        const task=taskById(handle.dataset.resizeTask);
+        if(!task||!canEditTask(actor(),task))return;
+        event.preventDefault();event.stopPropagation();
+        clearScheduleDrag();
+        const bar=handle.closest('.p-month-event,.p-horizontal-bar'), rect=bar.getBoundingClientRect();
+        const mode=handle.dataset.resizeMode;
+        const unit=mode==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/1440*15;
+        const tip=document.createElement('div');tip.className='p-drag-preview';tip.setAttribute('role','status');document.body.appendChild(tip);
+        const ghost=document.createElement('div');ghost.className='p-drag-ghost';ghost.style.cssText='left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;height:'+rect.height+'px';document.body.appendChild(ghost);
+        scheduleDrag={task,version:task.raw.rowVersion,edge:handle.dataset.resize,mode,handle,pointer:event.pointerId,x:event.clientX,unit,steps:0,rect,tip,ghost,range:proposedRange(task,handle.dataset.resize,0,mode)};
+        tip.textContent='左右拖动调整'+(handle.dataset.resize==='start'?'开始':'截止')+'时间；Esc取消';
+        handle.setPointerCapture(event.pointerId);
+      });
+      handle.addEventListener('pointermove',event=>{
+        const drag=scheduleDrag;if(!drag||event.pointerId!==drag.pointer)return;
+        event.preventDefault();event.stopPropagation();
+        drag.steps=Math.round((event.clientX-drag.x)/drag.unit);
+        drag.range=proposedRange(drag.task,drag.edge,drag.steps,drag.mode);
+        const format=value=>toDateInput(value)+' '+toTimeInput(value);
+        const valid=drag.range.due>=drag.range.start;
+        drag.tip.textContent=format(drag.range.start)+' → '+format(drag.range.due)+(valid?' · 松开后确认':' · 截止不得早于开始');
+        drag.tip.classList.toggle('is-invalid',!valid);
+        const delta=drag.steps*drag.unit;
+        drag.ghost.style.left=(drag.rect.left+(drag.edge==='start'?delta:0))+'px';
+        drag.ghost.style.width=Math.max(2,drag.rect.width+(drag.edge==='start'?-delta:delta))+'px';
+      });
+      ['pointerup','pointercancel','lostpointercapture'].forEach(type=>handle.addEventListener(type,completeScheduleDrag));
+      handle.addEventListener('keydown',event=>{
+        if(!['ArrowLeft','ArrowRight'].includes(event.key))return;
+        event.preventDefault();event.stopPropagation();
+        const task=taskById(handle.dataset.resizeTask);
+        if(!task||!canEditTask(actor(),task)||!P.idle())return;
+        const range=proposedRange(task,handle.dataset.resize,event.key==='ArrowRight'?1:-1,handle.dataset.resizeMode);
+        if(range.due<range.start){P.notice('截止不得早于开始。');return;}
+        P.openScheduleChange(task.id,range.start,range.due,task.raw.rowVersion);
+      });
+    });
+  }
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&scheduleDrag){event.preventDefault();event.stopImmediatePropagation();clearScheduleDrag();}},true);
+  window.addEventListener('blur',clearScheduleDrag);
+
   function dayHTML() {
     const d = state.viewAnchor;
     const heading = '<header class="p-day-view-heading"><div class="p-day-heading-main"><button type="button" class="p-day-month-return" data-action="schedule-return-month">' + icons.left + '<span>返回月视图</span></button><h2 tabindex="-1">' + dayLabel(d) + ' <span>' + weekday(d) + '</span></h2></div><div class="p-day-display-modes" role="group" aria-label="当日日程显示方式">' +
-      [['timeline','时间轴'],['list','任务清单']].map(([mode,label]) => '<button type="button" data-action="schedule-day-mode" data-day-mode="' + mode + '" aria-pressed="' + (dayDisplay===mode) + '" aria-controls="p-day-panel">' + label + '</button>').join('') + '</div></header>';
-    const panel = dayDisplay==='list' ? dayListHTML(d) : '<section id="p-day-panel" class="p-time-panel" aria-label="'+dayLabel(d)+'日程时间轴">' +
+      [['horizontal','横向排期'],['timeline','纵向时间轴'],['list','任务清单']].map(([mode,label]) => '<button type="button" data-action="schedule-day-mode" data-day-mode="' + mode + '" aria-pressed="' + (dayDisplay===mode) + '" aria-controls="p-day-panel">' + label + '</button>').join('') + '</div></header>';
+    const panel = dayDisplay==='horizontal' ? horizontalDayHTML(d) : dayDisplay==='list' ? dayListHTML(d) : '<section id="p-day-panel" class="p-time-panel" aria-label="'+dayLabel(d)+'日程时间轴">' +
       '<div class="p-day-allday"><span class="p-allday-label">全天</span><div class="p-allday-scroll">' + allDayHTML(d) + '</div></div>' +
       '<div class="p-timeline-scroll" tabindex="0" aria-label="00:00 至 24:00 纵向时间轴，可上下滚动浏览全天">' + axisHTML(d) + '</div></section>';
     return '<div class="p-day-layout" data-day-mode="' + dayDisplay + '">' + heading + panel + '</div>';
@@ -679,6 +777,9 @@
         const scale = calendarScale(scroller);
         scroller.scrollTop += (week.getBoundingClientRect().top - scroller.getBoundingClientRect().top) / scale - 40;
       }
+    } else if (dayDisplay==='horizontal') {
+      const first=sortedDay(state.viewAnchor)[0];
+      scroller.scrollLeft=Math.max(0,(first?dayCoverage(first,state.viewAnchor).start:480)-60);
     } else if (dayDisplay==='timeline') {
       const now = new Date(), includesToday = sameDay(now, state.viewAnchor);
       const first = dayEvents(state.viewAnchor)[0]?.task;
@@ -872,6 +973,7 @@
   }
 
   function renderSchedule() {
+    clearScheduleDrag();
     normalizeViewMode();
     if (!monthStream.length) resetStream(state.viewAnchor);
     if (typeof resetOverflowGroups === 'function') resetOverflowGroups();
@@ -883,6 +985,7 @@
       if (state.page === 'view' && state.viewPage !== 'table') restoreScheduleScroll();
     });
     if (state.viewMode==='month') { bindMonthGestures(); paintStreamBoundary(); }
+    bindScheduleResize();
     syncLayerLock();
     bindLayer();
     if (focus) restoreLayerFocus(focus);
@@ -928,7 +1031,7 @@
     if (!d) return;
     state.viewAnchor = d;
     state.viewMode = 'day';
-    dayDisplay = display==='list'?'list':'timeline';
+    dayDisplay = ['list','timeline'].includes(display)?display:'horizontal';
     closeSheet();
     updateView();
     document.querySelector('.p-day-view-heading h2')?.focus({preventScroll:true});
@@ -1007,7 +1110,7 @@
     }
     if (action==='schedule-day-mode') {
       const focused = document.activeElement === el;
-      dayDisplay = el.dataset.dayMode==='list'?'list':'timeline';
+      dayDisplay = ['list','timeline'].includes(el.dataset.dayMode)?el.dataset.dayMode:'horizontal';
       state.viewMode = 'day';
       updateView();
       if (focused) document.querySelector('[data-action="schedule-day-mode"][data-day-mode="'+dayDisplay+'"]')?.focus({preventScroll:true});
@@ -1068,7 +1171,8 @@
     previousAction(el);
   };
   P.sessionReset.push(function () {
-    scheduleScroll.clear(); monthStream = []; axisEvents = []; dayDisplay = 'timeline'; sideOpen = false;
+    clearScheduleDrag();
+    scheduleScroll.clear(); monthStream = []; axisEvents = []; dayDisplay = 'horizontal'; sideOpen = false;
     daySheet = null; pendingDrawerFocus = false; streamError = null;
     document.querySelectorAll('.p-schedule-layer').forEach(node => node.remove());
     document.querySelectorAll('.p-schedule-card [inert]').forEach(node => node.removeAttribute('inert'));

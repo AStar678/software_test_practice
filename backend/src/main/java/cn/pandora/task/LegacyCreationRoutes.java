@@ -16,7 +16,7 @@ import java.util.Map;
 import static cn.pandora.common.Db.s;
 
 /**
- * Applies the new creation-routing rule to creations that were already pending when this version was
+ * Applies operator-manager routing to requests that were already pending when this version was
  * deployed (chapter 3.4). It only looks at requests whose stored route still carries a legacy reason,
  * so normal restarts and freshly created requests are never recomputed.
  *
@@ -60,12 +60,12 @@ public class LegacyCreationRoutes implements ApplicationRunner {
             } catch (ApiException blocked) {
                 // A damaged organization must not stop the application from starting; the pending
                 // requests stay blocked and the repair is recorded for the administrator.
-                if (db.find("SELECT 1 FROM migration_findings WHERE organization_id=? AND migration='V16' "
+                if (db.find("SELECT 1 FROM migration_findings WHERE organization_id=? AND migration='V28' "
                         + "AND category='legacy_creation_route_refresh'", organizationId) == null) {
                     db.update("INSERT INTO migration_findings(id,organization_id,migration,category,severity,subject,detail) "
                                     + "VALUES(?,?,?,?,?,?,?)",
-                            Db.id(), organizationId, "V16", "legacy_creation_route_refresh", "limitation", null,
-                            "存量创建待审申请未能自动重算：" + blocked.getMessage() + "；申请保持阻断，需管理员修复组织关系。");
+                            Db.id(), organizationId, "V28", "legacy_creation_route_refresh", "limitation", null,
+                            "存量待审申请未能按操作者直属上级重算：" + blocked.getMessage() + "；申请保持阻断，需管理员修复组织关系。");
                 }
             }
         }

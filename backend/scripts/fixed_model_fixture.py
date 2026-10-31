@@ -49,6 +49,12 @@ class Fixture:
         body['accountName' if person['accountType']=='admin' else 'phone']=person['identifier']
         return self.call('POST','/auth/sessions',body)
     def __enter__(self):
+        # Fail before creating data if another fixture still owns the requested port.
+        import socket
+        with socket.socket() as probe:
+            probe.settimeout(.3)
+            if probe.connect_ex(('127.0.0.1', self.port)) == 0:
+                raise RuntimeError('fixture port already in use: '+str(self.port))
         self.admin.server_side(f'CREATE DATABASE `{self.database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci')
         try:
             values={}
@@ -63,11 +69,14 @@ class Fixture:
                        PANDORA_PORT=str(self.port),PANDORA_BIND_ADDRESS='127.0.0.1',PANDORA_SEED='false',
                        PANDORA_WORKER_ENABLED='true' if self.worker else 'false')
             args=['java','-jar',str(BASE/'target/pandora-backend-0.1.0.jar')]
+            if getattr(self, 'migration_target', None):
+                args.append('--spring.flyway.target='+str(self.migration_target))
             if self.controllable:
                 # Keep the scheduler quiet; verification calls POST /admin/worker/run-once.
                 args += ['--pandora.clock.controllable=true','--pandora.worker.delay-ms=3600000',
                          '--pandora.worker.initial-delay-ms=3600000']
             self.log_path.parent.mkdir(parents=True,exist_ok=True)
+            self.launch_env, self.launch_args = env, args
             with self.log_path.open('w') as log:
                 self.process=subprocess.Popen(args,env=env,stdout=log,stderr=subprocess.STDOUT)
             for _ in range(120):
@@ -89,6 +98,21 @@ class Fixture:
             try: self.process.wait(timeout=10)
             except subprocess.TimeoutExpired: self.process.kill();self.process.wait(timeout=10)
         self.admin.server_side(f'DROP DATABASE IF EXISTS `{self.database}`')
+    def restart(self):
+        """Restart this fixture only, allowing the next Flyway migration to run."""
+        self.process.terminate()
+        self.process.wait(timeout=20)
+        args=[arg for arg in self.launch_args if not arg.startswith('--spring.flyway.target=')]
+        with self.log_path.open('a') as log:
+            self.process=subprocess.Popen(args,env=self.launch_env,stdout=log,stderr=subprocess.STDOUT)
+        for _ in range(120):
+            if self.process.poll() is not None: raise RuntimeError('fixture restart failed; see '+str(self.log_path))
+            try:
+                with urllib.request.urlopen(f'http://127.0.0.1:{self.port}/health',timeout=1) as response:
+                    if response.status==200: return
+            except (OSError,urllib.error.URLError): pass
+            time.sleep(.5)
+        raise RuntimeError('fixture restart timed out')
     def seed(self):
         encoded=subprocess.run(['htpasswd','-bnBC','12','fixture',PASSWORD],capture_output=True,text=True,check=True).stdout.strip().split(':',1)[1]
         encoded=encoded.replace('$2y$','$2a$')

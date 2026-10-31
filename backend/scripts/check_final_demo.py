@@ -11,7 +11,7 @@ from fixed_model_fixture import Fixture, quote
 from prepare_demo import prepare,database_env
 from check_helpers import running_database
 
-OUTPUT=BASE.parent/'audit/refactor-pandora-organization-and-workflows/final-demo.json'
+OUTPUT=BASE.parent/'output/task-creation-refinement/final-demo.json'
 
 def main():
     name='pandora_precheck_demo_'+uuid.uuid4().hex[:12];admin=Mysql(None,DEFAULT_OPTION_FILE);db=Mysql(name,DEFAULT_OPTION_FILE)
@@ -94,7 +94,9 @@ def main():
             check('eight real concurrent timed and eight all-day tasks exist',all('task-overlap-'+str(i) in objects and 'task-all-day-'+str(i) in objects for i in range(1,9)))
             changed=call('GET','/tasks/'+task('takeover'),who='colleague')[1]
             status,result=call('PATCH','/tasks/'+task('takeover'),{'command':'change','description':'Persisted real demo edit','reason':'restart persistence'},'colleague',changed['rowVersion'])
-            check('taken-over task remains directly editable by its business owner',status==200 and result.get('outcome')=='direct')
+            check('taken-over task edit requires operator manager',status==200 and result.get('outcome')=='pending')
+            request=call('GET','/approval-requests/'+result['requestId'],who='product-head-1')[1]
+            check('actual manager approves takeover owner edit',call('PATCH','/approval-requests/'+result['requestId'],{'decision':'approve'},'product-head-1',request['rowVersion'])[0]==200)
             status,history=call('GET','/admin/tasks/'+task('takeover')+'/history',who='admin')
             check('admin task history can trace takeover after restart',status==200 and 'business_takeover' in json.dumps(history))
             account=call('GET','/admin/account',who='admin')[1]

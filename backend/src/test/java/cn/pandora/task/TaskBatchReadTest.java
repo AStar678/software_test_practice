@@ -66,6 +66,7 @@ class TaskBatchReadTest {
             if(sql.startsWith("SELECT * FROM users WHERE id=?")) return one(people.get(args[0]));
             if(sql.startsWith("SELECT t.* FROM tasks t")) return copy(tasks.values()); // Repeated Access check must independently reject out-of-scope candidates.
             if(sql.startsWith("SELECT * FROM tasks")) return select(tasks,args,1,sql.contains("id IN") || sql.contains("AND id=?"));
+            if(sql.startsWith("SELECT * FROM task_version_tags")) return List.of();
             if(sql.startsWith("SELECT * FROM task_versions")) return select(versions,args,1,true);
             if(sql.startsWith("SELECT version_id,user_id FROM task_version_assignees")) {
                 var result=new ArrayList<Map<String,Object>>();for(int i=1;i<args.length;i++) for(String owner:owners.getOrDefault(args[i],List.of())) result.add(row("versionId",args[i],"userId",owner));return result;
@@ -129,11 +130,11 @@ class TaskBatchReadTest {
         String candidate=f.db.queries.stream().filter(q->q.startsWith("SELECT t.*")).findFirst().orElseThrow();
         assertTrue(candidate.contains("task_business_owners") && candidate.contains("employee_placements") && candidate.contains("pr.active=1") && candidate.contains("ep.department_id=?"));
     }
-    @Test void pendingReviewerUsesCurrentBusinessOwnerAndHistoricalReviewDoesNotGrantComments() {
+    @Test void pendingReviewerUsesOperatorManagerAndHistoricalReviewDoesNotGrantComments() {
         var f=new Fixture(3);String task=id(10000);f.db.businessOwners.put(task,id(103));
         f.db.requests.put(id(30000),row("id",id(30000),"taskId",task,"kind","progress","status","pending","applicantId",id(105),"currentReviewerId",id(104),
                 "proposedVersionId",id(20000),"baseVersionId",id(20000),"rowVersion",1));
-        assertEquals(1,f.service.approvals(f.actor(103),"reviewer","1","0").get("total"));
+        assertEquals(1,f.service.approvals(f.actor(12),"reviewer","1","0").get("total"));
         assertEquals(0,f.service.approvals(f.actor(104),"reviewer","1","0").get("total"));
         // The historical reviewer can open the ordinary message, but has no effective task/comment right.
         f.db.requests.get(id(30000)).put("status","approved");
@@ -141,7 +142,7 @@ class TaskBatchReadTest {
         assertEquals(Set.of(),f.service.readableTaskIds(f.actor(104),List.of(task),false));
         // Creation ignores a stale stored reviewer and uses the creator's current direct manager.
         f.db.tasks.get(task).put("originalCreatorId",id(100));f.db.requests.get(id(30000)).put("kind","create");f.db.requests.get(id(30000)).put("status","pending");
-        assertEquals(1,f.service.approvals(f.actor(11),"reviewer","1","0").get("total"));
+        assertEquals(1,f.service.approvals(f.actor(12),"reviewer","1","0").get("total"));
         assertEquals(0,f.service.approvals(f.actor(104),"reviewer","1","0").get("total"));
     }
     @Test void snapshotsAreClearedAfterFailureAndNeverSurviveOwnershipChanges() {
@@ -159,7 +160,8 @@ class TaskBatchReadTest {
         var f=new Fixture(5000);Actor admin=f.access.actor(row("id",id(9),"accountType","admin","active",true));
         f.db.queries.clear();var result=f.service.adminTasks(admin,Map.of("limit","1"));
         assertEquals(5000,result.get("total"));assertEquals(1,((List<?>)result.get("items")).size());
-        assertTrue(f.db.queries.size()<40,"admin SQL calls: "+f.db.queries.size());
+        assertEquals(10,f.db.queries.stream().filter(q->q.startsWith("SELECT * FROM task_version_tags")).count(),"one tag batch per 500 versions");
+        assertTrue(f.db.queries.size()<45,"admin SQL calls: "+f.db.queries.size());
         assertEquals(Set.of(),f.service.readableTaskIds(admin,f.db.tasks.keySet(),true));
     }
 
@@ -187,8 +189,8 @@ class TaskBatchReadTest {
         f.db.requests.put(id(30000),row("id",id(30000),"taskId",task,"kind","progress","status","pending",
                 "applicantId",id(105),"currentReviewerId",reader.id(),"proposedVersionId",id(20000),"baseVersionId",id(20000),"rowVersion",1));
         assertEquals(Set.of(),f.service.readableTaskIds(reader,List.of(task),true));
-        // This exception remains meaningful on the authoritative approval route itself.
-        assertThrows(ApiException.class,()->f.service.approvals(reader,"reviewer","1","0"));
+        // A broken owner blocks the request and removes it from the former reviewer inbox.
+        assertEquals(List.of(),f.service.approvals(reader,"reviewer","1","0").get("items"));
     }
 
 }

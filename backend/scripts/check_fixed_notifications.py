@@ -6,7 +6,7 @@ import uuid
 from fixed_model_fixture import Fixture,quote
 from migration_precheck import BASE
 
-OUTPUT=BASE.parent/'audit/refactor-pandora-organization-and-workflows/fixed-notifications.json'
+OUTPUT=BASE.parent/'output/task-creation-refinement/fixed-notifications.json'
 
 def main():
  report={'updated':dt.datetime.now(dt.timezone.utc).isoformat(),'checks':[]}
@@ -49,8 +49,8 @@ def main():
     check(who+' cannot maintain another company/founder tag',call('PATCH','/tags/'+tag,{'name':'unauthorized','color':'#D8EAF4'},who,1)[0] in (403,404))
    task=create()
    change(task,{'command':'change','tagId':tag,'reason':'Tag uses normal business owner rule'})
-   check('task tag changes directly when applicant is current business owner',ok('GET','/tasks/'+task)['tag']['name']=='共享重点')
-   check('multiple task tags are refused',call('PATCH','/tasks/'+task,{'command':'change','tagIds':[tag,tag],'reason':'reject'},version=ok('GET','/tasks/'+task)['rowVersion'])[0]==400)
+   check('founder tag changes are exempt',ok('GET','/tasks/'+task)['tag']['name']=='共享重点')
+   check('duplicate task tag IDs are refused',call('PATCH','/tasks/'+task,{'command':'change','tagIds':[tag,tag],'reason':'reject'},version=ok('GET','/tasks/'+task)['rowVersion'])[0]==400)
    ok('PATCH','/tags/'+tag,{'name':'已改名','color':'#D8EAF4'},version=1)
    check('catalog rename/recolor updates current task reference',ok('GET','/tasks/'+task)['tag']['name']=='已改名')
    ok('DELETE','/tags/'+tag,version=2)

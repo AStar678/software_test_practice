@@ -1,5 +1,5 @@
 "use strict";
-/* 任务表单：视图下的二级页面，用完整授权任务在本地完成组合筛选、排序、计数与分页。
+/* 任务表单：视图下的二级页面，仅用本人创建或负责的授权任务在本地完成组合筛选、排序、计数与分页。
    任何页面都不复制一套任务数据；本模块只持有会话内的表单条件与最近一次完整结果。 */
 (function () {
   const P = window.Pandora;
@@ -7,7 +7,7 @@
   const PAGE_SIZE = 50;
   const QUERY_MAX = 200;
   const QUERY_DELAY = 220;
-  const RELATION_LABEL = { all: "全部", own: "我负责", created: "我创建", visible: "仅可见" };
+  const RELATION_LABEL = { all: "全部", own: "我负责", created: "我创建" };
   const COMPLETION_LABEL = { all: "全部", open: "未完成", done: "已完成" };
   const SORT_LABEL = { title: "任务名称", createdAt: "创建时间", start: "开始时间", due: "截止时间", urgency: "紧急程度", status: "执行状态" };
   const URGENCY_RANK = { "紧急": 0, "高": 1, "中": 2, "低": 3 };
@@ -84,6 +84,7 @@
   }
   function matchesTaskFilters(task, filters, accountId, timeZone) {
     const relation = relationOf(task, accountId);
+    if (!relation.assigned && !relation.created) return false;
     if (filters.relation === "own" && !relation.assigned) return false;
     if (filters.relation === "created" && !relation.created) return false;
     if (filters.relation === "visible" && !relation.visibleOnly) return false;
@@ -421,7 +422,7 @@
 
     if (T.loading) {
       head.innerHTML = headHTML();
-      body.innerHTML = emptyRow("正在加载当前授权任务…");
+      body.innerHTML = emptyRow("正在加载本人创建或负责的任务…");
       if (pager) pager.innerHTML = "";
       // Keep the reader's place across the masked refresh and restore it with the new rows.
       if (scroller) T.scrollMemory = keepScroll;
