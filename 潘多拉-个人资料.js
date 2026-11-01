@@ -64,7 +64,7 @@
     const id=raw.taskId||raw.id,range=taskRange(raw),start=P.companyDayStart(staff.date),end=P.companyDayStart(shiftStaffDate(staff.date,1));
     const time=raw.allDay?'全天':(+range.start===+range.end?'时点 · ':'')+(range.start<start?'前日延续':instantLabel(raw.startAt).split(' ')[1])+' — '+(range.end>=end?'24:00':instantLabel(raw.dueAt).split(' ')[1]);
     const tag=(raw.tags||[])[0]||raw.tag;
-    return '<button type="button" class="staff-work-item" data-task="'+esc(id)+'" style="--staff-accent:'+esc(tag?.color||'#f5ccdE')+'"><span class="staff-work-time">'+esc(time)+'</span><strong>'+esc(raw.title)+'</strong><span class="staff-work-meta">'+esc(({todo:'待开始',doing:'进行中',done:'已完成'})[raw.executionState]||'待开始')+(raw.frozen?' · 审核中':'')+'</span><small>'+esc(instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt))+'</small></button>';
+    return '<button type="button" class="staff-work-item'+(raw.frozen?' is-pending-review':'')+'" data-task="'+esc(id)+'" style="--staff-accent:'+esc(tag?.color||'#f5ccdE')+'"><span class="staff-work-time">'+esc(time)+'</span><strong>'+esc(raw.title)+'</strong><span class="staff-work-meta">'+esc(({todo:'待开始',doing:'进行中',done:'已完成'})[raw.executionState]||'待开始')+(raw.frozen?' · 审核中':'')+'</span><small>'+esc(instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt))+'</small></button>';
   }
   function staffLogHTML(raw){return '<button type="button" class="staff-log-card" data-action="p-staff-log" data-id="'+esc(raw.id)+'"><span class="staff-work-time">'+esc(raw.businessDate)+'</span><strong>'+esc(raw.body)+'</strong><small>'+esc(raw.tag?.name||'无标签')+' · 查看全文与评论 →</small></button>';}
   function staffMonthBounds(date){
@@ -80,8 +80,9 @@
       const week=P.calendar.monthWeek({start:parseDateInput(date)},tasks,3);
       const dates=week.days.map(d=>toDateInput(d));
       const cells=dates.map(d=>'<button type="button" class="staff-month-date'+(d.slice(0,7)!==s.date.slice(0,7)?' is-outside':'')+'" data-action="p-staff-date" data-date="'+d+'" aria-label="'+d+'，查看日视图" aria-pressed="'+(d===s.date)+'"><span>'+Number(d.slice(-2))+'</span></button>').join('');
-      const bars=week.shown.map(segment=>{const task=segment.task,raw=task.raw;
-        return '<button type="button" class="staff-month-event'+(segment.before?' continues-before':'')+(segment.after?' continues-after':'')+'" data-task="'+esc(task.id)+'" style="grid-column:'+(segment.start+1)+' / '+(segment.end+1)+';grid-row:'+(segment.lane+1)+';--staff-accent:'+esc(staffRawColor(raw))+'" title="'+esc(raw.title+' · '+instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt))+'"><strong>'+esc(raw.title)+'</strong><small>'+esc(raw.allDay?'全天':segment.before?'延续':instantLabel(raw.startAt).split(' ')[1])+'</small></button>';
+      const bars=week.shown.map(segment=>{const task=segment.task,raw=task.raw,range=taskRange(raw),bounds=staffMonthBounds(staff.date);
+        const detail=(segment.before?'延续 · ':'')+instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt)+(raw.frozen?' · 审核中':'');
+        return '<div role="group" tabindex="0" class="staff-month-event'+(segment.width===0?' is-point':'')+(raw.frozen?' is-pending-review':'')+(segment.before?' continues-before':'')+(segment.after?' continues-after':'')+'" data-task="'+esc(task.id)+'" style="grid-column:'+(segment.start+1)+' / '+(segment.end+1)+';grid-row:'+(segment.lane+1)+';--month-left:'+segment.left+'%;--month-width:'+segment.width+'%;--staff-accent:'+esc(staffRawColor(raw))+'" title="'+esc(raw.title+' · '+detail)+'"><span class="staff-month-duration"'+(P.canRescheduleTask(actor(),task)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="month"':'')+'><span class="p-month-caption"><strong>'+esc(raw.title)+'</strong><small>'+esc(detail)+'</small></span>'+(!segment.before?P.calendar.resizeHandle(task,'start','month'):'')+(!segment.after?P.calendar.resizeHandle(task,'end','month'):'')+'</span></div>';
       }).join('');
       const more=week.hidden.map((rows,col)=>rows.length?'<button type="button" data-action="p-staff-date" data-date="'+dates[col]+'" class="staff-month-more" style="grid-column:'+(col+1)+'" aria-label="'+dates[col]+'，还有'+rows.length+'项，查看全天">+'+rows.length+'</button>':'').join('');
       weeks.push('<div class="staff-month-week"><div class="staff-month-days">'+cells+'</div><div class="staff-month-tracks">'+bars+'</div><div class="staff-month-overflow">'+more+'</div></div>');
@@ -94,14 +95,17 @@
     const modes='<div class="staff-day-formats" role="group" aria-label="日视图显示方式">'+[['axis','时间轴'],['list','任务清单']].map(([mode,label])=>'<button type="button" data-action="p-staff-format" data-format="'+mode+'" aria-pressed="'+(s.dayFormat===mode)+'">'+label+'</button>').join('')+'</div>';
     if(s.dayFormat==='list')return modes+(s.rows.length?s.rows.map(staffTaskHTML).join(''):'<div class="staff-state">这一天暂无负责的任务</div>');
     const events=P.calendar.layoutDayEvents(timed),hours=Array.from({length:25},(_,h)=>'<div class="staff-axis-hour" style="top:'+h*60+'px"><span>'+pad2(h)+':00</span></div>').join('');
-    const bars=events.map(e=>'<button type="button" class="staff-axis-event" data-task="'+esc(e.task.id)+'" data-start-minute="'+e.start+'" data-end-minute="'+e.end+'" data-columns="'+e.columns+'" style="top:'+e.drawStart+'px;height:'+(e.drawEnd-e.drawStart)+'px;left:'+(e.lane*100/e.columns)+'%;width:'+(100/e.columns)+'%;--staff-accent:'+esc(staffRawColor(e.task.raw))+';--true-top:'+(e.start-e.drawStart)+'px;--true-height:'+Math.max(2,e.end-e.start)+'px" aria-label="'+esc(e.task.title+'，'+instantLabel(e.task.raw.startAt)+' 至 '+instantLabel(e.task.raw.dueAt))+'"><span class="staff-axis-true"></span><strong>'+esc(e.task.title)+'</strong><small>'+esc(instantLabel(e.task.raw.startAt).split(' ')[1])+'</small></button>').join('');
-    return modes+(all.length?'<div class="staff-allday"><span>全天</span><div>'+all.map(raw=>'<button type="button" data-task="'+esc(raw.taskId||raw.id)+'" style="--staff-accent:'+esc(staffRawColor(raw))+'">'+esc(raw.title)+'</button>').join('')+'</div></div>':'')+'<div class="staff-axis-scroll" tabindex="0" aria-label="当天00:00至24:00时间轴，可上下滚动"><div class="staff-day-axis">'+hours+'<div class="staff-axis-events">'+bars+'</div></div></div>';
+    const bars=events.map(e=>{
+      const task=e.task,raw=task.raw,range=taskRange(raw),start=P.companyDayStart(s.date),end=P.companyDayStart(shiftStaffDate(s.date,1));
+      return '<div role="group" tabindex="0" class="staff-axis-event'+(e.point?' is-point':'')+(task.frozen?' is-pending-review':'')+'" data-task="'+esc(task.id)+'" data-start-minute="'+e.start+'" data-end-minute="'+e.end+'" data-columns="'+e.columns+'" style="top:'+e.drawStart+'px;height:'+(e.drawEnd-e.drawStart)+'px;left:'+(e.lane*100/e.columns)+'%;width:'+(100/e.columns)+'%;--staff-accent:'+esc(staffRawColor(raw))+';--true-top:'+(e.start-e.drawStart)+'px;--true-height:'+Math.max(2,e.end-e.start)+'px" aria-label="'+esc(task.title+'，'+instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt))+'" title="'+esc(task.title+' · '+instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt))+'"><span class="staff-axis-true"'+(P.canRescheduleTask(actor(),task)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="vertical"':'')+'><span class="p-axis-caption"><strong>'+esc(task.title)+'</strong><small>'+esc(instantLabel(raw.startAt).split(' ')[1]+(task.frozen?' · 审核中':''))+'</small></span></span>'+(range.start>=start?P.calendar.resizeHandle(task,'start','vertical'):'')+(range.end<=end?P.calendar.resizeHandle(task,'end','vertical'):'')+'</div>';
+    }).join('');
+    return modes+(all.length?'<div class="staff-allday"><span>全天</span><div>'+all.map(raw=>'<button type="button" class="'+(raw.frozen?'is-pending-review':'')+'" data-task="'+esc(raw.taskId||raw.id)+'" style="--staff-accent:'+esc(staffRawColor(raw))+'">'+esc(raw.title+(raw.frozen?' · 审核中':''))+'</button>').join('')+'</div></div>':'')+'<div class="staff-axis-scroll" tabindex="0" aria-label="当天00:00至24:00时间轴，可上下滚动"><div class="staff-day-axis">'+hours+'<div class="staff-axis-events">'+bars+'</div></div></div>';
   }
   function staffCalendarNav(){
     const s=staff,dates=Array.from({length:7},(_,i)=>shiftStaffDate(s.date,i-3));
     return '<div class="staff-calendar-modes" role="group" aria-label="人员日程视图">'+[['month','月视图'],['day','日视图']].map(([mode,label])=>'<button type="button" data-action="p-staff-mode" data-mode="'+mode+'" aria-pressed="'+(s.mode===mode)+'">'+label+'</button>').join('')+'</div><div class="staff-date-nav"><button type="button" data-action="p-staff-nav" data-step="-1" aria-label="上一'+(s.mode==='month'?'月':'天')+'">‹</button><label class="staff-calendar-picker"><span class="sr-only">跳转日期</span><input type="date" id="staff-calendar-date" value="'+s.date+'" aria-label="跳转日期"></label><button type="button" data-action="p-staff-today">今天</button><button type="button" data-action="p-staff-nav" data-step="1" aria-label="下一'+(s.mode==='month'?'月':'天')+'">›</button></div>'+(s.mode==='day'?'<div class="staff-date-strip" role="group" aria-label="查看日期">'+dates.map(date=>'<button type="button" data-action="p-staff-date" data-date="'+date+'" aria-pressed="'+(date===s.date)+'"><small>'+['日','一','二','三','四','五','六'][parseDateInput(date).getDay()]+'</small><strong>'+Number(date.slice(-2))+'</strong></button>').join('')+'</div>':'');
   }
-  function restoreStaffAxis(){requestAnimationFrame(()=>{const axis=document.querySelector('.staff-axis-scroll');if(!axis||!staff)return;const date=parseDateInput(staff.date),events=staff.rows.map(raw=>P.calendar.dayCoverage(P.mapTask(raw),date)).filter(e=>e&&!e.fullDay);axis.scrollTop=Math.max(0,(events[0]?.start??480)-60);});}
+  function restoreStaffAxis(){requestAnimationFrame(()=>{P.calendar.bindScheduleResize();const axis=document.querySelector('.staff-axis-scroll');if(!axis||!staff)return;const date=parseDateInput(staff.date),events=staff.rows.map(raw=>P.calendar.dayCoverage(P.mapTask(raw),date)).filter(e=>e&&!e.fullDay);axis.scrollTop=Math.max(0,(events[0]?.start??480)-60);});}
   function staffView(){
     const s=staff,p=s.person;
     const dateBar=s.tab==='schedule'?staffCalendarNav():'';
@@ -117,21 +121,22 @@
         const directory=await P.request('/me/reports');
         if(!(directory.items||[]).some(p=>p.id===s.person.id))throw Error('已无权查看该人员，请关闭后刷新下属资料。');
         const person=await P.request('/users/'+encodeURIComponent(s.person.id));
-        let rows=[],next=null;
+        let rows=[],next=null,effectiveRows=[];
         if(s.tab==='logs'){
           if(!person.canReadLogs)throw Error('当前无权查看此人的日志。');
           const result=await P.request('/work-logs?scope=visible&authorId='+encodeURIComponent(person.id)+'&limit=10&offset='+(more?s.next:0));
           rows=result.items||[];next=result.nextOffset??null;
         }else{
           let offset=0;do{
-            const result=await P.request('/tasks?assigneeId='+encodeURIComponent(person.id)+'&from='+queryRange.start+'&to='+shiftStaffDate(queryRange.end,-1)+'&limit=100&offset='+offset);
+            const result=await P.request('/tasks?assigneeId='+encodeURIComponent(person.id)+'&calendarPreview=true&from='+queryRange.start+'&to='+shiftStaffDate(queryRange.end,-1)+'&limit=100&offset='+offset);
             rows.push(...(result.items||[]));const cursor=result.nextCursor??result.nextOffset;
             if(cursor==null)break;if(Number(cursor)<=offset)throw Error('日程分页异常，请重新读取。');offset=Number(cursor);
           }while(true);
           const start=P.companyDayStart(queryRange.start),end=P.companyDayStart(queryRange.end);
-          rows=rows.filter(r=>{const range=taskRange(r);return +range.start===+range.end?range.start>=start&&range.start<end:range.end>start&&range.start<end;}).sort((a,b)=>+taskRange(a).start-+taskRange(b).start||String(a.taskId||a.id).localeCompare(String(b.taskId||b.id)));
+          effectiveRows=rows;rows=rows.map(raw=>P.calendarTask(P.mapTask(raw)).raw).filter(r=>{const range=taskRange(r);return +range.start===+range.end?range.start>=start&&range.start<end:range.end>start&&range.start<end;}).sort((a,b)=>+taskRange(a).start-+taskRange(b).start||String(a.taskId||a.id).localeCompare(String(b.taskId||b.id)));
         }
         if(!staffCurrent(s,seq))return;
+        effectiveRows.forEach(raw=>P.upsertTask(raw));
         s.person=person;s.rows=more?s.rows.concat(rows):rows;s.next=next;s.loading=false;replaceTopSheet(staffView());restoreStaffAxis();
       }catch(error){if(!staffCurrent(s,seq))return;s.rows=[];s.next=null;s.person=Object.assign({},s.person,{canSetHandoverPreset:false});delete s.person.phone;s.loading=false;s.error=error.message;replaceTopSheet(staffView());}
     })();
@@ -302,6 +307,11 @@
     if (element.dataset.action === "p-save-password") return savePassword();
     return previousAction(element);
   };
+  document.addEventListener('keydown',event=>{
+    if(event.target.matches?.('.staff-month-event,.staff-axis-event')&&['Enter',' '].includes(event.key)){
+      event.preventDefault();event.stopPropagation();openTaskDetail(event.target.dataset.task);
+    }
+  });
   document.addEventListener('change',function(event){if(event.target.id==='staff-calendar-date'&&staff){const value=event.target.value,d=parseDateInput(value);if(d&&toDateInput(d)===value){staff.date=value;refreshStaff(false);}}});
   RENDER.me = renderMe;
 })();

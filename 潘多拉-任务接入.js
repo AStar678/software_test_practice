@@ -159,6 +159,9 @@
   window.canEditTask = function (account, task) {
     return !!(account && task && account.role !== "admin" && task.businessOwnerId === account.id && !task.frozen && (task.status === "todo" || task.status === "doing"));
   };
+  P.canRescheduleTask = function (account,task) {
+    return !!(account && account.role!=="admin" && task && task.raw?.canReschedule && !task.frozen && ['todo','doing'].includes(task.status));
+  };
   window.canUpdateTaskNote = function (account, task) {
     return !!(account && task && account.role !== "admin" && !task.frozen && task.assigneeIds.indexOf(account.id) !== -1 && (task.status === "todo" || task.status === "doing"));
   };
@@ -242,6 +245,13 @@
     if (!draft) return null;
     const creation = creationMode(draft.mode);
     const view = originalForm();
+    if (draft.mode==='schedule') {
+      const start=view.body.indexOf('<div class="field p-task-schedule">'),end=view.body.indexOf('<div class="field"><label>紧急程度</label>');
+      return {title:'调整排期',draftKind:'task',body:'<div class="callout info">'+esc(draft.title)+'</div>'+view.body.slice(start,end)+
+        textField('tf-reason','变更原因（必填，最多500字）',draft.reason,500,false)+
+        '<div class="callout info">'+esc(previewHint(draft.preview,'non-creation'))+'</div>'+errorBox('tf-error'),
+        foot:withBack('<button type="button" class="btn primary" data-action="save-task">提交排期</button>'),rebuild:adapterTaskFormView};
+    }
     view.title = draft.mode === "create" ? "创建任务" : draft.mode === "resubmit" ? "修改并重新提交" : "编辑任务";
     view.body = view.body.replace('id="tf-title" type="text"', 'id="tf-title" type="text" maxlength="80"')
       .replace('<textarea id="tf-desc">', '<textarea id="tf-desc" maxlength="5000">')
@@ -299,10 +309,10 @@
       if (!stillHere(mark)) return;
       if (!raw.currentVersionId) throw new Error("该任务尚未发布，请从申请详情修改重提。");
       P.upsertTask(raw);
-      if (!canEditTask(actor(), taskById(id))) throw new Error(raw.frozen ? "任务正在审核，暂时不能编辑。" : "当前账号不能编辑此任务。");
-      const draft = rawFormDraft(raw, "edit", mark);
-      await loadCandidates("edit");
-      draft.preview = await previewOperation({ operation: "change", taskId: id, assigneeIds: draft.assigneeIds });
+      if (!(mode==='schedule'?P.canRescheduleTask(actor(),taskById(id)):canEditTask(actor(), taskById(id)))) throw new Error(raw.frozen ? "任务正在审核，暂时不能编辑。" : "当前账号不能编辑此任务。");
+      const draft = rawFormDraft(raw, mode==='schedule'?'schedule':'edit', mark);
+      if (mode!=='schedule') await loadCandidates("edit");
+      draft.preview = await previewOperation({ operation: mode==='schedule'?'reschedule':'change', taskId: id, assigneeIds: draft.assigneeIds });
       if (!stillHere(mark)) return;
       drafts.task = draft;
       openSheet(taskFormView());
@@ -313,6 +323,13 @@
       syncTaskDraft();
       const draft = drafts.task;
       if (!draft || !stillHere(draft.mark)) throw new Error("表单已失效，请重新打开。");
+      if (draft.mode==='schedule') {
+        const start=timedValue(draft.startDate,draft.startTime),due=timedValue(draft.endDate,draft.endTime);
+        if (!start || !due || due<start) throw new Error('请填写有效起止时间，截止不得早于开始。');
+        const body={command:'reschedule',allDay:false,startAt:start.toISOString(),dueAt:due.toISOString(),reason:required(draft.reason,'变更原因',500)};
+        const result=await P.mutation(draft.slot,'PATCH','/tasks/'+encodeURIComponent(draft.id),body,draft.etag);
+        await finish(result,draft.mark);return;
+      }
       const creation = creationMode(draft.mode);
       const body = {
         title: required(draft.title, "任务名称", 80), description: required(draft.desc, "任务说明", 5000),
@@ -364,7 +381,7 @@
   // The existing edit form is the confirmation and submission boundary for a drag.
   P.openScheduleChange = async function (id, start, due, rowVersion) {
     const mark = session(), previousDraft = drafts.task;
-    await openTaskForm('edit', id);
+    await openTaskForm('schedule', id);
     if (!stillHere(mark) || !drafts.task || drafts.task === previousDraft || drafts.task.id !== id || !document.getElementById('tf-start-date')) return;
     if (drafts.task.etag !== '"' + rowVersion + '"') {
       showError('tf-error', '任务已被更新，已加载最新内容；请重新调整排期。'); return;
@@ -404,6 +421,7 @@
     const requestId = raw.pendingRequestId || request && request.id;
     if (task.frozen) body += '<div class="callout info">该任务有待审核申请。当前展示的是有效版本；审核结束前暂停资料修改、进展、完成及重开操作。</div>';
     const buttons = [];
+    if (P.canRescheduleTask(actor(),task)) buttons.push('<button type="button" class="btn" data-action="p-adjust-schedule" data-id="'+attr(id)+'">调整排期</button>');
     if (canEditTask(actor(), task)) buttons.push('<button type="button" class="btn primary" data-action="edit-task" data-id="' + attr(id) + '">编辑任务</button>');
     if (canUpdateTaskNote(actor(), task)) buttons.push('<button type="button" class="btn" data-action="update-note" data-id="' + attr(id) + '">更新进展</button><button type="button" class="btn ok" data-action="submit-complete" data-id="' + attr(id) + '">提交完成</button>');
     if (canReopen(task)) buttons.push('<button type="button" class="btn primary" data-action="p-reopen-task" data-id="' + attr(id) + '">重开任务</button>');
@@ -898,6 +916,12 @@
     }, "handover-preset-error");
   }
 
+  // This action can be nested in a calendar task; it must precede the generic task-detail click.
+  document.addEventListener('click',event=>{
+    const button=event.target.closest?.('[data-action="p-adjust-schedule"]');
+    if (!button) return;
+    event.preventDefault();event.stopImmediatePropagation();openTaskForm('schedule',button.dataset.id);
+  },true);
   window.runAction = function (element) {
     if(element.dataset.action==='rp-owner-add'&&reopenDraft){const id=inputValue('rp-owner-add');if(id&&!reopenDraft.assigneeIds.includes(id))reopenDraft.assigneeIds.push(id);refreshReopenOwners();return;}
     if(element.dataset.action==='rp-owner-remove'&&reopenDraft){reopenDraft.assigneeIds.splice(Number(element.dataset.index),1);refreshReopenOwners();return;}

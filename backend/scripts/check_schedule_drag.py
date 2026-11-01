@@ -7,7 +7,7 @@ OUT=BASE.parent/'output/task-schedule'
 
 def main():
     OUT.mkdir(parents=True,exist_ok=True)
-    f=Fixture(port=18210); f.log_path=OUT/'service.log'
+    f=Fixture(port=18210,worker=True,controllable=True); f.log_path=OUT/'service.log'
     with f:
         tokens={k:f.login(k)[1]['token'] for k in ('founder','alpha-one-employee','alpha-one-head')}
         ids={k:v['id'] for k,v in f.identities.items()}
@@ -24,7 +24,7 @@ def main():
                 ok('PATCH','/approval-requests/'+result['requestId'],{'decision':'approve'},'alpha-one-head',request['rowVersion'])
             return result['taskId']
         day='2030-12-31'
-        task=create('跨年排期调整',day+'T01:00:00Z',day+'T10:00:00Z')
+        task=create('跨年排期调整',day+'T01:20:00Z',day+'T10:20:00Z')
         point=create('零时长会议',day+'T04:00:00Z',day+'T04:00:00Z')
         full=create('整日排期',day+'T00:00:00+08:00','2031-01-01T00:00:00+08:00')
         legacy=create('历史全天任务',day,day,legacy=True)

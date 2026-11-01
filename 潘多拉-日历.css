@@ -381,3 +381,68 @@
   .p-schedule-toolbar .p-table-entry{grid-column:3;grid-row:1}
   .p-schedule-toolbar .p-schedule-navigation{grid-column:2 / 4;grid-row:2;justify-self:end}
 }
+/* Hourly drag controls remain independent of scrolling and task activation. */
+.p-resize-handle{width:24px;height:32px;line-height:32px;font-size:11px;font-weight:600;background:#fff8ed;color:#815569;touch-action:none;user-select:none;-webkit-user-select:none}
+.p-month-event .p-resize-start{top:0;bottom:auto}.p-month-event .p-resize-end{bottom:0;top:auto}
+.p-horizontal-bar .p-resize-start{left:-24px}.p-horizontal-bar .p-resize-end{right:-24px}
+.p-axis-event .p-resize-handle{position:absolute;z-index:5;height:24px;line-height:24px;width:24px;pointer-events:auto;touch-action:none}
+.p-axis-event .p-resize-start{top:0;left:0;bottom:auto;right:auto}.p-axis-event .p-resize-end{bottom:0;right:0;top:auto;left:auto}
+.p-axis-event:has(.p-resize-handle)>strong,.p-axis-event:has(.p-resize-handle)>.p-axis-event-time{padding-inline:24px;box-sizing:border-box}
+
+/* Proposed placement is visible while the effective task stays unchanged until approval. */
+.p-month-grid .p-month-event.is-pending-review,
+.p-horizontal-bar.is-pending-review,
+.p-day-allday .p-all-day-event.is-pending-review,
+.p-agenda .p-agenda-item.is-pending-review,
+.p-day-sheet-body .p-agenda-item.is-pending-review{
+  border:2px dashed var(--tc-bd,#b66b8c);box-sizing:border-box;
+  background:color-mix(in srgb,var(--tc-bg,#ffe1ea) 45%,white);
+}
+.p-axis-event.is-pending-review .p-axis-true{
+  border:2px dashed var(--tc-bd,#b66b8c);box-sizing:border-box;
+  background:color-mix(in srgb,var(--tc-bg,#ffe1ea) 45%,white);
+}
+.p-axis-event.is-pending-review.is-point .p-axis-true{height:4px!important;background:transparent}
+.p-axis-event .p-review-label{position:relative;display:block;color:#8b526d;font-size:10px;line-height:13px;padding:2px 4px}
+
+/* The actual schedule frame owns its caption; transparent edges replace labeled buttons. */
+.p-month-view[data-density] .p-month-event,.p-month-grid .p-month-event.is-pending-review{
+  position:relative;margin:0;padding:0;border:0;background:transparent;overflow:visible;box-sizing:border-box;pointer-events:none;
+}
+.p-month-duration,.staff-month-duration{
+  position:absolute;left:var(--month-left,0%);width:var(--month-width,100%);min-width:0;
+  top:0;bottom:auto;height:calc(100% - 1px);box-sizing:border-box;border:0;
+  border-radius:4px;background:var(--tc-bg,#ffe1ea);box-shadow:inset 2px 0 var(--tc-bd,#e39ab4);pointer-events:auto;
+}
+.p-month-caption,.p-axis-caption{position:absolute;inset:2px min(6px,6%);display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;overflow:hidden;pointer-events:none}
+.p-month-view[data-density] .p-month-event-title,.p-month-view[data-density] .p-month-event-time{
+  display:block;width:auto;min-width:0;max-height:none;padding:0;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;
+}
+.p-month-view[data-density] .p-month-event-title{font-size:12px;line-height:15px;font-weight:500}
+.p-month-view[data-density] .p-month-event-time{font-size:10px;line-height:13px}
+.p-month-event.is-pending-review .p-month-duration{border:0;outline:2px dashed var(--tc-bd,#b66b8c);outline-offset:-2px;box-shadow:none;background:color-mix(in srgb,var(--tc-bg,#ffe1ea) 45%,white)}
+.p-month-event.is-point .p-month-duration,.staff-month-event.is-point .staff-month-duration{min-width:2px}
+[data-schedule-move]{cursor:grab}
+.p-resize-handle{display:block;position:absolute;z-index:6;width:12px;height:100%;max-width:none;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;touch-action:none;user-select:none;cursor:ew-resize}
+.p-resize-handle:focus-visible{outline:2px solid #ab3257;outline-offset:-2px}
+.p-month-duration .p-resize-start,.staff-month-duration .p-resize-start{top:0;bottom:auto;left:-4px;right:auto;width:12px;height:50%}
+.p-month-duration .p-resize-end,.staff-month-duration .p-resize-end{top:auto;bottom:0;right:-4px;left:auto;width:12px;height:50%}
+.p-horizontal-row{height:64px}
+.p-horizontal-bar{top:6px;height:52px}
+.p-horizontal-task{display:block;padding:0;border:0;overflow:visible;background:transparent;height:100%;width:100%;min-width:0}
+.p-horizontal-task strong,.p-horizontal-task small{visibility:visible;display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-horizontal-caption{position:sticky;left:0;display:flex;flex-direction:column;justify-content:center;gap:3px;width:min(320px,100%);height:100%;padding:5px min(12px,6%);box-sizing:border-box;overflow:hidden;text-align:left}
+.p-horizontal-task strong{font-size:12px;line-height:16px}.p-horizontal-task small{font-size:10px;line-height:14px}
+.p-horizontal-bar .p-resize-start{left:0;right:auto;top:0;bottom:0;width:12px;height:100%}
+.p-horizontal-bar .p-resize-end{right:0;left:auto;top:0;bottom:0;width:12px;height:100%}
+.p-horizontal-bar:has(.p-horizontal-task):has(.p-resize-handle){min-width:1px}
+.p-axis-event .p-axis-true{pointer-events:auto;overflow:visible}
+.p-axis-caption{justify-content:flex-start}
+.p-axis-caption strong,.p-axis-caption .p-axis-event-time{display:block;padding:0!important;margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-axis-event .p-resize-handle,.staff-axis-event .p-resize-handle{width:100%;height:10px;left:0;right:0;cursor:ns-resize}
+.p-axis-event .p-resize-start{top:var(--axis-true-top);bottom:auto}
+.p-axis-event .p-resize-end{top:calc(var(--axis-true-top) + var(--axis-true-height) - 10px);bottom:auto}
+.p-axis-event.is-point .p-resize-start,.staff-axis-event.is-point .p-resize-start{top:0;bottom:auto;height:50%}
+.p-axis-event.is-point .p-resize-end,.staff-axis-event.is-point .p-resize-end{top:auto;bottom:0;height:50%}
+
+.p-drag-ghost{overflow:hidden;color:#493b46}.p-drag-ghost .p-month-caption strong,.p-drag-ghost .p-month-caption small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:14px}

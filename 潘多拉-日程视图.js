@@ -5,7 +5,7 @@
 (function () {
   const P = window.Pandora;
   /* 日轴固定 1440px 高：一分钟对应一像素，真实时段不会被点击区改写。 */
-  const AXIS_MINUTES = 1440, MIN_HIT_PX = 22;
+  const AXIS_MINUTES = 1440, MIN_HIT_PX = 48;
   const MONTH_MIN_HEIGHT = 100, MONTH_MAX_HEIGHT = 340;
   const MAX_MOUNTED_MONTHS = 12;
   const scheduleScroll = new Map();
@@ -33,7 +33,7 @@
     const me = selfId();
     return allNormalTasks(account).filter(function (task) {
       return me != null && (task.assigneeIds || []).indexOf(me) !== -1;
-    });
+    }).map(P.calendarTask);
   };
 
   const previousAction = runAction;
@@ -75,9 +75,9 @@
     return (P.data?.calendarLogs || []).filter(log => log.authorId === self && log.businessDate === key);
   }
   function scheduleText(t,d) {
-    if(t.allDay)return '全天';const bounds=businessBounds(d),range=calendarRange(t);
+    if(t.allDay)return '全天'+(t.frozen?' · 审核中':'');const bounds=businessBounds(d),range=calendarRange(t);
     const time=value=>{const p=P.companyParts(value);return p.hour+':'+p.minute;};
-    return (range.start<bounds.start?'前日延续':time(range.start))+' – '+(range.end>=bounds.end?'24:00':time(range.end))+(range.end>bounds.end?' · 跨日':'');
+    return (range.start<bounds.start?'前日延续':time(range.start))+' – '+(range.end>=bounds.end?'24:00':time(range.end))+(range.end>bounds.end?' · 跨日':'')+(t.frozen?' · 审核中':'');
   }
   function sortedDay(d) { return dayListSort(dayTasks(d)); }
   function allDayTasks(d) { return sortedDay(d).filter(t => t.allDay || dayCoverage(t,d)?.fullDay); }
@@ -100,7 +100,7 @@
     });
   }
   function taskButton(t, d, kind) {
-    return '<button type="button" class="p-agenda-item ' + (kind || '') + '" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '">' +
+    return '<button type="button" class="p-agenda-item ' + (kind || '') + (t.frozen?' is-pending-review':'') + '" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '">' +
       '<span class="p-agenda-marker" aria-hidden="true"></span><span class="p-agenda-copy"><strong>' + esc(t.title) + '</strong><span>' + esc(scheduleText(t, d)) + '</span>' +
       '<span class="p-agenda-meta">' + statusBadge(t) + urgencyBadge(t.urgency) + '</span></span></button>';
   }
@@ -185,24 +185,27 @@
       if (lane < 0) lane = occupied.length;
       occupied[lane] = (occupied[lane] || 0) | mask;
       const range = calendarRange(task);
-      segments.push({task,start,end,lane,
-        before: range.start < P.companyDayStart(dateKey(days[start])),
-        after: range.end > P.companyDayStart(dateKey(addDays(days[end-1], 1)))});
+      const first=P.companyDayStart(dateKey(days[start])),firstEnd=P.companyDayStart(dateKey(addDays(days[start],1))),
+        last=P.companyDayStart(dateKey(days[end-1])),lastEnd=P.companyDayStart(dateKey(addDays(days[end-1],1))),span=end-start;
+      const left=Math.max(0,Math.min(1,(range.start-first)/(firstEnd-first)))*100/span;
+      const right=(span-1+Math.max(0,Math.min(1,(range.end-last)/(lastEnd-last))))*100/span;
+      segments.push({task,start,end,lane,left,width:Math.max(0,right-left),
+        before: range.start < first,after: range.end > lastEnd});
     }
     const shown = segments.filter(s => s.lane < capacity);
     const hidden = days.map((d,col) => segments.filter(s => s.lane >= capacity && s.start <= col && s.end > col).map(s => s.task));
     return {days,shown,hidden,segments};
   }
   function resizeHandle(task, edge, mode) {
-    if (!canEditTask(actor(),task)) return '';
-    return '<button type="button" class="p-resize-handle p-resize-'+edge+'" data-resize="'+edge+'" data-resize-mode="'+mode+'" data-resize-task="'+esc(task.id)+'" aria-label="调整'+(edge==='start'?'开始':'截止')+'时间：'+esc(task.title)+'" title="横向拖动，或按左右方向键调整">↔</button>';
+    if (!P.canRescheduleTask(actor(),task)) return '';
+    const label='调整'+(edge==='start'?'开始':'截止')+'时间：'+task.title;
+    return '<span role="separator" tabindex="0" class="p-resize-handle p-resize-'+edge+'" data-resize="'+edge+'" data-resize-mode="'+mode+'" data-resize-task="'+esc(task.id)+'" aria-orientation="'+(mode==='vertical'?'horizontal':'vertical')+'" aria-label="'+esc(label)+'" title="'+esc(label+' · '+fmtSchedule(task)+'；拖动边缘或用方向键按小时调整')+'"></span>';
   }
   function connectedTaskHTML(s, hidden, key) {
-    const t=s.task, classes=(s.before?' continues-before':'')+(s.after?' continues-after':'')+(t.status==='done'?' is-done':'');
-    const detail='<small class="p-month-event-time">'+esc(t.allDay?'全天':s.before?'延续':fmtTime(t.start))+'</small>';
+    const t=s.task,classes=(s.before?' continues-before':'')+(s.after?' continues-after':'')+(t.status==='done'?' is-done':'')+(t.frozen?' is-pending-review':'')+(s.width===0?' is-point':'');
+    const detail=(s.before?'延续 · ':'')+fmtSchedule(t)+(t.frozen?' · 审核中':'');
     return '<div role="group" tabindex="0"'+(hidden?' hidden':'')+' class="p-month-event'+classes+'" data-task="'+esc(t.id)+'" data-month-key="'+esc(key)+'" data-start-column="'+s.start+'" data-end-column="'+s.end+'" data-lane="'+s.lane+'" data-span="'+(s.end-s.start)+
-      '" style="grid-column:'+(s.start+1)+' / '+(s.end+1)+';grid-row:'+(s.lane+1)+';'+taskColorVars(t)+'" aria-label="'+esc(taskAriaLabel(t,actor()))+'" title="'+esc(t.title+' · '+fmtSchedule(t))+'">'+(t.pinned?'<span class="p-pin" aria-label="已置顶">★</span>':'')+'<span class="p-month-event-title">'+esc(t.title)+'</span>'+detail+
-      (!s.before?resizeHandle(t,'start','month'):'')+(!s.after?resizeHandle(t,'end','month'):'')+'</div>';
+      '" style="grid-column:'+(s.start+1)+' / '+(s.end+1)+';grid-row:'+(s.lane+1)+';--month-left:'+s.left+'%;--month-width:'+s.width+'%;'+taskColorVars(t)+'" aria-label="'+esc(taskAriaLabel(t,actor()))+'" title="'+esc(t.title+' · '+detail)+'"><div class="p-month-duration"'+(P.canRescheduleTask(actor(),t)?' data-schedule-move="'+esc(t.id)+'" data-resize-mode="month"':'')+'><span class="p-month-caption"><strong class="p-month-event-title">'+esc((t.pinned?'★ ':'')+t.title)+'</strong><small class="p-month-event-time">'+esc(detail)+'</small></span>'+(!s.before?resizeHandle(t,'start','month'):'')+(!s.after?resizeHandle(t,'end','month'):'')+'</div></div>';
   }
   function monthMetrics(height = monthHeight) {
     const track = 52, gap = 5;
@@ -528,7 +531,6 @@
     if (!target||typeof target.closest!=='function') return;
     const week=target.closest('.p-month-week');
     if (!week) return;
-    if (target.closest('[data-resize]')) { event.preventDefault(); event.stopImmediatePropagation(); return; }
     if (Date.now()<suppressCalendarClickUntil) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -630,12 +632,14 @@
     const height = event.drawEnd - event.drawStart;
     const trueTop = event.start - event.drawStart;
     const trueHeight = Math.max(2, event.end - event.start);
-    return '<button type="button" class="p-axis-event' + (event.start===event.end?' is-point':'') + (event.point ? ' is-point':'') + (task.status==='done'?' is-done':'') +
+    return '<div role="group" tabindex="0" class="p-axis-event' + (event.start===event.end?' is-point':'') + (event.point ? ' is-point':'') + (task.status==='done'?' is-done':'') + (task.frozen?' is-pending-review':'') +
       '" data-task="' + esc(task.id) + '" data-start-minute="' + event.start + '" data-end-minute="' + event.end +
       '" data-lane="' + event.lane + '" data-columns="' + event.columns + '" style="' + taskColorVars(task) +
       'top:' + top + 'px;height:' + height + 'px;left:' + (event.lane*width) + '%;width:' + width + '%;--axis-true-top:' + trueTop + 'px;--axis-true-height:' + trueHeight + 'px" aria-label="' +
       esc(taskAriaLabel(task,actor())+'，'+minuteLabel(event.start)+(event.start===event.end?'':' 至 '+minuteLabel(event.end)))+'" title="' + esc(task.title+' · '+fmtSchedule(task)) + '">' +
-      '<span class="p-axis-true" aria-hidden="true"></span>' + (task.pinned ? '<span class="p-pin" aria-label="已置顶">★</span>' : '') + '<strong>' + esc(task.title) + '</strong><span class="p-axis-event-time">' + esc(event.start===event.end?minuteLabel(event.start):minuteLabel(event.start)+' – '+minuteLabel(event.end)) + '</span></button>';
+      '<span class="p-axis-true"'+(P.canRescheduleTask(actor(),task)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="vertical"':'')+'><span class="p-axis-caption"><strong>'+esc((task.pinned?'★ ':'')+task.title)+'</strong><span class="p-axis-event-time">'+esc((event.start===event.end?minuteLabel(event.start):minuteLabel(event.start)+' – '+minuteLabel(event.end))+(task.frozen?' · 审核中':''))+'</span></span></span>'+
+      (calendarRange(task).start>=businessBounds(state.viewAnchor).start?resizeHandle(task,'start','vertical'):'')+
+      (calendarRange(task).end<=businessBounds(state.viewAnchor).end?resizeHandle(task,'end','vertical'):'')+'</div>';
   }
   function axisHTML(d) {
     axisEvents = layoutDayEvents(dayEvents(d));
@@ -651,7 +655,7 @@
     const tasks = allDayTasks(d);
     if (!tasks.length) return '<span class="p-all-day-empty">—</span>';
     return '<div class="p-allday-list">' + tasks.map(t =>
-      '<button type="button" class="p-all-day-event" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '" aria-label="' + esc(taskAriaLabel(t,actor())) + '">' + esc(t.title) + '</button>').join('') + '</div>';
+      '<button type="button" class="p-all-day-event'+(t.frozen?' is-pending-review':'')+'" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '" aria-label="' + esc(taskAriaLabel(t,actor())) + '">' + esc(t.title) + '</button>').join('') + '</div>';
   }
   function horizontalDayHTML(d) {
     const bounds=businessBounds(d), tasks=sortedDay(d);
@@ -659,86 +663,93 @@
     const rows=tasks.map(task=>{
       const timed=Object.assign({},task,{allDay:false}), coverage=dayCoverage(timed,d), range=calendarRange(timed);
       const left=coverage.start, width=Math.max(1,coverage.end-coverage.start);
-      return '<div class="p-horizontal-row" style="'+taskColorVars(task)+'"><button type="button" class="p-horizontal-label" data-task="'+esc(task.id)+'"><strong>'+(task.pinned?'★ ':'')+esc(task.title)+'</strong><small>'+esc(scheduleText(timed,d))+'</small></button><div class="p-horizontal-bar" data-task="'+esc(task.id)+'" style="left:'+left+'px;width:'+width+'px">'+
-        '<button type="button" class="p-horizontal-task" data-task="'+esc(task.id)+'" aria-label="'+esc(taskAriaLabel(task,actor())+' '+scheduleText(timed,d))+'"><strong>'+esc(task.title)+'</strong><small>'+esc(scheduleText(timed,d))+'</small></button>'+
+      return '<div class="p-horizontal-row" style="'+taskColorVars(task)+'"><div class="p-horizontal-bar'+(task.frozen?' is-pending-review':'')+'" data-task="'+esc(task.id)+'" title="'+esc(task.title+' · '+fmtSchedule(task))+'"'+(P.canRescheduleTask(actor(),task)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="day"':'')+' style="left:'+left+'px;width:'+width+'px">'+
+        '<button type="button" class="p-horizontal-task" data-task="'+esc(task.id)+'" aria-label="'+esc(taskAriaLabel(task,actor())+' '+scheduleText(timed,d))+'"><span class="p-horizontal-caption"><strong>'+esc((task.pinned?'★ ':'')+task.title)+'</strong><small>'+esc(scheduleText(timed,d))+'</small></span></button>'+
         (range.start>=bounds.start?resizeHandle(task,'start','day'):'')+(range.end<=bounds.end?resizeHandle(task,'end','day'):'')+'</div></div>';
     }).join('');
-    return '<section id="p-day-panel" class="p-horizontal-panel"><p class="p-drag-hint">横向拖动任务两端调整时间，松开后确认提交；每格1小时，调整步长15分钟。</p><div class="p-timeline-scroll p-horizontal-scroll" tabindex="0" aria-label="横向排期，00:00至24:00，可左右滚动"><div class="p-horizontal-axis"><div class="p-horizontal-ruler">'+hours+'</div>'+(rows||'<div class="p-horizontal-empty">当天暂无任务</div>')+'</div></div></section>';
+    return '<section id="p-day-panel" class="p-horizontal-panel"><p class="p-drag-hint">拖动任务框移动，拖动边缘调整起止；松开后确认提交，每次调整1小时。</p><div class="p-timeline-scroll p-horizontal-scroll" tabindex="0" aria-label="横向排期，00:00至24:00，可左右滚动"><div class="p-horizontal-axis"><div class="p-horizontal-ruler">'+hours+'</div>'+(rows||'<div class="p-horizontal-empty">当天暂无任务</div>')+'</div></div></section>';
   }
 
   // Drag changes only a proposal. The original form owns validation, review and persistence.
   let scheduleDrag=null;
-  function proposedRange(task, edge, steps, mode) {
-    const start=new Date(task.raw.startAt), due=new Date(task.raw.dueAt);
-    const original=edge==='start'?start:due;
-    let next;
-    if (mode==='month') {
-      const date=addDays(parseDateInput(toDateInput(original)),steps);
-      next=parseDateTime(toDateInput(date),toTimeInput(original));
-    } else next=new Date(+original+steps*15*60000);
-    return {start:edge==='start'?next:start,due:edge==='end'?next:due};
+  function proposedRange(task, edge, steps) {
+    const start=new Date(task.raw.startAt), due=new Date(task.raw.dueAt), delta=steps*3600000;
+    return {start:['start','move'].includes(edge)?new Date(+start+delta):start,due:['end','move'].includes(edge)?new Date(+due+delta):due};
   }
-  function clearScheduleDrag() {
+  function clearScheduleDrag(suppress=true) {
     if (!scheduleDrag) return;
     const drag=scheduleDrag; scheduleDrag=null;
     drag.tip.remove(); drag.ghost.remove();
     try { if(drag.handle.hasPointerCapture(drag.pointer)) drag.handle.releasePointerCapture(drag.pointer); } catch (_) {}
-    suppressCalendarClickUntil=Date.now()+450;
+    if(suppress)suppressCalendarClickUntil=Date.now()+450;
   }
   function completeScheduleDrag(event) {
     const drag=scheduleDrag;
     if(!drag||event.pointerId!==drag.pointer)return;
     const apply=event.type==='pointerup'&&drag.steps!==0;
-    clearScheduleDrag();
+    const moved=drag.steps!==0;
+    if(moved){event.preventDefault();event.stopImmediatePropagation();}
+    clearScheduleDrag(moved);
     if(!apply)return;
     if(drag.range.due<drag.range.start) {P.notice('截止不得早于开始，本次调整未保存。');return;}
     P.openScheduleChange(drag.task.id,drag.range.start,drag.range.due,drag.version);
   }
   function bindScheduleResize() {
-    document.querySelectorAll('[data-resize]').forEach(handle=>{
+    document.querySelectorAll('[data-resize],[data-schedule-move]').forEach(handle=>{
       if(handle.dataset.resizeBound)return;
       handle.dataset.resizeBound='1';
-      handle.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();});
       handle.addEventListener('pointerdown',event=>{
         if(!event.isPrimary||event.button!==0||!P.idle())return;
-        const task=taskById(handle.dataset.resizeTask);
-        if(!task||!canEditTask(actor(),task))return;
+        if(handle.dataset.scheduleMove&&event.target.closest('[data-action],[data-resize]'))return;
+        const task=taskById(handle.dataset.resizeTask||handle.dataset.scheduleMove);
+        if(!task||!P.canRescheduleTask(actor(),task))return;
         event.preventDefault();event.stopPropagation();
         clearScheduleDrag();
-        const bar=handle.closest('.p-month-event,.p-horizontal-bar'), rect=bar.getBoundingClientRect();
-        const mode=handle.dataset.resizeMode;
-        const unit=mode==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/1440*15;
+        const bar=handle.closest('.p-month-event,.p-horizontal-bar,.p-axis-event,.staff-month-event,.staff-axis-event');
+        const mode=handle.dataset.resizeMode||'month',edge=handle.dataset.resize||'move';
+        const rect=(mode==='month'?bar.querySelector('.p-month-duration,.staff-month-duration'):mode==='vertical'?bar.querySelector('.p-axis-true,.staff-axis-true'):bar).getBoundingClientRect();
+        const vertical=mode==='vertical';
+        const unit=mode==='month'?bar.closest('.p-month-week,.staff-month-week').getBoundingClientRect().width/7/24:vertical?bar.closest('.p-axis-events,.staff-axis-events').getBoundingClientRect().height/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24;
         const tip=document.createElement('div');tip.className='p-drag-preview';tip.setAttribute('role','status');document.body.appendChild(tip);
-        const ghost=document.createElement('div');ghost.className='p-drag-ghost';ghost.style.cssText='left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;height:'+rect.height+'px';document.body.appendChild(ghost);
-        scheduleDrag={task,version:task.raw.rowVersion,edge:handle.dataset.resize,mode,handle,pointer:event.pointerId,x:event.clientX,unit,steps:0,rect,tip,ghost,range:proposedRange(task,handle.dataset.resize,0,mode)};
-        tip.textContent='左右拖动调整'+(handle.dataset.resize==='start'?'开始':'截止')+'时间；Esc取消';
-        handle.setPointerCapture(event.pointerId);
+        const ghost=document.createElement('div');ghost.className='p-drag-ghost';ghost.style.cssText='left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;height:'+rect.height+'px';
+        ghost.innerHTML='<span class="p-month-caption"><strong>'+esc(task.title)+'</strong><small>'+esc(fmtSchedule(task))+'</small></span>';document.body.appendChild(ghost);
+        scheduleDrag={task,version:task.raw.rowVersion,edge,mode,handle,pointer:event.pointerId,x:event.clientX,y:event.clientY,vertical,unit,steps:0,rect,tip,ghost,range:proposedRange(task,edge,0,mode)};
+        tip.textContent=(vertical?'上下':'左右')+'拖动调整'+(edge==='move'?'完整排期':edge==='start'?'开始':'截止')+'，每步1小时；Esc取消';
+        try { handle.setPointerCapture(event.pointerId); } catch (_) { /* document listeners provide capture fallback */ }
       });
-      handle.addEventListener('pointermove',event=>{
-        const drag=scheduleDrag;if(!drag||event.pointerId!==drag.pointer)return;
-        event.preventDefault();event.stopPropagation();
-        drag.steps=Math.round((event.clientX-drag.x)/drag.unit);
-        drag.range=proposedRange(drag.task,drag.edge,drag.steps,drag.mode);
-        const format=value=>toDateInput(value)+' '+toTimeInput(value);
-        const valid=drag.range.due>=drag.range.start;
-        drag.tip.textContent=format(drag.range.start)+' → '+format(drag.range.due)+(valid?' · 松开后确认':' · 截止不得早于开始');
-        drag.tip.classList.toggle('is-invalid',!valid);
-        const delta=drag.steps*drag.unit;
-        drag.ghost.style.left=(drag.rect.left+(drag.edge==='start'?delta:0))+'px';
-        drag.ghost.style.width=Math.max(2,drag.rect.width+(drag.edge==='start'?-delta:delta))+'px';
-      });
-      ['pointerup','pointercancel','lostpointercapture'].forEach(type=>handle.addEventListener(type,completeScheduleDrag));
       handle.addEventListener('keydown',event=>{
-        if(!['ArrowLeft','ArrowRight'].includes(event.key))return;
+        if(!handle.dataset.resize||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
         event.preventDefault();event.stopPropagation();
         const task=taskById(handle.dataset.resizeTask);
-        if(!task||!canEditTask(actor(),task)||!P.idle())return;
-        const range=proposedRange(task,handle.dataset.resize,event.key==='ArrowRight'?1:-1,handle.dataset.resizeMode);
+        if(!task||!P.canRescheduleTask(actor(),task)||!P.idle())return;
+        const range=proposedRange(task,handle.dataset.resize,['ArrowRight','ArrowDown'].includes(event.key)?1:-1,handle.dataset.resizeMode);
         if(range.due<range.start){P.notice('截止不得早于开始。');return;}
         P.openScheduleChange(task.id,range.start,range.due,task.raw.rowVersion);
       });
     });
   }
+  document.addEventListener('pointermove',event=>{
+    const drag=scheduleDrag;if(!drag||event.pointerId!==drag.pointer)return;
+    event.preventDefault();event.stopImmediatePropagation();
+    drag.steps=Math.round((drag.vertical?event.clientY-drag.y:event.clientX-drag.x)/drag.unit);
+    drag.range=proposedRange(drag.task,drag.edge,drag.steps);
+    const format=value=>toDateInput(value)+' '+toTimeInput(value),valid=drag.range.due>=drag.range.start;
+    drag.tip.textContent=format(drag.range.start)+' → '+format(drag.range.due)+(valid?' · 松开后确认（1小时/步）':' · 截止不得早于开始');
+    drag.ghost.querySelector('small').textContent=format(drag.range.start)+' → '+format(drag.range.due);
+    drag.tip.classList.toggle('is-invalid',!valid);
+    const delta=drag.steps*drag.unit;
+    if(drag.vertical){drag.ghost.style.top=(drag.rect.top+(['start','move'].includes(drag.edge)?delta:0))+'px';drag.ghost.style.height=Math.max(2,drag.rect.height+(drag.edge==='start'?-delta:drag.edge==='end'?delta:0))+'px';}
+    else {drag.ghost.style.left=(drag.rect.left+(['start','move'].includes(drag.edge)?delta:0))+'px';drag.ghost.style.width=Math.max(2,drag.rect.width+(drag.edge==='start'?-delta:drag.edge==='end'?delta:0))+'px';}
+  },{capture:true,passive:false});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(type=>document.addEventListener(type,completeScheduleDrag,true));
+  document.addEventListener('click',event=>{
+    if(Date.now()<suppressCalendarClickUntil&&event.target.closest?.('.p-axis-event,.p-horizontal-bar,.staff-month-event,.staff-axis-event')){event.preventDefault();event.stopImmediatePropagation();}
+  },true);
+  document.addEventListener('keydown',event=>{
+    if(event.target.matches?.('.p-axis-event')&&['Enter',' '].includes(event.key)){
+      event.preventDefault();event.stopPropagation();openTaskDetail(event.target.dataset.task);
+    }
+  });
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&scheduleDrag){event.preventDefault();event.stopImmediatePropagation();clearScheduleDrag();}},true);
   window.addEventListener('blur',clearScheduleDrag);
 
@@ -1194,7 +1205,7 @@
     }
     if (event.key === 'Tab') trapTab(event, container);
   }, true);
-  P.calendar = { dayTasks, dayLogs, dayEvents, dayCoverage, layoutDayEvents, monthWeek, monthSortTasks, dayListSort,
+  P.calendar = { bindScheduleResize, resizeHandle, dayTasks, dayLogs, dayEvents, dayCoverage, layoutDayEvents, monthWeek, monthSortTasks, dayListSort,
     sortedDay, allDayTasks, monthMetrics, monthKey, monthFromKey, shiftMonth, monthSection: monthSectionHTML,
     openDaySheet, closeDaySheet, appendStreamMonth, mountMonthAround,
     currentDaySheet: () => (daySheet ? { date: daySheet.date } : null),

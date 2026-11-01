@@ -21,12 +21,37 @@ try{
  await ev("document.querySelector('[data-action=p-staff-nav][data-step=\"1\"]').click()");check('month navigation crosses year',await idle()&&await ev("document.getElementById('staff-calendar-date').value==='2031-01-01'"));
  await ev(`document.getElementById('staff-calendar-date').value=${js(f.day)};document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))`);check('selected month ready',await idle());
  check('month has full weekday grid and spanning segments',await ev(`document.querySelectorAll('.staff-month-date').length>=28&&document.querySelectorAll('.staff-month-event[data-task="${f.spanning}"]').length>=2&&!document.querySelector('.staff-month-event[data-task="${f.other}"]')`));
+ const fraction=await ev(`(()=>{const n=document.querySelector('.staff-month-event[data-task="${f.cross}"]'),r=n.getBoundingClientRect(),d=n.querySelector('.staff-month-duration').getBoundingClientRect();return {width:d.width/r.width,left:(d.left-r.left)/r.width}})()`);
+ check('staff cross-day month bar preserves partial first and last days',Math.abs(fraction.width-38/72)<.005&&Math.abs(fraction.left-20/72)<.005,fraction);
+ check('staff month captions stay in frames with no labeled buttons',await ev("[...document.querySelectorAll('.staff-month-caption,.staff-month-event .p-month-caption')].every(n=>{const r=n.getBoundingClientRect(),f=n.closest('.staff-month-duration').getBoundingClientRect();return r.left>=f.left-1&&r.right<=f.right+1&&r.top>=f.top-1&&r.bottom<=f.bottom+1})&&!document.querySelector('.staff-month-event button')"));
+ const pointRaw=await ev(`Pandora.request('/tasks/'+${js(f.point)})`);
+ const pure=await ev(`(()=>{const raw=${js(pointRaw)},start=parseDateInput(${js(f.day)}),point=Pandora.calendar.monthWeek({start},[Pandora.mapTask(raw)],8).segments[0];const full=Pandora.calendar.monthWeek({start},[Pandora.mapTask({...raw,allDay:false,startAt:Pandora.companyDayStart(${js(f.day)}).toISOString(),dueAt:Pandora.companyDayStart(${js(new Date(Date.parse(f.day+'T00:00:00Z')+86400000).toISOString().slice(0,10))}).toISOString()})],8).segments[0];return {point,full}})()`);
+ check('point marker has zero duration geometry',pure.point.width===0&&pure.point.left===50);
+ check('full business day covers exactly one day',pure.full.start===0&&pure.full.end===1&&pure.full.left===0&&pure.full.width===100);
  for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});check('month fits '+width,await ev("document.getElementById('sheetBody').scrollWidth<=document.getElementById('sheetBody').clientWidth+1"));await b.screenshot(path.join(out,'month-'+width+'.png'));}
+ const move=await ev(`(()=>{const n=document.querySelector('.staff-month-event[data-task="${f.spanning}"]');n.scrollIntoView({block:'center'});const r=n.querySelector('.staff-month-duration').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,unit:n.closest('.staff-month-week').getBoundingClientRect().width/7/24}})()`);
+ await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:move.x,y:move.y,button:'left',clickCount:1});
+ await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:move.x+move.unit,y:move.y,button:'left',buttons:1});
+ await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:move.x+move.unit,y:move.y,button:'left',clickCount:1});
+ check('staff frame drag directly opens schedule-only editor',await waitFor(b,"Pandora.idle()&&drafts.task?.mode==='schedule'&&!!document.getElementById('tf-start-date')&&!document.getElementById('tf-title')"));
+ await ev("document.getElementById('sheetBack').click()");check('schedule editor back restores staff month',await idle()&&await ev("!!document.querySelector('.staff-month-view')"));
+ await ev(`document.querySelector('.staff-month-event[data-task="${f.spanning}"]').focus()`);
+ await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
+ check('staff month remains keyboard accessible',await waitFor(b,"Pandora.idle()&&!document.querySelector('[data-staff-panel]')&&document.getElementById('sheetBody').textContent.includes('独立人员工作页')"));
+ await ev("document.getElementById('sheetBack').click()");check('keyboard detail returns to staff month',await idle());
  await ev(`document.querySelector('.staff-month-event[data-task="${f.spanning}"]').click()`);check('month task detail opens',await waitFor(b,"Pandora.idle()&&!document.querySelector('[data-staff-panel]')"));
  await ev("document.getElementById('sheetBack').click()");await sleep(250);check('month detail return preserves month mode',await idle()&&await ev("!!document.querySelector('.staff-month-view')"));
  await ev(`document.querySelector('.staff-month-more[data-date="${f.day}"]').click()`);check('overflow opens complete day view',await idle()&&await ev("!!document.querySelector('.staff-day-axis')"));
  check('day has full axis overlapping columns and independent all-day area',await ev("document.querySelectorAll('.staff-axis-event').length===8&&document.querySelectorAll('.staff-allday [data-task]').length===2&&[...document.querySelectorAll('.staff-axis-event')].every(n=>Number(n.dataset.columns)>=7)&&document.querySelector('.staff-day-axis').offsetHeight===1440"));
  check('timed task captions start at their actual bar top',await ev("[...document.querySelectorAll('.staff-axis-event')].every(n=>n.querySelector('strong').getBoundingClientRect().top<n.getBoundingClientRect().top+8)"));
+ const axisMove=await ev(`(()=>{const n=document.querySelector('.staff-axis-event[data-task="${f.normal}"] .staff-axis-true');n.scrollIntoView({block:'center'});const r=n.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,top:r.top,height:r.height}})()`);
+ await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:axisMove.x,y:axisMove.y,button:'left',clickCount:1});
+ await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:axisMove.x,y:axisMove.y+60,button:'left',buttons:1});
+ const axisGhost=await ev("(()=>{const r=document.querySelector('.p-drag-ghost').getBoundingClientRect();return {top:r.top,height:r.height}})()");
+ check('staff day frame ghost moves without resizing',Math.abs(axisGhost.top-axisMove.top-60)<1&&Math.abs(axisGhost.height-axisMove.height)<1,axisGhost);
+ await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:axisMove.x,y:axisMove.y+60,button:'left',clickCount:1});
+ check('staff day whole frame opens schedule proposal',await waitFor(b,"Pandora.idle()&&drafts.task?.mode==='schedule'&&drafts.task.startTime==='10:00'&&drafts.task.endTime==='18:00'"));
+ await ev("document.getElementById('sheetBack').click()");check('staff day move cancel returns without saving',await idle());
  for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});check('day axis fits '+width,await ev("document.getElementById('sheetBody').scrollWidth<=document.getElementById('sheetBody').clientWidth+1"));await b.screenshot(path.join(out,'day-axis-'+width+'.png'));}
  await ev("document.querySelector('[data-action=p-staff-format][data-format=list]').click()");
  const ids=await ev("[...document.querySelectorAll('.staff-work-item')].map(n=>n.dataset.task)");check('only actual selected person day coverage',ids.length===10&&[f.normal,f.cross,f.point,f.spanning,...f.overlaps].every(id=>ids.includes(id))&&!ids.includes(f.midnight)&&!ids.includes(f.other),ids);
@@ -39,6 +64,7 @@ try{
  await ev("document.querySelector('[data-action=p-staff-tab][data-tab=logs]').click()");check('logs tab ready',await idle());check('logs first page and more',await ev("document.querySelectorAll('.staff-log-card').length===10&&!!document.querySelector('[data-action=p-staff-more]')"));
  await ev("document.querySelector('[data-action=p-staff-more]').click()");check('all log pages reachable',await idle()&&await ev("document.querySelectorAll('.staff-log-card').length===12&&!document.querySelector('[data-action=p-staff-more]')"));
  for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});check('logs fit '+width,await ev("document.getElementById('sheetBody').scrollWidth<=document.getElementById('sheetBody').clientWidth+1"));await b.screenshot(path.join(out,'logs-'+width+'.png'));}
+ const staffFont=await ev("({size:getComputedStyle(document.querySelector('.staff-log-card strong')).fontSize,line:getComputedStyle(document.querySelector('.staff-log-card strong')).lineHeight})");
  await ev("document.querySelector('.staff-log-card').click()");check('staff log opens full detail and comments',await waitFor(b,"Pandora.idle()&&!!document.getElementById('p-comment-input')&&document.getElementById('sheetTitle').textContent==='日志详情'"));
  await ev("document.getElementById('sheetBack').click()");await sleep(250);check('log return preserves person tab',await idle()&&await ev("document.querySelector('[data-action=p-staff-tab][data-tab=logs]').getAttribute('aria-pressed')==='true'"));
  await ev("window.staffOriginalRequest=Pandora.request;Pandora.request=function(p,o){if(p.startsWith('/tasks?'))return Promise.reject(new Error('模拟读取失败'));return window.staffOriginalRequest(p,o)};document.querySelector('[data-action=p-staff-tab][data-tab=schedule]').click()");
@@ -53,7 +79,13 @@ try{
  check('lost relationship clears prior content',await idle()&&await ev("document.querySelector('.staff-state').textContent.includes('无权')&&!document.querySelector('.staff-log-card,.staff-work-item')"));
  await ev("Pandora.request=window.staffBaseRequest;document.querySelector('[data-action=p-staff-retry]').click()");check('restored relationship retry works',await idle());
  await ev("closeSheet();setPage('log')");check('personal log page remains personal',await ev("!document.querySelector('#logResults .staff-log-card')&&filteredLogs(actor()).every(l=>l.authorId===Pandora.data.me.id)"));
- await ev('Pandora.logout()');await login('alpha-one-head');check('team head only sees direct employee',await ev("document.querySelectorAll('.staff-tree-person').length===1"));
+ for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});
+  const font=await ev("({size:getComputedStyle(document.querySelector('#logResults .p-log-reading')).fontSize,line:getComputedStyle(document.querySelector('#logResults .p-log-reading')).lineHeight,overflow:document.documentElement.scrollWidth>innerWidth+1})");
+  check('self list matches staff reading font '+width,font.size===staffFont.size&&font.line===staffFont.line&&font.size==='15px'&&!font.overflow,font);await b.screenshot(path.join(out,'self-reading-'+width+'.png'));
+ }
+ await ev(`document.querySelector('[data-log-card="${f.ownLog}"] p').click()`);check('self log detail reading ready',await waitFor(b,"Pandora.idle()&&!!document.querySelector('#sheetBody .p-log-reading')"));
+ check('self detail uses same reading size',await ev("getComputedStyle(document.querySelector('#sheetBody .p-log-reading')).fontSize==='15px'"));
+ await ev('closeSheet();Pandora.logout()');await login('alpha-one-head');check('team head only sees direct employee',await ev("document.querySelectorAll('.staff-tree-person').length===1"));
  await ev(`runAction({dataset:{action:'p-open-person',id:${js(f.identities['beta-one-employee'].id)}}})`);check('cannot open non-report through UI action',await ev("document.getElementById('overlay').hidden"));
  await ev('Pandora.logout()');await login('alpha-one-employee');check('ordinary employee empty tree',await ev("document.querySelector('[data-profile-fold=reports]').textContent.includes('暂无下属')&&!document.querySelector('.staff-tree-person')"));
  check('no browser exceptions',b.errors.length===0,b.errors);

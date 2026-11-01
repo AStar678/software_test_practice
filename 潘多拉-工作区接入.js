@@ -174,7 +174,7 @@ logCardHTML = function (l, a) {
         : '<span class="tiny muted">' + (frozen ? '已冻结' : '只读') + '</span>') +
     "</header>" +
     '<div class="row wrap">' + logTagHTML(raw) + '</div>' +
-    "<p>" + esc(l.content) + "</p>" +
+    '<p class="p-log-reading">' + esc(l.content) + "</p>" +
     (t ? '<button type="button" class="btn ghost tiny-btn log-link" data-task="' + esc(t.id) + '">关联任务：' + esc(t.title) + '</button>' : '<span class="tiny muted">未关联任务</span>') +
   "</article>";
 };
@@ -197,7 +197,7 @@ logDetailView = function (id) {
       '</span><span class="k">创建时间</span><span class="v">' + esc(timeText(raw.createdAt)) +
       '</span><span class="k">编辑权限</span><span class="v">' + (raw.editable ? "本人可编辑" : "只读（" + (raw.frozen ? "已冻结" : "非作者") + "）") +
       '</span><span class="k">冻结</span><span class="v">' + esc(freezeText(raw) || "—") +
-      '</span></div><div class="row wrap">' + logTagHTML(raw) + '</div><div class="divider"></div><p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(l.content) + '</p>' +
+      '</span></div><div class="row wrap">' + logTagHTML(raw) + '</div><div class="divider"></div><p class="p-log-reading" style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(l.content) + '</p>' +
       (t ? '<div class="divider"></div><button type="button" class="btn" data-task="' + esc(t.id) + '">关联：' + esc(t.title) + '</button>' : '') +
       '<div class="divider"></div>' + (P.commentsHTML ? P.commentsHTML("log", id) : ''),
     foot: withBack((raw.editable ? button("edit-log", "编辑日志", id, "primary") : "") + button("sheet-close", "关闭"), actor()) };

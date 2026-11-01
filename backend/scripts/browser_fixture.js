@@ -3,11 +3,11 @@ const {spawn}=require('child_process');const fs=require('fs');const os=require('
 const CHROME=process.env.CHROME_BIN||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function arg(name,fallback){return fallback;}
-async function openBrowser(url,metrics={width:390,height:844,mobile:true}) {
+async function openBrowser(url,metrics={width:390,height:844,mobile:true},options={}) {
   const port = 9800 + Math.floor(Math.random() * 150);
   const proc = spawn(CHROME, ["--headless", "--no-sandbox", "--disable-gpu", "--no-first-run",
     "--no-default-browser-check", "--disable-crash-reporter", "--hide-scrollbars", "--force-device-scale-factor=1",
-    "--remote-debugging-port=" + port, "--user-data-dir=" + path.join(os.tmpdir(), "pandora-cdp-" + crypto.randomBytes(4).toString("hex")), url], { stdio: "ignore" });
+    "--remote-debugging-port=" + port, "--user-data-dir=" + path.join(os.tmpdir(), "pandora-cdp-" + crypto.randomBytes(4).toString("hex")), ...(options.args||[]), url], { stdio: "ignore" });
   let target = null;
   for (let i = 0; i < 100 && !target; i++) {
     try {

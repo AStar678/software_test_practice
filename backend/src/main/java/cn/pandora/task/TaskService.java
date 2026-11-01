@@ -31,9 +31,9 @@ public class TaskService {
     private static final Set<String> FORM = union(Set.copyOf(FORM_FIELDS), "tagId");
     /** Reopening may replace inactive assignees while preserving the task's base information. */
     private static final Set<String> REOPEN_FORM = Set.of("allDay", "startAt", "dueAt", "startDate", "dueDate", "assigneeIds");
-    private static final Set<String> COMMANDS = Set.of("create", "change", "progress", "complete", "reopen");
+    private static final Set<String> COMMANDS = Set.of("create", "change", "reschedule", "progress", "complete", "reopen");
     /** Operations a preview may be asked about (chapter 3.3); each uses its own routing rule. */
-    private static final Set<String> OPERATIONS = Set.of("create", "change", "progress", "complete", "reopen", "handover");
+    private static final Set<String> OPERATIONS = Set.of("create", "change", "reschedule", "progress", "complete", "reopen", "handover");
     private static final Set<String> STATES = Set.of("todo", "doing", "done");
     private static final Set<String> PRIORITIES = Set.of("urgent", "high", "medium", "low");
     private static final Set<String> SCHEDULE_FIELDS = Set.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
@@ -162,8 +162,12 @@ public class TaskService {
             if(assignee!=null && !owners.contains(assignee)) continue;
             if(creator!=null && !creator.equals(s(task,"originalCreatorId"))) continue;
             if(!query.isEmpty() && !s(version,"title").toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT))) continue;
-            LocalDate start=instant(version.get("startAt"),"startAt").atZone(zone).toLocalDate();
-            LocalDate due=instant(version.get("dueAt"),"dueAt").atZone(zone).toLocalDate();
+            Map<String,Object> schedule=version;
+            var review=currentBatch(actor).pending.get(s(task,"id"));
+            if ("true".equals(filters.get("calendarPreview")) && review!=null)
+                schedule=version(actor,s(review,"proposedVersionId"));
+            LocalDate start=instant(schedule.get("startAt"),"startAt").atZone(zone).toLocalDate();
+            LocalDate due=instant(schedule.get("dueAt"),"dueAt").atZone(zone).toLocalDate();
             if(from!=null && due.isBefore(from) || to!=null && start.isAfter(to)) continue;
             visible.add(new VisibleTask(task,version,owners));
         }
@@ -411,7 +415,7 @@ public class TaskService {
     public Map<String, Object> change(Actor actor, String id, String ifMatch, Map<String, Object> input) {
         requireBusiness(actor);
         String command = command(input, "command", "action", "change");
-        if (!Set.of("create", "change", "progress", "complete", "reopen").contains(command)) throw bad("不支持的任务动作");
+        if (!Set.of("create", "change", "reschedule", "progress", "complete", "reopen").contains(command)) throw bad("不支持的任务动作");
         Map<String, Object> task = task(actor, id, true);
         String currentId = s(task, "currentVersionId");
         Map<String, Object> current = currentId == null ? null : version(actor, currentId);
@@ -439,6 +443,18 @@ public class TaskService {
             proposed.put("progressNote", "");
             command = "create";
             if (input.containsKey("reason")) body = requiredText(input, "reason", 500);
+        } else if ("reschedule".equals(command)) {
+            if ("done".equals(s(task,"executionState"))) throw conflict("TASK_COMPLETED","已完成任务须先重开");
+            allowed(input,union(SCHEDULE_FIELDS,"command","action","reason"));
+            if (!hasScheduleInput(input)) throw bad("请提供需要调整的排期");
+            body=requiredText(input,"reason",500);
+            Map<String,Object> base=new LinkedHashMap<>(current);base.put("assigneeIds",currentOwners);
+            Map<String,Object> normalized=validateForm(actor,input,base);
+            proposed=new LinkedHashMap<>(current);
+            for (String key:SCHEDULE_FIELDS) proposed.put(key,normalized.get(key));
+            proposed.put("allDayCutoffTime",normalized.get("allDayCutoffTime"));
+            proposed.put("assigneeIds",currentOwners);
+            command="change"; // Keep the existing review kind and history; only the schedule differs.
         } else if ("change".equals(command)) {
             if (!responsible) throw forbidden("仅当前业务责任方可修改任务资料");
             if ("done".equals(s(task, "executionState"))) throw conflict("TASK_COMPLETED", "已完成任务须先重开");
@@ -812,8 +828,11 @@ public class TaskService {
                 Map<String, Object> person = access.activeUser(actor, id);
                 if (person == null || "admin".equals(s(person, "role"))) throw bad("负责人须为本公司有效业务账号");
             }
-            validateRequestActor(actor,task,version(actor,s(task,"currentVersionId")),
-                    requestedOperation==null?"change":requestedOperation);
+            if (!"reschedule".equals(requestedOperation))
+                validateRequestActor(actor,task,version(actor,s(task,"currentVersionId")),
+                        requestedOperation==null?"change":requestedOperation);
+            else if (pending(actor,s(task,"id"),false)!=null || "done".equals(s(task,"executionState")))
+                throw conflict("TASK_NOT_RESCHEDULABLE","审核中或已完成任务不能调整排期");
             route = route(actor, owners, actor.id());
         }
         Map<String, Object> result = new LinkedHashMap<>();
@@ -1193,7 +1212,7 @@ public class TaskService {
         if ("handover".equals(kind)) validateHandoverAtApproval(context, taskId, requestId, base);
         validateParent(applicant, taskId, s(proposed, "parentTaskId"),
                 base == null || !Objects.equals(s(base, "parentTaskId"), s(proposed, "parentTaskId")));
-        validateRequestActor(applicant, task, base, kind);
+        validateRequestActor(applicant, task, base, kind, proposed);
     }
 
     /**
@@ -1320,7 +1339,7 @@ public class TaskService {
         if(!Objects.equals(s(task,"currentVersionId"),base==null?null:s(base,"id")))
             throw conflict("STALE_BASE_VERSION","任务有效版本已变化，请重新提交");
         validateActiveOwners(actor,owners);
-        validateRequestActor(actor,task,base,kind);
+        validateRequestActor(actor,task,base,kind,proposed);
         String versionId = insertVersion(actor, taskId, proposed, owners, direct ? "applied" : "proposed");
         proposed.put("id", versionId);
         String requestId = Db.id();
@@ -1654,6 +1673,14 @@ public class TaskService {
         result.put("pending", request != null);
         result.put("frozen", request != null);
         result.put("pendingKind", request == null ? null : s(request, "kind"));
+        result.put("canReschedule",request==null && !"done".equals(s(task,"executionState")));
+        // Calendar-only proposal: never replace effective fields or disclose the full review snapshot.
+        if (request != null) {
+            Map<String,Object> proposed=version(actor,s(request,"proposedVersionId"));
+            Map<String,Object> schedule=new LinkedHashMap<>();
+            for (String key:List.of("allDay","startAt","dueAt","startDate","dueDate")) schedule.put(key,proposed.get(key));
+            result.put("pendingSchedule",schedule);
+        }
         if (request != null && canSeeRequest(actor, request, task)) result.put("pendingRequestId", s(request, "id"));
         Route route = null;
         try { route = route(actor, owners, actor.id()).forApplicant(actor.id()); }
@@ -1903,6 +1930,15 @@ public class TaskService {
     }
 
     private void validateRequestActor(Actor applicant, Map<String, Object> task, Map<String, Object> base, String kind) {
+        validateRequestActor(applicant,task,base,kind,null);
+    }
+    private void validateRequestActor(Actor applicant, Map<String,Object> task, Map<String,Object> base,
+                                      String kind,Map<String,Object> proposed) {
+        if ("change".equals(kind) && base!=null && proposed!=null && scheduleOnly(applicant,base,proposed)) {
+            if (!access.canSeeTask(applicant,task,base,assignees(applicant,s(base,"id"))))
+                throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已无权查看该任务");
+            return;
+        }
         if ("handover".equals(kind)) {
             // A handover is raised by the owner or their direct manager, so the applicant need not be an
             // assignee; validateHandoverAtApproval re-checks the dedicated authority instead.
@@ -1912,6 +1948,15 @@ public class TaskService {
             String responsible="create".equals(kind)?s(task,"originalCreatorId"):access.businessOwner(task);
             if (!applicant.id().equals(responsible)) throw conflict("APPLICANT_NO_LONGER_ALLOWED", "申请人已不具备该操作权限");
         } else if (base == null || !assignees(applicant, s(base, "id")).contains(applicant.id())) throw conflict("APPLICANT_NO_LONGER_ALLOWED", "申请人已不是当前负责人");
+    }
+
+    private boolean scheduleOnly(Actor actor,Map<String,Object> base,Map<String,Object> proposed) {
+        for (String key:List.of("title","description","acceptanceCriteria","priority","parentTaskId","executionState","progressNote"))
+            if (!Objects.equals(base.get(key),proposed.get(key))) return false;
+        List<String> owners=proposed.containsKey("assigneeIds")?ids(proposed.get("assigneeIds")):assignees(actor,s(proposed,"id"));
+        if (!assignees(actor,s(base,"id")).equals(owners)) return false;
+        return versionTags(actor,base).stream().map(t->List.of(s(t,"tagId"),s(t,"tagNameSnapshot"),s(t,"tagColorSnapshot"))).toList()
+                .equals(versionTags(actor,proposed).stream().map(t->List.of(s(t,"tagId"),s(t,"tagNameSnapshot"),s(t,"tagColorSnapshot"))).toList());
     }
 
     private Map<String, Object> validateForm(Actor actor, Map<String, Object> input, Map<String, Object> base) {
@@ -2061,6 +2106,7 @@ public class TaskService {
             for(var row:db.list("SELECT * FROM approval_requests WHERE organization_id=? AND status='pending' AND task_id IN ("
                     +marks(part.size())+")",pendingArgs.toArray())) batch.pending.put(s(row,"taskId"),row);
         }
+        loadVersions(batch,batch.pending.values().stream().map(r->s(r,"proposedVersionId")).collect(java.util.stream.Collectors.toSet()));
         return batch;
     }
     /** Same fixed-placement relationships as Access.canSeeTask, repeated in memory after the SQL prefilter. */

@@ -280,11 +280,22 @@
       requests.delete(controller); finish();
     }
   };
+  // randomUUID is absent on ordinary HTTP IP/domain origins; getRandomValues remains available.
+  function newRequestId() {
+    const source=globalThis.crypto;
+    if (typeof source?.randomUUID==='function') return source.randomUUID();
+    if (typeof source?.getRandomValues!=='function') throw new Error('当前浏览器无法生成请求标识，请更新浏览器后重试。');
+    const bytes=source.getRandomValues(new Uint8Array(16));
+    bytes[6]=(bytes[6]&0x0f)|0x40;
+    bytes[8]=(bytes[8]&0x3f)|0x80;
+    const hex=Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('');
+    return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20);
+  }
   P.mutation = async function (slot, method, path, body, etag) {
     const signature = JSON.stringify([method, path, body, etag]);
     let retry = retries.get(slot);
     if (!retry || retry.signature !== signature) {
-      retry = { signature, key: crypto.randomUUID() }; retries.set(slot, retry);
+      retry = { signature, key: newRequestId() }; retries.set(slot, retry);
     }
     const headers = { "Idempotency-Key": retry.key };
     if (etag != null) headers["If-Match"] = etag;
@@ -361,6 +372,15 @@
       frozen: !!t.frozen || !!t.pending, pinned: !!t.pinned, assignedAt: t.assignedAt || null,
       pendingKind: t.pendingKind || null, tag: t.personalTag || t.tag || null, tagId: t.tagId || null,
       rowVersion: t.rowVersion, acceptanceCriteria: t.acceptanceCriteria || "", raw: t };
+  };
+  // A display copy for calendars only; TASKS, task details and all write preconditions remain effective.
+  P.calendarTask = function (task) {
+    const proposal=task.raw?.pendingSchedule;
+    if (!task.frozen || task.raw?.published===false || !proposal) return task;
+    const raw=Object.assign({},task.raw,proposal);
+    return Object.assign({},task,{raw,allDay:!!raw.allDay,
+      start:raw.allDay?parseISO(raw.startDate):new Date(raw.startAt),
+      due:raw.allDay?parseISO(raw.dueDate):new Date(raw.dueAt)});
   };
   P.rememberPeople = function (rows) {
     (rows || []).forEach(u => { if (!personById(u.id)) PEOPLE.push(mapPerson(u)); });
