@@ -231,9 +231,13 @@ def run_checks(f: Fixture, check, report: dict) -> None:
     call('PATCH', '/approval-requests/' + completed['requestId'], {'decision': 'approve'},
          'alpha-two-head', request['rowVersion'])
     view = call('GET', '/tasks/' + completed['taskId'], who='alpha-two-employee')
-    call('PATCH', '/tasks/' + completed['taskId'],
+    completion = call('PATCH', '/tasks/' + completed['taskId'],
          {'command': 'complete', 'completionNote': 'Finished before departure'},
          'alpha-two-employee', view['rowVersion'])
+    # Completion is reviewed by the operator's direct manager before the task counts as finished work.
+    completion_view = call('GET', '/approval-requests/' + completion['requestId'], who='alpha-two-head')
+    call('PATCH', '/approval-requests/' + completion['requestId'], {'decision': 'approve'},
+         'alpha-two-head', completion_view['rowVersion'])
     unpublished = call('POST', '/tasks', form('Unpublished departure creation', ['beta-one-employee']), 'alpha-two-employee')
     check('real departure work and unpublished creation are prepared',
           bool(completed.get('taskId')) and bool(unpublished.get('requestId')))

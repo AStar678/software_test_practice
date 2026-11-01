@@ -13,6 +13,8 @@ try{
  check('expand shows actual team heads without opening detail',await ev(`!!document.querySelector('[data-action=p-open-person][data-id="${f.identities['alpha-one-head'].id}"]')&&document.getElementById('overlay').hidden`));
  await ev(`document.querySelector('[data-action=p-report-toggle][data-id="${f.identities['alpha-one-head'].id}"]').click()`);
  check('grandchild appears within actual parent branch',await ev(`document.querySelector('[data-action=p-open-person][data-id="${f.identities['alpha-one-employee'].id}"]').closest('ul').parentElement.querySelector('.staff-tree-person').dataset.id===${js(f.identities['alpha-one-head'].id)}`));
+ check('tree keeps real department and team next to the position',await ev(`(()=>{const n=document.querySelector('[data-action=p-open-person][data-id="${f.identities['alpha-one-employee'].id}"]');return !!n&&n.textContent.includes('员工')&&n.textContent.includes('Display title')&&n.textContent.includes('alpha')&&n.textContent.includes('alpha one')})()`));
+ check('organization line covers four identities and the company level',await ev(`(()=>{const line=Pandora.staffOrgLine,founder=line({placementType:'founder',positionName:'Display title'}),head=line({placementType:'department_head',positionName:'Display title',departmentName:'alpha'}),team=line({placementType:'team_head',positionName:'Display title',departmentName:'alpha',teamName:'alpha one'}),employee=line({placementType:'employee',positionName:'Display title',departmentName:'alpha',teamName:'alpha one'});return founder==='创始人 · Display title · 公司层'&&head==='部门负责人 · Display title · alpha'&&team==='团队负责人 · Display title · alpha · alpha one'&&employee==='员工 · Display title · alpha · alpha one'})()`));
  for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});await ev("document.querySelector('[data-profile-fold=reports]').scrollIntoView({block:'start'})");check('tree fits '+width,await ev("document.documentElement.scrollWidth<=innerWidth+1"));await b.screenshot(path.join(out,'tree-'+width+'.png'));}
  await ev(`document.querySelector('[data-action=p-open-person][data-id="${f.identities['alpha-one-employee'].id}"]').click()`);check('person opens independent workspace',await idle());
  check('no own calendar or log reuse',await ev("!document.querySelector('#sheetBody .p-month-view,#sheetBody .log-card,#sheetBody .p-day-axis')&&!!document.querySelector('.staff-person')"));
@@ -20,21 +22,19 @@ try{
  await ev(`document.getElementById('staff-calendar-date').value='2030-12-31';document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))`);check('month jump loads',await idle());
  await ev("document.querySelector('[data-action=p-staff-nav][data-step=\"1\"]').click()");check('month navigation crosses year',await idle()&&await ev("document.getElementById('staff-calendar-date').value==='2031-01-01'"));
  await ev(`document.getElementById('staff-calendar-date').value=${js(f.day)};document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))`);check('selected month ready',await idle());
+  await ev(`document.getElementById('staff-calendar-date').value=${js(f.quiet)};document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))`);check('quiet month ready',await idle());
+  check('completed task is marked in the month view',await waitFor(b,`(()=>{const n=document.querySelector('.staff-month-event[data-task="${f.doneMonth}"]');return !!n&&n.classList.contains('is-done')&&n.textContent.includes('已完成')})()`));
+  await ev(`document.getElementById('staff-calendar-date').value=${js(f.day)};document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))`);check('selected month restored',await idle());
  check('month has full weekday grid and spanning segments',await ev(`document.querySelectorAll('.staff-month-date').length>=28&&document.querySelectorAll('.staff-month-event[data-task="${f.spanning}"]').length>=2&&!document.querySelector('.staff-month-event[data-task="${f.other}"]')`));
  const fraction=await ev(`(()=>{const n=document.querySelector('.staff-month-event[data-task="${f.cross}"]'),r=n.getBoundingClientRect(),d=n.querySelector('.staff-month-duration').getBoundingClientRect();return {width:d.width/r.width,left:(d.left-r.left)/r.width}})()`);
- check('staff cross-day month bar preserves partial first and last days',Math.abs(fraction.width-38/72)<.005&&Math.abs(fraction.left-20/72)<.005,fraction);
+ check('staff month bars cover the occupied company days',Math.abs(fraction.width-1)<.005&&Math.abs(fraction.left)<.005,fraction);
  check('staff month captions stay in frames with no labeled buttons',await ev("[...document.querySelectorAll('.staff-month-caption,.staff-month-event .p-month-caption')].every(n=>{const r=n.getBoundingClientRect(),f=n.closest('.staff-month-duration').getBoundingClientRect();return r.left>=f.left-1&&r.right<=f.right+1&&r.top>=f.top-1&&r.bottom<=f.bottom+1})&&!document.querySelector('.staff-month-event button')"));
  const pointRaw=await ev(`Pandora.request('/tasks/'+${js(f.point)})`);
  const pure=await ev(`(()=>{const raw=${js(pointRaw)},start=parseDateInput(${js(f.day)}),point=Pandora.calendar.monthWeek({start},[Pandora.mapTask(raw)],8).segments[0];const full=Pandora.calendar.monthWeek({start},[Pandora.mapTask({...raw,allDay:false,startAt:Pandora.companyDayStart(${js(f.day)}).toISOString(),dueAt:Pandora.companyDayStart(${js(new Date(Date.parse(f.day+'T00:00:00Z')+86400000).toISOString().slice(0,10))}).toISOString()})],8).segments[0];return {point,full}})()`);
- check('point marker has zero duration geometry',pure.point.width===0&&pure.point.left===50);
+ check('zero duration task keeps the day frame and an explicit point flag',pure.point.point===true&&pure.point.width===100&&pure.point.left===0,pure.point);
  check('full business day covers exactly one day',pure.full.start===0&&pure.full.end===1&&pure.full.left===0&&pure.full.width===100);
  for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});check('month fits '+width,await ev("document.getElementById('sheetBody').scrollWidth<=document.getElementById('sheetBody').clientWidth+1"));await b.screenshot(path.join(out,'month-'+width+'.png'));}
- const move=await ev(`(()=>{const n=document.querySelector('.staff-month-event[data-task="${f.spanning}"]');n.scrollIntoView({block:'center'});const r=n.querySelector('.staff-month-duration').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,unit:n.closest('.staff-month-week').getBoundingClientRect().width/7/24}})()`);
- await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:move.x,y:move.y,button:'left',clickCount:1});
- await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:move.x+move.unit,y:move.y,button:'left',buttons:1});
- await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:move.x+move.unit,y:move.y,button:'left',clickCount:1});
- check('staff frame drag directly opens schedule-only editor',await waitFor(b,"Pandora.idle()&&drafts.task?.mode==='schedule'&&!!document.getElementById('tf-start-date')&&!document.getElementById('tf-title')"));
- await ev("document.getElementById('sheetBack').click()");check('schedule editor back restores staff month',await idle()&&await ev("!!document.querySelector('.staff-month-view')"));
+ check('staff month exposes no drag or resize entry',await ev("!document.querySelector('.staff-month-event [data-schedule-move],.staff-month-event [data-resize-task]')"));
  await ev(`document.querySelector('.staff-month-event[data-task="${f.spanning}"]').focus()`);
  await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
  check('staff month remains keyboard accessible',await waitFor(b,"Pandora.idle()&&!document.querySelector('[data-staff-panel]')&&document.getElementById('sheetBody').textContent.includes('独立人员工作页')"));
@@ -42,19 +42,17 @@ try{
  await ev(`document.querySelector('.staff-month-event[data-task="${f.spanning}"]').click()`);check('month task detail opens',await waitFor(b,"Pandora.idle()&&!document.querySelector('[data-staff-panel]')"));
  await ev("document.getElementById('sheetBack').click()");await sleep(250);check('month detail return preserves month mode',await idle()&&await ev("!!document.querySelector('.staff-month-view')"));
  await ev(`document.querySelector('.staff-month-more[data-date="${f.day}"]').click()`);check('overflow opens complete day view',await idle()&&await ev("!!document.querySelector('.staff-day-axis')"));
- check('day has full axis overlapping columns and independent all-day area',await ev("document.querySelectorAll('.staff-axis-event').length===8&&document.querySelectorAll('.staff-allday [data-task]').length===2&&[...document.querySelectorAll('.staff-axis-event')].every(n=>Number(n.dataset.columns)>=7)&&document.querySelector('.staff-day-axis').offsetHeight===1440"));
+ check('day has full axis overlapping columns and independent all-day area',await ev("document.querySelectorAll('.staff-axis-event').length===10&&document.querySelectorAll('.staff-allday [data-task]').length===3&&[...document.querySelectorAll('.staff-axis-event')].every(n=>Number(n.dataset.columns)>=7)&&document.querySelector('.staff-day-axis').offsetHeight===1440"));
+  check('completed task is marked in the axis and the all-day area',await ev(`(()=>{const a=document.querySelector('.staff-axis-event[data-task="${f.doneTimed}"]'),b=document.querySelector('.staff-allday [data-task="${f.doneAllDay}"]');return !!a&&a.classList.contains('is-done')&&a.textContent.includes('已完成')&&!!b&&b.classList.contains('is-done')&&b.textContent.includes('已完成')})()`));
  check('timed task captions start at their actual bar top',await ev("[...document.querySelectorAll('.staff-axis-event')].every(n=>n.querySelector('strong').getBoundingClientRect().top<n.getBoundingClientRect().top+8)"));
- const axisMove=await ev(`(()=>{const n=document.querySelector('.staff-axis-event[data-task="${f.normal}"] .staff-axis-true');n.scrollIntoView({block:'center'});const r=n.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,top:r.top,height:r.height}})()`);
- await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:axisMove.x,y:axisMove.y,button:'left',clickCount:1});
- await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:axisMove.x,y:axisMove.y+60,button:'left',buttons:1});
- const axisGhost=await ev("(()=>{const r=document.querySelector('.p-drag-ghost').getBoundingClientRect();return {top:r.top,height:r.height}})()");
- check('staff day frame ghost moves without resizing',Math.abs(axisGhost.top-axisMove.top-60)<1&&Math.abs(axisGhost.height-axisMove.height)<1,axisGhost);
- await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:axisMove.x,y:axisMove.y+60,button:'left',clickCount:1});
- check('staff day whole frame opens schedule proposal',await waitFor(b,"Pandora.idle()&&drafts.task?.mode==='schedule'&&drafts.task.startTime==='10:00'&&drafts.task.endTime==='18:00'"));
- await ev("document.getElementById('sheetBack').click()");check('staff day move cancel returns without saving',await idle());
+ check('staff day axis exposes no drag or resize entry',await ev("!document.querySelector('.staff-axis-event [data-schedule-move],.staff-axis-event [data-resize-task]')"));
+ await ev(`document.querySelector('.staff-axis-event[data-task="${f.normal}"]').click()`);
+ check('staff day bar opens the normal task detail',await waitFor(b,"Pandora.idle()&&!document.querySelector('[data-staff-panel]')"));
+ await ev("document.getElementById('sheetBack').click()");check('day detail back restores staff axis',await idle()&&await ev("!!document.querySelector('.staff-day-axis')"));
  for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});check('day axis fits '+width,await ev("document.getElementById('sheetBody').scrollWidth<=document.getElementById('sheetBody').clientWidth+1"));await b.screenshot(path.join(out,'day-axis-'+width+'.png'));}
  await ev("document.querySelector('[data-action=p-staff-format][data-format=list]').click()");
- const ids=await ev("[...document.querySelectorAll('.staff-work-item')].map(n=>n.dataset.task)");check('only actual selected person day coverage',ids.length===10&&[f.normal,f.cross,f.point,f.spanning,...f.overlaps].every(id=>ids.includes(id))&&!ids.includes(f.midnight)&&!ids.includes(f.other),ids);
+ const ids=await ev("[...document.querySelectorAll('.staff-work-item')].map(n=>n.dataset.task)");check('only actual selected person day coverage',ids.length===13&&[f.normal,f.cross,f.point,f.spanning,f.doneTimed,f.doneAllDay,f.headOwned,...f.overlaps].every(id=>ids.includes(id))&&!ids.includes(f.midnight)&&!ids.includes(f.other),ids);
+  check('completed task is marked in the day list',await ev(`(()=>{const n=document.querySelector('.staff-work-item[data-task="${f.doneTimed}"]');return !!n&&n.textContent.includes('已完成')})()`));
  await ev("document.querySelector('[data-action=p-staff-nav][data-step=\"1\"]').click()");check('day navigation advances one day',await idle()&&await ev(`document.getElementById('staff-calendar-date').value===${js(new Date(Date.parse(f.day+'T00:00:00Z')+86400000).toISOString().slice(0,10))}`));
  await ev(`document.getElementById('staff-calendar-date').value=${js(f.day)};document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))`);check('day jump restored',await idle());
  check('cross-day and point labels identifiable',await ev("document.querySelector('.staff-content').textContent.includes('前日延续')&&document.querySelector('.staff-content').textContent.includes('时点')"));
@@ -69,7 +67,7 @@ try{
  await ev("document.getElementById('sheetBack').click()");await sleep(250);check('log return preserves person tab',await idle()&&await ev("document.querySelector('[data-action=p-staff-tab][data-tab=logs]').getAttribute('aria-pressed')==='true'"));
  await ev("window.staffOriginalRequest=Pandora.request;Pandora.request=function(p,o){if(p.startsWith('/tasks?'))return Promise.reject(new Error('模拟读取失败'));return window.staffOriginalRequest(p,o)};document.querySelector('[data-action=p-staff-tab][data-tab=schedule]').click()");
  check('failed read removes old contents and offers retry',await idle()&&await ev("!!document.querySelector('[data-action=p-staff-retry]')&&!document.querySelector('.staff-work-item,.staff-log-card')"));
- await ev("Pandora.request=window.staffOriginalRequest;document.querySelector('[data-action=p-staff-retry]').click()");check('retry recovers fresh data',await idle()&&await ev("document.querySelectorAll('.staff-work-item').length===10"));
+ await ev("Pandora.request=window.staffOriginalRequest;document.querySelector('[data-action=p-staff-retry]').click()");check('retry recovers fresh data',await idle()&&await ev("document.querySelectorAll('.staff-work-item').length===13"));
  await ev("window.staffBaseRequest=Pandora.request;window.staffHeld=false;Pandora.request=function(p,o){if(p.startsWith('/tasks?')&&!window.staffHeld){window.staffHeld=true;return window.staffBaseRequest(p,o).then(r=>new Promise(resolve=>window.releaseStaffResponse=()=>resolve(r)));}return window.staffBaseRequest(p,o)};document.querySelector('[data-action=p-staff-today]').click()");
  check('slow request can be held',await waitFor(b,"typeof window.releaseStaffResponse==='function'"));
  await ev("document.querySelector('[data-action=p-staff-tab][data-tab=logs]').click()");check('rapid tab switch loads latest content',await idle()&&await ev("document.querySelectorAll('.staff-log-card').length===10"));
@@ -88,6 +86,14 @@ try{
  await ev('closeSheet();Pandora.logout()');await login('alpha-one-head');check('team head only sees direct employee',await ev("document.querySelectorAll('.staff-tree-person').length===1"));
  await ev(`runAction({dataset:{action:'p-open-person',id:${js(f.identities['beta-one-employee'].id)}}})`);check('cannot open non-report through UI action',await ev("document.getElementById('overlay').hidden"));
  await ev('Pandora.logout()');await login('alpha-one-employee');check('ordinary employee empty tree',await ev("document.querySelector('[data-profile-fold=reports]').textContent.includes('暂无下属')&&!document.querySelector('.staff-tree-person')"));
+  await ev('Pandora.logout()');await login('alpha-one-head');
+  await ev(`document.querySelector('[data-action=p-open-person][data-id="${f.identities['alpha-one-employee'].id}"]').click()`);check('head opens the subordinate work page',await idle());
+  await ev(`openTaskDetail(${js(f.headOwned)})`);
+  check('business owner keeps base edit and schedule from the person entry',await waitFor(b,"Pandora.idle()&&!document.getElementById('overlay').hidden&&!!document.querySelector('[data-action=edit-task]')&&!!document.querySelector('[data-action=p-adjust-schedule]')"));
+  await ev("document.getElementById('sheetBack').click()");await idle();
+  await ev(`openTaskDetail(${js(f.normal)})`);
+  check('non-owner keeps schedule only and gains no base edit',await waitFor(b,"Pandora.idle()&&!document.getElementById('overlay').hidden&&!!document.querySelector('[data-action=p-adjust-schedule]')&&!document.querySelector('[data-action=edit-task]')"));
+  await ev("document.getElementById('sheetBack').click()");await idle();
  check('no browser exceptions',b.errors.length===0,b.errors);
 }finally{fs.writeFileSync(path.join(out,'browser-report.json'),JSON.stringify(report,null,2));await b.kill();}}
 main().catch(e=>{console.error(e);process.exitCode=1});

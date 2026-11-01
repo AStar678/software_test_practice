@@ -43,21 +43,35 @@ def main():
                     raise AssertionError(('approve', status, decision))
             return result
 
+        def approve(request_id, who, comment):
+            view = call('GET', '/approval-requests/' + request_id, who=who)[1]
+            status, decision = call('PATCH', '/approval-requests/' + request_id,
+                                    {'decision': 'approve', 'comment': comment}, who, view['rowVersion'])
+            if status != 200:
+                raise AssertionError(('approve', request_id, who, status, decision))
+            return decision
+
         completed = create('alpha-two-employee', ['alpha-two-employee'], 'Chain completed departure work')
         view = detail(completed['taskId'], 'alpha-two-employee')
         status, done = call('PATCH', '/tasks/' + completed['taskId'],
                             {'command': 'complete', 'completionNote': 'Completed before departure'},
                             'alpha-two-employee', view['rowVersion'])
-        if status != 200:
+        if status != 200 or done.get('outcome') != 'pending':
             raise AssertionError(('complete', status, done))
+        approve(done['requestId'], 'alpha-two-head', 'Chain completion approval')
+        if detail(completed['taskId'], 'alpha-two-employee')['executionState'] != 'done':
+            raise AssertionError('completion was not applied')
 
         active = create('alpha-two-employee', ['alpha-two-employee'], 'Chain active written-off work')
         detail_active = detail(active['taskId'], 'alpha-two-employee')
         status, progress = call('PATCH', '/tasks/' + active['taskId'],
                                 {'command': 'progress', 'progressNote': 'Work in flight'},
                                 'alpha-two-employee', detail_active['rowVersion'])
-        if status != 200:
+        if status != 200 or progress.get('outcome') != 'pending':
             raise AssertionError(('progress', status, progress))
+        approve(progress['requestId'], 'alpha-two-head', 'Chain progress approval')
+        if detail(active['taskId'], 'alpha-two-employee')['progressNote'] != 'Work in flight':
+            raise AssertionError('progress was not applied')
 
         unpublished = create('alpha-two-employee', ['beta-one-employee'], 'Chain unpublished creation', approve=False)
 
@@ -65,14 +79,9 @@ def main():
                                 {'sourceUserId': ids['alpha-two-employee'], 'targetUserId': ids['alpha-one-employee'],
                                  'reason': 'Direct manager prepares departure handover'},
                                 'alpha-two-head', detail(active['taskId'], 'alpha-two-head')['rowVersion'])
-        if status != 200:
+        if status != 200 or handover.get('outcome') != 'pending':
             raise AssertionError(('handover', status, handover))
-        handover_view = call('GET', '/approval-requests/' + handover['requestId'], who='alpha-two-employee')[1]
-        status, approved = call('PATCH', '/approval-requests/' + handover['requestId'],
-                                {'decision': 'approve', 'comment': 'Business owner approves handover'},
-                                'alpha-two-employee', handover_view['rowVersion'])
-        if status != 200:
-            raise AssertionError(('handover approve', status, approved))
+        approve(handover['requestId'], 'alpha-head', 'Direct manager of the handover operator approves')
 
         inventory = call('GET', '/admin/employees/' + ids['alpha-two-employee'] + '/responsibilities', who='admin')[1]
         unpublished_view = call('GET', '/approval-requests/' + unpublished['requestId'], who='alpha-two-employee')[1]

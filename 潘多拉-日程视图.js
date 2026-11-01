@@ -185,12 +185,12 @@
       if (lane < 0) lane = occupied.length;
       occupied[lane] = (occupied[lane] || 0) | mask;
       const range = calendarRange(task);
-      const first=P.companyDayStart(dateKey(days[start])),firstEnd=P.companyDayStart(dateKey(addDays(days[start],1))),
-        last=P.companyDayStart(dateKey(days[end-1])),lastEnd=P.companyDayStart(dateKey(addDays(days[end-1],1))),span=end-start;
-      const left=Math.max(0,Math.min(1,(range.start-first)/(firstEnd-first)))*100/span;
-      const right=(span-1+Math.max(0,Math.min(1,(range.end-last)/(lastEnd-last))))*100/span;
-      segments.push({task,start,end,lane,left,width:Math.max(0,right-left),
-        before: range.start < first,after: range.end > lastEnd});
+      const first=P.companyDayStart(dateKey(days[start])),
+        lastEnd=P.companyDayStart(dateKey(addDays(days[end-1],1)));
+      /* 月历是日级画布：任务占满其占用的公司日期，不按日内小时缩窄或偏移。
+         精确到小时的几何只保留在日轴与详情中。 */
+      segments.push({task,start,end,lane,left:0,width:100,
+        before: range.start < first,after: range.end > lastEnd,point:+range.start===+range.end});
     }
     const shown = segments.filter(s => s.lane < capacity);
     const hidden = days.map((d,col) => segments.filter(s => s.lane >= capacity && s.start <= col && s.end > col).map(s => s.task));
@@ -198,11 +198,12 @@
   }
   function resizeHandle(task, edge, mode) {
     if (!P.canRescheduleTask(actor(),task)) return '';
-    const label='调整'+(edge==='start'?'开始':'截止')+'时间：'+task.title;
-    return '<span role="separator" tabindex="0" class="p-resize-handle p-resize-'+edge+'" data-resize="'+edge+'" data-resize-mode="'+mode+'" data-resize-task="'+esc(task.id)+'" aria-orientation="'+(mode==='vertical'?'horizontal':'vertical')+'" aria-label="'+esc(label)+'" title="'+esc(label+' · '+fmtSchedule(task)+'；拖动边缘或用方向键按小时调整')+'"></span>';
+    const unit=mode==='month'?'日期':'时间';
+    const label='调整'+(edge==='start'?'开始':'截止')+unit+'：'+task.title;
+    return '<span role="separator" tabindex="0" class="p-resize-handle p-resize-'+edge+'" data-resize="'+edge+'" data-resize-mode="'+mode+'" data-resize-task="'+esc(task.id)+'" aria-orientation="'+(mode==='vertical'||mode==='allday'?'horizontal':'vertical')+'" aria-label="'+esc(label)+'" title="'+esc(label+' · '+fmtSchedule(task)+'；拖动边缘或用方向键按'+(mode==='month'?'天':'小时')+'调整')+'"></span>';
   }
   function connectedTaskHTML(s, hidden, key) {
-    const t=s.task,classes=(s.before?' continues-before':'')+(s.after?' continues-after':'')+(t.status==='done'?' is-done':'')+(t.frozen?' is-pending-review':'')+(s.width===0?' is-point':'');
+    const t=s.task,classes=(s.before?' continues-before':'')+(s.after?' continues-after':'')+(t.status==='done'?' is-done':'')+(t.frozen?' is-pending-review':'')+(s.point?' is-point':'');
     const detail=(s.before?'延续 · ':'')+fmtSchedule(t)+(t.frozen?' · 审核中':'');
     return '<div role="group" tabindex="0"'+(hidden?' hidden':'')+' class="p-month-event'+classes+'" data-task="'+esc(t.id)+'" data-month-key="'+esc(key)+'" data-start-column="'+s.start+'" data-end-column="'+s.end+'" data-lane="'+s.lane+'" data-span="'+(s.end-s.start)+
       '" style="grid-column:'+(s.start+1)+' / '+(s.end+1)+';grid-row:'+(s.lane+1)+';--month-left:'+s.left+'%;--month-width:'+s.width+'%;'+taskColorVars(t)+'" aria-label="'+esc(taskAriaLabel(t,actor()))+'" title="'+esc(t.title+' · '+detail)+'"><div class="p-month-duration"'+(P.canRescheduleTask(actor(),t)?' data-schedule-move="'+esc(t.id)+'" data-resize-mode="month"':'')+'><span class="p-month-caption"><strong class="p-month-event-title">'+esc((t.pinned?'★ ':'')+t.title)+'</strong><small class="p-month-event-time">'+esc(detail)+'</small></span>'+(!s.before?resizeHandle(t,'start','month'):'')+(!s.after?resizeHandle(t,'end','month'):'')+'</div></div>';
@@ -654,8 +655,13 @@
   function allDayHTML(d) {
     const tasks = allDayTasks(d);
     if (!tasks.length) return '<span class="p-all-day-empty">—</span>';
-    return '<div class="p-allday-list">' + tasks.map(t =>
-      '<button type="button" class="p-all-day-event'+(t.frozen?' is-pending-review':'')+'" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '" aria-label="' + esc(taskAriaLabel(t,actor())) + '">' + esc(t.title) + '</button>').join('') + '</div>';
+    /* 全天区仍只在这里展示；有仅排期权限时给出整条平移与真实端点，按日轴小时步长调整并进入原确认流程。 */
+    return '<div class="p-allday-list">' + tasks.map(t => {
+      const reschedule=P.canRescheduleTask(actor(),t);
+      return '<div role="group" tabindex="0" class="p-all-day-event'+(t.frozen?' is-pending-review':'')+'" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '" aria-label="' + esc(taskAriaLabel(t,actor())) + '" title="'+esc(t.title+' · '+fmtSchedule(t))+'">' +
+        '<span class="p-allday-move"'+(reschedule?' data-schedule-move="'+esc(t.id)+'" data-resize-mode="allday"':'')+'><strong>'+esc((t.pinned?'★ ':'')+t.title)+'</strong><small>'+esc(fmtSchedule(t))+'</small></span>' +
+        (reschedule?resizeHandle(t,'start','allday'):'')+(reschedule?resizeHandle(t,'end','allday'):'')+'</div>';
+    }).join('') + '</div>';
   }
   function horizontalDayHTML(d) {
     const bounds=businessBounds(d), tasks=sortedDay(d);
@@ -672,9 +678,31 @@
 
   // Drag changes only a proposal. The original form owns validation, review and persistence.
   let scheduleDrag=null;
-  function proposedRange(task, edge, steps) {
-    const start=new Date(task.raw.startAt), due=new Date(task.raw.dueAt), delta=steps*3600000;
-    return {start:['start','move'].includes(edge)?new Date(+start+delta):start,due:['end','move'].includes(edge)?new Date(+due+delta):due};
+  /* 月历按公司日期调整：保留公司时区内的日内时刻，不依赖设备时区或固定 24 小时偏移。 */
+  function shiftCompanyDays(value, days) {
+    const p=P.companyParts(value);
+    const date=new Date(Date.UTC(Number(p.year),Number(p.month)-1,Number(p.day)));
+    date.setUTCDate(date.getUTCDate()+days);
+    const base=P.companyDayStart(date.toISOString().slice(0,10));
+    const offset=(Number(p.hour)*60+Number(p.minute))*60000+Math.round(Number(p.second)*1000);
+    return new Date(+base+offset);
+  }
+  function taskInstants(task) {
+    const raw=task.raw||{};
+    const start=raw.startAt?new Date(raw.startAt):P.companyDayStart(raw.startDate||P.companyDateKey(+task.start));
+    const dueDate=raw.dueDate?dateKey(addDays(parseDateInput(raw.dueDate),1)):P.companyDateKey(+task.due);
+    const due=raw.dueAt?new Date(raw.dueAt):P.companyDayStart(dueDate);
+    return {start,due};
+  }
+  function proposedRange(task, edge, steps, mode) {
+    const range=taskInstants(task);
+    const shift=mode==='month'?(value=>shiftCompanyDays(value,steps)):(value=>new Date(+value+steps*3600000));
+    return {start:['start','move'].includes(edge)?shift(range.start):range.start,due:['end','move'].includes(edge)?shift(range.due):range.due};
+  }
+  function hourUnitPx(node) {
+    const axis=(node&&node.closest&&node.closest('.p-timeline-scroll')||document).querySelector?.('.p-day-axis');
+    const height=axis?axis.getBoundingClientRect().height:0;
+    return height?height/24:60;
   }
   function clearScheduleDrag(suppress=true) {
     if (!scheduleDrag) return;
@@ -694,8 +722,11 @@
     if(drag.range.due<drag.range.start) {P.notice('截止不得早于开始，本次调整未保存。');return;}
     P.openScheduleChange(drag.task.id,drag.range.start,drag.range.due,drag.version);
   }
-  function bindScheduleResize() {
-    document.querySelectorAll('[data-resize],[data-schedule-move]').forEach(handle=>{
+  /* 拖动手势只属于本人日程页根节点；任务表单与下属弹层即使渲染了授权任务也不绑定。 */
+  function bindScheduleResize(root) {
+    const scope = root || document.getElementById('page-view');
+    if (!scope) return;
+    scope.querySelectorAll('[data-resize],[data-schedule-move]').forEach(handle=>{
       if(handle.dataset.resizeBound)return;
       handle.dataset.resizeBound='1';
       handle.addEventListener('pointerdown',event=>{
@@ -703,19 +734,39 @@
         if(handle.dataset.scheduleMove&&event.target.closest('[data-action],[data-resize]'))return;
         const task=taskById(handle.dataset.resizeTask||handle.dataset.scheduleMove);
         if(!task||!P.canRescheduleTask(actor(),task))return;
+        const begin=(x,y)=>{
+          clearScheduleDrag();
+          const bar=handle.closest('.p-month-event,.p-horizontal-bar,.p-axis-event,.p-all-day-event');
+          if(!bar)return;
+          const mode=handle.dataset.resizeMode||'month',edge=handle.dataset.resize||'move';
+          const frame=mode==='month'?bar.querySelector('.p-month-duration'):mode==='vertical'?bar.querySelector('.p-axis-true'):bar;
+          const rect=(frame||bar).getBoundingClientRect();
+          const vertical=mode==='vertical'||mode==='allday';
+          const unit=mode==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7:vertical?hourUnitPx(bar):bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24;
+          const tip=document.createElement('div');tip.className='p-drag-preview';tip.setAttribute('role','status');document.body.appendChild(tip);
+          const ghost=document.createElement('div');ghost.className='p-drag-ghost';ghost.style.cssText='left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;height:'+rect.height+'px';
+          ghost.innerHTML='<span class="p-month-caption"><strong>'+esc(task.title)+'</strong><small>'+esc(fmtSchedule(task))+'</small></span>';document.body.appendChild(ghost);
+          scheduleDrag={task,version:task.raw.rowVersion,edge,mode,handle,pointer:event.pointerId,x,y,vertical,unit,steps:0,rect,tip,ghost,range:proposedRange(task,edge,0,mode)};
+          tip.textContent=(mode==='month'?'左右':'上下')+'拖动调整'+(edge==='move'?'完整排期':edge==='start'?'开始':'截止')+'，每步'+(mode==='month'?'1天':'1小时')+'；Esc取消';
+          try { handle.setPointerCapture(event.pointerId); } catch (_) { /* document listeners provide capture fallback */ }
+        };
+        /* 月历是纵向滚动、横向拖动。触摸先看手势方向：纵向留给滚动，横向超过阈值才进入拖动。 */
+        if(event.pointerType==='touch'&&(handle.dataset.resizeMode||'month')==='month'){
+          const origin={id:event.pointerId,x:event.clientX,y:event.clientY},mode=handle.dataset.resizeMode||'month';
+          const cleanup=()=>{document.removeEventListener('pointermove',decide,true);document.removeEventListener('pointerup',cleanup,true);document.removeEventListener('pointercancel',cleanup,true);};
+          const decide=move=>{
+            if(move.pointerId!==origin.id)return;
+            const dx=move.clientX-origin.x,dy=move.clientY-origin.y;
+            if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)){cleanup();event.preventDefault();begin(origin.x,origin.y);updateScheduleDrag(scheduleDrag,move.clientX,move.clientY);}
+            else if(Math.abs(dy)>8)cleanup();
+          };
+          document.addEventListener('pointermove',decide,true);
+          document.addEventListener('pointerup',cleanup,true);
+          document.addEventListener('pointercancel',cleanup,true);
+          return;
+        }
         event.preventDefault();event.stopPropagation();
-        clearScheduleDrag();
-        const bar=handle.closest('.p-month-event,.p-horizontal-bar,.p-axis-event,.staff-month-event,.staff-axis-event');
-        const mode=handle.dataset.resizeMode||'month',edge=handle.dataset.resize||'move';
-        const rect=(mode==='month'?bar.querySelector('.p-month-duration,.staff-month-duration'):mode==='vertical'?bar.querySelector('.p-axis-true,.staff-axis-true'):bar).getBoundingClientRect();
-        const vertical=mode==='vertical';
-        const unit=mode==='month'?bar.closest('.p-month-week,.staff-month-week').getBoundingClientRect().width/7/24:vertical?bar.closest('.p-axis-events,.staff-axis-events').getBoundingClientRect().height/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24;
-        const tip=document.createElement('div');tip.className='p-drag-preview';tip.setAttribute('role','status');document.body.appendChild(tip);
-        const ghost=document.createElement('div');ghost.className='p-drag-ghost';ghost.style.cssText='left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;height:'+rect.height+'px';
-        ghost.innerHTML='<span class="p-month-caption"><strong>'+esc(task.title)+'</strong><small>'+esc(fmtSchedule(task))+'</small></span>';document.body.appendChild(ghost);
-        scheduleDrag={task,version:task.raw.rowVersion,edge,mode,handle,pointer:event.pointerId,x:event.clientX,y:event.clientY,vertical,unit,steps:0,rect,tip,ghost,range:proposedRange(task,edge,0,mode)};
-        tip.textContent=(vertical?'上下':'左右')+'拖动调整'+(edge==='move'?'完整排期':edge==='start'?'开始':'截止')+'，每步1小时；Esc取消';
-        try { handle.setPointerCapture(event.pointerId); } catch (_) { /* document listeners provide capture fallback */ }
+        begin(event.clientX,event.clientY);
       });
       handle.addEventListener('keydown',event=>{
         if(!handle.dataset.resize||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
@@ -728,25 +779,31 @@
       });
     });
   }
+  function updateScheduleDrag(drag,clientX,clientY){
+    if(!drag)return;
+    const dx=clientX-drag.x,dy=clientY-drag.y;
+    const delta=drag.mode==='allday'?(Math.abs(dx)>Math.abs(dy)?dx:dy):drag.vertical?dy:dx;
+    drag.steps=Math.round(delta/drag.unit);
+    drag.range=proposedRange(drag.task,drag.edge,drag.steps,drag.mode);
+    const format=value=>toDateInput(value)+' '+toTimeInput(value),valid=drag.range.due>=drag.range.start;
+    drag.tip.textContent=format(drag.range.start)+' → '+format(drag.range.due)+(valid?' · 松开后确认（'+(drag.mode==='month'?'1天':'1小时')+'/步）':' · 截止不得早于开始');
+    drag.ghost.querySelector('small').textContent=format(drag.range.start)+' → '+format(drag.range.due);
+    drag.tip.classList.toggle('is-invalid',!valid);
+    const step=drag.steps*drag.unit;
+    if(drag.vertical){drag.ghost.style.top=(drag.rect.top+(['start','move'].includes(drag.edge)?step:0))+'px';drag.ghost.style.height=Math.max(2,drag.rect.height+(drag.edge==='start'?-step:drag.edge==='end'?step:0))+'px';}
+    else {drag.ghost.style.left=(drag.rect.left+(['start','move'].includes(drag.edge)?step:0))+'px';drag.ghost.style.width=Math.max(2,drag.rect.width+(drag.edge==='start'?-step:drag.edge==='end'?step:0))+'px';}
+  }
   document.addEventListener('pointermove',event=>{
     const drag=scheduleDrag;if(!drag||event.pointerId!==drag.pointer)return;
     event.preventDefault();event.stopImmediatePropagation();
-    drag.steps=Math.round((drag.vertical?event.clientY-drag.y:event.clientX-drag.x)/drag.unit);
-    drag.range=proposedRange(drag.task,drag.edge,drag.steps);
-    const format=value=>toDateInput(value)+' '+toTimeInput(value),valid=drag.range.due>=drag.range.start;
-    drag.tip.textContent=format(drag.range.start)+' → '+format(drag.range.due)+(valid?' · 松开后确认（1小时/步）':' · 截止不得早于开始');
-    drag.ghost.querySelector('small').textContent=format(drag.range.start)+' → '+format(drag.range.due);
-    drag.tip.classList.toggle('is-invalid',!valid);
-    const delta=drag.steps*drag.unit;
-    if(drag.vertical){drag.ghost.style.top=(drag.rect.top+(['start','move'].includes(drag.edge)?delta:0))+'px';drag.ghost.style.height=Math.max(2,drag.rect.height+(drag.edge==='start'?-delta:drag.edge==='end'?delta:0))+'px';}
-    else {drag.ghost.style.left=(drag.rect.left+(['start','move'].includes(drag.edge)?delta:0))+'px';drag.ghost.style.width=Math.max(2,drag.rect.width+(drag.edge==='start'?-delta:drag.edge==='end'?delta:0))+'px';}
+    updateScheduleDrag(drag,event.clientX,event.clientY);
   },{capture:true,passive:false});
   ['pointerup','pointercancel','lostpointercapture'].forEach(type=>document.addEventListener(type,completeScheduleDrag,true));
   document.addEventListener('click',event=>{
-    if(Date.now()<suppressCalendarClickUntil&&event.target.closest?.('.p-axis-event,.p-horizontal-bar,.staff-month-event,.staff-axis-event')){event.preventDefault();event.stopImmediatePropagation();}
+    if(Date.now()<suppressCalendarClickUntil&&event.target.closest?.('.p-axis-event,.p-horizontal-bar,.p-all-day-event,.staff-month-event,.staff-axis-event')){event.preventDefault();event.stopImmediatePropagation();}
   },true);
   document.addEventListener('keydown',event=>{
-    if(event.target.matches?.('.p-axis-event')&&['Enter',' '].includes(event.key)){
+    if(event.target.matches?.('.p-axis-event,.p-all-day-event')&&['Enter',' '].includes(event.key)){
       event.preventDefault();event.stopPropagation();openTaskDetail(event.target.dataset.task);
     }
   });

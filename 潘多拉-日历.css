@@ -256,7 +256,13 @@
 .p-day-allday .p-allday-label{flex:0 0 auto;width:var(--axis-width,50px);font-size:10px;line-height:1.4;color:#8e8e93;text-align:right;padding:3px 6px 0 0}
 .p-day-allday .p-allday-scroll{flex:1 1 auto;min-width:0;min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .p-day-allday .p-allday-list{display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start}
-.p-day-allday .p-all-day-event{flex:1 1 auto;max-width:100%;min-width:0;min-height:30px;padding:5px 7px;border:0;border-left:3px solid var(--tc-bd);border-radius:5px;background:var(--tc-bg);color:#303036;font-size:11px;line-height:1.35;text-align:left;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.p-day-allday .p-all-day-event{flex:1 1 auto;max-width:100%;min-width:0;min-height:30px;padding:5px 16px;position:relative;display:flex;align-items:center;border:0;border-left:3px solid var(--tc-bd);border-radius:5px;background:var(--tc-bg);color:#303036;font-size:11px;line-height:1.35;text-align:left;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.p-day-allday .p-allday-move{display:flex;flex-direction:column;justify-content:center;gap:1px;min-width:0;flex:1 1 auto}
+.p-day-allday .p-allday-move strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-day-allday .p-allday-move small{display:block;font-size:9px;line-height:11px;color:#666670;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-day-allday .p-resize-handle{top:0;bottom:auto;height:100%;width:14px}
+.p-day-allday .p-resize-start{left:0;right:auto}
+.p-day-allday .p-resize-end{right:0;left:auto}
 .p-day-allday .p-all-day-empty{padding:3px;font-size:11px;color:#a0a0a6}
 .p-day-layout>.p-time-panel{display:flex;flex-direction:column;min-height:0;overflow:hidden}
 @media(min-width:760px){
@@ -421,7 +427,10 @@
 .p-month-view[data-density] .p-month-event-title{font-size:12px;line-height:15px;font-weight:500}
 .p-month-view[data-density] .p-month-event-time{font-size:10px;line-height:13px}
 .p-month-event.is-pending-review .p-month-duration{border:0;outline:2px dashed var(--tc-bd,#b66b8c);outline-offset:-2px;box-shadow:none;background:color-mix(in srgb,var(--tc-bg,#ffe1ea) 45%,white)}
-.p-month-event.is-point .p-month-duration,.staff-month-event.is-point .staff-month-duration{min-width:2px}
+.p-month-event.is-point .p-month-duration,.staff-month-event.is-point .staff-month-duration{min-width:0}
+/* 日级月条上的零时长任务仍保留真实零工期，只加一个明确的时点标记。 */
+.p-month-event.is-point .p-month-duration::before{content:'';position:absolute;left:4px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:var(--tc-bd,#e39ab4);pointer-events:none}
+.p-month-event.is-point .p-month-caption{inset-inline-start:12px}
 [data-schedule-move]{cursor:grab}
 .p-resize-handle{display:block;position:absolute;z-index:6;width:12px;height:100%;max-width:none;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;touch-action:none;user-select:none;cursor:ew-resize}
 .p-resize-handle:focus-visible{outline:2px solid #ab3257;outline-offset:-2px}

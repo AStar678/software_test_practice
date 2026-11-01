@@ -1,13 +1,128 @@
 {
-  "updated": "2026-10-29T03:49:08.361Z",
+  "updated": "2026-11-01T11:27:09.446Z",
   "checks": [
     {
       "check": "employee session is ready",
       "pass": true
     },
     {
+      "check": "no separate backfill entry",
+      "pass": true
+    },
+    {
+      "check": "personal task table loaded",
+      "pass": true
+    },
+    {
+      "check": "table includes created and assigned only",
+      "pass": true,
+      "evidence": [
+        "e2892ac4-c2ad-4a42-80c0-7c2547990b1b",
+        "e7ef270e-7faf-477c-8a26-c3f195565c03"
+      ]
+    },
+    {
+      "check": "subordinate is globally authorized but absent from table",
+      "pass": true
+    },
+    {
+      "check": "search cannot recover subordinate rows",
+      "pass": true
+    },
+    {
+      "check": "table refresh keeps personal scope",
+      "pass": true
+    },
+    {
+      "check": "calendar tag row removed",
+      "pass": true
+    },
+    {
+      "check": "calendar task color retained",
+      "pass": true
+    },
+    {
+      "check": "non-founder has no tag maintenance entry",
+      "pass": true
+    },
+    {
+      "check": "manual manager invocation cannot open tag maintenance",
+      "pass": true
+    },
+    {
       "check": "today log entry opens for the first write",
       "pass": true
+    },
+    {
+      "check": "initial date options include all missing days",
+      "pass": true
+    },
+    {
+      "check": "log form shows no tag or ownership rule paragraphs",
+      "pass": true
+    },
+    {
+      "check": "create metadata aligned 320",
+      "pass": true,
+      "evidence": {
+        "a": {
+          "x": 16,
+          "y": 117,
+          "w": 288,
+          "h": 50,
+          "right": 304
+        },
+        "b": {
+          "x": 16,
+          "y": 211,
+          "w": 288,
+          "h": 50,
+          "right": 304
+        },
+        "overflow": false
+      }
+    },
+    {
+      "check": "create metadata aligned 390",
+      "pass": true,
+      "evidence": {
+        "a": {
+          "x": 20,
+          "y": 121,
+          "w": 350,
+          "h": 50,
+          "right": 370
+        },
+        "b": {
+          "x": 20,
+          "y": 215,
+          "w": 350,
+          "h": 50,
+          "right": 370
+        },
+        "overflow": false
+      }
+    },
+    {
+      "check": "create metadata aligned 1440",
+      "pass": true,
+      "evidence": {
+        "a": {
+          "x": 28,
+          "y": 129,
+          "w": 686,
+          "h": 50,
+          "right": 714
+        },
+        "b": {
+          "x": 726,
+          "y": 129,
+          "w": 686,
+          "h": 50,
+          "right": 1412
+        },
+        "overflow": false
+      }
     },
     {
       "check": "today log is persisted before backfilling",
@@ -18,20 +133,199 @@
       "pass": true
     },
     {
+      "check": "existing day absent from creation options",
+      "pass": true
+    },
+    {
       "check": "backfill entry then opens the day before",
+      "pass": true
+    },
+    {
+      "check": "only missing day remains",
       "pass": true
     },
     {
       "check": "all three business days hold one real log each",
       "pass": true,
       "evidence": [
-        "2026-10-29",
-        "2026-10-28",
-        "2026-10-27"
+        "2026-11-01",
+        "2026-10-31",
+        "2026-10-30"
       ]
     },
     {
       "check": "backfill entry reports that all three days are already written",
+      "pass": true
+    },
+    {
+      "check": "creation does not reopen existing log for editing",
+      "pass": true
+    },
+    {
+      "check": "log page has no person filters or extra detail buttons",
+      "pass": true
+    },
+    {
+      "check": "legacy filter state cannot change personal results",
+      "pass": true
+    },
+    {
+      "check": "nested task link opens only task detail",
+      "pass": true
+    },
+    {
+      "check": "clicking log opens detail and comments",
+      "pass": true
+    },
+    {
+      "check": "comment submits from direct log detail",
+      "pass": true
+    },
+    {
+      "check": "keyboard card activation opens detail",
+      "pass": true
+    },
+    {
+      "check": "explicit edit remains available",
+      "pass": true
+    },
+    {
+      "check": "edit shows one read-only business date without creation candidates",
+      "pass": true,
+      "evidence": {
+        "tag": "DIV",
+        "readonly": "true",
+        "text": "2026-11-01",
+        "options": 0,
+        "mode": "edit",
+        "id": "e4103f75-baeb-4747-ad26-1d79c3981ab7",
+        "newEntry": false
+      }
+    },
+    {
+      "check": "edit metadata aligned 320",
+      "pass": true,
+      "evidence": {
+        "a": {
+          "x": 16,
+          "y": 117,
+          "w": 288,
+          "h": 50,
+          "right": 304
+        },
+        "b": {
+          "x": 16,
+          "y": 211,
+          "w": 288,
+          "h": 50,
+          "right": 304
+        },
+        "overflow": false
+      }
+    },
+    {
+      "check": "edit metadata aligned 390",
+      "pass": true,
+      "evidence": {
+        "a": {
+          "x": 20,
+          "y": 121,
+          "w": 350,
+          "h": 50,
+          "right": 370
+        },
+        "b": {
+          "x": 20,
+          "y": 215,
+          "w": 350,
+          "h": 50,
+          "right": 370
+        },
+        "overflow": false
+      }
+    },
+    {
+      "check": "edit metadata aligned 1440",
+      "pass": true,
+      "evidence": {
+        "a": {
+          "x": 28,
+          "y": 129,
+          "w": 686,
+          "h": 50,
+          "right": 714
+        },
+        "b": {
+          "x": 726,
+          "y": 129,
+          "w": 686,
+          "h": 50,
+          "right": 1412
+        },
+        "overflow": false
+      }
+    },
+    {
+      "check": "explicit edit updates the same record and keeps its date and first-creation instant",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "date": "2026-11-01",
+          "createdAt": "2026-11-01T11:27:11.069547Z"
+        },
+        "after": {
+          "body": "Edited from explicit log entry 标签 原型",
+          "date": "2026-11-01",
+          "createdAt": "2026-11-01T11:27:11.069547Z"
+        }
+      }
+    },
+    {
+      "check": "authorized person logs open separately",
+      "pass": true
+    },
+    {
+      "check": "person log detail remains authorized",
+      "pass": true
+    },
+    {
+      "check": "reading person log cannot mix it into personal list",
+      "pass": true
+    },
+    {
+      "check": "reload still contains only personal logs",
+      "pass": true
+    },
+    {
+      "check": "analysis page shows a readable method instead of internal codes",
+      "pass": true
+    },
+    {
+      "check": "ordinary employee authenticates",
+      "pass": true
+    },
+    {
+      "check": "ordinary employee can choose existing log tag",
+      "pass": true
+    },
+    {
+      "check": "duplicate create retains draft without entering edit",
+      "pass": true
+    },
+    {
+      "check": "concurrent original log is preserved",
+      "pass": true
+    },
+    {
+      "check": "founder authenticates",
+      "pass": true
+    },
+    {
+      "check": "founder retains tag management",
+      "pass": true
+    },
+    {
+      "check": "founder management opens",
       "pass": true
     },
     {

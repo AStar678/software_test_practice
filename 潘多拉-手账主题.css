@@ -512,6 +512,8 @@ body { font-size: 17px; line-height: 1.65; }
 .p-log-meta>.field{margin:0;min-width:0;gap:8px}
 .p-log-meta>.field>label{min-height:24px;line-height:24px;font-size:16px}
 .p-log-meta select{width:100%;min-width:0;min-height:48px;box-sizing:border-box}
+/* Read-only business date uses the same control geometry as the tag select. */
+.p-log-meta .p-log-date-readonly{display:flex;align-items:center;min-height:50px;box-sizing:border-box;padding:11px 12px;border:1px solid #d2dfe0;border-radius:12px;background:var(--journal-paper,#fbf7fa);color:var(--ink);font-size:16px;line-height:26px;overflow-wrap:anywhere}
 .log-card[data-log-card]{cursor:pointer}
 .log-card[data-log-card]:focus-visible{outline:2px solid #ab3257;outline-offset:3px}
 /* Staff workspace: hierarchy at entry, compact date rail and vertical work list. */
@@ -546,6 +548,12 @@ body { font-size: 17px; line-height: 1.65; }
   border:2px dashed var(--staff-accent);box-sizing:border-box;
   background:color-mix(in srgb,var(--staff-accent) 30%,white);
 }
+/* Completed work stays tappable but is marked in every subordinate presentation. */
+.staff-month-event.is-done .staff-month-duration,
+.staff-axis-event.is-done .staff-axis-true,
+.staff-allday button.is-done{opacity:.62}
+.staff-month-event.is-done .p-month-caption strong,
+.staff-axis-event.is-done .p-axis-caption strong{text-decoration:line-through}
 
 .staff-month-tracks{grid-template-rows:repeat(3,44px);inset:33px 0 20px}
 .staff-month-week{height:194px}

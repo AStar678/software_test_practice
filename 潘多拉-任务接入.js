@@ -411,7 +411,7 @@
     if (raw.parentUnavailable) body += '<div class="callout info">上级任务不可查看。关联关系不扩大访问权限。</div>';
     else if (task.parentId) body += '<div class="divider"></div><div class="card-head"><h2>上级任务</h2></div>' + taskLink(task.parentId, taskName(task.parentId));
     const children = Array.isArray(raw.children) ? raw.children : childrenOf(id).map(function (child) { return { id: child.id, title: child.title, executionState: child.status }; });
-    if (children.length) body += '<div class="divider"></div><div class="card-head"><h2>子任务</h2></div><div class="stack">' + children.map(function (child) { return taskLink(child.id, child.title, child.executionState); }).join("") + '</div><p class="tiny muted">父子任务各自推进，完成状态不会自动联动。</p>';
+    if (children.length) body += '<div class="divider"></div><div class="card-head"><h2>子任务</h2></div><div class="stack">' + children.map(function (child) { return taskLink(child.id, child.title, child.executionState); }).join("") + '</div>';
     const siblings = task.parentId ? childrenOf(task.parentId).filter(function (other) { return other.id !== id; }) : [];
     if (siblings.length) body += '<div class="divider"></div><div class="card-head"><h2>同级任务</h2><span class="hint">同一上级任务下</span></div><div class="stack">' + siblings.map(function (other) { return taskLink(other.id, other.title, other.status); }).join("") + '</div>';
     if (Array.isArray(raw.records) && raw.records.length) body += '<div class="divider"></div><div class="card-head"><h2>有效进展与执行记录</h2></div><div class="stack">' + raw.records.map(function (record) {
@@ -794,7 +794,7 @@
     return {
       title: "专用交接",
       body: cards + textField("ho-reason", "交接原因（选填）", "", 500) +
-        '<p class="tiny muted">交接只替换该负责人在有序列表中的位置，不改标题、排期或基础字段；新路线审核通过后生效。</p>' +
+        '<p class="tiny muted">只替换负责人，不改标题、排期等字段。</p>' +
         errorBox("handover-error"),
       foot: withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>')
     };
@@ -871,7 +871,7 @@
     const clear = current ? '<button type="button" class="btn danger" data-action="p-clear-handover-preset">清除预设</button>' : '';
     return {
       title: "交接预设",
-      body: '<div class="callout info">预设仅用于专用交接申请；负责人变更仍按新路线审核后生效，不能修改标题、排期等基础字段。</div>' +
+      body: '<div class="callout info">预设仅用于专用交接申请。</div>' +
         '<div class="field"><label for="hp-target">预设交接对象（' + esc(ctx.subjectName) + '）</label><select id="hp-target">' + options + '</select></div>' +
         (current ? '<p class="tiny muted">当前预设：' + esc((ctx.preset.target && ctx.preset.target.displayName) || "已保存") + '</p>'
           : '<p class="tiny muted">尚未保存预设。</p>') + errorBox("handover-preset-error"),

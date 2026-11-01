@@ -230,7 +230,7 @@ function logDateOptions() {
 }
 function tagSelectHTML(kind, current) {
   const items = ((P.data.tags || {}).items || []).filter(tag => !tag.deleted || tag.id === current);
-  return '<div class="field p-log-tag"><label for="' + kind + '-tag">标签（单选，可清除）</label><select id="' + kind + '-tag"><option value=""' + (!current ? ' selected' : '') + '>无标签</option>' +
+  return '<div class="field p-log-tag"><label for="' + kind + '-tag">标签</label><select id="' + kind + '-tag"><option value=""' + (!current ? ' selected' : '') + '>无标签</option>' +
     items.map(tag => '<option value="' + esc(tag.id) + '"' + (tag.id === current ? ' selected' : '') + '>' + esc(tag.name) + (tag.deleted ? '（已删除）' : '') + '</option>').join('') +
     '</select></div>';
 }
@@ -271,37 +271,41 @@ async function existingLogFor(date) {
 }
 openLogForm = function (id, date) {
   return P.busy(async () => {
-    let raw = null, availableDates = null;
     if (id) {
-      raw = logSnapshot && logSnapshot.epoch === P.epoch && logSnapshot.raw.id === id && sheetTitleEl.textContent === "日志详情"
+      const raw = logSnapshot && logSnapshot.epoch === P.epoch && logSnapshot.raw.id === id && sheetTitleEl.textContent === "日志详情"
         ? logSnapshot.raw : await P.request("/work-logs/" + endpoint(id));
       if (!raw.editable) throw new Error("该日志已冻结或不是本人日志，不能再编辑。");
       putLog(raw);
-    } else {
-      const options = logDateOptions();
-      const existing = await Promise.all(options.map(option => existingLogFor(option.value)));
-      availableDates = options.filter((option, index) => !existing[index]);
-      if (!availableDates.length) { P.notice("今天、昨天和前天都已有日志，请从日志详情进入编辑。"); return; }
-      if (date && !availableDates.some(option => option.value === date)) {
-        P.notice("该日期不可创建或已有日志，请从日志详情进入编辑。"); return;
-      }
-      date = date || availableDates[0].value;
+      drafts.log = logDraft(raw, raw.businessDate);
+      drafts.log.mode = "edit";
+      openSheet(logEditView());
+      return;
     }
-    drafts.log = logDraft(raw, raw ? raw.businessDate : date);
+    const options = logDateOptions();
+    const existing = await Promise.all(options.map(option => existingLogFor(option.value)));
+    const availableDates = options.filter((option, index) => !existing[index]);
+    if (!availableDates.length) { P.notice("今天、昨天和前天都已有日志，请从日志详情进入编辑。"); return; }
+    if (date && !availableDates.some(option => option.value === date)) {
+      P.notice("该日期不可创建或已有日志，请从日志详情进入编辑。"); return;
+    }
+    drafts.log = logDraft(null, date || availableDates[0].value);
+    drafts.log.mode = "create";
     drafts.log.availableDates = availableDates;
-    openSheet(logFormView());
+    openSheet(logCreateView());
   });
 };
-logFormView = function () {
-  const d = drafts.log;
-  if (!d) return null;
+/* 创建与编辑只共享字段组件：日期候选、操作模式与提交目标各自决定，不由同一模板改属性。 */
+function logDateCreateHTML(d) {
+  return '<div class="field"><label for="lf-date">日志日期</label><select id="lf-date">' +
+    (d.availableDates || []).map(row => '<option value="' + esc(row.value) + '"' + (row.value === d.businessDate ? ' selected' : '') + '>' + esc(row.label) + '</option>').join('') +
+    '</select></div>';
+}
+function logDateEditHTML(d) {
+  return '<div class="field"><label>日志日期</label><div class="p-log-date-readonly" id="lf-date" role="textbox" aria-readonly="true" aria-label="日志日期，不可修改">' + esc(d.businessDate) + '</div></div>';
+}
+function logFieldsHTML(d, dateHTML) {
   const linked = d.taskId ? taskById(d.taskId) : null;
-  const dates = d.id ? logDateOptions() : (d.availableDates || []);
-  if (!dates.some(row => row.value === d.businessDate)) dates.push({ value: d.businessDate, label: d.businessDate });
-  const body = '<div class="p-log-meta">' +
-      '<div class="field"><label for="lf-date">日志日期</label><select id="lf-date"' + (d.id ? ' disabled' : '') + '>' +
-        dates.map(row => '<option value="' + esc(row.value) + '"' + (row.value === d.businessDate ? ' selected' : '') + '>' + esc(row.label) + '</option>').join('') +
-      '</select></div>' + tagSelectHTML('lf', d.tagId) + '</div>' +
+  return '<div class="p-log-meta">' + dateHTML + tagSelectHTML('lf', d.tagId) + '</div>' +
     '<div class="field log-content-field"><label for="lf-content">日志内容</label><textarea id="lf-content" maxlength="10000" data-autofocus>' + esc(d.content) + '</textarea></div>' +
     '<div class="field"><label>关联任务（可选）</label>' +
       '<div class="summary-line" id="lf-task-summary">' +
@@ -309,27 +313,44 @@ logFormView = function () {
       '<div class="row" style="margin-top:6px">' +
         '<button type="button" class="btn tiny-btn" data-action="pick-log-task">选择关联任务</button>' +
         (d.taskId ? '<button type="button" class="btn tiny-btn ghost" data-action="clear-log-task">清空关联</button>' : '') +
-      "</div>" +
-      '<span class="tiny muted">日志归属于本人，按日志权限只读分享给范围内的上级；只有本人可以编辑。</span></div>' +
+      "</div></div>" +
     (d.frozenAt ? '<div class="callout info">' + esc(freezeText({ frozen: d.frozen, frozenAt: d.frozenAt }) || '') + '</div>' : '') +
     '<div class="callout" id="lf-error" hidden></div>';
-  return { title: d.id ? "编辑日志" : "写日志", body: body,
+}
+const logCreateView = function () {
+  const d = drafts.log;
+  if (!d || d.mode !== "create") return null;
+  return { title: "写日志", body: logFieldsHTML(d, logDateCreateHTML(d)),
     foot: withBack('<button type="button" class="btn primary" data-action="save-log">保存日志</button>', actor()),
-    draftKind: "log", rebuild: logFormView, fullscreen: true };
+    draftKind: "log", rebuild: logCreateView, fullscreen: true };
+};
+const logEditView = function () {
+  const d = drafts.log;
+  if (!d || d.mode !== "edit" || !d.id) return null;
+  return { title: "编辑日志", body: logFieldsHTML(d, logDateEditHTML(d)),
+    foot: withBack('<button type="button" class="btn primary" data-action="save-log">保存日志</button>', actor()),
+    draftKind: "log", rebuild: logEditView, fullscreen: true };
+};
+logFormView = function () {
+  const d = drafts.log;
+  if (!d) return null;
+  return d.mode === "edit" ? logEditView() : logCreateView();
 };
 syncLogDraft = function () {
   if (!drafts.log) return;
   const content = document.getElementById("lf-content");
   if (content) drafts.log.content = content.value;
-  const date = document.getElementById("lf-date");
-  if (date && !drafts.log.id) drafts.log.businessDate = date.value;
+  if (drafts.log.mode === "create") {
+    const date = document.getElementById("lf-date");
+    if (date && date.value) drafts.log.businessDate = date.value;
+  }
   const tag = document.getElementById("lf-tag");
   if (tag) drafts.log.tagId = tag.value || null;
 };
 document.addEventListener('change', function (event) {
   if (!P.ready || !event.target || !drafts.log) return;
   if (event.target.id === 'lf-tag') { drafts.log.tagId = event.target.value || null; drafts.log.tagTouched = true; return; }
-  if (event.target.id !== 'lf-date' || drafts.log.id) return;
+  if (drafts.log.mode !== 'create' || event.target.id !== 'lf-date') return;
   syncLogDraft();
   if (drafts.log.content.trim()) {
     // 先保留已写内容：换日期只在空表单时自动切换，避免丢失草稿。
@@ -343,6 +364,7 @@ saveLog = function () {
     syncLogDraft();
     const d = drafts.log;
     if (!d || d.epoch !== P.epoch) throw new Error("请重新打开日志后再保存。");
+    if (d.mode === "edit" && !d.id) throw new Error("请重新打开日志后再保存。");
     const content = String(d.content || "").trim();
     if (!content) throw new Error("请填写日志内容。");
     const body = { body: content };
@@ -359,9 +381,17 @@ saveLog = function () {
         return;
       }
       if (error.code === "WORK_LOG_FROZEN") {
-        await P.reload();
-        closeSheet();
-        P.notice("该日志已满24小时，只能查看。");
+        // 冻结只拒绝这次写入：保留当前模式的日期/标签/正文/关联草稿与可复制文字，不关闭界面。
+        d.frozen = true;
+        try { await P.reload(); } catch (reloadError) { if (reloadError.name === "AbortError") return; /* 列表刷新失败也不能吞掉用户尚未保存的内容 */ }
+        // 身份切换或表单已被关闭时草稿已作废，不能再重建界面。
+        if (drafts.log !== d || d.epoch !== P.epoch) return;
+        replaceTopSheet(d.mode === "edit" ? logEditView() : logCreateView());
+        const message = d.mode === "edit"
+          ? "该日志已满24小时，只能查看；未保存的内容仍保留在页面上，可复制后关闭。"
+          : "该日期此前的日志已满24小时，不能重建；未保存的内容仍保留在页面上，可复制后换个日期。";
+        showError("lf-error", message);
+        P.notice(message);
         return;
       }
       throw error;
@@ -476,6 +506,9 @@ saveLog = function () {
     document.getElementById(event.target.id)?.focus();
   });
   openNotifications = function () {
+    /* 异步重载前先落焦点，关闭头部后才会回到铃铛入口而不是页面正文。 */
+    const bell = document.getElementById("bellBtn");
+    if (bell) bell.focus();
     P.busy(async () => { await P.reload(); openSheet(notificationsView()); });
   };
   function requestResultText(raw) {
@@ -503,14 +536,18 @@ saveLog = function () {
     body += '<div class="callout" id="notification-error" hidden></div>';
     const buttons = [];
     if (!revoked && raw.requestId) buttons.push(button("p-open-approval", raw.canReview ? "审核此申请" : "查看原申请结果", raw.requestId, raw.canReview ? "primary" : ""));
-    if (!revoked && raw.taskId) buttons.push(raw.relationLost || raw.readonly
-      ? button("p-open-historical-task", "查看历史只读详情", raw.id)
-      : button("p-open-notification-task", "查看相关任务", raw.id));
-    if (!revoked && raw.canWithdraw) buttons.push(button("p-withdraw-notification", "撤回通知", raw.id));
-    if (!revoked && raw.objectType && raw.objectId &&
-        !(raw.objectType === "task" && (raw.relationLost || raw.readonly))) {
-      buttons.push(button("p-open-notification-object", raw.focus === "comments" ? "定位到评论区" : "查看相关对象", raw.id));
+    /* 同一对象只保留一个跳转：任务消息合并为“查看任务”，评论消息定位评论区，日志消息使用“查看日志”。 */
+    const historical = !!(raw.taskId && (raw.relationLost || raw.readonly));
+    const objectLabel = raw.focus === "comments" ? "查看评论" : raw.objectType === "log" ? "查看日志" : raw.objectType === "task" ? "查看任务" : "查看相关对象";
+    if (!revoked && historical) {
+      buttons.push(button("p-open-historical-task", "查看历史只读详情", raw.id));
+      if (raw.objectType === "log" && raw.objectId) buttons.push(button("p-open-notification-object", objectLabel, raw.id));
+    } else if (!revoked && raw.objectType && raw.objectId) {
+      buttons.push(button("p-open-notification-object", objectLabel, raw.id));
+    } else if (!revoked && raw.taskId) {
+      buttons.push(button("p-open-notification-task", "查看任务", raw.id));
     }
+    if (!revoked && raw.canWithdraw) buttons.push(button("p-withdraw-notification", "撤回通知", raw.id));
     if (!revoked) buttons.push(button("p-hide-notification", "删除此消息", raw.id));
     return { title: "通知详情", notification: true, body: body, foot: buttons.join("") };
   }
@@ -598,6 +635,8 @@ saveLog = function () {
     const generatedAt = result ? result.generatedAt : stat.generatedAt;
     const ruleNames = { overdue: "已逾期", remaining_20_percent: "剩余工期 20%", remaining_10_percent: "剩余工期 10%",
       remaining_5_percent: "剩余工期 5%", schedule_conflict: "排期冲突", high_priority: "高紧急程度" };
+    const methodNames = { local_proportional_schedule_rules: "本地规则统计", current_effective_tasks: "当前有效任务" };
+    const methodLabel = method => methodNames[method] || "本地规则统计";
     function suggestionHTML(item){
       const sourceIds = Array.from(new Set(item.sourceTaskIds || (item.taskId ? [item.taskId] : [])));
       const links = sourceIds.filter(id => taskById(id)).map(id => '<button type="button" class="btn tiny-btn" data-task="' + esc(id) + '">查看「' + esc(taskById(id).title) + '」</button>').join("");
@@ -610,10 +649,10 @@ saveLog = function () {
       '</div><h3>紧急程度分布</h3><div class="stat-grid">' + priorities.map(([label,key]) => '<div class="stat"><div class="v">' + esc(priority[key] == null ? "—" : priority[key]) + '</div><div class="k">' + label + '</div></div>').join("") +
       '</div><p class="tiny muted">统计方法：当前有效任务 · 更新于 ' + esc(timeText(generatedAt)) + '</p></section>' +
       '<section class="card"><div class="card-head"><h2>关键词词云</h2><span class="hint">' + esc(scope || "当前授权范围") + '</span></div><div class="wc">' + cloud + '</div><p class="tiny muted">从授权范围内任务的标题和说明实时提取，不读取工作日志。</p></section>' +
-      '<section class="card"><div class="card-head"><h2>规则建议</h2><span class="hint">' + esc(suggestionScope) + '</span></div><p class="tiny muted">本地规则分析：比例临期/逾期、排期冲突和高紧急程度；不调用外部模型，也不会修改任务。</p>' +
+      '<section class="card"><div class="card-head"><h2>规则建议</h2><span class="hint">' + esc(suggestionScope) + '</span></div><p class="tiny muted">本地规则计算：比例临期、逾期、排期冲突和高紧急程度；不调用外部模型，不修改任务。</p>' +
       '<div class="action-grid">' + button("p-refresh-analysis", analysisLoading ? "正在重算…" : "刷新并重算", null, "primary") +
       '</div><div class="callout" id="analysis-error" hidden></div>' +
-      (analysisLoading ? '<div class="empty">正在按当前权限重新计算…</div>' : result ? '<p class="tiny muted">生成于 ' + esc(timeText(result.generatedAt)) + ' · ' + esc(result.method || "local_proportional_schedule_rules") + '</p>' +
+      (analysisLoading ? '<div class="empty">正在按当前权限重新计算…</div>' : result ? '<p class="tiny muted">生成于 ' + esc(timeText(result.generatedAt)) + ' · ' + esc(methodLabel(result.method)) + '</p>' +
         (suggestions.length ? suggestions.map(suggestionHTML).join("") : '<div class="empty">当前没有触发比例临期、逾期、排期冲突或高紧急规则</div>')
         : '<div class="empty">进入本页后将自动按当前权限生成分析</div>') + '</section>';
     const refresh = document.querySelector('[data-action="p-refresh-analysis"]');
