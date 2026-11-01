@@ -22,19 +22,14 @@ try{
  await ev(`document.getElementById('staff-calendar-date').value=${js(f.day)};document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))`);check('selected month ready',await idle());
  check('month has full weekday grid and spanning segments',await ev(`document.querySelectorAll('.staff-month-date').length>=28&&document.querySelectorAll('.staff-month-event[data-task="${f.spanning}"]').length>=2&&!document.querySelector('.staff-month-event[data-task="${f.other}"]')`));
  const fraction=await ev(`(()=>{const n=document.querySelector('.staff-month-event[data-task="${f.cross}"]'),r=n.getBoundingClientRect(),d=n.querySelector('.staff-month-duration').getBoundingClientRect();return {width:d.width/r.width,left:(d.left-r.left)/r.width}})()`);
- check('staff cross-day month bar preserves partial first and last days',Math.abs(fraction.width-38/72)<.005&&Math.abs(fraction.left-20/72)<.005,fraction);
+ check('staff month bars cover the occupied company days',Math.abs(fraction.width-1)<.005&&Math.abs(fraction.left)<.005,fraction);
  check('staff month captions stay in frames with no labeled buttons',await ev("[...document.querySelectorAll('.staff-month-caption,.staff-month-event .p-month-caption')].every(n=>{const r=n.getBoundingClientRect(),f=n.closest('.staff-month-duration').getBoundingClientRect();return r.left>=f.left-1&&r.right<=f.right+1&&r.top>=f.top-1&&r.bottom<=f.bottom+1})&&!document.querySelector('.staff-month-event button')"));
  const pointRaw=await ev(`Pandora.request('/tasks/'+${js(f.point)})`);
  const pure=await ev(`(()=>{const raw=${js(pointRaw)},start=parseDateInput(${js(f.day)}),point=Pandora.calendar.monthWeek({start},[Pandora.mapTask(raw)],8).segments[0];const full=Pandora.calendar.monthWeek({start},[Pandora.mapTask({...raw,allDay:false,startAt:Pandora.companyDayStart(${js(f.day)}).toISOString(),dueAt:Pandora.companyDayStart(${js(new Date(Date.parse(f.day+'T00:00:00Z')+86400000).toISOString().slice(0,10))}).toISOString()})],8).segments[0];return {point,full}})()`);
- check('point marker has zero duration geometry',pure.point.width===0&&pure.point.left===50);
+ check('zero duration task keeps the day frame and an explicit point flag',pure.point.point===true&&pure.point.width===100&&pure.point.left===0,pure.point);
  check('full business day covers exactly one day',pure.full.start===0&&pure.full.end===1&&pure.full.left===0&&pure.full.width===100);
  for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});check('month fits '+width,await ev("document.getElementById('sheetBody').scrollWidth<=document.getElementById('sheetBody').clientWidth+1"));await b.screenshot(path.join(out,'month-'+width+'.png'));}
- const move=await ev(`(()=>{const n=document.querySelector('.staff-month-event[data-task="${f.spanning}"]');n.scrollIntoView({block:'center'});const r=n.querySelector('.staff-month-duration').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,unit:n.closest('.staff-month-week').getBoundingClientRect().width/7/24}})()`);
- await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:move.x,y:move.y,button:'left',clickCount:1});
- await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:move.x+move.unit,y:move.y,button:'left',buttons:1});
- await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:move.x+move.unit,y:move.y,button:'left',clickCount:1});
- check('staff frame drag directly opens schedule-only editor',await waitFor(b,"Pandora.idle()&&drafts.task?.mode==='schedule'&&!!document.getElementById('tf-start-date')&&!document.getElementById('tf-title')"));
- await ev("document.getElementById('sheetBack').click()");check('schedule editor back restores staff month',await idle()&&await ev("!!document.querySelector('.staff-month-view')"));
+ check('staff month exposes no drag or resize entry',await ev("!document.querySelector('.staff-month-event [data-schedule-move],.staff-month-event [data-resize-task]')"));
  await ev(`document.querySelector('.staff-month-event[data-task="${f.spanning}"]').focus()`);
  await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
  check('staff month remains keyboard accessible',await waitFor(b,"Pandora.idle()&&!document.querySelector('[data-staff-panel]')&&document.getElementById('sheetBody').textContent.includes('独立人员工作页')"));
@@ -44,14 +39,10 @@ try{
  await ev(`document.querySelector('.staff-month-more[data-date="${f.day}"]').click()`);check('overflow opens complete day view',await idle()&&await ev("!!document.querySelector('.staff-day-axis')"));
  check('day has full axis overlapping columns and independent all-day area',await ev("document.querySelectorAll('.staff-axis-event').length===8&&document.querySelectorAll('.staff-allday [data-task]').length===2&&[...document.querySelectorAll('.staff-axis-event')].every(n=>Number(n.dataset.columns)>=7)&&document.querySelector('.staff-day-axis').offsetHeight===1440"));
  check('timed task captions start at their actual bar top',await ev("[...document.querySelectorAll('.staff-axis-event')].every(n=>n.querySelector('strong').getBoundingClientRect().top<n.getBoundingClientRect().top+8)"));
- const axisMove=await ev(`(()=>{const n=document.querySelector('.staff-axis-event[data-task="${f.normal}"] .staff-axis-true');n.scrollIntoView({block:'center'});const r=n.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,top:r.top,height:r.height}})()`);
- await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:axisMove.x,y:axisMove.y,button:'left',clickCount:1});
- await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:axisMove.x,y:axisMove.y+60,button:'left',buttons:1});
- const axisGhost=await ev("(()=>{const r=document.querySelector('.p-drag-ghost').getBoundingClientRect();return {top:r.top,height:r.height}})()");
- check('staff day frame ghost moves without resizing',Math.abs(axisGhost.top-axisMove.top-60)<1&&Math.abs(axisGhost.height-axisMove.height)<1,axisGhost);
- await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:axisMove.x,y:axisMove.y+60,button:'left',clickCount:1});
- check('staff day whole frame opens schedule proposal',await waitFor(b,"Pandora.idle()&&drafts.task?.mode==='schedule'&&drafts.task.startTime==='10:00'&&drafts.task.endTime==='18:00'"));
- await ev("document.getElementById('sheetBack').click()");check('staff day move cancel returns without saving',await idle());
+ check('staff day axis exposes no drag or resize entry',await ev("!document.querySelector('.staff-axis-event [data-schedule-move],.staff-axis-event [data-resize-task]')"));
+ await ev(`document.querySelector('.staff-axis-event[data-task="${f.normal}"]').click()`);
+ check('staff day bar opens the normal task detail',await waitFor(b,"Pandora.idle()&&!document.querySelector('[data-staff-panel]')"));
+ await ev("document.getElementById('sheetBack').click()");check('day detail back restores staff axis',await idle()&&await ev("!!document.querySelector('.staff-day-axis')"));
  for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});check('day axis fits '+width,await ev("document.getElementById('sheetBody').scrollWidth<=document.getElementById('sheetBody').clientWidth+1"));await b.screenshot(path.join(out,'day-axis-'+width+'.png'));}
  await ev("document.querySelector('[data-action=p-staff-format][data-format=list]').click()");
  const ids=await ev("[...document.querySelectorAll('.staff-work-item')].map(n=>n.dataset.task)");check('only actual selected person day coverage',ids.length===10&&[f.normal,f.cross,f.point,f.spanning,...f.overlaps].every(id=>ids.includes(id))&&!ids.includes(f.midnight)&&!ids.includes(f.other),ids);

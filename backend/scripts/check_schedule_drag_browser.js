@@ -20,7 +20,7 @@ async function main(){
  async function raw(id){return ev(`Pandora.request('/tasks/'+${js(id)})`);}
  async function handle(id,edge,mode){
   const selector=`[data-resize-task="${id}"][data-resize="${edge}"][data-resize-mode="${mode}"]`;
-  return ev(`(()=>{const h=document.querySelector(${js(selector)});if(!h)return null;h.scrollIntoView({block:'center',inline:'center'});const r=h.getBoundingClientRect(),bar=h.closest('.p-month-event,.p-horizontal-bar,.p-axis-event');if(!r.width||!r.height)return null;return {x:r.x+r.width/2,y:r.y+r.height/2,vertical:${js(mode)}==='vertical',unit:${js(mode)}==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7/24:${js(mode)}==='vertical'?bar.closest('.p-axis-events').getBoundingClientRect().height/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24}})()`);
+  return ev(`(()=>{const h=document.querySelector(${js(selector)});if(!h)return null;h.scrollIntoView({block:'center',inline:'center'});const r=h.getBoundingClientRect(),bar=h.closest('.p-month-event,.p-horizontal-bar,.p-axis-event,.p-all-day-event');if(!r.width||!r.height)return null;return {x:r.x+r.width/2,y:r.y+r.height/2,vertical:${js(mode)}==='vertical'||${js(mode)}==='allday',unit:${js(mode)}==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7:${js(mode)}==='vertical'?bar.closest('.p-axis-events').getBoundingClientRect().height/24:${js(mode)}==='allday'?(document.querySelector('.p-day-axis')?.getBoundingClientRect().height||1440)/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24}})()`);
  }
  async function drag(id,edge,mode,steps,cancel){
   const h=await handle(id,edge,mode);check('handle reachable '+edge+' '+mode,!!h,h);
@@ -42,13 +42,21 @@ async function main(){
   check('whole day move ghost shifts without resizing '+mode,Math.abs((vertical?ghost.top-data.top:ghost.left-data.left)-steps*60)<1&&Math.abs((vertical?ghost.height-data.height:ghost.width-data.width))<1,ghost);
   await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:data.x+(vertical?0:steps*60),y:data.y+(vertical?steps*60:0),button:'left',clickCount:1});await form();
  }
- async function moveMonth(id,steps,cancel=false){
-   const p=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${id}"]');n.scrollIntoView({block:'center'});const r=n.querySelector('.p-month-duration').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,unit:n.closest('.p-month-week').getBoundingClientRect().width/7/24}})()`);
+ async function moveMonth(id,steps,cancel=false){   const p=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${id}"]');n.scrollIntoView({block:'center'});const r=n.querySelector('.p-month-duration').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,unit:n.closest('.p-month-week').getBoundingClientRect().width/7}})()`);
    await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',clickCount:1});
    await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x+steps*p.unit,y:p.y,buttons:1,button:'left'});
    check('month whole task move shows preview',await ev("!!document.querySelector('.p-drag-preview')"));
    if(cancel)await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
    await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:p.x+steps*p.unit,y:p.y,button:'left',clickCount:1});
+ }
+ async function dragAllDay(id,edge,steps){
+   const h=await handle(id,edge,'allday');check('all-day handle reachable '+edge,!!h,h);
+   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:h.x,y:h.y});
+   await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:h.x,y:h.y,button:'left',clickCount:1});
+   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:h.x,y:h.y+h.unit*steps,button:'left',buttons:1});
+   check('all-day drag preview visible',await ev("!!document.querySelector('.p-drag-preview')"));
+   await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:h.x,y:h.y+h.unit*steps,button:'left',clickCount:1});
+   await sleep(150);
  }
  async function form(){check('drag opens confirmation form',await waitFor(b,"!!drafts.task&&!document.getElementById('overlay').hidden&&!document.getElementById('overlay').hidden&&Pandora.idle()"));}
  async function save(reason){await ev(`document.getElementById('tf-reason').value=${js(reason)};document.querySelector('[data-action=save-task]').click()`);check('schedule submitted',await waitFor(b,"Pandora.idle()&&document.getElementById('overlay').hidden",20000),await ev("document.getElementById('tf-error')?.textContent"));}
@@ -60,10 +68,12 @@ async function main(){
   for(const width of [320,390,1440]){
    await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});await view('month');
    const geometry=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.task}"]'),r=n.getBoundingClientRect(),d=n.querySelector('.p-month-duration').getBoundingClientRect();return {ratio:d.width/r.width,left:(d.left-r.left)/r.width}})()`);
-   check('month paints nine hours rather than whole day '+width,Math.abs(geometry.ratio-9/24)<.004&&Math.abs(geometry.left-(9+20/60)/24)<.004,geometry);
+   check('month paints the occupied company date rather than an hour slice '+width,Math.abs(geometry.ratio-1)<.004&&Math.abs(geometry.left)<.004,geometry);
    check('month text is inside real frame without labeled buttons '+width,await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.task}"]'),f=n.querySelector('.p-month-duration'),c=n.querySelector('.p-month-caption'),r=f.getBoundingClientRect(),t=c.getBoundingClientRect();return t.left>=r.left-1&&t.right<=r.right+1&&t.top>=r.top-1&&t.bottom<=r.bottom+1&&!n.querySelector('button')&&!!f.querySelector('.p-month-event-title')})()`));
    await b.screenshot(path.join(out,'partial-month-'+width+'.png'));
   }
+  check('three-hour and full-day tasks occupy the same single date cell',await ev(`(()=>{const box=id=>{const n=document.querySelector('.p-month-event[data-task="'+id+'"]'),r=n.getBoundingClientRect(),d=n.querySelector('.p-month-duration').getBoundingClientRect();return {w:r.width?d.width/r.width:null,l:r.width?(d.left-r.left)/r.width:null,span:Number(n.dataset.span)}};const a=box(${js(fixture.short)}),b=box(${js(fixture.shortFull)});return Math.abs(a.w-1)<.004&&Math.abs(a.l)<.004&&a.span===1&&Math.abs(b.w-a.w)<.004&&Math.abs(b.l-a.l)<.004})()`));
+  check('midnight ending paints only its own company date',await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.shortFull}"]');return !!n&&Number(n.dataset.endColumn)-Number(n.dataset.startColumn)===1&&Number(n.dataset.span)===1})()`));
   await b.viewport({width:1440,height:900,mobile:false});await view('month');
   const clickPoint=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.task}"]');n.scrollIntoView({block:'center'});const r=n.getBoundingClientRect();return {x:r.x+r.width*.25,y:r.y+8}})()`);
   await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:clickPoint.x,y:clickPoint.y,button:'left',clickCount:1});
@@ -71,11 +81,12 @@ async function main(){
   check('plain month click still opens day list',await waitFor(b,`Pandora.calendar.currentDaySheet()?.date===${js(fixture.day)}`));
   await ev('Pandora.calendar.closeDaySheet()');
   await b.viewport({width:390,height:844,mobile:true});await view('month');
-  const scrollPoint=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.task}"]');n.scrollIntoView({block:'center'});const r=n.getBoundingClientRect();return {x:r.x+6,y:r.y+8,scroll:document.querySelector('.p-month-scroll').scrollTop}})()`);
+  const scrollPoint=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.task}"]');n.scrollIntoView({block:'center'});const r=n.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+8,scroll:document.querySelector('.p-month-scroll').scrollTop}})()`);
   await b.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:scrollPoint.x,y:scrollPoint.y,id:0}]});
   await b.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:scrollPoint.x,y:scrollPoint.y-65,id:0}]});
   await b.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await sleep(250);
-  check('month vertical touch scroll does not submit a move',await ev(`document.getElementById('overlay').hidden&&!document.querySelector('.p-drag-preview')&&Math.abs(document.querySelector('.p-month-scroll').scrollTop-${scrollPoint.scroll})>1`));
+  const touchScroll=await ev(`(()=>{const s=document.querySelector('.p-month-scroll');const hit=document.elementFromPoint(${scrollPoint.x},${scrollPoint.y});return {overlay:document.getElementById('overlay').hidden,preview:!!document.querySelector('.p-drag-preview'),scroll:s.scrollTop,before:${scrollPoint.scroll},max:s.scrollHeight-s.clientHeight,hit:hit&&hit.className,touch:hit&&getComputedStyle(hit).touchAction}})()`);
+  check('month vertical touch scroll does not submit a move',touchScroll.overlay&&!touchScroll.preview&&Math.abs(touchScroll.scroll-touchScroll.before)>1,touchScroll);
   await b.viewport({width:1440,height:900,mobile:false});await view();
   const pointClick=await handle(fixture.point,'end','day');
   await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:pointClick.x,y:pointClick.y,button:'left',clickCount:1});
@@ -95,20 +106,23 @@ async function main(){
   await save('横向调整截止');
   check('founder saved precise timed range', (await raw(fixture.task)).dueAt==='2030-12-31T12:20:00Z'&&!(await raw(fixture.task)).allDay);
   await view('month');await drag(fixture.task,'end','month',1);await form();
-  check('month moves one hour not one day',await ev("drafts.task.endDate==='2030-12-31'&&drafts.task.endTime==='21:20'"));
+  check('month end moves one company day and keeps the clock time',await ev("drafts.task.endDate==='2031-01-01'&&drafts.task.endTime==='20:20'"));
   await ev('closeSheet()');await view('month');await drag(fixture.task,'end','month',4);await form();
-  check('month drag crosses year and preserves time',await ev("drafts.task.endDate==='2031-01-01'&&drafts.task.endTime==='00:20'&&drafts.task.startDate==='2030-12-31'"));
+  check('month drag crosses year by days and preserves time',await ev("drafts.task.endDate==='2031-01-04'&&drafts.task.endTime==='20:20'&&drafts.task.startDate==='2030-12-31'"));
   await save('跨年截止');
-  check('cross-year end persisted',(await raw(fixture.task)).dueAt==='2030-12-31T16:20:00Z');
+  check('cross-year end persisted by days',(await raw(fixture.task)).dueAt==='2031-01-04T12:20:00Z');
   await view();
   await view('month');
   check('month continuation has no extra schedule button',await ev("!document.querySelector('.p-month-event [data-action=p-adjust-schedule]')"));
   await moveMonth(fixture.task,1);await form();
-  check('continuation drag retains complete task duration',await ev("drafts.task.startDate==='2030-12-31'&&drafts.task.startTime==='10:20'&&drafts.task.endDate==='2031-01-01'&&drafts.task.endTime==='01:20'"));
+  check('whole month move shifts both dates and keeps time and duration',await ev("drafts.task.startDate==='2031-01-01'&&drafts.task.startTime==='09:20'&&drafts.task.endDate==='2031-01-05'&&drafts.task.endTime==='20:20'"));
+  await ev('closeSheet()');await view('month');
+  await drag(fixture.task,'start','month',1);await form();
+  check('month start moves one day keeping the other endpoint',await ev("drafts.task.startDate==='2031-01-01'&&drafts.task.startTime==='09:20'&&drafts.task.endDate==='2031-01-04'&&drafts.task.endTime==='20:20'"));
   await ev('closeSheet()');await view();
   check('clipped continuation has no false end handle',await ev(`!document.querySelector('[data-resize-task="${fixture.task}"][data-resize=end]')`));
   await drag(fixture.task,'start','day',-1);await form();
-  check('start changes independently',await ev("drafts.task.startTime==='08:20'&&drafts.task.endTime==='00:20'&&drafts.task.endDate==='2031-01-01'"));
+  check('start changes independently',await ev("drafts.task.startTime==='08:20'&&drafts.task.endTime==='20:20'&&drafts.task.endDate==='2031-01-04'"));
   await ev('closeSheet()');await view();
   await drag(fixture.point,'start','day',1);
   check('inverse point range rejected',await ev("document.getElementById('overlay').hidden")&&(await raw(fixture.point)).startAt===(await raw(fixture.point)).dueAt,await ev("({form:!document.getElementById('overlay').hidden,draft:drafts.task&&{id:drafts.task.id,start:drafts.task.startTime,end:drafts.task.endTime},preview:document.querySelector('.p-drag-preview')?.textContent})"));
@@ -153,10 +167,10 @@ async function main(){
   await b.viewport({width:1440,height:900,mobile:false});await view('day','timeline');
   check('vertical timeline has accessible endpoint handles',await ev(`!!document.querySelector('[data-resize-task="${fixture.task}"][data-resize-mode=vertical]')`));
   await moveDay(fixture.task,'vertical',1);
-  check('vertical frame moves both complete endpoints',await ev("drafts.task.startTime==='10:20'&&drafts.task.endTime==='01:20'&&drafts.task.endDate==='2031-01-01'"));
+  check('vertical frame moves both complete endpoints',await ev("drafts.task.startTime==='10:20'&&drafts.task.endTime==='21:20'&&drafts.task.endDate==='2031-01-04'"));
   await ev('closeSheet()');await view('day','timeline');
   await drag(fixture.task,'start','vertical',-1);await form();
-  check('vertical drag keeps minutes and other endpoint',await ev("drafts.task.startTime==='08:20'&&drafts.task.endTime==='00:20'&&drafts.task.endDate==='2031-01-01'"));
+  check('vertical drag keeps minutes and other endpoint',await ev("drafts.task.startTime==='08:20'&&drafts.task.endTime==='20:20'&&drafts.task.endDate==='2031-01-04'"));
   await ev('closeSheet()');await view('day','timeline');
   await ev("window.savedPointerCapture=Element.prototype.setPointerCapture;Element.prototype.setPointerCapture=function(){throw new DOMException('simulated unsupported capture')}");
   await drag(fixture.point,'end','vertical',1);await form();
@@ -178,6 +192,39 @@ async function main(){
   await b.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await form();
   check('vertical touch drag is not swallowed by scroll',await ev("drafts.task.startTime==='08:20'"));
   await ev('closeSheet()');
+  // V-001: the vertical all-day section keeps hour interaction for historical all-day and timed full-day tasks.
+  await b.viewport({width:1440,height:900,mobile:false});
+  await view('day','timeline');
+  check('all-day section exposes real endpoints and whole-bar move',await ev(`!!document.querySelector('.p-all-day-event[data-task="${fixture.full}"] [data-resize-mode=allday][data-resize=end]')&&!!document.querySelector('.p-all-day-event[data-task="${fixture.legacy}"] [data-schedule-move][data-resize-mode=allday]')`));
+  const fullBefore=await raw(fixture.full);
+  await dragAllDay(fixture.full,'end',1);await form();
+  check('timed full-day task endpoint adds one hour',await ev("drafts.task.startDate==='2030-12-31'&&drafts.task.startTime==='00:00'&&drafts.task.endDate==='2031-01-01'&&drafts.task.endTime==='01:00'"));
+  await save('全天区定时整日任务端点 +1 小时');
+  const fullAfter=await raw(fixture.full);
+  check('timed full-day endpoint persisted and start kept',new Date(fullAfter.dueAt).getTime()===new Date(fullBefore.dueAt).getTime()+3600000&&fullAfter.startAt===fullBefore.startAt,{fullBefore,fullAfter});
+  await view('day','timeline');
+  await dragAllDay(fixture.legacy,'start',1);await form();
+  check('historical all-day start moves one hour keeping the other endpoint',await ev("drafts.task.startDate==='2030-12-31'&&drafts.task.startTime==='01:00'&&drafts.task.endDate==='2030-12-31'&&drafts.task.endTime==='18:00'"));
+  await ev('closeSheet()');
+  await view('day','timeline');
+  const alldayMove=await ev(`(()=>{const n=document.querySelector('.p-all-day-event[data-task="${fixture.legacy}"] .p-allday-move');n.scrollIntoView({block:'center'});const r=n.getBoundingClientRect(),axis=document.querySelector('.p-day-axis');return {x:r.x+r.width/2,y:r.y+r.height/2,unit:(axis?axis.getBoundingClientRect().height:1440)/24}})()`);
+  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:alldayMove.x,y:alldayMove.y,button:'left',clickCount:1});
+  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:alldayMove.x,y:alldayMove.y+alldayMove.unit,button:'left',buttons:1});
+  check('all-day whole move shows preview',await ev("!!document.querySelector('.p-drag-preview')"));
+  await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:alldayMove.x,y:alldayMove.y+alldayMove.unit,button:'left',clickCount:1});
+  await form();
+  check('all-day whole move shifts both endpoint hours',await ev("drafts.task.startDate==='2030-12-31'&&drafts.task.startTime==='01:00'&&drafts.task.endDate==='2030-12-31'&&drafts.task.endTime==='19:00'"));
+  await ev('closeSheet()');await view('day','timeline');
+  await ev(`document.querySelector('[data-resize-task="${fixture.legacy}"][data-resize=start][data-resize-mode=allday]').focus()`);
+  await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowDown',code:'ArrowDown',windowsVirtualKeyCode:40});await form();
+  check('all-day keyboard endpoint uses the hour step',await ev("drafts.task.startTime==='01:00'&&drafts.task.endTime==='18:00'&&drafts.task.endDate==='2030-12-31'"));
+  await ev('closeSheet()');
+  await b.viewport({width:320,height:844,mobile:true});await view('day','timeline');
+  check('all-day handles stay reachable at 320',await ev(`(()=>{const h=document.querySelector('[data-resize-task="${fixture.legacy}"][data-resize=start][data-resize-mode=allday]');if(!h)return false;const r=h.getBoundingClientRect();return r.width>0&&r.height>0&&document.documentElement.scrollWidth<=innerWidth+1})()`));
+  await b.screenshot(path.join(out,'allday-handles-320.png'));
+  await b.viewport({width:390,height:844,mobile:true});await view('day','timeline');
+  await b.screenshot(path.join(out,'allday-handles-390.png'));
+  await b.viewport({width:1440,height:900,mobile:false});
   for(const width of [320,390]){
    await b.viewport({width,height:844,mobile:true});await view('month');
    const before=await raw(fixture.full),mh=await handle(fixture.full,'end','month');
@@ -185,10 +232,10 @@ async function main(){
    await b.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:mh.x,y:mh.y,id:0}]});
    await b.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:mh.x+mh.unit,y:mh.y,id:0}]});
    await b.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await form();
-   check('month touch adds one hour '+width,await ev(`parseDateTime(drafts.task.endDate,drafts.task.endTime).getTime()===${new Date(before.dueAt).getTime()+3600000}`));
+   check('month touch adds one company day '+width,await ev(`parseDateTime(drafts.task.endDate,drafts.task.endTime).getTime()===${new Date(before.dueAt).getTime()+86400000}`));
    await save('小屏月历触摸调整 '+width);
    const after=await raw(fixture.full);
-   check('month touch persists endpoint only '+width,new Date(after.dueAt).getTime()===new Date(before.dueAt).getTime()+3600000&&after.startAt===before.startAt);
+   check('month touch persists endpoint only '+width,new Date(after.dueAt).getTime()===new Date(before.dueAt).getTime()+86400000&&after.startAt===before.startAt);
    await ev('Pandora.reload()');await view('month');await handle(fixture.full,'end','month');
    check('month small screen has no overflow '+width,await ev('document.documentElement.scrollWidth<=innerWidth+1'));
    await b.screenshot(path.join(out,'month-touch-'+width+'.png'));
@@ -217,12 +264,13 @@ async function main(){
   await view('month');await moveMonth(fixture.forbidden,2,true);
   check('cancelled whole month movement preserves effective data',await ev("document.getElementById('overlay').hidden")&&(await raw(fixture.forbidden)).startAt==='2030-12-31T01:00:00Z');
   await view('month');await moveMonth(fixture.forbidden,1);await form();
-  check('month moves both endpoints preserving duration',await ev("drafts.task.startTime==='10:00'&&drafts.task.endTime==='19:00'"));
+  check('month moves both endpoints by one day preserving clock time',await ev("drafts.task.startDate==='2031-01-01'&&drafts.task.startTime==='09:00'&&drafts.task.endDate==='2031-01-01'&&drafts.task.endTime==='18:00'"));
   check('schedule-only form hides other task fields',await ev("drafts.task.mode==='schedule'&&!document.getElementById('tf-title')&&!document.getElementById('tf-assignees')&&!document.getElementById('tf-urgency')"));
+ check('schedule form renders no canvas drag controls',await ev("!document.querySelector('#sheetBody [data-resize-task],#sheetBody [data-schedule-move],#sheetBody .p-month-event,#sheetBody .p-axis-event')"));
   check('non-owner schedule review follows operator manager',await ev(`drafts.task.preview.reviewerId===${js(fixture.identities['alpha-one-head'].id)}`));
   await save('本人可见任务月历直接移动');
   const viewerPending=await raw(fixture.forbidden);
-  check('non-owner proposal leaves effective schedule pending',viewerPending.frozen&&viewerPending.pendingSchedule.startAt==='2030-12-31T02:00:00Z'&&viewerPending.startAt==='2030-12-31T01:00:00Z');
+  check('non-owner proposal leaves effective schedule pending',viewerPending.frozen&&viewerPending.pendingSchedule.startAt==='2031-01-01T01:00:00Z'&&viewerPending.startAt==='2030-12-31T01:00:00Z');
   await view();
   const prior=await raw(fixture.employee);
   await drag(fixture.employee,'end','day',1);await form();
@@ -264,9 +312,11 @@ async function main(){
     check('authorized staff workspace opens for pending task',await waitFor(b,"Pandora.idle()&&!!document.querySelector('[data-staff-panel]')&&!document.querySelector('.staff-state[role=status]')"));
     await ev("document.getElementById('staff-calendar-date').value='2031-01-02';document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))");
     check('staff month finds moved pending proposal',await waitFor(b,`!!document.querySelector('.staff-month-event.is-pending-review[data-task="${fixture.employee}"]')`));
+    check('staff calendar exposes no drag handles or move sources',await ev(`!document.querySelector('.staff-panel [data-resize-task],.staff-panel [data-schedule-move]')`));
     check('staff month pending color keeps dashed border',await ev(`getComputedStyle(document.querySelector('.staff-month-event[data-task="${fixture.employee}"] .staff-month-duration')).outlineStyle==='dashed'`));
     await ev("document.querySelector('[data-action=p-staff-mode][data-mode=day]').click()");
     check('staff day uses proposed minute range',await waitFor(b,`!!document.querySelector('.staff-axis-event.is-pending-review[data-task="${fixture.employee}"][data-start-minute="620"][data-end-minute="1040"]')`));
+    check('staff day axis also exposes no drag entry',await ev(`!document.querySelector('.staff-axis-event [data-resize-task],.staff-axis-event [data-schedule-move]')`));
     await b.screenshot(path.join(out,'pending-staff-day.png'));
     await ev("document.querySelector('[data-action=p-staff-format][data-format=list]').click()");
     check('staff pending list shows proposed date and dash',await ev(`getComputedStyle(document.querySelector('.staff-work-item[data-task="${fixture.employee}"]')).borderTopStyle==='dashed'&&document.querySelector('.staff-work-item[data-task="${fixture.employee}"]').textContent.includes('审核中')`));
@@ -275,7 +325,7 @@ async function main(){
      await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});await view('day','horizontal','2031-01-02');await b.screenshot(path.join(out,'pending-day-'+width+'.png'));
      await view('month','horizontal','2031-01-02');
      const frame=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.employee}"]'),o=n.getBoundingClientRect(),f=n.querySelector('.p-month-duration'),r=f.getBoundingClientRect(),c=f.querySelector('.p-month-caption').getBoundingClientRect();return {left:(r.left-o.left)/o.width,width:r.width/o.width,inside:c.left>=r.left-1&&c.right<=r.right+1&&c.top>=r.top-1&&c.bottom<=r.bottom+1,text:f.textContent,noButtons:!n.querySelector('button')}})()`);
-     check('pending frame and its text match proposed time '+width,Math.abs(frame.left-(10+20/60)/24)<.004&&Math.abs(frame.width-7/24)<.004&&frame.inside&&frame.text.includes('10:20')&&frame.text.includes('17:20')&&frame.noButtons,frame);
+     check('pending frame and its text match the proposed day '+width,Math.abs(frame.left)<.004&&Math.abs(frame.width-1)<.004&&frame.inside&&frame.text.includes('10:20')&&frame.text.includes('17:20')&&frame.noButtons,frame);
      await b.screenshot(path.join(out,'pending-month-'+width+'.png'));
     }
    }

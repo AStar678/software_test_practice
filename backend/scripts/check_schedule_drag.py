@@ -26,10 +26,14 @@ def main():
         day='2030-12-31'
         task=create('跨年排期调整',day+'T01:20:00Z',day+'T10:20:00Z')
         point=create('零时长会议',day+'T04:00:00Z',day+'T04:00:00Z')
+        # A three-hour task must occupy the same single company date cell as a full-day task on a quiet day.
+        quiet='2031-01-10'
+        short=create('三小时短任务',quiet+'T01:00:00Z',quiet+'T04:00:00Z')
+        shortFull=create('短任务同日整日',quiet+'T00:00:00+08:00','2031-01-11T00:00:00+08:00')
         full=create('整日排期',day+'T00:00:00+08:00','2031-01-01T00:00:00+08:00')
         legacy=create('历史全天任务',day,day,legacy=True)
         employee=create('员工排期待审核',day+'T01:00:00Z',day+'T10:00:00Z','alpha-one-employee')
         forbidden=ok('POST','/tasks',{'title':'他人创建仅负责','description':'不可修改排期','assigneeIds':[ids['alpha-one-employee']],'allDay':False,'startAt':day+'T01:00:00Z','dueAt':day+'T10:00:00Z'})['taskId']
-        manifest={'base':f'http://127.0.0.1:{f.port}','identities':f.identities,'task':task,'point':point,'full':full,'legacy':legacy,'employee':employee,'forbidden':forbidden,'day':day}
+        manifest={'base':f'http://127.0.0.1:{f.port}','identities':f.identities,'task':task,'point':point,'full':full,'short':short,'shortFull':shortFull,'quiet':quiet,'legacy':legacy,'employee':employee,'forbidden':forbidden,'day':day}
         subprocess.run(['node',str(BASE/'scripts/check_schedule_drag_browser.js')],env={**os.environ,'PANDORA_SCHEDULE_FIXTURE':json.dumps(manifest)},check=True)
 if __name__=='__main__':main()
