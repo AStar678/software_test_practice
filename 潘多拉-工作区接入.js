@@ -476,6 +476,9 @@ saveLog = function () {
     document.getElementById(event.target.id)?.focus();
   });
   openNotifications = function () {
+    /* 异步重载前先落焦点，关闭头部后才会回到铃铛入口而不是页面正文。 */
+    const bell = document.getElementById("bellBtn");
+    if (bell) bell.focus();
     P.busy(async () => { await P.reload(); openSheet(notificationsView()); });
   };
   function requestResultText(raw) {
@@ -503,14 +506,18 @@ saveLog = function () {
     body += '<div class="callout" id="notification-error" hidden></div>';
     const buttons = [];
     if (!revoked && raw.requestId) buttons.push(button("p-open-approval", raw.canReview ? "审核此申请" : "查看原申请结果", raw.requestId, raw.canReview ? "primary" : ""));
-    if (!revoked && raw.taskId) buttons.push(raw.relationLost || raw.readonly
-      ? button("p-open-historical-task", "查看历史只读详情", raw.id)
-      : button("p-open-notification-task", "查看相关任务", raw.id));
-    if (!revoked && raw.canWithdraw) buttons.push(button("p-withdraw-notification", "撤回通知", raw.id));
-    if (!revoked && raw.objectType && raw.objectId &&
-        !(raw.objectType === "task" && (raw.relationLost || raw.readonly))) {
-      buttons.push(button("p-open-notification-object", raw.focus === "comments" ? "定位到评论区" : "查看相关对象", raw.id));
+    /* 同一对象只保留一个跳转：任务消息合并为“查看任务”，评论消息定位评论区，日志消息使用“查看日志”。 */
+    const historical = !!(raw.taskId && (raw.relationLost || raw.readonly));
+    const objectLabel = raw.focus === "comments" ? "查看评论" : raw.objectType === "log" ? "查看日志" : raw.objectType === "task" ? "查看任务" : "查看相关对象";
+    if (!revoked && historical) {
+      buttons.push(button("p-open-historical-task", "查看历史只读详情", raw.id));
+      if (raw.objectType === "log" && raw.objectId) buttons.push(button("p-open-notification-object", objectLabel, raw.id));
+    } else if (!revoked && raw.objectType && raw.objectId) {
+      buttons.push(button("p-open-notification-object", objectLabel, raw.id));
+    } else if (!revoked && raw.taskId) {
+      buttons.push(button("p-open-notification-task", "查看任务", raw.id));
     }
+    if (!revoked && raw.canWithdraw) buttons.push(button("p-withdraw-notification", "撤回通知", raw.id));
     if (!revoked) buttons.push(button("p-hide-notification", "删除此消息", raw.id));
     return { title: "通知详情", notification: true, body: body, foot: buttons.join("") };
   }

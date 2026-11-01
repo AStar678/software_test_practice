@@ -26,8 +26,7 @@ async function main(){
  async function logout(){await ev('Pandora.logout()');await waitFor(b,"!!document.getElementById('backend-login')&&Pandora.idle()");}
  async function api(method,requestPath,body,headers){return ev(`Pandora.request(${js(requestPath)},{method:${js(method)},body:${js(body===undefined?null:body)},headers:${js(headers||{})}})`);}
  async function apiError(method,requestPath,body,headers){return ev(`(async()=>{try{await Pandora.request(${js(requestPath)},{method:${js(method)},body:${js(body===undefined?null:body)},headers:${js(headers||{})}});return {ok:true}}catch(error){return {ok:false,status:error.status,code:error.code,message:error.message}}})()`);}
- async function setPage(page){await ev(`setPage(${js(page)})`);await waitFor(b,`state.page===${js(page)}&&Pandora.idle()`);}
- async function openLogDate(date){
+ async function setPage(page){await ev(`setPage(${js(page)})`);await waitFor(b,`state.page===${js(page)}&&Pandora.idle()`);} async function openLogDate(date){
   await setPage('log');
   await ev("document.querySelector('[data-action=new-log]').click()");
   await waitFor(b,"!document.getElementById('overlay').hidden&&!!document.getElementById('lf-content')&&document.getElementById('sheetTitle').textContent==='写日志'&&Pandora.idle()");
@@ -46,10 +45,21 @@ async function main(){
   return ev(`Pandora.request('/work-logs?scope=self&from=${date}&to=${date}&limit=10').then(result=>result.items[0]||null)`);
  }
  async function openLogDetail(id){
-  await ev(`document.querySelector('[data-action=p-open-log][data-id=${js(id)}]').click()`);
+  await ev(`document.querySelector('[data-log-card=${js(id)}]').click()`);
   return waitFor(b,`!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='日志详情'&&Pandora.idle()`);
  }
  async function closeSheet(){await ev("document.getElementById('sheetClose').click()");await waitFor(b,"document.getElementById('overlay').hidden");}
+ /* Approval under the current rule always belongs to the applicant's direct manager, never the business owner. */
+ async function managerApprove(key,taskId,kind){
+  const person=ids[key];
+  const auth=await (await fetch(fixture.base+'/api/v1/auth/sessions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountType:'employee',phone:person.identifier,password:'Fixture@123456'})})).json();
+  const list=await (await fetch(fixture.base+'/api/v1/approval-requests?mine=reviewer',{headers:{Authorization:'Bearer '+auth.token}})).json();
+  const row=(list.items||[]).find(item=>item.taskId===taskId&&item.kind===kind&&item.status==='pending');
+  if(!row)throw new Error('missing pending '+kind+' for '+taskId);
+  const result=await fetch(fixture.base+'/api/v1/approval-requests/'+(row.requestId||row.id),{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token,'If-Match':'"'+row.rowVersion+'"','Idempotency-Key':'employee-browser-'+kind+'-'+Date.now()},body:JSON.stringify({decision:'approve',comment:'Direct manager approves'})});
+  if(result.status!==200)throw new Error('approve '+kind+' failed '+result.status);
+  return row;
+ }
  async function settle(){await ev("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");}
  async function clickVisible(selector){
   const point=await ev(`(()=>{const e=document.querySelector(${js(selector)});if(!e)throw new Error('Missing visible control');e.scrollIntoView({block:'nearest',inline:'center'});const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()`);
@@ -71,7 +81,7 @@ async function main(){
   await b.send('Network.emulateNetworkConditions',{offline:false,latency:700,downloadThroughput:-1,uploadThroughput:-1,connectionType:'cellular3g'});
   await ev("setPage('view');document.querySelector('.p-table-entry').click()");
   const loading=await ev("({loading:Pandora.taskForm.state.loading,loaded:Pandora.taskForm.state.loaded,error:Pandora.taskForm.state.error,text:document.getElementById('p-table-body').textContent,pager:document.getElementById('p-table-pager').textContent,rows:document.querySelectorAll('[data-task-row]').length})");
-  check('task form opens with a real loading state instead of stale rows',loading.loading===true&&loading.loaded===false&&loading.error===null&&loading.text.includes('正在加载当前授权任务')&&loading.pager===''&&loading.rows===0,loading);
+  check('task form opens with a real loading state instead of stale rows',loading.loading===true&&loading.loaded===false&&loading.error===null&&loading.text.includes('正在加载本人创建或负责的任务')&&loading.pager===''&&loading.rows===0,loading);
   await b.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1,connectionType:'wifi'});
   check('task form completes the full load with total/page controls',await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading&&!Pandora.taskForm.state.error&&document.querySelectorAll('[data-task-row]').length===50",20000));
   check('task form retains more than two pages and removes explanatory statistics',await ev("Pandora.taskForm.current().paged.pages>=3&&!document.querySelector('.p-table-source,.p-task-table caption,.p-table-counts')&&document.getElementById('p-table-pager').textContent.includes('共')"));
@@ -255,7 +265,9 @@ async function main(){
   await openLogDate(preday);
   const race=await api('POST','/work-logs',{body:'Browser same-day race winner',businessDate:preday},{'Idempotency-Key':'race-preday-'+Date.now()});
   await saveLogForm('Browser same-day race loser');
-  check('a same-day concurrent creation reopens the existing real record instead of duplicating it',await waitFor(b,"drafts.log&&drafts.log.id==="+js(race.logId))&&await ev(`document.getElementById('lf-content').value==='Browser same-day race winner'`),{race,notice:await ev("document.getElementById('appNotice').textContent"),form:await ev("({date:document.getElementById('lf-date').value,disabled:document.getElementById('lf-date').disabled})")});
+  await waitFor(b,"document.getElementById('appNotice').textContent.includes('编辑')||((document.getElementById('lf-error')||{}).textContent||'').includes('编辑')");
+  const raceState=await ev("({id:drafts.log&&drafts.log.id,body:document.getElementById('lf-content')&&document.getElementById('lf-content').value,error:(document.getElementById('lf-error')||{}).textContent,notice:document.getElementById('appNotice').textContent,title:document.getElementById('sheetTitle').textContent})");
+  check('a same-day concurrent creation keeps the creation draft and directs editing to the existing record',!raceState.id&&raceState.body==='Browser same-day race loser'&&/编辑/.test(raceState.error+raceState.notice)&&!/编辑日志/.test(raceState.title),{race,raceState});
   await closeSheet();
   const predayFinal=await selfLog(preday);
   check('same-day uniqueness keeps one live row for the company business date',predayFinal.id===predayLog.id&&predayFinal.createdAt===predayLog.createdAt,predayFinal);
@@ -361,7 +373,11 @@ async function main(){
   await ev("document.querySelector('[data-action=p-reopen-task]').click()");
   check('reopen exposes ordered active replacement assignees',await waitFor(b,"!!document.getElementById('rp-owner-add')")&&await ev(`!Array.from(document.getElementById('rp-owner-add').options).some(o=>o.value===${js(ids['alpha-two-employee'].id)})`));
   await ev(`document.querySelector('[data-action=rp-owner-remove]').click();document.getElementById('rp-owner-add').value=${js(ids['beta-one-employee'].id)};document.querySelector('[data-action=rp-owner-add]').click();document.getElementById('reopen-reason').value='Browser reopen with active replacement';document.querySelector('[data-action=p-confirm-reopen]').click()`);
-  check('reopen saves new round and replacement without adding business owner',await waitFor(b,`Pandora.idle()&&TASKS.find(t=>t.id===${js(fixture.completedTask)}).status!=='done'`)&&await ev(`(()=>{const t=TASKS.find(t=>t.id===${js(fixture.completedTask)});return t.assigneeIds.length===1&&t.assigneeIds[0]===${js(ids['beta-one-employee'].id)}&&t.creatorId===${js(ids['alpha-two-employee'].id)}&&t.businessOwnerId===${js(ids['beta-two-employee'].id)}&&!t.frozen})()`));
+  const reopenPending=await waitFor(b,`Pandora.idle()&&Pandora.data.approvals.some(r=>r.taskId===${js(fixture.completedTask)}&&r.kind==='reopen'&&r.status==='pending')`,20000);
+  check('takeover reopen waits for the applicant direct manager',reopenPending,await ev(`({notice:document.getElementById('appNotice').textContent,errors:Pandora.errors,title:document.getElementById('sheetTitle').textContent,rows:Pandora.data.approvals.filter(r=>r.taskId===${js(fixture.completedTask)}).map(r=>({kind:r.kind,status:r.status}))})`));
+  await managerApprove('beta-two-head',fixture.completedTask,'reopen');
+  await ev('Pandora.reload()');
+  check('manager approval saves new round and replacement without adding business owner',await waitFor(b,`Pandora.idle()&&TASKS.find(t=>t.id===${js(fixture.completedTask)}).status!=='done'`)&&await ev(`(()=>{const t=TASKS.find(t=>t.id===${js(fixture.completedTask)});return t.assigneeIds.length===1&&t.assigneeIds[0]===${js(ids['beta-one-employee'].id)}&&t.creatorId===${js(ids['alpha-two-employee'].id)}&&t.businessOwnerId===${js(ids['beta-two-employee'].id)}&&!t.frozen})()`));
   // The admin acceptance swapped the two team heads; alpha-two-head now manages alpha-one's employee.
   for(const [key,label,department,team] of [['founder','创始人',false,false],['alpha-head','部门负责人',true,false],['alpha-two-head','团队负责人',true,true]]){
    await ev('Pandora.logout()');await login(key);await ev("setPage('me')");

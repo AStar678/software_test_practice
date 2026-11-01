@@ -51,6 +51,11 @@ async function main(){
   check('tree initially collapsed',await ev("document.querySelectorAll('[data-pick-person]').length===1"));
   await ev("document.querySelector('[data-action=p-tree-toggle]').click()");
   check('expansion separate from selection',await ev("document.querySelectorAll('[data-pick-person]').length===3&&assigneePicker.selected.length===0"));
+  check('founder node shows the company level instead of a fake department',await ev(`(()=>{const node=document.querySelector('[data-pick-person="${fixture.identities.founder.id}"]')?.closest('.p-people-node');return !!node&&node.textContent.includes('公司层')&&!/·\\s*·/.test(node.textContent)})()`));
+  check('department head without a team shows the department without an empty separator',await ev(`(()=>{const node=document.querySelector('[data-pick-person="${fixture.identities['alpha-head'].id}"]')?.closest('.p-people-node');return !!node&&node.textContent.includes('alpha')&&!/·\\s*·/.test(node.textContent)})()`));
+  await ev(`document.getElementById('ap-search').value='alpha-one-employee';document.getElementById('ap-search').dispatchEvent(new Event('input',{bubbles:true}))`);
+  check('same-name people stay distinguishable by their real department and team',await ev(`(()=>{const rows=Array.from(document.querySelectorAll('.p-people-node')).map(n=>({id:n.querySelector('[data-pick-person]')?.dataset.pickPerson,text:n.textContent}));const a=rows.find(r=>r.id===${js(fixture.identities['alpha-one-employee'].id)}),b=rows.find(r=>r.id===${js(fixture.identities['beta-two-employee'].id)});return !!a&&!!b&&a.text!==b.text&&a.text.includes('alpha one')&&b.text.includes('beta two')&&!/·\\s*·/.test(a.text+b.text)})()`));
+  await ev("document.querySelector('[data-action=picker-assignee-clear-query]').click()");
   await ev(`document.getElementById('ap-search').value='beta-one-employee';document.getElementById('ap-search').dispatchEvent(new Event('input',{bubbles:true}))`);
   check('search expands actual ancestor path',await ev(`!!document.querySelector('[data-pick-person="${fixture.identities['beta-one-employee'].id}"]')`));
   await ev(`document.querySelector('[data-pick-person="${fixture.identities['beta-one-employee'].id}"]').click();document.querySelector('[data-action=picker-assignee-clear-query]').click()`);

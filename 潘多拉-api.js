@@ -342,7 +342,7 @@
     /* departmentName is the real department; teamName is an independent team and must never stand in
        for it (a candidate list grouped by team would hide cross-department choices). */
     return { id: u.id, name: u.displayName || "相关人员", role: u.placementType || u.role || "employee",
-      dept: u.departmentName || u.department || (u.placementType === "founder" ? "公司" : "—"), superiorId: u.managerId || null, raw: u };
+      dept: u.departmentName || u.department || (u.placementType === "founder" ? "公司层" : "—"), superiorId: u.managerId || null, raw: u };
   }
   // One company-calendar conversion shared by calendar, log and table projections.
   const companyFormatters=new Map(),dayBoundaryCache=new Map();

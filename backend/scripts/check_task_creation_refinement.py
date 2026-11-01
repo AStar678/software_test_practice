@@ -23,6 +23,9 @@ def main():
         with fixture as f:
             tokens = {k: f.login(k)[1]['token'] for k in f.identities}
             ids = {k: p['id'] for k, p in f.identities.items()}
+            # A real same-name pair across teams: the tree must tell them apart by department/team.
+            f.db.server_side('UPDATE users SET display_name=' + quote('alpha-one-employee') + ' WHERE id=' + quote(ids['beta-two-employee']))
+            check('fixture seeds a same-name employee in another team', f.db.scalar('SELECT COUNT(*) FROM users WHERE organization_id=' + quote('fixture-company') + ' AND display_name=' + quote('alpha-one-employee')) == 2)
             def call(method, path, body=None, who='founder', version=None):
                 return f.call(method, path, body, tokens[who], 'refine-' + uuid.uuid4().hex, version)
             def ok(method, path, body=None, who='founder', version=None):

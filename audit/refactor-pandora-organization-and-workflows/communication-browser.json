@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-29T02:15:50.968Z",
+  "updated": "2026-11-01T09:51:35.457Z",
   "checks": [
     {
       "check": "login form ready founder",
@@ -54,7 +54,7 @@
       "pass": true
     },
     {
-      "check": "ordinary employee has no catalogue management entry",
+      "check": "ordinary employee has no tag maintenance entry",
       "pass": true
     },
     {
@@ -70,11 +70,47 @@
       "pass": true
     },
     {
+      "check": "long task title keeps type, read state and time inside the compact row",
+      "pass": true
+    },
+    {
+      "check": "header close returns focus to the notification bell",
+      "pass": true
+    },
+    {
       "check": "comment notification offers a live comment focus jump",
       "pass": true
     },
     {
+      "check": "comment notification exposes exactly one comment destination",
+      "pass": true
+    },
+    {
       "check": "notification jump opens the correct object comment section",
+      "pass": true
+    },
+    {
+      "check": "ordinary task notification merges into one task destination",
+      "pass": true
+    },
+    {
+      "check": "merged task destination opens the live task detail",
+      "pass": true
+    },
+    {
+      "check": "log comment notification delivered",
+      "pass": true
+    },
+    {
+      "check": "non-task log comment row keeps a safe name, type, read state and time",
+      "pass": true
+    },
+    {
+      "check": "log comment notification exposes one comment destination without a task jump",
+      "pass": true
+    },
+    {
+      "check": "log comment jump opens the log comment section",
       "pass": true
     },
     {

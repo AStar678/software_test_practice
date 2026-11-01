@@ -1779,6 +1779,13 @@ public class TaskService {
         try {
             return route(actor,assignees(actor,versionId),s(request,"applicantId"));
         } catch (ApiException invalidOwners) {
+            // A reopen replaces the effective owners by design, so the old owners may already be inactive
+            // (e.g. the departed employee). Route the review from the applicant against the owners the
+            // decision would publish instead of making the pending request unreachable.
+            if("reopen".equals(s(request,"kind")) && s(request,"proposedVersionId")!=null) {
+                try { return route(actor,assignees(actor,s(request,"proposedVersionId")),s(request,"applicantId")); }
+                catch (ApiException stillInvalid) { /* fall through to the blocked route */ }
+            }
             return Route.blocked(s(request,"applicantId"),"applicant-unavailable",actor.authzVersion());
         }
     }

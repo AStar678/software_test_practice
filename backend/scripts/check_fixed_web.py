@@ -47,7 +47,10 @@ def main():
         request=call('GET','/approval-requests/'+completed['requestId'],who='alpha-two-head')
         call('PATCH','/approval-requests/'+completed['requestId'],{'decision':'approve'},'alpha-two-head',request['rowVersion'])
         view=call('GET','/tasks/'+completed['taskId'],who='alpha-two-employee')
-        call('PATCH','/tasks/'+completed['taskId'],{'command':'complete','completionNote':'Finished before departure'},'alpha-two-employee',view['rowVersion'])
+        completion=call('PATCH','/tasks/'+completed['taskId'],{'command':'complete','completionNote':'Finished before departure'},'alpha-two-employee',view['rowVersion'])
+        completion_view=call('GET','/approval-requests/'+completion['requestId'],who='alpha-two-head')
+        call('PATCH','/approval-requests/'+completion['requestId'],{'decision':'approve'},'alpha-two-head',completion_view['rowVersion'])
+        if call('GET','/tasks/'+completed['taskId'],who='alpha-two-employee')['executionState']!='done':raise AssertionError('completed fixture was not approved into the done state')
         call('POST','/tasks',form('Unpublished departure creation',['beta-one-employee']),'alpha-two-employee')
         # A published task whose completion is waiting for review: the task form and detail must keep
         # showing the effective execution state/current progress, never the proposed completion text,

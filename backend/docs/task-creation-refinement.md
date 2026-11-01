@@ -2,7 +2,7 @@
 
 ## 使用变化
 
-通知默认显示所属任务/对象、类型、已读状态、通知时间。可切换完整摘要，组合筛选已读状态与通知类型；打开才标已读，返回保留条件，切换账号恢复默认筛选。没有关联任务时显示安全对象名或占位信息。
+通知默认显示所属任务/对象、类型、已读状态、通知时间。可切换完整摘要，组合筛选已读状态与通知类型；打开才标已读，返回保留条件，切换账号恢复默认筛选。没有关联任务时显示安全对象名或占位信息。通知详情只保留一个对象跳转：任务消息合并为“查看任务”，评论消息为定位评论区的“查看评论”，日志消息为“查看日志”；审核申请/查看结果和历史只读入口仍按各自权限独立显示，不随合并扩权。关闭列表后焦点回到铃铛入口。
 
 创建、重提和编辑任务使用共用标签多选按钮，点一次选中，再点取消；选择顺序保留，取消后重新选中会排在末尾。名称位于色块下方，长名称自动换行。日志仍单选。任务日程颜色依次取本人私人标签、首个共用标签、默认粉色；详情展示全部共用标签。
 
@@ -23,6 +23,7 @@
 - 任务写入 `tagIds: [id1,id2]`，空数组清除。响应 `tags/tagIds` 是完整有序集合，旧 `tag/tagId` 投影第一项。未传标签字段沿用完整集合；多标签任务显式只传旧 `tagId` 返回 409 `MULTI_TAG_CLIENT_REQUIRED`，同时传冲突的新旧字段返回 400。重复、跨公司、私人冒充共用、已删除标签新引用均拒绝。
 - `assignee-candidates` 增加 `managerId/teamName/placementType`，仅提供合法员工最小目录字段，不提供电话或邮箱。候选可选不赋予任务、日志或交接操作权。
 - 审核预览 `reviewerBasis=operator`。刷新和决定使用申请记录里的 `applicantId`，不使用当前查看者替代申请人。
+- 通知字段由系统从真实事件自动生成，没有手动创建通知的写接口：`eventType` 决定 `category` 与 `purpose`，`title/changeSummary` 取事件快照，`summary` 取接收人副本，`createdAt/deliveredAt/readAt` 取送达记录，`objectName` 取当前可读对象。对象被删除、撤回或失权时只返回安全占位，并移除 `taskId/objectId/title/changeSummary` 及跳转。日志评论等非任务消息以 `objectType=log` 和 `objectName`（或“无关联任务”占位）展示，`taskId` 为空。
 
 ## 升级和回退
 
@@ -44,6 +45,10 @@ python3 backend/scripts/check_calendar_drawer.py
 python3 backend/scripts/check_task_refinement_upgrade.py
 python3 backend/scripts/check_review_routing.py
 python3 backend/scripts/check_fixed_notifications.py
+python3 backend/scripts/check_fixed_communication_web.py
+python3 backend/scripts/check_log_backfill_entry.py
+python3 backend/scripts/check_business_takeover.py
+python3 backend/scripts/check_handover_chain.py
 python3 backend/scripts/check_final_demo.py
 ```
 
@@ -54,7 +59,7 @@ python3 backend/scripts/check_final_demo.py
 
 ## 本人任务表单、标签维护和写日志入口
 
-任务表单仅列出本人原始创建或当前负责的任务，先按本人关系过滤，再搜索、排序、计数和分页；仅因上下级关系可见的任务不进入表单。日历仍仅显示本人负责的任务。
+任务表单仅列出本人原始创建或当前负责的任务，先按本人关系过滤，再搜索、排序、计数和分页；仅因上下级关系可见的任务不进入表单。日历仍仅显示本人负责的任务。本 delta 对任务表单、合并筛选和个人日志使用完整 MODIFIED 条款整体替换旧范围，而不是在旧条款上追加例外，因此不存在可用于恢复下属任务的旧关系/可见筛选。
 
 所有标签（含私人标签）的创建、改名、改色、删除仅由公司固定创始人执行，非创始人仅可在任务/日志编辑中选择和清除。创始人从“我的 → 标签管理”维护；日程页的标签管理/图例行已移除。已有私人颜色覆盖、共用标签首项颜色与默认粉色均保留，旧数据不清空。
 

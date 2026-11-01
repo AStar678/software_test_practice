@@ -141,6 +141,27 @@ def main():
    f.db.server_side('UPDATE notifications SET expires_at=UTC_TIMESTAMP(6)-INTERVAL 1 SECOND WHERE id='+quote(n['id']))
    check('expired notification cannot be read or grant historical entry',call('GET','/notifications/'+n['id'],who='alpha-one-employee')[0]==404 and call('GET','/notifications/'+n['id']+'/task',who='alpha-one-employee')[0]==404)
    worker();check('notification cleanup leaves business history intact',f.db.scalar('SELECT COUNT(*) FROM task_history_entries WHERE task_id='+quote(t))==source)
+   # Every in-use notification copy is generated from a real event and carries a complete safe projection.
+   matrix=create(('alpha-one-employee',));view=ok('GET','/tasks/'+matrix,who='alpha-one-employee')
+   done=ok('PATCH','/tasks/'+matrix,{'command':'complete','completionNote':'Matrix completion'},'alpha-one-employee',view['rowVersion'])
+   approve=ok('GET','/approval-requests/'+done['requestId'],who='alpha-one-head')
+   ok('PATCH','/approval-requests/'+done['requestId'],{'decision':'approve'},'alpha-one-head',approve['rowVersion']);worker()
+   all_rows=[(who,row) for who in ('founder','alpha-one-head','alpha-one-employee','beta-one-employee') for row in notices(who)]
+   categories={'review','result','reminder','comment','other'}
+   check('every notification copy carries type, category, purpose, time and read state',
+         bool(all_rows) and all(row.get('eventType') and row.get('category') in categories and row.get('purpose')
+              and row.get('createdAt') is not None and 'readAt' in row for _,row in all_rows),
+         sorted({row.get('eventType') for _,row in all_rows}))
+   check('every visible copy derives a title or summary from its event snapshot',
+         all(row.get('title') or row.get('summary') for _,row in all_rows))
+   check('withdrawn copies expose no object name, object jump or change summary',
+         all(not row.get('objectName') and not row.get('objectType') and not row.get('changeSummary')
+             for _,row in all_rows if row.get('revoked')))
+   check('the matrix covers current creation, modification, progress, completion and comment messages',
+         {'task.create.applied','task.change.applied','task.progress.submitted','task.complete.submitted','task.complete.approved','comment.created'}
+         <= {row.get('eventType') for _,row in all_rows}, sorted({row.get('eventType') for _,row in all_rows}))
+   check('notification content has no user-written creation endpoint',
+         call('POST','/notifications',{'title':'manual','summary':'manual'})[0] in (404,405))
    report['result']='PASS'
  except Exception as error:report['result']='FAIL';report['errorType']=type(error).__name__;raise
  finally:OUTPUT.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')

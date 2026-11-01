@@ -458,7 +458,8 @@ async function main() {
 
     /* ================= 10.2 full-day projection, concurrency, all-day scroll ================= */
     await setView(fixture.day);
-    const crossMonthAppearance = await ev(`(()=>{const bar=Array.from(document.querySelectorAll('[data-task="${fixture.special.cross}"]')).find(e=>e.classList.contains('p-month-event'));const pinned=Array.from(document.querySelectorAll('[data-task="${fixture.pinned}"]')).find(e=>e.classList.contains('p-month-event'));return {bg:bar&&bar.style.getPropertyValue('--tc-bg'),border:bar&&bar.style.getPropertyValue('--tc-bd'),hidden:bar&&bar.hidden,pinnedStar:!!document.querySelector('[data-task="${fixture.pinned}"] .p-pin'),pinnedBg:pinned&&pinned.style.getPropertyValue('--tc-bg')}})()`);
+    const pinMarked = `(element=>{if(!element)return false;const mark=element.querySelector('.p-pin');return !!(mark&&getComputedStyle(mark).display!=='none')||element.textContent.includes('★')})`;
+    const crossMonthAppearance = await ev(`(()=>{const pinMarked=${pinMarked};const bar=Array.from(document.querySelectorAll('[data-task="${fixture.special.cross}"]')).find(e=>e.classList.contains('p-month-event'));const pinned=Array.from(document.querySelectorAll('[data-task="${fixture.pinned}"]')).find(e=>e.classList.contains('p-month-event'));return {bg:bar&&bar.style.getPropertyValue('--tc-bg'),border:bar&&bar.style.getPropertyValue('--tc-bd'),hidden:bar&&bar.hidden,pinnedStar:pinMarked(document.querySelector('[data-task="${fixture.pinned}"]')),pinnedBg:pinned&&pinned.style.getPropertyValue('--tc-bg')}})()`);
     await setView(fixture.concurrent, 'day');
     await sleep(260);
     await b.screenshot(output.replace('calendar-drawer.json', 'calendar-day-projection.png'));
@@ -503,7 +504,7 @@ async function main() {
     /* tags/pins are identical in the month and projected day views */
     await setView(fixture.day, 'day');
     await sleep(200);
-    const pinnedDayAppearance = await ev(`(()=>{const bar=Array.from(document.querySelectorAll('[data-task="${fixture.pinned}"]')).find(e=>e.classList.contains('p-axis-event'));return {bg:bar&&bar.style.getPropertyValue('--tc-bg'),pinnedStar:!!document.querySelector('[data-task="${fixture.pinned}"] .p-pin')}})()`);
+    const pinnedDayAppearance = await ev(`(()=>{const pinMarked=${pinMarked};const bar=Array.from(document.querySelectorAll('[data-task="${fixture.pinned}"]')).find(e=>e.classList.contains('p-axis-event'));return {bg:bar&&bar.style.getPropertyValue('--tc-bg'),pinnedStar:!!(bar&&(pinMarked(bar)||bar.textContent.includes('★')))}})()`);
     await setView(fixture.concurrent, 'day');
     await sleep(200);
     const crossDayAppearance = await ev(`(()=>{const bar=Array.from(document.querySelectorAll('[data-task="${fixture.special.cross}"]')).find(e=>e.classList.contains('p-all-day-event'));return {bg:bar&&bar.style.getPropertyValue('--tc-bg'),border:bar&&bar.style.getPropertyValue('--tc-bd')}})()`);
