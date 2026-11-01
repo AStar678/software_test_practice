@@ -381,9 +381,17 @@ saveLog = function () {
         return;
       }
       if (error.code === "WORK_LOG_FROZEN") {
-        await P.reload();
-        closeSheet();
-        P.notice("该日志已满24小时，只能查看。");
+        // 冻结只拒绝这次写入：保留当前模式的日期/标签/正文/关联草稿与可复制文字，不关闭界面。
+        d.frozen = true;
+        try { await P.reload(); } catch (reloadError) { if (reloadError.name === "AbortError") return; /* 列表刷新失败也不能吞掉用户尚未保存的内容 */ }
+        // 身份切换或表单已被关闭时草稿已作废，不能再重建界面。
+        if (drafts.log !== d || d.epoch !== P.epoch) return;
+        replaceTopSheet(d.mode === "edit" ? logEditView() : logCreateView());
+        const message = d.mode === "edit"
+          ? "该日志已满24小时，只能查看；未保存的内容仍保留在页面上，可复制后关闭。"
+          : "该日期此前的日志已满24小时，不能重建；未保存的内容仍保留在页面上，可复制后换个日期。";
+        showError("lf-error", message);
+        P.notice(message);
         return;
       }
       throw error;

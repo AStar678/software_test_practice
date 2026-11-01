@@ -289,37 +289,69 @@ async function main(){
   await closeSheet();
   const detailClosed=await ev("document.getElementById('overlay').hidden");
   check('log detail closes without rewriting the log date',detailOpened&&detailVisible.overlay&&detailClosed,{detailOpened,detailVisible,detailClosed});
+  /* V-001 acceptance: nested selection and failed saves keep the current edit draft. */
+  await openLogDetail(todayLog.id);
+  await ev("document.querySelector('#sheetFoot [data-action=edit-log]').click()");
+  await waitFor(b,"document.getElementById('sheetTitle').textContent==='编辑日志'&&Pandora.idle()");
+  await ev("document.getElementById('lf-content').value='Browser nested task draft';document.querySelector('[data-action=pick-log-task]').click()");
+  const pickerReady=await waitFor(b,"document.getElementById('sheetTitle').textContent==='选择关联任务'&&Pandora.idle()");
+  const pickedTask=await ev("(()=>{const e=document.querySelector('[data-pick-task]');if(!e)throw new Error('no task candidate');e.click();return e.dataset.pickTask})()");
+  await ev("document.querySelector('[data-action=picker-task-confirm]').click()");
+  const pickerBack=await waitFor(b,"document.getElementById('sheetTitle').textContent==='编辑日志'&&Pandora.idle()");
+  const nestedDraft=await ev(`({value:document.getElementById('lf-content').value,taskId:drafts.log&&drafts.log.taskId,summary:(document.getElementById('lf-task-summary')||{}).textContent,title:taskById(${js(pickedTask)})&&taskById(${js(pickedTask)}).title})`);
+  check('nested task selection returns to the same edit form with the typed draft',pickerReady&&pickerBack&&nestedDraft.value==='Browser nested task draft'&&nestedDraft.taskId===pickedTask&&nestedDraft.summary===nestedDraft.title,{pickedTask,nestedDraft});
+  await ev("(()=>{window.__origMutation=Pandora.mutation;Pandora.mutation=function(){return Promise.reject(new Error('模拟网络中断'))}})()");
+  await ev("document.getElementById('lf-content').value='Browser network failure draft';document.querySelector('#sheetFoot [data-action=save-log]').click()");
+  const networkKept=await waitFor(b,"Pandora.idle()&&!!document.getElementById('lf-error')&&!document.getElementById('lf-error').hidden");
+  const networkState=await ev("({value:(document.getElementById('lf-content')||{}).value,error:(document.getElementById('lf-error')||{}).textContent,title:document.getElementById('sheetTitle').textContent,overlay:document.getElementById('overlay').hidden,mode:drafts.log&&drafts.log.mode,id:drafts.log&&drafts.log.id,taskId:drafts.log&&drafts.log.taskId})");
+  await ev("Pandora.mutation=window.__origMutation");
+  check('a network failure keeps the edit draft and stays in the edit form',networkKept&&!networkState.overlay&&networkState.title==='编辑日志'&&networkState.mode==='edit'&&networkState.id===todayLog.id&&networkState.value==='Browser network failure draft'&&networkState.taskId===pickedTask&&networkState.error.length>0,networkState);
+  const todayCurrent=await selfLog(today);
+  await api('PATCH','/work-logs/'+todayLog.id,{body:'Browser concurrent edit'},{'If-Match':'"'+todayCurrent.rowVersion+'"','Idempotency-Key':'conflict-today-'+Date.now()});
+  await ev("document.getElementById('lf-content').value='Browser version conflict draft';document.querySelector('#sheetFoot [data-action=save-log]').click()");
+  const conflictKept=await waitFor(b,"Pandora.idle()&&!!document.getElementById('lf-error')&&!document.getElementById('lf-error').hidden");
+  const conflictState=await ev("({value:(document.getElementById('lf-content')||{}).value,error:(document.getElementById('lf-error')||{}).textContent,title:document.getElementById('sheetTitle').textContent,overlay:document.getElementById('overlay').hidden,mode:drafts.log&&drafts.log.mode,id:drafts.log&&drafts.log.id,taskId:drafts.log&&drafts.log.taskId})");
+  const afterConflict=await selfLog(today);
+  check('a version conflict keeps the edit draft and does not overwrite the concurrent change',conflictKept&&!conflictState.overlay&&conflictState.title==='编辑日志'&&conflictState.mode==='edit'&&conflictState.id===todayLog.id&&conflictState.value==='Browser version conflict draft'&&conflictState.taskId===pickedTask&&conflictState.error.length>0&&afterConflict.body==='Browser concurrent edit',{conflictState,afterConflict});
+  await closeSheet();
   await ev(`document.querySelector('#logResults [data-action=edit-log][data-id="${yesterdayLog.id}"]').click()`);
   check('reopening the same business day edits the existing record instead of a new one',await waitFor(b,"!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='编辑日志'&&drafts.log&&drafts.log.id==="+js(yesterdayLog.id)+"&&Pandora.idle()")&&await ev(`document.getElementById('lf-date').getAttribute('aria-readonly')==='true'&&document.getElementById('lf-date').textContent===${js(yesterday)}&&document.getElementById('lf-content').value==='Browser log yesterday backfill'`));
   await closeSheet();
 
-  /* A page already open before the real 24-hour freeze must be rejected by the server. */
+  /* A page already open before the real 24-hour freeze must be rejected by the server while the
+     current edit form keeps its unsaved draft and shows a readable error (V-001). */
   await openLogDetail(yesterdayLog.id);
   await ev("document.querySelector('#sheetFoot [data-action=edit-log]').click()");
   const editReady=await waitFor(b,"!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='编辑日志'&&!!document.getElementById('lf-content')&&Pandora.idle()");
+  await ev(`(()=>{const e=document.getElementById('lf-tag');e.value=${js(fixture.tag)};e.dispatchEvent(new Event('change',{bubbles:true}))})()`);
   sql(`UPDATE work_logs SET created_at=UTC_TIMESTAMP(6)-INTERVAL 25 HOUR WHERE id=${sqlQuote(yesterdayLog.id)}`);
   const createdAtAged=sql(`SELECT DATE_FORMAT(created_at,'%Y-%m-%d %H:%i:%s.%f') FROM work_logs WHERE id=${sqlQuote(yesterdayLog.id)}`);
   await ev(`(()=>{window.__origRequest=Pandora.request;window.__saveRequests=[];Pandora.request=async function(path,options){try{const result=await window.__origRequest.call(this,path,options);window.__saveRequests.push({path,method:options&&options.method,status:200});return result}catch(error){window.__saveRequests.push({path,method:options&&options.method,status:error.status,code:error.code,message:error.message});throw error}}})()`);
   await saveLogForm('Browser stale frozen page write');
-  const frozen=await waitFor(b,"document.getElementById('overlay').hidden&&Pandora.idle()");
-  const frozenPage=await ev("({requests:window.__saveRequests,notice:document.getElementById('appNotice').textContent,error:(document.getElementById('lf-error')||{}).textContent,errorHidden:(document.getElementById('lf-error')||{}).hidden,sheet:document.getElementById('sheetTitle').textContent,overlay:document.getElementById('overlay').hidden,draft:drafts.log&&drafts.log.id})");
+  const frozen=await waitFor(b,"!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='编辑日志'&&Pandora.idle()&&!!document.getElementById('lf-error')&&!document.getElementById('lf-error').hidden");
+  const frozenPage=await ev("({requests:window.__saveRequests,notice:document.getElementById('appNotice').textContent,error:(document.getElementById('lf-error')||{}).textContent,errorHidden:(document.getElementById('lf-error')||{}).hidden,sheet:document.getElementById('sheetTitle').textContent,overlay:document.getElementById('overlay').hidden,draft:drafts.log&&{mode:drafts.log.mode,id:drafts.log.id,businessDate:drafts.log.businessDate,content:drafts.log.content,tagId:drafts.log.tagId,taskId:drafts.log.taskId},tagField:(document.getElementById('lf-tag')||{}).value,visibleContent:(document.getElementById('lf-content')||{}).value,visible:!!document.getElementById('lf-content')&&document.getElementById('lf-content').getBoundingClientRect().height>0})");
   await ev("Pandora.request=window.__origRequest");
   const yesterdayFrozen=await selfLog(yesterday);
   const createdAtAfter=sql(`SELECT DATE_FORMAT(created_at,'%Y-%m-%d %H:%i:%s.%f') FROM work_logs WHERE id=${sqlQuote(yesterdayLog.id)}`);
-  check('a stale page cannot write after the real 24-hour freeze',editReady&&frozen&&yesterdayFrozen.frozen===true&&yesterdayFrozen.editable===false&&yesterdayFrozen.body==='Browser log yesterday backfill'&&createdAtAfter===createdAtAged&&frozenPage.notice.includes('24小时'),{editReady,frozenPage,yesterdayFrozen,createdAtAged,createdAtAfter});
+  check('a stale page cannot write after the real 24-hour freeze and keeps the unsaved draft',editReady&&frozen&&yesterdayFrozen.frozen===true&&yesterdayFrozen.editable===false&&yesterdayFrozen.body==='Browser log yesterday backfill'&&createdAtAfter===createdAtAged&&frozenPage.notice.includes('24小时')&&frozenPage.error.includes('24小时')&&!frozenPage.errorHidden&&frozenPage.visible&&frozenPage.visibleContent==='Browser stale frozen page write'&&frozenPage.tagField===fixture.tag&&frozenPage.draft&&frozenPage.draft.mode==='edit'&&frozenPage.draft.id===yesterdayLog.id&&frozenPage.draft.businessDate===yesterday&&frozenPage.draft.content==='Browser stale frozen page write'&&frozenPage.draft.tagId===fixture.tag,{editReady,frozenPage,yesterdayFrozen,createdAtAged,createdAtAfter});
+  await closeSheet();
   check('the frozen log is visibly read-only in the real page',await ev(`document.getElementById('logResults').textContent.includes('已冻结')&&!document.querySelector('#logResults [data-action=edit-log][data-id="${yesterdayLog.id}"]')`));
 
-  /* A deleted day slot whose original 24 hours have elapsed stays closed after recreation. */
+  /* A deleted day slot whose original 24 hours have elapsed stays closed after recreation; the
+     create form keeps the recreate draft so the text can still be copied (V-001). */
   const todayBeforeDelete=await selfLog(today);
   await api('DELETE','/work-logs/'+todayLog.id,undefined,{'If-Match':'"'+todayBeforeDelete.rowVersion+'"','Idempotency-Key':'del-today-'+Date.now()});
   const todayRowBefore=sql(`SELECT id,business_date,IFNULL(deleted_at,'NULL'),DATE_FORMAT(created_at,'%Y-%m-%d %H:%i:%s.%f') FROM work_logs WHERE id=${sqlQuote(todayLog.id)}`);
   sql(`UPDATE work_logs SET created_at=UTC_TIMESTAMP(6)-INTERVAL 25 HOUR WHERE id=${sqlQuote(todayLog.id)}`);
   await openLogDate();
+  await ev(`(()=>{const e=document.getElementById('lf-tag');e.value=${js(fixture.tag)};e.dispatchEvent(new Event('change',{bubbles:true}))})()`);
   await saveLogForm('Browser deleted slot must stay frozen');
-  const deletedSlot=await waitFor(b,"document.getElementById('overlay').hidden&&Pandora.idle()");
+  const deletedSlot=await waitFor(b,"!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='写日志'&&Pandora.idle()&&!!document.getElementById('lf-error')&&!document.getElementById('lf-error').hidden");
+  const recreateDraft=await ev("({error:(document.getElementById('lf-error')||{}).textContent,notice:document.getElementById('appNotice').textContent,visibleContent:(document.getElementById('lf-content')||{}).value,visible:!!document.getElementById('lf-content')&&document.getElementById('lf-content').getBoundingClientRect().height>0,mode:drafts.log&&drafts.log.mode,id:drafts.log&&drafts.log.id,date:drafts.log&&drafts.log.businessDate,tagId:drafts.log&&drafts.log.tagId,dateField:(document.getElementById('lf-date')||{}).value,tagField:(document.getElementById('lf-tag')||{}).value})");
+  await closeSheet();
   const todayRowAfter=sql(`SELECT id,business_date,IFNULL(deleted_at,'NULL'),DATE_FORMAT(created_at,'%Y-%m-%d %H:%i:%s.%f') FROM work_logs WHERE id=${sqlQuote(todayLog.id)}`);
   const liveToday=sql(`SELECT COUNT(*) FROM work_logs WHERE author_id=${sqlQuote(ids['alpha-one-employee'].id)} AND business_date=${sqlQuote(today)} AND deleted_at IS NULL`);
-  check('recreating a deleted slot never resets the first-creation freeze window',deletedSlot&&todayRowAfter.split('\t')[0]===todayLog.id&&todayRowAfter.split('\t')[2]!=='NULL'&&liveToday==='0'&&(await ev("document.getElementById('appNotice').textContent")).includes('24小时'),{before:todayRowBefore,after:todayRowAfter,liveToday,notice:await ev("document.getElementById('appNotice').textContent")});
+  check('recreating a deleted slot never resets the first-creation freeze window and keeps the recreate draft',deletedSlot&&todayRowAfter.split('\t')[0]===todayLog.id&&todayRowAfter.split('\t')[2]!=='NULL'&&liveToday==='0'&&recreateDraft.error.includes('24小时')&&recreateDraft.notice.includes('24小时')&&recreateDraft.visible&&recreateDraft.visibleContent==='Browser deleted slot must stay frozen'&&recreateDraft.mode==='create'&&!recreateDraft.id&&recreateDraft.date===today&&recreateDraft.dateField===today&&recreateDraft.tagId===fixture.tag&&recreateDraft.tagField===fixture.tag,{before:todayRowBefore,after:todayRowAfter,liveToday,recreateDraft});
 
   /* -------- personal items: real id new/edit/delete, no list actions, tenth-item limit -------- */
   const logsBefore=await ev("JSON.stringify(Pandora.data.calendarLogs.map(l=>({id:l.id,body:l.body,businessDate:l.businessDate})))");
@@ -387,33 +419,46 @@ async function main(){
    for(let level=0;level<4;level++){await ev("document.querySelectorAll('[data-action=p-report-toggle][aria-expanded=false]').forEach(node=>node.click())");await sleep(80);}
    check('fixed manager retains subordinate profile and logs '+key,await ev(`!!document.querySelector('[data-action=p-open-person][data-id="${ids['alpha-one-employee'].id}"]')`));
    if(key==='alpha-head'){
-    await ev(`state.logDepartmentId='fixture-company-beta';state.logTeamId='fixture-company-beta-one';state.logDepartmentQuery='beta';state.logTeamQuery='beta';state.logAuthorQuery='beta';state.logFilterOpen=true`);
+    /* Stale personal-log filters must not scope the current dedicated person work page. */
+    await ev(`state.logDepartmentId='fixture-company-beta';state.logTeamId='fixture-company-beta-one';state.logDepartmentQuery='beta';state.logTeamQuery='beta';state.logAuthorQuery='beta'`);
     await ev(`document.querySelector('[data-action=p-open-person][data-id="${ids['alpha-one-employee'].id}"]').click()`);
-    check('actual descendant contact and log entry '+key,await waitFor(b,"!!document.querySelector('[data-action=p-open-person-logs]')&&Pandora.idle()"));
+    const personPage=await waitFor(b,"!!document.querySelector('[data-staff-panel]')&&Pandora.idle()");
+    check('actual descendant contact and log entry '+key,personPage&&await ev("document.getElementById('sheetBody').textContent.includes('手机号')&&!document.getElementById('sheetBody').textContent.includes('邮箱')"),await ev("({title:document.getElementById('sheetTitle').textContent,oldEntry:!!document.querySelector('[data-action=p-open-person-logs]')})"));
     const indirect=await ev(`(()=>{const target=Pandora.data.reports.items.find(p=>p.id===${js(ids['alpha-one-employee'].id)});return {manager:target&&target.managerId,me:Pandora.data.me.id,isDirect:!!target&&target.managerId===Pandora.data.me.id,canRead:!!target&&target.canReadLogs}})()`);
     check('person log target is an indirect descendant, not only a direct report',indirect.manager&&indirect.manager!==indirect.me&&indirect.isDirect===false&&indirect.canRead,indirect);
-    await ev("document.querySelector('[data-action=p-open-person-logs]').click()");
-    const personLogs=await waitFor(b,`state.page==='log'&&Pandora.idle()&&state.logAuthorId===${js(ids['alpha-one-employee'].id)}&&document.querySelectorAll('[data-log-card]').length>0`);
-    const logState=await ev(`(()=>{const logs=Pandora.taskForm?Pandora.data:[],cards=Array.from(document.querySelectorAll('[data-log-card]')).map(e=>e.dataset.logCard);return {page:state.page,author:state.logAuthorId,all:state.logAll,department:state.logDepartmentId,team:state.logTeamId,departmentQuery:state.logDepartmentQuery,teamQuery:state.logTeamQuery,authorQuery:state.logAuthorQuery,cards,filtered:filteredLogs().map(l=>({id:l.id,author:l.authorId}))}})()`);
-    check('person log entry clears stale department/team/search filters',personLogs&&logState.all===false&&logState.author===ids['alpha-one-employee'].id&&logState.department==='__all__'&&logState.team==='__all__'&&logState.departmentQuery===''&&logState.teamQuery===''&&logState.authorQuery==='',logState);
+    await ev("document.querySelector('[data-action=p-staff-tab][data-tab=logs]').click()");
+    const personLogs=await waitFor(b,"Pandora.idle()&&document.querySelectorAll('.staff-log-card').length>0");
+    const staffLogState=await ev("({panel:!!document.querySelector('[data-staff-panel]'),tab:document.querySelector('[data-action=p-staff-tab][data-tab=logs]').getAttribute('aria-pressed'),title:document.getElementById('sheetTitle').textContent,cards:Array.from(document.querySelectorAll('.staff-log-card')).map(e=>e.dataset.id),oldEntry:!!document.querySelector('[data-action=p-open-person-logs]'),author:state.logAuthorId,me:Pandora.data.me.id,departmentQuery:state.logDepartmentQuery,teamQuery:state.logTeamQuery,authorQuery:state.logAuthorQuery})");
     const expected=await ev(`Pandora.request('/work-logs?scope=visible&authorId=${ids['alpha-one-employee'].id}&limit=100').then(r=>r.items.map(l=>l.id))`);
-    check('person log list contains only the target person records from current authority',logState.cards.length===expected.length&&logState.cards.every(id=>expected.includes(id))&&logState.filtered.every(row=>row.author===ids['alpha-one-employee'].id),{expected,cards:logState.cards,filtered:logState.filtered});
+    check('person work page lists only the target person logs from current authority',personLogs&&staffLogState.panel&&staffLogState.tab==='true'&&!staffLogState.oldEntry&&staffLogState.cards.length===expected.length&&staffLogState.cards.every(id=>expected.includes(id)),{expected,staffLogState});
+    check('reading a person log does not scope the personal log page to that person',staffLogState.author===staffLogState.me&&staffLogState.departmentQuery==='beta'&&staffLogState.teamQuery==='beta'&&staffLogState.authorQuery==='beta',staffLogState);
     await b.screenshot(output.replace('employee-browser.json','employee-person-logs.png'));
+    /* The reader's own log must stay the only record on the personal page. */
+    const ownLog=await api('POST','/work-logs',{body:'负责人本人日志',businessDate:today},{'Idempotency-Key':'head-own-log-'+Date.now()});
+    await ev('closeSheet();Pandora.reload().then(()=>setPage("log"))');
+    await waitFor(b,"Pandora.idle()");
+    const personalLogs=await ev("({cards:Array.from(document.querySelectorAll('#logResults [data-log-card]')).map(e=>e.dataset.logCard),selfOnly:filteredLogs(actor()).every(l=>l.authorId===Pandora.data.me.id),peopleFilters:!!document.getElementById('logFindingCard')||!!document.getElementById('logAuthorSelect')||!!document.getElementById('logDepartmentSelect'),count:(document.getElementById('logResultsCount')||{}).textContent})");
+    const ownExpected=await ev("Pandora.request('/work-logs?scope=self&limit=100').then(r=>r.items.map(l=>l.id))");
+    check('personal log page stays self-only without people filters',personalLogs.selfOnly&&!personalLogs.peopleFilters&&personalLogs.cards.length===1&&personalLogs.cards[0]===ownLog.logId&&personalLogs.cards.every(id=>ownExpected.includes(id))&&!personalLogs.cards.some(id=>expected.includes(id)),{personalLogs,ownExpected,ownLog,expected});
    }else{
     await ev(`document.querySelector('[data-action=p-open-person][data-id="${ids['alpha-one-employee'].id}"]').click()`);
-    check('actual descendant contact and log entry '+key,await waitFor(b,"!!document.querySelector('[data-action=p-open-person-logs]')&&Pandora.idle()")&&await ev("document.getElementById('sheetBody').textContent.includes('手机号')&&!document.getElementById('sheetBody').textContent.includes('邮箱')"));
+    const personPage=await waitFor(b,"!!document.querySelector('[data-staff-panel]')&&Pandora.idle()");
+    check('actual descendant contact and log entry '+key,personPage&&await ev("document.getElementById('sheetBody').textContent.includes('手机号')&&!document.getElementById('sheetBody').textContent.includes('邮箱')"),await ev("({title:document.getElementById('sheetTitle').textContent,oldEntry:!!document.querySelector('[data-action=p-open-person-logs]')})"));
+    await ev("document.querySelector('[data-action=p-staff-tab][data-tab=logs]').click()");
+    const readsLogs=await waitFor(b,"Pandora.idle()&&document.querySelectorAll('.staff-log-card').length>0");
+    const staffLogs=await ev("Array.from(document.querySelectorAll('.staff-log-card')).map(e=>e.dataset.id)");
+    const targetExpected=await ev(`Pandora.request('/work-logs?scope=visible&authorId=${ids['alpha-one-employee'].id}&limit=100').then(r=>r.items.map(l=>l.id))`);
+    check('person work page reads the same target logs for '+key,readsLogs&&staffLogs.length===targetExpected.length&&staffLogs.every(id=>targetExpected.includes(id)),{staffLogs,targetExpected});
     await ev('closeSheet()');
    }
    if(key==='founder'){
+    const founderOwn=await api('POST','/work-logs',{body:'创始人本人日志',businessDate:today},{'Idempotency-Key':'founder-own-log-'+Date.now()});
+    await ev('Pandora.reload()');
+    await waitFor(b,"Pandora.idle()");
     await setPage('log');
-    await ev("(()=>{document.getElementById('logFindingCard').open=true;const set=(id,v)=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))};set('logDepartmentSearch','no-such-department');set('logTeamSearch','no-such-team');set('logAuthorInput','no-such-person')})()");
-    await sleep(80);
-    const noMatch=await ev("({visible:Array.from(document.querySelectorAll('#logFindingCard .empty')).some(e=>!e.hidden&&e.getBoundingClientRect().height>0),text:String((document.querySelector('#logFindingCard .empty')||{}).textContent||''),dq:state.logDepartmentQuery,tq:state.logTeamQuery,aq:state.logAuthorQuery,depts:document.getElementById('logDepartmentSelect').options.length,people:document.getElementById('logAuthorSelect').options.length})");
-    check('log hierarchy search shows an explicit no-match state and keeps the input',noMatch.visible&&noMatch.text.indexOf('没有匹配')!==-1&&noMatch.dq==='no-such-department'&&noMatch.tq==='no-such-team'&&noMatch.aq==='no-such-person'&&noMatch.depts===1&&noMatch.people===1,noMatch);
-    await ev("(()=>{const set=(id,v)=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))};set('logDepartmentSearch','');set('logTeamSearch','');set('logAuthorInput','')})()");
-    await sleep(80);
-    const restored=await ev("({visible:Array.from(document.querySelectorAll('#logFindingCard .empty')).some(e=>!e.hidden&&e.getBoundingClientRect().height>0),depts:document.getElementById('logDepartmentSelect').options.length,people:document.getElementById('logAuthorSelect').options.length})");
-    check('clearing the hierarchy search hides the no-match state and restores candidates',!restored.visible&&restored.depts>1&&restored.people>1,restored);
+    const founderLogs=await ev("({cards:Array.from(document.querySelectorAll('#logResults [data-log-card]')).map(e=>e.dataset.logCard),selfOnly:filteredLogs(actor()).every(l=>l.authorId===Pandora.data.me.id),peopleFilters:!!document.getElementById('logFindingCard')||!!document.getElementById('logDepartmentSelect')||!!document.getElementById('logAuthorSelect'),count:(document.getElementById('logResultsCount')||{}).textContent})");
+    const founderExpected=await ev("Pandora.request('/work-logs?scope=self&limit=100').then(r=>r.items.map(l=>l.id))");
+    check('founder log page keeps only own logs and no people filters',founderLogs.selfOnly&&!founderLogs.peopleFilters&&founderLogs.cards.length===1&&founderLogs.cards[0]===founderOwn.logId&&founderLogs.cards.every(id=>founderExpected.includes(id))&&founderLogs.count.includes('1 条'),{founderLogs,founderExpected,founderOwn});
    }
   }
 
@@ -427,7 +472,10 @@ async function main(){
   async function pickDeptFor(id){
    const dept=await ev(`(()=>{const p=assignablePeople(actor()).find(p=>p.id===${js(id)});return p&&p.dept})()`);
    if(!dept)throw new Error('candidate is not assignable: '+id);
-   await ev(`(()=>{const b=Array.from(document.querySelectorAll('[data-pick-dept]')).find(x=>x.dataset.pickDept===${js(dept)});if(!b)throw new Error('department missing');b.click()})()`);
+   /* The current owner picker filters through the real department select, not the retired chip row. */
+   const hasOption=await ev(`Array.from(document.getElementById('ap-department').options).some(o=>o.value===${js(dept)})`);
+   if(!hasOption)throw new Error('department missing: '+dept);
+   await ev(`(()=>{const e=document.getElementById('ap-department');e.value=${js(dept)};e.dispatchEvent(new Event('change',{bubbles:true}))})()`);
    await sleep(80);
    if(!await waitFor(b,`!!document.querySelector('[data-pick-person="${id}"]')`))throw new Error('candidate row missing: '+id);
    return dept;

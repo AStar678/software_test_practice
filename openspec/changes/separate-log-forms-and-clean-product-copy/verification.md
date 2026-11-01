@@ -98,8 +98,8 @@ macOS、Java21、Node24、离线Maven缓存、本机Chrome与MySQL13306。沙箱
 - Actual: 保存失败后编辑页关闭，草稿对象为空；作者无法重新进入已冻结编辑页取回未保存内容。
 - Repair guidance: 调整冻结错误的界面处理，在保持服务端只读的前提下保留当前草稿及用户可取回的文字和明确反馈。覆盖编辑及已删除日槽重建遇到冻结的创建模式，不能通过关闭/重新载入丢掉草稿。
 - Acceptance checks: 按上述真实可控时钟步骤复现两种模式；确认失败后模式/目标ID/日期/标签/正文/关联仍在且可复制，数据库原日志及首次创建/冻结点不变；其他作者仍无写权；再运行日志专项和修订后的完整check_work_logs。补验网络、版本冲突、嵌套选择返回保留草稿。
-- Repair status: pending
-- Repair notes: 无；本轮只验证，没有修复。
+- Repair status: addressed-awaiting-verification
+- Repair notes: 已修复。`潘多拉-工作区接入.js` 的 `saveLog` 冻结分支不再 `P.reload()` 后 `closeSheet()`：保留 `drafts.log`（mode/目标ID/业务日期/标签/正文/关联）与未保存文字，刷新数据后在原模式重建表单并显示含“24小时”的错误与通知，仅身份切换或草稿已作废时退出；`潘多拉-交互原型.html` 刷新该脚本的 `?v=`。回归补在 `backend/scripts/check_fixed_employee_browser.js`（`check_fixed_web.py` 增加共享标签 fixture）：真实冻结的编辑保存保留草稿/标签/只读日期且原日志 body 与 `created_at` 不变、仍拒绝写入；删除日槽重建冻结保留创建草稿与日期/标签；另补网络失败、版本冲突、选择关联任务后返回均保留草稿且不覆盖并发修改。实测修复前可控时钟复现 `overlayHidden=true,drafts.log=null`；修复后编辑与创建两模式均保持界面打开、草稿字段与可复制文字保留、error/notice 含“24小时”、原记录及首次 created_at 不变、浏览器异常0（临时证据 `output/fix-repro/repro_v001*.py`）。`python3 backend/scripts/check_fixed_web.py` 退出0（187 PASS）。
 - Reverification notes: 首次独立确认；LOG50通过没有覆盖该失败分支，旧综合脚本反而将“到期即关闭”写成期待，不得用其旧断言覆盖新合同。
 
 ### V-002: 必须运行的日志综合回归仍断言旧人员入口及本人页人员筛选
@@ -112,8 +112,8 @@ macOS、Java21、Node24、离线Maven缓存、本机Chrome与MySQL13306。沙箱
 - Actual: 综合入口被旧DOM/导航合同中断；handoff承认未全绿，但未完成本change明确要求的回归迁移，不能宣称后续日志/冻结/资料流程已经运行。
 - Repair guidance: 迁移旧入口/筛选/冻结失败断言到当前合同，同时保留真正的授权、冻结、冲突、删除重建及账号业务检查；不删检查或恢复旧产品入口换取通过。与下属工作区共享变更协调。
 - Acceptance checks: python3 backend/scripts/check_work_logs.py完整退出0，且日志/人员/冻结等后续用例确实执行；python3 backend/scripts/check_log_backfill_entry.py、check_subordinate_workspace.py、check_fixed_workspace_access.py仍通过；V-001真实失败草稿检查纳入当前验证。
-- Repair status: pending
-- Repair notes: 无；本轮没有修改测试。
+- Repair status: addressed-awaiting-verification
+- Repair notes: 已迁移旧断言。`backend/scripts/check_fixed_employee_browser.js` 的人员日志入口由已移除的 `p-open-person-logs`/`logAuthorId`/`logFindingCard` 改为当前 `[data-staff-panel]` 专用人员工作页与 `[data-action=p-staff-tab][data-tab=logs]`：按 `/work-logs?scope=visible&authorId=...` 校验目标人员日志、间接下属与 `canReadLogs`，本人日志页改验 self-only、无人员筛选且读他人日志不改写本人页范围（创始人/部门负责人各实际写入1条本人日志比对）。为让该必跑入口真正跑完后续检查，同文件把负责人选择器旧 `[data-pick-dept]` 药丸断言迁移到当前真实 `#ap-department` 下拉，保留跨部门选择、顺序、取消丢弃、空负责人拒绝等原业务断言；未删检查、未恢复旧产品入口；`check_fixed_web.py` 仅增加共享标签 fixture。实测：修复前基线 135 PASS 后在 founder 人员入口失败；`python3 backend/scripts/check_work_logs.py` 退出0（249 PASS = check_fixed_workspace_access 62 + check_fixed_web 187，原中断点之后的个人事项、待审版本、接管重开、资料/人员页、负责人编辑与原生弹层用例均实际执行）；`python3 backend/scripts/check_log_backfill_entry.py` 退出0（50 PASS）；`python3 backend/scripts/check_subordinate_workspace.py` 退出0（82 PASS）；`backend/scripts/check_web_resources.py` 14/14；8个根目录JS `node --check` 通过。
 - Reverification notes: 首次独立在本change记录。属于测试实现与覆盖缺口，现有证据不表明当前人员工作页的日志阅读本身故障；STAFF82及ACCESS62独立通过，不因过时断言否定它们实际证明的行为。
 
 下一步：`$openspec-e13-fix-change separate-log-forms-and-clean-product-copy`，修复后重新独立验证；当前不可归档。

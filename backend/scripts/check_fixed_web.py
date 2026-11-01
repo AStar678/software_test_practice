@@ -36,6 +36,7 @@ def main():
             if status not in (200,201):raise AssertionError((path,status,result.get('code')))
             return result
         def form(title,owners):return {'title':title,'description':'Browser acceptance real task','priority':'medium','allDay':False,'startAt':instant(0,9),'dueAt':instant(3,18),'assigneeIds':[ids[key] for key in owners]}
+        tag=call('POST','/tags',{'name':'浏览器共享标签','color':'#F6D5D2'})['tagId']
         for index in range(105):call('POST','/tasks',form('Browser task '+str(index).zfill(3)+' very long title '*3,['alpha-one-employee']))
         special={}
         for key,start,end in (('cross',instant(0,20),instant(2,10)),('midnight',instant(0,12),instant(1)),('point',instant(1),instant(1))):
@@ -63,7 +64,7 @@ def main():
             'completionNote':'Proposed completion must not appear'},'beta-one-employee',view['rowVersion'])
         manifest.update(day=str(day),special=special,completedTask=completed['taskId'],database=f.database,
             pendingTask=pending['taskId'],pendingOldTitle='Effective version pending task',
-            pendingProposedTitle='Proposed completion must not appear')
+            pendingProposedTitle='Proposed completion must not appear',tag=tag)
         env={**os.environ,'PANDORA_BROWSER_FIXTURE':json.dumps(manifest)}
         subprocess.run(['node',str(BASE/'scripts/check_fixed_admin_browser.js')],env=env,check=True)
         subprocess.run(['node',str(BASE/'scripts/check_fixed_employee_browser.js')],env=env,check=True)
