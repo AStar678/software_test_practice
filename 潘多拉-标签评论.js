@@ -34,7 +34,7 @@
     return '<div class="field p-tag-field"><label for="' + prefix + '-tag">共用标签（全员可见）</label><select id="' + prefix + '-tag">' +
       '<option value=""' + (!current ? ' selected' : '') + '>无标签（默认粉色）</option>' +
       list.map(tag => '<option value="' + esc(tag.id) + '"' + (tag.id === current ? ' selected' : '') + '>' + esc(tag.name) + (tag.deleted ? '（已删除）' : '') + '</option>').join('') +
-      '</select><span class="tiny muted">标签由创始人统一维护，日志最多选择一个，任务支持多选；删除的标签不能再用于新的关联。</span></div>';
+      '</select></div>';
   };
   P.taskTagsHTML = function (selected, snapshots) {
     const known = new Map(tags().map(tag => [tag.id, tag]));
@@ -74,8 +74,7 @@
   function manageView() {
     return {
       title: '编辑标签',
-      body: '<p class="tiny muted">标签由创始人维护，员工在编辑任务或日志时选择和清除标签。</p>' +
-        '<div class="card-head"><h2>新建标签</h2></div>' + tagFormHTML({ name: '', color: (palette()[0] || {}).color || '' }) + '<div class="divider"></div><div class="card-head"><h2>已有标签</h2></div>' + tagRowsHTML(),
+      body: '<div class="card-head"><h2>新建标签</h2></div>' + tagFormHTML({ name: '', color: (palette()[0] || {}).color || '' }) + '<div class="divider"></div><div class="card-head"><h2>已有标签</h2></div>' + tagRowsHTML(),
       foot: '<button type="button" class="btn primary" data-action="p-tag-create">新建标签</button>' + withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>')
     };
   }
@@ -374,7 +373,6 @@
     const card = document.createElement('section');
     card.className = 'card';
     card.innerHTML = '<div class="card-head"><h2>标签管理</h2><span class="hint">私人 / 共用</span></div>' +
-      '<p class="tiny muted">维护公司共用标签，员工在编辑任务或日志时选择使用。</p>' +
       '<button type="button" class="btn" data-action="p-manage-tags">打开标签管理</button>';
     page.appendChild(card);
   };

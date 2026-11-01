@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-01T09:50:16.373Z",
+  "updated": "2026-11-01T11:27:09.446Z",
   "checks": [
     {
       "check": "employee session is ready",
@@ -17,8 +17,8 @@
       "check": "table includes created and assigned only",
       "pass": true,
       "evidence": [
-        "5555d3a9-f4ed-402b-9397-6b62b323fbd7",
-        "cfa2d757-4ee0-47a4-b3eb-ea5062c72d7d"
+        "e2892ac4-c2ad-4a42-80c0-7c2547990b1b",
+        "e7ef270e-7faf-477c-8a26-c3f195565c03"
       ]
     },
     {
@@ -55,6 +55,10 @@
     },
     {
       "check": "initial date options include all missing days",
+      "pass": true
+    },
+    {
+      "check": "log form shows no tag or ownership rule paragraphs",
       "pass": true
     },
     {
@@ -186,6 +190,19 @@
       "pass": true
     },
     {
+      "check": "edit shows one read-only business date without creation candidates",
+      "pass": true,
+      "evidence": {
+        "tag": "DIV",
+        "readonly": "true",
+        "text": "2026-11-01",
+        "options": 0,
+        "mode": "edit",
+        "id": "e4103f75-baeb-4747-ad26-1d79c3981ab7",
+        "newEntry": false
+      }
+    },
+    {
       "check": "edit metadata aligned 320",
       "pass": true,
       "evidence": {
@@ -249,8 +266,19 @@
       }
     },
     {
-      "check": "explicit edit updates original log",
-      "pass": true
+      "check": "explicit edit updates the same record and keeps its date and first-creation instant",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "date": "2026-11-01",
+          "createdAt": "2026-11-01T11:27:11.069547Z"
+        },
+        "after": {
+          "body": "Edited from explicit log entry 标签 原型",
+          "date": "2026-11-01",
+          "createdAt": "2026-11-01T11:27:11.069547Z"
+        }
+      }
     },
     {
       "check": "authorized person logs open separately",
@@ -266,6 +294,10 @@
     },
     {
       "check": "reload still contains only personal logs",
+      "pass": true
+    },
+    {
+      "check": "analysis page shows a readable method instead of internal codes",
       "pass": true
     },
     {

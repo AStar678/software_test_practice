@@ -290,7 +290,7 @@ async function main(){
   const detailClosed=await ev("document.getElementById('overlay').hidden");
   check('log detail closes without rewriting the log date',detailOpened&&detailVisible.overlay&&detailClosed,{detailOpened,detailVisible,detailClosed});
   await ev(`document.querySelector('#logResults [data-action=edit-log][data-id="${yesterdayLog.id}"]').click()`);
-  check('reopening the same business day edits the existing record instead of a new one',await waitFor(b,"!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='编辑日志'&&drafts.log&&drafts.log.id==="+js(yesterdayLog.id)+"&&Pandora.idle()")&&await ev("document.getElementById('lf-date').disabled&&document.getElementById('lf-content').value==='Browser log yesterday backfill'"));
+  check('reopening the same business day edits the existing record instead of a new one',await waitFor(b,"!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='编辑日志'&&drafts.log&&drafts.log.id==="+js(yesterdayLog.id)+"&&Pandora.idle()")&&await ev(`document.getElementById('lf-date').getAttribute('aria-readonly')==='true'&&document.getElementById('lf-date').textContent===${js(yesterday)}&&document.getElementById('lf-content').value==='Browser log yesterday backfill'`));
   await closeSheet();
 
   /* A page already open before the real 24-hour freeze must be rejected by the server. */
@@ -383,6 +383,8 @@ async function main(){
    await ev('Pandora.logout()');await login(key);await ev("setPage('me')");
    const fields=await ev("Array.from(document.querySelectorAll('[data-profile-fold=organization] .profile-row .k')).map(e=>e.textContent)");
    check('fixed profile organization fields '+key,await ev(`document.querySelector('[data-profile-fold=organization]').textContent.includes(${js(label)})&&!document.querySelector('[data-action=p-open-teams]')`)&&fields.includes('部门')===department&&fields.includes('团队')===team,fields);
+   await ev("document.querySelector('[data-profile-fold=reports]').open=true");
+   for(let level=0;level<4;level++){await ev("document.querySelectorAll('[data-action=p-report-toggle][aria-expanded=false]').forEach(node=>node.click())");await sleep(80);}
    check('fixed manager retains subordinate profile and logs '+key,await ev(`!!document.querySelector('[data-action=p-open-person][data-id="${ids['alpha-one-employee'].id}"]')`));
    if(key==='alpha-head'){
     await ev(`state.logDepartmentId='fixture-company-beta';state.logTeamId='fixture-company-beta-one';state.logDepartmentQuery='beta';state.logTeamQuery='beta';state.logAuthorQuery='beta';state.logFilterOpen=true`);

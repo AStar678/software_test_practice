@@ -128,7 +128,8 @@ async function main(){
   await evaluate(`$('inventoryEmployee').value=${JSON.stringify(ids['alpha-two-employee'].id)};$('inventoryLoad').click()`);
   check('departure inventory includes completed work and pending unpublished creation',await waitFor(browser,`state.inventory.employeeId===${JSON.stringify(ids['alpha-two-employee'].id)}&&document.querySelector('[data-takeover-task]')&&document.querySelector('[data-cancel-request]')`));
   await evaluate(`document.querySelectorAll('[data-takeover-task]').forEach(s=>s.value=${JSON.stringify(ids['beta-two-employee'].id)});document.querySelectorAll('[data-cancel-request]').forEach(i=>i.checked=true);$('takeoverReason').value='Browser prepared departure';$('stageDeactivate').click();$('planReason').value='Browser final complete departure';$('planSave').click()`);
-  check('browser commits completed responsibility takeover and employee deactivation',await waitFor(browser,`!state.employees.find(e=>e.id===${JSON.stringify(ids['alpha-two-employee'].id)}).active`));
+  const deactivated=await waitFor(browser,`!state.employees.find(e=>e.id===${JSON.stringify(ids['alpha-two-employee'].id)}).active`);
+  check('browser commits completed responsibility takeover and employee deactivation',deactivated,await evaluate("({active:state.employees.find(e=>e.id==="+JSON.stringify(ids['alpha-two-employee'].id)+").active,planError:document.getElementById('planError')&&document.getElementById('planError').textContent,notice:document.getElementById('appNotice')&&document.getElementById('appNotice').textContent,body:document.body.innerText.slice(-600)})"));
   await evaluate("selectTab('account',document.querySelector('[data-tab=account]'))");
   check('admin account has independent account fields',await waitFor(browser,"state.adminAccount&&$('adminAccountName').value==='fixture-company-admin'"));
   await evaluate("$('adminAccountName').value='browser-renamed-admin';$('adminAccountSave').click()");

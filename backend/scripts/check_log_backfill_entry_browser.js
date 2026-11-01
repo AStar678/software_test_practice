@@ -70,6 +70,7 @@ async function main() {
     await ev("setPage('log')");
     check('today log entry opens for the first write', await open('new-log') && await ev(`document.getElementById('lf-date').value===${JSON.stringify(today)}`));
     check('initial date options include all missing days',await ev("document.querySelectorAll('#lf-date option').length===3&&!drafts.log.id"));
+    check('log form shows no tag or ownership rule paragraphs',await ev("!document.getElementById('sheetBody').textContent.includes('标签由创始人统一维护')&&!document.getElementById('sheetBody').textContent.includes('日志归属于本人')&&document.querySelector('#lf-tag').closest('.field').querySelector('label').textContent.trim()==='标签'"));
     await logGeometry('create');
     await browser.screenshot(path.join(screenshots,'create-log-390.png'));
     await ev(`drafts.log.taskId=${JSON.stringify(fixture.colorTask)};drafts.log.relationshipChanged=true`);
@@ -106,12 +107,16 @@ async function main() {
     await browser.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
     check('keyboard card activation opens detail',await waitFor(browser,"Pandora.idle()&&!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='日志详情'"));
     await ev('closeSheet()');
+    const beforeEdit=await ev(`Pandora.request('/work-logs/'+${JSON.stringify(existingId)})`);
     await ev(`document.querySelector('[data-log-card="${existingId}"] [data-action=edit-log]').click()`);
 
-    check('explicit edit remains available',await waitFor(browser,"Pandora.idle()&&document.getElementById('sheetTitle').textContent==='编辑日志'&&document.getElementById('lf-date').disabled"));
+    check('explicit edit remains available',await waitFor(browser,"Pandora.idle()&&document.getElementById('sheetTitle').textContent==='编辑日志'"));
+    const editDate=await ev(`(()=>{const n=document.getElementById('lf-date');return {tag:n&&n.tagName,readonly:n&&n.getAttribute('aria-readonly'),text:n&&n.textContent,options:n?n.querySelectorAll('option').length:0,mode:drafts.log&&drafts.log.mode,id:drafts.log&&drafts.log.id,newEntry:!!document.querySelector('#sheetBody [data-action=new-log]')}})()`);
+    check('edit shows one read-only business date without creation candidates',editDate.tag!=='SELECT'&&editDate.readonly==='true'&&editDate.text===today&&editDate.options===0&&editDate.mode==='edit'&&editDate.id===existingId&&!editDate.newEntry,editDate);
     await logGeometry('edit');
-    await save('Edited from explicit log entry');
-    check('explicit edit updates original log',await ev(`Pandora.request('/work-logs/'+${JSON.stringify(existingId)}).then(r=>r.body==='Edited from explicit log entry')`));
+    await save('Edited from explicit log entry 标签 原型');
+    const afterEdit=await ev(`Pandora.request('/work-logs/'+${JSON.stringify(existingId)})`);
+    check('explicit edit updates the same record and keeps its date and first-creation instant',afterEdit.body==='Edited from explicit log entry 标签 原型'&&afterEdit.body.includes('标签')&&afterEdit.body.includes('原型')&&afterEdit.businessDate===today&&afterEdit.createdAt===beforeEdit.createdAt,{before:{date:beforeEdit.businessDate,createdAt:beforeEdit.createdAt},after:{body:afterEdit.body,date:afterEdit.businessDate,createdAt:afterEdit.createdAt}});
     await ev(`Pandora.openLogsFor(${JSON.stringify(fixture.foreignAuthor)})`);
     check('authorized person logs open separately',await waitFor(browser,`document.getElementById('sheetTitle').textContent==='人员日志'&&!!document.querySelector('#sheetBody [data-log-card="${fixture.foreignLog}"]')`));
     await ev(`document.querySelector('#sheetBody [data-log-card="${fixture.foreignLog}"] p').click()`);
@@ -121,6 +126,8 @@ async function main() {
     await ev('Pandora.reload()');
     check('reload still contains only personal logs',await ev("document.querySelectorAll('#logResults [data-log-card]').length===3&&filteredLogs(actor()).every(l=>l.authorId===Pandora.data.me.id)"));
     await browser.screenshot(path.join(screenshots,'personal-log-page-390.png'));
+    await ev("setPage('ai')");
+    check('analysis page shows a readable method instead of internal codes',await waitFor(browser,"document.getElementById('page-ai').textContent.includes('本地规则统计')&&!document.getElementById('page-ai').textContent.includes('local_proportional_schedule_rules')&&document.getElementById('page-ai').textContent.includes('生成于')",30000));
     await ev('Pandora.logout()');
     await waitFor(browser,"!!document.getElementById('backend-login')");
     await ev(`document.getElementById('login-user').value=${JSON.stringify(ids['alpha-one-employee'].identifier)};document.getElementById('login-password').value='Fixture@123456';document.getElementById('backend-login').requestSubmit()`);

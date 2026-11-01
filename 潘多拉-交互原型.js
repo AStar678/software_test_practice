@@ -1827,7 +1827,7 @@ function logFormView(){
         '<button type="button" class="btn tiny-btn" data-action="pick-log-task">选择关联任务</button>' +
         (d.taskId ? '<button type="button" class="btn tiny-btn ghost" data-action="clear-log-task">清空关联</button>' : "") +
       "</div>" +
-      '<span class="tiny muted">日志归属于本人，可被范围内的上级查看，但只有本人可以编辑。</span></div>' +
+      '' +
     '<div class="callout" id="lf-error" hidden></div>';
   return { title: d.id ? "编辑日志" : "写日志", body: body,
     foot: withBack('<button type="button" class="btn primary" data-action="save-log">保存日志</button>', actor()),
