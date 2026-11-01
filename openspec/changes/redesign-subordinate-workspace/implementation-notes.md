@@ -1,71 +1,49 @@
 # Implementation Notes
 
 - Change: redesign-subordinate-workspace
-- Schema: spec-driven; Store: local
-- Project: /Users/aoxiang/Desktop/软件测试
-- Updated: 2026-10-31 (Asia/Shanghai)
-- Revision: ec675ae843b384ca1863ba9fa60dbf728928be42，同一脏工作区未提交。用户明确要求单独建立新变更；已有两个变更保留各自范围，未归档。
-- Progress: 5/5实施完成（含本轮月/日视图追加）；本记录不是独立验证结论。云端未发布，用户此前取消手机真机测试，本轮仅真实浏览器尺寸模拟。
+- Schema: spec-driven
+- Store: local（仓库根 `openspec/`）
+- Implementation roots: /Users/watuji/MyGitDev/software_test_practice
+- Updated: 2026-11-01T19:15+08:00
+- Implementation revision: `71ec623` 之上未提交的工作区（`潘多拉-个人资料.js`、`潘多拉-手账主题.css`、两个专项脚本、文档、任务与交接）；本 change 未创建 commit。
+- Progress: 5/5 tasks complete。本文件是实施交接，不是独立验证结论；`verification.md` 保留首次 FAIL 原文。
 
 ## Implementation map
 
-| 任务/场景 | 代码和测试 |
-| --- | --- |
-| 1.1 全后代树 | 潘多拉-个人资料.js reportsSection按reports.managerId构树，固定展开与人员按钮分离，姓名/职级/职位分行，expandedReports会话清理；check_subordinate_workspace验证创始人三级展开、团队负责人和普通员工，API验证部门/团队后代与跨部门拒绝 |
-| 2.1 独立日程 | 同模块staffView独立全屏、身份/资料、日程日志页签、七天日期按钮与前后七天导航。读取tasks assigneeId及公司日期，遍历当天全部分页后按开始排序，半开区间裁剪午夜和点任务；界面不放置拖动编辑。主题CSS为独立staff组件，非本人主页面复用 |
-| 2.2 日志/返回/状态 | authorId日志每页10条可加载更早，短摘要点击原详情评论；view.rebuild返回保留人/页签/日期并重新校验关系和读取。人员/内容API独立裁决，失权或读取失败清空列表与联系方式/代办标记。epoch+request sequence+当前可见panel阻止旧响应渲染。backend/docs/subordinate-workspace.md记录使用方式 |
-| 3.1 集成 | check_subordinate_workspace.py / _browser.js独立fixture，真实授权断言、分页/边界/详情/旧响应/失权/重试/范围隔离，320/390/1440截图；本地8080预览保持原数据库 |
+| 任务/场景 | 实现 | 检查 |
+| --- | --- | --- |
+| 1.1 真实下属树（V-002） | `潘多拉-个人资料.js` 新增 `P.staffOrgLine`：身份/职位与真实部门/团队分别拼接，无部门显示“公司层”；节点模板改用该行，不再用 `positionName||teamName||departmentName` 互斥回退 | 浏览器：节点同时含职位/部门/团队；四种身份与公司层的纯函数断言；320/390/1440 截图 |
+| 2.1 独立日程（V-001） | 月/日/全天/清单读取 `executionState`；月条、日轴、全天按钮增加 `is-done`、删除线/淡色和“已完成”文字；月历使用共享 `monthWeek` 日级几何（随排期 change 更新），不再按小时缩窄；下属月/日/全天/清单无 `data-schedule-move`/`data-resize-task`；待审虚线框按提议位置 | `check_subordinate_workspace.py` 82 项：完成状态四种呈现、所选人过滤、跨日/午夜/零时长、13 项分页可达、无拖动；`check_schedule_drag.py` 211 项覆盖下属待审提议位置（reject/withdraw）与通过后实线 |
+| 2.2 日志/返回/详情权限 | 日志 10+2 分页、详情评论、返回保留人员/页签/日期；详情按当前用户原权限显示：`check_subordinate_workspace.py` 新增团队负责人查看自己创建任务（可编辑+可调时）与仅可见任务（仅调时、无基础编辑）两种情况；他人日志正文只读、失权清空、旧响应/换账号丢弃沿用 | 浏览器断言 + 既有 82 项中的失权/重试/快速换人/换账号 |
+| 3.1 集成交付 | 隔离 API/浏览器 320/390/1440；构建、打包资源、本地 8080 预览以 `pandora_demo` 原数据重启；更新 `backend/docs/subordinate-workspace.md` 与实施交接 | 见下表 |
+| 4.1 月/日追加验证 | 旧小时比例/下属可拖动断言更新为日级几何与无拖动；跨年翻月、跨周/月条、+N、日轴重叠/全天/午夜/零时长/完成；待审新位置与终态（通过/驳回/撤回）；详情权限保留 | `check_subordinate_workspace.py` + `check_schedule_drag.py` 下属段落 |
 
-## Checks actually run（首次实施历史结果）
+## 本轮实际检查（2026-11-01，项目根目录）
 
-工作目录：项目根目录。CHROME_BIN=/Users/aoxiang/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing。
+浏览器 `CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"`；集成脚本各自创建并清理随机测试库，不连接演示库或云端。
 
 | 命令 | 结果 / 证据 |
 | --- | --- |
-| python3 backend/scripts/build_refinement_verification.py | 最终成功打包，111单元测试0失败/错误/跳过；output/staff-build.log、backend/target/surefire-reports。沿用临时POM排除既有* 2.java副本，不删除用户重复文件 |
-| CHROME_BIN=… python3 backend/scripts/check_subordinate_workspace.py | 39浏览器检查通过，无浏览器异常，另含API后代范围/普通员工空树/跨部门日志404及任务空集断言；output/staff-check.log、output/subordinate-workspace/browser-report.json。数据库随机创建、自动清理，不读云端正式数据 |
-| JS/Python语法、git diff --check | 通过 |
-| openspec validate redesign-subordinate-workspace --strict | 通过 |
-| 本地预览健康/资源SHA256 | /health=200，个人资料.js与手账主题.css的HTTP资源和源码相同，保留原演示数据库 |
-
-人工查看tree-320/390、schedule-320/390/1440、logs-320/390截图，深层名字可读，无横溢，桌面内容宽680，小屏无底部重复关闭按钮，页头关闭可达。fixture英文姓名用于长名字验证，未显示为真实业务数据。
-
-实施修正：首轮已通过，截图发现桌面内容自动缩成窄列，增加width:100%和max-width约束；删去重复底部关闭为小屏腾出空间。快速切换使用专用异步序列而非全局busy拦截，避免前一请求未结束时新选择卡在加载；最终回归包含故意延迟旧响应、切页签后释放旧响应、模拟丧失下属关系后重试。失权时清除人员电话和代办标记。
+| `cd backend && mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test package` | 111 项单元测试，0 失败/错误/跳过；BUILD SUCCESS |
+| `python3 backend/scripts/check_subordinate_workspace.py` | 退出 0；**82** 项（原 71）。`output/subordinate-workspace/browser-report.json`；新增 completed/org/详情权限断言与截图 |
+| `python3 backend/scripts/check_schedule_drag.py` | 退出 0；**211** 项；下属待审提议位置在驳回与撤回两种决策下验证，通过后下属月条回到实线新时间 |
+| `python3 backend/scripts/check_task_creation_refinement.py` | 退出 0；36 API + 39 浏览器（回归自查/表单/通知） |
+| `python3 backend/scripts/check_calendar_drawer.py` | 退出 0；102 项 |
+| `cd backend && python3 scripts/check_web_resources.py --repo .. --jar target/pandora-backend-0.1.0.jar --output ../audit/.../web-resources-staff.json` | 14/14；资源与源码逐字节一致，`?v=` 与当前哈希一致 |
+| 本地预览（`service.py stop demo` 后用当前 JAR 以 `pandora_demo` 重启） | health=UP；个人资料.js、手账主题.css、日程 JS、api JS 与源码 SHA256 一致；未重建演示库 |
+| `node --check`（个人资料/专项脚本）、`openspec validate redesign-subordinate-workspace --strict` | 通过 |
 
 ## Verification reminders
 
-- 复核目录父子关系来源和权限范围；UI目录不能替代任务/日志授权。
-- 复核person→task/log详情的返回与组织变化，日志more分页、午夜/点任务、快速切人/换账号时序。
-- 视图只主动展示所选人当前负责的正常已发布任务；不展示仅创建但不负责或待创建内容。
-- 返回日志详情后重新读取日志第一页，页签/人/日期保留；加载更多仍可达。未承诺保留父页滚动偏移或已加载页数。
-- 原profile平铺列表的旧浏览器断言不代表本轮需求，本轮使用新专项检查；没有重跑全部历史UI脚本。
-- 共用前两个未归档变更的代码基础，无独立checkout；本变更仅修改个人资料模块、主题及本轮测试/说明。没有数据库迁移或后端权限改动。
-- 独立验证与归档尚未进行，不能把本实施检查当作独立PASS。云端和安卓真机均未更新/测试。
+- V-001 修复的是**呈现**：完成状态在月条、日轴、全天按钮和清单都有 `is-done` 及“已完成”文字；不是只改清单。
+- V-002 修复的是**组织行**：`P.staffOrgLine` 不再用职位顶替部门/团队；验证时同时看节点文本与四种身份的纯函数输出（含无部门“公司层”）。
+- 下属页面**没有**拖动绑定：`bindScheduleResize` 只作用于本人日程页根节点；下属月/日/全天/清单 0 手柄。详情入口仍按当前用户原权限显示（本轮用“团队负责人查看自己创建任务可编辑、查看他人任务仅调时”验证）。
+- 待审虚线在月历按日级、日轴按真实时段；驳回/撤回保持提议位置，通过后下属月条回到实线新时间。下属终态覆盖通过（approve→19:00 实线）与驳回/撤回（待审提案仍显示）；失效终态由排期 change 的自有日历段落覆盖，共用同一投影代码。
+- 日志返回重新读取第一页，不承诺保留已加载页数或滚动位置；本人日志/日历/任务表单范围未改。
+- 已刷新 `潘多拉-交互原型.html`/`admin.html` 的资源版本号；再次修改资源后需重新刷新。
+- 共享排期 change 的更新已包含：日级月历、日轴小时、下属无拖动。旧“下属可拖动/小时比例月条”检查结果不得作为本 change 证据。
+- 未进行手机真机/软键盘测试；未发布云端、未推送 Git、未归档。
 
+## Historical（仍有效）
 
-## 月/日视图追加实施（2026-10-31）
-
-用户确认纳入同一变更。此前“仅七天导航和每日清单”的设计已由月/日视图取代，当前规划与任务为准；原39项结果为历史，不代表追加要求已经验证。
-
-- 2.1 / 4.1：个人资料模块增加默认月视图、模式切换、公司日期选择和今天/前后月或天导航。月网格周一至周日，使用P.calendar.monthWeek纯投影算法显示跨周/月连续条和+N；点击日期/+N进入完整日视图，月任务可进入详情并返回原模式。
-- 日视图复用P.calendar.dayCoverage/layoutDayEvents计算完整00:00—24:00轴、重叠分栏、点任务和独立全天区，保留任务清单切换，窄屏有内部纵向滚动。按整月网格/当天区间读取全部授权分页，再进行半开区间裁剪；不使用本人viewTasks或写入本人日历状态。
-- 3.1：主题新增局部staff日历样式，无拖动修改入口。320/390/1440测量及截图通过；月历溢出不丢任务，8个重叠/点任务在轴上分栏，两项整日覆盖独立展示。
-- 个人资料、主题、专项测试与backend/docs/subordinate-workspace.md更新；后端/数据库未变，原演示库保留。
-
-本轮命令（项目根目录，CHROME_BIN同前）：
-
-| 命令 | 实际结果 / 证据 |
-| --- | --- |
-| python3 backend/scripts/build_refinement_verification.py | 最终成功，111单元测试0失败/错误/跳过；output/staff-calendar-build.log |
-| CHROME_BIN=… python3 backend/scripts/check_subordinate_workspace.py | 最终月/日与原工作页专项回归全部通过；output/staff-calendar-check.log、output/subordinate-workspace/browser-report.json。56项检查全部通过；覆盖跨年翻月、月份跳转、跨周/月条、+N、全部日内任务、日轴/清单、返回模式、原日志/权限/旧响应/失权/重试。截图month-320/390/1440和day-axis-320/390/1440 |
-| openspec validate redesign-subordinate-workspace --strict、JS语法、git diff --check | 通过 |
-| 本地预览 | 8080健康200，个人资料.js和手账主题.css的HTTP资源与源码SHA256一致，数据库保留 |
-
-修复及检查过程：首次月历点击测试假设某个指定任务一定在前三个可见槽，实际该任务可按稳定排序进入+N；改为点击实际可见的跨周任务，并通过+N检查全部日内任务。截图发现长时间任务文字竖向居中，显式flex顶部对齐，新增文字顶边断言并复跑。长需求拆为组织工作页和下属月/日日历两条，保持全部场景，strict验证通过。
-
-独立验证提醒：重点检查月网格范围、跨月/午夜半开边界、+N与默认月视图、日期选择及轴/清单切换；本轮代码仍是先前同一脏工作区。真机已取消，云端未更新，未进行独立验证或归档。
-
-
-## 正式发布追记（2026-10-31）
-
-用户要求先上线并同步Git。现已发布到 https://8.141.96.122:6644 ，代码提交f29f9fd，原配置/数据库保留、V28成功升级；详情见backend/docs/release-20261031.md。上文“未发布云端”描述为对应实施检查时的历史状态，现由本追记更新。发布检查不代表独立验证PASS，当前变更仍未归档；手机测试仍按用户要求取消。线上未标记专用演示账号，因此未做登录后的业务读取测试，未改任何账号密码。
+- 首次实现基于 `f29f9fd` 并已发布；旧记录中的 `/Users/aoxiang/Desktop/软件测试`、旧 revision 与“未发布”状态由发布追记和本记录取代。首次独立验证 V-001/V-002 已在本轮修复。

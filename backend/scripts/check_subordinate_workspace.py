@@ -23,6 +23,22 @@ def main():
   spanning=task('跨周跨月连续任务',instant(day-dt.timedelta(days=4),20),instant(day+dt.timedelta(days=8),10))
   overlaps=[task('重叠工作 '+str(i),instant(day,9),instant(day,17)) for i in range(6)]
   other=task('其他下属任务不可混入',instant(day,9),instant(day,17),'alpha-two-employee')
+  # Completed work must stay distinguishable in month, axis, all-day and list presentations.
+  done_timed=task('日轴完成状态',instant(day,10),instant(day,11))
+  done_allday=ok('POST','/tasks',{'title':'全天完成状态','description':'独立人员工作页','assigneeIds':[ids['alpha-one-employee']],'allDay':True,'startDate':str(day),'dueDate':str(day)})['taskId']
+  quiet=day+dt.timedelta(days=40)
+  done_month=task('月历完成状态',instant(quiet,10),instant(quiet,11))
+  def complete(task_id):
+   view=ok('GET','/tasks/'+task_id,who='alpha-one-employee')
+   result=ok('PATCH','/tasks/'+task_id,{'command':'complete','completionNote':'完成状态检查'},'alpha-one-employee',view['rowVersion'])
+   request=ok('GET','/approval-requests/'+result['requestId'],who='alpha-one-head')
+   ok('PATCH','/approval-requests/'+result['requestId'],{'decision':'approve'},'alpha-one-head',request['rowVersion'])
+  for task_id in (done_timed,done_allday,done_month): complete(task_id)
+  # A task created by the team head proves the person entry keeps the viewer's existing base edit right.
+  created=ok('POST','/tasks',{'title':'负责人可直接编辑的任务','description':'独立人员工作页','assigneeIds':[ids['alpha-one-employee']],'allDay':False,'startAt':instant(day,14),'dueAt':instant(day,15)},'alpha-one-head')
+  request=ok('GET','/approval-requests/'+created['requestId'],who='alpha-head')
+  ok('PATCH','/approval-requests/'+created['requestId'],{'decision':'approve'},'alpha-head',request['rowVersion'])
+  head_owned=created['taskId']
   # Old historical logs are intentionally fixture-only; create UI still enforces the real 3-day window.
   for offset in range(12):
    f.db.server_side('INSERT INTO work_logs(id,organization_id,author_id,business_date,body) VALUES('+','.join(map(quote,[str(uuid.uuid4()),'fixture-company',ids['alpha-one-employee'],str(today-dt.timedelta(days=offset)),'日志 '+str(offset)+'\n'+'跨天资料整理，下一步检查验收。'*12]))+')')
@@ -33,6 +49,6 @@ def main():
   assert ok('GET','/me/reports',who='alpha-one-employee')['items']==[]
   assert call('GET','/work-logs?scope=visible&authorId='+ids['alpha-one-employee'],who='beta-one-head')[0]==404
   assert ok('GET','/tasks?assigneeId='+ids['alpha-one-employee'],who='beta-one-head')['items']==[]
-  manifest={'base':f'http://127.0.0.1:{f.port}','identities':f.identities,'day':str(day),'normal':normal,'point':point,'cross':cross,'midnight':midnight,'other':other,'spanning':spanning,'overlaps':overlaps,'ownLog':own_log}
+  manifest={'base':f'http://127.0.0.1:{f.port}','identities':f.identities,'day':str(day),'normal':normal,'point':point,'cross':cross,'midnight':midnight,'other':other,'spanning':spanning,'overlaps':overlaps,'ownLog':own_log,'doneTimed':done_timed,'doneAllDay':done_allday,'doneMonth':done_month,'quiet':str(quiet),'headOwned':head_owned}
   subprocess.run(['node',str(BASE/'scripts/check_subordinate_workspace_browser.js')],env={**os.environ,'PANDORA_STAFF_FIXTURE':json.dumps(manifest)},check=True)
 if __name__=='__main__':main()

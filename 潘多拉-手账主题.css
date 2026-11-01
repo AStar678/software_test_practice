@@ -546,6 +546,12 @@ body { font-size: 17px; line-height: 1.65; }
   border:2px dashed var(--staff-accent);box-sizing:border-box;
   background:color-mix(in srgb,var(--staff-accent) 30%,white);
 }
+/* Completed work stays tappable but is marked in every subordinate presentation. */
+.staff-month-event.is-done .staff-month-duration,
+.staff-axis-event.is-done .staff-axis-true,
+.staff-allday button.is-done{opacity:.62}
+.staff-month-event.is-done .p-month-caption strong,
+.staff-axis-event.is-done .p-axis-caption strong{text-decoration:line-through}
 
 .staff-month-tracks{grid-template-rows:repeat(3,44px);inset:33px 0 20px}
 .staff-month-week{height:194px}

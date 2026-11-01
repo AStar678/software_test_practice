@@ -296,6 +296,14 @@ async function main(){
   async function propose(command,extra={}){const task=await raw(fixture.employee);await as('alpha-one-employee','PATCH','/tasks/'+fixture.employee,{command,...(['change','reopen'].includes(command)?{reason:'待审日程投影验证'}:{}),...extra},task.rowVersion);await ev('Pandora.reload()');}
   await decide('approve');await view();
   check('approval applies new time and removes dash',!(await raw(fixture.employee)).pendingSchedule&&(await raw(fixture.employee)).dueAt==='2030-12-31T11:00:00Z'&&await ev(`!document.querySelector('.p-horizontal-bar[data-task="${fixture.employee}"]').classList.contains('is-pending-review')`));
+  await ev('Pandora.logout()');await login('founder');
+  await ev(`setPage('me');runAction({dataset:{action:'p-open-person',id:${js(fixture.identities['alpha-one-employee'].id)}}})`);
+  await waitFor(b,"Pandora.idle()&&!!document.querySelector('[data-staff-panel]')");
+  await ev("document.getElementById('staff-calendar-date').value='2030-12-31';document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))");
+  const approved=await waitFor(b,`(()=>{const n=document.querySelector('.staff-month-event[data-task="${fixture.employee}"]');return !!n&&!n.classList.contains('is-pending-review')&&n.textContent.includes('19:00')})()`,15000);
+  const approvedStaff=await ev(`(()=>{const n=document.querySelector('.staff-month-event[data-task="${fixture.employee}"]');return {found:!!n,pending:n&&n.classList.contains('is-pending-review'),text:n&&n.textContent,anyPending:!!document.querySelector('.staff-panel .is-pending-review'),date:document.getElementById('staff-calendar-date')&&document.getElementById('staff-calendar-date').value}})()`);
+  check('approved staff schedule shows the new effective day without a dash',approved&&approvedStaff.found&&!approvedStaff.pending&&approvedStaff.text.includes('19:00'),approvedStaff);
+  await ev('closeSheet();Pandora.logout()');await login('alpha-one-employee');
   const janStart='2031-01-02T02:20:00Z',janEnd='2031-01-02T09:20:00Z';
   for(const decision of ['reject','withdraw']){
    await propose('change',{allDay:false,startAt:janStart,dueAt:janEnd});await view();
@@ -306,8 +314,7 @@ async function main(){
    const rows=await as('alpha-one-head','GET',query+'&calendarPreview=true',null),effective=await as('alpha-one-head','GET',query,null);
    check('authorized subordinate range follows proposal '+decision,rows.items.some(t=>t.id===fixture.employee)&&!effective.items.some(t=>t.id===fixture.employee));
    const outside=await as('beta-one-head','GET',query+'&calendarPreview=true',null);check('proposal range does not widen task authorization '+decision,!outside.items.some(t=>t.id===fixture.employee));
-   if(decision==='reject'){
-    await ev('Pandora.logout()');await login('founder');
+   await ev('Pandora.logout()');await login('founder');
     await ev(`setPage('me');runAction({dataset:{action:'p-open-person',id:${js(fixture.identities['alpha-one-employee'].id)}}})`);
     check('authorized staff workspace opens for pending task',await waitFor(b,"Pandora.idle()&&!!document.querySelector('[data-staff-panel]')&&!document.querySelector('.staff-state[role=status]')"));
     await ev("document.getElementById('staff-calendar-date').value='2031-01-02';document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))");
@@ -328,7 +335,6 @@ async function main(){
      check('pending frame and its text match the proposed day '+width,Math.abs(frame.left)<.004&&Math.abs(frame.width-1)<.004&&frame.inside&&frame.text.includes('10:20')&&frame.text.includes('17:20')&&frame.noButtons,frame);
      await b.screenshot(path.join(out,'pending-month-'+width+'.png'));
     }
-   }
    await decide(decision);await view();
    check('resolved proposal restores effective position '+decision,!(await raw(fixture.employee)).pendingSchedule&&await ev(`!!document.querySelector('.p-horizontal-bar[data-task="${fixture.employee}"]:not(.is-pending-review)')`));
   }
