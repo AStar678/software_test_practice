@@ -4,9 +4,9 @@
 - Schema: spec-driven
 - Store: local（`openspec/` 仓库根，无 `--store`）
 - Implementation roots: /Users/watuji/MyGitDev/software_test_practice
-- Updated: 2026-11-01T18:05+08:00
-- Implementation revision: `fc9285e` 之上未提交的工作区（服务端、脚本、网页资源、任务勾选见 `git status`）；本轮未创建 commit。
-- Progress: 25/28 tasks complete。`6.2`、`6.3`、`6.4` 暂停（依赖另一个仍在实施中的 change，见“未完成与阻塞”）。
+- Updated: 2026-11-01T19:50+08:00
+- Implementation revision: `2133e28` 之上未提交的工作区（排期衔接、服务端、脚本、网页资源、任务勾选见 `git status`）；本轮未创建 commit。
+- Progress: 28/28 tasks complete。`6.2`–`6.4` 已在 `fix-hourly-schedule-drag-and-log-type` 完成后按最终合同衔接并回归（见下）。
 
 本文件是实施交接，不是独立验证结论，也不修改 `verification.md`。
 
@@ -51,10 +51,26 @@
 | `python3 backend/scripts/check_fixed_web.py` | **未全绿**：管理端 15 项通过；员工端 134 项通过后停在 `fixed manager retains subordinate profile and logs founder`（下属资料树默认折叠，属 `redesign-subordinate-workspace` 范围）。其完成态 fixture 与重开待审路径已按本变更更新并通过 |
 | `node --check`（根目录 8 个实际加载 JS + 改动的检查脚本）、`python3 -m py_compile` 等价语法检查、`openspec validate ... --strict` | 通过（validate 见下条历史说明） |
 
-## 未完成与阻塞
+## 排期衔接完成（6.2–6.4，2026-11-01）
 
-- `6.2` 月历按日绘制/按天拖动、`6.3` 待审排期虚线投影、`6.4` 对应浏览器与 API 回归，依赖 `fix-hourly-schedule-drag-and-log-type` 的最终合同（其 tasks 2.1、4.2、5.2、7.1 仍未实施）。当前代码仍是：月历按小时比例绘制、拖动按 1 小时步长；待审只显示“审核中”标记，不做虚线提议位置。本变更未擅自实现另一 change 的排期合同，避免同一交互出现两份冲突实现。
-- 该 three tasks 未勾选；本变更因此尚未满足归档条件。
+`fix-hourly-schedule-drag-and-log-type` 已完成（14/14）并包含月历日级绘制/按天拖动、日轴小时、纵向全天区、本人/下属入口分离和待审虚线投影。本变更因此不再阻塞：
+
+- `6.2` 本人日历使用共享 `monthWeek` 日级几何（`--month-left:0%;--month-width:100%`），整条/端点按公司日期平移并保留日内时刻；日轴/横轴/全天区按小时。普通点击仍开当日清单，键盘、取消、跨日/月/午夜/零时长由排期专项覆盖；不再以 15 分钟或基础编辑权作为拖动标准。
+- `6.3` 仅排期确认走 `P.openScheduleChange` → 原 change/reschedule 审核（实际操作者直属上级）；待审时本人日历在提议位置显示虚线，普通详情/表单/提醒仍读有效版本；任务表单和下属日程无拖动入口，任务详情沿用当前用户原权限（下属专项分别验证有/无基础编辑权）。
+- `6.4` 本轮回归与本地预览更新见下表；未做手机真机测试。
+
+| 本轮命令（2026-11-01 晚，隔离随机库） | 结果 |
+| --- | --- |
+| `CHROME_BIN=… python3 backend/scripts/check_schedule_drag.py` | 退出 0；211 项（日级月历、按天整条/端点、日轴小时、全天区、待审位置与终态、下属/表单无拖动） |
+| `CHROME_BIN=… python3 backend/scripts/check_subordinate_workspace.py` | 退出 0；82 项（共享日级几何、完成状态、无拖动、详情权限） |
+| `CHROME_BIN=… python3 backend/scripts/check_task_creation_refinement.py` | 退出 0；36 API + 39 浏览器 |
+| `CHROME_BIN=… python3 backend/scripts/check_calendar_drawer.py` | 退出 0；102 项 |
+| `CHROME_BIN=… python3 backend/scripts/check_review_routing.py` | 退出 0；204 项 |
+| `cd backend && mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test package` | 111 项单元测试，0 失败/错误/跳过；BUILD SUCCESS |
+| `cd backend && python3 scripts/check_web_resources.py --repo .. --jar target/pandora-backend-0.1.0.jar --output ../audit/.../web-resources-logs.json` | 14/14；资源与源码逐字节一致 |
+| 本地 8080 预览（`service.py stop demo` 后以 `pandora_demo` 重启） | health=UP；工作区/日程/个人资料/主题/HTML 与源码 SHA256 一致；演示库保留 |
+
+实施交接仍不是独立验证结论；`verification.md` 保留首次 FAIL 原文。
 
 ## Verification Reminders
 
