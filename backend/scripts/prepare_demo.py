@@ -68,22 +68,26 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
     env={**os.environ,**values,'PANDORA_DB_URL':f'jdbc:mysql://127.0.0.1:13306/{database}?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED',
          'PANDORA_PORT':str(port),'PANDORA_BIND_ADDRESS':'127.0.0.1','PANDORA_SEED':'true','PANDORA_WORKER_ENABLED':'true'}
     log_path=BASE/'.runtime/demo-prepare.log'
-    args=['java','-jar',str(BASE/'target/pandora-backend-0.1.0.jar'),'--pandora.demo-target='+database,
+    args=[os.environ.get('JAVA_BIN','java'),'-jar',str(BASE/'target/pandora-backend-0.1.0.jar'),'--pandora.demo-target='+database,
           '--pandora.demo-marker='+marker,'--pandora.demo-initialize='+str(initialize).lower(),
           '--pandora.worker.initial-delay-ms=3600000','--pandora.worker.delay-ms=3600000']
     process=None
     try:
+        print('启动演示数据准备服务，日志：'+str(log_path),flush=True)
         with log_path.open('w') as log:process=subprocess.Popen(args,env=env,stdout=log,stderr=subprocess.STDOUT)
-        for _ in range(240):
-            if process.poll() is not None:raise RuntimeError('Preparation failed; see '+str(log_path))
+        for attempt in range(240):
+            if process.poll() is not None:
+                raise RuntimeError('Preparation failed; see '+str(log_path)+'\n'+log_path.read_text(errors='replace')[-8192:])
             present={row[0] for row in db.rows('SHOW TABLES')}
             if 'demo_database_identity' in present and db.scalar('SELECT COUNT(*) FROM demo_database_identity WHERE prepared_at IS NOT NULL'):
                 try:
                     with urllib.request.urlopen(f'http://127.0.0.1:{port}/health',timeout=1) as response:
                         if response.status==200:break
                 except OSError:pass
+            if attempt and attempt%20==0:
+                print(f'等待演示数据准备完成（第 {attempt}/240 次检查），日志：{log_path}',flush=True)
             time.sleep(.5)
-        else:raise RuntimeError('Preparation timeout; see '+str(log_path))
+        else:raise RuntimeError('Preparation timeout; see '+str(log_path)+'\n'+log_path.read_text(errors='replace')[-8192:])
         # Only a new seed needs delivery. Repeated preparation must also work after the real
         # administrator has changed their name/password; never reset credentials to drain events.
         if not already_prepared:

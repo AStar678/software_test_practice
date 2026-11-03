@@ -34,6 +34,12 @@ if [[ ! "$DEMO_DB" =~ ^[A-Za-z0-9_]{1,64}$ ]]; then echo "演示库名不合法�
 MYSQL="$(command -v mysql || true)"
 JAVA_BIN="${JAVA_BIN:-$(command -v java || true)}"
 if [[ -z "$MYSQL" || -z "$JAVA_BIN" ]]; then echo '需要 mysql 客户端和 Java 21。'; exit 1; fi
+for dependency in "$MYSQL" "$JAVA_BIN" python3 curl lsof; do
+  if ! command -v "$dependency" >/dev/null 2>&1; then echo "缺少启动依赖：$dependency" >&2; exit 1; fi
+done
+if [[ "${PANDORA_SKIP_BUILD:-0}" != "1" ]] && ! command -v mvn >/dev/null 2>&1; then echo '缺少启动依赖：mvn（Maven 3.9+）' >&2; exit 1; fi
+echo '检查 Java 运行环境...'
+"$JAVA_BIN" -version
 
 "$BASE_DIR/scripts/start-db.sh"
 
@@ -69,7 +75,7 @@ admin_sql -e "FLUSH PRIVILEGES;"
 
 if [[ "${PANDORA_SKIP_BUILD:-0}" != "1" ]]; then
   echo '构建 JAR...'
-  mvn -B -ntp -q -DskipTests -Dmaven.repo.local="$RUNTIME/m2" package
+  mvn -B -ntp -DskipTests -Dmaven.repo.local="$RUNTIME/m2" package
 fi
 
 PREP_ARGS=(--database "$DEMO_DB" --demo-marker "$MARKER" --output "$RUNTIME/demo-manifest.json")
@@ -84,12 +90,16 @@ export PANDORA_DB_URL="jdbc:mysql://127.0.0.1:13306/${DEMO_DB}?connectionTimeZon
 export PANDORA_SEED=false
 export PANDORA_PORT="$PORT"
 python3 scripts/service.py start demo "$JAVA_BIN" -jar "$BASE_DIR/target/pandora-backend-0.1.0.jar"
-for _ in {1..60}; do
-  curl -fsS "http://127.0.0.1:$PORT/health" >/dev/null 2>&1 && break
+echo "等待演示后端就绪，日志：$RUNTIME/demo-console.log"
+for i in {1..60}; do
+  curl --connect-timeout 1 --max-time 2 -fsS "http://127.0.0.1:$PORT/health" >/dev/null 2>&1 && break
+  if (( i % 10 == 0 )); then echo "等待演示后端就绪（第 $i/60 次检查）..."; fi
   sleep 1
 done
-if ! curl -fsS "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
-  echo "演示后端未就绪，请查看 $RUNTIME/demo-console.log"; exit 1
+if ! curl --connect-timeout 1 --max-time 2 -fsS "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
+  echo "演示后端未就绪，请查看 $RUNTIME/demo-console.log" >&2
+  tail -n 30 "$RUNTIME/demo-console.log" >&2
+  exit 1
 fi
 
 cat <<TXT

@@ -4,9 +4,32 @@ BASE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 RUNTIME="$BASE_DIR/.runtime"
 MYSQLD="${MYSQLD_BIN:-$(command -v mysqld || true)}"
 MYSQL="${MYSQL_BIN:-$(command -v mysql || true)}"
-if [[ -z "$MYSQLD" || -z "$MYSQL" ]]; then echo '需要已安装的 MySQL 8.4+（mysqld、mysql）。'; exit 1; fi
+MYSQLADMIN="${MYSQLADMIN_BIN:-$(command -v mysqladmin || true)}"
+if [[ -z "$MYSQLD" || -z "$MYSQL" || -z "$MYSQLADMIN" ]]; then echo '需要已安装的 MySQL 8.4+（mysqld、mysql、mysqladmin）。' >&2; exit 1; fi
+for dependency in "$MYSQLD" "$MYSQL" "$MYSQLADMIN" python3 openssl; do
+  if ! command -v "$dependency" >/dev/null 2>&1; then
+    echo "缺少启动依赖或路径不可执行：$dependency" >&2; exit 1
+  fi
+done
+# Pass the optional macOS library fallback as env arguments: system shells can strip
+# inherited DYLD_* variables before this script or service.py receives them.
+MYSQLD_COMMAND=("$MYSQLD")
+if [[ -n "${MYSQLD_LIBRARY_PATH:-}" ]]; then
+  MYSQLD_COMMAND=(env "DYLD_FALLBACK_LIBRARY_PATH=$MYSQLD_LIBRARY_PATH" "$MYSQLD")
+fi
 mkdir -p "$RUNTIME"
 chmod 700 "$RUNTIME"
+
+# Check clients even when the server is already running: Homebrew can break either side.
+for client in "$MYSQL" "$MYSQLADMIN"; do
+  echo "检查 MySQL 客户端：$client"
+  if ! "$client" --no-defaults --version >"$RUNTIME/mysql-preflight.log" 2>&1; then
+    echo "MySQL 客户端无法运行：$client" >&2
+    cat "$RUNTIME/mysql-preflight.log" >&2
+    echo '请先修复本机 MySQL 及其依赖，再重新启动。' >&2
+    exit 1
+  fi
+done
 
 # Every start re-applies the application account grants. Flyway runs destructive DDL in the
 # contract migrations (V25 DROP TABLE ...), so DROP is part of the required privilege set.
@@ -42,24 +65,46 @@ GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES, DROP ON 
 SQL
 }
 
-if [[ -f "$RUNTIME/mysql-admin.cnf" ]] && mysqladmin --defaults-file="$RUNTIME/mysql-admin.cnf" ping >/dev/null 2>&1; then
+if [[ -f "$RUNTIME/mysql-admin.cnf" ]] && "$MYSQLADMIN" --defaults-file="$RUNTIME/mysql-admin.cnf" --connect-timeout=2 ping >/dev/null 2>&1; then
   ensure_database_and_grants
   echo '项目 MySQL 已启动（127.0.0.1:13306）。'
   exit 0
 fi
-if [[ ! -d "$RUNTIME/mysql/mysql" ]]; then
-  mkdir -p "$RUNTIME/mysql"
-  "$MYSQLD" --no-defaults --initialize-insecure --datadir="$RUNTIME/mysql" --log-error="$RUNTIME/mysql-init.log"
+# Report loader/dependency failures before detaching the server and waiting for readiness.
+# These failures reach stderr, before mysqld can open mysql.log.
+echo '检查 MySQL 服务端...'
+if ! "${MYSQLD_COMMAND[@]}" --no-defaults --version >"$RUNTIME/mysql-preflight.log" 2>&1; then
+  echo "MySQL 服务端无法运行：$MYSQLD" >&2
+  cat "$RUNTIME/mysql-preflight.log" >&2
+  echo '请先修复本机 MySQL 及其依赖，再重新启动。' >&2
+  exit 1
 fi
-python3 "$BASE_DIR/scripts/service.py" start mysql "$MYSQLD" --no-defaults --datadir="$RUNTIME/mysql" --socket="$RUNTIME/mysql.sock" --pid-file="$RUNTIME/mysql.pid" --port=13306 --bind-address=127.0.0.1 --mysqlx=0 --skip-log-bin --default-time-zone='+00:00' --log-error="$RUNTIME/mysql.log"
+if [[ ! -d "$RUNTIME/mysql/mysql" ]]; then
+  echo '初始化项目 MySQL 数据目录...'
+  mkdir -p "$RUNTIME/mysql"
+  if ! "${MYSQLD_COMMAND[@]}" --no-defaults --initialize-insecure --datadir="$RUNTIME/mysql" --log-error="$RUNTIME/mysql-init.log"; then
+    echo "MySQL 初始化失败，请查看 $RUNTIME/mysql-init.log" >&2
+    [[ ! -f "$RUNTIME/mysql-init.log" ]] || tail -n 20 "$RUNTIME/mysql-init.log" >&2
+    exit 1
+  fi
+fi
+echo "启动项目 MySQL（127.0.0.1:13306），日志：$RUNTIME/mysql-console.log、$RUNTIME/mysql.log"
+python3 "$BASE_DIR/scripts/service.py" start mysql "${MYSQLD_COMMAND[@]}" --no-defaults --datadir="$RUNTIME/mysql" --socket="$RUNTIME/mysql.sock" --pid-file="$RUNTIME/mysql.pid" --port=13306 --bind-address=127.0.0.1 --mysqlx=0 --skip-log-bin --default-time-zone='+00:00' --log-error="$RUNTIME/mysql.log"
 for i in {1..60}; do
   if [[ -f "$RUNTIME/mysql-admin.cnf" ]]; then
-    mysqladmin --defaults-file="$RUNTIME/mysql-admin.cnf" ping >/dev/null 2>&1 && break
+    "$MYSQLADMIN" --defaults-file="$RUNTIME/mysql-admin.cnf" --connect-timeout=2 ping >/dev/null 2>&1 && break
   else
-    mysqladmin --no-defaults --socket="$RUNTIME/mysql.sock" -u root ping >/dev/null 2>&1 && break
+    "$MYSQLADMIN" --no-defaults --socket="$RUNTIME/mysql.sock" --connect-timeout=2 -u root ping >/dev/null 2>&1 && break
   fi
+  if (( i % 10 == 0 )); then echo "等待 MySQL 就绪（第 $i/60 次检查）..."; fi
   sleep 1
 done
-if ! mysqladmin --defaults-file="$RUNTIME/mysql-admin.cnf" ping >/dev/null 2>&1 && ! mysqladmin --no-defaults --socket="$RUNTIME/mysql.sock" -u root ping >/dev/null 2>&1; then echo "MySQL 启动失败，请查看 $RUNTIME/mysql.log";exit 1;fi
+if ! "$MYSQLADMIN" --defaults-file="$RUNTIME/mysql-admin.cnf" --connect-timeout=2 ping >/dev/null 2>&1 && ! "$MYSQLADMIN" --no-defaults --socket="$RUNTIME/mysql.sock" --connect-timeout=2 -u root ping >/dev/null 2>&1; then
+  echo "MySQL 启动失败，请查看 $RUNTIME/mysql-console.log 和 $RUNTIME/mysql.log" >&2
+  for log in "$RUNTIME/mysql-console.log" "$RUNTIME/mysql.log"; do
+    if [[ -f "$log" ]]; then echo "最近日志：$log" >&2; tail -n 20 "$log" >&2; fi
+  done
+  exit 1
+fi
 ensure_database_and_grants
 echo '项目 MySQL 已启动（127.0.0.1:13306），数据保存于 backend/.runtime/mysql。'

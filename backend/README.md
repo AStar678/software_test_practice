@@ -13,6 +13,8 @@ cd backend
 
 服务默认 http://127.0.0.1:8080，项目 MySQL 端口13306。普通启动 `PANDORA_SEED=false`，迁移保留已有数据，不自动初始化或清理。`./scripts/stop.sh` 停止应用但保留数据库。已有旧库先执行 [升级/恢复流程](docs/fixed-model-upgrade.md)。数据库凭据保存在本机 `.runtime`，不提交。
 
+启动会检查所需命令及 MySQL 客户端、服务端能否运行；失败会直接显示错误。服务启动后立即退出会显示本次日志，等待数据库、演示准备服务和后端就绪时定期输出进度，失败或超时附带最近日志；构建会显示 Maven 输出。macOS 上若 Homebrew 更新依赖后出现 `Library not loaded`，应修复或升级 MySQL，使其与依赖版本配套；升级前确认官方支持的升级路径。若兼容的旧版依赖仍在本机，也可临时用 `MYSQLD_LIBRARY_PATH` 指定其 `lib` 目录，此设置仅传给项目 MySQL，不修改 Homebrew 全局链接。依赖修复后正常启动无需此变量。启动日志位于 `.runtime/mysql-console.log` 和 `.runtime/mysql.log`。
+
 ### 演示：每次启动都是同一份初始数据
 
 演示统一用 `pandora_demo` 库，占 8080。脚本默认**整库重建**：停掉占用 8080 的本项目后端 → drop 并重建 `pandora_demo` → 重新授权 → 构建 JAR → `--initialize` 首次准备 → 以 `PANDORA_DB_URL` 指向演示库启动。普通库 `pandora` 不受影响。
@@ -65,6 +67,7 @@ python3 backend/scripts/prepare_demo.py --database pandora_demo --demo-marker lo
 
 ```sh
 cd backend
+python3 scripts/check_startup_failures.py
 mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test package
 cd ..
 python3 backend/scripts/check_final_workflow.py --phase all
