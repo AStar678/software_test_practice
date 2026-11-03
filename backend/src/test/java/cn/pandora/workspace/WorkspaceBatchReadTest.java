@@ -106,8 +106,45 @@ class WorkspaceBatchReadTest {
     }
 
     @Test
+    void emittedReminderNamesAgreeAcrossFiltersCountsAndDetail() {
+        var f=new Fixture();
+        for(String type:List.of("task.reminder_20","task.reminder_10","task.reminder_5","task.overdue"))
+            f.add(type,type,true,false,false);
+        f.add("other","task.progress.submitted",true,false,false);
+        var response=f.service.notifications(VIEWER,Map.of("category","reminder","limit","2"));
+        assertEquals(4,response.get("total"));
+        assertEquals(2,items(response).size());
+        for(var row:items(f.service.notifications(VIEWER,Map.of("category","reminder","limit","100")))) {
+            assertEquals("reminder",row.get("category"));
+            assertEquals("task.overdue".equals(row.get("eventType"))?"逾期提醒":"临期提醒",row.get("purpose"));
+            assertEquals(row,f.service.notification(VIEWER,Db.s(row,"id")));
+        }
+        assertEquals(1,f.service.notifications(VIEWER,Map.of("category","other")).get("total"));
+    }
+
+    @Test
+    void requestEntryUsesCurrentRequestAuthorityWithoutChangingRetainedResults() {
+        var f=new Fixture();
+        f.add("allowed","task.change.approved",true,false,false);
+        f.add("denied","task.change.approved",true,false,false);
+        f.add("missing","task.change.approved",true,false,false);
+        f.db.rows.get("approval_requests").remove(f.db.row("approval_requests","r-missing"));
+        f.add("withdrawn","task.change.approved",true,false,true);
+        f.approvalReadable.addAll(List.of("t-allowed","t-withdrawn"));
+        for(var row:items(f.service.notifications(VIEWER,Map.of()))) {
+            assertEquals("allowed".equals(row.get("id")),row.get("canOpenRequest"));
+            assertEquals(row,f.service.notification(VIEWER,Db.s(row,"id")));
+        }
+        assertEquals("approved",f.service.notification(VIEWER,"denied").get("requestStatus"));
+        assertEquals("private excerpt",f.service.notification(VIEWER,"denied").get("summary"));
+        f.approvalReadable.clear();
+        assertEquals(false,f.service.notification(VIEWER,"allowed").get("canOpenRequest"));
+    }
+
+    @Test
     void reviewCategoryTracksReassignmentDeadlineWithdrawalAndTerminalState() {
         var f=new Fixture();
+        f.approvalReadable.add("t-live");
         for(String id:List.of("live","reassigned","expired","withdrawn","finished")) {
             f.add(id,"task.progress.submitted",true,false,"withdrawn".equals(id));
             var request=f.db.row("approval_requests","r-"+id);
@@ -193,7 +230,8 @@ class WorkspaceBatchReadTest {
                     .filter(r->!sql.contains("n.read_at IS NULL") || r.get("readAt")==null).map(r->{
                         var value=new LinkedHashMap<>(r);var event=row("domain_events",Db.s(r,"eventId"));
                         value.put("eventRevokedAt",event.get("revokedAt"));value.put("eventExpiresAt",event.get("expiresAt"));
-                        var request=row("approval_requests",Db.s(r,"requestId"));
+                        var request=rows.getOrDefault("approval_requests",List.of()).stream()
+                                .filter(q->Objects.equals(q.get("id"),r.get("requestId"))).findFirst().orElse(Map.of());
                         value.put("requestStatus",request.get("status"));value.put("reviewerId",request.get("currentReviewerId"));value.put("applicableDeadline",request.get("applicableDeadline"));
                         return (Map<String,Object>)value;}).toList();
             if(sql.contains("task_version_assignees"))return List.of();

@@ -626,6 +626,7 @@ public class WorkspaceService {
         view.put("canWithdraw",!revoked && withinWithdrawal && (manager || (!automatic && event!=null && a.id().equals(s(event,"initiatorId")))));
         view.put("canOpenTask",objectOpen && s(row,"taskId")!=null);
         view.put("canReview",false);
+        view.put("canOpenRequest",false);
         view.put("requestStatus",null);
         view.put("requestKind",null);
         view.put("objectType",objectOpen?objectType:null);
@@ -639,13 +640,16 @@ public class WorkspaceService {
             var request = batch == null ? db.find("SELECT id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline FROM approval_requests WHERE organization_id=? AND id=?",a.organizationId(),requestId)
                     : batch.requests.get(requestId);
             if (request != null) {
+                boolean canOpenRequest = !revoked && (batch == null ? tasks.canReadRequest(a,requestId)
+                        : batch.readableRequests.computeIfAbsent(requestId,id -> tasks.canReadRequest(a,id)));
+                view.put("canOpenRequest",canOpenRequest);
                 view.put("requestStatus",s(request,"status"));
                 view.put("requestKind",s(request,"kind"));
                 view.put("requestComment",request.get("comment"));
                 view.put("requestDecidedAt",request.get("decidedAt"));
                 boolean deadlineOpen = request.get("applicableDeadline")==null
                         || now.isBefore(Instant.parse(String.valueOf(request.get("applicableDeadline"))));
-                view.put("canReview",!revoked && "pending".equals(s(request,"status")) && deadlineOpen
+                view.put("canReview",canOpenRequest && "pending".equals(s(request,"status")) && deadlineOpen
                         && a.id().equals(s(request,"currentReviewerId")));
             }
         }
@@ -683,6 +687,7 @@ public class WorkspaceService {
     private static final class NotificationBatch {
         Map<String,Map<String,Object>> events,requests,logs,comments,taskRows;
         Set<String> readableTasks,readableWithApprovals;
+        final Map<String,Boolean> readableRequests = new HashMap<>();
     }
 
     private NotificationBatch notificationBatch(Actor a,List<Map<String,Object>> rows) {
@@ -799,7 +804,8 @@ public class WorkspaceService {
         Map<String,Object> classification=new HashMap<>(row);
         boolean deadlineOpen=row.get("applicableDeadline")==null || now.isBefore(Instant.parse(String.valueOf(row.get("applicableDeadline"))));
         classification.put("canReview",row.get("eventRevokedAt")==null && "pending".equals(s(row,"requestStatus"))
-                && actor.id().equals(s(row,"reviewerId")) && deadlineOpen && readable.contains(s(row,"taskId")));
+                && actor.id().equals(s(row,"reviewerId")) && deadlineOpen && readable.contains(s(row,"taskId"))
+                && tasks.canReadRequest(actor,s(row,"requestId")));
         return notificationCategory(classification);
     }
 
@@ -807,9 +813,14 @@ public class WorkspaceService {
         if(Boolean.TRUE.equals(view.get("canReview"))) return "review";
         String type=Objects.toString(view.get("eventType"),"");
         if(type.startsWith("comment.")) return "comment";
-        if(type.startsWith("reminder.") || type.startsWith("task.deadline.")) return "reminder";
+        if(isReminderEvent(type)) return "reminder";
         if(type.startsWith("task.") && (type.endsWith(".approved") || type.endsWith(".rejected") || type.endsWith(".withdrawn") || type.endsWith(".expired") || type.endsWith(".direct") || type.endsWith(".applied"))) return "result";
         return "other";
+    }
+
+    private static boolean isReminderEvent(String type) {
+        return type.startsWith("reminder.") || type.startsWith("task.deadline.")
+                || type.equals("task.overdue") || Set.of("task.reminder_20","task.reminder_10","task.reminder_5").contains(type);
     }
 
     /** Human purpose of a message, independent of its body (chapter 8.6). */
@@ -823,7 +834,7 @@ public class WorkspaceService {
         if (type.startsWith("task.complete.")) return type.endsWith(".submitted") ? "完成待审" : "完成结果";
         if (type.startsWith("task.reopen.")) return type.endsWith(".submitted") ? "重开待审" : "重开结果";
         if (type.startsWith("task.handover.")) return type.endsWith(".submitted") ? "交接待审" : "交接结果";
-        if (type.startsWith("task.deadline.") || type.startsWith("reminder.")) return "截止提醒";
+        if (isReminderEvent(type)) return type.equals("task.overdue") ? "逾期提醒" : "临期提醒";
         if (type.startsWith("home_item.")) return "公司信息";
         return "工作通知";
     }

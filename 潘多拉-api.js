@@ -123,7 +123,7 @@
       '<div class="field"><label for="login-password">密码</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required></div>' +
       '<div class="callout" id="login-error" role="alert"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
       '<button type="submit" class="btn primary auth-submit">登录工作台</button></form>' +
-      '<p class="auth-help">员工使用本人手机号登录，初始密码由公司管理员提供；忘记密码请联系管理员。管理员请通过下方“进入管理后台”入口使用管理账号登录。</p>' +
+      '<p class="auth-help">初始密码及密码重置请联系管理员。</p>' +
       '<a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
     gate();
     document.getElementById("backend-login").addEventListener("submit", event => {
@@ -134,6 +134,7 @@
         const result = await P.request("/auth/sessions", { method: "POST", body: { phone, password, accountType: "employee" } });
         P.epoch++;
         P.token = result.token; sessionStorage.setItem(SESSION_KEY, P.token);
+        P.notice("");
         // A new account or a reset account must change its password before any business page loads.
         if (result.passwordChangeRequired) { passwordPage(password, ""); return; }
         try { await P.reload(); }
@@ -154,7 +155,7 @@
       '<div class="field"><label for="pw-current">当前密码</label><input id="pw-current" name="currentPassword" type="password" autocomplete="current-password" required></div>' +
       '<div class="field"><label for="pw-new">新密码</label><input id="pw-new" name="newPassword" type="password" autocomplete="new-password" required></div>' +
       '<div class="field"><label for="pw-confirm">确认新密码</label><input id="pw-confirm" type="password" autocomplete="new-password" required></div>' +
-      '<p class="tiny muted">至少10个字符，须同时包含字母和数字，UTF-8 长度不超过72字节。修改成功后，请使用新密码重新登录。</p>' +
+      '<p class="tiny muted">至少10个字符，包含字母和数字，最多72字节。修改后需重新登录。</p>' +
       '<div class="callout" id="password-error" role="alert"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
       '<div class="row"><button type="submit" class="btn primary">修改密码</button>' +
       '<button type="button" class="btn" id="password-logout">退出登录</button></div></form></section>';
@@ -189,11 +190,11 @@
     P.ready = false; gate();
     document.getElementById("appMain").classList.remove("is-map");
     document.querySelectorAll(".page").forEach(el => { el.classList.toggle("is-active", el.id === "page-map"); el.innerHTML = ""; });
-    document.getElementById("pageTitle").textContent = "连接后端";
+    document.getElementById("pageTitle").textContent = "连接服务";
     document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div>' +
       '<div class="auth-copy"><h2>暂时无法打开工作台</h2><p>请检查网络连接后重试。</p></div><div class="callout" role="alert">' + esc(error.message) +
       '</div><div class="action-grid"><button class="btn primary" data-backend-retry>重新加载</button><button class="btn" data-backend-logout>退出登录</button></div><a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
-    P.notice("数据加载失败，请检查后端服务后重试。");
+    P.notice("数据加载失败，请稍后重试。");
   }
   /* ------------------------------------------------------------------ *
    * Web-owned hour/minute control (chapter 4.2)
@@ -260,7 +261,7 @@
         catch (error) { if (error.name === "AbortError") throw error; result = {}; }
       } catch (error) {
         if (epoch !== P.epoch || externalSignal?.aborted || (controller.signal.aborted && !timedOut)) throw cancelled();
-        throw new Error(timedOut ? "请求超时。请重试，已提交的操作不会重复保存。" : "无法连接后端，请检查网络后重试。");
+        throw new Error(timedOut ? "请求超时。请重试，已提交的操作不会重复保存。" : "无法连接服务，请检查网络后重试。");
       }
       if (epoch !== P.epoch) throw cancelled();
       if (!response.ok) {
@@ -341,8 +342,8 @@
   function mapPerson(u) {
     /* departmentName is the real department; teamName is an independent team and must never stand in
        for it (a candidate list grouped by team would hide cross-department choices). */
-    return { id: u.id, name: u.displayName || "相关人员", role: u.placementType || u.role || "employee",
-      dept: u.departmentName || u.department || (u.placementType === "founder" ? "公司" : "—"), superiorId: u.managerId || null, raw: u };
+    return { id: u.id, name: u.displayName || "相关人员", role: u.placementType || u.role || null,
+      dept: u.departmentName || u.department || (u.placementType === "founder" ? "公司层" : ""), superiorId: u.managerId || null, raw: u };
   }
   // One company-calendar conversion shared by calendar, log and table projections.
   const companyFormatters=new Map(),dayBoundaryCache=new Map();
@@ -383,7 +384,15 @@
       due:raw.allDay?parseISO(raw.dueDate):new Date(raw.dueAt)});
   };
   P.rememberPeople = function (rows) {
-    (rows || []).forEach(u => { if (!personById(u.id)) PEOPLE.push(mapPerson(u)); });
+    (rows || []).forEach(u => {
+      if (!u.id) return;
+      const known = personById(u.id);
+      // Partial participant summaries contain names only. Explicit nulls in a complete directory
+      // row still clear old department/team/manager values after an organization move.
+      const raw = Object.assign({}, known && known.raw, u);
+      if (known) Object.assign(known, mapPerson(raw));
+      else PEOPLE.push(mapPerson(raw));
+    });
   };
   P.upsertTask = function (raw) {
     P.rememberPeople(raw.participants);
@@ -468,7 +477,7 @@
     clearData(); state.logFilter = "logs"; state.logsMineOnly = false; state.logAuthorQuery = "";
     state.logDepartmentId = "__all__";
     state.logAll = false; state.logAuthorId = null; state.pickerOpen = false;
-    loginPage(""); P.notice("请使用本人手机号登录。");
+    loginPage(""); P.notice("已退出登录。");
   };
   visibleTasks = () => TASKS.slice();
   visibleLogs = () => LOGS.slice();
@@ -493,7 +502,7 @@
   }, true);
   clearData(); gate();
   document.addEventListener("DOMContentLoaded", function () {
-    if (!P.token) { loginPage(); P.notice("请使用真实账号登录。"); return; }
+    if (!P.token) { loginPage(); return; }
     P.busy(async () => {
       try {
         // Ask for the identity first: a restricted session must never load the workspace.

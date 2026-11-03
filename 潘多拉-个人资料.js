@@ -28,7 +28,7 @@
   }
   function identityLabel(user) { return ({founder:"创始人",department_head:"部门负责人",team_head:"团队负责人",employee:"员工"})[user.placementType || user.role] || "员工"; }
   function readonlyRows(user) {
-    return row("公司", user.organizationName) + row("组织身份", identityLabel(user)) +
+    return row("组织身份", identityLabel(user)) +
       (user.departmentName ? row("部门", user.departmentName) : "") + row("职位", user.positionName) +
       (user.teamName ? row("团队", user.teamName) : "") + row("直属上级", superior(user));
   }
@@ -105,12 +105,28 @@
     const s=staff,dates=Array.from({length:7},(_,i)=>shiftStaffDate(s.date,i-3));
     return '<div class="staff-calendar-modes" role="group" aria-label="人员日程视图">'+[['month','月视图'],['day','日视图']].map(([mode,label])=>'<button type="button" data-action="p-staff-mode" data-mode="'+mode+'" aria-pressed="'+(s.mode===mode)+'">'+label+'</button>').join('')+'</div><div class="staff-date-nav"><button type="button" data-action="p-staff-nav" data-step="-1" aria-label="上一'+(s.mode==='month'?'月':'天')+'">‹</button><label class="staff-calendar-picker"><span class="sr-only">跳转日期</span><input type="date" id="staff-calendar-date" value="'+s.date+'" aria-label="跳转日期"></label><button type="button" data-action="p-staff-today">今天</button><button type="button" data-action="p-staff-nav" data-step="1" aria-label="下一'+(s.mode==='month'?'月':'天')+'">›</button></div>'+(s.mode==='day'?'<div class="staff-date-strip" role="group" aria-label="查看日期">'+dates.map(date=>'<button type="button" data-action="p-staff-date" data-date="'+date+'" aria-pressed="'+(date===s.date)+'"><small>'+['日','一','二','三','四','五','六'][parseDateInput(date).getDay()]+'</small><strong>'+Number(date.slice(-2))+'</strong></button>').join('')+'</div>':'');
   }
-  function restoreStaffAxis(){requestAnimationFrame(()=>{P.calendar.bindScheduleResize();const axis=document.querySelector('.staff-axis-scroll');if(!axis||!staff)return;const date=parseDateInput(staff.date),events=staff.rows.map(raw=>P.calendar.dayCoverage(P.mapTask(raw),date)).filter(e=>e&&!e.fullDay);axis.scrollTop=Math.max(0,(events[0]?.start??480)-60);});}
+  function rememberStaffScroll(s){
+    if(staff!==s||s.epoch!==P.epoch)return;
+    s.savedScroll=['#sheetBody','.staff-month-scroll','.staff-axis-scroll'].map(selector=>{
+      const node=document.querySelector(selector);return node?{selector,top:node.scrollTop,left:node.scrollLeft}:null;
+    }).filter(Boolean);
+  }
+  function restoreStaffAxis(){const s=staff;requestAnimationFrame(()=>{
+    if(!s||staff!==s||s.epoch!==P.epoch)return;
+    P.calendar.bindScheduleResize();
+    if(s.restoreScroll){
+      (s.savedScroll||[]).forEach(pos=>{const node=document.querySelector(pos.selector);if(node){node.scrollTop=pos.top;node.scrollLeft=pos.left;}});
+      s.restoreScroll=false;return;
+    }
+    const axis=document.querySelector('.staff-axis-scroll');if(!axis)return;
+    const date=parseDateInput(s.date),events=s.rows.map(raw=>P.calendar.dayCoverage(P.mapTask(raw),date)).filter(e=>e&&!e.fullDay);
+    axis.scrollTop=Math.max(0,(events[0]?.start??480)-60);
+  });}
   function staffView(){
     const s=staff,p=s.person;
     const dateBar=s.tab==='schedule'?staffCalendarNav():'';
     const content=s.loading?'<div class="staff-state" role="status">正在读取'+(s.tab==='schedule'?'日程':'日志')+'…</div>':s.error?'<div class="staff-state" role="alert">'+esc(s.error)+'<button type="button" class="btn" data-action="p-staff-retry">重新读取</button></div>':s.tab==='schedule'?(s.mode==='month'?staffMonthHTML():staffDayHTML()):s.rows.length?s.rows.map(staffLogHTML).join(''):'<div class="staff-state">'+(s.tab==='schedule'?'这一天暂无负责的任务':'暂无可查看的日志')+'</div>';
-    return {title:p.displayName+'的工作',fullscreen:true,body:'<section class="staff-panel" data-staff-panel="'+esc(p.id)+'"><header class="staff-person"><span class="staff-avatar">'+esc(Array.from(p.displayName||'')[0]||'人')+'</span><div><h2>'+esc(p.displayName)+'</h2><p>'+esc(identityLabel(p)+' · '+(p.positionName||''))+'</p><small>'+esc([p.departmentName,p.teamName].filter(Boolean).join(' / ')||'公司层')+'</small></div></header><details class="staff-person-info"><summary>人员资料</summary>'+readonlyRows(p)+(p.phone?row('手机号',p.phone):'')+(p.canSetHandoverPreset?'<button type="button" class="btn" data-action="p-open-handover-preset" data-id="'+esc(p.id)+'" data-name="'+esc(p.displayName)+'">设置交接预设</button>':'')+'</details><div class="staff-tabs" role="group" aria-label="下属工作类型">'+[['schedule','日程'],['logs','日志']].map(([tab,label])=>'<button type="button" data-action="p-staff-tab" data-tab="'+tab+'" aria-pressed="'+(s.tab===tab)+'">'+label+'</button>').join('')+'</div>'+dateBar+'<div class="staff-content">'+content+'</div>'+(!s.loading&&!s.error&&s.next!=null?'<button type="button" class="btn staff-more" data-action="p-staff-more">加载更早日志</button>':'')+'</section>',foot:'',rebuild:function(){if(staff===s){s.rows=[];s.loading=true;setTimeout(()=>refreshStaff(false),0);}return staffView();}};
+    return {title:p.displayName+'的工作',fullscreen:true,returnContext:'staff',suspend:()=>rememberStaffScroll(s),body:'<section class="staff-panel" data-staff-panel="'+esc(p.id)+'"><header class="staff-person"><span class="staff-avatar">'+esc(Array.from(p.displayName||'')[0]||'人')+'</span><div><h2>'+esc(p.displayName)+'</h2><p>'+esc(identityLabel(p)+' · '+(p.positionName||''))+'</p><small>'+esc([p.departmentName,p.teamName].filter(Boolean).join(' / ')||'公司层')+'</small></div></header><details class="staff-person-info"><summary>人员资料</summary>'+readonlyRows(p)+(p.phone?row('手机号',p.phone):'')+(p.canSetHandoverPreset?'<button type="button" class="btn" data-action="p-open-handover-preset" data-id="'+esc(p.id)+'" data-name="'+esc(p.displayName)+'">设置交接预设</button>':'')+'</details><div class="staff-tabs" role="group" aria-label="下属工作类型">'+[['schedule','日程'],['logs','日志']].map(([tab,label])=>'<button type="button" data-action="p-staff-tab" data-tab="'+tab+'" aria-pressed="'+(s.tab===tab)+'">'+label+'</button>').join('')+'</div>'+dateBar+'<div class="staff-content">'+content+'</div>'+(!s.loading&&!s.error&&s.next!=null?'<button type="button" class="btn staff-more" data-action="p-staff-more">加载更早日志</button>':'')+'</section>',foot:'',rebuild:function(){if(staff!==s||s.epoch!==P.epoch)return {title:'人员工作',body:'<p>请重新打开人员资料。</p>',returnContext:'staff'};s.rows=[];s.loading=true;s.restoreScroll=true;setTimeout(()=>{if(staff===s&&s.epoch===P.epoch)refreshStaff(false);},0);return staffView();}};
   }
   function staffCurrent(s,seq){return staff===s&&s.epoch===P.epoch&&seq===staffSequence&&!!document.querySelector('[data-staff-panel="'+s.person.id+'"]');}
   async function refreshStaff(more){
@@ -137,7 +153,7 @@
         }
         if(!staffCurrent(s,seq))return;
         effectiveRows.forEach(raw=>P.upsertTask(raw));
-        s.person=person;s.rows=more?s.rows.concat(rows):rows;s.next=next;s.loading=false;replaceTopSheet(staffView());restoreStaffAxis();
+        P.rememberPeople([person]);s.person=person;s.rows=more?s.rows.concat(rows):rows;s.next=next;s.loading=false;replaceTopSheet(staffView());restoreStaffAxis();
       }catch(error){if(!staffCurrent(s,seq))return;s.rows=[];s.next=null;s.person=Object.assign({},s.person,{canSetHandoverPreset:false});delete s.person.phone;s.loading=false;s.error=error.message;replaceTopSheet(staffView());}
     })();
   }
@@ -178,8 +194,8 @@
         '<div class="field avatar-upload"><label for="profile-avatar-file">上传照片（PNG / JPG，最大10MB）</label><input id="profile-avatar-file" type="file" accept="image/png,image/jpeg"><p class="tiny muted" id="avatar-upload-status" role="status">' + (/^data:image\//.test(raw.avatar || "") ? '照片已选好，保存资料后生效。' : '照片会自动裁成方形，保存资料后生效。') + '</p></div>' +
         row("姓名", raw.displayName) + row("登录手机号", raw.phone) +
         field("profile-email", "email", "邮箱（选填）", raw.email, 254, "email", false) +
-        '<p class="tiny muted">姓名和登录手机号由管理员维护。邮箱仅本人可见，可留空清除。</p><div class="divider"></div>' + readonlyRows(raw) +
-        '<p class="tiny muted">账号、部门、身份和直属上级由管理员维护。</p><div class="callout reject" id="profile-error" role="alert" hidden></div>',
+        '<p class="tiny muted">邮箱仅本人可见，留空可清除。</p><div class="divider"></div>' + readonlyRows(raw) +
+        '<div class="callout reject" id="profile-error" role="alert" hidden></div>',
       foot: button("sheet-back", "返回设置") + button("p-save-profile", "保存资料", "primary")
     };
   }
@@ -258,7 +274,7 @@
       body: '<div class="field"><label for="cp-current">当前密码</label><input id="cp-current" type="password" autocomplete="current-password" required data-autofocus></div>' +
         '<div class="field"><label for="cp-new">新密码</label><input id="cp-new" type="password" autocomplete="new-password" required></div>' +
         '<div class="field"><label for="cp-confirm">确认新密码</label><input id="cp-confirm" type="password" autocomplete="new-password" required></div>' +
-        '<p class="tiny muted">至少10个字符，须同时包含字母和数字，UTF-8 长度不超过72字节。修改成功后包括当前会话在内的全部会话失效，需重新登录。</p>' +
+        '<p class="tiny muted">至少10个字符，包含字母和数字，最多72字节。修改后需重新登录。</p>' +
         '<div class="callout reject" id="password-error" role="alert" hidden></div>',
       foot: button("sheet-back", "返回设置") + button("p-save-password", "修改密码", "primary")
     };

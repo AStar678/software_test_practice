@@ -1446,8 +1446,9 @@ function renderSheet(){
     return;
   }
   const view = sheetStack[sheetStack.length - 1];
-  document.getElementById("sheetClose").hidden = !!view.notification;
-  document.getElementById("sheetBack").hidden = !view.notification;
+  const useBack = !!view.notification || (!!view.returnContext && sheetStack.length > 1);
+  document.getElementById("sheetClose").hidden = useBack;
+  document.getElementById("sheetBack").hidden = !useBack;
   sheet.classList.toggle("is-fullscreen", !!view.fullscreen);
   sheetTitleEl.textContent = view.title;
   sheetBodyEl.innerHTML = view.body;
@@ -1462,10 +1463,13 @@ function renderSheet(){
   const target = sheetBodyEl.querySelector("[data-autofocus]") ||
     sheetFootEl.querySelector("button") ||
     sheetBodyEl.querySelector("button, input, select, textarea") || document.getElementById("sheetClose");
-  const headerTarget = document.getElementById(view.notification ? "sheetBack" : "sheetClose");
+  const headerTarget = document.getElementById(useBack ? "sheetBack" : "sheetClose");
   if (target) (matchMedia("(max-width: 600px)").matches ? headerTarget : target).focus({ preventScroll: true });
 }
 function openSheet(view){
+  const parent = sheetStack[sheetStack.length - 1];
+  if (parent && typeof parent.suspend === "function") parent.suspend();
+  if (parent && parent.returnContext) view = { ...view, returnContext: parent.returnContext };
   // 从通知进入的任务、申请详情继续使用同一套返回导航。
   if (sheetStack.some(item => item.notification)) {
     view = { ...view, notification: true };
@@ -1477,6 +1481,9 @@ function openSheet(view){
 /* 就地替换栈顶视图：用于表单内不涉及二级界面的本地状态变更（如清空上级/关联任务） */
 function replaceTopSheet(view){
   if (!view) return;
+  const previous = sheetStack[sheetStack.length - 1];
+  if (previous && previous.returnContext) view = { ...view, returnContext: previous.returnContext };
+  if (previous && previous.notification) view = { ...view, notification: true };
   sheetStack[sheetStack.length - 1] = view;
   renderSheet();
 }
@@ -1493,6 +1500,11 @@ function closeSheet(){
   sheetStack = [];
   clearDrafts();
   renderSheet();
+}
+function dismissSheet(){
+  const top = sheetStack[sheetStack.length - 1];
+  if (top && top.returnContext && sheetStack.length > 1) backSheet();
+  else closeSheet();
 }
 function withBack(foot){
   const items = [];
@@ -1743,7 +1755,7 @@ function assigneeSummaryHTML(ids){
   if (!people.length) return '<div class="empty">尚未选择负责人</div>';
   return '<div class="chip-row">' + people.map(function(p){
     return '<span class="chip">' + esc(p.name) +
-      '<span class="chip-meta">' + esc(ROLE_LABEL[p.role]) + " · " + esc(p.dept) + "</span></span>";
+      '<span class="chip-meta">' + esc([...new Set([ROLE_LABEL[p.role], p.raw && p.raw.positionName, p.dept, p.raw && p.raw.teamName].filter(Boolean))].join(' · ')) + "</span></span>";
   }).join("") + "</div>";
 }
 function parentTaskLabel(d){
@@ -1786,7 +1798,7 @@ function taskFormView(){
       '<div class="field" style="flex:1" id="tf-end-time-field"' + '><label for="tf-end-time-hour">截止时刻</label>' +
         timeControl("tf-end-time", d.endTime) + '</div>' +
     "</div>" +
-    '<span class="tiny muted">均按组织时区填写。全天快捷：开始日00:00至截止日次日00:00，可继续修改。</span></div>';
+    '<span class="tiny muted">按公司时区填写；全天快捷设为开始日00:00至截止日次日00:00。</span></div>';
 
   body += '<div class="field"><label>紧急程度</label><div class="choice-row" id="tf-urgency">' +
     ["紧急", "高", "中", "低"].map(function(u){
@@ -1795,7 +1807,7 @@ function taskFormView(){
 
   body += '<div class="field"><label>负责人（可多选）</label>' + assigneeSummaryHTML(d.assigneeIds) +
     (canPickAssignees ? '<button type="button" class="btn tiny-btn" data-action="pick-assignees" style="align-self:flex-start">选择负责人</button>' : "") +
-    '<div class="tiny muted">负责人可选本公司全部有效员工（含其他部门、直属上级与创始人）；至少保留一位，本人可移除且不会自动加回。创建审核只按创建人的直属上级，与负责人选择无关。</div>' +
+    '<div class="tiny muted">可多选负责人，至少选择一人。</div>' +
     "</div>";
 
   body += '<div class="callout" id="tf-error" hidden></div>';
@@ -2114,7 +2126,7 @@ function personalItemFormView(id){
   if (id && !it) return null;
   return { title: it ? "编辑个人信息" : "添加个人信息",
     body: '<div class="field"><label for="pi-text">内容</label><input id="pi-text" type="text" value="' + esc(it ? it.text : "") + '" data-autofocus /></div>' +
-      '<div class="tiny muted">个人信息由本人维护，默认取自本人日志摘录，编辑个人信息不会改写原始日志。</div>' +
+      '<div class="tiny muted">最多保存10条个人事项。</div>' +
       '<div class="callout" id="pi-error" hidden></div>',
     foot: withBack('<button type="button" class="btn primary" data-action="save-personal"' + (it ? ' data-id="' + it.id + '"' : "") + ">保存</button>", a) };
 }
@@ -2497,7 +2509,7 @@ function runAction(el){
   const action = el.dataset.action;
   const id = el.dataset.id;
   switch (action){
-    case "sheet-close": closeSheet(); return;
+    case "sheet-close": dismissSheet(); return;
     case "sheet-back": backSheet(); return;
     case "new-log": openLogForm(null); return;
     case "edit-log": openLogForm(id); return;
@@ -2744,11 +2756,11 @@ document.addEventListener("click", function(ev){
   }
   const actionEl = ev.target.closest("[data-action]");
   if (actionEl){ runAction(actionEl); return; }
-  if (ev.target === overlayEl) closeSheet();
+  if (ev.target === overlayEl) dismissSheet();
 });
 
 document.getElementById("bellBtn").addEventListener("click", openNotifications);
-document.getElementById("sheetClose").addEventListener("click", closeSheet);
+document.getElementById("sheetClose").addEventListener("click", dismissSheet);
 document.getElementById("sheetBack").addEventListener("click", function(){
   if (sheetStack.length > 1) backSheet(); else closeSheet();
 });

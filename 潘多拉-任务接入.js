@@ -106,29 +106,26 @@
 
   /* Creation/modification candidates come from the server's real company directory (chapter 3.1):
      creation and modification both use every active business member. */
-  const candidateCache = { epoch: null, create: null, edit: null };
+  const candidateCache = { epoch: null, directory: null, create: null, edit: null };
   let activePickerPurpose = "create";
   function pickerPurpose() { return drafts.task && drafts.task.mode === "edit" ? "edit" : "create"; }
   async function loadCandidates(purpose) {
     const mode = purpose === "edit" ? "edit" : "create";
-    if (candidateCache.epoch !== P.epoch) {
-      candidateCache.epoch = P.epoch; candidateCache.create = null; candidateCache.edit = null;
+    if (candidateCache.epoch !== P.epoch || candidateCache.directory !== P.data.users) {
+      candidateCache.epoch = P.epoch; candidateCache.directory = P.data.users;
+      candidateCache.create = null; candidateCache.edit = null;
     }
     if (!candidateCache[mode]) {
       const data = await P.request("/assignee-candidates?purpose=" + mode);
       P.rememberPeople(data.items || []);
-      const people = (data.items || []).map(function (item) {
-        const person = personById(item.id);
-        if (person) { person.superiorId = item.managerId || null; person.raw = Object.assign({}, person.raw, item); }
-        return person;
-      }).filter(Boolean);
+      const people = (data.items || []).map(item => personById(item.id)).filter(Boolean);
       if (candidateCache.epoch === P.epoch) candidateCache[mode] = people;
     }
     return candidateCache[mode] || [];
   }
   window.assignablePeople = function (account) {
     if (!account || !me() || account.id !== me().id || account.role === "admin") return [];
-    return candidateCache[activePickerPurpose] || [];
+    return (candidateCache[activePickerPurpose] || []).map(person => personById(person.id)).filter(Boolean);
   };
   window.assignableDepartments = function (account) {
     const out = [];
@@ -223,19 +220,19 @@
     drafts.task.endTime = P.readTimeControl("tf-end-time") || drafts.task.endTime;
   };
   function previewHint(preview, kind) {
-    if (!preview) return "正在确认本次审核路线…";
-    if (preview.error) return "暂时无法确认审核路线：" + preview.error + "。仍可提交，提交时会重新校验。";
-    if (preview.blocked) return "审核路线不可用：" + (preview.blockedReason || "请管理员修复组织关系") + "。修复前无法提交。";
+    if (!preview) return "正在确认审核人…";
+    if (preview.error) return "暂时无法确认审核人：" + preview.error + "。请重试。";
+    if (preview.blocked) return "无法提交：" + (preview.blockedReason || "请管理员修复组织关系") + "。";
     if (preview.requiresApproval) {
       const who = personName(preview.reviewerId, preview.route || {});
       return kind === "creation"
-        ? "创建审核人：" + who + "（按创建人的直属上级审核；负责人换序、更换或跨部门都不改变审核人）。"
-        : "本次审核人：" + who + "；提交后由该审核人处理。";
+        ? "审核人：" + who + "。"
+        : "审核人：" + who + "。";
     }
     const reason = preview.exemptionReason || (preview.route && preview.route.reasonText) || "申请人即审核人";
     return kind === "creation"
       ? "无需审核：" + reason + "；提交后直接生效。"
-      : "直接生效：" + reason + "；提交后记录原因直接生效。";
+      : "直接生效：" + reason + "。";
   }
   function creationMode(mode) { return mode === "create" || mode === "resubmit"; }
   /* Named distinctly: a local `taskFormView` declaration would shadow the captured base function
@@ -255,8 +252,7 @@
     view.title = draft.mode === "create" ? "创建任务" : draft.mode === "resubmit" ? "修改并重新提交" : "编辑任务";
     view.body = view.body.replace('id="tf-title" type="text"', 'id="tf-title" type="text" maxlength="80"')
       .replace('<textarea id="tf-desc">', '<textarea id="tf-desc" maxlength="5000">')
-      .replace('说明</label>', '任务说明（必填）</label>')
-      .replace('创建时间在保存时单独记录，编辑排期不会改变创建时间。', '全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。');
+      .replace('说明</label>', '任务说明（必填）</label>');
     /* Ordered company tags belong to the proposed task version. */
     if (P.taskTagsHTML) {
       view.body = view.body.replace('<div class="field"><label>紧急程度</label>',
@@ -408,10 +404,10 @@
       kv("负责人", peopleText(task.assigneeIds, raw)) + kv("审核人", raw.reviewerId ? personName(raw.reviewerId, raw) : "待配置") +
       kv("任务说明", task.desc || "暂无") + (raw.acceptanceCriteria ? kv("完成标准", raw.acceptanceCriteria) : "") + kv("当前进展", task.progressNote || "暂无") + '</div>';
     if (P.personalTagHTML) body += P.personalTagHTML(raw);
-    if (raw.parentUnavailable) body += '<div class="callout info">上级任务不可查看。关联关系不扩大访问权限。</div>';
+    if (raw.parentUnavailable) body += '<div class="callout info">上级任务当前不可查看。</div>';
     else if (task.parentId) body += '<div class="divider"></div><div class="card-head"><h2>上级任务</h2></div>' + taskLink(task.parentId, taskName(task.parentId));
     const children = Array.isArray(raw.children) ? raw.children : childrenOf(id).map(function (child) { return { id: child.id, title: child.title, executionState: child.status }; });
-    if (children.length) body += '<div class="divider"></div><div class="card-head"><h2>子任务</h2></div><div class="stack">' + children.map(function (child) { return taskLink(child.id, child.title, child.executionState); }).join("") + '</div><p class="tiny muted">父子任务各自推进，完成状态不会自动联动。</p>';
+    if (children.length) body += '<div class="divider"></div><div class="card-head"><h2>子任务</h2></div><div class="stack">' + children.map(function (child) { return taskLink(child.id, child.title, child.executionState); }).join("") + '</div>';
     const siblings = task.parentId ? childrenOf(task.parentId).filter(function (other) { return other.id !== id; }) : [];
     if (siblings.length) body += '<div class="divider"></div><div class="card-head"><h2>同级任务</h2><span class="hint">同一上级任务下</span></div><div class="stack">' + siblings.map(function (other) { return taskLink(other.id, other.title, other.status); }).join("") + '</div>';
     if (Array.isArray(raw.records) && raw.records.length) body += '<div class="divider"></div><div class="card-head"><h2>有效进展与执行记录</h2></div><div class="stack">' + raw.records.map(function (record) {
@@ -419,14 +415,14 @@
     }).join("") + '</div>';
     const request = pendingForTask(id);
     const requestId = raw.pendingRequestId || request && request.id;
-    if (task.frozen) body += '<div class="callout info">该任务有待审核申请。当前展示的是有效版本；审核结束前暂停资料修改、进展、完成及重开操作。</div>';
+    if (task.frozen) body += '<div class="callout info">审核中，当前展示已生效内容。</div>';
     const buttons = [];
     if (P.canRescheduleTask(actor(),task)) buttons.push('<button type="button" class="btn" data-action="p-adjust-schedule" data-id="'+attr(id)+'">调整排期</button>');
     if (canEditTask(actor(), task)) buttons.push('<button type="button" class="btn primary" data-action="edit-task" data-id="' + attr(id) + '">编辑任务</button>');
     if (canUpdateTaskNote(actor(), task)) buttons.push('<button type="button" class="btn" data-action="update-note" data-id="' + attr(id) + '">更新进展</button><button type="button" class="btn ok" data-action="submit-complete" data-id="' + attr(id) + '">提交完成</button>');
     if (canReopen(task)) buttons.push('<button type="button" class="btn primary" data-action="p-reopen-task" data-id="' + attr(id) + '">重开任务</button>');
     if (raw.canHandover) buttons.push('<button type="button" class="btn" data-action="p-open-handover" data-id="' + attr(id) + '">专用交接</button>');
-    buttons.push('<button type="button" class="btn" data-action="p-toggle-task-pin" data-id="' + attr(id) + '">' + (task.pinned ? '取消置顶' : '置顶到我的月视图') + '</button>');
+    if (canPin(task)) buttons.push('<button type="button" class="btn" data-action="p-toggle-task-pin" data-id="' + attr(id) + '">' + (task.pinned ? '取消置顶' : '置顶到我的月视图') + '</button>');
     if (requestId) buttons.push('<button type="button" class="btn" data-action="p-open-approval" data-id="' + attr(requestId) + '">查看当前申请</button>');
     // Comments are an independent aggregate at the bottom of the detail (chapter 8.4).
     if (P.commentsHTML) body += '<div class="divider"></div>' + P.commentsHTML("task", id);
@@ -494,13 +490,13 @@
     const noteId = command === "progress" ? "pf-note" : "cf-note";
     const errorId = command === "progress" ? "pf-error" : command === "complete" ? "cf-error" : "reopen-error";
     const label = command === "progress" ? "本次进展（必填）" : "完成说明（必填）";
-    const hint = command === "complete" ? "通过后任务标记为已完成，退回后继续执行；撤销申请保留提交前状态。"
-      : "进展也需要审核。通过后更新有效进展，首条有效进展使任务进入进行中。";
+    const hint = command === "complete" ? "审核通过后标记为已完成。"
+      : "审核通过后更新进展。";
     const buttonAction = command === "progress" ? "save-note" : command === "complete" ? "confirm-complete" : "p-confirm-reopen";
     let body;
     if (command === "reopen") {
       reopenDraft = Object.assign(reopenSchedule(task),{assigneeIds:task.assigneeIds.slice()});
-      body = '<div class="callout info">当前业务责任方可重开，并同步安排新的有效负责人；保存后进入新执行轮次。</div>' +
+      body = '<div class="callout info">请确认重开后的排期和负责人。</div>' +
         '<div class="callout info">' + esc(previewHint(context.preview, "non-creation")) + '</div>' +
         reopenScheduleHTML() + reopenOwnersHTML() + textField("reopen-reason", "重开原因（必填，最多500字）", "", 500, true) + errorBox(errorId);
     } else {
@@ -608,7 +604,7 @@
     if (!changes.length) {
       return request && request.baseVersionId ? '<div class="callout info">本次提交没有改变可比较的字段。</div>' : "";
     }
-    return '<div class="card-head"><h2>本次授权差异</h2><span class="hint">仅本次审核人可见</span></div><div class="kv">' +
+    return '<div class="card-head"><h2>变更对比</h2></div><div class="kv">' +
       changes.map(function (change) {
         const label = diffLabels[change.field] || change.field;
         return kv(label, diffText(change.field, change.before, request) + " → " + diffText(change.field, change.after, request));
@@ -646,7 +642,7 @@
     if (request.status !== "pending") throw new Error("该申请已处理。");
     if (decision === "withdraw" ? request.applicantId !== me().id : request.currentReviewerId !== me().id) throw new Error("当前账号不能执行此操作。");
     const withdraw = decision === "withdraw";
-    return { title: withdraw ? "撤销申请" : "退回申请", body: '<div class="callout info">' + (withdraw ? '撤销后本次申请不会生效，任务保持申请前的有效内容。' : request.kind === "complete" ? '退回完成申请后任务进入进行中，请说明仍需处理的事项。' : '退回后保留原有效内容；创建申请不会进入普通任务列表。') + '</div>' + (withdraw ? '' : textField("review-comment", "退回原因（必填）", "", 2000, true)) + errorBox("review-decision-error"), foot: withBack('<button type="button" class="btn danger" data-action="p-confirm-decision" data-decision="' + decision + '" data-id="' + attr(id) + '">' + (withdraw ? '确认撤销' : '确认退回') + '</button>') };
+    return { title: withdraw ? "撤销申请" : "退回申请", body: '<div class="callout info">' + (withdraw ? '撤销后本次申请不会生效，任务保持申请前的有效内容。' : request.kind === "complete" ? '退回完成申请后任务进入进行中，请说明仍需处理的事项。' : '确认退回此申请？') + '</div>' + (withdraw ? '' : textField("review-comment", "退回原因（必填）", "", 2000, true)) + errorBox("review-decision-error"), foot: withBack('<button type="button" class="btn danger" data-action="p-confirm-decision" data-decision="' + decision + '" data-id="' + attr(id) + '">' + (withdraw ? '确认撤销' : '确认退回') + '</button>') };
   }
   function decide(id, decision, suppliedComment) {
     return P.busy(async function () {
@@ -696,9 +692,12 @@
     if (request && reviewContexts.has(request.id)) return decisionForm(request.id, "reject");
     return { title: "查看审核申请", body: '<div class="callout info">请先打开申请快照后处理。</div>', foot: request ? '<button type="button" class="btn primary" data-action="p-open-approval" data-id="' + attr(request.id) + '">打开申请</button>' : '<button type="button" class="btn" data-action="sheet-close">关闭</button>' };
   };
+  function canPin(task) {
+    return !!me() && task.raw?.published !== false && !!task.raw?.currentVersionId && task.assigneeIds.includes(me().id);
+  }
   function togglePin(id) {
     const task = taskById(id);
-    if (!task) return;
+    if (!task || !canPin(task)) return;
     const next = !task.pinned;
     return P.busy(async function () {
       await P.mutation("pin:" + id, next ? "PUT" : "DELETE", "/tasks/" + encodeURIComponent(id) + "/pin", null, null);
@@ -794,7 +793,7 @@
     return {
       title: "专用交接",
       body: cards + textField("ho-reason", "交接原因（选填）", "", 500) +
-        '<p class="tiny muted">交接只替换该负责人在有序列表中的位置，不改标题、排期或基础字段；新路线审核通过后生效。</p>' +
+        '<p class="tiny muted">交接审核通过后生效。</p>' +
         errorBox("handover-error"),
       foot: withBack('<button type="button" class="btn" data-action="sheet-close">关闭</button>')
     };
@@ -871,7 +870,7 @@
     const clear = current ? '<button type="button" class="btn danger" data-action="p-clear-handover-preset">清除预设</button>' : '';
     return {
       title: "交接预设",
-      body: '<div class="callout info">预设仅用于专用交接申请；负责人变更仍按新路线审核后生效，不能修改标题、排期等基础字段。</div>' +
+      body: '<div class="callout info">选择默认交接人。</div>' +
         '<div class="field"><label for="hp-target">预设交接对象（' + esc(ctx.subjectName) + '）</label><select id="hp-target">' + options + '</select></div>' +
         (current ? '<p class="tiny muted">当前预设：' + esc((ctx.preset.target && ctx.preset.target.displayName) || "已保存") + '</p>'
           : '<p class="tiny muted">尚未保存预设。</p>') + errorBox("handover-preset-error"),

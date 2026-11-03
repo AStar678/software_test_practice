@@ -184,7 +184,7 @@ function freezeText(raw) {
   if (!raw || !raw.frozenAt) return '';
   const at = new Date(raw.frozenAt);
   if (Number.isNaN(at.getTime())) return '';
-  return (raw.frozen ? '已于 ' : '将于 ') + timeText(raw.frozenAt) + (raw.frozen ? ' 冻结，只能查看。' : ' 自动冻结（首次创建后 24 小时）。');
+  return (raw.frozen ? '已于 ' : '将于 ') + timeText(raw.frozenAt) + (raw.frozen ? ' 冻结，只能查看。' : ' 冻结。');
 }
 logDetailView = function (id) {
   const l = logById(id);
@@ -195,7 +195,6 @@ logDetailView = function (id) {
   return { title: "日志详情", body: '<div class="kv"><span class="k">作者</span><span class="v">' + esc(name) +
       '</span><span class="k">日志日期</span><span class="v">' + esc(raw.businessDate) +
       '</span><span class="k">创建时间</span><span class="v">' + esc(timeText(raw.createdAt)) +
-      '</span><span class="k">编辑权限</span><span class="v">' + (raw.editable ? "本人可编辑" : "只读（" + (raw.frozen ? "已冻结" : "非作者") + "）") +
       '</span><span class="k">冻结</span><span class="v">' + esc(freezeText(raw) || "—") +
       '</span></div><div class="row wrap">' + logTagHTML(raw) + '</div><div class="divider"></div><p class="p-log-reading" style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(l.content) + '</p>' +
       (t ? '<div class="divider"></div><button type="button" class="btn" data-task="' + esc(t.id) + '">关联：' + esc(t.title) + '</button>' : '') +
@@ -310,7 +309,7 @@ logFormView = function () {
         '<button type="button" class="btn tiny-btn" data-action="pick-log-task">选择关联任务</button>' +
         (d.taskId ? '<button type="button" class="btn tiny-btn ghost" data-action="clear-log-task">清空关联</button>' : '') +
       "</div>" +
-      '<span class="tiny muted">日志归属于本人，按日志权限只读分享给范围内的上级；只有本人可以编辑。</span></div>' +
+      '</div>' +
     (d.frozenAt ? '<div class="callout info">' + esc(freezeText({ frozen: d.frozen, frozenAt: d.frozenAt }) || '') + '</div>' : '') +
     '<div class="callout" id="lf-error" hidden></div>';
   return { title: d.id ? "编辑日志" : "写日志", body: body,
@@ -375,7 +374,7 @@ saveLog = function () {
     rememberHome("personal", id);
     const view = oldPersonalForm(id);
     if (view) view.body = view.body.replace('id="pi-text"', 'id="pi-text" maxlength="2000"')
-      .replace("个人信息由本人维护，默认取自本人日志摘录，编辑个人信息不会改写原始日志。", "个人信息由本人维护，最多 10 条，独立保存，不会改写日志。");
+      .replace("个人信息由本人维护，默认取自本人日志摘录，编辑个人信息不会改写原始日志。", "最多保存10条个人事项。");
     return view;
   };
   confirmDeleteView = function (kind, id) {
@@ -479,10 +478,10 @@ saveLog = function () {
     P.busy(async () => { await P.reload(); openSheet(notificationsView()); });
   };
   function requestResultText(raw) {
-    if (!raw.requestId) return "";
+    if (!raw.requestId || !raw.requestStatus) return "";
     const kind = REQUEST_KIND[raw.requestKind] || "任务申请";
     const result = REQUEST_RESULT[raw.requestStatus] || raw.requestStatus || "已处理";
-    return kind + " · " + result + (raw.requestStatus === "pending" ? "" : "（已办结，不再提供审核按钮）");
+    return kind + " · " + result;
   }
   function notificationView(raw) {
     const revoked = !!raw.revoked;
@@ -493,22 +492,23 @@ saveLog = function () {
     if (revoked && !raw.canReadWithdrawnDetails) {
       body += '<div class="divider"></div><p>该通知已被撤回。</p>';
     } else {
-      if (revoked) body += '<div class="callout info">该通知已撤回。你作为发起人的上级，可查看原通知内容；此页仅供只读查看。</div>';
+      if (revoked) body += '<div class="callout info">通知已撤回，以下为只读内容。</div>';
       if (raw.title) body += '<div class="card-head"><h2>' + esc(raw.title) + '</h2></div>';
       body += '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(raw.summary || "") + '</p>';
       if (raw.changeSummary && raw.changeSummary !== raw.summary) body += '<p class="tiny muted" style="white-space:pre-wrap">' + esc(raw.changeSummary) + '</p>';
-      if (raw.requestId) body += '<div class="callout info">原申请：' + esc(requestResultText(raw)) + '</div>';
-      if (raw.relationLost) body += '<div class="callout info">你已不再是该任务负责人；此消息仅保留只读摘要，不能用于修改或审核。</div>';
+      if (requestResultText(raw)) body += '<div class="callout info">原申请：' + esc(requestResultText(raw)) + '</div>';
+      if (raw.requestStatus && raw.requestComment) body += '<p style="white-space:pre-wrap;overflow-wrap:anywhere">处理意见：' + esc(raw.requestComment) + '</p>';
+      if (raw.relationLost) body += '<div class="callout info">当前无任务操作权限，可查看历史只读详情。</div>';
     }
     body += '<div class="callout" id="notification-error" hidden></div>';
     const buttons = [];
-    if (!revoked && raw.requestId) buttons.push(button("p-open-approval", raw.canReview ? "审核此申请" : "查看原申请结果", raw.requestId, raw.canReview ? "primary" : ""));
+    if (!revoked && raw.requestId && raw.canOpenRequest) buttons.push(button("p-open-approval", raw.canReview ? "审核此申请" : "查看原申请结果", raw.requestId, raw.canReview ? "primary" : ""));
     if (!revoked && raw.taskId) buttons.push(raw.relationLost || raw.readonly
       ? button("p-open-historical-task", "查看历史只读详情", raw.id)
       : button("p-open-notification-task", "查看相关任务", raw.id));
     if (!revoked && raw.canWithdraw) buttons.push(button("p-withdraw-notification", "撤回通知", raw.id));
     if (!revoked && raw.objectType && raw.objectId &&
-        !(raw.objectType === "task" && (raw.relationLost || raw.readonly))) {
+        !(raw.objectType === "task" && (raw.relationLost || raw.readonly || (raw.taskId === raw.objectId && raw.focus !== "comments")))) {
       buttons.push(button("p-open-notification-object", raw.focus === "comments" ? "定位到评论区" : "查看相关对象", raw.id));
     }
     if (!revoked) buttons.push(button("p-hide-notification", "删除此消息", raw.id));
@@ -608,14 +608,14 @@ saveLog = function () {
       '<section class="card"><div class="card-head"><h2>任务数据统计</h2><span class="hint">' + esc(scope || "当前授权范围") + '</span></div><div class="stat-grid">' +
       labels.map(([label,key]) => '<div class="stat"><div class="v">' + esc(stat[key] == null ? "—" : stat[key]) + '</div><div class="k">' + label + '</div></div>').join("") +
       '</div><h3>紧急程度分布</h3><div class="stat-grid">' + priorities.map(([label,key]) => '<div class="stat"><div class="v">' + esc(priority[key] == null ? "—" : priority[key]) + '</div><div class="k">' + label + '</div></div>').join("") +
-      '</div><p class="tiny muted">统计方法：当前有效任务 · 更新于 ' + esc(timeText(generatedAt)) + '</p></section>' +
-      '<section class="card"><div class="card-head"><h2>关键词词云</h2><span class="hint">' + esc(scope || "当前授权范围") + '</span></div><div class="wc">' + cloud + '</div><p class="tiny muted">从授权范围内任务的标题和说明实时提取，不读取工作日志。</p></section>' +
-      '<section class="card"><div class="card-head"><h2>规则建议</h2><span class="hint">' + esc(suggestionScope) + '</span></div><p class="tiny muted">本地规则分析：比例临期/逾期、排期冲突和高紧急程度；不调用外部模型，也不会修改任务。</p>' +
+      '</div><p class="tiny muted">来源：当前有效任务 · 更新于 ' + esc(timeText(generatedAt)) + '</p></section>' +
+      '<section class="card"><div class="card-head"><h2>关键词词云</h2><span class="hint">' + esc(scope || "当前授权范围") + '</span></div><div class="wc">' + cloud + '</div><p class="tiny muted">来源：可见任务的标题和说明。</p></section>' +
+      '<section class="card"><div class="card-head"><h2>规则建议</h2><span class="hint">' + esc(suggestionScope) + '</span></div><p class="tiny muted">基于临期、逾期、排期冲突和紧急程度。</p>' +
       '<div class="action-grid">' + button("p-refresh-analysis", analysisLoading ? "正在重算…" : "刷新并重算", null, "primary") +
       '</div><div class="callout" id="analysis-error" hidden></div>' +
-      (analysisLoading ? '<div class="empty">正在按当前权限重新计算…</div>' : result ? '<p class="tiny muted">生成于 ' + esc(timeText(result.generatedAt)) + ' · ' + esc(result.method || "local_proportional_schedule_rules") + '</p>' +
-        (suggestions.length ? suggestions.map(suggestionHTML).join("") : '<div class="empty">当前没有触发比例临期、逾期、排期冲突或高紧急规则</div>')
-        : '<div class="empty">进入本页后将自动按当前权限生成分析</div>') + '</section>';
+      (analysisLoading ? '<div class="empty">正在计算…</div>' : result ? '<p class="tiny muted">生成于 ' + esc(timeText(result.generatedAt))  + '</p>' +
+        (suggestions.length ? suggestions.map(suggestionHTML).join("") : '<div class="empty">暂无建议</div>')
+        : '<div class="empty">正在生成建议…</div>') + '</section>';
     const refresh = document.querySelector('[data-action="p-refresh-analysis"]');
     if (refresh) refresh.disabled = analysisLoading;
   };
@@ -627,7 +627,7 @@ saveLog = function () {
       const saved = await P.request("/ai-jobs/" + endpoint(job.jobId));
       analysis = { epoch: P.epoch, jobId: job.jobId, result: saved.result };
       P.data.analytics = saved.result.summary;
-      if (!silent) P.notice("已按当前权限刷新规则分析。");
+      if (!silent) P.notice("建议已更新。");
       return saved.result;
     } finally {
       analysisLoading = false;
@@ -681,7 +681,7 @@ saveLog = function () {
       case "p-refresh-workspace": P.busy(async () => { analysis = null; await P.reload(); P.notice("已读取最新数据。"); }); return;
       case "p-logout": P.busy(() => P.logout()); return;
       case "new-consult": case "save-consult": case "reply-consult": case "save-reply":
-        P.notice("请示功能尚未接入后端，未保存任何内容。"); return;
+        P.notice("暂无法发送，请稍后重试。"); return;
       default: oldActions(el);
     }
   };
