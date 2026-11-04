@@ -1,0 +1,686 @@
+{
+  "updated": "2026-11-04T11:51:47.391352+00:00",
+  "checks": [
+    {
+      "check": "V28 fixture writes a real task and log before the migration",
+      "pass": true,
+      "evidence": {
+        "task": 201,
+        "log": 200
+      }
+    },
+    {
+      "check": "baseline is V28 and still holds the old personal item",
+      "pass": true,
+      "evidence": {
+        "tasks": "3c4e5c53-bef2-4089-9d24-050a212197e8",
+        "logs": "3beed348-68b5-4aa3-b9d3-7e88e3fdca24",
+        "company": "upgrade-company",
+        "personal": "1",
+        "version": "28"
+      }
+    },
+    {
+      "check": "V29 creates daily_items and records the actual migration version",
+      "pass": true,
+      "evidence": {
+        "tasks": "3c4e5c53-bef2-4089-9d24-050a212197e8",
+        "logs": "3beed348-68b5-4aa3-b9d3-7e88e3fdca24",
+        "company": "upgrade-company",
+        "personal": "0",
+        "version": "29",
+        "daily": "1"
+      }
+    },
+    {
+      "check": "V29 removes only the old personal home items",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "tasks": "3c4e5c53-bef2-4089-9d24-050a212197e8",
+          "logs": "3beed348-68b5-4aa3-b9d3-7e88e3fdca24",
+          "company": "upgrade-company",
+          "personal": "1",
+          "version": "28"
+        },
+        "after": {
+          "tasks": "3c4e5c53-bef2-4089-9d24-050a212197e8",
+          "logs": "3beed348-68b5-4aa3-b9d3-7e88e3fdca24",
+          "company": "upgrade-company",
+          "personal": "0",
+          "version": "29",
+          "daily": "1"
+        }
+      }
+    },
+    {
+      "check": "V29 leaves tasks and logs byte-identical",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "tasks": "3c4e5c53-bef2-4089-9d24-050a212197e8",
+          "logs": "3beed348-68b5-4aa3-b9d3-7e88e3fdca24",
+          "company": "upgrade-company",
+          "personal": "1",
+          "version": "28"
+        },
+        "after": {
+          "tasks": "3c4e5c53-bef2-4089-9d24-050a212197e8",
+          "logs": "3beed348-68b5-4aa3-b9d3-7e88e3fdca24",
+          "company": "upgrade-company",
+          "personal": "0",
+          "version": "29",
+          "daily": "1"
+        }
+      }
+    },
+    {
+      "check": "a valid leap-day item with internal newlines is created",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 1,
+        "id": "17a17c7d-2fab-42e5-9615-7a23654eccd9",
+        "date": "2024-02-29"
+      }
+    },
+    {
+      "check": "detail returns the exact leap date and plain text with rowVersion",
+      "pass": true,
+      "evidence": {
+        "id": "17a17c7d-2fab-42e5-9615-7a23654eccd9",
+        "date": "2024-02-29",
+        "body": "闰日事项\n第二行",
+        "completed": false,
+        "rowVersion": 1,
+        "createdAt": "2026-11-04T11:51:10.254860Z",
+        "updatedAt": "2026-11-04T11:51:10.254860Z"
+      }
+    },
+    {
+      "check": "create rejects invalid leap date",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "date 必须为 YYYY-MM-DD 有效日期"
+      }
+    },
+    {
+      "check": "create rejects impossible month",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "date 必须为 YYYY-MM-DD 有效日期"
+      }
+    },
+    {
+      "check": "create rejects non-padded date",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "date 必须为 YYYY-MM-DD 有效日期"
+      }
+    },
+    {
+      "check": "create rejects blank body",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "body 不能为空且不得超过 2000 字"
+      }
+    },
+    {
+      "check": "create rejects whitespace only",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "body 不能为空且不得超过 2000 字"
+      }
+    },
+    {
+      "check": "create rejects unknown owner injection",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "请求含不支持的字段"
+      }
+    },
+    {
+      "check": "create rejects unknown task injection",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "请求含不支持的字段"
+      }
+    },
+    {
+      "check": "2000-character body boundary is accepted",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 1,
+        "id": "cbeae7ce-ce9d-4373-92b3-fbf22a04bbd1",
+        "date": "2026-11-04"
+      }
+    },
+    {
+      "check": "2001-character body is rejected without partial save",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "body 不能为空且不得超过 2000 字"
+      }
+    },
+    {
+      "check": "completed must be an explicit boolean",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "completed 必须为布尔值"
+      }
+    },
+    {
+      "check": "update without If-Match is rejected with 428",
+      "pass": true,
+      "evidence": {
+        "code": "PRECONDITION_REQUIRED",
+        "message": "请先读取详情并提交 If-Match"
+      }
+    },
+    {
+      "check": "stale version is rejected with 412 instead of silent overwrite",
+      "pass": true,
+      "evidence": {
+        "code": "VERSION_CONFLICT",
+        "message": "内容已更新，请刷新后重试"
+      }
+    },
+    {
+      "check": "date, body and completed are saved atomically with a new version",
+      "pass": true,
+      "evidence": {
+        "completed": true,
+        "id": "cbeae7ce-ce9d-4373-92b3-fbf22a04bbd1",
+        "rowVersion": 2,
+        "date": "2026-11-05"
+      }
+    },
+    {
+      "check": "completion is explicitly reversible",
+      "pass": true,
+      "evidence": {
+        "completed": false,
+        "id": "cbeae7ce-ce9d-4373-92b3-fbf22a04bbd1",
+        "rowVersion": 3,
+        "date": "2026-11-05"
+      }
+    },
+    {
+      "check": "one page is capped at 100 and reports the complete total",
+      "pass": true,
+      "evidence": {
+        "total": 105,
+        "next": 100
+      }
+    },
+    {
+      "check": "the second page returns the remaining items without duplicates",
+      "pass": true,
+      "evidence": {
+        "second": 5
+      }
+    },
+    {
+      "check": "paging order is created_at then id, independent of completion",
+      "pass": true,
+      "evidence": {
+        "expected": [
+          "01067977-4f57-4a0e-a2df-5d6e10a87049",
+          "01c01541-e546-4ac8-8d60-28c8a51ed073",
+          "030c8791-1a92-4a1f-89e7-ccc39ca1f6fe"
+        ]
+      }
+    },
+    {
+      "check": "items with identical bodies keep distinct real ids",
+      "pass": true,
+      "evidence": {
+        "unique": 105
+      }
+    },
+    {
+      "check": "summary omits a truly zero day, so absence means zero",
+      "pass": true,
+      "evidence": {
+        "days": [
+          "2026-11-15",
+          "2026-11-16",
+          "2026-11-17",
+          "2026-11-18",
+          "2026-11-19",
+          "2026-11-20",
+          "2026-11-21",
+          "2026-11-22"
+        ]
+      }
+    },
+    {
+      "check": "summary counts 1 open item(s) on day 11",
+      "pass": true,
+      "evidence": {
+        "date": "2026-11-15",
+        "openCount": 1,
+        "completedCount": 0
+      }
+    },
+    {
+      "check": "summary counts 2 open item(s) on day 12",
+      "pass": true,
+      "evidence": {
+        "date": "2026-11-16",
+        "openCount": 2,
+        "completedCount": 0
+      }
+    },
+    {
+      "check": "summary counts 3 open item(s) on day 13",
+      "pass": true,
+      "evidence": {
+        "date": "2026-11-17",
+        "openCount": 3,
+        "completedCount": 0
+      }
+    },
+    {
+      "check": "summary counts 4 open item(s) on day 14",
+      "pass": true,
+      "evidence": {
+        "date": "2026-11-18",
+        "openCount": 4,
+        "completedCount": 0
+      }
+    },
+    {
+      "check": "summary counts 5 open item(s) on day 15",
+      "pass": true,
+      "evidence": {
+        "date": "2026-11-19",
+        "openCount": 5,
+        "completedCount": 0
+      }
+    },
+    {
+      "check": "summary counts 7 open item(s) on day 16",
+      "pass": true,
+      "evidence": {
+        "date": "2026-11-20",
+        "openCount": 7,
+        "completedCount": 0
+      }
+    },
+    {
+      "check": "summary keeps 105 items independent of the 100-row list page",
+      "pass": true,
+      "evidence": {
+        "from": "2026-11-07",
+        "to": "2026-11-07",
+        "maxDays": 93,
+        "days": [
+          {
+            "date": "2026-11-07",
+            "openCount": 105,
+            "completedCount": 0
+          }
+        ]
+      }
+    },
+    {
+      "check": "summary reports mixed open/completed counts",
+      "pass": true,
+      "evidence": {
+        "date": "2026-11-21",
+        "openCount": 3,
+        "completedCount": 2
+      }
+    },
+    {
+      "check": "summary reports an all-completed day as zero open",
+      "pass": true,
+      "evidence": {
+        "date": "2026-11-22",
+        "openCount": 0,
+        "completedCount": 4
+      }
+    },
+    {
+      "check": "summary rejects a range longer than 93 closed days",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "汇总范围最多 93 天"
+      }
+    },
+    {
+      "check": "summary rejects an inverted range",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "from 不能晚于 to"
+      }
+    },
+    {
+      "check": "same-team peer cannot read another person's daily list",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "same-team peer cannot read another person's detail",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "same-team peer cannot modify another person's item",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "same-team peer cannot delete another person's item",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "same-team peer summary does not expose another person's count",
+      "pass": true,
+      "evidence": {
+        "from": "2026-11-24",
+        "to": "2026-11-24",
+        "maxDays": 93,
+        "days": []
+      }
+    },
+    {
+      "check": "department head cannot read another person's daily list",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "department head cannot read another person's detail",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "department head cannot modify another person's item",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "department head cannot delete another person's item",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "department head summary does not expose another person's count",
+      "pass": true,
+      "evidence": {
+        "from": "2026-11-24",
+        "to": "2026-11-24",
+        "maxDays": 93,
+        "days": []
+      }
+    },
+    {
+      "check": "founder cannot read another person's daily list",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "founder cannot read another person's detail",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "founder cannot modify another person's item",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "founder cannot delete another person's item",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "founder summary does not expose another person's count",
+      "pass": true,
+      "evidence": {
+        "from": "2026-11-24",
+        "to": "2026-11-24",
+        "maxDays": 93,
+        "days": []
+      }
+    },
+    {
+      "check": "other company cannot read another person's daily list",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "other company cannot read another person's detail",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "other company cannot modify another person's item",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "other company cannot delete another person's item",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "other company summary does not expose another person's count",
+      "pass": true,
+      "evidence": {
+        "from": "2026-11-24",
+        "to": "2026-11-24",
+        "maxDays": 93,
+        "days": []
+      }
+    },
+    {
+      "check": "an independent administrator cannot use the employee daily-item API",
+      "pass": true,
+      "evidence": {
+        "code": "BUSINESS_ROLE_REQUIRED",
+        "message": "管理员请使用独立管理端"
+      }
+    },
+    {
+      "check": "an invalid session is rejected",
+      "pass": true,
+      "evidence": 401
+    },
+    {
+      "check": "the retired personal home-item create path is rejected",
+      "pass": true,
+      "evidence": {
+        "code": "HOME_ITEMS_PERSONAL_RETIRED",
+        "message": "个人事项已改为每日事项，请使用每日事项接口"
+      }
+    },
+    {
+      "check": "daily-item maintenance writes no notification and leaves tasks/logs untouched",
+      "pass": true,
+      "evidence": {
+        "notifications": [
+          0,
+          0
+        ],
+        "tasks": [
+          1,
+          "same"
+        ],
+        "logs": [
+          1,
+          "same"
+        ]
+      }
+    },
+    {
+      "check": "the audit event carries the item identity but never its body and has no recipients",
+      "pass": true,
+      "evidence": {
+        "audit": [
+          [
+            "{\"date\": \"2026-11-27\", \"dailyItemId\": \"0b9edaf4-348f-414f-bf7f-658bf995a5c9\"}"
+          ]
+        ],
+        "events": [
+          [
+            "daily_item.created",
+            "[]"
+          ]
+        ]
+      }
+    },
+    {
+      "check": "the same create request replays without a duplicate item",
+      "pass": true,
+      "evidence": {
+        "replay": {
+          "id": "c8ad5f36-f31e-400a-803c-16659d0da798",
+          "date": "2026-11-25",
+          "rowVersion": 1
+        },
+        "total": 1
+      }
+    },
+    {
+      "check": "deleting and replaying the same idempotent request returns the cached result",
+      "pass": true,
+      "evidence": {
+        "id": "c8ad5f36-f31e-400a-803c-16659d0da798",
+        "deleted": true
+      }
+    },
+    {
+      "check": "the deleted item is gone after the replayed delete",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "one idempotency key cannot be reused for a different request",
+      "pass": true,
+      "evidence": {
+        "first": 200,
+        "second": 409,
+        "result": {
+          "code": "IDEMPOTENCY_CONFLICT",
+          "message": "同一幂等键不能用于不同请求"
+        }
+      }
+    },
+    {
+      "check": "the home board includes self-created tasks the actor currently owns",
+      "pass": true,
+      "evidence": {
+        "board": [
+          "02b7e948-e031-4f13-8b94-fe0debbb3136",
+          "6e624d65-f18b-4886-b2ce-3c8bc731004d",
+          "7729c493-72b6-41ff-9543-753f628b2be7",
+          "85483754-90d8-4846-a072-a2f6b1d2a4c8",
+          "be12b0d6-d7e1-4267-810d-e9a9a8f0f3e8",
+          "c4c4aa93-a69c-46b0-9139-705325aa6da0",
+          "ea20eab8-e3eb-4da2-a7be-6bc4e1f5c36e",
+          "f3132e96-7153-4c11-8338-658de93b347a",
+          "f78cdb37-ac21-43fd-9675-e7d89ee1a822",
+          "fc9f634e-a72b-436d-a07f-20ebe2c0929e"
+        ]
+      }
+    },
+    {
+      "check": "the home board excludes completed, removed and not-created tasks",
+      "pass": true,
+      "evidence": {
+        "board": [
+          "02b7e948-e031-4f13-8b94-fe0debbb3136",
+          "6e624d65-f18b-4886-b2ce-3c8bc731004d",
+          "7729c493-72b6-41ff-9543-753f628b2be7",
+          "85483754-90d8-4846-a072-a2f6b1d2a4c8",
+          "be12b0d6-d7e1-4267-810d-e9a9a8f0f3e8",
+          "c4c4aa93-a69c-46b0-9139-705325aa6da0",
+          "ea20eab8-e3eb-4da2-a7be-6bc4e1f5c36e",
+          "f3132e96-7153-4c11-8338-658de93b347a",
+          "f78cdb37-ac21-43fd-9675-e7d89ee1a822",
+          "fc9f634e-a72b-436d-a07f-20ebe2c0929e"
+        ]
+      }
+    },
+    {
+      "check": "the home board is capped at ten and ordered by assignment time then id",
+      "pass": true,
+      "evidence": {
+        "board": [
+          "02b7e948-e031-4f13-8b94-fe0debbb3136",
+          "6e624d65-f18b-4886-b2ce-3c8bc731004d",
+          "7729c493-72b6-41ff-9543-753f628b2be7",
+          "85483754-90d8-4846-a072-a2f6b1d2a4c8",
+          "be12b0d6-d7e1-4267-810d-e9a9a8f0f3e8",
+          "c4c4aa93-a69c-46b0-9139-705325aa6da0",
+          "ea20eab8-e3eb-4da2-a7be-6bc4e1f5c36e",
+          "f3132e96-7153-4c11-8338-658de93b347a",
+          "f78cdb37-ac21-43fd-9675-e7d89ee1a822",
+          "fc9f634e-a72b-436d-a07f-20ebe2c0929e"
+        ],
+        "expected": [
+          "02b7e948-e031-4f13-8b94-fe0debbb3136",
+          "6e624d65-f18b-4886-b2ce-3c8bc731004d",
+          "7729c493-72b6-41ff-9543-753f628b2be7",
+          "85483754-90d8-4846-a072-a2f6b1d2a4c8",
+          "be12b0d6-d7e1-4267-810d-e9a9a8f0f3e8",
+          "c4c4aa93-a69c-46b0-9139-705325aa6da0",
+          "ea20eab8-e3eb-4da2-a7be-6bc4e1f5c36e",
+          "f3132e96-7153-4c11-8338-658de93b347a",
+          "f78cdb37-ac21-43fd-9675-e7d89ee1a822",
+          "fc9f634e-a72b-436d-a07f-20ebe2c0929e"
+        ]
+      }
+    },
+    {
+      "check": "the home response no longer carries personalItems or recentLogs",
+      "pass": true,
+      "evidence": [
+        "assignedTasks",
+        "businessDate",
+        "companyItems"
+      ]
+    },
+    {
+      "check": "another employee's board shows tasks assigned by someone else",
+      "pass": true,
+      "evidence": {
+        "board": [
+          "09953962-19db-4ff9-af16-92a89284c5d6",
+          "6b483dc3-1a35-4b96-b01d-4e7f84dcca00"
+        ]
+      }
+    },
+    {
+      "check": "an unpublished creation never enters the board",
+      "pass": true,
+      "evidence": {
+        "board": [
+          "09953962-19db-4ff9-af16-92a89284c5d6",
+          "6b483dc3-1a35-4b96-b01d-4e7f84dcca00"
+        ]
+      }
+    },
+    {
+      "check": "the administrator company-information limit still rejects the eleventh item",
+      "pass": true,
+      "evidence": {
+        "code": "HOME_ITEM_LIMIT",
+        "message": "公司信息最多10条，请先删除后再新增"
+      }
+    }
+  ]
+}

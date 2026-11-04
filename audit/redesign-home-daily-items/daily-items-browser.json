@@ -1,0 +1,623 @@
+{
+  "updated": "2026-11-04T11:51:17.512Z",
+  "checks": [
+    {
+      "check": "login form is ready",
+      "pass": true
+    },
+    {
+      "check": "employee login loads the home page",
+      "pass": true
+    },
+    {
+      "check": "navigation uses 首页 and 公司 while keeping five entries",
+      "pass": true,
+      "evidence": {
+        "tabs": [
+          "首页",
+          "公司",
+          "日志",
+          "统计",
+          "我的"
+        ],
+        "title": "首页",
+        "heading": true
+      }
+    },
+    {
+      "check": "home has exactly 事件纪、任务看板、每日事项 and no old log/personal card",
+      "pass": true,
+      "evidence": {
+        "count": 3,
+        "order": [
+          "quad company-quad",
+          "quad tasks-quad",
+          "quad daily-quad"
+        ],
+        "company": true,
+        "tasks": true,
+        "daily": true,
+        "logs": false,
+        "personal": false,
+        "newPersonal": false,
+        "dailyColumn": "1",
+        "grid": "178px 178px",
+        "priorities": [
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          }
+        ]
+      }
+    },
+    {
+      "check": "the daily section spans both columns below the two upper cards",
+      "pass": true,
+      "evidence": {
+        "columnStart": "1"
+      }
+    },
+    {
+      "check": "task items keep their title and a fully visible right-aligned priority",
+      "pass": true,
+      "evidence": [
+        {
+          "width": 21,
+          "visible": true
+        },
+        {
+          "width": 21,
+          "visible": true
+        },
+        {
+          "width": 21,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "check": "calendar shows a fixed Monday-to-Sunday header and seven-row week columns",
+      "pass": true,
+      "evidence": {
+        "weekdayCount": 8,
+        "weekdays": [
+          "周一",
+          "周二",
+          "周三",
+          "周四",
+          "周五",
+          "周六",
+          "周日"
+        ],
+        "cells": 91,
+        "firstCellBox": 44,
+        "weekCells": 7,
+        "todayLabel": "2026年11月4日，未完成1条，已完成0条",
+        "lunar": false,
+        "monthLabels": [
+          "2026年10月",
+          "2026年11月",
+          "2026年12月"
+        ],
+        "scroller": true,
+        "fab": true,
+        "weekdayFixed": "static"
+      }
+    },
+    {
+      "check": "the calendar exposes real month labels, a horizontal scroller and a floating add action",
+      "pass": true,
+      "evidence": {
+        "weekdayCount": 8,
+        "weekdays": [
+          "周一",
+          "周二",
+          "周三",
+          "周四",
+          "周五",
+          "周六",
+          "周日"
+        ],
+        "cells": 91,
+        "firstCellBox": 44,
+        "weekCells": 7,
+        "todayLabel": "2026年11月4日，未完成1条，已完成0条",
+        "lunar": false,
+        "monthLabels": [
+          "2026年10月",
+          "2026年11月",
+          "2026年12月"
+        ],
+        "scroller": true,
+        "fab": true,
+        "weekdayFixed": "static"
+      }
+    },
+    {
+      "check": "the loaded week sequence is consecutive with no duplicate date",
+      "pass": true,
+      "evidence": {
+        "unique": true,
+        "consecutive": true,
+        "count": 91,
+        "todayVisible": true
+      }
+    },
+    {
+      "check": "the calendar initially positions the company today inside the viewport",
+      "pass": true,
+      "evidence": {
+        "unique": true,
+        "consecutive": true,
+        "count": 91,
+        "todayVisible": true
+      }
+    },
+    {
+      "check": "day 0 renders 1 open item(s) with the clamped marker width 4",
+      "pass": true,
+      "evidence": {
+        "aria": "2026年11月4日，未完成1条，已完成0条",
+        "marks": [
+          {
+            "cls": "daily-mark is-open",
+            "width": 4,
+            "height": 4
+          }
+        ]
+      }
+    },
+    {
+      "check": "day 1 renders 2 open item(s) with the clamped marker width 7",
+      "pass": true,
+      "evidence": {
+        "aria": "2026年11月5日，未完成2条，已完成0条",
+        "marks": [
+          {
+            "cls": "daily-mark is-open",
+            "width": 7,
+            "height": 4
+          }
+        ]
+      }
+    },
+    {
+      "check": "day 2 renders 3 open item(s) with the clamped marker width 10",
+      "pass": true,
+      "evidence": {
+        "aria": "2026年11月6日，未完成3条，已完成0条",
+        "marks": [
+          {
+            "cls": "daily-mark is-open",
+            "width": 10,
+            "height": 4
+          }
+        ]
+      }
+    },
+    {
+      "check": "day 3 renders 4 open item(s) with the clamped marker width 13",
+      "pass": true,
+      "evidence": {
+        "aria": "2026年11月7日，未完成4条，已完成0条",
+        "marks": [
+          {
+            "cls": "daily-mark is-open",
+            "width": 13,
+            "height": 4
+          }
+        ]
+      }
+    },
+    {
+      "check": "day 4 renders 5 open item(s) with the clamped marker width 16",
+      "pass": true,
+      "evidence": {
+        "aria": "2026年11月8日，未完成5条，已完成0条",
+        "marks": [
+          {
+            "cls": "daily-mark is-open",
+            "width": 16,
+            "height": 4
+          }
+        ]
+      }
+    },
+    {
+      "check": "day 5 renders 6 open item(s) with the clamped marker width 16",
+      "pass": true,
+      "evidence": {
+        "aria": "2026年11月9日，未完成6条，已完成0条",
+        "marks": [
+          {
+            "cls": "daily-mark is-open",
+            "width": 16,
+            "height": 4
+          }
+        ]
+      }
+    },
+    {
+      "check": "a mixed day shows blue and grey marks side by side with exact accessible counts",
+      "pass": true,
+      "evidence": {
+        "aria": "2026年11月10日，未完成1条，已完成1条",
+        "marks": [
+          {
+            "cls": "daily-mark is-open",
+            "width": 4,
+            "height": 4
+          },
+          {
+            "cls": "daily-mark is-done",
+            "width": 4,
+            "height": 4
+          }
+        ]
+      }
+    },
+    {
+      "check": "a horizontal drag does not open a day list",
+      "pass": true,
+      "evidence": {
+        "before": 102,
+        "afterSlide": {
+          "open": false,
+          "left": 102
+        }
+      }
+    },
+    {
+      "check": "the calendar scrolls horizontally within its own region",
+      "pass": true,
+      "evidence": {
+        "before": 102,
+        "scrolled": 222
+      }
+    },
+    {
+      "check": "arrow keys move focus between real date cells",
+      "pass": true,
+      "evidence": "2026-11-05"
+    },
+    {
+      "check": "Enter opens the day list for the keyboard-focused date",
+      "pass": true
+    },
+    {
+      "check": "the day list shows that date, its items and a create action",
+      "pass": true,
+      "evidence": {
+        "title": "11月5日 · 每日事项",
+        "rows": 2,
+        "empty": false,
+        "foot": 1
+      }
+    },
+    {
+      "check": "an empty day shows an empty state and a create action",
+      "pass": true,
+      "evidence": {
+        "empty": true,
+        "create": true
+      }
+    },
+    {
+      "check": "creating from a day uses that day as the default date",
+      "pass": true,
+      "evidence": {
+        "defaultDate": "2026-11-24",
+        "emptyKey": "2026-11-24"
+      }
+    },
+    {
+      "check": "saving creates a real item with the plain text preserved",
+      "pass": true,
+      "evidence": {
+        "saved": true,
+        "created": {
+          "id": "c2a728f3-7edf-4ece-8427-fd9e2f620eb1",
+          "body": "<b>不是标签</b>\n第二行 长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本"
+        }
+      }
+    },
+    {
+      "check": "the empty day now shows one open marker",
+      "pass": true
+    },
+    {
+      "check": "the inline completion control never opens the detail and keeps the row in place",
+      "pass": true,
+      "evidence": {
+        "rowOrder": [
+          "c2a728f3-7edf-4ece-8427-fd9e2f620eb1"
+        ],
+        "inline": {
+          "title": "11月24日 · 每日事项",
+          "rows": [
+            "c2a728f3-7edf-4ece-8427-fd9e2f620eb1"
+          ],
+          "checked": "true",
+          "open": true
+        }
+      }
+    },
+    {
+      "check": "the inline completion updates the calendar marker",
+      "pass": true
+    },
+    {
+      "check": "toggling back restores the inline unchecked state",
+      "pass": true
+    },
+    {
+      "check": "detail shows the date and the text literally without executing HTML",
+      "pass": true,
+      "evidence": {
+        "text": "2026年11月24日未完成<b>不是标签</b>\n第二行 长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本",
+        "html": "<div class=\"daily-detail-head\"><span class=\"daily-detail-date\">2026年11月24日</span><span class=\"badge b-normal\">未完成</span></div><p class=\"daily-detail-body\">&lt;b&gt;不是标签&lt;/b&gt;\n第二行 长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本长文本</p><div class=\"callout\" id=\"daily-detail-error\" role=\"alert\" hidden=\"\"></div>",
+        "date": "2026年11月24日",
+        "actions": [
+          "标记完成",
+          "编辑",
+          "删除"
+        ]
+      }
+    },
+    {
+      "check": "detail exposes the explicit completed state and its reverse action",
+      "pass": true
+    },
+    {
+      "check": "the calendar marker follows a completion made in the detail",
+      "pass": true
+    },
+    {
+      "check": "reopening the item restores the open count",
+      "pass": true
+    },
+    {
+      "check": "saving an edit returns to the original day list",
+      "pass": true
+    },
+    {
+      "check": "moving the item updates both real days",
+      "pass": true,
+      "evidence": {
+        "old": [],
+        "now": [
+          {
+            "date": "2026-11-04",
+            "openCount": 2,
+            "completedCount": 0
+          }
+        ]
+      }
+    },
+    {
+      "check": "confirming deletion returns to the original day list",
+      "pass": true
+    },
+    {
+      "check": "the deleted item no longer exists on the server or in the open list",
+      "pass": true
+    },
+    {
+      "check": "a failed save keeps the form open with the draft and an explicit error",
+      "pass": true,
+      "evidence": {
+        "open": true,
+        "value": "离线重试后的正文",
+        "error": "无法连接后端，请检查网络后重试。",
+        "title": "编辑每日事项"
+      }
+    },
+    {
+      "check": "retrying the same draft after connectivity returns saves exactly one item",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "eaf6b6fa-fadb-406d-a8c0-05bffae6b7c1",
+          "date": "2026-11-05",
+          "body": "离线重试后的正文",
+          "completed": false,
+          "rowVersion": 2,
+          "createdAt": "2026-11-04T11:51:16.832104Z",
+          "updatedAt": "2026-11-04T11:51:20.962537Z"
+        }
+      ]
+    },
+    {
+      "check": "a day with more than one page reaches every item without duplicates",
+      "pass": true,
+      "evidence": {
+        "firstPage": 50,
+        "all": {
+          "count": 105,
+          "unique": 105,
+          "more": false
+        }
+      }
+    },
+    {
+      "check": "complete seven-row calendar and safe floating add at 320",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "days": 7,
+        "dayHeight": 44,
+        "dayWidth": 44,
+        "sevenRows": true,
+        "lastReachable": true,
+        "fabOverNav": false,
+        "fabRight": 21,
+        "scrollable": true,
+        "markersHeight": true
+      }
+    },
+    {
+      "check": "the complete daily section is reachable without being covered by the navigation at 320",
+      "pass": true,
+      "evidence": {
+        "bottom": 657.1875,
+        "navTop": 664.5625,
+        "scrollTop": 87,
+        "noOverflow": true
+      }
+    },
+    {
+      "check": "complete seven-row calendar and safe floating add at 390",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "days": 7,
+        "dayHeight": 44,
+        "dayWidth": 46,
+        "sevenRows": true,
+        "lastReachable": true,
+        "fabOverNav": false,
+        "fabRight": 25,
+        "scrollable": true,
+        "markersHeight": true
+      }
+    },
+    {
+      "check": "the complete daily section is reachable without being covered by the navigation at 390",
+      "pass": true,
+      "evidence": {
+        "bottom": 756.96875,
+        "navTop": 768.5625,
+        "scrollTop": 3,
+        "noOverflow": true
+      }
+    },
+    {
+      "check": "complete seven-row calendar and safe floating add at 1440",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "days": 7,
+        "dayHeight": 44,
+        "dayWidth": 46,
+        "sevenRows": true,
+        "lastReachable": true,
+        "fabOverNav": false,
+        "fabRight": 173,
+        "scrollable": true,
+        "markersHeight": true
+      }
+    },
+    {
+      "check": "the complete daily section is reachable without being covered by the navigation at 1440",
+      "pass": true,
+      "evidence": {
+        "bottom": 783.96875,
+        "navTop": 819.5625,
+        "scrollTop": 0,
+        "noOverflow": true
+      }
+    },
+    {
+      "check": "a short screen keeps the seven-row calendar and the add action above the navigation",
+      "pass": true,
+      "evidence": {
+        "overflow": "auto",
+        "scrollTop": 247,
+        "dailyBottom": 512.96875,
+        "navTop": 524.5625,
+        "fabBottom": 501.96875,
+        "weekdayRows": 8
+      }
+    },
+    {
+      "check": "a remote leap February loads with a Monday first cell, February 29 and no duplicate dates",
+      "pass": true,
+      "evidence": {
+        "block": true,
+        "has29": true,
+        "unique": true,
+        "first": "2024-02-05",
+        "firstDay": 1,
+        "last": "2024-03-03"
+      }
+    },
+    {
+      "check": "回到今天 returns to the company today month inside the viewport",
+      "pass": true,
+      "evidence": {
+        "visible": true
+      }
+    },
+    {
+      "check": "switching to 公司 and back restores the daily horizontal position and anchor date",
+      "pass": true,
+      "evidence": {
+        "scrollBefore": {
+          "left": 240,
+          "anchor": "2026-10-12"
+        },
+        "scrollAfter": {
+          "left": 240,
+          "anchor": "2026-10-12"
+        }
+      }
+    },
+    {
+      "check": "December to January stays one consecutive date sequence across the year boundary",
+      "pass": true,
+      "evidence": {
+        "has": true,
+        "next": "2027-01-01",
+        "unique": true,
+        "jan": true,
+        "dec": true
+      }
+    },
+    {
+      "check": "a failed range load keeps the calendar and offers a retry instead of a confirmed zero",
+      "pass": true,
+      "evidence": {
+        "retry": true,
+        "marks": 0,
+        "aria": "2025年6月2日，数量加载中"
+      }
+    },
+    {
+      "check": "retrying the failed range loads its real counts",
+      "pass": true
+    },
+    {
+      "check": "a loaded range with no items reports confirmed zero counts without drawing marks",
+      "pass": true,
+      "evidence": {
+        "aria": "2025年6月2日，未完成0条，已完成0条",
+        "marks": 0
+      }
+    },
+    {
+      "check": "Escape closes the day list and returns focus to its date cell",
+      "pass": true
+    },
+    {
+      "check": "a second account logs in after the first logs out",
+      "pass": true
+    },
+    {
+      "check": "switching accounts clears the previous daily state and never shows its counts",
+      "pass": true,
+      "evidence": {
+        "account": "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+        "expected": "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+        "aria": "2026年11月4日，未完成0条，已完成0条"
+      }
+    }
+  ]
+}

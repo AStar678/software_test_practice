@@ -893,17 +893,19 @@ public class WorkspaceService {
 
     private Map<String,Object> homeRead(Actor a) {
         business(a);
+        // The board is the actor's current effective responsibility, never filtered by who created the
+        // task; an active assignment to a normally published, unfinished task is the only inclusion rule.
         var assigned = db.list("SELECT t.id AS task_id,v.title,v.priority,a.assigned_at,a.assigned_source "
                 + "FROM task_assignments a JOIN tasks t ON t.organization_id=a.organization_id AND t.id=a.task_id "
                 + "JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
                 + "WHERE a.organization_id=? AND a.user_id=? AND a.active=TRUE "
-                + "AND t.current_version_id IS NOT NULL AND t.execution_state<>'done' AND t.original_creator_id<>? "
-                + "ORDER BY a.assigned_at DESC,t.id LIMIT 10",a.organizationId(),a.id(),a.id());
+                + "AND t.current_version_id IS NOT NULL AND t.execution_state<>'done' "
+                + "ORDER BY a.assigned_at DESC,t.id LIMIT 10",a.organizationId(),a.id());
         LocalDate today = clock.instant().atZone(zone(a)).toLocalDate();
-        var logPage = logs(a,Map.of("scope","self","from",today.minusDays(9).toString(),"to",today.toString(),"limit","10"));
+        // The home page no longer renders logs or personal items; the log page keeps loading its own
+        // authorized /work-logs data and nothing queries a card-only log window here.
         return Map.of("companyItems",db.list("SELECT id,kind,title,body,sort_order,row_version FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id LIMIT 10",a.organizationId()),
-            "personalItems",db.list("SELECT id,kind,title,body,sort_order,row_version FROM home_items WHERE organization_id=? AND kind='personal' AND owner_id=? ORDER BY sort_order,created_at,id LIMIT 10",a.organizationId(),a.id()),
-            "assignedTasks",assigned,"recentLogs",logPage.get("items"),"businessDate",today.toString());
+            "assignedTasks",assigned,"businessDate",today.toString());
     }
 
     public Map<String,Object> homeItem(Actor a,String itemId) {
@@ -917,6 +919,7 @@ public class WorkspaceService {
         business(a);allowed(body,Set.of("kind","title","body"));
         String kind=required(body,"kind",20);
         if(!Set.of("company","personal").contains(kind)) throw bad("kind 只能为 company 或 personal");
+        if("personal".equals(kind)) throw personalItemsRetired();
         requireHomeWrite(a,kind);
         String content=required(body,"body",2000),title=body.containsKey("title")?required(body,"title",200):content.substring(0,Math.min(content.length(),200));
         var items=db.list("SELECT id,sort_order FROM home_items WHERE organization_id=? AND kind=? AND (kind='company' OR owner_id=?)",a.organizationId(),kind,a.id());
@@ -930,7 +933,8 @@ public class WorkspaceService {
 
     public Map<String,Object> changeHomeItem(Actor a,String itemId,String ifMatch,Map<String,Object> body) {
         allowed(body,Set.of("title","body"));
-        var item=readHomeItem(a,itemId,true);requireHomeWrite(a,s(item,"kind"));Writes.checkVersion(ifMatch,n(item,"rowVersion"));
+        var item=readHomeItem(a,itemId,true);if("personal".equals(s(item,"kind"))) throw personalItemsRetired();
+        requireHomeWrite(a,s(item,"kind"));Writes.checkVersion(ifMatch,n(item,"rowVersion"));
         String content=body.containsKey("body")?required(body,"body",2000):s(item,"body");
         String title=body.containsKey("title")?required(body,"title",200):s(item,"title");
         db.update("UPDATE home_items SET title=?,body=?,row_version=row_version+1 WHERE organization_id=? AND id=?",title,content,a.organizationId(),itemId);
@@ -939,7 +943,8 @@ public class WorkspaceService {
     }
 
     public Map<String,Object> deleteHomeItem(Actor a,String itemId,String ifMatch) {
-        var item=readHomeItem(a,itemId,true);requireHomeWrite(a,s(item,"kind"));Writes.checkVersion(ifMatch,n(item,"rowVersion"));
+        var item=readHomeItem(a,itemId,true);if("personal".equals(s(item,"kind"))) throw personalItemsRetired();
+        requireHomeWrite(a,s(item,"kind"));Writes.checkVersion(ifMatch,n(item,"rowVersion"));
         db.update("DELETE FROM home_items WHERE organization_id=? AND id=?",a.organizationId(),itemId);
         events.record(a,null,"home_item.deleted",List.of(),Map.of("homeItemId",itemId,"kind",s(item,"kind")));
         return Map.of("id",itemId,"deleted",true);
@@ -955,7 +960,13 @@ public class WorkspaceService {
 
     // Check before idempotency replay as well: commands cached under the old upper-role policy cannot bypass this restriction.
     public void checkHomeCreateAccess(Actor a,Map<String,Object> body) {
-        business(a);requireHomeWrite(a,s(body,"kind"));
+        business(a);
+        if("personal".equals(s(body,"kind"))) throw personalItemsRetired();
+        requireHomeWrite(a,s(body,"kind"));
+    }
+    /** Personal items moved to the independent daily-items model; old writes must not resurrect them. */
+    private static ApiException personalItemsRetired() {
+        return new ApiException(410,"HOME_ITEMS_PERSONAL_RETIRED","个人事项已改为每日事项，请使用每日事项接口");
     }
     public void checkHomeItemWriteAccess(Actor a,String itemId) {
         business(a);

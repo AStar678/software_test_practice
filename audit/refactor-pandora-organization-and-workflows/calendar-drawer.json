@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-01T11:30:28.348Z",
+  "updated": "2026-11-04T11:54:25.465Z",
   "checks": [
     {
       "check": "login form is ready",
@@ -20,8 +20,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -4.802873611450195,
-          "r": 158.9940013885498,
+          "l": -3.147090435028076,
+          "r": 160.64978456497192,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -30,7 +30,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 231.0059986114502,
+        "visibleRight": 229.35021543502808,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -79,8 +79,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -4.802873611450195,
-          "r": 158.9940013885498,
+          "l": -3.147090435028076,
+          "r": 160.64978456497192,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -89,7 +89,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 231.0059986114502,
+        "visibleRight": 229.35021543502808,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -120,8 +120,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -4.802873611450195,
-          "r": 158.9940013885498,
+          "l": -3.147090435028076,
+          "r": 160.64978456497192,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -130,7 +130,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 231.0059986114502,
+        "visibleRight": 229.35021543502808,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -161,8 +161,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -4.802873611450195,
-          "r": 158.9940013885498,
+          "l": -3.147090435028076,
+          "r": 160.64978456497192,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -171,7 +171,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 231.0059986114502,
+        "visibleRight": 229.35021543502808,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -265,13 +265,13 @@
       "pass": true,
       "evidence": {
         "before": {
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": "220",
           "scroll": 2268
         },
         "after": {
           "mode": "month",
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": "220",
           "stream": [
             "2026-09",
@@ -297,8 +297,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.7584400177001953,
-          "r": 141.2415599822998,
+          "l": -2.759324312210083,
+          "r": 141.24067568778992,
           "w": 144,
           "h": 611.5625
         },
@@ -307,7 +307,7 @@
           "h": 494.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.7584400177002,
+        "visibleRight": 178.75932431221008,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -356,8 +356,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.7584400177001953,
-          "r": 141.2415599822998,
+          "l": -2.759324312210083,
+          "r": 141.24067568778992,
           "w": 144,
           "h": 611.5625
         },
@@ -366,7 +366,7 @@
           "h": 494.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.7584400177002,
+        "visibleRight": 178.75932431221008,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -397,8 +397,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.7584400177001953,
-          "r": 141.2415599822998,
+          "l": -2.759324312210083,
+          "r": 141.24067568778992,
           "w": 144,
           "h": 611.5625
         },
@@ -407,7 +407,7 @@
           "h": 494.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.7584400177002,
+        "visibleRight": 178.75932431221008,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -438,8 +438,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.7584400177001953,
-          "r": 141.2415599822998,
+          "l": -2.759324312210083,
+          "r": 141.24067568778992,
           "w": 144,
           "h": 611.5625
         },
@@ -448,7 +448,7 @@
           "h": 494.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.7584400177002,
+        "visibleRight": 178.75932431221008,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -479,17 +479,17 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 146.2305145263672,
-          "r": 616.6210784912109,
-          "w": 470.39056396484375,
+          "l": 150.98638916015625,
+          "r": 621.3770141601562,
+          "w": 470.390625,
           "h": 766.5625
         },
         "content": {
           "w": 1120,
           "h": 701.5625
         },
-        "ratio": 0.4199915749686105,
-        "visibleRight": 663.3789215087891,
+        "ratio": 0.4199916294642857,
+        "visibleRight": 658.6229858398438,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -538,17 +538,17 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 146.2305145263672,
-          "r": 616.6210784912109,
-          "w": 470.39056396484375,
+          "l": 150.98638916015625,
+          "r": 621.3770141601562,
+          "w": 470.390625,
           "h": 766.5625
         },
         "content": {
           "w": 1120,
           "h": 701.5625
         },
-        "ratio": 0.4199915749686105,
-        "visibleRight": 663.3789215087891,
+        "ratio": 0.4199916294642857,
+        "visibleRight": 658.6229858398438,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -579,17 +579,17 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 146.2305145263672,
-          "r": 616.6210784912109,
-          "w": 470.39056396484375,
+          "l": 150.98638916015625,
+          "r": 621.3770141601562,
+          "w": 470.390625,
           "h": 766.5625
         },
         "content": {
           "w": 1120,
           "h": 701.5625
         },
-        "ratio": 0.4199915749686105,
-        "visibleRight": 663.3789215087891,
+        "ratio": 0.4199916294642857,
+        "visibleRight": 658.6229858398438,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -620,17 +620,17 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 146.2305145263672,
-          "r": 616.6210784912109,
-          "w": 470.39056396484375,
+          "l": 150.98638916015625,
+          "r": 621.3770141601562,
+          "w": 470.390625,
           "h": 766.5625
         },
         "content": {
           "w": 1120,
           "h": 701.5625
         },
-        "ratio": 0.4199915749686105,
-        "visibleRight": 663.3789215087891,
+        "ratio": 0.4199916294642857,
+        "visibleRight": 658.6229858398438,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -656,7 +656,7 @@
       "evidence": {
         "320": 0.45,
         "390": 0.41999198717948716,
-        "1440": 0.4199915749686105
+        "1440": 0.4199916294642857
       }
     },
     {
@@ -665,7 +665,7 @@
       "evidence": {
         "mode": "month",
         "overlay": true,
-        "title": "11月4日 周三",
+        "title": "11月7日 周六",
         "items": 16
       }
     },
@@ -673,7 +673,7 @@
       "check": "a click on the empty part of a month cell opens that day sheet",
       "pass": true,
       "evidence": {
-        "blankDate": "2026-12-06",
+        "blankDate": "2026-12-09",
         "blankItems": 0
       }
     },
@@ -682,11 +682,11 @@
       "pass": true,
       "evidence": {
         "overflow": {
-          "date": "2026-11-04",
+          "date": "2026-11-07",
           "count": 13,
           "text": "+13",
-          "label": "11月4日，还有13项日程，打开当日任务清单",
-          "x": 139.28125,
+          "label": "11月7日，还有13项日程，打开当日任务清单",
+          "x": 306.421875,
           "y": 420.25
         },
         "hiddenTruth": {
@@ -701,24 +701,24 @@
       "pass": true,
       "evidence": {
         "barTarget": {
-          "column": 6,
-          "start": 5,
+          "column": 3,
+          "start": 1,
           "end": 7,
-          "x": 362.14285714285717,
+          "x": 195,
           "y": 404.25,
-          "weekStart": "2026-11-09"
+          "weekStart": "2026-11-16"
         },
         "barPoint": {
-          "column": 6,
-          "x": 362.14285714285717,
+          "column": 3,
+          "x": 195,
           "y": 404.25
         },
         "barSheet": {
-          "date": "2026-11-15",
+          "date": "2026-11-19",
           "mode": "month",
           "overlay": true
         },
-        "expectedBarDate": "2026-11-15"
+        "expectedBarDate": "2026-11-19"
       }
     },
     {
@@ -807,19 +807,19 @@
       "pass": true,
       "evidence": {
         "keyboardSetup": {
-          "start": 5,
+          "start": 1,
           "end": 7,
-          "weekStart": "2026-11-09"
+          "weekStart": "2026-11-16"
         },
         "keyboardBar": {
-          "hit": "6",
-          "date": "2026-11-15",
-          "label": "Calendar week span，我负责，待开始，紧急程度中，11月14日 10:00 → 11月22日 12:00，说明：Calendar browser acceptance task，已选择11月15日，回车打开当日清单"
+          "hit": "3",
+          "date": "2026-11-19",
+          "label": "Calendar week span，我负责，待开始，紧急程度中，11月17日 10:00 → 11月25日 12:00，说明：Calendar browser acceptance task，已选择11月19日，回车打开当日清单"
         },
-        "keyboardDate": "2026-11-15",
-        "keyboardExpected": 6,
+        "keyboardDate": "2026-11-19",
+        "keyboardExpected": 3,
         "beforeEnter": {
-          "active": "dc584aaa-4e73-4838-b21a-d98f36c29534",
+          "active": "b02d3966-8b51-4939-8445-b10845238d06",
           "isBar": true,
           "sheet": false
         },
@@ -838,8 +838,8 @@
       "check": "activating the focused bar (the native Enter/Space result) opens the same selected day",
       "pass": true,
       "evidence": {
-        "nativeDate": "2026-11-15",
-        "keyboardExpected": 6
+        "nativeDate": "2026-11-19",
+        "keyboardExpected": 3
       }
     },
     {
@@ -849,17 +849,17 @@
         "sheetList": {
           "count": 16,
           "first": [
-            "121b47a0-af8e-437f-a3b5-3e5f3316d752",
-            "c5cc94ac-bfa2-4226-b19c-a2fcf204d51f",
-            "05d44524-f46c-4056-83b2-a7036b164607"
+            "cdb69a34-4069-4eec-8e0e-a0007cb20b79",
+            "2779d03a-782f-4b01-a1f0-9794b8726f07",
+            "2cab9162-aaf3-41ef-a90a-38576c020643"
           ]
         },
         "dayTruth": {
           "total": 16,
           "first": [
-            "121b47a0-af8e-437f-a3b5-3e5f3316d752",
-            "c5cc94ac-bfa2-4226-b19c-a2fcf204d51f",
-            "05d44524-f46c-4056-83b2-a7036b164607"
+            "cdb69a34-4069-4eec-8e0e-a0007cb20b79",
+            "2779d03a-782f-4b01-a1f0-9794b8726f07",
+            "2cab9162-aaf3-41ef-a90a-38576c020643"
           ]
         }
       }
@@ -884,9 +884,9 @@
       "pass": true,
       "evidence": {
         "excluded": [
-          "b14562ed-2884-4907-8a16-cd5c9a38a641",
-          "848ae40b-0b27-424e-a9a7-ae4abd7f55f7",
-          "a9f925a0-917a-41a2-bb85-c8f564f754d8"
+          "29abeba0-a169-40e6-94c7-f48835393ded",
+          "a992c271-42e2-4d57-825e-3ddba16d65cb",
+          "f75e4992-f6ac-4f74-a968-9b35d4d57308"
         ]
       }
     },
@@ -908,7 +908,7 @@
           "top": 120,
           "sheet": true,
           "drawer": false,
-          "focus": "c5cc94ac-bfa2-4226-b19c-a2fcf204d51f"
+          "focus": "2779d03a-782f-4b01-a1f0-9794b8726f07"
         }
       }
     },
@@ -917,7 +917,7 @@
       "pass": true,
       "evidence": {
         "monthSnapshot": {
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": "220",
           "stream": [
             "2026-09",
@@ -930,7 +930,7 @@
           "mode": "month"
         },
         "monthAfter": {
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": "220",
           "stream": [
             "2026-09",
@@ -952,7 +952,7 @@
       "check": "the sheet returns focus to the month trigger that opened it",
       "pass": true,
       "evidence": {
-        "date": "2026-11-04",
+        "date": "2026-11-07",
         "action": "schedule-month-date",
         "tag": "BUTTON",
         "cls": "p-month-date is-selected"
@@ -962,9 +962,9 @@
       "check": "only 查看日视图 switches to the day mode for that date",
       "pass": true,
       "evidence": {
-        "anchor": 1793721600000,
+        "anchor": 1793980800000,
         "mode": "day",
-        "heading": "11月4日 周三",
+        "heading": "11月7日 周六",
         "items": 16
       }
     },
@@ -1001,7 +1001,7 @@
       "evidence": {
         "beforeDay": {
           "mode": "month",
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1016,7 +1016,7 @@
         },
         "afterDay": {
           "mode": "month",
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1035,7 +1035,7 @@
       "check": "return to month restores focus to the selected date at 390",
       "pass": true,
       "evidence": {
-        "date": "2026-11-04",
+        "date": "2026-11-07",
         "selected": true,
         "button": false
       }
@@ -1073,7 +1073,7 @@
       "evidence": {
         "beforeDay": {
           "mode": "month",
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1088,7 +1088,7 @@
         },
         "afterDay": {
           "mode": "month",
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1107,7 +1107,7 @@
       "check": "return to month restores focus to the selected date at 320",
       "pass": true,
       "evidence": {
-        "date": "2026-11-04",
+        "date": "2026-11-07",
         "selected": true,
         "button": false
       }
@@ -1145,7 +1145,7 @@
       "evidence": {
         "beforeDay": {
           "mode": "month",
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1160,7 +1160,7 @@
         },
         "afterDay": {
           "mode": "month",
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1179,7 +1179,7 @@
       "check": "return to month restores focus to the selected date at 768",
       "pass": true,
       "evidence": {
-        "date": "2026-11-04",
+        "date": "2026-11-07",
         "selected": true,
         "button": false
       }
@@ -1217,7 +1217,7 @@
       "evidence": {
         "beforeDay": {
           "mode": "month",
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1232,7 +1232,7 @@
         },
         "afterDay": {
           "mode": "month",
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1251,7 +1251,7 @@
       "check": "return to month restores focus to the selected date at 1440",
       "pass": true,
       "evidence": {
-        "date": "2026-11-04",
+        "date": "2026-11-07",
         "selected": true,
         "button": false
       }
@@ -1259,7 +1259,7 @@
     {
       "check": "the fixture provides an empty day for the empty state",
       "pass": true,
-      "evidence": "2026-12-14"
+      "evidence": "2026-12-17"
     },
     {
       "check": "an empty day sheet shows the empty state and a create entry",
@@ -1273,8 +1273,8 @@
       "check": "creating from the empty sheet opens the create form for that date and keeps the sheet",
       "pass": true,
       "evidence": {
-        "start": "2026-12-14",
-        "end": "2026-12-14",
+        "start": "2026-12-17",
+        "end": "2026-12-17",
         "sheet": true
       }
     },
@@ -1421,8 +1421,8 @@
       "pass": true,
       "evidence": {
         "allDay": false,
-        "startAt": "2026-11-04T12:00:00Z",
-        "dueAt": "2026-11-06T02:00:00Z",
+        "startAt": "2026-11-07T12:00:00Z",
+        "dueAt": "2026-11-09T02:00:00Z",
         "pinned": false,
         "tag": null,
         "tagId": null
@@ -1433,7 +1433,7 @@
       "pass": true,
       "evidence": {
         "title": "Calendar cross",
-        "snippet": "待开始中👤我负责任务名称Calendar cross创建者founder创建时间2026年11月1日 19:30当前业务责任方founder任务排期11月4日 20:00 → 11月6日 10:00截止2026年11月6日 10:00负责人alpha-one-employee审核人alpha-one-head任务说明Calendar browser acceptance task当前进展暂无评论共 0 条还没有评论，欢迎发表第一条。加载更多发表评论（平铺，不支持回复层级）发表"
+        "snippet": "待开始中👤我负责任务名称Calendar cross创建者founder创建时间2026年11月4日 19:54当前业务责任方founder任务排期11月7日 20:00 → 11月9日 10:00截止2026年11月9日 10:00负责人alpha-one-employee审核人alpha-one-head任务说明Calendar browser acceptance task当前进展暂无评论共 0 条还没有评论，欢迎发表第一条。加载更多发表评论（平铺，不支持回复层级）发表"
       }
     },
     {
@@ -1623,7 +1623,7 @@
       "pass": true,
       "evidence": {
         "rowHeight": 340,
-        "shown": 13,
+        "shown": 14,
         "hidden": 35
       }
     },
@@ -1632,7 +1632,7 @@
       "pass": true,
       "evidence": {
         "contextBeforeForm": {
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "stream": [
             "2026-09",
             "2026-10",
@@ -1645,7 +1645,7 @@
           "scroll": 8097
         },
         "contextAfterForm": {
-          "anchor": 1793721600000,
+          "anchor": 1793980800000,
           "stream": [
             "2026-09",
             "2026-10",

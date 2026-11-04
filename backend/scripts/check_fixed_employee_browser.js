@@ -72,8 +72,8 @@ async function main(){
   await login('alpha-one-employee');
   for(const width of [320,390,1440]){
    await b.viewport({width,height:width===320?740:width===390?844:900,mobile:width<1000});
-   const geometry=await ev(`(()=>{setPage('map');document.querySelector('.tasks-quad .q-body').scrollTop=90;return {quadrants:document.querySelectorAll('#page-map .quad').length,scroll:Array.from(document.querySelectorAll('#page-map .q-body')).every(e=>getComputedStyle(e).overflowY==='auto'),priorities:Array.from(document.querySelectorAll('.home-task-priority')).map(e=>({width:e.getBoundingClientRect().width,visible:e.getBoundingClientRect().right<=e.closest('.q-body').getBoundingClientRect().right+1})),duplicate:!!document.querySelector('#page-map .workday button'),longTitle:!!Array.from(document.querySelectorAll('.home-task-title')).find(e=>e.textContent.length>50)}})()`);
-   check('dashboard priority and independent quadrants at '+width,geometry.quadrants===4&&geometry.scroll&&geometry.priorities.length>0&&geometry.priorities.every(p=>p.width>10&&p.visible)&&!geometry.duplicate&&geometry.longTitle,geometry);
+   const geometry=await ev(`(()=>{setPage('map');document.querySelector('.tasks-quad .q-body').scrollTop=90;return {modules:document.querySelectorAll('#page-map .quad').length,daily:!!document.querySelector('#dailyItemsSection'),personal:!!document.querySelector('.personal-quad'),logs:!!document.querySelector('.logs-quad'),scroll:Array.from(document.querySelectorAll('#page-map .q-body')).every(e=>getComputedStyle(e).overflowY==='auto'),priorities:Array.from(document.querySelectorAll('.home-task-priority')).map(e=>({width:e.getBoundingClientRect().width,visible:e.getBoundingClientRect().right<=e.closest('.q-body').getBoundingClientRect().right+1})),duplicate:!!document.querySelector('#page-map .workday button'),longTitle:!!Array.from(document.querySelectorAll('.home-task-title')).find(e=>e.textContent.length>50)}})()`);
+   check('dashboard priority and three modules at '+width,geometry.modules===3&&geometry.daily&&!geometry.personal&&!geometry.logs&&geometry.scroll&&geometry.priorities.length>0&&geometry.priorities.every(p=>p.width>10&&p.visible)&&!geometry.duplicate&&geometry.longTitle,geometry);
    await b.screenshot(output.replace('employee-browser.json','dashboard-'+width+'.png'));
   }
   await b.viewport({width:390,height:844,mobile:true});
@@ -353,38 +353,12 @@ async function main(){
   const liveToday=sql(`SELECT COUNT(*) FROM work_logs WHERE author_id=${sqlQuote(ids['alpha-one-employee'].id)} AND business_date=${sqlQuote(today)} AND deleted_at IS NULL`);
   check('recreating a deleted slot never resets the first-creation freeze window and keeps the recreate draft',deletedSlot&&todayRowAfter.split('\t')[0]===todayLog.id&&todayRowAfter.split('\t')[2]!=='NULL'&&liveToday==='0'&&recreateDraft.error.includes('24小时')&&recreateDraft.notice.includes('24小时')&&recreateDraft.visible&&recreateDraft.visibleContent==='Browser deleted slot must stay frozen'&&recreateDraft.mode==='create'&&!recreateDraft.id&&recreateDraft.date===today&&recreateDraft.dateField===today&&recreateDraft.tagId===fixture.tag&&recreateDraft.tagField===fixture.tag,{before:todayRowBefore,after:todayRowAfter,liveToday,recreateDraft});
 
-  /* -------- personal items: real id new/edit/delete, no list actions, tenth-item limit -------- */
-  const logsBefore=await ev("JSON.stringify(Pandora.data.calendarLogs.map(l=>({id:l.id,body:l.body,businessDate:l.businessDate})))");
+  /* -------- the old personal module is retired; the independent daily calendar owns the lower half -------- */
   await setPage('map');
-  await ev("document.querySelector('[data-action=new-personal]').click()");
-  await waitFor(b,"!!document.getElementById('pi-text')&&Pandora.idle()");
-  check('personal item list exposes opening only, not edit/delete actions',await ev("!document.querySelector('.personal-quad [data-edit-personal],.personal-quad [data-delete-personal],.personal-quad [data-action=p-edit-home-personal],.personal-quad [data-action=p-delete-home-personal]')&&Array.from(document.querySelectorAll('.personal-quad .home-personal-item')).every(e=>e.dataset.action==='p-open-home-personal')"));
-  await ev("document.getElementById('pi-text').value='Browser personal item v1';document.querySelector('[data-action=save-personal]').click()");
-  await waitFor(b,"document.getElementById('overlay').hidden&&Pandora.idle()");
-  const personal=await ev("Pandora.request('/home').then(h=>h.personalItems.find(i=>i.body==='Browser personal item v1')||null)");
-  check('new personal item is saved with a real object id',!!personal&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(personal.id),personal);
-  await ev(`document.querySelector('[data-action=p-open-home-personal][data-id="${personal.id}"]').click()`);
-  check('workbench detail opens the same personal item with edit/delete',await waitFor(b,"document.getElementById('sheetTitle').textContent==='个人信息'&&Pandora.idle()")&&await ev(`document.getElementById('sheetBody').textContent.includes('Browser personal item v1')&&!!document.querySelector('[data-action=p-edit-home-personal][data-id="${personal.id}"]')&&!!document.querySelector('[data-action=p-delete-home-personal][data-id="${personal.id}"]')`));
-  await ev(`document.querySelector('[data-action=p-edit-home-personal][data-id="${personal.id}"]').click()`);
-  await waitFor(b,"!!document.getElementById('pi-text')&&Pandora.idle()");
-  await ev("document.getElementById('pi-text').value='Browser personal item v2';document.querySelector('[data-action=save-personal]').click()");
-  await waitFor(b,"document.getElementById('overlay').hidden&&Pandora.idle()");
-  const personalEdited=await ev("Pandora.request('/home/items/"+personal.id+"')");
-  check('personal item edit keeps the same id and does not rewrite the source log',personalEdited.id===personal.id&&personalEdited.body==='Browser personal item v2'&&await ev("JSON.stringify(Pandora.data.calendarLogs.map(l=>({id:l.id,body:l.body,businessDate:l.businessDate})))")===logsBefore,{personalEdited});
-  await b.screenshot(output.replace('employee-browser.json','employee-personal.png'));
-  await ev(`document.querySelector('[data-action=p-open-home-personal][data-id="${personal.id}"]').click()`);
-  await waitFor(b,"document.getElementById('sheetTitle').textContent==='个人信息'&&Pandora.idle()");
-  await ev(`document.querySelector('[data-action=p-delete-home-personal][data-id="${personal.id}"]').click()`);
-  check('personal item delete asks for confirmation in the real page',await waitFor(b,"!!document.querySelector('[data-action=confirm-delete][data-id=\""+personal.id+"\"]')&&Pandora.idle()"));
-  await ev("document.querySelector('[data-action=confirm-delete]').click()");
-  await waitFor(b,"document.getElementById('overlay').hidden&&Pandora.idle()");
-  check('personal item delete removes the real object and keeps logs untouched',await ev("Pandora.request('/home').then(h=>!h.personalItems.some(i=>i.id==="+js(personal.id)+"))")&&await ev("JSON.stringify(Pandora.data.calendarLogs.map(l=>({id:l.id,body:l.body,businessDate:l.businessDate})))")===logsBefore);
-  for(let index=1;index<=10;index++)await api('POST','/home/items',{kind:'personal',body:'Browser limit item '+index},{'Idempotency-Key':'limit-'+index+'-'+Date.now()});
-  await ev('Pandora.reload()');
-  const limitState=await ev("({count:Pandora.data.home.personalItems.length,disabled:document.querySelector('[data-action=new-personal]').disabled,actions:Array.from(document.querySelectorAll('.personal-quad .home-personal-item')).every(e=>e.dataset.action==='p-open-home-personal')})");
-  check('tenth personal item disables the visible create action',limitState.count===10&&limitState.disabled&&limitState.actions,limitState);
-  const eleventh=await apiError('POST','/home/items',{kind:'personal',body:'Browser eleventh item'},{'Idempotency-Key':'limit-eleven-'+Date.now()});
-  check('the eleventh personal item is rejected by the real service with a stable error',eleventh.ok===false&&eleventh.status===409&&eleventh.code==='HOME_ITEM_LIMIT',eleventh);
+  const retired=await ev("({personal:!!document.querySelector('.personal-quad'),logs:!!document.querySelector('.logs-quad'),daily:!!document.querySelector('#dailyItemsSection'),fab:!!document.querySelector('.daily-fab'),nav:Array.from(document.querySelectorAll('#tabbar button span')).map(e=>e.textContent)})");
+  check('home retires the personal/log cards and exposes the independent daily calendar',!retired.personal&&!retired.logs&&retired.daily&&retired.fab&&retired.nav[0]==='首页'&&retired.nav[1]==='公司',retired);
+  const retiredWrite=await apiError('POST','/home/items',{kind:'personal',body:'Browser retired personal item'},{'Idempotency-Key':'retired-'+Date.now()});
+  check('the retired personal create path is rejected instead of restoring old data',retiredWrite.ok===false&&[410,404].includes(retiredWrite.status),retiredWrite);
 
   /* -------- 8.2 effective-version isolation under a pending modification -------- */
   await logout();await login('alpha-one-head');

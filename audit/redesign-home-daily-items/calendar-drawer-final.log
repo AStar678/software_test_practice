@@ -1,0 +1,81 @@
+PASS login form is ready
+PASS employee signs in with the real phone login
+PASS drawer overlays the left side of the schedule at 390
+PASS drawer keeps the underlying calendar size at 390
+PASS drawer wraps and scrolls its own content at 390
+PASS drawer offers month/day and my applications and drops the removed note at 390
+PASS drawer receives focus and locks the underlying calendar at 390
+PASS Tab from the last drawer control wraps back inside the drawer
+PASS Shift+Tab from the first drawer control wraps to the last one inside the drawer
+PASS the drawer scrim stops the calendar underneath from scrolling
+PASS clicking the covered calendar never opens a sheet or a detail (the scrim takes the click)
+PASS Esc closes the drawer and returns focus to the trigger with the calendar unlocked
+PASS the scrim closes the drawer and restores the original calendar scroll and trigger focus
+PASS the drawer back control closes it
+PASS the drawer close control closes it
+PASS closing the drawer keeps the month date, density, stream and scroll unchanged
+PASS drawer overlays the left side of the schedule at 320
+PASS drawer keeps the underlying calendar size at 320
+PASS drawer wraps and scrolls its own content at 320
+PASS drawer offers month/day and my applications and drops the removed note at 320
+PASS drawer receives focus and locks the underlying calendar at 320
+PASS drawer overlays the left side of the schedule at 1440
+PASS drawer keeps the underlying calendar size at 1440
+PASS drawer wraps and scrolls its own content at 1440
+PASS drawer offers month/day and my applications and drops the removed note at 1440
+PASS drawer receives focus and locks the underlying calendar at 1440
+PASS the drawer covers about 40-45% of the schedule region
+PASS a click on the month date number opens that day sheet
+PASS a click on the empty part of a month cell opens that day sheet
+PASS the +N overflow opens the complete day sheet and shows the real hidden count
+PASS a cross-week bar opens the sheet of the clicked middle date, not the bar start
+PASS the cross-month task is drawn in both month sections
+PASS a bar that continues into the next month opens the clicked calendar date
+PASS a drag across the month grid never opens the sheet or the day view
+PASS the same click opens the sheet once the gesture suppression window ends
+PASS a two-finger resize gesture never turns the following tap into a sheet
+PASS arrow keys pick a covered date on a cross-day bar and Enter opens exactly that day
+PASS activating the focused bar (the native Enter/Space result) opens the same selected day
+PASS the day sheet lists every own effective task exactly once in pin/start/id order
+PASS the day sheet header shows the date, day view and close entries
+PASS the day sheet keeps a bottom-sheet height and wraps at 320
+PASS the sheet only lists own effective ownership and excludes other people tasks
+PASS closing a nested task detail returns to the sheet with its scroll and focus intact
+PASS closing the sheet restores the month date, density, stream and scroll without leaving an inert page
+PASS the sheet returns focus to the month trigger that opened it
+PASS only 查看日视图 switches to the day mode for that date
+PASS the day view exposes a visible, touch-sized return to month at 390
+PASS return to month stays visible while the day timeline scrolls at 390
+PASS return to month preserves date, density, month stream and scroll at 390
+PASS return to month restores focus to the selected date at 390
+PASS the day view exposes a visible, touch-sized return to month at 320
+PASS return to month stays visible while the day timeline scrolls at 320
+PASS return to month preserves date, density, month stream and scroll at 320
+PASS return to month restores focus to the selected date at 320
+PASS the day view exposes a visible, touch-sized return to month at 768
+PASS return to month stays visible while the day timeline scrolls at 768
+PASS return to month preserves date, density, month stream and scroll at 768
+PASS return to month restores focus to the selected date at 768
+PASS the day view exposes a visible, touch-sized return to month at 1440
+PASS return to month stays visible while the day timeline scrolls at 1440
+PASS return to month preserves date, density, month stream and scroll at 1440
+PASS return to month restores focus to the selected date at 1440
+PASS the fixture provides an empty day for the empty state
+PASS an empty day sheet shows the empty state and a create entry
+PASS creating from the empty sheet opens the create form for that date and keeps the sheet
+PASS cancelling the form returns to the still-open day sheet
+FAIL dragging the sheet handle down closes it
+Error: dragging the sheet handle down closes it undefined
+    at check (/Users/watuji/MyGitDev/software_test_practice/backend/scripts/check_calendar_drawer_browser.js:20:20)
+    at main (/Users/watuji/MyGitDev/software_test_practice/backend/scripts/check_calendar_drawer_browser.js:402:5)
+Traceback (most recent call last):
+  File "/Users/watuji/MyGitDev/software_test_practice/backend/scripts/check_calendar_drawer.py", line 112, in <module>
+    main()
+    ~~~~^^
+  File "/Users/watuji/MyGitDev/software_test_practice/backend/scripts/check_calendar_drawer.py", line 108, in main
+    subprocess.run(['node', str(BASE / 'scripts/check_calendar_drawer_browser.js')], env=env, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/subprocess.py", line 579, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['node', '/Users/watuji/MyGitDev/software_test_practice/backend/scripts/check_calendar_drawer_browser.js']' returned non-zero exit status 1.

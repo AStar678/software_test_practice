@@ -1,0 +1,50 @@
+PASS employee session is ready
+PASS no separate backfill entry
+PASS personal task table loaded
+PASS table includes created and assigned only
+PASS subordinate is globally authorized but absent from table
+PASS search cannot recover subordinate rows
+PASS table refresh keeps personal scope
+PASS calendar tag row removed
+PASS calendar task color retained
+PASS non-founder has no tag maintenance entry
+PASS manual manager invocation cannot open tag maintenance
+PASS today log entry opens for the first write
+PASS initial date options include all missing days
+PASS log form shows no tag or ownership rule paragraphs
+PASS create metadata aligned 320
+PASS create metadata aligned 390
+PASS create metadata aligned 1440
+PASS today log is persisted before backfilling
+PASS backfill entry opens yesterday instead of today's edit
+PASS existing day absent from creation options
+PASS backfill entry then opens the day before
+PASS only missing day remains
+PASS all three business days hold one real log each
+PASS backfill entry reports that all three days are already written
+PASS creation does not reopen existing log for editing
+PASS log page has no person filters or extra detail buttons
+PASS legacy filter state cannot change personal results
+PASS nested task link opens only task detail
+PASS clicking log opens detail and comments
+PASS comment submits from direct log detail
+PASS keyboard card activation opens detail
+PASS explicit edit remains available
+PASS edit shows one read-only business date without creation candidates
+PASS edit metadata aligned 320
+PASS edit metadata aligned 390
+PASS edit metadata aligned 1440
+PASS explicit edit updates the same record and keeps its date and first-creation instant
+PASS authorized person logs open separately
+PASS person log detail remains authorized
+PASS reading person log cannot mix it into personal list
+PASS reload still contains only personal logs
+PASS analysis page shows a readable method instead of internal codes
+PASS ordinary employee authenticates
+PASS ordinary employee can choose existing log tag
+PASS duplicate create retains draft without entering edit
+PASS concurrent original log is preserved
+PASS founder authenticates
+PASS founder retains tag management
+PASS founder management opens
+PASS backfill entry has no browser exceptions
