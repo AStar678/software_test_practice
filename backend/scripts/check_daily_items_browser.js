@@ -314,6 +314,8 @@ async function main() {
       await waitFor(b, "document.getElementById('overlay').hidden") &&
       await ev("document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.dailyDate==='" + fixture.today + "'"));
 
+    await require('./check_daily_items_repairs_browser')(b, fixture, check);
+
     await ev("Pandora.logout()");
     await waitFor(b, "!!document.getElementById('backend-login')&&Pandora.idle()", 20000);
     await ev(`document.getElementById('login-user').value=${js(ids['alpha-two-employee'].identifier)};document.getElementById('login-password').value='Fixture@123456';document.getElementById('backend-login').requestSubmit()`);

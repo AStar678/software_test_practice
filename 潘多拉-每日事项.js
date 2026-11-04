@@ -15,8 +15,8 @@
     companyToday: null, selected: null, anchor: null,
     blocks: [], summaries: new Map(), lists: new Map(),
     scrollLeft: 0, scrollToken: 0, pendingScroll: null, scrollTimer: null, anchorDate: null, anchorOffset: 0, restoring: false,
-    detail: null, listScroll: null, afterBack: null, closeFocus: null,
-    formOrigin: "calendar", sessionSeq: 0
+    detail: null, listScroll: null, closeFocus: null, closePosition: null,
+    formOrigin: "calendar", sessionSeq: 0, generation: 0
   };
 
   /* ------------------------------------------------------------ 日期工具 */
@@ -67,24 +67,36 @@
   function blockContaining(key) { return S.blocks.find(block => key >= block.from && key <= block.to) || null; }
   function blockIndex(key) { return S.blocks.findIndex(block => block.key === key); }
 
+  function clearSession() {
+    S.generation++;
+    clearTimeout(S.scrollTimer);
+    S.scrollTimer = null;
+    S.epoch = -1; S.account = null; S.organization = null;
+    S.blocks = []; S.summaries.clear(); S.lists.clear();
+    S.scrollLeft = 0; S.pendingScroll = null; S.anchorDate = null; S.anchorOffset = 0;
+    S.scrollToken++; S.restoring = false;
+    S.companyToday = null; S.selected = null; S.anchor = null;
+    S.detail = null; S.listScroll = null; S.closeFocus = null; S.closePosition = null;
+    S.formOrigin = "calendar";
+    drafts.daily = null;
+    press = null;
+  }
+  P.sessionReset.push(clearSession);
   function resetForSession() {
     const me = (P.data && P.data.me) || {};
     // A transient reload may momentarily have no profile; never wipe the same account's position.
     if (!me.id) return false;
     const changed = S.epoch !== P.epoch || S.account !== me.id || S.organization !== (me.organizationId || null);
     if (!changed) return false;
+    clearSession();
     S.epoch = P.epoch; S.account = me.id || null; S.organization = me.organizationId || null;
-    S.blocks = []; S.summaries.clear(); S.lists.clear();
-    S.scrollLeft = 0; S.pendingScroll = null; S.anchorDate = null; S.anchorOffset = 0;
-    S.selected = null; S.anchor = null;
-    S.detail = null; S.listScroll = null; S.afterBack = null;
     S.companyToday = dateKey(companyToday());
-    drafts.daily = null;
     return true;
   }
-  function sameSession() {
+  function sameSession(generation) {
     const me = (P.data && P.data.me) || {};
-    return S.epoch === P.epoch && S.account === (me.id || null) && S.organization === (me.organizationId || null);
+    return (generation == null || generation === S.generation) && S.account != null &&
+      S.epoch === P.epoch && S.account === (me.id || null) && S.organization === (me.organizationId || null);
   }
 
   /* ------------------------------------------------------------ 日历渲染 */
@@ -190,10 +202,12 @@
     const scroller = document.getElementById("dailyScroller");
     if (!scroller) return;
     const savedAnchor = S.anchorDate, savedOffset = S.anchorOffset || 0;
+    const generation = S.generation;
     const fallback = S.pendingScroll != null ? S.pendingScroll : S.scrollLeft;
     S.pendingScroll = null;
     S.restoring = true;
     const place = () => {
+      if (!sameSession(generation)) return true;
       const current = document.getElementById("dailyScroller");
       if (!current) { S.restoring = false; return true; }
       current.scrollTop = 0;
@@ -360,6 +374,7 @@
     }
   }
   function jumpToMonth(year, month) {
+    const scrollToken = ++S.scrollToken;
     const target = new Date(year, month - 1, 1);
     S.blocks = [blockForMonth(target.getFullYear(), target.getMonth() - 1),
       blockForMonth(target.getFullYear(), target.getMonth()),
@@ -372,16 +387,23 @@
       S.blocks.forEach(loadBlock);
       S.pendingScroll = null;
       const scroller = document.getElementById("dailyScroller");
-      const cell = track.querySelector('[data-daily-date="' + dateKey(target) + '"]');
-      if (scroller && cell) {
-        const left = cell.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
-        scroller.scrollLeft = Math.max(0, left - 46 * 2);
+      const block = track.querySelector('[data-month="' + monthKeyOf(target) + '"]');
+      if (scroller && block) {
+        // Align the month's own week block, including months whose first day is
+        // in the preceding block. Leading context must not change the target month.
+        const left = block.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
+        // Wide screens need enough following weeks to put the target at the left
+        // edge; otherwise the browser clamps the position to the preceding month.
+        for (let guard = 0; scroller.scrollWidth - scroller.clientWidth < left && guard < MAX_MONTHS; guard++) extend(1);
+        scroller.scrollLeft = Math.max(0, left);
         S.scrollLeft = scroller.scrollLeft;
         anchorFromDom(scroller);
+        const generation = S.generation;
         requestAnimationFrame(() => {
+          if (!sameSession(generation) || !block.isConnected || scrollToken !== S.scrollToken) return;
           const current = document.getElementById("dailyScroller");
           if (!current) return;
-          current.scrollLeft = Math.max(0, left - 46 * 2);
+          current.scrollLeft = Math.max(0, left);
           S.scrollLeft = current.scrollLeft;
           anchorFromDom(current);
         });
@@ -424,7 +446,18 @@
 
   function focusCell(key) {
     const cell = document.querySelector('[data-daily-date="' + key + '"]');
-    if (cell) { cell.focus({ preventScroll: true }); return true; }
+    const scroller = document.getElementById("dailyScroller");
+    if (cell && scroller && scroller.clientWidth) {
+      S.scrollToken++;
+      const box = cell.getBoundingClientRect(), viewport = scroller.getBoundingClientRect();
+      if (box.left < viewport.left) scroller.scrollLeft -= viewport.left - box.left;
+      else if (box.right > viewport.right) scroller.scrollLeft += box.right - viewport.right;
+      S.scrollLeft = scroller.scrollLeft;
+      anchorFromDom(scroller);
+      setAnchorFromScroll();
+      cell.focus({ preventScroll: true });
+      return true;
+    }
     return false;
   }
   function onCalendarKey(event) {
@@ -460,12 +493,13 @@
     return entry;
   }
   async function loadList(date, offset, limit) {
+    const generation = S.generation;
     const entry = listEntry(date);
     const token = ++entry.token;
     entry.loading = true; entry.error = null;
     try {
       const result = await P.request("/daily-items?date=" + encodeURIComponent(date) + "&limit=" + (limit || PAGE) + "&offset=" + offset);
-      if (entry.token !== token || !sameSession()) return entry;
+      if (entry.token !== token || !sameSession(generation)) return entry;
       const seen = new Set(offset ? entry.items.map(item => item.id) : []);
       (result.items || []).forEach(item => { if (!seen.has(item.id)) { seen.add(item.id); entry.items.push(item); } });
       if (!offset) entry.items = (result.items || []).slice();
@@ -474,7 +508,7 @@
       entry.loading = false;
       return entry;
     } catch (error) {
-      if (entry.token === token) { entry.loading = false; entry.error = error; }
+      if (entry.token === token && sameSession(generation)) { entry.loading = false; entry.error = error; }
       throw error;
     }
   }
@@ -501,12 +535,19 @@
   }
   function openList(date, trigger) {
     S.selected = date;
+    const generation = S.generation;
     P.busy(async () => {
       const entry = S.lists.get(date);
       if (!entry || (!entry.items.length && !entry.loading)) await loadList(date, 0);
-      if (!sameSession()) return;
+      if (!sameSession(generation)) return;
       S.listScroll = { date: date, top: 0 };
       S.closeFocus = trigger || null;
+      const scroller = document.getElementById("dailyScroller");
+      if (scroller) {
+        S.scrollToken++;
+        anchorFromDom(scroller);
+        S.closePosition = { date: S.anchorDate, offset: S.anchorOffset, left: scroller.scrollLeft };
+      }
       openSheet(listView(date));
     }, "daily-list-error");
   }
@@ -535,7 +576,17 @@
     sheetStack.length = index;
     sheetStack.push(listView(date));
     renderSheet();
-    sheetBodyEl.scrollTop = S.listScroll && S.listScroll.date === date ? S.listScroll.top : 0;
+    restoreListPosition();
+  }
+  function restoreListPosition() {
+    const saved = S.listScroll;
+    if (!saved || topKind() !== "list" || openListDate() !== saved.date) return;
+    sheetBodyEl.scrollTop = saved.top;
+    const row = saved.focus && sheetBodyEl.querySelector('[data-action="daily-open"][data-id="' + saved.focus + '"]');
+    if (row) row.focus({ preventScroll: true });
+  }
+  function dailyWithBack(foot) {
+    return (sheetStack.length ? '<button type="button" class="btn" data-action="sheet-back">返回</button>' : "") + foot;
   }
 
   /* ------------------------------------------------------------ 详情 */
@@ -545,16 +596,17 @@
         '<span class="badge ' + (raw.completed ? "b-ok" : "b-normal") + '">' + (raw.completed ? "已完成" : "未完成") + "</span></div>" +
         '<p class="daily-detail-body">' + esc(raw.body) + "</p>" +
         '<div class="callout" id="daily-detail-error" role="alert" hidden></div>',
-      foot: withBack('<button type="button" class="btn ' + (raw.completed ? "" : "ok") + '" data-action="daily-toggle" data-id="' + esc(raw.id) + '" data-date="' + esc(raw.date) + '" data-target="' + (raw.completed ? "false" : "true") + '">' + (raw.completed ? "取消完成" : "标记完成") + "</button>" +
+      foot: dailyWithBack('<button type="button" class="btn ' + (raw.completed ? "" : "ok") + '" data-action="daily-toggle" data-id="' + esc(raw.id) + '" data-date="' + esc(raw.date) + '" data-target="' + (raw.completed ? "false" : "true") + '">' + (raw.completed ? "取消完成" : "标记完成") + "</button>" +
         '<button type="button" class="btn" data-action="daily-edit" data-id="' + esc(raw.id) + '">编辑</button>' +
         '<button type="button" class="btn danger" data-action="daily-delete" data-id="' + esc(raw.id) + '">删除</button>') };
   }
   function openDetail(id) {
+    const generation = S.generation;
+    if (topKind() === "list") S.listScroll = { date: openListDate(), top: sheetBodyEl.scrollTop, focus: id };
     P.busy(async () => {
       const raw = await P.request("/daily-items/" + encodeURIComponent(id));
-      if (!sameSession()) return;
+      if (!sameSession(generation)) return;
       S.detail = { raw: raw, etag: '"' + raw.rowVersion + '"' };
-      S.afterBack = { date: raw.date, top: S.listScroll && S.listScroll.date === raw.date ? S.listScroll.top : 0, focus: id };
       openSheet(detailView(raw));
     }, "daily-list-error");
   }
@@ -570,7 +622,7 @@
         '<div class="field daily-body-field"><label for="daily-body">内容</label><textarea id="daily-body" maxlength="2000" placeholder="写下今天要记住的事">' + esc(d.body) + "</textarea></div>" +
         '<div class="tiny muted">每日事项仅本人可见，可填写过去、今天或未来的日期，最多 2000 字。</div>' +
         '<div class="callout" id="daily-form-error" role="alert" hidden></div>',
-      foot: withBack('<button type="button" class="btn primary" data-action="daily-save">保存</button>') };
+      foot: dailyWithBack('<button type="button" class="btn primary" data-action="daily-save">保存</button>') };
   }
   function openForm(mode, options) {
     const opts = options || {};
@@ -620,7 +672,7 @@
       body: '<div class="callout reject">删除后无法恢复，请确认是否删除以下内容。</div>' +
         '<p class="daily-detail-body" style="margin:0">' + esc(raw.body) + "</p>" +
         '<div class="callout" id="daily-confirm-error" role="alert" hidden></div>',
-      foot: withBack('<button type="button" class="btn danger" data-action="daily-confirm-delete" data-id="' + esc(id) + '">确认删除</button>') });
+      foot: dailyWithBack('<button type="button" class="btn danger" data-action="daily-confirm-delete" data-id="' + esc(id) + '">确认删除</button>') });
   }
   function confirmDelete(id) {
     const detail = S.detail;
@@ -699,8 +751,8 @@
     if (!actionName || actionName.indexOf("daily-") !== 0) return false;
     const date = element.dataset.date || S.selected || S.companyToday;
     switch (actionName) {
-      case "daily-prev": { const d = parseKey((S.anchor || S.companyToday) + "-01") || companyToday(); goToDate(dateKey(monthStart(d.getFullYear(), d.getMonth() - 1))); return true; }
-      case "daily-next": { const d = parseKey((S.anchor || S.companyToday) + "-01") || companyToday(); goToDate(dateKey(monthStart(d.getFullYear(), d.getMonth() + 1))); return true; }
+      case "daily-prev": { const d = parseKey((S.anchor || S.companyToday) + "-01") || companyToday(); jumpToMonth(d.getFullYear(), d.getMonth()); return true; }
+      case "daily-next": { const d = parseKey((S.anchor || S.companyToday) + "-01") || companyToday(); jumpToMonth(d.getFullYear(), d.getMonth() + 2); return true; }
       case "daily-today": goToDate(S.companyToday); S.selected = S.companyToday; return true;
       case "daily-locate": openLocate(); return true;
       case "daily-locate-save": locateFromForm(); return true;
@@ -764,27 +816,33 @@
   /* 把重新渲染后的清单滚动位置和焦点恢复到离开前的位置。 */
   const baseBackSheet = backSheet;
   backSheet = function () {
-    const restore = S.afterBack;
-    S.afterBack = null;
     baseBackSheet();
     if (topKind() !== "detail") S.detail = null;
-    if (restore) requestAnimationFrame(() => {
-      if (openListDate() !== restore.date) return;
-      sheetBodyEl.scrollTop = restore.top || 0;
-      const row = restore.focus && document.querySelector('[data-action="daily-open"][data-id="' + restore.focus + '"]');
-      if (row) row.focus({ preventScroll: true });
-    });
+    restoreListPosition();
   };
   const baseCloseSheet = closeSheet;
   closeSheet = function () {
     const focus = S.closeFocus;
-    S.closeFocus = null;
-    S.detail = null; S.afterBack = null;
+    const position = S.closePosition;
+    S.closeFocus = null; S.closePosition = null;
+    S.detail = null; S.listScroll = null; drafts.daily = null;
     baseCloseSheet();
     if (focus && document.contains(focus)) focus.focus({ preventScroll: true });
     else if (S.selected && document.querySelector('[data-daily-date="' + S.selected + '"]')) focusCell(S.selected);
     const scroller = document.getElementById("dailyScroller");
-    if (scroller) scroller.scrollTop = 0;
+    if (scroller) {
+      // The shared sheet's lastFocused.focus() can scroll the background. Restore
+      // the calendar after it runs, using a date anchor if its window was extended.
+      if (position) {
+        const cell = scroller.querySelector('[data-daily-date="' + position.date + '"]');
+        scroller.scrollLeft = cell ? scroller.scrollLeft + cell.getBoundingClientRect().left -
+          scroller.getBoundingClientRect().left - position.offset : position.left;
+        S.scrollLeft = scroller.scrollLeft;
+        anchorFromDom(scroller);
+        setAnchorFromScroll();
+      }
+      scroller.scrollTop = 0;
+    }
   };
 
   /* 选择器统一在动作分发之前拦截，避免被旧个人事项处理器吞掉。 */

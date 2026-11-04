@@ -2702,7 +2702,7 @@ document.addEventListener("click", function(ev){
 });
 
 document.getElementById("bellBtn").addEventListener("click", openNotifications);
-document.getElementById("sheetClose").addEventListener("click", closeSheet);
+document.getElementById("sheetClose").addEventListener("click", function(){ closeSheet(); });
 document.getElementById("sheetBack").addEventListener("click", function(){
   if (sheetStack.length > 1) backSheet(); else closeSheet();
 });
