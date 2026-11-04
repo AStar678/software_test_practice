@@ -50,15 +50,23 @@ public class OrganizationService {
     public Map<String,Object> employees(Actor actor,Map<String,String> filters) {
         access.requireAdmin(actor);access.requireCurrent(actor);
         String query=filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
+        var phones=new HashMap<String,Object>();
+        for (var row:db.list("SELECT id,login_phone FROM users WHERE organization_id=?",actor.organizationId()))
+            phones.put(s(row,"id"),row.get("loginPhone"));
         var rows=access.employeeDirectory(actor,true).stream().filter(row->query.isEmpty()
                 || Objects.toString(row.get("displayName"),"").toLowerCase(Locale.ROOT).contains(query)
-                || Objects.toString(row.get("departmentName"),"").toLowerCase(Locale.ROOT).contains(query)).toList();
+                || Objects.toString(row.get("departmentName"),"").toLowerCase(Locale.ROOT).contains(query))
+                .map(row -> {var item=new LinkedHashMap<>(row);item.put("loginPhone",phones.get(s(row,"id")));return item;}).toList();
         return Map.of("items",rows,"total",rows.size());
     }
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> employee(Actor actor,String id) {
         access.requireAdmin(actor);access.requireCurrent(actor);
-        return access.employeeDirectory(actor,true).stream().filter(row->id.equals(s(row,"id"))).findFirst().orElseThrow(ApiException::notFound);
+        var person=access.employeeDirectory(actor,true).stream().filter(row->id.equals(s(row,"id"))).findFirst().orElseThrow(ApiException::notFound);
+        var item=new LinkedHashMap<>(person);
+        var phone=db.find("SELECT login_phone FROM users WHERE organization_id=? AND id=?",actor.organizationId(),id);
+        item.put("loginPhone",phone==null?null:phone.get("loginPhone"));
+        return item;
     }
     public List<Map<String,Object>> departmentMembers(Actor actor,String departmentId) {
         access.requireAdmin(actor);requireDepartment(actor,departmentId);

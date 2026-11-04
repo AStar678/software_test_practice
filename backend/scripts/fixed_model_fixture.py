@@ -68,7 +68,7 @@ class Fixture:
             env.update(PANDORA_DB_URL=f'jdbc:mysql://127.0.0.1:13306/{self.database}?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED',
                        PANDORA_PORT=str(self.port),PANDORA_BIND_ADDRESS='127.0.0.1',PANDORA_SEED='false',
                        PANDORA_WORKER_ENABLED='true' if self.worker else 'false')
-            args=['java','-jar',str(BASE/'target/pandora-backend-0.1.0.jar')]
+            args=['java','-jar',os.environ.get('PANDORA_FIXTURE_JAR',str(BASE/'target/pandora-backend-0.1.0.jar'))]
             if getattr(self, 'migration_target', None):
                 args.append('--spring.flyway.target='+str(self.migration_target))
             if self.controllable:
@@ -114,8 +114,12 @@ class Fixture:
             time.sleep(.5)
         raise RuntimeError('fixture restart timed out')
     def seed(self):
-        encoded=subprocess.run(['htpasswd','-bnBC','12','fixture',PASSWORD],capture_output=True,text=True,check=True).stdout.strip().split(':',1)[1]
-        encoded=encoded.replace('$2y$','$2a$')
+        try:
+            encoded=subprocess.run(['htpasswd','-bnBC','12','fixture',PASSWORD],capture_output=True,text=True,check=True).stdout.strip().split(':',1)[1]
+            encoded=encoded.replace('$2y$','$2a$')
+        except FileNotFoundError:
+            import bcrypt
+            encoded=bcrypt.hashpw(PASSWORD.encode(),bcrypt.gensalt(rounds=12)).decode()
         for org,base_phone in (('fixture-company',13900000000),('other-company',13900000100)):
             self.db.server_side('INSERT INTO organizations(id,name) VALUES('+quote(org)+','+quote(org)+')')
             self.db.server_side('INSERT INTO positions(id,organization_id,name) VALUES('+quote(org+'-title')+','+quote(org)+",'Display title')")

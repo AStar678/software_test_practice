@@ -35,8 +35,8 @@
     return role + " · " + org;
   };
   function readonlyRows(user) {
-    return row("公司", user.organizationName) + row("组织身份", identityLabel(user)) +
-      (user.departmentName ? row("部门", user.departmentName) : "") + row("职位", user.positionName) +
+    return row("组织身份", identityLabel(user)) +
+      row("部门", user.departmentName || "公司层") + row("职位", user.positionName) +
       (user.teamName ? row("团队", user.teamName) : "") + row("直属上级", superior(user));
   }
   function field(id, type, label, value, max, autocomplete, required) {
@@ -67,13 +67,13 @@
     if(raw.allDay)return {start:P.companyDayStart(raw.startDate),end:P.companyDayStart(shiftStaffDate(raw.dueDate,1))};
     return {start:new Date(raw.startAt),end:new Date(raw.dueAt)};
   }
-  function staffTaskHTML(raw){
-    const id=raw.taskId||raw.id,range=taskRange(raw),start=P.companyDayStart(staff.date),end=P.companyDayStart(shiftStaffDate(staff.date,1));
+  function staffTaskHTML(raw,selectedDate=staff.date){
+    const id=raw.taskId||raw.id,range=taskRange(raw),start=P.companyDayStart(selectedDate),end=P.companyDayStart(shiftStaffDate(selectedDate,1));
     const time=raw.allDay?'全天':(+range.start===+range.end?'时点 · ':'')+(range.start<start?'前日延续':instantLabel(raw.startAt).split(' ')[1])+' — '+(range.end>=end?'24:00':instantLabel(raw.dueAt).split(' ')[1]);
     const tag=(raw.tags||[])[0]||raw.tag;
     return '<button type="button" class="staff-work-item'+(raw.frozen?' is-pending-review':'')+'" data-task="'+esc(id)+'" style="--staff-accent:'+esc(tag?.color||'#f5ccdE')+'"><span class="staff-work-time">'+esc(time)+'</span><strong>'+esc(raw.title)+'</strong><span class="staff-work-meta">'+esc(({todo:'待开始',doing:'进行中',done:'已完成'})[raw.executionState]||'待开始')+(raw.frozen?' · 审核中':'')+'</span><small>'+esc(instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt))+'</small></button>';
   }
-  function staffLogHTML(raw){return '<button type="button" class="staff-log-card" data-action="p-staff-log" data-id="'+esc(raw.id)+'"><span class="staff-work-time">'+esc(raw.businessDate)+'</span><strong>'+esc(raw.body)+'</strong><small>'+esc(raw.tag?.name||'无标签')+' · 查看全文与评论 →</small></button>';}
+  function staffLogHTML(raw){return '<button type="button" class="staff-log-card" data-action="p-staff-log" data-id="'+esc(raw.id)+'"><span class="staff-work-time">'+esc(raw.businessDate)+'</span><strong>'+esc(raw.body)+'</strong><small>'+esc((raw.tags||[]).map(t=>t.name).join('、')||'无标签')+' · 查看全文与评论 →</small></button>';}
   function staffMonthBounds(date){
     const d=parseDateInput(date),first=new Date(d.getFullYear(),d.getMonth(),1),last=new Date(d.getFullYear(),d.getMonth()+1,0);
     const start=addDays(first,-((first.getDay()+6)%7)),end=addDays(last,7-((last.getDay()+6)%7));
@@ -89,10 +89,10 @@
       const cells=dates.map(d=>'<button type="button" class="staff-month-date'+(d.slice(0,7)!==s.date.slice(0,7)?' is-outside':'')+'" data-action="p-staff-date" data-date="'+d+'" aria-label="'+d+'，查看日视图" aria-pressed="'+(d===s.date)+'"><span>'+Number(d.slice(-2))+'</span></button>').join('');
       const bars=week.shown.map(segment=>{const task=segment.task,raw=task.raw,range=taskRange(raw),bounds=staffMonthBounds(staff.date),done=raw.executionState==='done';
         const detail=(segment.before?'延续 · ':'')+instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt)+(done?' · 已完成':'')+(raw.frozen?' · 审核中':'');
-        return '<div role="group" tabindex="0" class="staff-month-event'+(segment.point?' is-point':'')+(done?' is-done':'')+(raw.frozen?' is-pending-review':'')+(segment.before?' continues-before':'')+(segment.after?' continues-after':'')+'" data-task="'+esc(task.id)+'" style="grid-column:'+(segment.start+1)+' / '+(segment.end+1)+';grid-row:'+(segment.lane+1)+';--month-left:'+segment.left+'%;--month-width:'+segment.width+'%;--staff-accent:'+esc(staffRawColor(raw))+'" title="'+esc(raw.title+' · '+detail)+'"><span class="staff-month-duration"><span class="p-month-caption"><strong>'+esc(raw.title)+'</strong><small>'+esc(detail)+'</small></span></span></div>';
+        return '<div role="group" tabindex="0" class="staff-month-event'+(segment.point?' is-point':'')+(done?' is-done':'')+(raw.frozen?' is-pending-review':'')+(segment.before?' continues-before':'')+(segment.after?' continues-after':'')+'" data-task="'+esc(task.id)+'" data-col-start="'+segment.start+'" data-col-end="'+segment.end+'" style="grid-column:'+(segment.start+1)+' / '+(segment.end+1)+';grid-row:'+(segment.lane+1)+';--month-left:'+segment.left+'%;--month-width:'+segment.width+'%;--staff-accent:'+esc(staffRawColor(raw))+'" title="'+esc(raw.title+' · '+detail)+'"><span class="staff-month-duration"><span class="p-month-caption"><strong>'+esc(raw.title)+'</strong><small>'+esc(detail)+'</small></span></span></div>';
       }).join('');
       const more=week.hidden.map((rows,col)=>rows.length?'<button type="button" data-action="p-staff-date" data-date="'+dates[col]+'" class="staff-month-more" style="grid-column:'+(col+1)+'" aria-label="'+dates[col]+'，还有'+rows.length+'项，查看全天">+'+rows.length+'</button>':'').join('');
-      weeks.push('<div class="staff-month-week"><div class="staff-month-days">'+cells+'</div><div class="staff-month-tracks">'+bars+'</div><div class="staff-month-overflow">'+more+'</div></div>');
+      weeks.push('<div class="staff-month-week" data-week-start="'+date+'"><div class="staff-month-days">'+cells+'</div><div class="staff-month-tracks">'+bars+'</div><div class="staff-month-overflow">'+more+'</div></div>');
     }
     return '<div class="staff-month-view" aria-label="'+s.date.slice(0,7)+'月历"><div class="staff-month-weekdays">'+['一','二','三','四','五','六','日'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="staff-month-scroll">'+weeks.join('')+'</div></div>';
   }
@@ -100,7 +100,7 @@
     const s=staff,date=parseDateInput(s.date),all=[],timed=[];
     s.rows.forEach(raw=>{const task=P.mapTask(raw),coverage=P.calendar.dayCoverage(task,date);if(!coverage)return;if(task.allDay||coverage.fullDay)all.push(raw);else timed.push(Object.assign({task},coverage));});
     const modes='<div class="staff-day-formats" role="group" aria-label="日视图显示方式">'+[['axis','时间轴'],['list','任务清单']].map(([mode,label])=>'<button type="button" data-action="p-staff-format" data-format="'+mode+'" aria-pressed="'+(s.dayFormat===mode)+'">'+label+'</button>').join('')+'</div>';
-    if(s.dayFormat==='list')return modes+(s.rows.length?s.rows.map(staffTaskHTML).join(''):'<div class="staff-state">这一天暂无负责的任务</div>');
+    if(s.dayFormat==='list')return modes+(s.rows.length?s.rows.map(raw=>staffTaskHTML(raw)).join(''):'<div class="staff-state">这一天暂无负责的任务</div>');
     const events=P.calendar.layoutDayEvents(timed),hours=Array.from({length:25},(_,h)=>'<div class="staff-axis-hour" style="top:'+h*60+'px"><span>'+pad2(h)+':00</span></div>').join('');
     const bars=events.map(e=>{
       const task=e.task,raw=task.raw,range=taskRange(raw),start=P.companyDayStart(s.date),end=P.companyDayStart(shiftStaffDate(s.date,1)),done=raw.executionState==='done';
@@ -117,7 +117,17 @@
     const s=staff,p=s.person;
     const dateBar=s.tab==='schedule'?staffCalendarNav():'';
     const content=s.loading?'<div class="staff-state" role="status">正在读取'+(s.tab==='schedule'?'日程':'日志')+'…</div>':s.error?'<div class="staff-state" role="alert">'+esc(s.error)+'<button type="button" class="btn" data-action="p-staff-retry">重新读取</button></div>':s.tab==='schedule'?(s.mode==='month'?staffMonthHTML():staffDayHTML()):s.rows.length?s.rows.map(staffLogHTML).join(''):'<div class="staff-state">'+(s.tab==='schedule'?'这一天暂无负责的任务':'暂无可查看的日志')+'</div>';
-    return {title:p.displayName+'的工作',fullscreen:true,body:'<section class="staff-panel" data-staff-panel="'+esc(p.id)+'"><header class="staff-person"><span class="staff-avatar">'+esc(Array.from(p.displayName||'')[0]||'人')+'</span><div><h2>'+esc(p.displayName)+'</h2><p>'+esc(identityLabel(p)+' · '+(p.positionName||''))+'</p><small>'+esc([p.departmentName,p.teamName].filter(Boolean).join(' / ')||'公司层')+'</small></div></header><details class="staff-person-info"><summary>人员资料</summary>'+readonlyRows(p)+(p.phone?row('手机号',p.phone):'')+(p.canSetHandoverPreset?'<button type="button" class="btn" data-action="p-open-handover-preset" data-id="'+esc(p.id)+'" data-name="'+esc(p.displayName)+'">设置交接预设</button>':'')+'</details><div class="staff-tabs" role="group" aria-label="下属工作类型">'+[['schedule','日程'],['logs','日志']].map(([tab,label])=>'<button type="button" data-action="p-staff-tab" data-tab="'+tab+'" aria-pressed="'+(s.tab===tab)+'">'+label+'</button>').join('')+'</div>'+dateBar+'<div class="staff-content">'+content+'</div>'+(!s.loading&&!s.error&&s.next!=null?'<button type="button" class="btn staff-more" data-action="p-staff-more">加载更早日志</button>':'')+'</section>',foot:'',rebuild:function(){if(staff===s){s.rows=[];s.loading=true;setTimeout(()=>refreshStaff(false),0);}return staffView();}};
+    const daySheet=s.daySheetDate ? '<section class="staff-day-popup" role="dialog" aria-label="'+esc(s.daySheetDate)+'完整任务清单"><h3>'+esc(s.daySheetDate)+' 日程</h3>'+
+      s.rows.filter(raw=>{const range=taskRange(raw),start=P.companyDayStart(s.daySheetDate),end=P.companyDayStart(shiftStaffDate(s.daySheetDate,1));return +range.start===+range.end?range.start>=start&&range.start<end:range.end>start&&range.start<end;}).map(raw=>staffTaskHTML(raw,s.daySheetDate)).join('')+
+      '<div class="row"><button type="button" class="btn" data-action="p-staff-day-view">进入日视图</button><button type="button" class="btn" data-action="p-staff-day-close">关闭清单</button></div></section>' : '';
+    return {title:p.displayName+'的工作',fullscreen:true,subordinate:true,body:'<section class="staff-panel" data-staff-panel="'+esc(p.id)+'"><header class="staff-person"><span class="staff-avatar">'+esc(Array.from(p.displayName||'')[0]||'人')+'</span><div><h2>'+esc(p.displayName)+'</h2><p>'+esc(identityLabel(p)+' · '+(p.positionName||''))+'</p><small>'+esc([p.departmentName,p.teamName].filter(Boolean).join(' / ')||'公司层')+'</small></div></header><div class="staff-tabs" role="group" aria-label="下属工作类型">'+[['schedule','日程'],['logs','日志']].map(([tab,label])=>'<button type="button" data-action="p-staff-tab" data-tab="'+tab+'" aria-pressed="'+(s.tab===tab)+'">'+label+'</button>').join('')+'</div>'+dateBar+'<div class="staff-content">'+content+'</div>'+daySheet+(!s.loading&&!s.error&&s.next!=null?'<button type="button" class="btn staff-more" data-action="p-staff-more">加载更早日志</button>':'')+'</section>',foot:'',rebuild:function(){if(staff===s){s.loading=true;s.restoreScroll=this.savedScroll??0;setTimeout(()=>refreshStaff(false),0);}return staffView();}};
+  }
+  function staffCardView(){
+    if(!staff)return null;
+    const p=staff.person;
+    return {title:p.displayName+'的资料',subordinate:true,body:'<div class="profile-details">'+readonlyRows(p)+
+      (p.phone?row('手机号',p.phone):'')+'</div><div class="action-grid"><button type="button" class="btn primary" data-action="p-staff-enter" data-tab="schedule">查看日程</button><button type="button" class="btn" data-action="p-staff-enter" data-tab="logs">查看日志</button></div>',
+      foot:withBack(button('sheet-close','关闭'))};
   }
   function staffCurrent(s,seq){return staff===s&&s.epoch===P.epoch&&seq===staffSequence&&!!document.querySelector('[data-staff-panel="'+s.person.id+'"]');}
   async function refreshStaff(more){
@@ -143,18 +153,23 @@
           effectiveRows=rows;rows=rows.map(raw=>P.calendarTask(P.mapTask(raw)).raw).filter(r=>{const range=taskRange(r);return +range.start===+range.end?range.start>=start&&range.start<end:range.end>start&&range.start<end;}).sort((a,b)=>+taskRange(a).start-+taskRange(b).start||String(a.taskId||a.id).localeCompare(String(b.taskId||b.id)));
         }
         if(!staffCurrent(s,seq))return;
-        effectiveRows.forEach(raw=>P.upsertTask(raw));
-        s.person=person;s.rows=more?s.rows.concat(rows):rows;s.next=next;s.loading=false;replaceTopSheet(staffView());restoreStaffAxis();
+        P.subordinateTasks.clear();
+        effectiveRows.forEach(raw=>P.subordinateTasks.set(raw.taskId||raw.id,P.mapTask(raw)));
+        s.person=person;s.rows=more?s.rows.concat(rows):rows;s.next=next;s.loading=false;replaceTopSheet(staffView());
+        if(s.restoreScroll!=null){sheetBodyEl.scrollTop=s.restoreScroll;s.restoreScroll=null;}else restoreStaffAxis();
       }catch(error){if(!staffCurrent(s,seq))return;s.rows=[];s.next=null;s.person=Object.assign({},s.person,{canSetHandoverPreset:false});delete s.person.phone;s.loading=false;s.error=error.message;replaceTopSheet(staffView());}
     })();
   }
   function openPerson(id){
     const person=reports().find(p=>p.id===id);
     if(!person){P.notice('当前下属资料中没有此人，请刷新后重试。');return;}
-    staff={person,epoch:P.epoch,tab:'schedule',mode:'month',dayFormat:'axis',date:P.data.home.businessDate,rows:[],next:null,loading:true,error:null};
-    openSheet(staffView());return refreshStaff(false);
+    staff={person,epoch:P.epoch,tab:'schedule',mode:'month',dayFormat:'axis',date:P.data.home.businessDate,rows:[],next:null,loading:false,error:null,daySheetDate:null};
+    P.subordinateTasks.clear();P.subordinateLogs.clear();
+    openSheet(staffCardView());
+    return P.busy(async()=>{const raw=await P.request('/users/'+encodeURIComponent(id));if(staff?.person.id!==id||staff.epoch!==P.epoch)return;staff.person=raw;replaceTopSheet(staffCardView());});
   }
   function openPersonLogs(id){openPerson(id);}
+  function openStaffDaySheet(date){if(!staff)return;staff.daySheetDate=date;replaceTopSheet(staffView());}
 
   renderMe = function () {
     const user = me();
@@ -294,10 +309,14 @@
     const action=element.dataset.action;
     if(action==='p-report-toggle') {const id=element.dataset.id;if(expandedReports.has(id))expandedReports.delete(id);else expandedReports.add(id);renderMe();document.querySelector('[data-action="p-report-toggle"][data-id="'+id+'"]')?.focus();return;}
     if(action==='p-staff-log')return openLogDetail(element.dataset.id);
+    if(action==='p-staff-enter'&&staff){staff.tab=element.dataset.tab==='logs'?'logs':'schedule';staff.daySheetDate=null;openSheet(staffView());return refreshStaff(false);}
+    if(action==='p-staff-day-close'&&staff){staff.daySheetDate=null;replaceTopSheet(staffView());return;}
+    if(action==='p-staff-day-view'&&staff){staff.date=staff.daySheetDate;staff.daySheetDate=null;staff.mode='day';return refreshStaff(false);}
     if(action?.startsWith('p-staff-')&&staff){
       if(action==='p-staff-tab')staff.tab=element.dataset.tab==='logs'?'logs':'schedule';
-      if(action==='p-staff-date'){staff.date=element.dataset.date;staff.mode='day';}
+      if(action==='p-staff-date'){if(staff.mode==='month')return openStaffDaySheet(element.dataset.date);staff.date=element.dataset.date;}
       if(action==='p-staff-mode')staff.mode=element.dataset.mode==='day'?'day':'month';
+      staff.daySheetDate=null;
       if(action==='p-staff-format'){staff.dayFormat=element.dataset.format==='list'?'list':'axis';replaceTopSheet(staffView());restoreStaffAxis();return;}
       if(action==='p-staff-nav'){const d=parseDateInput(staff.date),step=Number(element.dataset.step);staff.date=staff.mode==='month'?toDateInput(new Date(d.getFullYear(),d.getMonth()+step,1)):shiftStaffDate(staff.date,step);}
       if(action==='p-staff-week')staff.date=shiftStaffDate(staff.date,Number(element.dataset.step));
@@ -316,9 +335,20 @@
   };
   document.addEventListener('keydown',event=>{
     if(event.target.matches?.('.staff-month-event,.staff-axis-event')&&['Enter',' '].includes(event.key)){
-      event.preventDefault();event.stopPropagation();openTaskDetail(event.target.dataset.task);
+      event.preventDefault();event.stopPropagation();
+      if(event.target.matches('.staff-month-event')){
+        const week=event.target.closest('.staff-month-week');
+        openStaffDaySheet(shiftStaffDate(week.dataset.weekStart,Number(event.target.dataset.colStart)));
+      } else openTaskDetail(event.target.dataset.task);
     }
   });
+  document.addEventListener('click',event=>{
+    const bar=event.target.closest?.('.staff-month-event');
+    if(!bar||!staff)return;
+    const week=bar.closest('.staff-month-week'),track=week.querySelector('.staff-month-tracks');
+    const rect=track.getBoundingClientRect(),column=Math.max(Number(bar.dataset.colStart),Math.min(Number(bar.dataset.colEnd)-1,Math.floor((event.clientX-rect.left)/(rect.width/7))));
+    event.preventDefault();event.stopImmediatePropagation();openStaffDaySheet(shiftStaffDate(week.dataset.weekStart,column));
+  },true);
   document.addEventListener('change',function(event){if(event.target.id==='staff-calendar-date'&&staff){const value=event.target.value,d=parseDateInput(value);if(d&&toDateInput(d)===value){staff.date=value;refreshStaff(false);}}});
   RENDER.me = renderMe;
 })();

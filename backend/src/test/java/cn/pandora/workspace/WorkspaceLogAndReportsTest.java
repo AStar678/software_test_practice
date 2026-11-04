@@ -75,13 +75,13 @@ class WorkspaceLogAndReportsTest {
         Db db = timezone(mock(Db.class));
         when(db.find(startsWith("SELECT id,row_version,business_date"), eq("org"), eq("u"), any()))
                 .thenReturn(null);
-        when(db.update(contains("INSERT INTO work_logs"), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
+        when(db.update(contains("INSERT INTO work_logs"), any(), any(), any(), any(), any(), any())).thenReturn(1);
         WorkspaceService service = service(db, WorkspaceTestSupport.access());
 
         Map<String, Object> result = service.createLog(EMPLOYEE, Map.of("body", "today"));
         assertEquals("2026-10-20", result.get("businessDate"));
         verify(db).update(contains("INSERT INTO work_logs"), any(), eq("org"), eq("u"),
-                eq(java.sql.Date.valueOf("2026-10-20")), eq("today"), isNull(), isNull());
+                eq(java.sql.Date.valueOf("2026-10-20")), eq("today"), isNull());
     }
 
     @Test

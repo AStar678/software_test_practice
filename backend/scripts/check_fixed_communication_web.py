@@ -7,10 +7,13 @@ import subprocess
 import uuid
 from fixed_model_fixture import Fixture
 from migration_precheck import BASE
+from pathlib import Path
 
 def main():
     fixture=Fixture(port=18197,worker=True)
-    fixture.log_path=BASE.parent/'audit/refactor-pandora-organization-and-workflows/communication-web-service.log'
+    report_dir=Path(os.environ.get('PANDORA_CHECK_OUTPUT',BASE.parent/'audit/refactor-pandora-organization-and-workflows'))
+    report_dir.mkdir(parents=True,exist_ok=True)
+    fixture.log_path=report_dir/'communication-web-service.log'
     with fixture as f:
         token=f.login('founder')[1]['token'];now=dt.datetime.now(dt.timezone.utc)
         status,task=f.call('POST','/tasks',{'title':'Communication browser task','description':'Current effective task',

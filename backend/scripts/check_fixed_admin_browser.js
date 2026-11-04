@@ -22,6 +22,11 @@ async function main(){
   await evaluate(`$('accountName').value=${JSON.stringify(ids.admin.identifier)};$('password').value='Fixture@123456';$('loginButton').click()`);
   check('independent admin enters real management console',await waitFor(browser,"state.structure&&state.planDraft&&document.querySelectorAll('#employeeRows tr').length===11"));
   check('retired role and manual manager controls are removed',await evaluate("!document.getElementById('tab-roles')&&!document.getElementById('fManager')&&!document.getElementById('fLevel')&&!document.querySelector('#employeeRows').textContent.includes('用户名')"));
+  const phoneId=ids['alpha-one-employee'].id,phone=ids['alpha-one-employee'].identifier;
+  check('admin employee row displays the complete login phone',await evaluate(`(()=>{const row=Array.from(document.querySelectorAll('#employeeRows tr')).find(r=>r.querySelector('[data-edit="${phoneId}"]'));return !!row&&row.cells[1].textContent.trim()===${JSON.stringify(phone)}})()`));
+  await evaluate(`document.querySelector('[data-edit="${phoneId}"]').click()`);
+  check('admin employee editor reads the stored login phone',await waitFor(browser,`$('employeeDialog').open&&$('fPhone').value===${JSON.stringify(phone)}`));
+  await evaluate("$('employeeDialog').close()");
   if(contract){
    const clean=await evaluate(`(()=>{
     const navText=Array.from(document.querySelectorAll('nav button')).map(b=>b.textContent).join('|');

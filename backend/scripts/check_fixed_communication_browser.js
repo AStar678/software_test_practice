@@ -3,7 +3,8 @@
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
 const {openBrowser,waitFor}=require('./browser_fixture');
 const fixture=JSON.parse(process.env.PANDORA_BROWSER_FIXTURE),ids=fixture.identities;
-const output=path.resolve(__dirname,'../../audit/refactor-pandora-organization-and-workflows/communication-browser.json');
+const output=path.join(process.env.PANDORA_CHECK_OUTPUT||path.resolve(__dirname,'../../audit/refactor-pandora-organization-and-workflows'),'communication-browser.json');
+fs.mkdirSync(path.dirname(output),{recursive:true});
 const report={updated:new Date().toISOString(),checks:[]};
 const js=JSON.stringify;
 function check(name,pass,evidence){report.checks.push({check:name,pass:!!pass,evidence});console.log((pass?'PASS ':'FAIL ')+name);if(!pass)throw new Error(name+' '+JSON.stringify(evidence));}

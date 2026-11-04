@@ -1,5 +1,11 @@
 # Current fixed-organization checks
 
+## 2026-11-04 change under implementation
+
+`refine-notifications-task-editing-and-staff-browsing` replaces the earlier private-tag and single-log-tag behavior. The checks below document the historical fixed-organization baseline. Current targeted real-service entries are `check_apply_log_tags.py`, `check_apply_private_migration_guard.py`, `check_apply_mixed_edit.py`, `check_apply_admin_login_phone.py`, `check_calendar_tags.py`, `check_subordinate_workspace.py`, and `check_schedule_drag.py`. `check_visible_schedule_permissions.py` and `check_fixed_employee_browser.js` now follow field-level owner editing, ordered log tags, and the person-card entry. Results and remaining acceptance work are recorded in the change's `implementation-notes.md`; no old report is relabeled as a current verdict.
+
+The native clients must later consume `tagIds/tags`, remove the personal-tag route, honor `editableFields`, and adopt the subordinate read-only navigation. This implementation does not add a legacy dual-write API.
+
 Build first (`cd backend && mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test package`), start the project MySQL, then from the repository root run:
 
 ```sh

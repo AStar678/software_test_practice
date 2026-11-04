@@ -23,7 +23,11 @@ def main():
    check('unrelated or admin cannot reschedule '+who,call(who,'PATCH','/tasks/'+task,body,base['rowVersion'])[0] in (403,404))
   for field,value in [('title','恶意改名'),('assigneeIds',[ids['alpha-one-head']]),('tagIds',[]),('progressNote','非法进展')]:
    check('schedule endpoint refuses '+field,call('alpha-one-head','PATCH','/tasks/'+task,{**body,field:value},base['rowVersion'])[0]==400)
-  check('ordinary metadata edit remains forbidden',call('alpha-one-employee','PATCH','/tasks/'+task,{'command':'change','title':'越权','reason':'不允许'},base['rowVersion'])[0]==403)
+  viewer_edit_code,_=call('alpha-one-head','PATCH','/tasks/'+task,{'command':'change','title':'越权','reason':'不允许'},base['rowVersion'])
+  check('visible-only manager cannot edit ordinary metadata',viewer_edit_code in (403,409))
+  owner_task=create();owner_base=detail(owner_task)
+  owner_change=ok('alpha-one-employee','PATCH','/tasks/'+owner_task,{'command':'change','title':'负责人可改资料','reason':'负责人修改'},owner_base['rowVersion'])
+  check('effective owner can propose ordinary metadata',owner_change['outcome']=='pending')
   check('stale reschedule is rejected',call('alpha-one-head','PATCH','/tasks/'+task,body,base['rowVersion']+1)[0]==412)
   preview=ok('alpha-one-head','POST','/tasks/reviewer-preview',{'taskId':task,'operation':'reschedule'})
   check('viewer preview routes to operator manager',preview['reviewerId']==ids['alpha-head'])

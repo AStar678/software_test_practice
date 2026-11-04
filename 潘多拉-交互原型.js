@@ -698,7 +698,7 @@ function paletteIndexOf(t){
 /* 无标签任务的统一默认粉色：只在未标记时使用，且刻意不进入标签色板 */
 const DEFAULT_TASK_COLOR = { bg: "#ffe1ea", bd: "#e39ab4" };
 const TAG_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
-/* 任务底色优先私人标签，否则取首个共用标签；日志仍单选，无标签用默认粉色。 */
+/* 任务底色取首个共用标签；无标签时用默认粉色。 */
 function taskColorVars(t){
   const tag = t && t.tag;
   if (tag && TAG_COLOR_PATTERN.test(String(tag.color || ""))) {
@@ -1470,6 +1470,13 @@ function openSheet(view){
   if (sheetStack.some(item => item.notification)) {
     view = { ...view, notification: true };
   }
+  if (sheetStack.some(item => item.subordinate)) view = { ...view, subordinate: true };
+  const current = sheetStack[sheetStack.length - 1];
+  if (current) {
+    current.savedScroll = sheetBodyEl.scrollTop;
+    const focused = document.activeElement;
+    current.savedFocus = focused?.id ? '#'+CSS.escape(focused.id) : null;
+  }
   if (!lastFocused) lastFocused = document.activeElement;
   sheetStack.push(view);
   renderSheet();
@@ -1488,8 +1495,13 @@ function backSheet(){
   const top = sheetStack[sheetStack.length - 1];
   if (top && typeof top.rebuild === "function") sheetStack[sheetStack.length - 1] = top.rebuild();
   renderSheet();
+  if (top) {
+    sheetBodyEl.scrollTop = top.savedScroll || 0;
+    if (top.savedFocus) sheetBodyEl.querySelector(top.savedFocus)?.focus({preventScroll:true});
+  }
 }
 function closeSheet(){
+  if (sheetStack.length > 1 && sheetStack.some(item => item.subordinate)) {backSheet();return;}
   sheetStack = [];
   clearDrafts();
   renderSheet();
