@@ -2,11 +2,13 @@
 
 ## 需求
 
-- [V4 修订版](requirements/潘多拉-产品需求文档-V4修订版.md)：2026-10-30 的需求基线。当前正在实施的 [OpenSpec 变更](../openspec/changes/refine-notifications-task-editing-and-staff-browsing/specs/pandora-requirements-aligned-prototype/spec.md) 更新了私人标签、日志多标签、任务编辑、下属浏览、通知和管理员读号等口径；实施进度见该 change 的 `tasks.md` 与 `implementation-notes.md`，独立验证另行进行。
+- [V5 修订版](requirements/潘多拉-产品需求文档-V5修订版.md)：当前需求入口，2026-11-01（2026-11-04开始进行的变更refine-notifications-task-editing-and-staff-browsing，尚未同步至PRD）；整合申请人直属上级审核、公司标签多选、负责人树、月/日拖动与待审投影、任务表单范围、日志创建/编辑分离、下属工作区和通知筛选；各端进度和验证结果另见工程记录。
+- [V5 变更对照](reviews/潘多拉-PRD-V5变更对照-2026-11-01.md)：V5 逐条落点、旧规则替换和待确认边界。
+- [V4 修订版](requirements/潘多拉-产品需求文档-V4修订版.md)：上一版历史基线，未被 V5 替换的规则仍有效。
 - [V4 后续变更对照](reviews/潘多拉-PRD-V4后续变更对照-2026-10-30.md)：从 `216be51` 起追踪 PR #15—#24，区分更改指导/OpenSpec 来源与其余代码挖掘结果，记录旧规则替换及未交付范围。
-- [2026-10-28 更改指导](reviews/更改指导.md)：固定位置、独立身份、审核和 Web 交互的历史需求来源，已整合入当前 V4；对应 [已归档 change](../openspec/changes/archive/2026-10-29-refactor-pandora-organization-and-workflows/)，验证结论仅适用其注明基线。
+- [2026-10-28 更改指导](reviews/更改指导.md)：固定位置、独立身份、审核和 Web 交互的历史需求来源，已整合入 V4，V5 继续覆盖冲突条款；对应 [已归档 change](../openspec/changes/archive/2026-10-29-refactor-pandora-organization-and-workflows/)，验证结论仅适用其注明基线。
 - [V3 修订版](requirements/潘多拉-产品需求文档-V3修订版.md)：上一版需求基线，整合 2026-10-21 的 8 条反馈；保留供追溯。
-- [V4 编写前参考（历史）](requirements/潘多拉-产品需求文档-V4编写前必读-已确认保留行为与修订参考-新需求优先.md)：只保留 2026-10-25 创建 V4 前的决策背景，不再要求编写前阅读或沿用冲突旧规则，当前口径见 V4 正文。
+- [V4 编写前参考（历史）](requirements/潘多拉-产品需求文档-V4编写前必读-已确认保留行为与修订参考-新需求优先.md)：只保留 2026-10-25 创建 V4 前的决策背景，不再要求编写前阅读或沿用冲突旧规则，当前口径见 V5 正文。
 - [Web 与管理端代码修改清单](reviews/潘多拉-Web与管理端代码修改清单-2026-10-25.md)：记录 25 项待实施/已收口要求、代码入口及核对要点，不表示已经实施或验收通过。
 - [甲方反馈与最新代码差异](reviews/潘多拉-甲方反馈差异分析-2026-10-21.md)：基于 `29ada01` 的静态核对，只适用 V3 的 8 条反馈；V4 反馈所指 `4a4b9b4` 已在当前仓库中，可据此补充差异分析。
 
