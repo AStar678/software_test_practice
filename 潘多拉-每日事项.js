@@ -18,6 +18,7 @@
     detail: null, listScroll: null, closeFocus: null, closePosition: null,
     formOrigin: "calendar", sessionSeq: 0, generation: 0
   };
+  let pendingSheetQuery = null;
 
   /* ------------------------------------------------------------ 日期工具 */
   function pad(n) { return n < 10 ? "0" + n : "" + n; }
@@ -68,6 +69,7 @@
   function blockIndex(key) { return S.blocks.findIndex(block => block.key === key); }
 
   function clearSession() {
+    cancelSheetQuery();
     S.generation++;
     clearTimeout(S.scrollTimer);
     S.scrollTimer = null;
@@ -487,6 +489,31 @@
   }
 
   /* ------------------------------------------------------------ 日清单 */
+  function cancelSheetQuery() {
+    pendingSheetQuery = null;
+  }
+  function queryForSheet(read, apply, errorId) {
+    cancelSheetQuery();
+    const query = { source: sheetStack[sheetStack.length - 1], page: state.page, generation: S.generation };
+    const current = () => pendingSheetQuery === query && sameSession(query.generation) &&
+      state.page === query.page && sheetStack[sheetStack.length - 1] === query.source;
+    pendingSheetQuery = query;
+    // Read requests already expose loading through P.request. Keep close/back and
+    // a replacement date usable while waiting; writes retain the command lock.
+    (async () => {
+      try {
+        const result = await read();
+        if (current()) apply(result);
+      } catch (error) {
+        if (current() && error.name !== "AbortError") {
+          showSheetError(errorId, error.message);
+          P.notice(error.message);
+        }
+      } finally {
+        if (pendingSheetQuery === query) pendingSheetQuery = null;
+      }
+    })();
+  }
   function listEntry(date) {
     let entry = S.lists.get(date);
     if (!entry) { entry = { items: [], total: 0, next: null, loading: false, error: null, token: 0 }; S.lists.set(date, entry); }
@@ -535,11 +562,10 @@
   }
   function openList(date, trigger) {
     S.selected = date;
-    const generation = S.generation;
-    P.busy(async () => {
+    queryForSheet(async () => {
       const entry = S.lists.get(date);
-      if (!entry || (!entry.items.length && !entry.loading)) await loadList(date, 0);
-      if (!sameSession(generation)) return;
+      if (!entry || !entry.items.length) await loadList(date, 0);
+    }, () => {
       S.listScroll = { date: date, top: 0 };
       S.closeFocus = trigger || null;
       const scroller = document.getElementById("dailyScroller");
@@ -601,11 +627,8 @@
         '<button type="button" class="btn danger" data-action="daily-delete" data-id="' + esc(raw.id) + '">删除</button>') };
   }
   function openDetail(id) {
-    const generation = S.generation;
     if (topKind() === "list") S.listScroll = { date: openListDate(), top: sheetBodyEl.scrollTop, focus: id };
-    P.busy(async () => {
-      const raw = await P.request("/daily-items/" + encodeURIComponent(id));
-      if (!sameSession(generation)) return;
+    queryForSheet(() => P.request("/daily-items/" + encodeURIComponent(id)), raw => {
       S.detail = { raw: raw, etag: '"' + raw.rowVersion + '"' };
       openSheet(detailView(raw));
     }, "daily-list-error");
@@ -814,14 +837,26 @@
   }
 
   /* 把重新渲染后的清单滚动位置和焦点恢复到离开前的位置。 */
+  const baseOpenSheet = openSheet;
+  openSheet = function (view) {
+    cancelSheetQuery();
+    return baseOpenSheet(view);
+  };
+  const baseReplaceTopSheet = replaceTopSheet;
+  replaceTopSheet = function (view) {
+    cancelSheetQuery();
+    return baseReplaceTopSheet(view);
+  };
   const baseBackSheet = backSheet;
   backSheet = function () {
+    cancelSheetQuery();
     baseBackSheet();
     if (topKind() !== "detail") S.detail = null;
     restoreListPosition();
   };
   const baseCloseSheet = closeSheet;
   closeSheet = function () {
+    cancelSheetQuery();
     const focus = S.closeFocus;
     const position = S.closePosition;
     S.closeFocus = null; S.closePosition = null;
@@ -843,6 +878,11 @@
       }
       scroller.scrollTop = 0;
     }
+  };
+  const baseSetPage = setPage;
+  setPage = function (page) {
+    if (page !== state.page) cancelSheetQuery();
+    return baseSetPage(page);
   };
 
   /* 选择器统一在动作分发之前拦截，避免被旧个人事项处理器吞掉。 */

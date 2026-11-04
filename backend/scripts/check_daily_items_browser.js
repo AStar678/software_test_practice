@@ -315,6 +315,7 @@ async function main() {
       await ev("document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.dailyDate==='" + fixture.today + "'"));
 
     await require('./check_daily_items_repairs_browser')(b, fixture, check);
+    await require('./check_daily_items_lifecycle_browser')(b, fixture, check);
 
     await ev("Pandora.logout()");
     await waitFor(b, "!!document.getElementById('backend-login')&&Pandora.idle()", 20000);
