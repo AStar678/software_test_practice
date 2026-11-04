@@ -2,7 +2,7 @@
 
 ## 需求
 
-- [V4 修订版](requirements/潘多拉-产品需求文档-V4修订版.md)：当前需求入口，2026-10-30 更新至 `5f551d2`；整合固定组织、独立管理员、业务责任方审核及接管、日程清单/全天归类、四组任务列、日志逐层搜索、私人标签、加载反馈及跨端质量要求，正文、验收标准与演示要求同步更新；各端进度和验证结果另见工程记录。
+- [V4 修订版](requirements/潘多拉-产品需求文档-V4修订版.md)：2026-10-30 的需求基线。当前正在实施的 [OpenSpec 变更](../openspec/changes/refine-notifications-task-editing-and-staff-browsing/specs/pandora-requirements-aligned-prototype/spec.md) 更新了私人标签、日志多标签、任务编辑、下属浏览、通知和管理员读号等口径；实施进度见该 change 的 `tasks.md` 与 `implementation-notes.md`，独立验证另行进行。
 - [V4 后续变更对照](reviews/潘多拉-PRD-V4后续变更对照-2026-10-30.md)：从 `216be51` 起追踪 PR #15—#24，区分更改指导/OpenSpec 来源与其余代码挖掘结果，记录旧规则替换及未交付范围。
 - [2026-10-28 更改指导](reviews/更改指导.md)：固定位置、独立身份、审核和 Web 交互的历史需求来源，已整合入当前 V4；对应 [已归档 change](../openspec/changes/archive/2026-10-29-refactor-pandora-organization-and-workflows/)，验证结论仅适用其注明基线。
 - [V3 修订版](requirements/潘多拉-产品需求文档-V3修订版.md)：上一版需求基线，整合 2026-10-21 的 8 条反馈；保留供追溯。

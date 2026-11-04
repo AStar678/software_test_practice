@@ -123,7 +123,7 @@
         <button class="primary" id="employeeNew">新增员工</button>
       </div>
       <div id="employeeSecret"></div>
-      <table><thead><tr><th>姓名</th><th>部门/职位</th><th>团队</th><th>直属上级</th><th>组织身份</th><th>状态</th><th></th></tr></thead>
+      <table><thead><tr><th>姓名</th><th>登录手机号</th><th>部门/职位</th><th>团队</th><th>直属上级</th><th>组织身份</th><th>状态</th><th></th></tr></thead>
         <tbody id="employeeRows"></tbody></table>
     </section>
 
@@ -217,7 +217,7 @@
 <dialog id="employeeDialog">
   <h2 id="employeeDialogTitle">员工身份资料</h2><input type="hidden" id="employeeId">
   <label for="fDisplayName">姓名</label><input id="fDisplayName">
-  <label for="fPhone">登录手机号（仅写入；编辑留空表示不修改）</label><input id="fPhone" inputmode="tel" autocomplete="off">
+  <label for="fPhone">登录手机号</label><input id="fPhone" inputmode="tel" autocomplete="off">
   <p id="employeeNewHint" class="muted">新员工加入组织草稿后，请安排完整位置与职位，再统一保存。</p>
   <div class="row"><button class="primary" id="employeeSave">保存</button><button class="ghost" id="employeeCancel">取消</button></div>
   <div class="error" id="employeeError" role="alert"></div>
@@ -333,10 +333,10 @@ function renderStructure() {
 function renderEmployees() {
   const query=$('employeeQuery').value.trim().toLowerCase();
   $('employeeRows').innerHTML=state.employees.filter(e=>!query||[e.displayName,e.departmentName].some(v=>(v||'').toLowerCase().includes(query))).map(e=>`<tr>
-    <td>${esc(e.displayName)}</td><td>${esc(e.departmentName||'公司')} / ${esc(e.positionName||'—')}</td><td>${esc(e.teamName||'—')}</td>
+    <td>${esc(e.displayName)}</td><td>${esc(e.loginPhone||'未设置')}</td><td>${esc(e.departmentName||'公司')} / ${esc(e.positionName||'—')}</td><td>${esc(e.teamName||'—')}</td>
     <td>${esc(e.managerName||'—')}</td><td>${esc(PLACEMENT_LABELS[e.placementType]||'—')}</td><td>${e.active?'在任':'已停用'}</td>
     <td><button class="ghost" data-edit="${esc(e.id)}">姓名/手机号</button>${e.active?`<button class="ghost" data-reset="${esc(e.id)}">重置密码</button>`:''}</td></tr>`).join('');
-  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEmployee(b.dataset.edit));
+  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEmployee(b.dataset.edit).catch(error=>fail(error.message)));
   document.querySelectorAll('[data-reset]').forEach(b=>b.onclick=async()=>{
     if(!confirm('重置密码并撤销此员工全部会话？'))return;
     try {const r=(await api('POST','/api/v1/admin/employees/'+b.dataset.reset+'/password-reset',undefined,{key:newKey()})).body;
@@ -581,11 +581,11 @@ async function withdrawEvent(eventId) {
 function plannedFounderId() {
   return state.structure?.organization.founderEmployeeId||state.planDraft?.founderEmployeeId||null;
 }
-function openEmployee(id,placementType='employee') {
+async function openEmployee(id,placementType='employee') {
   if(!id&&placementType==='founder'&&plannedFounderId()){fail('公司已有创始人安排，请查看组织调整草稿。');return;}
-  const employee=id?state.employees.find(e=>e.id===id):null;state.editing=employee;
+  const employee=id?(await api('GET','/api/v1/admin/employees/'+id)).body:null;state.editing=employee;
   state.newEmployeePlacement=!id&&placementType==='founder'?'founder':'employee';
-  $('employeeId').value=id||'';$('fDisplayName').value=employee?.displayName||'';$('fPhone').value='';
+  $('employeeId').value=id||'';$('fDisplayName').value=employee?.displayName||'';$('fPhone').value=employee?.loginPhone||'';
   $('employeeDialogTitle').textContent=employee?'编辑姓名/登录手机号':state.newEmployeePlacement==='founder'?'新增创始人到草稿':'添加新员工到草稿';$('employeeNewHint').hidden=!!employee;
   $('employeeNewHint').textContent=state.newEmployeePlacement==='founder'?'加入草稿后，请在下方选择展示职位，再保存完整组织结果。保存后成为公司唯一固定创始人。':'新员工加入组织草稿后，请安排完整位置与职位，再统一保存。';
   $('employeeSave').textContent=employee?'保存':'加入草稿';
@@ -596,7 +596,7 @@ async function saveEmployee() {
   try {
     if(!displayName)throw new Error('请填写姓名');
     if(id){const detail=(await api('GET','/api/v1/admin/employees/'+id)).body;
-      await api('PATCH','/api/v1/admin/employees/'+id,{displayName,...(phone?{phone}:{})},{key:newKey(),ifMatch:'"'+detail.rowVersion+'"'});
+      await api('PATCH','/api/v1/admin/employees/'+id,{displayName,...(phone&&phone!==detail.loginPhone?{phone}:{})},{key:newKey(),ifMatch:'"'+detail.rowVersion+'"'});
       await reloadAll();
     }else{
       if(!phone)throw new Error('新员工须填写有效手机号');

@@ -16,7 +16,7 @@ def main():
     fixture.log_path=BASE.parent/'audit/refactor-pandora-organization-and-workflows/web-service.log'
     with fixture as f:
         root=BASE.parent
-        names={without_query(name)[0] for _,name in references((root/'潘多拉-交互原型.html').read_text())}
+        names={without_query(name)[0] for _,name in references((root/'潘多拉-交互原型.html').read_text(encoding='utf-8'))}
         names.update(('潘多拉-交互原型.html','admin.html','index.html','debug.html'))
         resource_report={'updated':dt.datetime.now(dt.timezone.utc).isoformat(),'checks':[]}
         for name in sorted(names):
@@ -24,7 +24,7 @@ def main():
             with urllib.request.urlopen(f'http://127.0.0.1:{f.port}/'+urllib.parse.quote(name)) as response:
                 same=response.read()==source.read_bytes()
             resource_report['checks'].append({'resource':name,'pass':same})
-        (root/'audit/refactor-pandora-organization-and-workflows/served-resources-final.json').write_text(json.dumps(resource_report,ensure_ascii=False,indent=2)+'\n')
+        (root/'audit/refactor-pandora-organization-and-workflows/served-resources-final.json').write_text(json.dumps(resource_report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         if not all(row['pass'] for row in resource_report['checks']):raise AssertionError('Served resources differ from repository')
         manifest={'base':f'http://127.0.0.1:{f.port}','identities':f.identities}
         tokens={key:f.login(key)[1]['token'] for key in ('founder','alpha-one-head','alpha-head','beta-one-employee','alpha-two-employee','alpha-two-head')}

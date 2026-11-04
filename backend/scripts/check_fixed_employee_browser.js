@@ -323,17 +323,17 @@ async function main(){
   await openLogDetail(yesterdayLog.id);
   await ev("document.querySelector('#sheetFoot [data-action=edit-log]').click()");
   const editReady=await waitFor(b,"!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='编辑日志'&&!!document.getElementById('lf-content')&&Pandora.idle()");
-  await ev(`(()=>{const e=document.getElementById('lf-tag');e.value=${js(fixture.tag)};e.dispatchEvent(new Event('change',{bubbles:true}))})()`);
+  await ev(`document.querySelector('#lf-tags [data-action=p-task-tag][data-id="${fixture.tag}"]').click()`);
   sql(`UPDATE work_logs SET created_at=UTC_TIMESTAMP(6)-INTERVAL 25 HOUR WHERE id=${sqlQuote(yesterdayLog.id)}`);
   const createdAtAged=sql(`SELECT DATE_FORMAT(created_at,'%Y-%m-%d %H:%i:%s.%f') FROM work_logs WHERE id=${sqlQuote(yesterdayLog.id)}`);
   await ev(`(()=>{window.__origRequest=Pandora.request;window.__saveRequests=[];Pandora.request=async function(path,options){try{const result=await window.__origRequest.call(this,path,options);window.__saveRequests.push({path,method:options&&options.method,status:200});return result}catch(error){window.__saveRequests.push({path,method:options&&options.method,status:error.status,code:error.code,message:error.message});throw error}}})()`);
   await saveLogForm('Browser stale frozen page write');
   const frozen=await waitFor(b,"!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='编辑日志'&&Pandora.idle()&&!!document.getElementById('lf-error')&&!document.getElementById('lf-error').hidden");
-  const frozenPage=await ev("({requests:window.__saveRequests,notice:document.getElementById('appNotice').textContent,error:(document.getElementById('lf-error')||{}).textContent,errorHidden:(document.getElementById('lf-error')||{}).hidden,sheet:document.getElementById('sheetTitle').textContent,overlay:document.getElementById('overlay').hidden,draft:drafts.log&&{mode:drafts.log.mode,id:drafts.log.id,businessDate:drafts.log.businessDate,content:drafts.log.content,tagId:drafts.log.tagId,taskId:drafts.log.taskId},tagField:(document.getElementById('lf-tag')||{}).value,visibleContent:(document.getElementById('lf-content')||{}).value,visible:!!document.getElementById('lf-content')&&document.getElementById('lf-content').getBoundingClientRect().height>0})");
+  const frozenPage=await ev("({requests:window.__saveRequests,notice:document.getElementById('appNotice').textContent,error:(document.getElementById('lf-error')||{}).textContent,errorHidden:(document.getElementById('lf-error')||{}).hidden,sheet:document.getElementById('sheetTitle').textContent,overlay:document.getElementById('overlay').hidden,draft:drafts.log&&{mode:drafts.log.mode,id:drafts.log.id,businessDate:drafts.log.businessDate,content:drafts.log.content,tagIds:drafts.log.tagIds,taskId:drafts.log.taskId},tagPressed:document.querySelector('#lf-tags [aria-pressed=true]')?.dataset.id,visibleContent:(document.getElementById('lf-content')||{}).value,visible:!!document.getElementById('lf-content')&&document.getElementById('lf-content').getBoundingClientRect().height>0})");
   await ev("Pandora.request=window.__origRequest");
   const yesterdayFrozen=await selfLog(yesterday);
   const createdAtAfter=sql(`SELECT DATE_FORMAT(created_at,'%Y-%m-%d %H:%i:%s.%f') FROM work_logs WHERE id=${sqlQuote(yesterdayLog.id)}`);
-  check('a stale page cannot write after the real 24-hour freeze and keeps the unsaved draft',editReady&&frozen&&yesterdayFrozen.frozen===true&&yesterdayFrozen.editable===false&&yesterdayFrozen.body==='Browser log yesterday backfill'&&createdAtAfter===createdAtAged&&frozenPage.notice.includes('24小时')&&frozenPage.error.includes('24小时')&&!frozenPage.errorHidden&&frozenPage.visible&&frozenPage.visibleContent==='Browser stale frozen page write'&&frozenPage.tagField===fixture.tag&&frozenPage.draft&&frozenPage.draft.mode==='edit'&&frozenPage.draft.id===yesterdayLog.id&&frozenPage.draft.businessDate===yesterday&&frozenPage.draft.content==='Browser stale frozen page write'&&frozenPage.draft.tagId===fixture.tag,{editReady,frozenPage,yesterdayFrozen,createdAtAged,createdAtAfter});
+  check('a stale page cannot write after the real 24-hour freeze and keeps the unsaved draft',editReady&&frozen&&yesterdayFrozen.frozen===true&&yesterdayFrozen.editable===false&&yesterdayFrozen.body==='Browser log yesterday backfill'&&createdAtAfter===createdAtAged&&frozenPage.notice.includes('24小时')&&frozenPage.error.includes('24小时')&&!frozenPage.errorHidden&&frozenPage.visible&&frozenPage.visibleContent==='Browser stale frozen page write'&&frozenPage.tagPressed===fixture.tag&&frozenPage.draft&&frozenPage.draft.mode==='edit'&&frozenPage.draft.id===yesterdayLog.id&&frozenPage.draft.businessDate===yesterday&&frozenPage.draft.content==='Browser stale frozen page write'&&frozenPage.draft.tagIds.includes(fixture.tag),{editReady,frozenPage,yesterdayFrozen,createdAtAged,createdAtAfter});
   await closeSheet();
   check('the frozen log is visibly read-only in the real page',await ev(`document.getElementById('logResults').textContent.includes('已冻结')&&!document.querySelector('#logResults [data-action=edit-log][data-id="${yesterdayLog.id}"]')`));
 
@@ -344,14 +344,14 @@ async function main(){
   const todayRowBefore=sql(`SELECT id,business_date,IFNULL(deleted_at,'NULL'),DATE_FORMAT(created_at,'%Y-%m-%d %H:%i:%s.%f') FROM work_logs WHERE id=${sqlQuote(todayLog.id)}`);
   sql(`UPDATE work_logs SET created_at=UTC_TIMESTAMP(6)-INTERVAL 25 HOUR WHERE id=${sqlQuote(todayLog.id)}`);
   await openLogDate();
-  await ev(`(()=>{const e=document.getElementById('lf-tag');e.value=${js(fixture.tag)};e.dispatchEvent(new Event('change',{bubbles:true}))})()`);
+  await ev(`document.querySelector('#lf-tags [data-action=p-task-tag][data-id="${fixture.tag}"]').click()`);
   await saveLogForm('Browser deleted slot must stay frozen');
   const deletedSlot=await waitFor(b,"!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent==='写日志'&&Pandora.idle()&&!!document.getElementById('lf-error')&&!document.getElementById('lf-error').hidden");
-  const recreateDraft=await ev("({error:(document.getElementById('lf-error')||{}).textContent,notice:document.getElementById('appNotice').textContent,visibleContent:(document.getElementById('lf-content')||{}).value,visible:!!document.getElementById('lf-content')&&document.getElementById('lf-content').getBoundingClientRect().height>0,mode:drafts.log&&drafts.log.mode,id:drafts.log&&drafts.log.id,date:drafts.log&&drafts.log.businessDate,tagId:drafts.log&&drafts.log.tagId,dateField:(document.getElementById('lf-date')||{}).value,tagField:(document.getElementById('lf-tag')||{}).value})");
+  const recreateDraft=await ev("({error:(document.getElementById('lf-error')||{}).textContent,notice:document.getElementById('appNotice').textContent,visibleContent:(document.getElementById('lf-content')||{}).value,visible:!!document.getElementById('lf-content')&&document.getElementById('lf-content').getBoundingClientRect().height>0,mode:drafts.log&&drafts.log.mode,id:drafts.log&&drafts.log.id,date:drafts.log&&drafts.log.businessDate,tagIds:drafts.log&&drafts.log.tagIds,dateField:(document.getElementById('lf-date')||{}).value,tagPressed:document.querySelector('#lf-tags [aria-pressed=true]')?.dataset.id})");
   await closeSheet();
   const todayRowAfter=sql(`SELECT id,business_date,IFNULL(deleted_at,'NULL'),DATE_FORMAT(created_at,'%Y-%m-%d %H:%i:%s.%f') FROM work_logs WHERE id=${sqlQuote(todayLog.id)}`);
   const liveToday=sql(`SELECT COUNT(*) FROM work_logs WHERE author_id=${sqlQuote(ids['alpha-one-employee'].id)} AND business_date=${sqlQuote(today)} AND deleted_at IS NULL`);
-  check('recreating a deleted slot never resets the first-creation freeze window and keeps the recreate draft',deletedSlot&&todayRowAfter.split('\t')[0]===todayLog.id&&todayRowAfter.split('\t')[2]!=='NULL'&&liveToday==='0'&&recreateDraft.error.includes('24小时')&&recreateDraft.notice.includes('24小时')&&recreateDraft.visible&&recreateDraft.visibleContent==='Browser deleted slot must stay frozen'&&recreateDraft.mode==='create'&&!recreateDraft.id&&recreateDraft.date===today&&recreateDraft.dateField===today&&recreateDraft.tagId===fixture.tag&&recreateDraft.tagField===fixture.tag,{before:todayRowBefore,after:todayRowAfter,liveToday,recreateDraft});
+  check('recreating a deleted slot never resets the first-creation freeze window and keeps the recreate draft',deletedSlot&&todayRowAfter.split('\t')[0]===todayLog.id&&todayRowAfter.split('\t')[2]!=='NULL'&&liveToday==='0'&&recreateDraft.error.includes('24小时')&&recreateDraft.notice.includes('24小时')&&recreateDraft.visible&&recreateDraft.visibleContent==='Browser deleted slot must stay frozen'&&recreateDraft.mode==='create'&&!recreateDraft.id&&recreateDraft.date===today&&recreateDraft.dateField===today&&recreateDraft.tagIds.includes(fixture.tag)&&recreateDraft.tagPressed===fixture.tag,{before:todayRowBefore,after:todayRowAfter,liveToday,recreateDraft});
 
   /* -------- personal items: real id new/edit/delete, no list actions, tenth-item limit -------- */
   const logsBefore=await ev("JSON.stringify(Pandora.data.calendarLogs.map(l=>({id:l.id,body:l.body,businessDate:l.businessDate})))");
@@ -411,10 +411,10 @@ async function main(){
   await ev('Pandora.reload()');
   check('manager approval saves new round and replacement without adding business owner',await waitFor(b,`Pandora.idle()&&TASKS.find(t=>t.id===${js(fixture.completedTask)}).status!=='done'`)&&await ev(`(()=>{const t=TASKS.find(t=>t.id===${js(fixture.completedTask)});return t.assigneeIds.length===1&&t.assigneeIds[0]===${js(ids['beta-one-employee'].id)}&&t.creatorId===${js(ids['alpha-two-employee'].id)}&&t.businessOwnerId===${js(ids['beta-two-employee'].id)}&&!t.frozen})()`));
   // The admin acceptance swapped the two team heads; alpha-two-head now manages alpha-one's employee.
-  for(const [key,label,department,team] of [['founder','创始人',false,false],['alpha-head','部门负责人',true,false],['alpha-two-head','团队负责人',true,true]]){
+  for(const [key,label,department,team] of [['founder','创始人',true,false],['alpha-head','部门负责人',true,false],['alpha-two-head','团队负责人',true,true]]){
    await ev('Pandora.logout()');await login(key);await ev("setPage('me')");
    const fields=await ev("Array.from(document.querySelectorAll('[data-profile-fold=organization] .profile-row .k')).map(e=>e.textContent)");
-   check('fixed profile organization fields '+key,await ev(`document.querySelector('[data-profile-fold=organization]').textContent.includes(${js(label)})&&!document.querySelector('[data-action=p-open-teams]')`)&&fields.includes('部门')===department&&fields.includes('团队')===team,fields);
+   check('fixed profile organization fields '+key,await ev(`document.querySelector('[data-profile-fold=organization]').textContent.includes(${js(label)})&&!document.querySelector('[data-action=p-open-teams]')`)&&fields.includes('部门')===department&&fields.includes('团队')===team&&!fields.includes('公司'),fields);
    await ev("document.querySelector('[data-profile-fold=reports]').open=true");
    for(let level=0;level<4;level++){await ev("document.querySelectorAll('[data-action=p-report-toggle][aria-expanded=false]').forEach(node=>node.click())");await sleep(80);}
    check('fixed manager retains subordinate profile and logs '+key,await ev(`!!document.querySelector('[data-action=p-open-person][data-id="${ids['alpha-one-employee'].id}"]')`));
@@ -422,11 +422,11 @@ async function main(){
     /* Stale personal-log filters must not scope the current dedicated person work page. */
     await ev(`state.logDepartmentId='fixture-company-beta';state.logTeamId='fixture-company-beta-one';state.logDepartmentQuery='beta';state.logTeamQuery='beta';state.logAuthorQuery='beta'`);
     await ev(`document.querySelector('[data-action=p-open-person][data-id="${ids['alpha-one-employee'].id}"]').click()`);
-    const personPage=await waitFor(b,"!!document.querySelector('[data-staff-panel]')&&Pandora.idle()");
+    const personPage=await waitFor(b,"!!document.querySelector('[data-action=p-staff-enter][data-tab=logs]')&&Pandora.idle()");
     check('actual descendant contact and log entry '+key,personPage&&await ev("document.getElementById('sheetBody').textContent.includes('手机号')&&!document.getElementById('sheetBody').textContent.includes('邮箱')"),await ev("({title:document.getElementById('sheetTitle').textContent,oldEntry:!!document.querySelector('[data-action=p-open-person-logs]')})"));
     const indirect=await ev(`(()=>{const target=Pandora.data.reports.items.find(p=>p.id===${js(ids['alpha-one-employee'].id)});return {manager:target&&target.managerId,me:Pandora.data.me.id,isDirect:!!target&&target.managerId===Pandora.data.me.id,canRead:!!target&&target.canReadLogs}})()`);
     check('person log target is an indirect descendant, not only a direct report',indirect.manager&&indirect.manager!==indirect.me&&indirect.isDirect===false&&indirect.canRead,indirect);
-    await ev("document.querySelector('[data-action=p-staff-tab][data-tab=logs]').click()");
+    await ev("document.querySelector('[data-action=p-staff-enter][data-tab=logs]').click()");
     const personLogs=await waitFor(b,"Pandora.idle()&&document.querySelectorAll('.staff-log-card').length>0");
     const staffLogState=await ev("({panel:!!document.querySelector('[data-staff-panel]'),tab:document.querySelector('[data-action=p-staff-tab][data-tab=logs]').getAttribute('aria-pressed'),title:document.getElementById('sheetTitle').textContent,cards:Array.from(document.querySelectorAll('.staff-log-card')).map(e=>e.dataset.id),oldEntry:!!document.querySelector('[data-action=p-open-person-logs]'),author:state.logAuthorId,me:Pandora.data.me.id,departmentQuery:state.logDepartmentQuery,teamQuery:state.logTeamQuery,authorQuery:state.logAuthorQuery})");
     const expected=await ev(`Pandora.request('/work-logs?scope=visible&authorId=${ids['alpha-one-employee'].id}&limit=100').then(r=>r.items.map(l=>l.id))`);
@@ -435,16 +435,16 @@ async function main(){
     await b.screenshot(output.replace('employee-browser.json','employee-person-logs.png'));
     /* The reader's own log must stay the only record on the personal page. */
     const ownLog=await api('POST','/work-logs',{body:'负责人本人日志',businessDate:today},{'Idempotency-Key':'head-own-log-'+Date.now()});
-    await ev('closeSheet();Pandora.reload().then(()=>setPage("log"))');
+    await ev('closeSheet();closeSheet();Pandora.reload().then(()=>setPage("log"))');
     await waitFor(b,"Pandora.idle()");
     const personalLogs=await ev("({cards:Array.from(document.querySelectorAll('#logResults [data-log-card]')).map(e=>e.dataset.logCard),selfOnly:filteredLogs(actor()).every(l=>l.authorId===Pandora.data.me.id),peopleFilters:!!document.getElementById('logFindingCard')||!!document.getElementById('logAuthorSelect')||!!document.getElementById('logDepartmentSelect'),count:(document.getElementById('logResultsCount')||{}).textContent})");
     const ownExpected=await ev("Pandora.request('/work-logs?scope=self&limit=100').then(r=>r.items.map(l=>l.id))");
     check('personal log page stays self-only without people filters',personalLogs.selfOnly&&!personalLogs.peopleFilters&&personalLogs.cards.length===1&&personalLogs.cards[0]===ownLog.logId&&personalLogs.cards.every(id=>ownExpected.includes(id))&&!personalLogs.cards.some(id=>expected.includes(id)),{personalLogs,ownExpected,ownLog,expected});
    }else{
     await ev(`document.querySelector('[data-action=p-open-person][data-id="${ids['alpha-one-employee'].id}"]').click()`);
-    const personPage=await waitFor(b,"!!document.querySelector('[data-staff-panel]')&&Pandora.idle()");
+    const personPage=await waitFor(b,"!!document.querySelector('[data-action=p-staff-enter][data-tab=logs]')&&Pandora.idle()");
     check('actual descendant contact and log entry '+key,personPage&&await ev("document.getElementById('sheetBody').textContent.includes('手机号')&&!document.getElementById('sheetBody').textContent.includes('邮箱')"),await ev("({title:document.getElementById('sheetTitle').textContent,oldEntry:!!document.querySelector('[data-action=p-open-person-logs]')})"));
-    await ev("document.querySelector('[data-action=p-staff-tab][data-tab=logs]').click()");
+    await ev("document.querySelector('[data-action=p-staff-enter][data-tab=logs]').click()");
     const readsLogs=await waitFor(b,"Pandora.idle()&&document.querySelectorAll('.staff-log-card').length>0");
     const staffLogs=await ev("Array.from(document.querySelectorAll('.staff-log-card')).map(e=>e.dataset.id)");
     const targetExpected=await ev(`Pandora.request('/work-logs?scope=visible&authorId=${ids['alpha-one-employee'].id}&limit=100').then(r=>r.items.map(l=>l.id))`);

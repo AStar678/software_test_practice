@@ -155,9 +155,7 @@ document.addEventListener('keydown',event=>{
 
 /* 日志卡片：显示标签与冻结状态（第七章/第八章 8.2）。 */
 function logTagHTML(raw) {
-  const tag = raw && raw.tag;
-  if (!tag) return '';
-  return '<span class="p-tag-pill' + (tag.deleted ? ' is-deleted' : '') + '" style="--tag-bg:' + esc(tag.color || '#ffe1ea') + ';--tag-bd:' + esc(tag.border || '#8a8f98') + '">' + esc(tag.name || '标签') + (tag.deleted ? '（已删除）' : '') + '</span>';
+  return ((raw && raw.tags) || []).map(tag => P.tagPillHTML ? P.tagPillHTML(tag) : '').join('');
 }
 logCardHTML = function (l, a) {
   const t = l.taskId ? taskById(l.taskId) : null;
@@ -184,10 +182,10 @@ function freezeText(raw) {
   if (!raw || !raw.frozenAt) return '';
   const at = new Date(raw.frozenAt);
   if (Number.isNaN(at.getTime())) return '';
-  return (raw.frozen ? '已于 ' : '将于 ') + timeText(raw.frozenAt) + (raw.frozen ? ' 冻结，只能查看。' : ' 自动冻结（首次创建后 24 小时）。');
+  return raw.frozen ? '已冻结' : '可编辑至 ' + timeText(raw.frozenAt);
 }
 logDetailView = function (id) {
-  const l = logById(id);
+  const l = P.subordinateMode() ? (P.subordinateLogs.get(id) || logById(id)) : logById(id);
   if (!l) return null;
   const t = l.taskId ? taskById(l.taskId) : null;
   const raw = l.raw || {};
@@ -195,25 +193,25 @@ logDetailView = function (id) {
   return { title: "日志详情", body: '<div class="kv"><span class="k">作者</span><span class="v">' + esc(name) +
       '</span><span class="k">日志日期</span><span class="v">' + esc(raw.businessDate) +
       '</span><span class="k">创建时间</span><span class="v">' + esc(timeText(raw.createdAt)) +
-      '</span><span class="k">编辑权限</span><span class="v">' + (raw.editable ? "本人可编辑" : "只读（" + (raw.frozen ? "已冻结" : "非作者") + "）") +
       '</span><span class="k">冻结</span><span class="v">' + esc(freezeText(raw) || "—") +
       '</span></div><div class="row wrap">' + logTagHTML(raw) + '</div><div class="divider"></div><p class="p-log-reading" style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(l.content) + '</p>' +
       (t ? '<div class="divider"></div><button type="button" class="btn" data-task="' + esc(t.id) + '">关联：' + esc(t.title) + '</button>' : '') +
       '<div class="divider"></div>' + (P.commentsHTML ? P.commentsHTML("log", id) : ''),
-    foot: withBack((raw.editable ? button("edit-log", "编辑日志", id, "primary") : "") + button("sheet-close", "关闭"), actor()) };
+    foot: withBack((raw.editable && !P.subordinateMode() ? button("edit-log", "编辑日志", id, "primary") : "") + button("sheet-close", "关闭"), actor()) };
 };
 openLogDetail = function (id) {
   P.busy(async () => {
     const raw = await P.request("/work-logs/" + endpoint(id));
-    putLog(raw); logSnapshot = { raw, epoch: P.epoch };
+    if (P.subordinateMode()) P.subordinateLogs.set(id,{id:raw.id,authorId:raw.authorId,time:new Date(raw.createdAt),content:raw.body,taskId:raw.taskId,raw});
+    else putLog(raw);
+    logSnapshot = { raw, epoch: P.epoch };
     openSheet(logDetailView(id));
   });
 };
 function logDraft(raw, businessDate) {
   return { id: raw ? raw.id : null, content: raw ? raw.body : "", taskId: raw ? raw.taskId || null : null,
     originalTaskId: raw ? raw.taskId || null : null, relationshipChanged: false,
-    tagId: raw && Object.prototype.hasOwnProperty.call(raw, 'tagId') ? raw.tagId : null,
-    originalTagId: raw && Object.prototype.hasOwnProperty.call(raw, 'tagId') ? raw.tagId : null,
+    tagIds: raw ? (raw.tagIds || []).slice() : [], tagSnapshots: raw ? (raw.tags || []).slice() : [],
     tagTouched: false,
     hiddenTask: !!raw && !Object.prototype.hasOwnProperty.call(raw, "taskId"),
     etag: raw ? version(raw) : null, epoch: P.epoch,
@@ -227,12 +225,6 @@ function logDateOptions() {
     const date = addDays(today, offset);
     return { value: toDateInput(date), label: (offset === 0 ? '今天' : offset === -1 ? '昨天' : '前天') + ' · ' + (date.getMonth()+1) + '月' + date.getDate() + '日' };
   }).reverse();
-}
-function tagSelectHTML(kind, current) {
-  const items = ((P.data.tags || {}).items || []).filter(tag => !tag.deleted || tag.id === current);
-  return '<div class="field p-log-tag"><label for="' + kind + '-tag">标签</label><select id="' + kind + '-tag"><option value=""' + (!current ? ' selected' : '') + '>无标签</option>' +
-    items.map(tag => '<option value="' + esc(tag.id) + '"' + (tag.id === current ? ' selected' : '') + '>' + esc(tag.name) + (tag.deleted ? '（已删除）' : '') + '</option>').join('') +
-    '</select></div>';
 }
 /* 日志分页读取与整体替换：授权边界仍由服务端裁决，页面只替换已授权的完整结果。 */
 async function applyLogAuthor() {
@@ -270,6 +262,7 @@ async function existingLogFor(date) {
   return (result.items || [])[0] || null;
 }
 openLogForm = function (id, date) {
+  if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
   return P.busy(async () => {
     if (id) {
       const raw = logSnapshot && logSnapshot.epoch === P.epoch && logSnapshot.raw.id === id && sheetTitleEl.textContent === "日志详情"
@@ -305,7 +298,7 @@ function logDateEditHTML(d) {
 }
 function logFieldsHTML(d, dateHTML) {
   const linked = d.taskId ? taskById(d.taskId) : null;
-  return '<div class="p-log-meta">' + dateHTML + tagSelectHTML('lf', d.tagId) + '</div>' +
+  return '<div class="p-log-meta">' + dateHTML + (P.tagCollectionHTML ? P.tagCollectionHTML('lf', d.tagIds, d.tagSnapshots) : '') + '</div>' +
     '<div class="field log-content-field"><label for="lf-content">日志内容</label><textarea id="lf-content" maxlength="10000" data-autofocus>' + esc(d.content) + '</textarea></div>' +
     '<div class="field"><label>关联任务（可选）</label>' +
       '<div class="summary-line" id="lf-task-summary">' +
@@ -344,12 +337,9 @@ syncLogDraft = function () {
     const date = document.getElementById("lf-date");
     if (date && date.value) drafts.log.businessDate = date.value;
   }
-  const tag = document.getElementById("lf-tag");
-  if (tag) drafts.log.tagId = tag.value || null;
 };
 document.addEventListener('change', function (event) {
   if (!P.ready || !event.target || !drafts.log) return;
-  if (event.target.id === 'lf-tag') { drafts.log.tagId = event.target.value || null; drafts.log.tagTouched = true; return; }
   if (drafts.log.mode !== 'create' || event.target.id !== 'lf-date') return;
   syncLogDraft();
   if (drafts.log.content.trim()) {
@@ -360,6 +350,7 @@ document.addEventListener('change', function (event) {
   openLogForm(null, event.target.value);
 });
 saveLog = function () {
+  if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
   P.busy(async () => {
     syncLogDraft();
     const d = drafts.log;
@@ -370,7 +361,7 @@ saveLog = function () {
     const body = { body: content };
     if (!d.id) body.businessDate = d.businessDate;
     if (!d.id || d.relationshipChanged || d.taskId !== d.originalTaskId) body.taskId = d.taskId || null;
-    if (!d.id || d.tagTouched) body.tagId = d.tagId || null;
+    if (!d.id || d.tagTouched) body.tagIds = (d.tagIds || []).slice();
     try {
       await P.mutation("work-log:" + (d.id || "new"), d.id ? "PATCH" : "POST",
         "/work-logs" + (d.id ? "/" + endpoint(d.id) : ""), body, d.etag);
@@ -512,30 +503,33 @@ saveLog = function () {
     P.busy(async () => { await P.reload(); openSheet(notificationsView()); });
   };
   function requestResultText(raw) {
-    if (!raw.requestId) return "";
+    if (!raw.requestStatus) return "";
     const kind = REQUEST_KIND[raw.requestKind] || "任务申请";
     const result = REQUEST_RESULT[raw.requestStatus] || raw.requestStatus || "已处理";
     return kind + " · " + result + (raw.requestStatus === "pending" ? "" : "（已办结，不再提供审核按钮）");
   }
   function notificationView(raw) {
     const revoked = !!raw.revoked;
-    let body = '<div class="kv"><span class="k">时间</span><span class="v">' + esc(timeText(raw.createdAt)) +
-      '</span><span class="k">用途</span><span class="v">' + esc(notificationPurpose(raw)) +
-      (raw.objectName ? '</span><span class="k">对象</span><span class="v">' + esc(raw.objectName) : '') +
-      '</span><span class="k">状态</span><span class="v">' + (revoked ? "已撤回" : raw.readAt ? "已读" : "未读") + '</span></div>';
+    const changes = Array.isArray(raw.changes) ? raw.changes : [];
+    let body = '<div class="card-head"><h2>' + esc(raw.eventResult || notificationPurpose(raw)) + '</h2></div>' +
+      '<div class="kv">' + (raw.objectName ? '<span class="k">对象</span><span class="v">'+esc(raw.objectName)+'</span>' : '') +
+      '<span class="k">通知时间</span><span class="v">' + esc(timeText(raw.createdAt)) + '</span></div>';
     if (revoked && !raw.canReadWithdrawnDetails) {
       body += '<div class="divider"></div><p>该通知已被撤回。</p>';
     } else {
       if (revoked) body += '<div class="callout info">该通知已撤回。你作为发起人的上级，可查看原通知内容；此页仅供只读查看。</div>';
-      if (raw.title) body += '<div class="card-head"><h2>' + esc(raw.title) + '</h2></div>';
-      body += '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(raw.summary || "") + '</p>';
-      if (raw.changeSummary && raw.changeSummary !== raw.summary) body += '<p class="tiny muted" style="white-space:pre-wrap">' + esc(raw.changeSummary) + '</p>';
-      if (raw.requestId) body += '<div class="callout info">原申请：' + esc(requestResultText(raw)) + '</div>';
+      const summary = changes.length ? String(raw.summary || '').split('本次变化：')[0] : (raw.summary || '');
+      body += '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(summary) + '</p>';
+      if (changes.length) body += '<div class="p-notice-changes" aria-label="本次变化">' + changes.map(change =>
+        '<div><strong>' + esc(change.label || change.field) + '</strong><span>' + esc(change.before || '空') + '</span><span aria-hidden="true">→</span><span>' + esc(change.after || '空') + '</span></div>').join('') + '</div>';
+      if (!changes.length && raw.changeSummary && raw.changeSummary !== raw.summary) body += '<p class="tiny muted" style="white-space:pre-wrap">' + esc(raw.changeSummary) + '</p>';
+      if (raw.requestStatus) body += '<div class="callout info">申请：' + esc(requestResultText(raw)) + '</div>';
+      if (raw.requestUnavailable) body += '<p class="tiny muted">原申请不可查看。</p>';
       if (raw.relationLost) body += '<div class="callout info">你已不再是该任务负责人；此消息仅保留只读摘要，不能用于修改或审核。</div>';
     }
     body += '<div class="callout" id="notification-error" hidden></div>';
     const buttons = [];
-    if (!revoked && raw.requestId) buttons.push(button("p-open-approval", raw.canReview ? "审核此申请" : "查看原申请结果", raw.requestId, raw.canReview ? "primary" : ""));
+    if (!revoked && raw.canReadRequest && raw.requestId) buttons.push(button("p-open-approval", raw.canReview ? "审核此申请" : "查看原申请", raw.requestId, "primary"));
     /* 同一对象只保留一个跳转：任务消息合并为“查看任务”，评论消息定位评论区，日志消息使用“查看日志”。 */
     const historical = !!(raw.taskId && (raw.relationLost || raw.readonly));
     const objectLabel = raw.focus === "comments" ? "查看评论" : raw.objectType === "log" ? "查看日志" : raw.objectType === "task" ? "查看任务" : "查看相关对象";
@@ -547,8 +541,12 @@ saveLog = function () {
     } else if (!revoked && raw.taskId) {
       buttons.push(button("p-open-notification-task", "查看任务", raw.id));
     }
-    if (!revoked && raw.canWithdraw) buttons.push(button("p-withdraw-notification", "撤回通知", raw.id));
-    if (!revoked) buttons.push(button("p-hide-notification", "删除此消息", raw.id));
+    const more=[];
+    if (!revoked && raw.canWithdrawRequest && raw.requestId) more.push(button('p-withdraw-request','撤销本人申请',raw.requestId));
+    if (!revoked && raw.canWithdraw) more.push(button("p-withdraw-notification", "撤回通知", raw.id));
+    if (!revoked) more.push(button("p-hide-notification", "删除此消息", raw.id));
+    if (more.length) body += '<details class="p-notice-more"><summary>更多操作</summary><div class="row wrap">'+more.join('')+'</div></details>';
+    if (buttons.length && !buttons.some(item=>item.includes('class="btn primary'))) buttons[0]=buttons[0].replace('class="btn ','class="btn primary ');
     return { title: "通知详情", notification: true, body: body, foot: buttons.join("") };
   }
   function historicalTaskView(raw) {
@@ -573,6 +571,7 @@ saveLog = function () {
     }, "notification-error");
   };
   function deleteNotification(id) {
+    if (!confirm('仅从自己的通知列表删除此消息？')) return;
     P.busy(async () => {
       const snapshot = notificationSnapshot;
       if (!snapshot || snapshot.epoch !== P.epoch || snapshot.raw.id !== id) throw new Error("请重新打开通知后再操作。");
@@ -582,6 +581,7 @@ saveLog = function () {
     }, "notification-error");
   }
   function withdrawNotification(id) {
+    if (!confirm('撤回此通知？撤回通知不会撤销业务申请或结果。')) return;
     P.busy(async () => {
       const snapshot = notificationSnapshot;
       if (!snapshot || snapshot.epoch !== P.epoch || snapshot.raw.id !== id) throw new Error("请重新打开通知后再操作。");

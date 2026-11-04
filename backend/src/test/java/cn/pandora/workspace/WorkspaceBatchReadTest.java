@@ -129,17 +129,24 @@ class WorkspaceBatchReadTest {
         var f=new Fixture();
         when(f.access.logAuthorIds(VIEWER)).thenReturn(List.of("viewer"));
         IntStream.range(0,200).forEach(i->f.db.add("work_logs",map("id","l"+i,"authorId","viewer","businessDate","2026-10-29",
-                "createdAt","2026-10-29T09:00:00Z","taskId","t"+i,"tagId","tag"+i,"body","body")));
+                "createdAt","2026-10-29T09:00:00Z","taskId","t"+i,"body","body")));
         f.db.add("tags",map("id","tag30","name","旧标签","color","#F6D5D2","rowVersion",1L,"deletedAt",NOW.toString()));
+        f.db.add("work_log_tags",map("logId","l30","tagId","tag30","ordinal",0,"tagNameSnapshot","旧标签","tagColorSnapshot","#F6D5D2"));
         var result=f.service.logs(VIEWER,Map.of("limit","1","offset","30"));
         assertEquals(200,result.get("total"));
         var row=items(result).getFirst();
         assertEquals("l30",row.get("id"));
         assertFalse(row.containsKey("taskId"));
         assertEquals(true,row.get("editable"));
-        assertEquals(true,((Map<?,?>)row.get("tag")).get("deleted"));
+        assertEquals(List.of("tag30"),row.get("tagIds"));
+        assertEquals(true,((Map<?,?>)((List<?>)row.get("tags")).getFirst()).get("deleted"));
         verify(f.tasks).readableTaskIds(VIEWER,List.of("t30"));
         assertEquals(3,f.db.queries.size());
+        f.db.queries.clear();
+        var widePage=f.service.logs(VIEWER,Map.of("limit","50","offset","20"));
+        assertEquals(50,items(widePage).size());
+        assertEquals(3,f.db.queries.size(),"ordered tag reads remain one batch query across a full page");
+        assertEquals(List.of("tag30"),items(widePage).stream().filter(item->"l30".equals(item.get("id"))).findFirst().orElseThrow().get("tagIds"));
     }
 
     @SuppressWarnings("unchecked")
@@ -161,6 +168,20 @@ class WorkspaceBatchReadTest {
             when(tasks.readableTaskIds(eq(VIEWER),anyCollection())).thenAnswer(c->new HashSet<>(currentReadable));
             when(tasks.readableTaskIds(eq(VIEWER),anyCollection(),eq(true))).thenAnswer(c->{var ids=new HashSet<>(currentReadable);ids.addAll(approvalReadable);return ids;});
             when(tasks.canReadRequest(eq(VIEWER),anyString())).thenAnswer(c->approvalReadable.contains(((String)c.getArgument(1)).replace("r-","t-")));
+            when(tasks.requestAccess(eq(VIEWER),anyCollection())).thenAnswer(c->{
+                @SuppressWarnings("unchecked") Collection<String> ids=(Collection<String>)c.getArgument(1);
+                var readable=new HashSet<String>();var reviewable=new HashSet<String>();
+                for(String id:ids) {
+                    if(id==null)continue;
+                    var request=db.rows.getOrDefault("approval_requests",List.of()).stream().filter(r->id.equals(r.get("id"))).findFirst().orElse(null);
+                    if(request==null)continue;
+                    String taskId=Db.s(request,"taskId");
+                    if(VIEWER.id().equals(request.get("currentReviewerId")) || approvalReadable.contains(taskId))readable.add(id);
+                    if("pending".equals(request.get("status")) && VIEWER.id().equals(request.get("currentReviewerId"))
+                            && (request.get("applicableDeadline")==null || NOW.isBefore(Instant.parse(Db.s(request,"applicableDeadline")))))reviewable.add(id);
+                }
+                return new TaskService.RequestAccess(readable,reviewable);
+            });
         }
         Map<String,Object> add(String id,String type,boolean readable,boolean deleted,boolean withdrawn) {
             String task="t-"+id,version="v-"+id,event="e-"+id,comment="c-"+id,request="r-"+id;
@@ -194,9 +215,16 @@ class WorkspaceBatchReadTest {
                         var value=new LinkedHashMap<>(r);var event=row("domain_events",Db.s(r,"eventId"));
                         value.put("eventRevokedAt",event.get("revokedAt"));value.put("eventExpiresAt",event.get("expiresAt"));
                         var request=row("approval_requests",Db.s(r,"requestId"));
-                        value.put("requestStatus",request.get("status"));value.put("reviewerId",request.get("currentReviewerId"));value.put("applicableDeadline",request.get("applicableDeadline"));
+                        value.put("requestStatus",request.get("status"));value.put("requestTaskId",request.get("taskId"));
+                        value.put("reviewerId",request.get("currentReviewerId"));value.put("applicableDeadline",request.get("applicableDeadline"));
                         return (Map<String,Object>)value;}).toList();
             if(sql.contains("task_version_assignees"))return List.of();
+            if(sql.startsWith("SELECT wt.log_id,"))return source.stream().filter(r->Arrays.asList(args).contains(r.get("logId"))).map(r->{
+                var tag=row("tags",Db.s(r,"tagId"));var value=new LinkedHashMap<>(r);
+                value.put("name",tag.get("name"));value.put("color",tag.get("color"));
+                value.put("deletedAt",tag.get("deletedAt"));value.put("rowVersion",tag.get("rowVersion"));
+                return (Map<String,Object>)value;
+            }).toList();
             if(sql.startsWith("SELECT w.id,"))return source.stream().map(LinkedHashMap::new).map(r->(Map<String,Object>)r).toList();
             Set<Object> ids=new HashSet<>(Arrays.asList(args));
             return source.stream().filter(r->ids.contains(r.get("id")) || (sql.contains("task_id=?") && !sql.contains(" AND id=?") && ids.contains(r.get("taskId"))))

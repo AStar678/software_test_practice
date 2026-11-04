@@ -54,14 +54,6 @@ public class TaskController {
         return tasks.list(actor, filters);
     }
 
-    @PutMapping("/tasks/{id}/personal-tag")
-    public Map<String,Object> personalTag(@RequestAttribute("actor") Actor actor,@PathVariable String id,
-            @RequestHeader(value="Idempotency-Key",required=false) String key,
-            @RequestBody Map<String,Object> input) {
-        return writes.run(actor,key,"PUT /tasks/"+id+"/personal-tag",input,null,
-                () -> tasks.setPersonalTag(actor,id,input));
-    }
-
     /** Authorized assignee candidates; reading a department never puts its people in this list. */
     @GetMapping("/assignee-candidates")
     public Map<String, Object> assigneeCandidates(@RequestAttribute("actor") Actor actor,

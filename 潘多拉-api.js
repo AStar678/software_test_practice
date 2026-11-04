@@ -8,6 +8,9 @@
     data: {}, taskEtags: new Map(), approvalEtags: new Map(),
     logEtags: new Map(), notificationEtags: new Map()
   };
+  P.subordinateMode = () => sheetStack.some(item => item.subordinate);
+  P.subordinateTasks = new Map();
+  P.subordinateLogs = new Map();
   const retries = new Map();
   let working = false, reloadSequence = 0, taskSequence = 0;
   /* Per-module session teardown hooks: pages that cache authorized data register here so logout,
@@ -96,6 +99,7 @@
     [PEOPLE, TASKS, LOGS, NOTIFICATIONS, CONSULTATIONS, COMPANY_ITEMS].forEach(a => a.splice(0));
     Object.keys(PERSONAL_STATE).forEach(k => delete PERSONAL_STATE[k]);
     [P.taskEtags, P.approvalEtags, P.logEtags, P.notificationEtags].forEach(m => m.clear());
+    P.subordinateTasks.clear();P.subordinateLogs.clear();
     retries.clear(); state.actorId = null;
     closeSheet();
     document.querySelectorAll(".page").forEach(el => { el.innerHTML = ""; });
@@ -292,6 +296,8 @@
     return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20);
   }
   P.mutation = async function (slot, method, path, body, etag) {
+    if (P.subordinateMode() && !/^(\/comments\/|\/(tasks|work-logs)\/[^/]+\/comments(?:\/|$))/.test(path))
+      throw new Error('下属浏览仅可评论，请从本人正常入口办理其他操作。');
     const signature = JSON.stringify([method, path, body, etag]);
     let retry = retries.get(slot);
     if (!retry || retry.signature !== signature) {
@@ -341,8 +347,12 @@
   function mapPerson(u) {
     /* departmentName is the real department; teamName is an independent team and must never stand in
        for it (a candidate list grouped by team would hide cross-department choices). */
-    return { id: u.id, name: u.displayName || "相关人员", role: u.placementType || u.role || "employee",
-      dept: u.departmentName || u.department || (u.placementType === "founder" ? "公司层" : "—"), superiorId: u.managerId || null, raw: u };
+    const safe={};
+    Object.keys(u || {}).forEach(key => { if (!['phone','loginPhone','contactPhone','mobile','email'].includes(key)) safe[key]=u[key]; });
+    return { id: safe.id, name: safe.displayName || "相关人员", role: safe.placementType || safe.role || null,
+      dept: safe.departmentName || safe.department || (safe.placementType === "founder" ? "公司层" : "—"),
+      team: safe.teamName || null, position: safe.positionName || null,
+      superiorId: safe.managerId || null, raw: safe };
   }
   // One company-calendar conversion shared by calendar, log and table projections.
   const companyFormatters=new Map(),dayBoundaryCache=new Map();
@@ -370,7 +380,7 @@
       urgency: ({ urgent: "紧急", high: "高", medium: "中", low: "低" })[t.priority] || "中",
       status: t.executionState || "todo", progressNote: t.progressNote || "", reviewNote: "",
       frozen: !!t.frozen || !!t.pending, pinned: !!t.pinned, assignedAt: t.assignedAt || null,
-      pendingKind: t.pendingKind || null, tag: t.personalTag || t.tag || null, tagId: t.tagId || null,
+      pendingKind: t.pendingKind || null, tag: (t.tags || [])[0] || null, tagId: (t.tagIds || [])[0] || null,
       rowVersion: t.rowVersion, acceptanceCriteria: t.acceptanceCriteria || "", raw: t };
   };
   // A display copy for calendars only; TASKS, task details and all write preconditions remain effective.
@@ -383,7 +393,15 @@
       due:raw.allDay?parseISO(raw.dueDate):new Date(raw.dueAt)});
   };
   P.rememberPeople = function (rows) {
-    (rows || []).forEach(u => { if (!personById(u.id)) PEOPLE.push(mapPerson(u)); });
+    (rows || []).forEach(u => {
+      if (!u || !u.id) return;
+      const existing=personById(u.id);
+      const canonical=(P.data?.users || []).find(person=>person.id===u.id);
+      // The current directory wins over a late name-only or older detail response.
+      const merged={...(existing?.raw || {}),...u,...(canonical || {})};
+      const next=mapPerson(merged);
+      if (existing) PEOPLE.splice(PEOPLE.indexOf(existing),1,next); else PEOPLE.push(next);
+    });
   };
   P.upsertTask = function (raw) {
     P.rememberPeople(raw.participants);
