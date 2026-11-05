@@ -82,7 +82,8 @@ def main():
             founder_task=ok('POST','/tasks',{**body,'assigneeIds':[ids['founder']]})
             check('founder remains exempt',founder_task['outcome']=='direct')
             # Independent tag commands: rejected proposals never replace the effective collection.
-            private=ok('POST','/tags',{'scope':'personal','name':'仅本人标签','color':'#E4DEF3'})['tagId']
+            check('personal tag creation rejected',call('POST','/tags',{'scope':'personal','name':'仅本人标签','color':'#E4DEF3'})[0]==400)
+            private=str(uuid.uuid4())
             foreign=ok('POST','/tags',{'name':'其他公司','color':'#D8EAF4'},'other-founder')['tagId']
             deleted=ok('POST','/tags',{'name':'保留删除快照','color':'#FBE3CB'})['tagId']
             invalids=[{'tagIds':[tag1,tag1]},{'tagIds':[foreign]},{'tagIds':[private]},{'tagIds':[tag1],'tagId':tag2}]
@@ -106,7 +107,7 @@ def main():
             ok('PATCH','/approval-requests/'+proposal['requestId'],{'decision':'reject','comment':'保留原标签'},'alpha-one-head',request['rowVersion'])
             check('rejection preserves entire collection',ok('GET','/tasks/'+task)['tagIds']==[tag1,tag2])
             worker()
-            ok('PUT','/tasks/'+founder_task['taskId']+'/personal-tag',{'tagId':private})
+            check('personal tag route is removed',call('PUT','/tasks/'+founder_task['taskId']+'/personal-tag',{'tagId':private})[0] in (404,405))
             check('private tag leaves shared collection intact',ok('GET','/tasks/'+founder_task['taskId'])['tagIds']==[tag1,tag2])
             manifest={'base':f'http://127.0.0.1:{f.port}','identities':f.identities,'taskId':founder_task['taskId'],'emptyTaskId':delete_task,'deletedTaskId':retained_deleted,'deletedTagId':deleted,'sharedTaskId':task,'tagIds':[tag1,tag2]}
             subprocess.run(['node',str(BASE/'scripts/check_task_creation_refinement_browser.js')],env={**os.environ,'PANDORA_BROWSER_FIXTURE':json.dumps(manifest)},check=True)

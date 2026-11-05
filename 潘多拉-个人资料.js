@@ -120,7 +120,7 @@
     const daySheet=s.daySheetDate ? '<section class="staff-day-popup" role="dialog" aria-label="'+esc(s.daySheetDate)+'完整任务清单"><h3>'+esc(s.daySheetDate)+' 日程</h3>'+
       s.rows.filter(raw=>{const range=taskRange(raw),start=P.companyDayStart(s.daySheetDate),end=P.companyDayStart(shiftStaffDate(s.daySheetDate,1));return +range.start===+range.end?range.start>=start&&range.start<end:range.end>start&&range.start<end;}).map(raw=>staffTaskHTML(raw,s.daySheetDate)).join('')+
       '<div class="row"><button type="button" class="btn" data-action="p-staff-day-view">进入日视图</button><button type="button" class="btn" data-action="p-staff-day-close">关闭清单</button></div></section>' : '';
-    return {title:p.displayName+'的工作',fullscreen:true,subordinate:true,body:'<section class="staff-panel" data-staff-panel="'+esc(p.id)+'"><header class="staff-person"><span class="staff-avatar">'+esc(Array.from(p.displayName||'')[0]||'人')+'</span><div><h2>'+esc(p.displayName)+'</h2><p>'+esc(identityLabel(p)+' · '+(p.positionName||''))+'</p><small>'+esc([p.departmentName,p.teamName].filter(Boolean).join(' / ')||'公司层')+'</small></div></header><div class="staff-tabs" role="group" aria-label="下属工作类型">'+[['schedule','日程'],['logs','日志']].map(([tab,label])=>'<button type="button" data-action="p-staff-tab" data-tab="'+tab+'" aria-pressed="'+(s.tab===tab)+'">'+label+'</button>').join('')+'</div>'+dateBar+'<div class="staff-content">'+content+'</div>'+daySheet+(!s.loading&&!s.error&&s.next!=null?'<button type="button" class="btn staff-more" data-action="p-staff-more">加载更早日志</button>':'')+'</section>',foot:'',rebuild:function(){if(staff===s){s.loading=true;s.restoreScroll=this.savedScroll??0;setTimeout(()=>refreshStaff(false),0);}return staffView();}};
+    return {title:p.displayName+'的工作',fullscreen:true,subordinate:true,body:'<section class="staff-panel" data-staff-panel="'+esc(p.id)+'"><header class="staff-person"><span class="staff-avatar">'+esc(Array.from(p.displayName||'')[0]||'人')+'</span><div><h2>'+esc(p.displayName)+'</h2><p>'+esc(identityLabel(p)+' · '+(p.positionName||''))+'</p><small>'+esc([p.departmentName,p.teamName].filter(Boolean).join(' / ')||'公司层')+'</small></div></header><div class="staff-tabs" role="group" aria-label="下属工作类型">'+[['schedule','日程'],['logs','日志']].map(([tab,label])=>'<button type="button" data-action="p-staff-tab" data-tab="'+tab+'" aria-pressed="'+(s.tab===tab)+'">'+label+'</button>').join('')+'</div>'+dateBar+'<div class="staff-content">'+content+'</div>'+daySheet+(!s.loading&&!s.error&&s.next!=null?'<button type="button" class="btn staff-more" data-action="p-staff-more">加载更早日志</button>':'')+'</section>',foot:'',rebuild:function(){if(staff===s){s.loading=true;s.restoreScroll=this.savedScroll??0;s.restoreFocus=this.savedFocus||null;setTimeout(()=>refreshStaff(false),0);}return staffView();}};
   }
   function staffCardView(){
     if(!staff)return null;
@@ -129,11 +129,12 @@
       (p.phone?row('手机号',p.phone):'')+'</div><div class="action-grid"><button type="button" class="btn primary" data-action="p-staff-enter" data-tab="schedule">查看日程</button><button type="button" class="btn" data-action="p-staff-enter" data-tab="logs">查看日志</button></div>',
       foot:withBack(button('sheet-close','关闭'))};
   }
+  P.subordinateKey = function () { return staff && staff.epoch === P.epoch ? staff.person.id + ':' + P.epoch : null; };
   function staffCurrent(s,seq){return staff===s&&s.epoch===P.epoch&&seq===staffSequence&&!!document.querySelector('[data-staff-panel="'+s.person.id+'"]');}
   async function refreshStaff(more){
     const s=staff;if(!s||s.epoch!==P.epoch)return;
     return (async()=>{
-      const seq=++staffSequence, queryRange=staffQueryRange(s);s.loading=true;s.error=null;if(!more)s.rows=[];replaceTopSheet(staffView());
+      const seq=++staffSequence, queryRange=staffQueryRange(s);s.loading=true;s.error=null;if(!more){s.rows=[];P.subordinateTasks.clear();P.subordinateLogs.clear();}replaceTopSheet(staffView());
       try{
         const directory=await P.request('/me/reports');
         if(!(directory.items||[]).some(p=>p.id===s.person.id))throw Error('已无权查看该人员，请关闭后刷新下属资料。');
@@ -157,7 +158,8 @@
         effectiveRows.forEach(raw=>P.subordinateTasks.set(raw.taskId||raw.id,P.mapTask(raw)));
         s.person=person;s.rows=more?s.rows.concat(rows):rows;s.next=next;s.loading=false;replaceTopSheet(staffView());
         if(s.restoreScroll!=null){sheetBodyEl.scrollTop=s.restoreScroll;s.restoreScroll=null;}else restoreStaffAxis();
-      }catch(error){if(!staffCurrent(s,seq))return;s.rows=[];s.next=null;s.person=Object.assign({},s.person,{canSetHandoverPreset:false});delete s.person.phone;s.loading=false;s.error=error.message;replaceTopSheet(staffView());}
+        if(s.restoreFocus){sheetBodyEl.querySelector(s.restoreFocus)?.focus({preventScroll:true});s.restoreFocus=null;}
+      }catch(error){if(!staffCurrent(s,seq))return;P.subordinateTasks.clear();P.subordinateLogs.clear();s.rows=[];s.next=null;s.person=Object.assign({},s.person,{canSetHandoverPreset:false});delete s.person.phone;s.loading=false;s.error=error.message;replaceTopSheet(staffView());}
     })();
   }
   function openPerson(id){

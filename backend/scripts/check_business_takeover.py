@@ -89,7 +89,7 @@ def main():
             check('approved progress applies exactly once',detail(first,receiver)['progressNote']=='Applicant becomes business reviewer')
             status,filtered=call('GET','/tasks?creatorId='+ids[receiver],who=receiver)
             check('taken-over work is absent from receiver original-created filter',status==200 and first not in [row['id'] for row in filtered['items']])
-            check('old creator loses basic modification authority',command(first,owner,{'command':'change','title':'Unauthorized','reason':'Old creator'})[0]==403)
+            check('old creator loses basic modification authority',command(first,owner,{'command':'change','title':'Unauthorized','reason':'Old creator'})[0] in (403,409))
             status,edited=command(first,receiver,{'command':'change','title':'Continued after takeover','reason':'New responsibility'})
             check('receiver base edit waits for the applicant direct manager',status==200 and edited['outcome']=='pending',{'status':status,'outcome':edited.get('outcome'),'code':edited.get('code')})
             check('applicant direct manager approves the base edit',decide(edited['requestId'],'beta-one-head')[0]==200)

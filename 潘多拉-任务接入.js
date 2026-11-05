@@ -73,7 +73,7 @@
       let message=resultMessage(result);
       if (result.requestId && (result.outcome === 'pending' || result.status === 'pending')) {
         try {
-          const saved=await P.request('/approvals/'+encodeURIComponent(result.requestId));
+          const saved=await P.request('/approval-requests/'+encodeURIComponent(result.requestId));
           if (saved.currentReviewerId) message+=' 当前审核人：'+personName(saved.currentReviewerId,saved)+ '。';
         } catch (ignored) { /* the saved request can become unavailable after a route change */ }
       }
@@ -299,7 +299,7 @@
     }
     let extra = draft.mode === "edit" ? textField("tf-reason", "变更原因（必填，最多500字）", draft.reason, 500, false) : "";
     extra += '<div class="callout info">' + esc(previewHint(draft.preview, creation ? "creation" : "non-creation")) + '</div>';
-    view.body = view.body.replace('<div class="callout" id="tf-error" hidden></div>', extra + errorBox("tf-error"));
+    view.body = view.body.replace(/<div class="callout" id="tf-error" hidden(?:="")?><\/div>/, extra + errorBox("tf-error"));
     view.foot = withBack('<button type="button" class="btn primary" data-action="save-task">' +
       (draft.mode === "create" ? '提交任务' : draft.mode === "resubmit" ? '重新提交' : '提交变更') + '</button>');
     view.rebuild = adapterTaskFormView;
@@ -337,7 +337,9 @@
       if (!(mode==='schedule'?P.canRescheduleTask(actor(),taskById(id)):canEditTask(actor(), taskById(id)))) throw new Error(raw.frozen ? "任务正在审核，暂时不能编辑。" : "当前账号不能编辑此任务。");
       const draft = rawFormDraft(raw, mode==='schedule'?'schedule':'edit', mark);
       if (mode!=='schedule' && (raw.editableFields || []).includes('assigneeIds')) await loadCandidates("edit");
-      draft.preview = await previewOperation({ operation: mode==='schedule'?'reschedule':'change', taskId: id, assigneeIds: draft.assigneeIds });
+      const previewBody={ operation: mode==='schedule'?'reschedule':'change', taskId: id, assigneeIds: draft.assigneeIds };
+      if (mode!=='schedule') previewBody.fields=draft.editableFields || [];
+      draft.preview = await previewOperation(previewBody);
       if (!stillHere(mark)) return;
       drafts.task = draft;
       openSheet(taskFormView());
@@ -463,6 +465,7 @@
   }
   // A calendar drop has a separate schedule-only draft and confirmation sheet.
   P.openScheduleChange = async function (id, start, due, rowVersion) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     if (!Number.isFinite(+start) || !Number.isFinite(+due) || due<start) { P.notice('截止不得早于开始。');return; }
     return P.busy(async function () {
       const mark=session(),original=taskById(id),raw=await P.request('/tasks/'+encodeURIComponent(id));
@@ -515,10 +518,13 @@
   window.openTaskDetail = function (id) {
     return P.busy(async function () {
       const mark = session();
+      const source = P.subordinateMode() ? P.subordinateKey() : null;
       const raw = await P.request("/tasks/" + encodeURIComponent(id));
       if (!stillHere(mark)) return;
+      if (source !== (P.subordinateMode() ? P.subordinateKey() : null)) return;
       if (!P.subordinateMode()) taskTag(raw);
       if (!raw.currentVersionId) {
+        if (P.subordinateMode()) { P.notice("下属浏览仅可评论。"); return; }
         const requestId = raw.pendingRequestId || raw.latestRequestId;
         if (!requestId) throw new Error("该任务尚未发布。");
         await openApprovalNow(requestId, mark);
@@ -580,7 +586,7 @@
     let body;
     if (command === "reopen") {
       reopenDraft = Object.assign(reopenSchedule(task),{assigneeIds:task.assigneeIds.slice()});
-      body = '<div class="callout info">当前业务责任方可重开，并同步安排新的有效负责人；保存后进入新执行轮次。</div>' +
+      body = '<div class="callout info">仅任务当前责任方可重开，并同步安排新的有效负责人；保存后进入新执行轮次。</div>' +
         '<div class="callout info">' + esc(previewHint(context.preview, "non-creation")) + '</div>' +
         reopenScheduleHTML() + reopenOwnersHTML() + textField("reopen-reason", "重开原因（必填，最多500字）", "", 500, true) + errorBox(errorId);
     } else {
@@ -594,6 +600,7 @@
   window.noteFormView = function (id) { return actionView("progress", id); };
   window.submitCompleteView = function (id) { return actionView("complete", id); };
   function openAction(command, id) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     return P.busy(async function () {
       const mark = session();
       const raw = await P.request("/tasks/" + encodeURIComponent(id));
@@ -721,6 +728,7 @@
     return { title: kindName[request.kind] + " · " + (request.proposedVersion.title || "申请详情"), body: body, foot: withBack(buttons.join("")), approvalId: id };
   }
   async function openApprovalNow(id, mark) {
+    if (P.subordinateMode()) { P.notice("下属浏览仅可评论。"); return; }
     const request = await P.request("/approval-requests/" + encodeURIComponent(id));
     if (!stillHere(mark)) return;
     reviewContexts.set(id, { request: request, etag: reviewTag(request), mark: mark, slot: newSlot("review:" + id) });
@@ -785,6 +793,7 @@
     return { title: "查看审核申请", body: '<div class="callout info">请先打开申请快照后处理。</div>', foot: request ? '<button type="button" class="btn primary" data-action="p-open-approval" data-id="' + attr(request.id) + '">打开申请</button>' : '<button type="button" class="btn" data-action="sheet-close">关闭</button>' };
   };
   function togglePin(id) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     const task = taskById(id);
     if (!task) return;
     const next = !task.pinned;
@@ -888,6 +897,7 @@
     };
   }
   function openHandoverSheet(taskId) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     return P.busy(async function () {
       const mark = session();
       const raw = await P.request("/tasks/" + encodeURIComponent(taskId));
@@ -968,6 +978,7 @@
     };
   }
   P.openHandoverPreset = function (subjectId, subjectNameArg) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     return P.busy(async function () {
       const mark = session();
       const preset = await P.request("/users/" + encodeURIComponent(subjectId) + "/handover-preset");
