@@ -4,9 +4,9 @@
 - Schema: `spec-driven`
 - Store: local (`/home/rmy/桌面/panDuola`)
 - Implementation root: `/home/rmy/桌面/panDuola`
-- Updated: 2026-11-05 21:45 CST
-- Implementation revision: `143e7af`, dirty worktree; section 4 is not committed.
-- Progress: 23/38 tasks complete. Sections 2.1–2.6, 3.1–3.5 and 4.1–4.5 were implemented and checked; independent verification is still pending.
+- Updated: 2026-11-05 22:01 CST
+- Implementation revision: `45402da`, dirty worktree; section 5 is not committed.
+- Progress: 28/38 tasks complete. Sections 2.1–2.6, 3.1–3.5, 4.1–4.5 and 5.1–5.5 were implemented and checked; independent verification is still pending.
 
 ## Implementation Map
 
@@ -31,7 +31,12 @@
 | 4.3 task colors | `潘多拉-交互原型.js` (`taskColorVars`), `潘多拉-api.js` (`mapTask`), `check_calendar_tags.py`, `check_apply_private_migration_guard.py` | Shared first-tag color and default pink are used in task detail/calendar/subordinate views; reorder, rename, recolor and deleted snapshots checked; private overrides remain removed. |
 | 4.4 personal pin | `TaskService` (`taskView.canPin`, `setPinned`), `潘多拉-任务接入.js`, `check_apply_profile_pin_history.py` | Effective owner only; visible non-owner/unpublished writes are rejected; completed owned tasks remain pin-eligible; pin does not change schedule or other users' order; subordinate path has no action. |
 | 4.5 employee history | `TaskService.detail` (no records), `潘多拉-任务接入.js` detail, `check_apply_profile_pin_history.py` | Multi-round employee detail exposes current progress only and no records timeline; employee admin-history API is denied; administrator history retains all operation entries. |
-| 5–7 | `潘多拉-个人资料.js`, `潘多拉-日程视图.js`, `潘多拉-交互原型.js`, `admin.html`, `OrganizationService.java` | Earlier implementation remains; not part of this session's completion claim. |
+| 5.1 subordinate card and work split | `潘多拉-个人资料.js` (`openPerson`, `staffCardView`, `staffView`), `check_subordinate_workspace.py` | The card opens first with authorized contact and separate schedule/log entries; work data uses a subject-scoped request path without switching the personal calendar/log page. |
+| 5.2 subordinate month/day/list | `潘多拉-个人资料.js` (`staffMonthHTML`, `staffDayHTML`, `refreshStaff`), `check_subordinate_workspace.py` | Dates, task bars and overflow open the hit-date list; all task pages, cross-day/midnight/point/completed/pending, log reading and 320/390/1440 were checked; no drag/resize entry. |
+| 5.3 comment-only chain | `潘多拉-任务接入.js` (subordinate guards), `潘多拉-工作区接入.js`, `潘多拉-api.js` (`P.mutation`), `check_subordinate_workspace_browser.js` | Published and unpublished application paths, task/log detail, child/related navigation and comment writes were tested. Non-comment writes are blocked before the network; direct API remains independently enforced. |
+| 5.4 sheet stack and restoration | `潘多拉-交互原型.js` (`openSheet`, `backSheet`, focus selector), `潘多拉-个人资料.js` (`staffView` restore), `check_subordinate_workspace_browser.js` | Back, header close, Escape and overlay pop only the current staff child detail; date, focus, mode/tab and scroll/page state restore. |
+| 5.5 re-authorization and async isolation | `潘多拉-个人资料.js` (`refreshStaff`, `P.subordinateKey`), `潘多拉-任务接入.js`/`潘多拉-工作区接入.js` stale-response guards, `check_subordinate_workspace.py` | Lost authority clears rows and `P.subordinateTasks/Logs`; retry restores data; delayed task/log responses are discarded when the staff subject or mode changes. |
+| 6–7 | `潘多拉-日程视图.js`, `admin.html`, `OrganizationService.java` | Earlier implementation remains; not part of this session's completion claim. |
 | 8.1–8.4 | Not yet completed | Cross-module acceptance, documentation mapping and final handoff remain open. |
 
 ## Checks Run
@@ -68,7 +73,8 @@
 - These notes are an apply handoff only; they do not establish an independent verification verdict or archive readiness.
 - `check_apply_mixed_edit.py` is the primary section 2 evidence. Its browser phase covers the owner edit form, failed-draft retention, saved current reviewer, reviewer diff, creation-without-old-value, and ordered tag/owner cases.
 - `check_business_takeover.py` was updated because the old creator now receives a field-level rejection after takeover (403/409), not the previous fixed 403; verify the intended current behavior in the independent review.
-- Run the remaining OpenSpec tasks, especially 8.1–8.4, before archive. Sections 5–7 and the earlier 1.x evidence were not re-verified in this session.
+- Run the remaining OpenSpec tasks, especially 8.1–8.4, before archive. Sections 6–7 and the earlier 1.x evidence were not re-verified in this session.
+- `check_subordinate_workspace.py` is the primary section 5 evidence. It uses a real fixture and browser; it does not establish independent verification.
 - `check_apply_profile_pin_history.py` is the primary section 4 evidence. It uses a real browser and real API fixture; it does not establish independent verification.
 - `check_apply_notifications.py` is the primary section 3 evidence. It uses real worker reminders and a real browser; it does not establish independent verification.
 - The old `check_task_creation_refinement.py` private-tag assertions were updated because section 1.5 removed the private-tag route and changed the shared-color rule. Recheck that assertion change in independent review.
