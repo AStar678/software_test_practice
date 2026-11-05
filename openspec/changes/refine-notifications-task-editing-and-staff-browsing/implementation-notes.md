@@ -4,9 +4,9 @@
 - Schema: `spec-driven`
 - Store: local (`/home/rmy/桌面/panDuola`)
 - Implementation root: `/home/rmy/桌面/panDuola`
-- Updated: 2026-11-05 21:18 CST
-- Implementation revision: `59a420e`, dirty worktree; section 3 is not committed.
-- Progress: 18/38 tasks complete. Sections 2.1–2.6 and 3.1–3.5 were implemented and checked; independent verification is still pending.
+- Updated: 2026-11-05 21:45 CST
+- Implementation revision: `143e7af`, dirty worktree; section 4 is not committed.
+- Progress: 23/38 tasks complete. Sections 2.1–2.6, 3.1–3.5 and 4.1–4.5 were implemented and checked; independent verification is still pending.
 
 ## Implementation Map
 
@@ -26,7 +26,12 @@
 | 3.3 result and structured changes | `WorkspaceService` (`safeNotification`, event `changes` projection), `check_apply_notifications.py` | Actual mixed description/progress changes are projected as legal before/after values. Withdrawal removes result, changes, object name, task link and request access; historical fallback remains summary-only. |
 | 3.4 notification detail layout | `潘多拉-工作区接入.js` (`notificationSummary`, `notificationView`, `requestResultText`) | Result heading first, legal changes next, object name/time once, concise request status, one primary action, and accessibly focusable more menu. Verified at 320/390/1440. |
 | 3.5 more actions | `潘多拉-工作区接入.js` (`withdrawRequestFromNotification`, notification actions), `check_apply_notifications_browser.js` | Notification request withdrawal now uses the notification snapshot and current approval version instead of the task approval form. Delete, withdraw notification, and request withdrawal are separately named/confirmed and return to the filtered inbox; 180-second notification withdrawal remains backend-enforced. |
-| 4–7 | `潘多拉-个人资料.js`, `潘多拉-日程视图.js`, `潘多拉-交互原型.js`, `admin.html`, `OrganizationService.java` | Earlier implementation remains; not part of this session's completion claim. |
+| 4.1 safe people cache | `潘多拉-api.js` (`rememberPeople`), `check_apply_profile_pin_history_browser.js` | Name-only summaries no longer overwrite organization fields; complete detail updates known people; explicit null clears fields; phone/email stay out of the general cache. |
+| 4.2 people display | `潘多拉-个人资料.js` (`readonlyRows`, `staffOrgLine`), existing profile/subordinate checks | Own and subordinate profiles have no company data row; identity, position, department, team and company-level placeholders remain separate; position names do not determine identity. |
+| 4.3 task colors | `潘多拉-交互原型.js` (`taskColorVars`), `潘多拉-api.js` (`mapTask`), `check_calendar_tags.py`, `check_apply_private_migration_guard.py` | Shared first-tag color and default pink are used in task detail/calendar/subordinate views; reorder, rename, recolor and deleted snapshots checked; private overrides remain removed. |
+| 4.4 personal pin | `TaskService` (`taskView.canPin`, `setPinned`), `潘多拉-任务接入.js`, `check_apply_profile_pin_history.py` | Effective owner only; visible non-owner/unpublished writes are rejected; completed owned tasks remain pin-eligible; pin does not change schedule or other users' order; subordinate path has no action. |
+| 4.5 employee history | `TaskService.detail` (no records), `潘多拉-任务接入.js` detail, `check_apply_profile_pin_history.py` | Multi-round employee detail exposes current progress only and no records timeline; employee admin-history API is denied; administrator history retains all operation entries. |
+| 5–7 | `潘多拉-个人资料.js`, `潘多拉-日程视图.js`, `潘多拉-交互原型.js`, `admin.html`, `OrganizationService.java` | Earlier implementation remains; not part of this session's completion claim. |
 | 8.1–8.4 | Not yet completed | Cross-module acceptance, documentation mapping and final handoff remain open. |
 
 ## Checks Run
@@ -50,13 +55,21 @@
 | `mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test` | `backend/` | PASS, 111 tests | 2026-11-05 21:13 CST |
 | `python3 backend/scripts/check_web_resources.py --repo . --jar backend/target/pandora-backend-0.1.0.jar --output backend/.runtime/apply-web-resources-section3.json` | Repository root | PASS, 14/14; employee resource hashes refreshed | 2026-11-05 21:13 CST |
 | `node --check 潘多拉-工作区接入.js`; `node --check backend/scripts/check_apply_notifications_browser.js`; `node --check backend/scripts/check_task_creation_refinement_browser.js`; `git diff --check` | Repository root | PASS | 2026-11-05 21:18 CST |
+| `CHROME_BIN=/usr/bin/google-chrome PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_apply_profile_pin_history.py` | Repository root; disposable fixture port 18235 | PASS, 27 checks; cache order, profile labels, pin eligibility and employee/admin history; browser report under `output/apply-profile-pin-history/` | 2026-11-05 21:45 CST |
+| `CHROME_BIN=/usr/bin/google-chrome PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_calendar_tags.py` | Repository root; disposable fixture | PASS, shared first tag, reorder, rename/recolor, deleted snapshot, no private override, 320/390/1440 | 2026-11-05 21:42 CST |
+| `PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_apply_private_migration_guard.py` | Repository root; disposable fixture | PASS, malformed private references abort and healthy V30 preserves shared tasks/pins | 2026-11-05 21:42 CST |
+| `CHROME_BIN=/usr/bin/google-chrome PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_subordinate_workspace.py` | Repository root; disposable fixture | PASS, subordinate profile/work views and no subordinate pin action | 2026-11-05 21:42 CST |
+| `mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test` | `backend/` | PASS, 111 tests | 2026-11-05 21:45 CST |
+| `python3 backend/scripts/check_web_resources.py --repo . --jar backend/target/pandora-backend-0.1.0.jar --output backend/.runtime/apply-web-resources-section4.json` | Repository root | PASS, 14/14 | 2026-11-05 21:45 CST |
+| `node --check 潘多拉-api.js`; `node --check backend/scripts/check_apply_profile_pin_history_browser.js`; `git diff --check` | Repository root | PASS | 2026-11-05 21:45 CST |
 
 ## Verification Reminders
 
 - These notes are an apply handoff only; they do not establish an independent verification verdict or archive readiness.
 - `check_apply_mixed_edit.py` is the primary section 2 evidence. Its browser phase covers the owner edit form, failed-draft retention, saved current reviewer, reviewer diff, creation-without-old-value, and ordered tag/owner cases.
 - `check_business_takeover.py` was updated because the old creator now receives a field-level rejection after takeover (403/409), not the previous fixed 403; verify the intended current behavior in the independent review.
-- Run the remaining OpenSpec tasks, especially 8.1–8.4, before archive. Sections 4–7 and the earlier 1.x evidence were not re-verified in this session.
+- Run the remaining OpenSpec tasks, especially 8.1–8.4, before archive. Sections 5–7 and the earlier 1.x evidence were not re-verified in this session.
+- `check_apply_profile_pin_history.py` is the primary section 4 evidence. It uses a real browser and real API fixture; it does not establish independent verification.
 - `check_apply_notifications.py` is the primary section 3 evidence. It uses real worker reminders and a real browser; it does not establish independent verification.
 - The old `check_task_creation_refinement.py` private-tag assertions were updated because section 1.5 removed the private-tag route and changed the shared-color rule. Recheck that assertion change in independent review.
 - `backend/.runtime/` and generated `output/` artifacts are ignored; tracked audit evidence was restored after checks. Native-client adaptation to `editableFields`, `tagIds/tags`, removed private-tag routes and the subordinate navigation contract remains a separate follow-up.
