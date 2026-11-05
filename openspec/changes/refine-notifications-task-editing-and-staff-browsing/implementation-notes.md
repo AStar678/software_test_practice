@@ -1,54 +1,48 @@
 # Implementation Notes
 
 - Change: `refine-notifications-task-editing-and-staff-browsing`
-- Schema / store: `spec-driven` / local
-- Implementation root: `C:\Users\20943\Desktop\software_test_practice`
-- Updated: 2026-11-05 00:02 CST
-- Revision: `39b06ff` on `codex/apply-notifications-task-staff`, dirty worktree; implementation is not committed.
-- Progress: 7/38 tasks checked. Code spans later tasks, but their full acceptance checks remain open.
+- Schema: `spec-driven`
+- Store: local (`/home/rmy/桌面/panDuola`)
+- Implementation root: `/home/rmy/桌面/panDuola`
+- Updated: 2026-11-05 20:44 CST
+- Implementation revision: `88a6830`, dirty worktree; section 2 is not committed.
+- Progress: 13/38 tasks complete. Section 2.1–2.6 were implemented and checked in this session; independent verification is still pending.
 
 ## Implementation Map
 
-| Task / requirement | Code and checks | Decision / status |
+| Task / requirement / scenario | Code and tests | Decisions / context |
 | --- | --- | --- |
-| 1.1 ordered log tag migration | `backend/src/main/resources/db/migration/V29__work_log_multiple_tags.sql` | Empty V1→V30 and isolated V28→V30 migrations passed. On cloned V28 data, all 36 `work_logs` retained IDs, body, business date, creation and deletion timestamps; pre/post aggregate CRC 3445985899 matched. Original tag backfilled. Old `tag_id` and its FK/index removed; five constraints inspected. |
-| 1.2–1.3 log collection contract | `WorkspaceService.java`, `backend/scripts/check_apply_log_tags.py`, `潘多拉-工作区接入.js`, `WorkspaceBatchReadTest.java` | Ordered `tagIds/tags`, transactional replacement; 17 real API checks passed including home, manager pagination, omitted collection, stale edit, live rename and deleted snapshot. A one-row and 50-row page each used three database queries in the batch test. |
-| 1.4–1.5 remove private tags | `V30__remove_private_tags.sql`, `Tags.java`, `TaskController.java`, `潘多拉-标签评论.js`, `潘多拉-api.js`, `check_calendar_tags.py` | Isolated V28 clone with private sample migrated successfully; malformed reference guard aborts safely. Rewritten 12 API + responsive browser checks passed for shared catalogue, removed private route, ordered display and deleted first tag. Additional preservation and pin checks remain. |
-| 2.1–2.6 field rights, mixed edit and reviewer diff | `TaskService.java`, `潘多拉-任务接入.js`, `backend/scripts/check_apply_mixed_edit.py`, `check_apply_mixed_edit_browser.js` | 14 real API checks and reviewer browser at 320/390/1440 passed. Diff now shows original above proposed and starts with full snapshots collapsed. More lifecycle, ordered tag/owner diff and other identity cases remain. |
-| 3.1–3.5 notification categories and request links | `WorkspaceService.java`, `潘多拉-工作区接入.js` | Reminder/overdue categories, original-request access, event result and structured changes implemented; worker-backed mixed edit notification check passed. Further access and browser matrices remain. |
-| 4–7 people, subordinate view, drag, labels, admin login phone | `潘多拉-api.js`, `潘多拉-个人资料.js`, `潘多拉-日程视图.js`, `潘多拉-交互原型.js`, `admin.html`, `OrganizationService.java` | Subordinate browser checks passed including overlap comment-only and all three widths. Schedule browser checks passed including cancel, lightweight confirmation, exact hour/day changes, full-day gating and year boundary. Admin phone API/browser passed. Further matrix and copy cleanup remain. |
-| 7.3 log detail copy | `潘多拉-工作区接入.js` | Permission row removed; short freeze state with lawful edit action. Own editable/frozen and superior read/comment paths passed in fixed employee/subordinate checks. |
+| 1.1 ordered log tag migration | `backend/src/main/resources/db/migration/V29__work_log_multiple_tags.sql` | Earlier session evidence: empty and V28 upgrade paths passed; log IDs/body/date/timestamps and tag backfill were preserved. |
+| 1.2–1.3 log collection contract | `WorkspaceService.java`, `backend/scripts/check_apply_log_tags.py`, `潘多拉-工作区接入.js`, `WorkspaceBatchReadTest.java` | Earlier session evidence: ordered `tagIds/tags`, transactional replacement, batch reads and deleted snapshots. |
+| 1.4–1.5 remove private tags | `V30__remove_private_tags.sql`, `Tags.java`, `TaskController.java`, `潘多拉-标签评论.js`, `潘多拉-api.js`, `check_calendar_tags.py` | Earlier session evidence: shared-only catalogue, removed private route and stabilized first-tag color. |
+| 2.1 unified field eligibility and preview | `backend/src/main/java/cn/pandora/task/TaskService.java` (`editableFieldsFor`, `reviewerPreview`, `previewFields`, `validateRequestActor`), `潘多拉-任务接入.js` (`openTaskForm`), `backend/scripts/check_apply_mixed_edit.py` | `editableFields` and submit/approve now share one policy: schedule for visible tasks; metadata for effective owner or current business owner; progress for effective owner; owner list for business owner. Preview accepts optional `fields` and rejects unauthorized metadata/progress/order. |
+| 2.2 mixed information and progress edit | `TaskService` (`change`, `submit`, `validateApplicationEffect`, `diff`, `recordFieldChanges`, `recordEffectiveProgress`), `check_apply_mixed_edit.py` | One pending request and one proposed version for mixed changes; approval applies all fields/progress atomically; rejection, withdrawal and expiry publish nothing; founder direct apply and idempotent retry verified; history, effective progress record and one result event verified. |
+| 2.3 dedicated flows and schedule-only boundary | `TaskService` (`complete`, `handover`, `reopen`, validation), `check_visible_schedule_permissions.py`, `check_review_routing.py`, `check_business_takeover.py`, `check_handover_chain.py` | Ordinary edits cannot carry state/round/source. Visible-only users retain schedule edits; completion/handover/reopen remain dedicated. Updated the old takeover assertion to accept the current field-level rejection code (403/409). |
+| 2.4 unified task edit UI | `潘多拉-任务接入.js` (`adapterTaskFormView`, `openTaskForm`, `saveTask`, `taskDetailView`) | One edit entry for metadata, schedule and current progress; unauthorized owner picker and fields removed; owner list visible only with authority; failed submission keeps the form/draft. Fixed edit mode's reason/preview insertion after DOM field filtering. |
+| 2.5 reviewer display and saved request | `潘多拉-任务接入.js` (`finish`, `taskDetailView`, `approvalDetailView`) | Employee detail no longer shows internal responsibility or fixed reviewer rows. Submit success now reads `/approval-requests/{id}` for the saved current reviewer; pending detail reads the current reviewer. Reopen wording no longer exposes the internal owner label. |
+| 2.6 reviewer diff | `潘多拉-任务接入.js` (`differenceHTML`, `diffText`, `approvalDetailView`), `check_apply_mixed_edit_browser.js` | Default view shows authorized changed fields only, original above proposed; ordered owner/tag changes are visible; creation requests show no fabricated old value. Owner form and reviewer diff were checked at 320/390/1440. |
+| 3–7 | `WorkspaceService.java`, `潘多拉-工作区接入.js`, `潘多拉-个人资料.js`, `潘多拉-日程视图.js`, `潘多拉-交互原型.js`, `admin.html`, `OrganizationService.java` | Earlier implementation remains; not part of this session's completion claim. |
+| 8.1–8.4 | Not yet completed | Cross-module acceptance, documentation mapping and final handoff remain open. |
 
 ## Checks Run
 
-| Command / setup | Result |
-| --- | --- |
-| `mvn -o -B -ntp -f .runtime-apply-pom.xml -Dmaven.repo.local=.runtime/m2 -DskipTests package`, `backend/` | PASS. Temporary POM redirects build to ignored `.runtime/target-apply` because Windows holds the old `target` JAR open. |
-| `mvn -o -B -ntp -f .runtime-apply-pom.xml -Dmaven.repo.local=.runtime/m2 test`, `backend/`, outside sandbox for Mockito self-attach | PASS, 111 tests, 0 failures/errors/skips. |
-| `python backend/scripts/check_apply_log_tags.py`, `PANDORA_FIXTURE_JAR=backend/.runtime/target-apply/pandora-backend-0.1.0.jar` | PASS, 17 real API checks against disposable DB. |
-| `mvn -o -B -ntp -f pom.xml -Dmaven.repo.local=.runtime/m2 -Dtest=WorkspaceBatchReadTest test`, `backend/` | PASS, 7 tests including one-row versus 50-row log tag query bound. |
-| `python backend/scripts/check_apply_mixed_edit.py`, same JAR and `CHROME_BIN` | PASS, 14 API checks plus 320/390/1440 reviewer browser checks. |
-| `python backend/scripts/check_visible_schedule_permissions.py`, same JAR | PASS, 22 real API checks; old metadata permission assertion updated to current rule. |
-| `python backend/scripts/check_fixed_notifications.py`, same JAR | PASS, existing real API notification, comment, freeze and retention checks. |
-| `python backend/scripts/check_review_routing.py`, same JAR | PASS, existing real API review and handover routing checks. |
-| `python backend/scripts/check_work_logs.py`, same JAR | Its workspace API portion passed; subsequent old browser script failed on Windows GBK decoding. UTF-8 fix applied. |
-| `python backend/scripts/check_fixed_web.py`, same JAR and `CHROME_BIN=C:\Program Files\Google\Chrome\Application\chrome.exe` | PASS, admin and employee browser suites including admin login phone. Generated tracked `audit/` output must be restored before handoff. |
-| `python backend/scripts/check_subordinate_workspace.py`, same environment | PASS, direct/deep reports, card→work, month/day/log, delayed response, 320/390/1440 and overlap comment-only with comment write and old action blocked. |
-| `python backend/scripts/check_schedule_drag.py`, same environment | PASS, lightweight confirmation, hour/day precision, cancel, full-day and cross-day gating, point task, year boundary and three widths; outputs under `output/task-schedule/`. |
-| `python backend/scripts/check_calendar_tags.py`, same environment | PASS, 12 real API checks and shared-tag browser workflow at 320/390/1440. |
-| `python backend/scripts/check_apply_private_migration_guard.py`, same JAR | PASS, malformed private reference blocks V30 and preserves existing data. |
-| `python backend/scripts/check_apply_admin_login_phone.py`, same JAR | PASS, 8 real API checks. |
-| `python backend/scripts/check_calendar_drawer.py`, same environment | PASS, real browser month/day drawer, focus, gesture, 320/390/1440 layout, full-day projection and continuous month stream. Its generated tracked audit outputs were restored to HEAD after inspection. |
-| `python backend/scripts/check_fixed_workspace_access.py`, same environment | PASS, report/log/person scope, privacy and manager replacement. |
-| `PANDORA_CHECK_OUTPUT=output/communication-apply python backend/scripts/check_fixed_communication_web.py`, same environment | PASS, real shared tag/comment/notification browser including revoked content and historical read-only view. |
-| `python backend/scripts/check_web_resources.py --repo . --jar backend/.runtime/target-apply/pandora-backend-0.1.0.jar --output backend/.runtime/apply-web-resources.json` | PASS, 14/14 source, package and served resource checks after final reviewer/tag cleanup. |
-| `node --check` for edited JS/browser scripts; `git diff --check` | PASS after latest script edits; rerun near handoff. |
+| Command | Working directory / setup | Result / evidence | Run time or revision |
+| --- | --- | --- | --- |
+| `mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test` | `backend/`; local MySQL available | PASS, 111 tests, 0 failures/errors/skips | 2026-11-05 20:33 CST, dirty `88a6830` |
+| `mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 -DskipTests package` | `backend/` | PASS; JAR rebuilt with edited web resources | 2026-11-05 20:39 CST |
+| `CHROME_BIN=/usr/bin/google-chrome PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_apply_mixed_edit.py` | Repository root; disposable fixture port 18228 | PASS, 66 checks; includes owner/reviewer browser phases and 320/390/1440 screenshots under `output/apply-mixed-edit/` | 2026-11-05 20:44 CST |
+| `PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_visible_schedule_permissions.py` | Repository root; disposable fixture | PASS, 22 checks | 2026-11-05 20:30 CST |
+| `PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_review_routing.py` | Repository root; disposable fixture | PASS, routing/direct-apply/takeover/reminder/expiry matrix | 2026-11-05 20:30 CST |
+| `PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_business_takeover.py` | Repository root; disposable fixture | PASS after updating the old field-rights assertion | 2026-11-05 20:31 CST |
+| `CHROME_BIN=/usr/bin/google-chrome PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_handover_chain.py` | Repository root; disposable fixture | PASS, administrator/employee handover chain | 2026-11-05 20:31 CST |
+| `CHROME_BIN=/usr/bin/google-chrome PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_handover_preset.py` | Repository root; disposable fixture | PASS; delegates through review routing and handover chain | 2026-11-05 20:32 CST |
+| `python3 backend/scripts/check_web_resources.py --repo . --jar backend/target/pandora-backend-0.1.0.jar --output backend/.runtime/apply-web-resources-section2.json` | Repository root | PASS, 14/14; cache-busting versions refreshed in `潘多拉-交互原型.html` | 2026-11-05 20:39 CST |
+| `node --check 潘多拉-任务接入.js`; `node --check backend/scripts/check_apply_mixed_edit_browser.js`; `git diff --check` | Repository root | PASS | 2026-11-05 20:44 CST |
 
 ## Verification Reminders
 
-- Do not treat these notes as independent verification or archive authority. 31 tasks remain unchecked.
-- Temporary `backend/.runtime-apply-pom.xml` was removed after the tests; ignored `.runtime/target-apply` remains a local build aid. `PANDORA_FIXTURE_JAR` support in the fixture is intentional for isolated package runs.
-- Full cross-module browser flow, remainder of the permission/lifecycle matrix, batching query counts and copy audit remain open.
-- Historical notification events without provable structure retain their summary; new task event details supply authorized structured changes.
-- The new reviewer diff browser covers title/progress layout and three widths; ordered owner/tag differences and create-without-old-value remain to test.
-- Native clients need a separate later adaptation to `tagIds/tags`, removed private-tag routes, task `editableFields`, and subordinate navigation contract; no legacy dual-write is planned.
+- These notes are an apply handoff only; they do not establish an independent verification verdict or archive readiness.
+- `check_apply_mixed_edit.py` is the primary section 2 evidence. Its browser phase covers the owner edit form, failed-draft retention, saved current reviewer, reviewer diff, creation-without-old-value, and ordered tag/owner cases.
+- `check_business_takeover.py` was updated because the old creator now receives a field-level rejection after takeover (403/409), not the previous fixed 403; verify the intended current behavior in the independent review.
+- Run the remaining OpenSpec tasks, especially 8.1–8.4, before archive. Sections 3–7 and the earlier 1.x evidence were not re-verified in this session.
+- `backend/.runtime/` and generated `output/` artifacts are ignored; tracked audit evidence was restored after checks. Native-client adaptation to `editableFields`, `tagIds/tags`, removed private-tag routes and the subordinate navigation contract remains a separate follow-up.
