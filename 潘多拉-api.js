@@ -397,8 +397,18 @@
       if (!u || !u.id) return;
       const existing=personById(u.id);
       const canonical=(P.data?.users || []).find(person=>person.id===u.id);
-      // The current directory wins over a late name-only or older detail response.
-      const merged={...(existing?.raw || {}),...u,...(canonical || {})};
+      const summary=Object.keys(u).every(key=>key==='id'||key==='displayName');
+      let merged;
+      if (summary) {
+        merged={...(existing?.raw || {})};
+        for (const [key,value] of Object.entries(canonical || {})) if (!(key in merged)) merged[key]=value;
+        Object.assign(merged,u);
+      } else {
+        // Name-only participant summaries never overwrite organization fields. A complete detail
+        // response is allowed to update a known person, while the current directory still fills
+        // fields that are absent from that response.
+        merged={...(existing?.raw || {}),...(canonical || {}),...u};
+      }
       const next=mapPerson(merged);
       if (existing) PEOPLE.splice(PEOPLE.indexOf(existing),1,next); else PEOPLE.push(next);
     });
