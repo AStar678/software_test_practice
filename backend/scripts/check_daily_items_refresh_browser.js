@@ -75,6 +75,61 @@ module.exports = async function checkDailyItemsRefresh(b, fixture, check, eviden
       row.movedForward && row.movedBackward && !row.forward.open && !row.backward.open, row);
   }
 
+  // A hidden-page restore used to retain a zero-width layout retry. Returning and immediately
+  // choosing another month must beat that old work, even after all delayed callbacks have run.
+  // Use actual browser mouse input, capture the immediate target, then assert it again after 650ms.
+  const returns = [];
+  const facts = () => ev(`(()=>{const s=document.getElementById('dailyScroller'),r=s.getBoundingClientRect();
+    const state=PandoraDaily.state;
+    return {anchor:state.anchor,date:state.anchorDate,offset:state.anchorOffset,months:state.blocks.length,
+      visible:Array.from(s.querySelectorAll('[data-daily-date]')).filter(c=>{const x=c.getBoundingClientRect();
+        return x.left>=r.left-1&&x.right<=r.right+1}).map(c=>c.dataset.dailyDate)}})()`);
+  async function mouse(action) {
+    const point = await ev(`(()=>{const r=document.querySelector('[data-action="${action}"]').getBoundingClientRect();
+      return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+    await b.send('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, ...point });
+    await b.send('Input.dispatchMouseEvent', { type: 'mouseReleased', button: 'left', clickCount: 1, ...point });
+  }
+  for (const width of [390, 1440]) {
+    await b.viewport({ width, height: width === 390 ? 844 : 900, mobile: width === 390 });
+    for (const delay of [0, 10]) {
+      for (const action of ['daily-next', 'daily-prev', 'daily-locate', 'daily-today']) {
+        await ev(`document.querySelector('[data-action=daily-locate]').click();
+          document.getElementById('daily-locate').value='2040-01';
+          document.querySelector('[data-action=daily-locate-save]').click()`);
+        await sleep(200);
+        await ev("setPage('view')");
+        await sleep(220);
+        await ev("setPage('map')");
+        if (delay) await sleep(delay);
+        await mouse(action);
+        if (action === 'daily-locate') await ev(`document.getElementById('daily-locate').value='2044-02';
+          document.querySelector('[data-action=daily-locate-save]').click()`);
+        const expected = action === 'daily-next' ? '2040-02' : action === 'daily-prev' ? '2039-12' :
+          action === 'daily-locate' ? '2044-02' : fixture.today.slice(0, 7);
+        const immediate = await facts();
+        await sleep(650);
+        const settled = await facts();
+        const row = { width, delay, action, expected, immediate, settled };
+        returns.push(row);
+        evidence('page-return-navigation', returns);
+        check(`page return at ${width}px + ${delay}ms keeps ${action} after delayed layouts settle`,
+          immediate.anchor === expected && settled.anchor === expected &&
+          settled.visible.some(d => action === 'daily-today' ? d === fixture.today : d === expected + '-01') &&
+          settled.months <= 12, row);
+      }
+    }
+    // A return with no new navigation must still preserve the date and its pixel offset.
+    const before = await facts();
+    await ev("setPage('view')");
+    await sleep(220);
+    await ev("setPage('map')");
+    await sleep(650);
+    const after = await facts();
+    check(`ordinary page return at ${width}px preserves the saved date and pixel offset`,
+      before.date === after.date && Math.abs(before.offset - after.offset) <= 1, { before, after });
+  }
+
   // Leave the suite in its default viewport with a freshly rendered calendar.
   await b.viewport({ width: 390, height: 844, mobile: true });
   await b.send('Page.reload', { ignoreCache: true });

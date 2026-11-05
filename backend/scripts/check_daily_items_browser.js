@@ -499,6 +499,7 @@ async function main() {
       await waitFor(b, "document.getElementById('overlay').hidden") &&
       await ev("document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.dailyDate==='" + fixture.today + "'"));
 
+    await require('./check_daily_items_form_browser')(b, fixture, check);
     await require('./check_daily_items_repairs_browser')(b, fixture, check);
     await require('./check_daily_items_lifecycle_browser')(b, fixture, check);
     await require('./check_daily_items_paging_browser')(b, fixture, check);

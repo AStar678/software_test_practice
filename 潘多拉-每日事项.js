@@ -14,7 +14,7 @@
     epoch: -1, account: null, organization: null,
     companyToday: null, selected: null, anchor: null,
     blocks: [], summaries: new Map(), lists: new Map(),
-    scrollLeft: 0, scrollToken: 0, scrollTimer: null, layoutTimer: null, resizeObserver: null, anchorDate: null, anchorOffset: 0, restoring: false, layoutWidth: 0,
+    scrollLeft: 0, scrollToken: 0, scrollTimer: null, layoutTimer: null, layoutRetryTimer: null, layoutVersion: 0, resizeObserver: null, anchorDate: null, anchorOffset: 0, restoring: false, layoutWidth: 0,
     detail: null, listScroll: null, closeFocus: null, closePosition: null,
     formOrigin: "calendar", sessionSeq: 0, generation: 0
   };
@@ -68,10 +68,7 @@
   function clearSession() {
     cancelSheetQuery();
     S.generation++;
-    clearTimeout(S.scrollTimer);
-    S.scrollTimer = null;
-    clearTimeout(S.layoutTimer);
-    S.layoutTimer = null;
+    cancelLayout();
     if (S.resizeObserver) { S.resizeObserver.disconnect(); S.resizeObserver = null; }
     S.epoch = -1; S.account = null; S.organization = null;
     S.blocks = []; S.summaries.clear(); S.lists.clear();
@@ -179,6 +176,7 @@
     const fresh = !S.blocks.length;
     if (fresh) initialBlocks(today);
     if (!S.selected) S.selected = S.companyToday;
+    cancelLayout();
     host.innerHTML = calendarHTML();
     bindCalendar();
     S.blocks.forEach(loadBlock);
@@ -210,6 +208,17 @@
   }
 
   /* ------------------------------------------------------- 布局与范围补足 */
+  function cancelLayout() {
+    S.layoutVersion++;
+    clearTimeout(S.layoutTimer);
+    clearTimeout(S.layoutRetryTimer);
+    clearTimeout(S.scrollTimer);
+    S.layoutTimer = S.layoutRetryTimer = S.scrollTimer = null;
+  }
+  function currentLayout(scroller, generation, version) {
+    return sameSession(generation) && version === S.layoutVersion &&
+      scroller === document.getElementById("dailyScroller");
+  }
   function monthOffset(scroller, key) {
     const element = scroller.querySelector('.daily-month[data-month="' + key + '"]');
     if (!element) return null;
@@ -266,18 +275,22 @@
      its saved pixel offset (or two cells from the left edge). A hidden or zero-width container is
      retried for a bounded number of frames and abandoned when the session/render generation moves. */
   function layoutCalendar(target) {
+    cancelLayout();
     const opts = target || {};
     const generation = S.generation;
+    const version = S.layoutVersion;
+    const scroller = document.getElementById("dailyScroller");
     const date = parseKey(opts.date) ? opts.date : S.companyToday;
     if (!date) return false;
     const month = date.slice(0, 7);
     const offset = opts.offset;
     const place = (tries) => {
-      if (!sameSession(generation)) return false;
-      const scroller = document.getElementById("dailyScroller");
-      if (!scroller || !S.blocks.length) return false;
+      if (!scroller || !currentLayout(scroller, generation, version) || !S.blocks.length) return false;
       if (!scroller.clientWidth) {
-        if (tries > 0) setTimeout(() => place(tries - 1), 32);
+        if (tries > 0) S.layoutRetryTimer = setTimeout(() => {
+          S.layoutRetryTimer = null;
+          place(tries - 1);
+        }, 32);
         return false;
       }
       S.restoring = true;
@@ -306,16 +319,18 @@
     if (!scroller || typeof ResizeObserver !== "function") return;
     const generation = S.generation;
     S.resizeObserver = new ResizeObserver(() => {
-      if (!sameSession(generation)) return;
+      if (!sameSession(generation) || scroller !== document.getElementById("dailyScroller")) return;
       scheduleLayout();
     });
     S.resizeObserver.observe(scroller);
   }
   function scheduleLayout() {
     if (S.layoutTimer) return;
+    const scroller = document.getElementById("dailyScroller");
+    const generation = S.generation, version = S.layoutVersion;
     S.layoutTimer = setTimeout(() => {
       S.layoutTimer = null;
-      if (!sameSession()) return;
+      if (!currentLayout(scroller, generation, version)) return;
       layoutCalendar({ date: S.anchorDate || S.companyToday, offset: S.anchorOffset });
     }, 60);
   }
@@ -391,9 +406,10 @@
     if (!S.restoring) anchorFromDom(scroller);
     setAnchorFromScroll();
     if (S.scrollTimer) return;
+    const generation = S.generation, version = S.layoutVersion;
     S.scrollTimer = setTimeout(() => {
       S.scrollTimer = null;
-      if (!sameSession()) return;
+      if (!currentLayout(scroller, generation, version) || !scroller.clientWidth) return;
       const right = scroller.scrollWidth - scroller.clientWidth - scroller.scrollLeft;
       if (scroller.scrollLeft < 80) extend(-1);
       else if (right < 80) extend(1);
@@ -729,7 +745,6 @@
       rebuild: formView,
       body: '<div class="field"><label for="daily-date">日期</label><input id="daily-date" type="date" value="' + esc(d.date) + '" data-autofocus /></div>' +
         '<div class="field daily-body-field"><label for="daily-body">内容</label><textarea id="daily-body" maxlength="2000" placeholder="写下今天要记住的事">' + esc(d.body) + "</textarea></div>" +
-        '<div class="tiny muted">每日事项仅本人可见，可填写过去、今天或未来的日期，最多 2000 字。</div>' +
         '<div class="callout" id="daily-form-error" role="alert" hidden></div>',
       foot: dailyWithBack('<button type="button" class="btn primary" data-action="daily-save">保存</button>') };
   }
