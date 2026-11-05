@@ -28,6 +28,8 @@ public class TaskService {
     /** Snapshot fields in a stable order so the recorded history and the reviewer diff are deterministic. */
     private static final List<String> FORM_FIELDS = List.of("title", "description", "acceptanceCriteria", "priority",
             "allDay", "startAt", "dueAt", "startDate", "dueDate", "assigneeIds", "parentTaskId", "tagIds");
+    private static final List<String> ORDINARY_FIELDS = List.of("title", "description", "acceptanceCriteria",
+            "priority", "tagIds", "parentTaskId");
     private static final Set<String> FORM = union(Set.copyOf(FORM_FIELDS), "tagId");
     /** Reopening may replace inactive assignees while preserving the task's base information. */
     private static final Set<String> REOPEN_FORM = Set.of("allDay", "startAt", "dueAt", "startDate", "dueDate", "assigneeIds");
@@ -37,6 +39,7 @@ public class TaskService {
     private static final Set<String> STATES = Set.of("todo", "doing", "done");
     private static final Set<String> PRIORITIES = Set.of("urgent", "high", "medium", "low");
     private static final Set<String> SCHEDULE_FIELDS = Set.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
+    private static final List<String> SCHEDULE_FIELD_ORDER = List.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
     /** Documented default for an organization that has not configured a cut-off. */
     private static final LocalTime DEFAULT_ALL_DAY_CUTOFF = LocalTime.of(18, 0);
     private final Db db;
@@ -692,6 +695,11 @@ public class TaskService {
 
     /** Field-by-field difference between the effective snapshot and the proposal, for the reviewer only. */
     private List<Map<String, Object>> diff(Actor actor, Map<String, Object> base, Map<String, Object> proposed) {
+        return diff(actor, base, proposed, null, null);
+    }
+
+    private List<Map<String, Object>> diff(Actor actor, Map<String, Object> base, Map<String, Object> proposed,
+                                           List<String> beforeOwners, List<String> afterOwners) {
         List<Map<String, Object>> changes = new ArrayList<>();
         if (base == null) return changes;
         for (String field : FORM_FIELDS) {
@@ -705,8 +713,8 @@ public class TaskService {
         if (!Objects.equals(base.get("progressNote"),proposed.get("progressNote")))
             changes.add(Map.of("field","progressNote","before",Objects.toString(base.get("progressNote"),""),
                     "after",Objects.toString(proposed.get("progressNote"),"")));
-        List<String> beforeOrder = assignees(actor, s(base, "id"));
-        List<String> afterOrder = assignees(actor, s(proposed, "id"));
+        List<String> beforeOrder = beforeOwners == null ? assignees(actor, s(base, "id")) : beforeOwners;
+        List<String> afterOrder = afterOwners == null ? assignees(actor, s(proposed, "id")) : afterOwners;
         if (!beforeOrder.equals(afterOrder)) {
             changes.add(Map.of("field", "assigneeIds", "before", String.join(",", beforeOrder), "after", String.join(",", afterOrder)));
         }
@@ -845,9 +853,10 @@ public class TaskService {
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> reviewerPreview(Actor actor, Map<String, Object> input) {
         requireBusiness(actor);access.requireCurrent(actor);
-        allowed(input, Set.of("taskId", "assigneeIds", "operation"));
+        allowed(input, Set.of("taskId", "assigneeIds", "operation", "fields"));
         String requestedOperation = command(input, "operation", "kind", null);
         if (requestedOperation != null && !OPERATIONS.contains(requestedOperation)) throw bad("不支持的操作预览类型");
+        Set<String> requestedFields = previewFields(input);
         String requestedTask = optionalId(input.get("taskId"), "taskId");
         boolean creation = requestedOperation != null ? "create".equals(requestedOperation) : requestedTask == null;
         if (!creation && requestedTask == null) throw bad("非创建预览须提供taskId");
@@ -874,16 +883,25 @@ public class TaskService {
                 validateCreationAssignable(actor, ids(input.get("assigneeIds")));
             }
         } else {
-            List<String> owners = input.containsKey("assigneeIds") ? ids(input.get("assigneeIds"))
-                    : effectiveOwnersForPreview(actor, task, requestedOperation);
+            String currentId = s(task, "currentVersionId");
+            List<String> currentOwners = assignees(actor, currentId);
+            List<String> owners = input.containsKey("assigneeIds") ? ids(input.get("assigneeIds")) : currentOwners;
             for (String id : owners) {
                 Map<String, Object> person = access.activeUser(actor, id);
                 if (person == null || "admin".equals(s(person, "role"))) throw bad("负责人须为本公司有效业务账号");
             }
-            if (!"reschedule".equals(requestedOperation))
-                validateRequestActor(actor,task,version(actor,s(task,"currentVersionId")),
-                        requestedOperation==null?"change":requestedOperation);
-            else if (pending(actor,s(task,"id"),false)!=null || "done".equals(s(task,"executionState")))
+            String operation=requestedOperation==null?"change":requestedOperation;
+            if ("change".equals(operation)) {
+                Set<String> allowed=editableFieldsFor(actor,task,currentOwners,pending(actor,s(task,"id"),false)!=null,s(task,"executionState"));
+                if (requestedFields != null && !allowed.containsAll(requestedFields))
+                    throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已不具备本次字段的修改资格");
+                if (requestedFields == null && allowed.stream().allMatch(SCHEDULE_FIELDS::contains))
+                    throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已不具备本次字段的修改资格");
+                if (!owners.equals(currentOwners) && !allowed.contains("assigneeIds"))
+                    throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已不具备本次字段的修改资格");
+            } else if (!"reschedule".equals(operation)) {
+                validateRequestActor(actor,task,version(actor,currentId),operation);
+            } else if (pending(actor,s(task,"id"),false)!=null || "done".equals(s(task,"executionState")))
                 throw conflict("TASK_NOT_RESCHEDULABLE","审核中或已完成任务不能调整排期");
             route = route(actor, owners, actor.id());
         }
@@ -903,16 +921,17 @@ public class TaskService {
         return result;
     }
 
-    /**
-     * Owners a non-creation preview falls back to when the caller does not send them. Modification and
-     * handover change the proposal itself, so their owners must be supplied instead of guessed.
-     */
-    private List<String> effectiveOwnersForPreview(Actor actor, Map<String, Object> task, String operation) {
-        if (task == null) throw bad("非创建预览须提供负责人或taskId");
-
-        String currentId = s(task, "currentVersionId");
-        if (currentId == null) throw conflict("TASK_NOT_PUBLISHED", "未发布任务没有非创建审核路线");
-        return assignees(actor, currentId);
+    private static Set<String> previewFields(Map<String, Object> input) {
+        if (!input.containsKey("fields")) return null;
+        Object raw=input.get("fields");
+        if (!(raw instanceof List<?> list)) throw bad("fields 必须为数组");
+        LinkedHashSet<String> fields=new LinkedHashSet<>();
+        for (Object item:list) {
+            if (!(item instanceof String field) || !(FORM_FIELDS.contains(field) || "progressNote".equals(field)))
+                throw bad("不支持的任务字段");
+            fields.add(field);
+        }
+        return fields;
     }
 
     /**
@@ -1713,6 +1732,19 @@ public class TaskService {
             insertRecord(actor,taskId,requestId,Objects.toString(proposed.get("progressNote"),""),"progress",true);
     }
 
+    private Set<String> editableFieldsFor(Actor actor, Map<String, Object> task, List<String> owners,
+                                          boolean frozen, String executionState) {
+        LinkedHashSet<String> fields = new LinkedHashSet<>();
+        if (s(task, "currentVersionId") == null || frozen || "done".equals(executionState)) return fields;
+        boolean manager = actor.id().equals(access.businessOwner(task));
+        boolean owner = owners.contains(actor.id());
+        fields.addAll(SCHEDULE_FIELD_ORDER);
+        if (manager || owner) fields.addAll(ORDINARY_FIELDS);
+        if (owner) fields.add("progressNote");
+        if (manager) fields.add("assigneeIds");
+        return fields;
+    }
+
     private Map<String, Object> taskView(Actor actor, Map<String, Object> task, Map<String, Object> version, List<String> owners) {
         Map<String, Object> result = snapshotView(actor, version);
         ReadBatch batch=currentBatch(actor);
@@ -1736,16 +1768,7 @@ public class TaskService {
         result.put("pendingKind", request == null ? null : s(request, "kind"));
         result.put("canReschedule",request==null && !"done".equals(s(task,"executionState")));
         result.put("canPin",owners.contains(actor.id()));
-        var editableFields=new LinkedHashSet<String>();
-        if (request==null && !"done".equals(s(task,"executionState"))) {
-            editableFields.addAll(SCHEDULE_FIELDS);
-            boolean manager=actor.id().equals(access.businessOwner(task));
-            boolean owner=owners.contains(actor.id());
-            if (manager || owner) editableFields.addAll(List.of("title","description","acceptanceCriteria","priority","tagIds","parentTaskId"));
-            if (owner) editableFields.add("progressNote");
-            if (manager) editableFields.add("assigneeIds");
-        }
-        result.put("editableFields",List.copyOf(editableFields));
+        result.put("editableFields",List.copyOf(editableFieldsFor(actor,task,owners,request!=null,s(task,"executionState"))));
         // Calendar-only proposal: never replace effective fields or disclose the full review snapshot.
         if (request != null) {
             Map<String,Object> proposed=version(actor,s(request,"proposedVersionId"));
@@ -2015,18 +2038,14 @@ public class TaskService {
                                       String kind,Map<String,Object> proposed) {
         if ("change".equals(kind) && base!=null && proposed!=null) {
             List<String> beforeOwners=assignees(applicant,s(base,"id"));
-            List<String> afterOwners=proposed.containsKey("assigneeIds") ? ids(proposed.get("assigneeIds")) : assignees(applicant,s(proposed,"id"));
-            boolean manager=applicant.id().equals(access.businessOwner(task));
-            boolean owner=beforeOwners.contains(applicant.id());
-            boolean ownerChanged=!beforeOwners.equals(afterOwners);
-            boolean progressChanged=!Objects.equals(base.get("progressNote"),proposed.get("progressNote"));
-            boolean ordinaryChanged=false;
-            for (String field:List.of("title","description","acceptanceCriteria","priority","parentTaskId"))
-                ordinaryChanged |= !Objects.equals(base.get(field),proposed.get(field));
-            ordinaryChanged |= !Objects.equals(base.get("tagIds"),proposed.get("tagIds"));
-            if (ownerChanged && !manager || progressChanged && !owner || ordinaryChanged && !(manager || owner)
-                    || !access.canSeeTask(applicant,task,base,beforeOwners))
+            List<String> afterOwners=proposed.containsKey("assigneeIds") ? ids(proposed.get("assigneeIds")) : beforeOwners;
+            if (!access.canSeeTask(applicant,task,base,beforeOwners))
                 throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已不具备本次字段的修改资格");
+            Set<String> allowed=editableFieldsFor(applicant,task,beforeOwners,false,s(task,"executionState"));
+            for (var change:diff(applicant,base,proposed,beforeOwners,afterOwners)) {
+                if (!allowed.contains(s(change,"field")))
+                    throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已不具备本次字段的修改资格");
+            }
             return;
         }
         if ("handover".equals(kind)) {
