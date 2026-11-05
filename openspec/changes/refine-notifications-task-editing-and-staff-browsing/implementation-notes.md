@@ -4,9 +4,9 @@
 - Schema: `spec-driven`
 - Store: local (`/home/rmy/桌面/panDuola`)
 - Implementation root: `/home/rmy/桌面/panDuola`
-- Updated: 2026-11-05 20:44 CST
-- Implementation revision: `88a6830`, dirty worktree; section 2 is not committed.
-- Progress: 13/38 tasks complete. Section 2.1–2.6 were implemented and checked in this session; independent verification is still pending.
+- Updated: 2026-11-05 21:18 CST
+- Implementation revision: `59a420e`, dirty worktree; section 3 is not committed.
+- Progress: 18/38 tasks complete. Sections 2.1–2.6 and 3.1–3.5 were implemented and checked; independent verification is still pending.
 
 ## Implementation Map
 
@@ -21,7 +21,12 @@
 | 2.4 unified task edit UI | `潘多拉-任务接入.js` (`adapterTaskFormView`, `openTaskForm`, `saveTask`, `taskDetailView`) | One edit entry for metadata, schedule and current progress; unauthorized owner picker and fields removed; owner list visible only with authority; failed submission keeps the form/draft. Fixed edit mode's reason/preview insertion after DOM field filtering. |
 | 2.5 reviewer display and saved request | `潘多拉-任务接入.js` (`finish`, `taskDetailView`, `approvalDetailView`) | Employee detail no longer shows internal responsibility or fixed reviewer rows. Submit success now reads `/approval-requests/{id}` for the saved current reviewer; pending detail reads the current reviewer. Reopen wording no longer exposes the internal owner label. |
 | 2.6 reviewer diff | `潘多拉-任务接入.js` (`differenceHTML`, `diffText`, `approvalDetailView`), `check_apply_mixed_edit_browser.js` | Default view shows authorized changed fields only, original above proposed; ordered owner/tag changes are visible; creation requests show no fabricated old value. Owner form and reviewer diff were checked at 320/390/1440. |
-| 3–7 | `WorkspaceService.java`, `潘多拉-工作区接入.js`, `潘多拉-个人资料.js`, `潘多拉-日程视图.js`, `潘多拉-交互原型.js`, `admin.html`, `OrganizationService.java` | Earlier implementation remains; not part of this session's completion claim. |
+| 3.1 reminder classification and filters | `WorkspaceService` (`notificationCategory`, `notificationPurpose`, `notificationResult`, `notificationsRead`), `ReminderService.java`, `backend/scripts/check_apply_notifications.py` | Real worker events `task.reminder_20/10/5` and `task.overdue` were generated with a controlled clock. List/detail category and purpose agree; combined unread/reminder filters keep the global unread count; repeat scans do not redeliver. |
+| 3.2 request access projection | `WorkspaceService` (`safeNotification`, `notificationBatch`, `requestAccess`), `check_apply_notifications.py` | Verified applicant, current reviewer, terminal reviewer, ordinary result recipient, removed owner, mismatched/old request binding, and later request separation. `canReadRequest` stays separate from `canReview` and never exposes proposal/diff data. |
+| 3.3 result and structured changes | `WorkspaceService` (`safeNotification`, event `changes` projection), `check_apply_notifications.py` | Actual mixed description/progress changes are projected as legal before/after values. Withdrawal removes result, changes, object name, task link and request access; historical fallback remains summary-only. |
+| 3.4 notification detail layout | `潘多拉-工作区接入.js` (`notificationSummary`, `notificationView`, `requestResultText`) | Result heading first, legal changes next, object name/time once, concise request status, one primary action, and accessibly focusable more menu. Verified at 320/390/1440. |
+| 3.5 more actions | `潘多拉-工作区接入.js` (`withdrawRequestFromNotification`, notification actions), `check_apply_notifications_browser.js` | Notification request withdrawal now uses the notification snapshot and current approval version instead of the task approval form. Delete, withdraw notification, and request withdrawal are separately named/confirmed and return to the filtered inbox; 180-second notification withdrawal remains backend-enforced. |
+| 4–7 | `潘多拉-个人资料.js`, `潘多拉-日程视图.js`, `潘多拉-交互原型.js`, `admin.html`, `OrganizationService.java` | Earlier implementation remains; not part of this session's completion claim. |
 | 8.1–8.4 | Not yet completed | Cross-module acceptance, documentation mapping and final handoff remain open. |
 
 ## Checks Run
@@ -38,11 +43,20 @@
 | `CHROME_BIN=/usr/bin/google-chrome PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_handover_preset.py` | Repository root; disposable fixture | PASS; delegates through review routing and handover chain | 2026-11-05 20:32 CST |
 | `python3 backend/scripts/check_web_resources.py --repo . --jar backend/target/pandora-backend-0.1.0.jar --output backend/.runtime/apply-web-resources-section2.json` | Repository root | PASS, 14/14; cache-busting versions refreshed in `潘多拉-交互原型.html` | 2026-11-05 20:39 CST |
 | `node --check 潘多拉-任务接入.js`; `node --check backend/scripts/check_apply_mixed_edit_browser.js`; `git diff --check` | Repository root | PASS | 2026-11-05 20:44 CST |
+| `CHROME_BIN=/usr/bin/google-chrome PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_apply_notifications.py` | Repository root; disposable fixture port 18231 | PASS, 55 checks; controlled-clock reminder set, request-access matrix, redaction, browser more-menu/request-withdraw flow; screenshots under `output/apply-notifications/` | 2026-11-05 21:18 CST |
+| `PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_fixed_notifications.py` | Repository root; disposable fixture | PASS, existing notification/comment/history lifecycle | 2026-11-05 21:13 CST |
+| `CHROME_BIN=/usr/bin/google-chrome PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_fixed_communication_web.py` | Repository root; disposable fixture | PASS, existing communication/notification browser lifecycle | 2026-11-05 21:13 CST |
+| `CHROME_BIN=/usr/bin/google-chrome PANDORA_FIXTURE_JAR=backend/target/pandora-backend-0.1.0.jar python3 backend/scripts/check_task_creation_refinement.py` | Repository root; disposable fixture | PASS after updating old private-tag assertions to the current shared-only contract; includes notification filters/compact list | 2026-11-05 21:14 CST |
+| `mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test` | `backend/` | PASS, 111 tests | 2026-11-05 21:13 CST |
+| `python3 backend/scripts/check_web_resources.py --repo . --jar backend/target/pandora-backend-0.1.0.jar --output backend/.runtime/apply-web-resources-section3.json` | Repository root | PASS, 14/14; employee resource hashes refreshed | 2026-11-05 21:13 CST |
+| `node --check 潘多拉-工作区接入.js`; `node --check backend/scripts/check_apply_notifications_browser.js`; `node --check backend/scripts/check_task_creation_refinement_browser.js`; `git diff --check` | Repository root | PASS | 2026-11-05 21:18 CST |
 
 ## Verification Reminders
 
 - These notes are an apply handoff only; they do not establish an independent verification verdict or archive readiness.
 - `check_apply_mixed_edit.py` is the primary section 2 evidence. Its browser phase covers the owner edit form, failed-draft retention, saved current reviewer, reviewer diff, creation-without-old-value, and ordered tag/owner cases.
 - `check_business_takeover.py` was updated because the old creator now receives a field-level rejection after takeover (403/409), not the previous fixed 403; verify the intended current behavior in the independent review.
-- Run the remaining OpenSpec tasks, especially 8.1–8.4, before archive. Sections 3–7 and the earlier 1.x evidence were not re-verified in this session.
+- Run the remaining OpenSpec tasks, especially 8.1–8.4, before archive. Sections 4–7 and the earlier 1.x evidence were not re-verified in this session.
+- `check_apply_notifications.py` is the primary section 3 evidence. It uses real worker reminders and a real browser; it does not establish independent verification.
+- The old `check_task_creation_refinement.py` private-tag assertions were updated because section 1.5 removed the private-tag route and changed the shared-color rule. Recheck that assertion change in independent review.
 - `backend/.runtime/` and generated `output/` artifacts are ignored; tracked audit evidence was restored after checks. Native-client adaptation to `editableFields`, `tagIds/tags`, removed private-tag routes and the subordinate navigation contract remains a separate follow-up.
