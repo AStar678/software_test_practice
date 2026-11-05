@@ -20,7 +20,7 @@ from pathlib import Path
 from fixed_model_fixture import Fixture
 from migration_precheck import BASE
 
-AUDIT = BASE.parent / "audit/redesign-home-daily-items"
+AUDIT = BASE.parent / "audit/refine-home-daily-items-layout-and-scrolling"
 REPORT: list[dict] = []
 PASSWORD = "Fixture@123456"
 
@@ -103,6 +103,7 @@ def main():
         with browser as f:
             founder = f.login("founder")[1]["token"]
             person = f.login("alpha-one-employee")[1]["token"]
+            admin = f.login("admin")[1]["token"]
             day = f.call("GET", "/home", token=person)[1]["businessDate"]
             board_day = str(dt.date.fromisoformat(day) + dt.timedelta(days=1))
             board_ids = {key: value["id"] for key, value in f.identities.items()}
@@ -113,21 +114,36 @@ def main():
                     "assigneeIds": [board_ids["alpha-one-employee"]]}, founder, "browser-board-" + str(index) + "-" + uuid.uuid4().hex)
                 if status not in (200, 201):
                     raise AssertionError(("board", index, status, result))
+            # Four short single-line tasks, so the three-row budget is measured on normal rows
+            # rather than on titles that wrap to two lines.
+            for index in range(4):
+                status, result = f.call("POST", "/tasks", {"title": "短任务 " + str(index),
+                    "description": "browser short-row fixture", "priority": "low", "allDay": False,
+                    "startAt": board_day + "T09:00:00+08:00", "dueAt": board_day + "T18:00:00+08:00",
+                    "assigneeIds": [board_ids["alpha-one-employee"]]}, founder, "browser-short-" + str(index) + "-" + uuid.uuid4().hex)
+                if status not in (200, 201):
+                    raise AssertionError(("short-board", index, status, result))
+            # Company information: five short single-line entries for the same row budget.
+            for index in range(5):
+                status, result = f.call("POST", "/admin/company/items", {"body": "公司信息 " + str(index)},
+                    admin, "browser-company-" + str(index) + "-" + uuid.uuid4().hex)
+                if status != 200:
+                    raise AssertionError(("company", index, status, result))
             today = dt.date.fromisoformat(day)
-            # Seeded markers: 1, 2, 3, 4, 5 and 6 items as well as a mixed day.
-            plans = {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 2}
-            for offset, count in plans.items():
+            # Seeded markers, as (open, completed): 1..6 open items, a mixed day with one open and
+            # four completed items, an all-completed day with five items. Day +8 stays empty.
+            plans = {0: (1, 0), 1: (2, 0), 2: (3, 0), 3: (4, 0), 4: (5, 0), 5: (6, 0), 6: (1, 4), 7: (0, 5)}
+            for offset, (open_count, done_count) in plans.items():
                 date = str(today + dt.timedelta(days=offset))
-                for index in range(count):
-                    completed = offset == 6 and index == 0
+                for index in range(open_count + done_count):
                     result = f.call("POST", "/daily-items", {"date": date, "body": f"Seeded item {offset}-{index}"},
                         person, f"browser-seed-{offset}-{index}-" + uuid.uuid4().hex)
                     if result[0] != 200:
                         raise AssertionError(("seed", result))
-                    if completed:
+                    if index >= open_count:
                         item = result[1]
                         f.call("PATCH", "/daily-items/" + item["id"], {"completed": True}, person,
-                            "browser-seed-complete-" + uuid.uuid4().hex, item["rowVersion"])
+                            "browser-seed-complete-" + str(offset) + "-" + str(index) + "-" + uuid.uuid4().hex, item["rowVersion"])
             bulk = str(today + dt.timedelta(days=30))
             for index in range(105):
                 status, result = f.call("POST", "/daily-items", {"date": bulk, "body": "Browser bulk " + str(index)},

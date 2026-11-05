@@ -14,7 +14,7 @@
     epoch: -1, account: null, organization: null,
     companyToday: null, selected: null, anchor: null,
     blocks: [], summaries: new Map(), lists: new Map(),
-    scrollLeft: 0, scrollToken: 0, pendingScroll: null, scrollTimer: null, anchorDate: null, anchorOffset: 0, restoring: false,
+    scrollLeft: 0, scrollToken: 0, scrollTimer: null, layoutTimer: null, resizeObserver: null, anchorDate: null, anchorOffset: 0, restoring: false, layoutWidth: 0,
     detail: null, listScroll: null, closeFocus: null, closePosition: null,
     formOrigin: "calendar", sessionSeq: 0, generation: 0
   };
@@ -46,36 +46,36 @@
   }
 
   /* ------------------------------------------------------------ 月份窗口 */
-  /* A month block owns every week from the week of its 1st to the week of its last day.
-     The week containing the previous month's last day stays in the previous block, so the
-     week sequence is contiguous and one real date never appears twice. */
+  /* Every month owns the whole weeks from the week of its 1st to the week of its last day.
+     Positions in those weeks that belong to another month are non-interactive blanks, so a real
+     date exists in exactly one month block, month headings never share a week column and each
+     heading starts above its own 1st. */
   function blockForMonth(year, monthIndex) {
     const normalized = new Date(year, monthIndex, 1);
     return monthBlock(normalized.getFullYear(), normalized.getMonth() + 1);
   }
   function monthBlock(year, month) {
     const first = monthStart(year, month), last = new Date(year, month, 0);
-    let start = mondayOf(first);
-    const previousLast = new Date(year, month - 1, 0);
-    if (mondayOf(previousLast).getTime() === start.getTime()) start = shift(start, 7);
-    const lastWeek = mondayOf(last);
     const weeks = [];
-    for (let cursor = start, guard = 0; cursor <= lastWeek && guard < 8; cursor = shift(cursor, 7), guard++) weeks.push(dateKey(cursor));
+    for (let cursor = mondayOf(first), guard = 0; cursor <= mondayOf(last) && guard < 8; cursor = shift(cursor, 7), guard++) weeks.push(dateKey(cursor));
     return { key: year + "-" + pad(month), year: year, month: month, weeks: weeks,
-      from: weeks[0], to: dateKey(shift(parseKey(weeks[weeks.length - 1]), 6)) };
+      from: dateKey(first), to: dateKey(last) };
   }
   function monthKeyOf(date) { return date.getFullYear() + "-" + pad(date.getMonth() + 1); }
   function blockContaining(key) { return S.blocks.find(block => key >= block.from && key <= block.to) || null; }
-  function blockIndex(key) { return S.blocks.findIndex(block => block.key === key); }
+  function blockOf(key) { return S.blocks.find(block => block.key === key) || null; }
 
   function clearSession() {
     cancelSheetQuery();
     S.generation++;
     clearTimeout(S.scrollTimer);
     S.scrollTimer = null;
+    clearTimeout(S.layoutTimer);
+    S.layoutTimer = null;
+    if (S.resizeObserver) { S.resizeObserver.disconnect(); S.resizeObserver = null; }
     S.epoch = -1; S.account = null; S.organization = null;
     S.blocks = []; S.summaries.clear(); S.lists.clear();
-    S.scrollLeft = 0; S.pendingScroll = null; S.anchorDate = null; S.anchorOffset = 0;
+    S.scrollLeft = 0; S.anchorDate = null; S.anchorOffset = 0; S.layoutWidth = 0;
     S.scrollToken++; S.restoring = false;
     S.companyToday = null; S.selected = null; S.anchor = null;
     S.detail = null; S.listScroll = null; S.closeFocus = null; S.closePosition = null;
@@ -108,12 +108,15 @@
       blockForMonth(today.getFullYear(), today.getMonth() + 1)];
     S.anchor = monthKeyOf(today);
   }
-  function markWidth(count) { return 4 + (Math.min(count, 5) - 1) * 3; }
+  function markWidth(total) { return 4 + (Math.min(total, 5) - 1) * 3; }
+  /* One marker per day, sized by open + completed. Colour only reports whether anything is left
+     open, so completing or reopening an item never changes a day's marker length. */
   function marksHTML(counts) {
     if (!counts) return '<span class="daily-marks"></span>';
-    const open = counts.open > 0 ? '<i class="daily-mark is-open" style="width:' + markWidth(counts.open) + 'px"></i>' : '';
-    const done = counts.completed > 0 ? '<i class="daily-mark is-done" style="width:' + markWidth(counts.completed) + 'px"></i>' : '';
-    return '<span class="daily-marks">' + open + done + '</span>';
+    const total = (Number(counts.open) || 0) + (Number(counts.completed) || 0);
+    if (total <= 0) return '<span class="daily-marks"></span>';
+    const state = Number(counts.open) > 0 ? "is-open" : "is-done";
+    return '<span class="daily-marks"><i class="daily-mark ' + state + '" style="width:' + markWidth(total) + 'px"></i></span>';
   }
   function cellAria(date, counts) {
     const countText = counts == null
@@ -125,18 +128,23 @@
     const key = dateKey(date), summary = S.summaries.get(block.key);
     const counts = summary && summary.state === "ready" ? (summary.days.get(key) || { open: 0, completed: 0 }) : null;
     const classes = ["daily-cell"];
-    if (date.getMonth() + 1 !== block.month) classes.push("is-adjacent");
     if (key === S.companyToday) classes.push("is-today");
     if (key === S.selected) classes.push("is-selected");
     if (summary && summary.state === "error") classes.push("is-unknown");
-    const tag = date.getDate() === 1 ? '<span class="daily-month-tag">' + (date.getMonth() + 1 === 1 ? date.getFullYear() + "年" : "") + (date.getMonth() + 1) + "月</span>" : "";
     return '<button type="button" class="' + classes.join(" ") + '" data-daily-date="' + key + '" tabindex="-1" aria-label="' + esc(cellAria(date, counts)) + '">' +
-      '<span class="daily-num">' + date.getDate() + "</span>" + tag + marksHTML(counts) + "</button>";
+      '<span class="daily-num">' + date.getDate() + "</span>" + marksHTML(counts) + "</button>";
   }
+  /* Padding for a date that belongs to a neighbouring month: no button, no focus target. */
+  function gapHTML() { return '<span class="daily-gap" aria-hidden="true"></span>'; }
   function blockHTML(block) {
     const weeks = block.weeks.map(start => {
+      const monday = parseKey(start);
       const cells = [];
-      for (let i = 0; i < 7; i++) cells.push(cellHTML(block, shift(parseKey(start), i)));
+      for (let i = 0; i < 7; i++) {
+        const date = shift(monday, i);
+        const own = date.getFullYear() === block.year && date.getMonth() + 1 === block.month;
+        cells.push(own ? cellHTML(block, date) : gapHTML());
+      }
       return '<div class="daily-week">' + cells.join("") + "</div>";
     }).join("");
     return '<div class="daily-month" data-month="' + block.key + '" aria-label="' + block.year + "年" + block.month + "月日历" + '">' +
@@ -145,12 +153,9 @@
       "</div>" +
       '<div class="daily-weeks">' + weeks + "</div></div>";
   }
-  function anchorLabelText() {
-    const block = S.blocks[blockIndex(S.anchor)] || S.blocks[0];
-    return block ? block.year + "年" + block.month + "月" : "";
-  }
   function calendarHTML() {
-    return '<div class="card-head daily-head"><h2 id="q3">每日事项</h2><span class="hint" id="dailyAnchorLabel">' + anchorLabelText() + "</span>" +
+    return '<div class="card-head daily-head"><h2 id="q3">每日事项</h2>' +
+      '<button type="button" class="btn tiny-btn daily-add" data-action="daily-new" aria-label="新增每日事项">+</button>' +
       '<div class="daily-tools">' +
         '<button type="button" class="btn tiny-btn" data-action="daily-prev" aria-label="上一月">‹</button>' +
         '<button type="button" class="btn tiny-btn" data-action="daily-next" aria-label="下一月">›</button>' +
@@ -162,7 +167,6 @@
           WEEKDAY.map(name => "<span>" + name + "</span>").join("") + "</div>" +
         '<div class="daily-scroller" id="dailyScroller" tabindex="0" role="group" aria-label="每日事项日历：左右滚动浏览月份，方向键移动日期，回车打开当天清单">' +
           '<div class="daily-track" id="dailyTrack">' + S.blocks.map(blockHTML).join("") + "</div></div>" +
-        '<button type="button" class="daily-fab" data-action="daily-new" aria-label="新增每日事项">+</button>' +
       "</div>" +
       '<div class="callout" id="dailyError" role="alert" hidden></div>';
   }
@@ -172,23 +176,30 @@
     resetForSession();
     const today = companyToday();
     S.companyToday = dateKey(today);
-    if (!S.blocks.length) initialBlocks(today);
+    const fresh = !S.blocks.length;
+    if (fresh) initialBlocks(today);
     if (!S.selected) S.selected = S.companyToday;
     host.innerHTML = calendarHTML();
-    const scroller = document.getElementById("dailyScroller");
-    if (scroller) {
-      scroller.addEventListener("scroll", onScroll, { passive: true });
-      scroller.addEventListener("keydown", onCalendarKey);
-      scroller.addEventListener("pointerdown", onPointerDown, { passive: true });
-      scroller.addEventListener("pointermove", onPointerMove, { passive: true });
-    }
+    bindCalendar();
     S.blocks.forEach(loadBlock);
-    restoreScroll();
-    setAnchorFromScroll();
+    if (fresh || !S.anchorDate) layoutCalendar({ date: S.companyToday });
+    else layoutCalendar({ date: S.anchorDate, offset: S.anchorOffset });
+  }
+  function bindCalendar() {
+    const scroller = document.getElementById("dailyScroller");
+    if (!scroller) return;
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    scroller.addEventListener("keydown", onCalendarKey);
+    scroller.addEventListener("pointerdown", onPointerDown, { passive: true });
+    scroller.addEventListener("pointermove", onPointerMove, { passive: true });
+    observeSize(scroller);
   }
 
+  /* The saved anchor is a date plus its pixel offset. A viewport change clamps scrollLeft before
+     the window can be padded, and that transient clamp must never overwrite the anchor: only a
+     scroll at the width the anchor was measured at may replace it. */
   function anchorFromDom(scroller) {
-    if (!scroller) return;
+    if (!scroller || scroller.clientWidth !== S.layoutWidth) return;
     const left = scroller.getBoundingClientRect().left;
     let best = null, bestLeft = Infinity;
     scroller.querySelectorAll("[data-daily-date]").forEach(cell => {
@@ -197,48 +208,116 @@
     });
     if (best) { S.anchorDate = best.dataset.dailyDate; S.anchorOffset = bestLeft - left; }
   }
-  /* A hidden page discards scroll offsets, and a just-inserted track may not be laid out yet.
-     Restore from the saved leftmost date plus its pixel offset, retrying across layout frames
-     without letting clamped intermediate values overwrite the anchor. */
-  function restoreScroll() {
+
+  /* ------------------------------------------------------- 布局与范围补足 */
+  function monthOffset(scroller, key) {
+    const element = scroller.querySelector('.daily-month[data-month="' + key + '"]');
+    if (!element) return null;
+    return element.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
+  }
+  function blockWidth(scroller, key) {
+    const element = scroller.querySelector('.daily-month[data-month="' + key + '"]');
+    return element ? element.getBoundingClientRect().width : 0;
+  }
+  /* Walk the bounded window towards a month that is not mounted yet. */
+  function ensureMonth(key) {
+    let guard = 0;
+    while (!blockOf(key) && guard++ < MAX_MONTHS) {
+      const first = S.blocks[0], last = S.blocks[S.blocks.length - 1];
+      if (!first || !last) return false;
+      if (key < first.key) extend(-1);
+      else if (key > last.key) extend(1);
+      else return false;
+    }
+    return !!blockOf(key);
+  }
+  /* Keep at least one measurable viewport of months on each side of the anchor month, so the
+     calendar can be slid both ways the moment it is laid out (never "static months" on a wide
+     screen). The 12-month cap still bounds the DOM and the summary requests. */
+  function padWindow(key) {
     const scroller = document.getElementById("dailyScroller");
-    if (!scroller) return;
-    const savedAnchor = S.anchorDate, savedOffset = S.anchorOffset || 0;
+    if (!scroller || !scroller.clientWidth || !blockOf(key)) return;
+    const viewport = scroller.clientWidth;
+    for (let guard = 0; guard < MAX_MONTHS; guard++) {
+      if (S.blocks.length >= MAX_MONTHS) return;
+      const left = monthOffset(scroller, key);
+      if (left == null) return;
+      const right = scroller.scrollWidth - left - blockWidth(scroller, key);
+      if (left >= viewport && right >= viewport) return;
+      extend(left < viewport ? -1 : 1);
+    }
+  }
+  function revealDate(scroller, key) {
+    if (!key) return;
+    const cell = scroller.querySelector('[data-daily-date="' + key + '"]');
+    if (!cell) return;
+    const box = cell.getBoundingClientRect(), view = scroller.getBoundingClientRect();
+    if (box.left < view.left) scroller.scrollLeft -= view.left - box.left;
+    else if (box.right > view.right) scroller.scrollLeft += box.right - view.right;
+  }
+  function syncScroll(scroller) {
+    S.scrollLeft = scroller.scrollLeft;
+    S.restoring = false;
+    anchorFromDom(scroller);
+    setAnchorFromScroll();
+  }
+  /* One entry point shared by first render, page refresh, month jumps, locate/today and viewport
+     changes: mount the target month, pad both sides by a viewport, then place the target date at
+     its saved pixel offset (or two cells from the left edge). A hidden or zero-width container is
+     retried for a bounded number of frames and abandoned when the session/render generation moves. */
+  function layoutCalendar(target) {
+    const opts = target || {};
     const generation = S.generation;
-    const fallback = S.pendingScroll != null ? S.pendingScroll : S.scrollLeft;
-    S.pendingScroll = null;
-    S.restoring = true;
-    const place = () => {
-      if (!sameSession(generation)) return true;
-      const current = document.getElementById("dailyScroller");
-      if (!current) { S.restoring = false; return true; }
-      current.scrollTop = 0;
+    const date = parseKey(opts.date) ? opts.date : S.companyToday;
+    if (!date) return false;
+    const month = date.slice(0, 7);
+    const offset = opts.offset;
+    const place = (tries) => {
+      if (!sameSession(generation)) return false;
+      const scroller = document.getElementById("dailyScroller");
+      if (!scroller || !S.blocks.length) return false;
+      if (!scroller.clientWidth) {
+        if (tries > 0) setTimeout(() => place(tries - 1), 32);
+        return false;
+      }
+      S.restoring = true;
+      scroller.scrollTop = 0;
+      ensureMonth(month);
+      if (!blockOf(month)) { S.restoring = false; return false; }
+      padWindow(month);
+      const cell = scroller.querySelector('[data-daily-date="' + date + '"]');
+      const cellLeft = cell ? cell.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft : null;
       let value = null;
-      if (savedAnchor) {
-        const cell = current.querySelector('[data-daily-date="' + savedAnchor + '"]');
-        if (cell) {
-          const left = cell.getBoundingClientRect().left - current.getBoundingClientRect().left + current.scrollLeft;
-          value = Math.max(0, left - savedOffset);
-        }
-      }
-      if (value == null && fallback) value = fallback;
-      if (value == null) { scrollToDate(S.companyToday); S.restoring = false; return true; }
-      current.scrollLeft = value;
-      current.scrollTop = 0;
-      if (Math.abs(current.scrollLeft - value) <= 1) {
-        S.scrollLeft = current.scrollLeft;
-        S.restoring = false;
-        anchorFromDom(current);
-        return true;
-      }
-      return false;
+      if (cellLeft != null) value = offset != null ? cellLeft - offset : cellLeft - 46 * 2;
+      if (value == null) { const left = monthOffset(scroller, month); value = left == null ? 0 : left; }
+      scroller.scrollLeft = Math.max(0, value);
+      if (offset == null) revealDate(scroller, date);
+      scroller.scrollTop = 0;
+      S.layoutWidth = scroller.clientWidth;
+      syncScroll(scroller);
+      return true;
     };
-    const settle = (tries) => {
-      if (place()) return;
-      if (tries <= 0) { S.restoring = false; return; }
-      setTimeout(() => settle(tries - 1), 16);
-    };
-    settle(10);
+    return place(16);
+  }
+  /* A resize (narrow → wide), a hidden page becoming visible or a late layout all re-run the same
+     layout with the current anchor, which is how the window stays browsable after a viewport change. */
+  function observeSize(scroller) {
+    if (S.resizeObserver) { S.resizeObserver.disconnect(); S.resizeObserver = null; }
+    if (!scroller || typeof ResizeObserver !== "function") return;
+    const generation = S.generation;
+    S.resizeObserver = new ResizeObserver(() => {
+      if (!sameSession(generation)) return;
+      scheduleLayout();
+    });
+    S.resizeObserver.observe(scroller);
+  }
+  function scheduleLayout() {
+    if (S.layoutTimer) return;
+    S.layoutTimer = setTimeout(() => {
+      S.layoutTimer = null;
+      if (!sameSession()) return;
+      layoutCalendar({ date: S.anchorDate || S.companyToday, offset: S.anchorOffset });
+    }, 60);
   }
 
   /* ------------------------------------------------------------ 数量加载 */
@@ -303,14 +382,24 @@
     // saved anchor or position for the same account.
     if (!scroller || !scroller.clientWidth) return;
     S.scrollLeft = scroller.scrollLeft;
+    if (scroller.clientWidth !== S.layoutWidth) {
+      // A resize clamped the position before the window could be repadded; keep the saved anchor
+      // and let the size observer/layout restore it at the new width.
+      scheduleLayout();
+      return;
+    }
     if (!S.restoring) anchorFromDom(scroller);
     setAnchorFromScroll();
     if (S.scrollTimer) return;
     S.scrollTimer = setTimeout(() => {
       S.scrollTimer = null;
-      const right = scroller.scrollWidth - scroller.clientWidth;
+      if (!sameSession()) return;
+      const right = scroller.scrollWidth - scroller.clientWidth - scroller.scrollLeft;
       if (scroller.scrollLeft < 80) extend(-1);
-      if (right - scroller.scrollLeft < 80) extend(1);
+      else if (right < 80) extend(1);
+      // Keep the same one-viewport margin around the browsed month, so a gesture never hits a
+      // dead end while more months remain inside the bounded window.
+      if (S.anchor) padWindow(S.anchor);
     }, 120);
   }
   function extend(direction) {
@@ -338,80 +427,44 @@
       const head = direction > 0;
       const width = scroller.scrollWidth;
       element.remove();
+      S.summaries.delete(removed.key);
       if (head) scroller.scrollLeft = Math.max(0, scroller.scrollLeft - (width - scroller.scrollWidth));
     }
     S.scrollLeft = scroller.scrollLeft;
+    if (!S.restoring) anchorFromDom(scroller);
     setAnchorFromScroll();
   }
   function scrollToDate(key) {
-    const scroller = document.getElementById("dailyScroller");
-    let guard = 0;
-    while (!blockContaining(key) && guard++ < 36) {
-      const first = S.blocks[0], last = S.blocks[S.blocks.length - 1];
-      if (key < first.from) extend(-1); else if (key > last.to) extend(1); else break;
-    }
-    const cell = scroller && scroller.querySelector('[data-daily-date="' + key + '"]');
-    if (!cell || !scroller) return false;
-    const left = cell.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
-    scroller.scrollLeft = Math.max(0, left - 46 * 2);
-    S.scrollLeft = scroller.scrollLeft;
-    anchorFromDom(scroller);
-    setAnchorFromScroll();
-    return true;
+    if (!parseKey(key)) return false;
+    if (!blockContaining(key) && !ensureMonth(key.slice(0, 7))) return false;
+    layoutCalendar({ date: key });
+    return !!document.querySelector('[data-daily-date="' + key + '"]');
   }
   function setAnchorFromScroll() {
     const scroller = document.getElementById("dailyScroller");
-    const label = document.getElementById("dailyAnchorLabel");
-    if (!scroller || !label || !scroller.clientWidth) return;
+    if (!scroller || !scroller.clientWidth) return;
     const left = scroller.getBoundingClientRect().left;
     let best = null, bestDelta = Infinity;
     scroller.querySelectorAll(".daily-month").forEach(element => {
       const delta = Math.abs(element.getBoundingClientRect().left - left);
       if (delta < bestDelta) { bestDelta = delta; best = element; }
     });
-    if (best) {
-      S.anchor = best.dataset.month;
-      const block = S.blocks.find(item => item.key === S.anchor);
-      label.textContent = block ? block.year + "年" + block.month + "月" : best.textContent.trim();
-    }
+    if (best) S.anchor = best.dataset.month;
   }
   function jumpToMonth(year, month) {
-    const scrollToken = ++S.scrollToken;
+    ++S.scrollToken;
     const target = new Date(year, month - 1, 1);
+    if (isNaN(target.getTime())) return;
     S.blocks = [blockForMonth(target.getFullYear(), target.getMonth() - 1),
       blockForMonth(target.getFullYear(), target.getMonth()),
       blockForMonth(target.getFullYear(), target.getMonth() + 1)];
     S.summaries.clear();
     S.anchor = monthKeyOf(target);
     const track = document.getElementById("dailyTrack");
-    if (track) {
-      track.innerHTML = S.blocks.map(blockHTML).join("");
-      S.blocks.forEach(loadBlock);
-      S.pendingScroll = null;
-      const scroller = document.getElementById("dailyScroller");
-      const block = track.querySelector('[data-month="' + monthKeyOf(target) + '"]');
-      if (scroller && block) {
-        // Align the month's own week block, including months whose first day is
-        // in the preceding block. Leading context must not change the target month.
-        const left = block.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
-        // Wide screens need enough following weeks to put the target at the left
-        // edge; otherwise the browser clamps the position to the preceding month.
-        for (let guard = 0; scroller.scrollWidth - scroller.clientWidth < left && guard < MAX_MONTHS; guard++) extend(1);
-        scroller.scrollLeft = Math.max(0, left);
-        S.scrollLeft = scroller.scrollLeft;
-        anchorFromDom(scroller);
-        const generation = S.generation;
-        requestAnimationFrame(() => {
-          if (!sameSession(generation) || !block.isConnected || scrollToken !== S.scrollToken) return;
-          const current = document.getElementById("dailyScroller");
-          if (!current) return;
-          current.scrollLeft = Math.max(0, left);
-          S.scrollLeft = current.scrollLeft;
-          anchorFromDom(current);
-        });
-      }
-      setAnchorFromScroll();
-    }
+    if (!track) return;
+    track.innerHTML = S.blocks.map(blockHTML).join("");
+    S.blocks.forEach(loadBlock);
+    layoutCalendar({ date: dateKey(target), offset: 0 });
   }
   function goToDate(key) {
     const date = parseKey(key);
@@ -423,6 +476,13 @@
       if (distance > 3) { jumpToMonth(date.getFullYear(), date.getMonth() + 1); return; }
     }
     if (!scrollToDate(key)) jumpToMonth(date.getFullYear(), date.getMonth() + 1);
+  }
+  /* 前后月以当前浏览锚点推进，与已删除的可见年月文案无关。 */
+  function stepMonth(delta) {
+    const anchor = /^\d{4}-\d{2}$/.test(String(S.anchor || "")) ? S.anchor : String(S.companyToday || "").slice(0, 7);
+    const date = parseKey(anchor + "-01") || companyToday();
+    const moved = new Date(date.getFullYear(), date.getMonth() + delta, 1);
+    jumpToMonth(moved.getFullYear(), moved.getMonth() + 1);
   }
 
   /* ------------------------------------------------- 横滑与点击隔离、键盘 */
@@ -799,8 +859,8 @@
     if (!actionName || actionName.indexOf("daily-") !== 0) return false;
     const date = element.dataset.date || S.selected || S.companyToday;
     switch (actionName) {
-      case "daily-prev": { const d = parseKey((S.anchor || S.companyToday) + "-01") || companyToday(); jumpToMonth(d.getFullYear(), d.getMonth()); return true; }
-      case "daily-next": { const d = parseKey((S.anchor || S.companyToday) + "-01") || companyToday(); jumpToMonth(d.getFullYear(), d.getMonth() + 2); return true; }
+      case "daily-prev": stepMonth(-1); return true;
+      case "daily-next": stepMonth(1); return true;
       case "daily-today": goToDate(S.companyToday); S.selected = S.companyToday; return true;
       case "daily-locate": openLocate(); return true;
       case "daily-locate-save": locateFromForm(); return true;
@@ -897,8 +957,10 @@
     S.closeFocus = null; S.closePosition = null;
     S.detail = null; S.listScroll = null; drafts.daily = null;
     baseCloseSheet();
+    // A list/detail close returns to its real trigger. A create form opened from the header has no
+    // date trigger, so the shared sheet's own lastFocused restore (the header 加号) is kept.
     if (focus && document.contains(focus)) focus.focus({ preventScroll: true });
-    else if (S.selected && document.querySelector('[data-daily-date="' + S.selected + '"]')) focusCell(S.selected);
+    else if (focus && S.selected && document.querySelector('[data-daily-date="' + S.selected + '"]')) focusCell(S.selected);
     const scroller = document.getElementById("dailyScroller");
     if (scroller) {
       // The shared sheet's lastFocused.focus() can scroll the background. Restore

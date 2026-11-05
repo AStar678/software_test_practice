@@ -1,0 +1,56 @@
+{
+  "updated": "2026-11-05T06:58:36.772Z",
+  "viewports": [
+    {
+      "overflow": false,
+      "weekdayRows": 7,
+      "dayHeight": 44,
+      "dayWidth": 44,
+      "sevenRows": true,
+      "lastReachable": true,
+      "markersHeight": true,
+      "company": {
+        "rows": 5,
+        "short": 5,
+        "fully": 4,
+        "thirdFully": true,
+        "bodyHeight": 167,
+        "scrollable": true,
+        "overflow": "auto",
+        "cardHeight": 236
+      },
+      "tasks": {
+        "rows": 7,
+        "short": 4,
+        "fully": 3,
+        "thirdFully": true,
+        "bodyHeight": 167,
+        "scrollable": true,
+        "overflow": "auto",
+        "cardHeight": 236
+      },
+      "head": {
+        "sameRow": true,
+        "addVisible": true,
+        "addLeft": 82,
+        "titleRight": 77,
+        "toolsRight": 303,
+        "headRight": 303
+      },
+      "monthAligned": true,
+      "monthCount": 6,
+      "scroll": {
+        "scrollWidth": 1380,
+        "clientWidth": 256,
+        "scrollLeft": 650,
+        "maxLeft": 1124,
+        "anchor": "2026-11-30"
+      },
+      "reveal": {
+        "bottom": 657,
+        "navTop": 665,
+        "noOverflow": true
+      }
+    }
+  ]
+}

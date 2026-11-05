@@ -355,8 +355,8 @@ async function main(){
 
   /* -------- the old personal module is retired; the independent daily calendar owns the lower half -------- */
   await setPage('map');
-  const retired=await ev("({personal:!!document.querySelector('.personal-quad'),logs:!!document.querySelector('.logs-quad'),daily:!!document.querySelector('#dailyItemsSection'),fab:!!document.querySelector('.daily-fab'),nav:Array.from(document.querySelectorAll('#tabbar button span')).map(e=>e.textContent)})");
-  check('home retires the personal/log cards and exposes the independent daily calendar',!retired.personal&&!retired.logs&&retired.daily&&retired.fab&&retired.nav[0]==='首页'&&retired.nav[1]==='公司',retired);
+  const retired=await ev("({personal:!!document.querySelector('.personal-quad'),logs:!!document.querySelector('.logs-quad'),daily:!!document.querySelector('#dailyItemsSection'),headerAdd:!!document.querySelector('.daily-quad .daily-head .daily-add'),fab:!!document.querySelector('.daily-fab'),nav:Array.from(document.querySelectorAll('#tabbar button span')).map(e=>e.textContent)})");
+  check('home retires the personal/log cards and exposes the independent daily calendar with its header add control',!retired.personal&&!retired.logs&&retired.daily&&retired.headerAdd&&!retired.fab&&retired.nav[0]==='首页'&&retired.nav[1]==='公司',retired);
   const retiredWrite=await apiError('POST','/home/items',{kind:'personal',body:'Browser retired personal item'},{'Idempotency-Key':'retired-'+Date.now()});
   check('the retired personal create path is rejected instead of restoring old data',retiredWrite.ok===false&&[410,404].includes(retiredWrite.status),retiredWrite);
 

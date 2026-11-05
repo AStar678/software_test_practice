@@ -12,7 +12,13 @@ module.exports = async function checkDailyItemRepairs(b, fixture, check) {
     await ev(`document.querySelector('[data-action=daily-locate]').click();document.getElementById('daily-locate').value=${js(month)};document.querySelector('[data-action=daily-locate-save]').click()`);
     await sleep(180);
   }
-  const monthState = `(()=>{const s=document.getElementById('dailyScroller'),r=s.getBoundingClientRect();return {anchor:PandoraDaily.state.anchor,label:document.getElementById('dailyAnchorLabel').textContent,visible:Array.from(s.querySelectorAll('[data-daily-date]')).filter(c=>{const x=c.getBoundingClientRect();return x.left>=r.left-1&&x.right<=r.right+1}).map(c=>c.dataset.dailyDate)}})()`;
+  /* The visible month heading is now the block's own label; there is no separate anchor subtitle. */
+  const monthState = `(()=>{const s=document.getElementById('dailyScroller'),r=s.getBoundingClientRect();
+    const cells=Array.from(s.querySelectorAll('[data-daily-date]'));
+    const first=cells.find(c=>c.getBoundingClientRect().left>=r.left-1);
+    const block=first?first.closest('.daily-month'):null;
+    return {anchor:PandoraDaily.state.anchor,label:block?block.querySelector('.daily-month-label').textContent:null,
+      visible:cells.filter(c=>{const x=c.getBoundingClientRect();return x.left>=r.left-1&&x.right<=r.right+1}).map(c=>c.dataset.dailyDate)}})()`;
   function correctMonth(state, month) {
     return state.anchor === month && state.label === Number(month.slice(0, 4)) + '年' + Number(month.slice(5)) + '月' && state.visible.some(day => day.startsWith(month));
   }
@@ -30,8 +36,14 @@ module.exports = async function checkDailyItemRepairs(b, fixture, check) {
   }
   await ev("document.getElementById('dailyScroller').scrollLeft+=100;document.getElementById('dailyScroller').dispatchEvent(new Event('scroll'))");
   await sleep(200);
-  const sequence = await ev(`(()=>{const dates=Array.from(document.querySelectorAll('[data-daily-date]')).map(e=>e.dataset.dailyDate);return {unique:new Set(dates).size===dates.length,continuous:dates.every((d,i)=>!i||new Date(d+'T00:00:00Z')-new Date(dates[i-1]+'T00:00:00Z')===86400000)}})()`);
-  check('V-001 horizontal browsing remains continuous after month navigation', sequence.unique && sequence.continuous, sequence);
+  const sequence = await ev(`(()=>{const blocks=Array.from(document.querySelectorAll('.daily-month'));
+    const perBlock=blocks.map(b=>Array.from(b.querySelectorAll('[data-daily-date]')).map(c=>c.dataset.dailyDate));
+    const all=perBlock.flat();
+    return {unique:new Set(all).size===all.length,
+      contiguous:perBlock.every(ds=>ds.every((d,i)=>!i||new Date(d+'T00:00:00Z')-new Date(ds[i-1]+'T00:00:00Z')===86400000)),
+      ascending:perBlock.every((ds,i)=>!i||ds[0]>perBlock[i-1][perBlock[i-1].length-1]),
+      ownMonth:perBlock.every(ds=>new Set(ds.map(d=>d.slice(0,7))).size<=1)}})()`);
+  check('V-001 horizontal browsing keeps every month internally continuous and in date order', sequence.unique && sequence.contiguous && sequence.ascending && sequence.ownMonth, sequence);
   await ev("document.querySelector('[data-action=daily-today]').click()");
   await sleep(200);
   const todayVisible = await ev(`(()=>{const c=document.querySelector('[data-daily-date="${fixture.today}"]'),s=document.getElementById('dailyScroller'),r=c.getBoundingClientRect(),v=s.getBoundingClientRect();return r.left>=v.left-1&&r.right<=v.right+1})()`);

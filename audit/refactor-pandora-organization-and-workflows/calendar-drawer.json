@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-04T11:54:25.465Z",
+  "updated": "2026-11-05T07:02:49.933Z",
   "checks": [
     {
       "check": "login form is ready",
@@ -20,8 +20,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -3.147090435028076,
-          "r": 160.64978456497192,
+          "l": -3.1443440914154053,
+          "r": 160.6525309085846,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -30,7 +30,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 229.35021543502808,
+        "visibleRight": 229.3474690914154,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -79,8 +79,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -3.147090435028076,
-          "r": 160.64978456497192,
+          "l": -3.1443440914154053,
+          "r": 160.6525309085846,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -89,7 +89,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 229.35021543502808,
+        "visibleRight": 229.3474690914154,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -120,8 +120,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -3.147090435028076,
-          "r": 160.64978456497192,
+          "l": -3.1443440914154053,
+          "r": 160.6525309085846,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -130,7 +130,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 229.35021543502808,
+        "visibleRight": 229.3474690914154,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -161,8 +161,8 @@
           "h": 715.5625
         },
         "drawer": {
-          "l": -3.147090435028076,
-          "r": 160.64978456497192,
+          "l": -3.1443440914154053,
+          "r": 160.6525309085846,
           "w": 163.796875,
           "h": 715.5625
         },
@@ -171,7 +171,7 @@
           "h": 650.5625
         },
         "ratio": 0.41999198717948716,
-        "visibleRight": 229.35021543502808,
+        "visibleRight": 229.3474690914154,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -265,13 +265,13 @@
       "pass": true,
       "evidence": {
         "before": {
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": "220",
           "scroll": 2268
         },
         "after": {
           "mode": "month",
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": "220",
           "stream": [
             "2026-09",
@@ -297,8 +297,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.759324312210083,
-          "r": 141.24067568778992,
+          "l": -2.7598068714141846,
+          "r": 141.24019312858582,
           "w": 144,
           "h": 611.5625
         },
@@ -307,7 +307,7 @@
           "h": 494.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.75932431221008,
+        "visibleRight": 178.75980687141418,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -356,8 +356,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.759324312210083,
-          "r": 141.24067568778992,
+          "l": -2.7598068714141846,
+          "r": 141.24019312858582,
           "w": 144,
           "h": 611.5625
         },
@@ -366,7 +366,7 @@
           "h": 494.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.75932431221008,
+        "visibleRight": 178.75980687141418,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -397,8 +397,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.759324312210083,
-          "r": 141.24067568778992,
+          "l": -2.7598068714141846,
+          "r": 141.24019312858582,
           "w": 144,
           "h": 611.5625
         },
@@ -407,7 +407,7 @@
           "h": 494.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.75932431221008,
+        "visibleRight": 178.75980687141418,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -438,8 +438,8 @@
           "h": 611.5625
         },
         "drawer": {
-          "l": -2.759324312210083,
-          "r": 141.24067568778992,
+          "l": -2.7598068714141846,
+          "r": 141.24019312858582,
           "w": 144,
           "h": 611.5625
         },
@@ -448,7 +448,7 @@
           "h": 494.5625
         },
         "ratio": 0.45,
-        "visibleRight": 178.75932431221008,
+        "visibleRight": 178.75980687141418,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -479,8 +479,8 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 150.98638916015625,
-          "r": 621.3770141601562,
+          "l": 150.9848175048828,
+          "r": 621.3754425048828,
           "w": 470.390625,
           "h": 766.5625
         },
@@ -489,7 +489,7 @@
           "h": 701.5625
         },
         "ratio": 0.4199916294642857,
-        "visibleRight": 658.6229858398438,
+        "visibleRight": 658.6245574951172,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -538,8 +538,8 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 150.98638916015625,
-          "r": 621.3770141601562,
+          "l": 150.9848175048828,
+          "r": 621.3754425048828,
           "w": 470.390625,
           "h": 766.5625
         },
@@ -548,7 +548,7 @@
           "h": 701.5625
         },
         "ratio": 0.4199916294642857,
-        "visibleRight": 658.6229858398438,
+        "visibleRight": 658.6245574951172,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -579,8 +579,8 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 150.98638916015625,
-          "r": 621.3770141601562,
+          "l": 150.9848175048828,
+          "r": 621.3754425048828,
           "w": 470.390625,
           "h": 766.5625
         },
@@ -589,7 +589,7 @@
           "h": 701.5625
         },
         "ratio": 0.4199916294642857,
-        "visibleRight": 658.6229858398438,
+        "visibleRight": 658.6245574951172,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -620,8 +620,8 @@
           "h": 766.5625
         },
         "drawer": {
-          "l": 150.98638916015625,
-          "r": 621.3770141601562,
+          "l": 150.9848175048828,
+          "r": 621.3754425048828,
           "w": 470.390625,
           "h": 766.5625
         },
@@ -630,7 +630,7 @@
           "h": 701.5625
         },
         "ratio": 0.4199916294642857,
-        "visibleRight": 658.6229858398438,
+        "visibleRight": 658.6245574951172,
         "wraps": true,
         "overflow": "auto",
         "modes": [
@@ -665,7 +665,7 @@
       "evidence": {
         "mode": "month",
         "overlay": true,
-        "title": "11月7日 周六",
+        "title": "11月8日 周日",
         "items": 16
       }
     },
@@ -673,7 +673,7 @@
       "check": "a click on the empty part of a month cell opens that day sheet",
       "pass": true,
       "evidence": {
-        "blankDate": "2026-12-09",
+        "blankDate": "2026-12-10",
         "blankItems": 0
       }
     },
@@ -682,11 +682,11 @@
       "pass": true,
       "evidence": {
         "overflow": {
-          "date": "2026-11-07",
+          "date": "2026-11-08",
           "count": 13,
           "text": "+13",
-          "label": "11月7日，还有13项日程，打开当日任务清单",
-          "x": 306.421875,
+          "label": "11月8日，还有13项日程，打开当日任务清单",
+          "x": 362.1328125,
           "y": 420.25
         },
         "hiddenTruth": {
@@ -701,24 +701,24 @@
       "pass": true,
       "evidence": {
         "barTarget": {
-          "column": 3,
-          "start": 1,
+          "column": 4,
+          "start": 2,
           "end": 7,
-          "x": 195,
+          "x": 250.71428571428572,
           "y": 404.25,
           "weekStart": "2026-11-16"
         },
         "barPoint": {
-          "column": 3,
-          "x": 195,
+          "column": 4,
+          "x": 250.71428571428572,
           "y": 404.25
         },
         "barSheet": {
-          "date": "2026-11-19",
+          "date": "2026-11-20",
           "mode": "month",
           "overlay": true
         },
-        "expectedBarDate": "2026-11-19"
+        "expectedBarDate": "2026-11-20"
       }
     },
     {
@@ -807,19 +807,19 @@
       "pass": true,
       "evidence": {
         "keyboardSetup": {
-          "start": 1,
+          "start": 2,
           "end": 7,
           "weekStart": "2026-11-16"
         },
         "keyboardBar": {
-          "hit": "3",
-          "date": "2026-11-19",
-          "label": "Calendar week span，我负责，待开始，紧急程度中，11月17日 10:00 → 11月25日 12:00，说明：Calendar browser acceptance task，已选择11月19日，回车打开当日清单"
+          "hit": "4",
+          "date": "2026-11-20",
+          "label": "Calendar week span，我负责，待开始，紧急程度中，11月18日 10:00 → 11月26日 12:00，说明：Calendar browser acceptance task，已选择11月20日，回车打开当日清单"
         },
-        "keyboardDate": "2026-11-19",
-        "keyboardExpected": 3,
+        "keyboardDate": "2026-11-20",
+        "keyboardExpected": 4,
         "beforeEnter": {
-          "active": "b02d3966-8b51-4939-8445-b10845238d06",
+          "active": "5dcd7806-b2ba-4a8f-9904-788dcb826ea0",
           "isBar": true,
           "sheet": false
         },
@@ -838,8 +838,8 @@
       "check": "activating the focused bar (the native Enter/Space result) opens the same selected day",
       "pass": true,
       "evidence": {
-        "nativeDate": "2026-11-19",
-        "keyboardExpected": 3
+        "nativeDate": "2026-11-20",
+        "keyboardExpected": 4
       }
     },
     {
@@ -849,17 +849,17 @@
         "sheetList": {
           "count": 16,
           "first": [
-            "cdb69a34-4069-4eec-8e0e-a0007cb20b79",
-            "2779d03a-782f-4b01-a1f0-9794b8726f07",
-            "2cab9162-aaf3-41ef-a90a-38576c020643"
+            "89035ff6-2a76-4afe-b248-1d11b2d78ac8",
+            "e98459e1-cf58-4ebc-bef4-32e1242211d7",
+            "06190351-7f22-45e6-b5a4-054a9686f286"
           ]
         },
         "dayTruth": {
           "total": 16,
           "first": [
-            "cdb69a34-4069-4eec-8e0e-a0007cb20b79",
-            "2779d03a-782f-4b01-a1f0-9794b8726f07",
-            "2cab9162-aaf3-41ef-a90a-38576c020643"
+            "89035ff6-2a76-4afe-b248-1d11b2d78ac8",
+            "e98459e1-cf58-4ebc-bef4-32e1242211d7",
+            "06190351-7f22-45e6-b5a4-054a9686f286"
           ]
         }
       }
@@ -884,9 +884,9 @@
       "pass": true,
       "evidence": {
         "excluded": [
-          "29abeba0-a169-40e6-94c7-f48835393ded",
-          "a992c271-42e2-4d57-825e-3ddba16d65cb",
-          "f75e4992-f6ac-4f74-a968-9b35d4d57308"
+          "7c09aa80-b827-49f4-8023-116f4518dc5a",
+          "f954f5ac-6240-444c-9942-397b9ebef004",
+          "7bf93c3f-9b07-4ab7-80ee-7707face58bf"
         ]
       }
     },
@@ -908,7 +908,7 @@
           "top": 120,
           "sheet": true,
           "drawer": false,
-          "focus": "2779d03a-782f-4b01-a1f0-9794b8726f07"
+          "focus": "e98459e1-cf58-4ebc-bef4-32e1242211d7"
         }
       }
     },
@@ -917,7 +917,7 @@
       "pass": true,
       "evidence": {
         "monthSnapshot": {
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": "220",
           "stream": [
             "2026-09",
@@ -930,7 +930,7 @@
           "mode": "month"
         },
         "monthAfter": {
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": "220",
           "stream": [
             "2026-09",
@@ -952,7 +952,7 @@
       "check": "the sheet returns focus to the month trigger that opened it",
       "pass": true,
       "evidence": {
-        "date": "2026-11-07",
+        "date": "2026-11-08",
         "action": "schedule-month-date",
         "tag": "BUTTON",
         "cls": "p-month-date is-selected"
@@ -962,9 +962,9 @@
       "check": "only 查看日视图 switches to the day mode for that date",
       "pass": true,
       "evidence": {
-        "anchor": 1793980800000,
+        "anchor": 1794067200000,
         "mode": "day",
-        "heading": "11月7日 周六",
+        "heading": "11月8日 周日",
         "items": 16
       }
     },
@@ -1001,7 +1001,7 @@
       "evidence": {
         "beforeDay": {
           "mode": "month",
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1016,7 +1016,7 @@
         },
         "afterDay": {
           "mode": "month",
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1035,7 +1035,7 @@
       "check": "return to month restores focus to the selected date at 390",
       "pass": true,
       "evidence": {
-        "date": "2026-11-07",
+        "date": "2026-11-08",
         "selected": true,
         "button": false
       }
@@ -1073,7 +1073,7 @@
       "evidence": {
         "beforeDay": {
           "mode": "month",
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1088,7 +1088,7 @@
         },
         "afterDay": {
           "mode": "month",
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1107,7 +1107,7 @@
       "check": "return to month restores focus to the selected date at 320",
       "pass": true,
       "evidence": {
-        "date": "2026-11-07",
+        "date": "2026-11-08",
         "selected": true,
         "button": false
       }
@@ -1145,7 +1145,7 @@
       "evidence": {
         "beforeDay": {
           "mode": "month",
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1160,7 +1160,7 @@
         },
         "afterDay": {
           "mode": "month",
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1179,7 +1179,7 @@
       "check": "return to month restores focus to the selected date at 768",
       "pass": true,
       "evidence": {
-        "date": "2026-11-07",
+        "date": "2026-11-08",
         "selected": true,
         "button": false
       }
@@ -1217,7 +1217,7 @@
       "evidence": {
         "beforeDay": {
           "mode": "month",
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1232,7 +1232,7 @@
         },
         "afterDay": {
           "mode": "month",
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "rowHeight": 220,
           "stream": [
             "2026-09",
@@ -1251,7 +1251,7 @@
       "check": "return to month restores focus to the selected date at 1440",
       "pass": true,
       "evidence": {
-        "date": "2026-11-07",
+        "date": "2026-11-08",
         "selected": true,
         "button": false
       }
@@ -1259,7 +1259,7 @@
     {
       "check": "the fixture provides an empty day for the empty state",
       "pass": true,
-      "evidence": "2026-12-17"
+      "evidence": "2026-12-18"
     },
     {
       "check": "an empty day sheet shows the empty state and a create entry",
@@ -1273,8 +1273,8 @@
       "check": "creating from the empty sheet opens the create form for that date and keeps the sheet",
       "pass": true,
       "evidence": {
-        "start": "2026-12-17",
-        "end": "2026-12-17",
+        "start": "2026-12-18",
+        "end": "2026-12-18",
         "sheet": true
       }
     },
@@ -1421,8 +1421,8 @@
       "pass": true,
       "evidence": {
         "allDay": false,
-        "startAt": "2026-11-07T12:00:00Z",
-        "dueAt": "2026-11-09T02:00:00Z",
+        "startAt": "2026-11-08T12:00:00Z",
+        "dueAt": "2026-11-10T02:00:00Z",
         "pinned": false,
         "tag": null,
         "tagId": null
@@ -1433,7 +1433,7 @@
       "pass": true,
       "evidence": {
         "title": "Calendar cross",
-        "snippet": "待开始中👤我负责任务名称Calendar cross创建者founder创建时间2026年11月4日 19:54当前业务责任方founder任务排期11月7日 20:00 → 11月9日 10:00截止2026年11月9日 10:00负责人alpha-one-employee审核人alpha-one-head任务说明Calendar browser acceptance task当前进展暂无评论共 0 条还没有评论，欢迎发表第一条。加载更多发表评论（平铺，不支持回复层级）发表"
+        "snippet": "待开始中👤我负责任务名称Calendar cross创建者founder创建时间2026年11月5日 15:02当前业务责任方founder任务排期11月8日 20:00 → 11月10日 10:00截止2026年11月10日 10:00负责人alpha-one-employee审核人alpha-one-head任务说明Calendar browser acceptance task当前进展暂无评论共 0 条还没有评论，欢迎发表第一条。加载更多发表评论（平铺，不支持回复层级）发表"
       }
     },
     {
@@ -1624,7 +1624,7 @@
       "evidence": {
         "rowHeight": 340,
         "shown": 14,
-        "hidden": 35
+        "hidden": 36
       }
     },
     {
@@ -1632,7 +1632,7 @@
       "pass": true,
       "evidence": {
         "contextBeforeForm": {
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "stream": [
             "2026-09",
             "2026-10",
@@ -1645,7 +1645,7 @@
           "scroll": 8097
         },
         "contextAfterForm": {
-          "anchor": 1793980800000,
+          "anchor": 1794067200000,
           "stream": [
             "2026-09",
             "2026-10",
