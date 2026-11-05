@@ -43,12 +43,13 @@ def main():
   for offset in range(12):
    f.db.server_side('INSERT INTO work_logs(id,organization_id,author_id,business_date,body) VALUES('+','.join(map(quote,[str(uuid.uuid4()),'fixture-company',ids['alpha-one-employee'],str(today-dt.timedelta(days=offset)),'日志 '+str(offset)+'\n'+'跨天资料整理，下一步检查验收。'*12]))+')')
   own_log=ok('POST','/work-logs',{'businessDate':str(today),'body':'本人日志阅读字号验证，长内容应自动换行。'*15})['logId']
+  unpublished=ok('POST','/tasks',{'title':'下属路径未发布申请','description':'仅评论路径不得打开审批','assigneeIds':[ids['alpha-one-employee']],'allDay':False,'startAt':instant(day,16),'dueAt':instant(day,17)},'alpha-one-employee')['taskId']
   reports=ok('GET','/me/reports')['items'];assert all('managerId' in p for p in reports)
   assert ids['alpha-one-employee'] in [p['id'] for p in ok('GET','/me/reports',who='alpha-head')['items']]
   assert ids['alpha-one-employee'] in [p['id'] for p in ok('GET','/me/reports',who='alpha-one-head')['items']]
   assert ok('GET','/me/reports',who='alpha-one-employee')['items']==[]
   assert call('GET','/work-logs?scope=visible&authorId='+ids['alpha-one-employee'],who='beta-one-head')[0]==404
   assert ok('GET','/tasks?assigneeId='+ids['alpha-one-employee'],who='beta-one-head')['items']==[]
-  manifest={'base':f'http://127.0.0.1:{f.port}','identities':f.identities,'day':str(day),'normal':normal,'point':point,'cross':cross,'midnight':midnight,'other':other,'spanning':spanning,'overlaps':overlaps,'ownLog':own_log,'doneTimed':done_timed,'doneAllDay':done_allday,'doneMonth':done_month,'quiet':str(quiet),'headOwned':head_owned}
+  manifest={'base':f'http://127.0.0.1:{f.port}','identities':f.identities,'day':str(day),'normal':normal,'point':point,'cross':cross,'midnight':midnight,'other':other,'spanning':spanning,'overlaps':overlaps,'ownLog':own_log,'doneTimed':done_timed,'doneAllDay':done_allday,'doneMonth':done_month,'quiet':str(quiet),'headOwned':head_owned,'unpublished':unpublished}
   subprocess.run(['node',str(BASE/'scripts/check_subordinate_workspace_browser.js')],env={**os.environ,'PANDORA_STAFF_FIXTURE':json.dumps(manifest)},check=True)
 if __name__=='__main__':main()
