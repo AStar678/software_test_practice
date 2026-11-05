@@ -469,6 +469,17 @@ saveLog = function () {
     if (type.startsWith("comment.")) return PURPOSE_FALLBACK.comment;
     return PURPOSE_FALLBACK.task;
   }
+  function notificationSummary(raw, changes) {
+    let text = String(raw.summary || "");
+    if (changes && changes.length) text = text.split("本次变化：")[0];
+    const name = raw.objectName;
+    if (name && text) {
+      for (const prefix of ["任务《" + name + "》的", "任务《" + name + "》", "《" + name + "》", name]) {
+        if (text.startsWith(prefix)) { text = text.slice(prefix.length); break; }
+      }
+    }
+    return text.trim();
+  }
   let noticeFilters = { read: "all", category: "all", mode: "compact", epoch: -1 };
   const NOTICE_CATEGORIES = { all: "全部类型", review: "需我审核", result: "结果告知", reminder: "提醒", comment: "评论", other: "其他" };
   function noticeSelect(id, label, value, options) {
@@ -482,7 +493,7 @@ saveLog = function () {
     const rows = list.map(n => {
       const raw = n.raw, category = NOTICE_CATEGORIES[raw.category] || '其他';
       const name = raw.objectName || raw.title || (raw.taskId ? '关联任务不可查看' : '无关联任务');
-      const summary = raw.summary || '';
+      const summary = notificationSummary(raw, []);
       return '<button type="button" class="notif p-notice-row' + (raw.readAt ? ' is-read' : '') + '" data-action="open-notif" data-id="' + esc(n.id) + '"><span class="nbody"><span class="ntop"><span class="ntitle">' + esc(name) + '</span><span class="npurpose">' + esc(category) + '</span></span>' +
         (noticeFilters.mode === 'full' ? '<span class="nsummary">' + esc(notificationPurpose(raw)) + ' · ' + esc(summary) + '</span>' : '') +
         '<span class="nmeta"><span>' + (raw.readAt ? '已读' : '未读') + '</span><time>' + esc(timeText(raw.createdAt)) + '</time></span></span></button>';
@@ -506,7 +517,7 @@ saveLog = function () {
     if (!raw.requestStatus) return "";
     const kind = REQUEST_KIND[raw.requestKind] || "任务申请";
     const result = REQUEST_RESULT[raw.requestStatus] || raw.requestStatus || "已处理";
-    return kind + " · " + result + (raw.requestStatus === "pending" ? "" : "（已办结，不再提供审核按钮）");
+    return kind + " · " + result;
   }
   function notificationView(raw) {
     const revoked = !!raw.revoked;
@@ -518,11 +529,12 @@ saveLog = function () {
       body += '<div class="divider"></div><p>该通知已被撤回。</p>';
     } else {
       if (revoked) body += '<div class="callout info">该通知已撤回。你作为发起人的上级，可查看原通知内容；此页仅供只读查看。</div>';
-      const summary = changes.length ? String(raw.summary || '').split('本次变化：')[0] : (raw.summary || '');
-      body += '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(summary) + '</p>';
+      const summary = notificationSummary(raw, changes);
+      const changeSummary = notificationSummary({ ...raw, summary: raw.changeSummary }, []);
+      if (!changes.length && summary) body += '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(summary) + '</p>';
       if (changes.length) body += '<div class="p-notice-changes" aria-label="本次变化">' + changes.map(change =>
         '<div><strong>' + esc(change.label || change.field) + '</strong><span>' + esc(change.before || '空') + '</span><span aria-hidden="true">→</span><span>' + esc(change.after || '空') + '</span></div>').join('') + '</div>';
-      if (!changes.length && raw.changeSummary && raw.changeSummary !== raw.summary) body += '<p class="tiny muted" style="white-space:pre-wrap">' + esc(raw.changeSummary) + '</p>';
+      if (!changes.length && changeSummary && changeSummary !== summary) body += '<p class="tiny muted" style="white-space:pre-wrap">' + esc(changeSummary) + '</p>';
       if (raw.requestStatus) body += '<div class="callout info">申请：' + esc(requestResultText(raw)) + '</div>';
       if (raw.requestUnavailable) body += '<p class="tiny muted">原申请不可查看。</p>';
       if (raw.relationLost) body += '<div class="callout info">你已不再是该任务负责人；此消息仅保留只读摘要，不能用于修改或审核。</div>';
@@ -542,10 +554,10 @@ saveLog = function () {
       buttons.push(button("p-open-notification-task", "查看任务", raw.id));
     }
     const more=[];
-    if (!revoked && raw.canWithdrawRequest && raw.requestId) more.push(button('p-withdraw-request','撤销本人申请',raw.requestId));
+    if (!revoked && raw.canWithdrawRequest && raw.requestId) more.push('<button type="button" class="btn" data-action="p-withdraw-notification-request" data-id="'+esc(raw.requestId)+'">撤销本人申请</button>');
     if (!revoked && raw.canWithdraw) more.push(button("p-withdraw-notification", "撤回通知", raw.id));
     if (!revoked) more.push(button("p-hide-notification", "删除此消息", raw.id));
-    if (more.length) body += '<details class="p-notice-more"><summary>更多操作</summary><div class="row wrap">'+more.join('')+'</div></details>';
+    if (more.length) body += '<details class="p-notice-more"><summary>更多操作</summary><div class="row wrap" role="group" aria-label="更多通知操作">'+more.join('')+'</div></details>';
     if (buttons.length && !buttons.some(item=>item.includes('class="btn primary'))) buttons[0]=buttons[0].replace('class="btn ','class="btn primary ');
     return { title: "通知详情", notification: true, body: body, foot: buttons.join("") };
   }
@@ -588,6 +600,17 @@ saveLog = function () {
       await P.mutation("notification-withdraw:" + id, "POST", "/notifications/" + endpoint(id) + "/withdraw",
         { reason: "发起人撤回" });
       await P.reload(); closeSheet(); openSheet(notificationsView()); P.notice("通知已撤回，业务结果不变。");
+    }, "notification-error");
+  }
+  function withdrawRequestFromNotification(requestId) {
+    const snapshot = notificationSnapshot;
+    if (!snapshot || snapshot.epoch !== P.epoch || snapshot.raw.requestId !== requestId) throw new Error("请重新打开通知后再操作。");
+    if (!confirm('撤销本人申请？任务将保持申请前的有效内容。')) return;
+    P.busy(async () => {
+      const request = await P.request("/approval-requests/" + encodeURIComponent(requestId));
+      await P.mutation("notification-withdraw-request:" + requestId, "PATCH",
+        "/approval-requests/" + encodeURIComponent(requestId), { decision: "withdraw" }, '"' + request.rowVersion + '"');
+      await P.reload(); closeSheet(); openSheet(notificationsView()); P.notice("本人申请已撤销，任务保持申请前内容。");
     }, "notification-error");
   }
   function openNotificationTask(id) {
@@ -712,6 +735,7 @@ saveLog = function () {
       case "p-notice-clear": noticeFilters.read = "all"; noticeFilters.category = "all"; replaceTopSheet(notificationsView()); return;
       case "p-hide-notification": deleteNotification(el.dataset.id); return;
       case "p-withdraw-notification": withdrawNotification(el.dataset.id); return;
+      case "p-withdraw-notification-request": withdrawRequestFromNotification(el.dataset.id); return;
       case "p-open-notification-task": openNotificationTask(el.dataset.id); return;
       case "p-open-notification-object": openNotificationObject(el.dataset.id); return;
       case "p-open-historical-task": openHistoricalTask(el.dataset.id); return;
