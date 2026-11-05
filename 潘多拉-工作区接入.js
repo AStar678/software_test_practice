@@ -201,7 +201,9 @@ logDetailView = function (id) {
 };
 openLogDetail = function (id) {
   P.busy(async () => {
+    const source = P.subordinateMode() ? P.subordinateKey?.() : null;
     const raw = await P.request("/work-logs/" + endpoint(id));
+    if (source !== (P.subordinateMode() ? P.subordinateKey?.() : null)) return;
     if (P.subordinateMode()) P.subordinateLogs.set(id,{id:raw.id,authorId:raw.authorId,time:new Date(raw.createdAt),content:raw.body,taskId:raw.taskId,raw});
     else putLog(raw);
     logSnapshot = { raw, epoch: P.epoch };

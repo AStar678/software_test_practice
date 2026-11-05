@@ -465,6 +465,7 @@
   }
   // A calendar drop has a separate schedule-only draft and confirmation sheet.
   P.openScheduleChange = async function (id, start, due, rowVersion) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     if (!Number.isFinite(+start) || !Number.isFinite(+due) || due<start) { P.notice('截止不得早于开始。');return; }
     return P.busy(async function () {
       const mark=session(),original=taskById(id),raw=await P.request('/tasks/'+encodeURIComponent(id));
@@ -517,10 +518,13 @@
   window.openTaskDetail = function (id) {
     return P.busy(async function () {
       const mark = session();
+      const source = P.subordinateMode() ? P.subordinateKey() : null;
       const raw = await P.request("/tasks/" + encodeURIComponent(id));
       if (!stillHere(mark)) return;
+      if (source !== (P.subordinateMode() ? P.subordinateKey() : null)) return;
       if (!P.subordinateMode()) taskTag(raw);
       if (!raw.currentVersionId) {
+        if (P.subordinateMode()) { P.notice("下属浏览仅可评论。"); return; }
         const requestId = raw.pendingRequestId || raw.latestRequestId;
         if (!requestId) throw new Error("该任务尚未发布。");
         await openApprovalNow(requestId, mark);
@@ -596,6 +600,7 @@
   window.noteFormView = function (id) { return actionView("progress", id); };
   window.submitCompleteView = function (id) { return actionView("complete", id); };
   function openAction(command, id) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     return P.busy(async function () {
       const mark = session();
       const raw = await P.request("/tasks/" + encodeURIComponent(id));
@@ -723,6 +728,7 @@
     return { title: kindName[request.kind] + " · " + (request.proposedVersion.title || "申请详情"), body: body, foot: withBack(buttons.join("")), approvalId: id };
   }
   async function openApprovalNow(id, mark) {
+    if (P.subordinateMode()) { P.notice("下属浏览仅可评论。"); return; }
     const request = await P.request("/approval-requests/" + encodeURIComponent(id));
     if (!stillHere(mark)) return;
     reviewContexts.set(id, { request: request, etag: reviewTag(request), mark: mark, slot: newSlot("review:" + id) });
@@ -787,6 +793,7 @@
     return { title: "查看审核申请", body: '<div class="callout info">请先打开申请快照后处理。</div>', foot: request ? '<button type="button" class="btn primary" data-action="p-open-approval" data-id="' + attr(request.id) + '">打开申请</button>' : '<button type="button" class="btn" data-action="sheet-close">关闭</button>' };
   };
   function togglePin(id) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     const task = taskById(id);
     if (!task) return;
     const next = !task.pinned;
@@ -890,6 +897,7 @@
     };
   }
   function openHandoverSheet(taskId) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     return P.busy(async function () {
       const mark = session();
       const raw = await P.request("/tasks/" + encodeURIComponent(taskId));
@@ -970,6 +978,7 @@
     };
   }
   P.openHandoverPreset = function (subjectId, subjectNameArg) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     return P.busy(async function () {
       const mark = session();
       const preset = await P.request("/users/" + encodeURIComponent(subjectId) + "/handover-preset");

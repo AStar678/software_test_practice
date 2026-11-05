@@ -1475,7 +1475,11 @@ function openSheet(view){
   if (current) {
     current.savedScroll = sheetBodyEl.scrollTop;
     const focused = document.activeElement;
-    current.savedFocus = focused?.id ? '#'+CSS.escape(focused.id) : null;
+    if (focused?.id) current.savedFocus = '#'+CSS.escape(focused.id);
+    else if (focused?.dataset?.task) current.savedFocus = '[data-task="'+CSS.escape(focused.dataset.task)+'"]';
+    else if (focused?.dataset?.action && focused?.dataset?.id) current.savedFocus = '[data-action="'+CSS.escape(focused.dataset.action)+'"][data-id="'+CSS.escape(focused.dataset.id)+'"]';
+    else if (focused?.dataset?.action && focused?.dataset?.date) current.savedFocus = '[data-action="'+CSS.escape(focused.dataset.action)+'"][data-date="'+CSS.escape(focused.dataset.date)+'"]';
+    else current.savedFocus = null;
   }
   if (!lastFocused) lastFocused = document.activeElement;
   sheetStack.push(view);
