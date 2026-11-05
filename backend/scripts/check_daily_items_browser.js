@@ -316,6 +316,7 @@ async function main() {
 
     await require('./check_daily_items_repairs_browser')(b, fixture, check);
     await require('./check_daily_items_lifecycle_browser')(b, fixture, check);
+    await require('./check_daily_items_paging_browser')(b, fixture, check);
 
     await ev("Pandora.logout()");
     await waitFor(b, "!!document.getElementById('backend-login')&&Pandora.idle()", 20000);

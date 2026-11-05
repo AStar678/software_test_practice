@@ -525,13 +525,39 @@
     const token = ++entry.token;
     entry.loading = true; entry.error = null;
     try {
-      const result = await P.request("/daily-items?date=" + encodeURIComponent(date) + "&limit=" + (limit || PAGE) + "&offset=" + offset);
-      if (entry.token !== token || !sameSession(generation)) return entry;
-      const seen = new Set(offset ? entry.items.map(item => item.id) : []);
-      (result.items || []).forEach(item => { if (!seen.has(item.id)) { seen.add(item.id); entry.items.push(item); } });
-      if (!offset) entry.items = (result.items || []).slice();
-      entry.total = Number(result.total || 0);
-      entry.next = result.nextOffset == null ? null : Number(result.nextOffset);
+      // Offset belongs to an old snapshot. Re-read the visible prefix plus one
+      // page so deletions remove stale rows and cannot shift an unseen row past us.
+      const wanted = offset ? entry.items.length + (limit || PAGE) : (limit || PAGE);
+      let previous = null, result = null;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const items = [], seen = new Set();
+        let total = null, next = 0, valid = true, requests = 0;
+        do {
+          const page = await P.request("/daily-items?date=" + encodeURIComponent(date) + "&limit=" + Math.min(100, wanted - items.length) + "&offset=" + next);
+          if (entry.token !== token || !sameSession(generation)) return entry;
+          requests++;
+          if (total != null && total !== Number(page.total)) valid = false;
+          total = Number(page.total);
+          for (const item of page.items || []) {
+            if (seen.has(item.id)) valid = false;
+            else { seen.add(item.id); items.push(item); }
+          }
+          const following = page.nextOffset == null ? null : Number(page.nextOffset);
+          if (following != null && following <= next) { valid = false; break; }
+          next = following;
+        } while (next != null && items.length < wanted);
+        if (items.length !== Math.min(wanted, total)) valid = false;
+        const snapshot = { items: items, total: total, next: items.length < total ? items.length : null };
+        const signature = JSON.stringify(snapshot);
+        // One API response is transactional. Multiple responses need a matching
+        // second read, including IDs/versions, even when a delete+create kept total.
+        if (valid && (requests === 1 || signature === previous)) { result = snapshot; break; }
+        previous = valid ? signature : null;
+      }
+      if (!result) throw new Error("事项正在其他会话中变化，请重试加载。");
+      entry.items = result.items;
+      entry.total = result.total;
+      entry.next = result.next;
       entry.loading = false;
       return entry;
     } catch (error) {
@@ -762,8 +788,7 @@
   }
   async function reloadList(date) {
     const entry = listEntry(date);
-    const wanted = Math.min(100, Math.max(PAGE, entry.items.length));
-    entry.items = []; entry.next = null; entry.total = 0; entry.token++;
+    const wanted = Math.max(PAGE, entry.items.length);
     await loadList(date, 0, wanted);
     rerenderOpenList(date, null);
   }
@@ -800,9 +825,19 @@
     const entry = S.lists.get(date);
     if (!entry || entry.next == null) return;
     const top = sheetBodyEl.scrollTop;
-    P.busy(async () => {
+    const active = document.activeElement;
+    const focusId = active && active.dataset.id;
+    const focusAction = active && active.dataset.action;
+    const previousIds = entry.items.map(item => item.id);
+    queryForSheet(async () => {
       await loadList(date, entry.next);
+    }, () => {
       rerenderOpenList(date, top);
+      const target = focusAction && sheetBodyEl.querySelector('[data-action="' + focusAction + '"]' + (focusId ? '[data-id="' + focusId + '"]' : ""));
+      const fallbackId = previousIds.reverse().find(id => entry.items.some(item => item.id === id));
+      const fallback = sheetBodyEl.querySelector('[data-action="daily-open"]' + (fallbackId ? '[data-id="' + fallbackId + '"]' : ""));
+      if (target || fallback) (target || fallback).focus({ preventScroll: true });
+      invalidateDate(date);
     }, "daily-list-error");
   }
   function reloadOpenList(date) {
