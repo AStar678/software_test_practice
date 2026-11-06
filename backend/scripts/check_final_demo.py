@@ -22,7 +22,8 @@ def main():
     def snapshot():
         return {table:db.rows('SELECT * FROM '+table+' ORDER BY '+key) for table,key in
                 (('users','id'),('employee_placements','employee_id'),('tasks','id'),('task_versions','id'),
-                 ('demo_seed_keys','seed_key'),('task_business_transfers','id'),('home_items','id'),('work_logs','id'))}
+                 ('demo_seed_keys','seed_key'),('task_business_transfers','id'),('home_items','id'),('work_logs','id'),
+                 ('work_log_tags','log_id,ordinal'),('daily_items','id'))}
     try:
         admin.server_side(f'CREATE DATABASE `{name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci')
         values=database_env()
@@ -65,6 +66,11 @@ def main():
             ids={key:value['id'] for key,value in f.identities.items()}
             def call(method,path,body=None,who='upper',version=None):
                 return f.call(method,path,body,tokens[who],'demo-check-'+uuid.uuid4().hex,version)
+            status,tagged_log=call('GET','/work-logs/'+manifest['objects']['log-employee-0']['id'],who='employee')
+            focus_tag=manifest['objects']['tag-focus']['id']
+            check('demo log reads its seeded shared tag through the ordered collection',
+                  status==200 and tagged_log.get('tagIds')==[focus_tag]
+                  and [tag['id'] for tag in tagged_log.get('tags',[])]==[focus_tag])
             for who,role in (('upper','founder'),('middle','department_head'),('product-head-1','team_head'),('employee','employee')):
                 status,me=call('GET','/me',who=who);check(who+' has the derived fixed position',status==200 and me.get('role')==role)
             status,directory=call('GET','/users?limit=100')

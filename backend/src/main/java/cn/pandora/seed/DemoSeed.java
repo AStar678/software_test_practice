@@ -194,8 +194,9 @@ public class DemoSeed implements ApplicationRunner {
         String tag=stable("tag-focus");
         db.update("INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,'重点','#F6D5D2')",tag,ORG);
         remember("tag-focus","tag",tag);
-        db.update("UPDATE work_logs SET tag_id=? WHERE author_id=? AND business_date=?",tag,stable("employee"),today);
-        command("middle",doing,Map.of("command","change","tagId",tag,"reason","重点跟进"),true);
+        var taggedLog=db.one("SELECT id,row_version FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?",ORG,stable("employee"),today);
+        workspace.changeLog(actors.get("employee"),s(taggedLog,"id"),"\""+n(taggedLog,"rowVersion")+"\"",Map.of("tagIds",List.of(tag)));
+        command("middle",doing,Map.of("command","change","tagIds",List.of(tag),"reason","重点跟进"),true);
         comments.create(actors.get("middle"),"task",doing,Map.of("body","评论独立于任务进展与审核，请确认清单。"));
         String revoked=create("comment-revoked","upper","评论撤权边界",List.of("employee"),schedule(),true);
         comments.create(actors.get("upper"),"task",revoked,Map.of("body","撤权后旧评论通知不得恢复此正文。"));
