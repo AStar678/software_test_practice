@@ -6,30 +6,12 @@
   const version = row => '"' + row.rowVersion + '"';
   const endpoint = id => encodeURIComponent(id);
   let logSnapshot = null, notificationSnapshot = null, analysis = null, analysisLoading = false, analysisSequence = 0;
-  const homeVersions = new Map();
-  const oldMap = renderMap;
   const oldLogForm = logFormView;
-  const oldPersonalForm = personalItemFormView;
-  const oldDeleteView = confirmDeleteView;
   const oldActions = runAction;
   const oldNotifications = openNotifications;
   const oldReload = P.reload;
   const oldSetPage = setPage;
 
-  function homeRow(kind, id) {
-    const home = P.data.home || {};
-    return (kind === "company" ? home.companyItems || [] : home.personalItems || []).find(row => row.id === id);
-  }
-  function rememberHome(kind, id) {
-    if (!id) return;
-    const row = homeRow(kind, id);
-    if (row) homeVersions.set(kind + ":" + id, { epoch: P.epoch, etag: version(row) });
-  }
-  function homeVersion(kind, id) {
-    const saved = homeVersions.get(kind + ":" + id);
-    if (!saved || saved.epoch !== P.epoch) throw new Error("请重新打开这条信息后再操作。");
-    return saved.etag;
-  }
   function putLog(raw) {
     if (raw.authorId === (P.data.me || {}).id) {
       const own = P.data.calendarLogs || (P.data.calendarLogs = []);
@@ -56,69 +38,39 @@
     return (P.data.approvals || []).filter(r => filter === "reviews"
       ? r.status === "pending" && r.currentReviewerId === me.id : r.applicantId === me.id);
   }
+  function companyBusinessDate() { return (P.data.home || {}).businessDate || toDateInput(new Date()); }
 
-  personalItemsFor = function (pid) {
-    if (!P.data.me || P.data.me.id !== pid) return [];
-    return ((P.data.home || {}).personalItems || []).map(row => ({ id: row.id, text: row.body || row.title, raw: row }));
-  };
   const HOME_PRIORITY = { urgent: "紧急", high: "高", medium: "中", low: "低" };
   function homeAssignedBody() {
     const items = (P.data.home || {}).assignedTasks || [];
-    if (!items.length) return '<div class="empty">暂无被派发的未完成任务</div>';
+    if (!items.length) return '<div class="empty">暂无本人负责的未完成任务</div>';
     return items.map(item =>
       '<button type="button" class="home-task" data-task="' + esc(item.taskId) + '"><span class="home-task-title">' +
         esc(item.title) + '</span><span class="home-task-priority">' + esc(HOME_PRIORITY[item.priority] || "中") + '</span></button>'
     ).join("");
   }
-  function homePersonalBody() {
-    const items = (P.data.home || {}).personalItems || [];
-    if (!items.length) return '<div class="empty">暂无个人信息，可手动添加</div>';
-    return items.map((item, index) =>
-      '<button type="button" class="item-line home-personal-item" data-action="p-open-home-personal" data-id="' + esc(item.id) +
-        '"><span class="idx">' + (index + 1) + '</span><span class="txt">' + esc(item.body || item.title) + '</span></button>'
-    ).join("");
-  }
-  function homeLogsBody() {
-    const logs = (P.data.home || {}).recentLogs || [];
-    if (!logs.length) return '<div class="empty">近十天暂无日志</div>';
-    return logs.map(l =>
-      '<button type="button" class="log-line" data-log="' + esc(l.id) + '"><span class="lt">' + esc(l.businessDate) +
-      '</span><span class="lc">' + esc(l.body) + '</span></button>'
-    ).join("");
-  }
+  /* 首页固定三个模块：事件纪、任务看板保持上方左右位置，每日事项通栏位于下方。
+     日志卡片、旧个人事项列表与第四块空占位已移除；日志仍在日志页按原权限维护。 */
   renderMap = function () {
     const home = P.data.home || {};
     const company = home.companyItems || [];
-    const personal = home.personalItems || [];
     const assigned = home.assignedTasks || [];
-    const today = new Date();
+    const today = parseDateInput(companyBusinessDate()) || new Date();
     const weekday = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][today.getDay()];
     document.getElementById("page-map").innerHTML =
       '<section class="workday"><div class="workday-copy"><h2>' + esc(fmtDate(today)) + '</h2><p>' + esc(weekday) + '</p></div>' +
       '</section>' +
       '<div class="map-grid">' +
-        '<section class="quad company-quad" aria-labelledby="q1"><div class="card-head"><h2 id="q1">公司事项</h2><span class="hint">统一发布</span></div>' +
+        '<section class="quad company-quad" aria-labelledby="q1"><div class="card-head"><h2 id="q1">事件纪</h2><span class="hint">统一发布</span></div>' +
           '<div class="q-body" tabindex="0" role="region" aria-labelledby="q1">' + (company.length ? company.map((item, index) =>
             '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt">' + esc(item.body || item.title) + '</span></div></div>'
           ).join("") : '<div class="empty">暂无公司信息</div>') + '</div></section>' +
-        '<section class="quad tasks-quad" aria-labelledby="q2"><div class="card-head"><h2 id="q2">我的待办</h2><span class="hint">' +
+        '<section class="quad tasks-quad" aria-labelledby="q2"><div class="card-head"><h2 id="q2">任务看板</h2><span class="hint">' +
           assigned.length + '/10</span></div><div class="q-body" tabindex="0" role="region" aria-labelledby="q2">' + homeAssignedBody() + '</div></section>' +
-        '<section class="quad personal-quad" aria-labelledby="q3"><div class="card-head has-actions"><h2 id="q3">个人事项</h2><span class="hint">' +
-          personal.length + '/10 · 本人维护</span><button type="button" class="btn tiny-btn" data-action="new-personal"' +
-          (personal.length >= 10 ? ' disabled' : '') + ' aria-label="新增个人信息">新增</button></div>' +
-          '<div class="q-body" tabindex="0" role="region" aria-labelledby="q3">' + homePersonalBody() + '</div></section>' +
-        '<section class="quad logs-quad" aria-labelledby="q4"><div class="card-head"><h2 id="q4">日志</h2><span class="hint">最近10条</span></div>' +
-          '<div class="q-body" tabindex="0" role="region" aria-labelledby="q4">' + homeLogsBody() + '</div></section>' +
+        '<section class="quad daily-quad" id="dailyItemsSection" aria-labelledby="q3"><div class="card-head"><h2 id="q3">每日事项</h2><span class="hint">本人维护</span></div></section>' +
       '</div>';
+    if (window.PandoraDaily) window.PandoraDaily.render();
   };
-
-  function openPersonalDetail(id) {
-    return P.busy(async function () {
-      const raw = await P.request("/home/items/" + endpoint(id));
-      openSheet({ title: "个人信息", body: '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(raw.body || raw.title) + '</p>',
-        foot: withBack(button("p-edit-home-personal", "编辑", id, "primary") + button("p-delete-home-personal", "删除", id, "danger") + button("sheet-close", "关闭")) });
-    });
-  }
 
   LOG_FILTER_LABEL.logs = "日志";
 /* ---------- 日志页固定展示本人；人员资料中的授权阅读独立打开。 ---------- */
@@ -220,7 +172,6 @@ function logDraft(raw, businessDate) {
     businessDate: raw ? raw.businessDate : businessDate,
     frozen: !!(raw && raw.frozen), frozenAt: raw ? raw.frozenAt : null };
 }
-function companyBusinessDate() { return (P.data.home || {}).businessDate || toDateInput(new Date()); }
 function logDateOptions() {
   const today = parseDateInput(companyBusinessDate()) || new Date();
   return [-2,-1,0].map(offset => {
@@ -394,71 +345,20 @@ saveLog = function () {
 };
 
   companyItemFormView = () => null;
-  personalItemFormView = function (id) {
-    rememberHome("personal", id);
-    const view = oldPersonalForm(id);
-    if (view) view.body = view.body.replace('id="pi-text"', 'id="pi-text" maxlength="2000"')
-      .replace("个人信息由本人维护，默认取自本人日志摘录，编辑个人信息不会改写原始日志。", "最多 10 条，独立保存。");
-    return view;
-  };
-  confirmDeleteView = function (kind, id) {
-    if (kind === "company") return null;
-    rememberHome(kind, id);
-    const view = oldDeleteView(kind, id);
-    if (view) view.body += '<div class="callout" id="home-delete-error" hidden></div>';
-    return view;
-  };
-  function openHomeItem(kind, id, deleting) {
-    if (kind === "company") { P.notice("公司统一信息由管理端统一发布。"); return; }
-    P.busy(async () => {
-      const raw = await P.request("/home/items/" + endpoint(id));
-      const key = kind === "company" ? "companyItems" : "personalItems";
-      const rows = P.data.home[key];
-      const index = rows.findIndex(row => row.id === id);
-      if (index < 0) rows.push(raw); else rows.splice(index, 1, raw);
-      if (kind === "company") {
-        const mapped = { id: raw.id, text: raw.body || raw.title, raw };
-        const position = COMPANY_ITEMS.findIndex(row => row.id === id);
-        if (position < 0) COMPANY_ITEMS.push(mapped); else COMPANY_ITEMS.splice(position, 1, mapped);
-      } else PERSONAL_STATE[P.data.me.id] = { edited: true, items: personalItemsFor(P.data.me.id) };
-      renderAll();
-      const view = deleting ? confirmDeleteView(kind, id) : kind === "company" ? companyItemFormView(id) : personalItemFormView(id);
-      if (view) openSheet(view);
-    });
-  }
+  /* 个人事项已迁移为每日事项；旧入口只提示，不再读写 home_items personal。 */
+  function companyNotice() { P.notice("公司统一信息由管理端统一发布。"); }
+  function personalRetired() { P.notice("个人事项已改为每日事项，请在首页每日事项中维护。"); }
   // Fetch the record when opening; submission retains this snapshot even if a later reload occurs.
   document.addEventListener("click", function (event) {
-    const el = event.target.closest("[data-edit-company],[data-edit-personal],[data-delete-company],[data-delete-personal],[data-action='delete-company'],[data-action='delete-personal']");
+    const el = event.target.closest("[data-edit-company],[data-delete-company],[data-edit-personal],[data-delete-personal],[data-action='delete-company'],[data-action='delete-personal']");
     if (!el || !P.ready) return;
     event.preventDefault(); event.stopImmediatePropagation();
-    if (el.dataset.editCompany || el.dataset.deleteCompany || el.dataset.action === "delete-company") {
-      P.notice("公司统一信息由管理端统一发布。"); return;
-    }
-    if (el.dataset.editPersonal) openHomeItem("personal", el.dataset.editPersonal, false);
-    else if (el.dataset.deletePersonal) openHomeItem("personal", el.dataset.deletePersonal, true);
-    else openHomeItem(el.dataset.action === "delete-company" ? "company" : "personal", el.dataset.id, true);
+    if (el.dataset.editPersonal || el.dataset.deletePersonal || el.dataset.action === "delete-personal") { personalRetired(); return; }
+    companyNotice();
   }, true);
-  function saveHome(kind, id) {
-    if (kind === "company") { P.notice("公司统一信息由管理端统一发布。"); return; }
-    const prefix = kind === "company" ? "ci" : "pi";
-    P.busy(async () => {
-      const content = document.getElementById(prefix + "-text").value.trim();
-      if (!content) throw new Error("内容不能为空。");
-      const body = { body: content };
-      if (!id) body.kind = kind;
-      await P.mutation("home:" + kind + ":" + (id || "new"), id ? "PATCH" : "POST", "/home/items" + (id ? "/" + endpoint(id) : ""), body, id ? homeVersion(kind, id) : null);
-      await P.reload(); closeSheet(); P.notice("信息已保存。");
-    }, prefix + "-error");
-  }
-  saveCompanyItem = () => P.notice("公司统一信息由管理端统一发布。");
-  savePersonalItem = id => saveHome("personal", id);
-  deleteItem = function (kind, id) {
-    if (kind === "company") { P.notice("公司统一信息由管理端统一发布。"); return; }
-    P.busy(async () => {
-      await P.mutation("home-delete:" + id, "DELETE", "/home/items/" + endpoint(id), null, homeVersion(kind, id));
-      await P.reload(); closeSheet(); P.notice("信息已删除。");
-    }, "home-delete-error");
-  };
+  saveCompanyItem = () => companyNotice();
+  savePersonalItem = () => personalRetired();
+  deleteItem = function (kind) { if (kind === "company") companyNotice(); else personalRetired(); };
 
   const REQUEST_KIND = { create: "创建任务", change: "修改资料", progress: "更新进展", complete: "提交完成", reopen: "重开任务", handover: "交接" };
   const REQUEST_RESULT = { pending: "待审核", approved: "已通过", rejected: "已退回", withdrawn: "已撤销", direct: "已生效", expired: "已失效" };
@@ -724,9 +624,6 @@ saveLog = function () {
         return;
       case "toggle-logs-mine":
         return;
-      case "p-open-home-personal": openPersonalDetail(el.dataset.id); return;
-      case "p-edit-home-personal": openHomeItem("personal", el.dataset.id, false); return;
-      case "p-delete-home-personal": openHomeItem("personal", el.dataset.id, true); return;
       case "clear-log-task":
         if (drafts.log) drafts.log.relationshipChanged = true;
         oldActions(el); return;

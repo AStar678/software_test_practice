@@ -1,0 +1,107 @@
+/* =====================================================================
+   每日事项：横向连续日历、按日清单、详情与表单。
+   仅本模块使用；公司页任务月历的间距、拖动、密度样式不受影响。
+   ===================================================================== */
+
+/* ---------- 首页三模块：上下两层，短屏允许整页纵向滚动 ---------- */
+.app-main.is-map{overflow-y:auto;overflow-x:hidden}
+.app-main.is-map #page-map.is-active{flex:none;min-height:100%;height:auto}
+/* 上方两卡按真实条目行高分配：单行条目 44px + 6px 间距，加卡片内边距和标题后可完整容纳
+   三条，常规窗口接近四条；不再叠加会抵消高度的 34vh 上限。 */
+.app-main.is-map .map-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:minmax(188px,236px) auto;flex:none;height:auto;min-height:0;align-content:start}
+.map-grid>.quad{grid-column:auto;grid-row:auto}
+.map-grid>.daily-quad{grid-column:1/-1;grid-row:2;min-height:0;max-height:none}
+.map-grid>.company-quad,.map-grid>.tasks-quad{max-height:none}
+.map-grid .q-body{overflow-y:auto;overflow-x:hidden}
+
+/* 空占位与旧日志卡片已移除；只保留三张纸片 */
+.map-grid>.daily-quad{--note-color:var(--journal-mint, #cfe8d9)}
+.map-grid>.daily-quad::before{background:var(--note-color)}
+
+/* ---------- 每日事项卡片 ---------- */
+.daily-quad{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
+/* 单行标题栏：标题 + 玻璃加号紧接其右，月份工具靠行尾；没有重复年月副标题。 */
+.daily-quad .daily-head{display:flex;flex-wrap:nowrap;align-items:center;gap:5px;margin-bottom:6px;min-width:0}
+.daily-quad .daily-head h2{flex:0 0 auto;min-width:0;white-space:nowrap}
+.daily-tools{margin-left:auto;display:flex;gap:2px;align-items:center;flex-wrap:nowrap}
+.daily-tools .btn{min-width:34px;min-height:34px;padding:2px 6px;font-size:12px;line-height:1}
+.daily-body{flex:1;min-height:0;display:flex;min-width:0}
+
+/* 标题右侧的新增加号：与月份工具同形态（同高、同圆角），半透明薄荷绿玻璃，非白填充。 */
+.daily-head .btn.daily-add{position:relative;min-width:34px;min-height:34px;padding:2px 6px;font-size:17px;
+  line-height:1;font-weight:700;color:#1e5c44;border:1px solid rgba(255,255,255,.72);border-radius:10px;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.15) 55%,rgba(255,255,255,0)),
+    rgba(150,211,180,.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(30,92,68,.12),0 2px 6px rgba(30,92,68,.18);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);cursor:pointer;flex:0 0 auto}
+.daily-head .btn.daily-add:hover{background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.18) 55%,rgba(255,255,255,0)),
+  rgba(138,203,170,.62)}
+.daily-head .btn.daily-add:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* 固定星期表头：横向滚动时不动 */
+.daily-weekdays{flex:0 0 34px;width:34px;display:flex;flex-direction:column;align-items:center;color:var(--muted);font-size:10.5px;font-weight:600}
+.daily-weekdays .daily-corner{height:22px;flex:0 0 22px}
+.daily-weekdays span:not(.daily-corner){height:44px;flex:0 0 44px;display:flex;align-items:flex-start;justify-content:center;padding-top:3px;border-bottom:1px dashed var(--line-2)}
+.daily-weekdays span:last-child{border-bottom:0}
+
+/* 横向滚动只发生在每日事项自己的区域 */
+.daily-scroller{flex:1 1 auto;min-width:0;min-height:330px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;touch-action:pan-x;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.daily-scroller:focus-visible{outline-offset:-2px}
+.daily-track{display:flex;align-items:flex-start;gap:12px;min-height:330px;padding-bottom:2px}
+.daily-month{flex:0 0 auto;display:flex;flex-direction:column}
+/* 年月头整体属于月块，起点即 1 号所在列；允许超出单列宽度，不截断。 */
+.daily-month-head{height:22px;display:flex;align-items:center;gap:4px;min-width:0}
+.daily-month-label{font-size:10.5px;font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:visible}
+.daily-retry{min-width:34px;min-height:22px;padding:0 4px;font-size:10px;line-height:1}
+.daily-weeks{display:flex;align-items:flex-start}
+.daily-week{display:flex;flex-direction:column}
+
+/* 日期格：日期数字在上，数量标记在下；44px 可操作目标 */
+.daily-cell{position:relative;width:46px;min-width:46px;height:44px;padding:2px 1px;border:0;border-radius:9px;background:transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;cursor:pointer;color:var(--ink)}
+.daily-cell:hover{background:var(--brand-soft)}
+.daily-cell .daily-num{font-size:12.5px;line-height:1.25;font-variant-numeric:tabular-nums}
+/* 相邻月份的位置只是非交互空位：无按钮、无焦点、不显示日期。 */
+.daily-gap{display:block;width:46px;min-width:46px;height:44px;flex:0 0 auto}
+.daily-cell.is-today{background:var(--brand-soft);box-shadow:inset 0 0 0 1px #c7d7fb}
+.daily-cell.is-today .daily-num{color:var(--brand);font-weight:700}
+.daily-cell.is-selected{box-shadow:inset 0 0 0 2px var(--brand)}
+.daily-cell.is-unknown{background:var(--grey-soft)}
+.daily-cell.is-unknown .daily-marks::after{content:"!";font-size:9px;color:var(--warn);line-height:1}
+
+/* 数量标记：每个日期最多一个，长度只由当天总数决定；有未完成=蓝，全完成=灰 */
+.daily-marks{display:flex;align-items:center;justify-content:center;gap:2px;height:4px;flex:0 0 4px;min-width:4px}
+.daily-mark{display:block;height:4px;border-radius:2px;flex:0 0 auto}
+.daily-mark.is-open{background:#3b82f6}
+.daily-mark.is-done{background:#9ca3af}
+
+/* ---------- 日清单 ---------- */
+.daily-list-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--ink-2)}
+.daily-rows{display:flex;flex-direction:column;gap:6px}
+.daily-row{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border:1px solid var(--line);border-radius:12px;background:#fff;min-width:0}
+.daily-row.is-done{background:#f7f8fa}
+.daily-row.is-done .daily-text span{color:var(--muted);text-decoration:line-through}
+.daily-check{flex:0 0 44px;width:44px;min-height:44px;border:1px solid var(--line);border-radius:11px;background:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--ok);cursor:pointer}
+.daily-row.is-done .daily-check{background:var(--ok-soft);border-color:#b7e0d0}
+.daily-text{flex:1 1 auto;min-width:0;min-height:44px;border:0;background:transparent;text-align:left;padding:2px 0;cursor:pointer}
+.daily-text span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.5}
+
+/* ---------- 详情与表单 ---------- */
+.daily-detail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.daily-detail-date{font-size:13px;font-weight:700;color:var(--ink)}
+.daily-detail-body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.75;margin:0}
+.daily-body-field textarea{min-height:180px;resize:vertical;white-space:pre-wrap}
+.sheet.is-fullscreen .daily-body-field textarea{min-height:220px}
+
+/* ---------- 窄屏与手账主题 ---------- */
+@media (max-width:360px){
+  .daily-weekdays{flex-basis:30px;width:30px}
+  .daily-cell{width:44px;min-width:44px}
+  .daily-gap{width:44px;min-width:44px}
+  .daily-tools .btn{min-width:32px;min-height:32px;padding:2px 4px}
+  .daily-head .btn.daily-add{min-width:32px;min-height:32px;padding:2px 4px;font-size:16px}
+}
+.daily-quad{background:var(--card)}
+.daily-quad .daily-month-label{color:var(--ink-2)}

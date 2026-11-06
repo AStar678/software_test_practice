@@ -23,6 +23,7 @@ RESULTS: list[dict] = []
 SCRIPT_ORDER = [
     "潘多拉-交互原型.js", "潘多拉-api.js", "潘多拉-任务接入.js", "潘多拉-工作区接入.js",
     "潘多拉-日程视图.js", "潘多拉-任务表单.js", "潘多拉-个人资料.js", "潘多拉-标签评论.js",
+    "潘多拉-每日事项.js",
 ]
 
 
@@ -86,6 +87,8 @@ def main() -> int:
     check("10.1 the later modules load in dependency order so their overrides win",
           len(positions) == len(SCRIPT_ORDER) and positions == sorted(positions),
           {"scripts": scripts, "expected": SCRIPT_ORDER})
+    check("10.1 the employee page loads the independent daily-item calendar last",
+          "潘多拉-每日事项.js" in scripts and "潘多拉-每日事项.css" in names, {"scripts": scripts})
     check("10.1 the employee page loads the shared tag/comment and profile modules",
           "潘多拉-标签评论.js" in scripts and "潘多拉-个人资料.js" in scripts, {"scripts": scripts})
     check("10.1 the employee page no longer references an Android-only theme override",

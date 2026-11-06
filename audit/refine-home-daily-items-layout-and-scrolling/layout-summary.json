@@ -1,0 +1,221 @@
+{
+  "updated": "2026-11-05T06:58:38.991Z",
+  "viewports": [
+    {
+      "viewport": "320x740",
+      "layout": {
+        "overflow": false,
+        "weekdayRows": 7,
+        "dayHeight": 44,
+        "dayWidth": 44,
+        "sevenRows": true,
+        "lastReachable": true,
+        "markersHeight": true,
+        "company": {
+          "rows": 5,
+          "short": 5,
+          "fully": 4,
+          "thirdFully": true,
+          "bodyHeight": 167,
+          "scrollable": true,
+          "overflow": "auto",
+          "cardHeight": 236
+        },
+        "tasks": {
+          "rows": 7,
+          "short": 4,
+          "fully": 3,
+          "thirdFully": true,
+          "bodyHeight": 167,
+          "scrollable": true,
+          "overflow": "auto",
+          "cardHeight": 236
+        },
+        "head": {
+          "sameRow": true,
+          "addVisible": true,
+          "addLeft": 82,
+          "titleRight": 77,
+          "toolsRight": 303,
+          "headRight": 303
+        },
+        "monthAligned": true,
+        "monthCount": 6,
+        "scroll": {
+          "scrollWidth": 1380,
+          "clientWidth": 256,
+          "scrollLeft": 650,
+          "maxLeft": 1124,
+          "anchor": "2026-11-30"
+        },
+        "reveal": {
+          "bottom": 657,
+          "navTop": 665,
+          "noOverflow": true
+        }
+      }
+    },
+    {
+      "viewport": "390x844",
+      "layout": {
+        "overflow": false,
+        "weekdayRows": 7,
+        "dayHeight": 44,
+        "dayWidth": 46,
+        "sevenRows": true,
+        "lastReachable": true,
+        "markersHeight": true,
+        "company": {
+          "rows": 5,
+          "short": 5,
+          "fully": 3,
+          "thirdFully": true,
+          "bodyHeight": 160,
+          "scrollable": true,
+          "overflow": "auto",
+          "cardHeight": 236
+        },
+        "tasks": {
+          "rows": 7,
+          "short": 4,
+          "fully": 3,
+          "thirdFully": true,
+          "bodyHeight": 160,
+          "scrollable": true,
+          "overflow": "auto",
+          "cardHeight": 236
+        },
+        "head": {
+          "sameRow": true,
+          "addVisible": true,
+          "addLeft": 96,
+          "titleRight": 91,
+          "toolsRight": 367,
+          "headRight": 367
+        },
+        "monthAligned": true,
+        "monthCount": 6,
+        "scroll": {
+          "scrollWidth": 1440,
+          "clientWidth": 310,
+          "scrollLeft": 680,
+          "maxLeft": 1130,
+          "anchor": "2026-11-30"
+        },
+        "reveal": {
+          "bottom": 757,
+          "navTop": 769,
+          "noOverflow": true
+        }
+      }
+    },
+    {
+      "viewport": "1440x900",
+      "layout": {
+        "overflow": false,
+        "weekdayRows": 7,
+        "dayHeight": 44,
+        "dayWidth": 46,
+        "sevenRows": true,
+        "lastReachable": true,
+        "markersHeight": true,
+        "company": {
+          "rows": 5,
+          "short": 5,
+          "fully": 3,
+          "thirdFully": true,
+          "bodyHeight": 148,
+          "scrollable": true,
+          "overflow": "auto",
+          "cardHeight": 236
+        },
+        "tasks": {
+          "rows": 7,
+          "short": 4,
+          "fully": 3,
+          "thirdFully": true,
+          "bodyHeight": 148,
+          "scrollable": true,
+          "overflow": "auto",
+          "cardHeight": 236
+        },
+        "head": {
+          "sameRow": true,
+          "addVisible": true,
+          "addLeft": 250,
+          "titleRight": 245,
+          "toolsRight": 1263,
+          "headRight": 1263
+        },
+        "monthAligned": true,
+        "monthCount": 12,
+        "scroll": {
+          "scrollWidth": 2984,
+          "clientWidth": 1052,
+          "scrollLeft": 1452,
+          "maxLeft": 1932,
+          "anchor": "2026-11-30"
+        },
+        "reveal": {
+          "bottom": 802,
+          "navTop": 820,
+          "noOverflow": true
+        }
+      }
+    },
+    {
+      "viewport": "390x600",
+      "layout": {
+        "overflow": false,
+        "weekdayRows": 7,
+        "dayHeight": 44,
+        "dayWidth": 46,
+        "sevenRows": true,
+        "lastReachable": true,
+        "markersHeight": true,
+        "company": {
+          "rows": 5,
+          "short": 5,
+          "fully": 3,
+          "thirdFully": true,
+          "bodyHeight": 160,
+          "scrollable": true,
+          "overflow": "auto",
+          "cardHeight": 236
+        },
+        "tasks": {
+          "rows": 7,
+          "short": 4,
+          "fully": 3,
+          "thirdFully": true,
+          "bodyHeight": 160,
+          "scrollable": true,
+          "overflow": "auto",
+          "cardHeight": 236
+        },
+        "head": {
+          "sameRow": true,
+          "addVisible": true,
+          "addLeft": 96,
+          "titleRight": 91,
+          "toolsRight": 367,
+          "headRight": 367
+        },
+        "monthAligned": true,
+        "monthCount": 12,
+        "scroll": {
+          "scrollWidth": 2984,
+          "clientWidth": 310,
+          "scrollLeft": 1452,
+          "maxLeft": 2674,
+          "anchor": "2026-11-30"
+        },
+        "reveal": {
+          "bottom": 513,
+          "navTop": 525,
+          "noOverflow": true
+        }
+      }
+    }
+  ]
+}

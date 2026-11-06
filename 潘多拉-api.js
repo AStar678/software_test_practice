@@ -122,11 +122,11 @@
     document.getElementById("pageTitle").textContent = "登录";
     document.querySelectorAll(".role-switch button").forEach(b => b.setAttribute("aria-pressed", "false"));
     document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div>' +
-      '<div class="auth-copy"><p class="eyebrow">PANDORA WORKSPACE</p><h2>让每一天，<br>有序向前。</h2><p>登录你的工作台，查看任务与团队动态。</p></div>' +
+      '<div class="auth-copy"><p class="eyebrow">PANDORA WORKSPACE</p><h2>让每一天，<br>有序向前。</h2><p>登录你的首页，查看每日事项与任务动态。</p></div>' +
       '<form id="backend-login"><div class="field"><label for="login-user">手机号</label><input id="login-user" type="text" name="phone" inputmode="tel" autocomplete="tel" autocapitalize="none" spellcheck="false" placeholder="请输入本人手机号" required value="' + esc(identifier || "") + '"></div>' +
       '<div class="field"><label for="login-password">密码</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required></div>' +
       '<div class="callout" id="login-error" role="alert"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
-      '<button type="submit" class="btn primary auth-submit">登录工作台</button></form>' +
+      '<button type="submit" class="btn primary auth-submit">登录首页</button></form>' +
       '<p class="auth-help">员工使用本人手机号登录，初始密码由公司管理员提供；忘记密码请联系管理员。管理员请通过下方“进入管理后台”入口使用管理账号登录。</p>' +
       '<a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
     gate();
@@ -153,7 +153,7 @@
     document.getElementById("pageTitle").textContent = "修改密码";
     document.querySelectorAll(".role-switch button").forEach(b => b.setAttribute("aria-pressed", "false"));
     document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div><div class="auth-copy"><h2>设置你的新密码</h2>' +
-      '<p>首次登录请先修改初始密码，完成后即可进入工作台。</p></div>' +
+      '<p>首次登录请先修改初始密码，完成后即可进入首页。</p></div>' +
       '<form id="backend-password">' +
       '<div class="field"><label for="pw-current">当前密码</label><input id="pw-current" name="currentPassword" type="password" autocomplete="current-password" required></div>' +
       '<div class="field"><label for="pw-new">新密码</label><input id="pw-new" name="newPassword" type="password" autocomplete="new-password" required></div>' +
@@ -195,7 +195,7 @@
     document.querySelectorAll(".page").forEach(el => { el.classList.toggle("is-active", el.id === "page-map"); el.innerHTML = ""; });
     document.getElementById("pageTitle").textContent = "连接后端";
     document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div>' +
-      '<div class="auth-copy"><h2>暂时无法打开工作台</h2><p>请检查网络连接后重试。</p></div><div class="callout" role="alert">' + esc(error.message) +
+      '<div class="auth-copy"><h2>暂时无法打开首页</h2><p>请检查网络连接后重试。</p></div><div class="callout" role="alert">' + esc(error.message) +
       '</div><div class="action-grid"><button class="btn primary" data-backend-retry>重新加载</button><button class="btn" data-backend-logout>退出登录</button></div><a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
     P.notice("数据加载失败，请检查后端服务后重试。");
   }
@@ -455,7 +455,7 @@
       return commitTaskRows(snapshot.rows);
     });
   };
-  P.reload = function () { return loadingGroup("正在加载工作台，请稍候…", async () => {
+  P.reload = function () { return loadingGroup("正在加载首页，请稍候…", async () => {
     const epoch = P.epoch, sequence = ++reloadSequence;
     const me = await P.request("/me");
     if (me.role === "admin") throw new Error("此页面供业务账号使用。管理员请使用 /admin.html 管理端。");
@@ -485,7 +485,6 @@
     LOGS.splice(0, LOGS.length, ...logs.map(l => ({ id: l.id, authorId: l.authorId, time: new Date(l.createdAt), content: l.body, taskId: l.taskId || null, rowVersion: l.rowVersion, editable: l.editable, raw: l })));
     NOTIFICATIONS.splice(0, NOTIFICATIONS.length, ...notifications.map(n => ({ id: n.id, time: new Date(n.createdAt), summary: n.summary, type: n.eventType, recipients: [me.id], read: n.readAt ? [me.id] : [], targetType: "task", targetId: n.taskId, raw: n })));
     COMPANY_ITEMS.splice(0, COMPANY_ITEMS.length, ...home.companyItems.map(i => ({ id: i.id, text: i.body || i.title, raw: i })));
-    PERSONAL_STATE[me.id] = { edited: true, items: home.personalItems.map(i => ({ id: i.id, text: i.body || i.title, raw: i })) };
     [[approvals, P.approvalEtags], [logs, P.logEtags], [notifications, P.notificationEtags]].forEach(([rows, map]) => { map.clear(); rows.forEach(row => map.set(row.id || row.taskId, version(row))); });
     retries.clear(); P.ready = true; gate(); renderAll();
     return P.data;

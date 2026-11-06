@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-01T11:25:05.526748+00:00",
+  "updated": "2026-11-04T11:46:10.630307+00:00",
   "task": "6.3 admin console and notification contract",
   "checks": [
     {
@@ -127,16 +127,16 @@
       "pass": true,
       "evidence": {
         "pass": {
-          "eventId": "51ec64b2-bbf7-43f9-b606-4572fdca57b0",
-          "taskId": "19c966e7-5782-4710-bc5d-7b0b6aaacb6b"
+          "eventId": "d5fabc5f-a965-4225-b3a9-9fe0d63e6549",
+          "taskId": "b4dbc1df-b17c-4167-87d5-058c249df3d4"
         },
         "closed": {
-          "eventId": "e9273855-219d-41be-983e-c7d685184449",
-          "taskId": "4154343d-f633-4585-8d7c-39a090216357"
+          "eventId": "9d5b3fe7-a989-4de7-b235-05f434b92b58",
+          "taskId": "d72bd662-12e3-4db9-9412-250bede07441"
         },
         "edge": {
-          "eventId": "1ea4ee82-de91-4319-8054-eb092e3b7af1",
-          "taskId": "4e2affd2-91fd-46eb-88f0-dfd865701557"
+          "eventId": "3a52bc03-9553-4b4c-9890-1ad68abe8005",
+          "taskId": "c03075f8-16a5-4764-8c93-12823611cf06"
         }
       }
     },
@@ -147,7 +147,7 @@
         "status": 200,
         "ageMs": 179014,
         "body": {
-          "eventId": "1ea4ee82-de91-4319-8054-eb092e3b7af1",
+          "eventId": "3a52bc03-9553-4b4c-9890-1ad68abe8005",
           "withdrawn": true,
           "copies": 1
         }
@@ -157,7 +157,7 @@
       "check": "179.x withdrawal clears the copy but keeps the approval request and task history",
       "pass": true,
       "evidence": {
-        "revokedAt": "2026-11-01 11:25:11.603149",
+        "revokedAt": "2026-11-04 11:46:16.087574",
         "copy": [
           "该通知已被撤回。",
           "NULL",
@@ -199,7 +199,7 @@
         "copy": [
           "提交创建任务《Contract window closed》，等待审核。",
           "Contract window closed",
-          "4154343d-f633-4585-8d7c-39a090216357"
+          "d72bd662-12e3-4db9-9412-250bede07441"
         ],
         "requestStatus": "pending"
       }
@@ -335,7 +335,7 @@
       "check": "browser created and renamed display positions without touching the placement id",
       "pass": true,
       "evidence": {
-        "daec8cef-0776-4590-acb3-ee396c5f3e6f": "Browser Catalog Analyst",
+        "5992cc8d-b525-427f-8515-cece670cb948": "Browser Catalog Analyst",
         "fixture-company-title": "Browser Renamed Title"
       }
     },
@@ -393,7 +393,7 @@
       "check": "browser under-180 withdrawal clears the copy but keeps the approval request and task history",
       "pass": true,
       "evidence": {
-        "revokedAt": "2026-11-01 11:25:13.660812",
+        "revokedAt": "2026-11-04 11:46:18.105988",
         "copy": [
           "该通知已被撤回。",
           "NULL",
@@ -414,7 +414,7 @@
         "copy": [
           "提交创建任务《Contract window closed》，等待审核。",
           "Contract window closed",
-          "4154343d-f633-4585-8d7c-39a090216357"
+          "d72bd662-12e3-4db9-9412-250bede07441"
         ]
       }
     },
@@ -430,7 +430,7 @@
     }
   ],
   "browser": {
-    "updated": "2026-11-01T11:25:11.835Z",
+    "updated": "2026-11-04T11:46:16.305Z",
     "checks": [
       {
         "check": "independent admin enters real management console",
@@ -699,7 +699,7 @@
         "check": "closed-window notification remains unread and withdrawable",
         "pass": true,
         "evidence": {
-          "text": "\n      alpha-one-head\n      Contract window closedtask.create.submitted\n      未读2026/11/1 19:25:112027/2/1 19:25:11\n      撤回",
+          "text": "\n      alpha-one-head\n      Contract window closedtask.create.submitted\n      未读2026/11/4 19:46:152027/2/4 19:46:15\n      撤回",
           "withdraw": true
         }
       },

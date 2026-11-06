@@ -19,7 +19,8 @@ PHASES={
         'check_review_routing.py','check_auto_apply_authorization.py','check_business_takeover.py',
         'check_fixed_workspace_access.py','check_fixed_notifications.py'],
  'browser':['check_admin_contract.py','check_handover_chain.py','check_fixed_web.py','check_calendar_drawer.py',
-            'check_fixed_late_response.py','check_log_backfill_entry.py','check_fixed_communication_web.py'],
+            'check_fixed_late_response.py','check_log_backfill_entry.py','check_fixed_communication_web.py',
+            'check_daily_items.py'],
 }
 def main():
  parser=argparse.ArgumentParser(description=__doc__)

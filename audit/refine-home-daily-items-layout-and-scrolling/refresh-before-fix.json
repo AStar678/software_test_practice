@@ -1,0 +1,117 @@
+{
+  "updated": "2026-11-05T06:33:15.117Z",
+  "viewports": [
+    {
+      "viewport": "320x740",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-10",
+          "2026-11",
+          "2026-12"
+        ],
+        "clientWidth": 256,
+        "scrollWidth": 592,
+        "scrollLeft": 94,
+        "maxLeft": 336,
+        "todayVisible": true
+      },
+      "canSlideBack": true,
+      "canSlideForward": true,
+      "forward": {
+        "left": 522,
+        "open": false
+      },
+      "backward": {
+        "left": 265,
+        "open": false
+      },
+      "movedForward": true,
+      "movedBackward": true
+    },
+    {
+      "viewport": "390x844",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-10",
+          "2026-11",
+          "2026-12"
+        ],
+        "clientWidth": 310,
+        "scrollWidth": 618,
+        "scrollLeft": 102,
+        "maxLeft": 308,
+        "todayVisible": true
+      },
+      "canSlideBack": true,
+      "canSlideForward": true,
+      "forward": {
+        "left": 503,
+        "open": false
+      },
+      "backward": {
+        "left": 254,
+        "open": false
+      },
+      "movedForward": true,
+      "movedBackward": true
+    },
+    {
+      "viewport": "1440x900",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-10",
+          "2026-11",
+          "2026-12"
+        ],
+        "clientWidth": 1052,
+        "scrollWidth": 1052,
+        "scrollLeft": 0,
+        "maxLeft": 0,
+        "todayVisible": true
+      },
+      "canSlideBack": false,
+      "canSlideForward": false,
+      "forward": {
+        "left": 0,
+        "open": false
+      },
+      "backward": {
+        "left": 0,
+        "open": false
+      },
+      "movedForward": false,
+      "movedBackward": false
+    },
+    {
+      "viewport": "390x600",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-10",
+          "2026-11",
+          "2026-12"
+        ],
+        "clientWidth": 310,
+        "scrollWidth": 618,
+        "scrollLeft": 102,
+        "maxLeft": 308,
+        "todayVisible": true
+      },
+      "canSlideBack": true,
+      "canSlideForward": true,
+      "forward": {
+        "left": 102,
+        "open": false
+      },
+      "backward": {
+        "left": 102,
+        "open": false
+      },
+      "movedForward": false,
+      "movedBackward": false
+    }
+  ]
+}

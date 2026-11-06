@@ -34,7 +34,9 @@ def main():
         original = detail()
         check('create preserves both tag IDs and order', original['tagIds'] == tags[:2] and [tag['id'] for tag in original['tags']] == tags[:2])
         home = ok('alpha-one-employee', 'GET', '/home')
-        check('home recent logs use ordered collection', next(item for item in home['recentLogs'] if item['id'] == log_id)['tagIds'] == tags[:2])
+        check('home omits the retired recent-log card', 'recentLogs' not in home)
+        own_logs = ok('alpha-one-employee', 'GET', '/work-logs')
+        check('own log list uses the ordered collection', next(item for item in own_logs['items'] if item['id'] == log_id)['tagIds'] == tags[:2])
         listed = ok('alpha-one-head', 'GET', '/work-logs?scope=visible&authorId=' + fixture.identities['alpha-one-employee']['id'])
         check('manager list reads same ordered collection', next(item for item in listed['items'] if item['id'] == log_id)['tagIds'] == tags[:2])
         for offset in (1,2):

@@ -29,6 +29,7 @@ public class DemoSeed implements ApplicationRunner {
     private final Db db;
     private final TaskService tasks;
     private final WorkspaceService workspace;
+    private final DailyItemService dailyItems;
     private final CommentService comments;
     private final BusinessTakeovers takeovers;
     private final Access access;
@@ -40,13 +41,13 @@ public class DemoSeed implements ApplicationRunner {
     private final boolean initialize;
     private LocalDate today;
     private final Map<String,Actor> actors=new LinkedHashMap<>();
-    public DemoSeed(Db db,TaskService tasks,WorkspaceService workspace,CommentService comments,
+    public DemoSeed(Db db,TaskService tasks,WorkspaceService workspace,DailyItemService dailyItems,CommentService comments,
                     BusinessTakeovers takeovers,Access access,OrganizationService organization,ObjectProvider<EventsWorker> worker,TransactionTemplate tx,Clock clock,
                     @Value("${pandora.demo-password}") String password,
                     @Value("${pandora.demo-target:}") String target,
                     @Value("${pandora.demo-marker:}") String marker,
                     @Value("${pandora.demo-initialize:false}") boolean initialize) {
-        this.db=db;this.tasks=tasks;this.workspace=workspace;this.comments=comments;
+        this.db=db;this.tasks=tasks;this.workspace=workspace;this.dailyItems=dailyItems;this.comments=comments;
         this.takeovers=takeovers;this.access=access;this.organization=organization;this.worker=worker;this.tx=tx;this.clock=clock;
         this.password=password;this.target=target;this.marker=marker;this.initialize=initialize;
     }
@@ -136,7 +137,11 @@ public class DemoSeed implements ApplicationRunner {
                 var log=workspace.createLog(actors.get(key),Map.of("businessDate",today.minusDays(offset).toString(),"body","演示日志："+key+" / 业务日 "+today.minusDays(offset)));
                 remember("log-"+key+"-"+offset,"log",s(log,"logId"));
             }
-            workspace.createHomeItem(actors.get(key),Map.of("kind","personal","title","本周关注","body","明确完成标准，及时同步阻塞。"));
+            // Daily items replace the retired personal home list; dates are the demo business days.
+            dailyItems.create(actors.get(key),Map.of("date",today.toString(),"body","明确完成标准，及时同步阻塞。"));
+            dailyItems.create(actors.get(key),Map.of("date",today.minusDays(1).toString(),"body","整理昨日遗留问题并同步进度。"));
+            var finished=dailyItems.create(actors.get(key),Map.of("date",today.toString(),"body","检查今日交付清单。"));
+            dailyItems.change(actors.get(key),s(finished,"id"),"\"1\"",Map.of("completed",true));
         }
         // Recreated slot retains its first creation instant. Another log demonstrates a real frozen row.
         var deleted=db.one("SELECT * FROM work_logs WHERE author_id=? AND business_date=?",stable("colleague"),today.minusDays(1));

@@ -569,81 +569,35 @@ function personalItemsFor(pid){
 function renderMap(){
   const a = actor();
   const el = document.getElementById("page-map");
+  /* 任务看板只按当前有效负责关系纳入本人未完成任务，不再按创建者排除本人创建的任务。 */
   const assigned = sortTasks(visibleTasks(a).filter(function(t){
-    return t.assigneeIds.indexOf(a.id) !== -1 && t.creatorId !== a.id && !isFinished(t);
+    return t.assigneeIds.indexOf(a.id) !== -1 && !isFinished(t);
   })).slice(0, 10);
-  const personal = personalItemsFor(a.id);
-  const recentLogs = LOGS.filter(function(l){ return l.authorId === a.id; })
-    .filter(function(l){ return dayDiff(l.time, BASE_DAY) >= -1 && dayDiff(l.time, BASE_DAY) <= 0; })
-    .sort(function(x, y){ return y.time.getTime() - x.time.getTime(); });
-  const personalEdited = ensurePersonal(a.id).edited;
-  const canEditCompany = a.role === "upper";
-  const companyAtLimit = COMPANY_ITEMS.length >= 10;
-  const personalAtLimit = personal.length >= 10;
-
   function companyBody(){
     if (!COMPANY_ITEMS.length) return '<div class="empty">暂无公司信息</div>';
     return COMPANY_ITEMS.map(function(it, i){
-      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span></div>" +
-        (canEditCompany
-          ? '<div class="item-actions">' +
-              '<button type="button" class="btn ghost tiny-btn" data-edit-company="' + it.id + '" aria-label="编辑公司信息第' + (i + 1) + '条">编辑</button>' +
-              '<button type="button" class="btn ghost tiny-btn" data-delete-company="' + it.id + '" aria-label="删除公司信息第' + (i + 1) + '条">删除</button>' +
-            "</div>"
-          : "") +
-        "</div>";
+      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span></div></div>";
     }).join("");
   }
   function assignedBody(){
-    if (!assigned.length) return '<div class="empty">暂无被派发的未完成任务</div>';
-    return assigned.map(function(t){ return taskItemHTML(t, a); }).join("");
-  }
-  function personalBody(){
-    if (!personal.length) return '<div class="empty">暂无个人信息，可手动添加</div>';
-    return personal.map(function(it, i){
-      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span></div>" +
-        '<div class="item-actions">' +
-          '<button type="button" class="btn ghost tiny-btn" data-edit-personal="' + it.id + '" aria-label="编辑个人信息第' + (i + 1) + '条">编辑</button>' +
-          '<button type="button" class="btn ghost tiny-btn" data-delete-personal="' + it.id + '" aria-label="删除个人信息第' + (i + 1) + '条">删除</button>' +
-        "</div></div>";
+    if (!assigned.length) return '<div class="empty">暂无本人负责的未完成任务</div>';
+    return assigned.map(function(t){
+      return '<button type="button" class="home-task" data-task="' + t.id + '"><span class="home-task-title">' + esc(t.title) +
+        '</span><span class="home-task-priority">' + esc(t.urgency || "中") + "</span></button>";
     }).join("");
   }
-  function logsBody(){
-    if (!recentLogs.length) return '<div class="empty">今天与昨天暂无日志</div>';
-    return recentLogs.map(function(l){
-      const t = l.taskId ? taskById(l.taskId) : null;
-      return '<button type="button" class="log-line" data-log="' + l.id + '">' +
-        '<span class="lt">' + esc(relativeDayLabel(l.time)) + " " + esc(fmtTime(l.time)) +
-          (t ? " · 关联：" + esc(t.title) : "") + "</span>" +
-        '<span class="lc">' + esc(l.content) + "</span></button>";
-    }).join("");
-  }
-
   el.innerHTML =
     '<div class="map-grid">' +
-      '<section class="quad" aria-labelledby="q1">' +
-        '<div class="card-head' + (canEditCompany ? " has-actions" : "") + '"><h2 id="q1">公司统一信息</h2><span class="hint">' + COMPANY_ITEMS.length + "/10" +
-          (canEditCompany && companyAtLimit ? " · 已达上限" : "") + "</span>" +
-          (canEditCompany ? '<button type="button" class="btn tiny-btn" data-action="new-company"' + (companyAtLimit ? " disabled" : "") + ' aria-label="新增公司信息">新增</button>' : "") +
-        "</div>" +
-        '<div class="q-body">' + companyBody() + "</div>" +
-      "</section>" +
-      '<section class="quad" aria-labelledby="q2">' +
-        '<div class="card-head"><h2 id="q2">我被派发未完成</h2><span class="hint">' + assigned.length + "/10</span></div>" +
-        '<div class="q-body">' + assignedBody() + "</div>" +
-      "</section>" +
-      '<section class="quad" aria-labelledby="q3">' +
-        '<div class="card-head has-actions"><h2 id="q3">个人信息</h2><span class="hint">' + personal.length + "/10 · " +
-          (personalEdited ? "已编辑" : "来自日志") + (personalAtLimit ? " · 已达上限" : "") + "</span>" +
-          '<button type="button" class="btn tiny-btn" data-action="new-personal"' + (personalAtLimit ? " disabled" : "") + ' aria-label="新增个人信息">新增</button>' +
-        "</div>" +
-        '<div class="q-body">' + personalBody() + "</div>" +
-      "</section>" +
-      '<section class="quad" aria-labelledby="q4">' +
-        '<div class="card-head"><h2 id="q4">今天与昨天日志</h2><span class="hint">时间倒序</span></div>' +
-        '<div class="q-body">' + logsBody() + "</div>" +
-      "</section>" +
+      '<section class="quad company-quad" aria-labelledby="q1">' +
+        '<div class="card-head"><h2 id="q1">事件纪</h2><span class="hint">统一发布</span></div>' +
+        '<div class="q-body" tabindex="0" role="region" aria-labelledby="q1">' + companyBody() + "</div></section>" +
+      '<section class="quad tasks-quad" aria-labelledby="q2">' +
+        '<div class="card-head"><h2 id="q2">任务看板</h2><span class="hint">' + assigned.length + "/10</span></div>" +
+        '<div class="q-body" tabindex="0" role="region" aria-labelledby="q2">' + assignedBody() + "</div></section>" +
+      '<section class="quad daily-quad" id="dailyItemsSection" aria-labelledby="q3">' +
+        '<div class="card-head"><h2 id="q3">每日事项</h2><span class="hint">本人维护</span></div></section>' +
     "</div>";
+  if (window.PandoraDaily) window.PandoraDaily.render();
 }
 
 /* ============================== 页面：视图（响应式类甘特） ============================== */
@@ -2425,7 +2379,7 @@ function openNotifications(){
 }
 
 /* ============================== 事件与渲染调度 ============================== */
-const PAGE_TITLE = { map: "工作台", view: "日程", log: "日志", ai: "统计", me: "我的" };
+const PAGE_TITLE = { map: "首页", view: "公司", log: "日志", ai: "统计", me: "我的" };
 const RENDER = { map: renderMap, view: renderView, log: renderLog, ai: renderAI, me: renderMe };
 
 function updateToTop(){
@@ -2762,7 +2716,7 @@ document.addEventListener("click", function(ev){
 });
 
 document.getElementById("bellBtn").addEventListener("click", openNotifications);
-document.getElementById("sheetClose").addEventListener("click", closeSheet);
+document.getElementById("sheetClose").addEventListener("click", function(){ closeSheet(); });
 document.getElementById("sheetBack").addEventListener("click", function(){
   if (sheetStack.length > 1) backSheet(); else closeSheet();
 });

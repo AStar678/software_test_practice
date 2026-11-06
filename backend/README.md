@@ -1,6 +1,6 @@
 # 潘多拉后端与本机演示
 
-Java 21 / Spring Boot 3.5.16 / MySQL / Flyway。后端托管根目录员工 Web 和独立 PC 管理端 `/admin.html`，API 前缀 `/api/v1`，`/health` 检查数据库连接。员工界面保留工作台、月/日日程、日志、统计和我的。
+Java 21 / Spring Boot 3.5.16 / MySQL / Flyway。后端托管根目录员工 Web 和独立 PC 管理端 `/admin.html`，API 前缀 `/api/v1`，`/health` 检查数据库连接。员工界面保留首页（事件纪、任务看板、每日事项）、公司页（月/日任务日程）、日志、统计和我的。
 
 ## 启动与演示
 
