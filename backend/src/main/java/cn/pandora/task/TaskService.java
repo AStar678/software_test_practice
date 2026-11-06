@@ -2038,7 +2038,9 @@ public class TaskService {
                                       String kind,Map<String,Object> proposed) {
         if ("change".equals(kind) && base!=null && proposed!=null) {
             List<String> beforeOwners=assignees(applicant,s(base,"id"));
-            List<String> afterOwners=proposed.containsKey("assigneeIds") ? ids(proposed.get("assigneeIds")) : beforeOwners;
+            List<String> afterOwners = proposed.containsKey("assigneeIds")
+                    ? ids(proposed.get("assigneeIds"))
+                    : assignees(applicant, s(proposed, "id"));
             if (!access.canSeeTask(applicant,task,base,beforeOwners))
                 throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已不具备本次字段的修改资格");
             Set<String> allowed=editableFieldsFor(applicant,task,beforeOwners,false,s(task,"executionState"));

@@ -129,6 +129,23 @@ def main():
         assignee_diff=[row for row in reorder_request['diff'] if row['field']=='assigneeIds']
         check('creator owner reorder produces an ordered reviewer diff',len(assignee_diff)==1 and assignee_diff[0]['before'].startswith(ids['alpha-one-employee']) and assignee_diff[0]['after'].startswith(ids['beta-one-employee']))
 
+        task_id=creator_task['taskId']
+        applicant_id=ids['alpha-one-employee']
+        responsibilities=ok('admin','GET','/admin/employees/'+applicant_id+'/responsibilities')
+        responsibility=next(item for item in responsibilities['businessTasks'] if item['id']==task_id)
+        organization=ok('admin','GET','/admin/organization-plans')
+        ok('admin','POST','/admin/business-takeovers',{'transfers':[{
+            'taskId':task_id,'taskVersion':responsibility['rowVersion'],'ownerVersion':responsibility['ownerVersion'],
+            'previousEmployeeId':applicant_id,'nextEmployeeId':ids['beta-one-employee'],'reason':'审批前转交业务责任',
+        }]},organization['rowVersion'])
+        reorder_request=ok('alpha-one-head','GET','/approval-requests/'+reorder['requestId'])
+        status,blocked=call('alpha-one-head','PATCH','/approval-requests/'+reorder['requestId'],
+            {'decision':'approve'},reorder_request['rowVersion'])
+        check('approval rejects reordering after transfer revokes assignee edit authority',
+              status==409 and blocked.get('code')=='APPLICANT_NO_LONGER_ALLOWED')
+        check('blocked reorder preserves the effective assignee order',
+              detail_of(task_id,'alpha-one-employee')['assigneeIds']==[applicant_id,ids['beta-one-employee']])
+
         lost_task=founder_task('批准前失权',[ids['alpha-one-employee']])
         lost_base=detail_of(lost_task)
         lost=ok('alpha-one-employee','PATCH','/tasks/'+lost_task,{'command':'change','title':'不应发布','progressNote':'不应发布进展','reason':'失权验证'},lost_base['rowVersion'])
