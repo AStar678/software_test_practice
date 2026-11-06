@@ -118,29 +118,35 @@
 
   /* Creation/modification candidates come from the server's real company directory (chapter 3.1):
      creation and modification both use every active business member. */
-  const candidateCache = { epoch: null, create: null, edit: null };
+  const candidateCache = { epoch: null, data: null, create: null, edit: null };
+  const candidateSequence = { create: 0, edit: 0 };
   let activePickerPurpose = "create";
   function pickerPurpose() { return drafts.task && drafts.task.mode === "edit" ? "edit" : "create"; }
+  function candidatesFor(mode) {
+    if (candidateCache.epoch !== P.epoch || candidateCache.data !== P.data) return [];
+    return (candidateCache[mode] || []).map(personById).filter(Boolean);
+  }
   async function loadCandidates(purpose) {
     const mode = purpose === "edit" ? "edit" : "create";
-    if (candidateCache.epoch !== P.epoch) {
-      candidateCache.epoch = P.epoch; candidateCache.create = null; candidateCache.edit = null;
+    if (candidateCache.epoch !== P.epoch || candidateCache.data !== P.data) {
+      candidateCache.epoch = P.epoch; candidateCache.data = P.data;
+      candidateCache.create = null; candidateCache.edit = null;
     }
     if (!candidateCache[mode]) {
+      const mark = session(), source = P.data, sequence = ++candidateSequence[mode];
       const data = await P.request("/assignee-candidates?purpose=" + mode);
+      if (!stillHere(mark) || source !== P.data || sequence !== candidateSequence[mode]) {
+        throw Object.assign(new Error("人员资料已更新，请重新打开选择器。"), { name: "AbortError" });
+      }
       P.rememberPeople(data.items || []);
-      const people = (data.items || []).map(function (item) {
-        const person = personById(item.id);
-        if (person) { person.superiorId = item.managerId || null; person.raw = Object.assign({}, person.raw, item); }
-        return person;
-      }).filter(Boolean);
-      if (candidateCache.epoch === P.epoch) candidateCache[mode] = people;
+      // Keep eligibility as IDs; rememberPeople/reload replace safe person objects.
+      candidateCache[mode] = (data.items || []).map(item => item.id);
     }
-    return candidateCache[mode] || [];
+    return candidatesFor(mode);
   }
   window.assignablePeople = function (account) {
     if (!account || !me() || account.id !== me().id || account.role === "admin") return [];
-    return candidateCache[activePickerPurpose] || [];
+    return candidatesFor(activePickerPurpose);
   };
   window.assignableDepartments = function (account) {
     const out = [];
@@ -368,7 +374,7 @@
         if (fields.has('assigneeIds')) {
           body.assigneeIds=unique(draft.assigneeIds.slice());
           if (!body.assigneeIds.length) throw new Error('至少选择一位负责人。');
-          const eligible=(candidateCache.edit || []).map(person=>person.id);
+          const eligible=candidatesFor('edit').map(person=>person.id);
           if (eligible.length && body.assigneeIds.some(id=>!eligible.includes(id))) throw new Error('负责人已不在可选范围，请重新选择。');
         }
         if (fields.has('startAt')) {
@@ -394,7 +400,7 @@
       if (!creation) body.acceptanceCriteria = String(draft.acceptanceCriteria == null ? "" : draft.acceptanceCriteria).trim();
       if (!body.priority) throw new Error("请选择紧急程度。");
       if (!body.assigneeIds.length) throw new Error("至少选择一位负责人。");
-      const candidates = candidateCache[creation ? "create" : "edit"];
+      const candidates = candidatesFor(creation ? "create" : "edit");
       if (candidates) {
         const eligible = candidates.map(function (person) { return person.id; });
         if (body.assigneeIds.some(function (id) { return eligible.indexOf(id) === -1; })) throw new Error("负责人已不在可选范围，请重新选择。");
@@ -587,7 +593,7 @@
   }
   function reopenOwnersHTML() {
     const selected=reopenDraft.assigneeIds;
-    return '<div class="field"><label for="rp-owner-add">负责人（按添加顺序）</label><ol id="rp-owner-list">'+selected.map((id,index)=>'<li>'+esc(personName(id))+' <button type="button" class="btn tiny-btn" data-action="rp-owner-remove" data-index="'+index+'">移除</button></li>').join('')+'</ol><select id="rp-owner-add"><option value="">选择要添加的员工</option>'+(candidateCache.edit||[]).filter(p=>!selected.includes(p.id)).map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('')+'</select><button type="button" class="btn" data-action="rp-owner-add">添加负责人</button></div>';
+    return '<div class="field"><label for="rp-owner-add">负责人（按添加顺序）</label><ol id="rp-owner-list">'+selected.map((id,index)=>'<li>'+esc(personName(id))+' <button type="button" class="btn tiny-btn" data-action="rp-owner-remove" data-index="'+index+'">移除</button></li>').join('')+'</ol><select id="rp-owner-add"><option value="">选择要添加的员工</option>'+candidatesFor('edit').filter(p=>!selected.includes(p.id)).map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('')+'</select><button type="button" class="btn" data-action="rp-owner-add">添加负责人</button></div>';
   }
   function refreshReopenOwners() {
     const list=document.getElementById('rp-owner-list');if(list)list.closest('.field').outerHTML=reopenOwnersHTML();

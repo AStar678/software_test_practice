@@ -123,7 +123,10 @@ def main():
                 'pinTask': pin_task,
                 'completedTask': completed,
                 'historyTask': history_task,
-                'historyText': '第二轮进展'
+                'historyText': '第二轮进展',
+                'adminToken': tokens['admin'],
+                'replacementHeadId': ids['beta-one-head'],
+                'removedCandidateId': ids['beta-two-employee']
             }
             subprocess.run(['node', str(BASE / 'scripts/check_apply_profile_pin_history_browser.js')],
                            env={**os.environ, 'PANDORA_PROFILE_FIXTURE': json.dumps(manifest)}, check=True)

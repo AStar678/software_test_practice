@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('fs'),path=require('path');
 const {openBrowser,waitFor}=require('./browser_fixture');
+const checkAssigneeRefresh=require('./check_assignee_refresh_browser');
 const f=JSON.parse(process.env.PANDORA_PROFILE_FIXTURE),q=JSON.stringify;
 const out=path.resolve(__dirname,'../../output/apply-profile-pin-history');fs.mkdirSync(out,{recursive:true});
 const report={checks:[]};
@@ -11,6 +12,7 @@ async function main(){
  async function idle(){return waitFor(b,'Pandora.idle()',20000);}
  try{
   await login(f.founder);
+  await checkAssigneeRefresh(b,f,check,login);
   const cache=await ev(`(()=>{
     const id=${q(f.employeeId)},before=personById(id).raw;
     const full={id,displayName:'缓存完整姓名',placementType:'team_head',departmentName:'缓存部门',teamName:'缓存团队',positionName:'缓存职位',phone:'13900009999',email:'cache@example.com'};
