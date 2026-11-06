@@ -2,7 +2,7 @@
 
 包含两个手机前端（网页套壳版、Android 原生版）、共用 Java 后端及数据库备份的完整项目。员工业务界面包含首页、公司、日志、统计和我的五个栏目；另提供独立的 PC Web 管理端。
 
-当前需求见 [V4 修订版（2026-10-30 更新）](docs/requirements/潘多拉-产品需求文档-V4修订版.md)，已整合 [更改指导](docs/reviews/更改指导.md)、[已归档 OpenSpec delta](openspec/changes/archive/2026-10-29-refactor-pandora-organization-and-workflows/specs/pandora-requirements-aligned-prototype/spec.md) 及截至 `5f551d2` 的后续改动，包含固定四层位置、独立账号、当前业务责任方审核/接管、日程交互、任务列组和私人标签。来源见 [后续变更对照](docs/reviews/潘多拉-PRD-V4后续变更对照-2026-10-30.md)。本轮为 Web 与共用后端改造，Android 客户端需要后续适配新契约，未交付新 APK。
+当前需求见 [V5 修订版（2026-11-01 更新）](docs/requirements/潘多拉-产品需求文档-V5修订版.md)，包含申请人直属上级审核、公司标签多选、月/日拖动、日志创建编辑分离、下属工作区和通知筛选。V4 保留为历史版本。本轮为 Web 与共用后端需求整理，Android 客户端需要后续适配新契约，未交付新 APK。
 
 ## 两个前端与后端的范围
 

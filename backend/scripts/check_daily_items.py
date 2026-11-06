@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Daily items, three-section home board and V29 migration checks on disposable real services.
+"""Daily items, three-section home board and V31 migration checks on disposable real services.
 
 The suite owns random databases and temporary services; it never touches the normal database.
-It first upgrades an empty database to V28, writes real tasks/logs/company information, runs the
-V28 -> V29 migration, and proves that only old personal home items were removed. It then exercises
+It first upgrades an empty database to V30, writes real tasks/logs/company information, runs the
+V30 -> V31 migration, and proves that only old personal home items were removed. It then exercises
 the daily-item API (private scope, date/body/boolean validation, stable paging, exact summaries,
 declared completion, version fencing and idempotent replay) and the home task board contract.
 """
@@ -40,7 +40,7 @@ def main():
 
     # ---------------------------------------------------------------- migration + API
     upgrade = Fixture(port=18193)
-    upgrade.migration_target = 28
+    upgrade.migration_target = 30
     upgrade.log_path = AUDIT / "daily-items-service.log"
     with upgrade as f:
         founder = f.login("founder")[1]["token"]
@@ -50,12 +50,15 @@ def main():
         task_day = str(dt.date.fromisoformat(business_day) + dt.timedelta(days=1))
         start = task_day + "T09:00:00+08:00"
         due = task_day + "T18:00:00+08:00"
-        task = f.call("POST", "/tasks", {"title": "V28 migration witness task", "description": "migration fixture",
+        task = f.call("POST", "/tasks", {"title": "V30 migration witness task", "description": "migration fixture",
             "priority": "medium", "allDay": False, "startAt": start, "dueAt": due,
             "assigneeIds": [ids["founder"]]}, founder, "migration-task-" + uuid.uuid4().hex)
-        log = f.call("POST", "/work-logs", {"businessDate": business_day, "body": "V28 migration witness log"},
+        tag_status, tag = f.call("POST", "/tags", {"name": "Migration witness tag", "color": "#F6D5D2"},
+            founder, "migration-tag-" + uuid.uuid4().hex)
+        assert tag_status == 200, (tag_status, tag)
+        log = f.call("POST", "/work-logs", {"businessDate": business_day, "body": "V30 migration witness log", "tagIds": [tag["tagId"]]},
             founder, "migration-log-" + uuid.uuid4().hex)
-        check("V28 fixture writes a real task and log before the migration",
+        check("V30 fixture writes a real task and log before the migration",
               task[0] in (200, 201) and log[0] == 200, {"task": task[0], "log": log[0]})
         f.db.server_side("INSERT INTO home_items(id,organization_id,owner_id,kind,title,body,sort_order) VALUES('upgrade-personal','" +
             org + "','" + ids["founder"] + "','personal','Legacy personal','legacy personal item',1)")
@@ -68,29 +71,35 @@ def main():
         before = {
             "tasks": q("SELECT GROUP_CONCAT(id ORDER BY id) FROM tasks"),
             "logs": q("SELECT GROUP_CONCAT(id ORDER BY id) FROM work_logs"),
+            "taskRows": f.db.rows("SELECT * FROM tasks ORDER BY id"),
+            "logRows": f.db.rows("SELECT * FROM work_logs ORDER BY id"),
+            "logTags": f.db.rows("SELECT * FROM work_log_tags ORDER BY organization_id,log_id,ordinal"),
             "company": q("SELECT GROUP_CONCAT(id ORDER BY id) FROM home_items WHERE kind='company'"),
             "personal": q("SELECT COUNT(*) FROM home_items WHERE kind='personal'"),
             "version": q("SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history WHERE success=1"),
         }
-        check("baseline is V28 and still holds the old personal item",
-              before["version"].startswith("28") and int(before["personal"]) == 1, before)
+        check("baseline is V30 and still holds the old personal item",
+              before["version"] == "30" and int(before["personal"]) == 1, before)
 
         f.restart()
 
         after = {
             "tasks": q("SELECT GROUP_CONCAT(id ORDER BY id) FROM tasks"),
             "logs": q("SELECT GROUP_CONCAT(id ORDER BY id) FROM work_logs"),
+            "taskRows": f.db.rows("SELECT * FROM tasks ORDER BY id"),
+            "logRows": f.db.rows("SELECT * FROM work_logs ORDER BY id"),
+            "logTags": f.db.rows("SELECT * FROM work_log_tags ORDER BY organization_id,log_id,ordinal"),
             "company": q("SELECT GROUP_CONCAT(id ORDER BY id) FROM home_items WHERE kind='company'"),
             "personal": q("SELECT COUNT(*) FROM home_items WHERE kind='personal'"),
             "version": q("SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history WHERE success=1"),
             "daily": q("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='daily_items'"),
         }
-        check("V29 creates daily_items and records the actual migration version",
-              after["daily"] == "1" and after["version"].startswith("29"), after)
-        check("V29 removes only the old personal home items",
+        check("V31 creates daily_items and records the actual migration version",
+              after["daily"] == "1" and after["version"] == "31", after)
+        check("V31 removes only the old personal home items",
               after["personal"] == "0" and after["company"] == before["company"], {"before": before, "after": after})
-        check("V29 leaves tasks and logs byte-identical",
-              after["tasks"] == before["tasks"] and after["logs"] == before["logs"], {"before": before, "after": after})
+        check("V31 leaves tasks and logs byte-identical",
+              all(after[key] == before[key] for key in ("tasks", "logs", "taskRows", "logRows", "logTags")), {"before": before, "after": after})
         # The migration witness task stays out of the board contract assertions below.
         f.db.server_side("UPDATE tasks SET execution_state='done'")
 

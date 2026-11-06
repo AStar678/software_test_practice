@@ -150,8 +150,8 @@ public class WorkspaceService {
         var selected=selectedMetadata.stream().map(row->logRows.get(s(row,"id"))).filter(Objects::nonNull).toList();
         var linked = selected.stream().map(row -> s(row,"taskId")).filter(Objects::nonNull).toList();
         Set<String> readable = linked.isEmpty() ? Set.of() : tasks.readableTaskIds(a,linked);
-        var tagRows = rowsById(a,"tags","*",selected.stream().map(row -> s(row,"tagId")).toList());
-        paged.put("items",selected.stream().map(row -> safeLog(a,new LinkedHashMap<>(row),readable,tagRows)).toList());
+        var logTags = logTags(a,selected.stream().map(row -> s(row,"id")).toList());
+        paged.put("items",selected.stream().map(row -> safeLog(a,new LinkedHashMap<>(row),readable,logTags)).toList());
         return paged;
     }
 
@@ -280,7 +280,7 @@ public class WorkspaceService {
 
     public Map<String,Object> createLog(Actor a, Map<String,Object> body) {
         business(a);
-        allowed(body,Set.of("body","businessDate","taskId","tagId"));
+        allowed(body,Set.of("body","businessDate","taskId","tagIds"));
         String text = required(body,"body",10000);
         LocalDate today = today(a);
         LocalDate date = body.containsKey("businessDate") ? dateFor(a,body,"businessDate") : today;
@@ -288,9 +288,7 @@ public class WorkspaceService {
         if (date.isBefore(today.minusDays(LOG_BACKFILL_DAYS))) throw bad("只能补写公司今天、昨天和前天的日志");
         String taskId = nullable(body,"taskId");
         if (taskId != null) tasks.detail(a,taskId);
-        // A tag belongs to the company catalogue and may be left unset; only one tag per log.
-        Map<String,Object> tag = tags.resolveForWrite(a, nullable(body,"tagId"), null);
-        String tagId = tag == null ? null : s(tag,"id");
+        var wantedTags = requestedLogTags(a,body.getOrDefault("tagIds",List.of()),Set.of());
         var existing = findLog(a, date);
         if (existing != null && s(existing, "id") != null) {
             // The day slot survives a delete (chapter 1.2): writing again restores that same row,
@@ -300,28 +298,30 @@ public class WorkspaceService {
             // Recreating a deleted day is a write like any other: the original first-creation instant
             // is the only freeze base, so a slot whose 24 hours are over stays closed (chapter 7.2).
             requireWritable(existing);
-            int restored = db.update("UPDATE work_logs SET body=?,task_id=?,tag_id=?,deleted_at=NULL,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) "
+            int restored = db.update("UPDATE work_logs SET body=?,task_id=?,deleted_at=NULL,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) "
                     + "WHERE organization_id=? AND author_id=? AND id=? AND deleted_at IS NOT NULL",
-                    text, taskId, tagId, a.organizationId(), a.id(), s(existing, "id"));
+                    text, taskId, a.organizationId(), a.id(), s(existing, "id"));
             if (restored != 1) throw conflict("WORK_LOG_CONFLICT","日志日位置已被并发修改，请刷新后重试");
+            replaceLogTags(a,s(existing,"id"),wantedTags);
             events.record(a,null,"log.restored",List.of(),Map.of("logId",s(existing,"id")));
             return Map.of("logId",s(existing,"id"),"rowVersion",n(existing,"rowVersion")+1,"businessDate",date.toString(),"restored",true);
         }
         String logId = id();
         try {
-            db.update("INSERT INTO work_logs(id,organization_id,author_id,business_date,body,task_id,tag_id) VALUES(?,?,?,?,?,?,?)",logId,a.organizationId(),a.id(),java.sql.Date.valueOf(date),text,taskId,tagId);
+            db.update("INSERT INTO work_logs(id,organization_id,author_id,business_date,body,task_id) VALUES(?,?,?,?,?,?)",logId,a.organizationId(),a.id(),java.sql.Date.valueOf(date),text,taskId);
         } catch (DuplicateKeyException duplicate) {
             var concurrent = findLog(a, date);
             if (concurrent != null && s(concurrent, "id") != null) throw logExists(concurrent);
             throw duplicate;
         }
+        replaceLogTags(a,logId,wantedTags);
         events.record(a,null,"log.created",List.of(),Map.of("logId",logId));
         return Map.of("logId",logId,"rowVersion",1,"businessDate",date.toString());
     }
 
     public Map<String,Object> changeLog(Actor a, String logId, String ifMatch, Map<String,Object> body) {
         business(a);
-        allowed(body,Set.of("body","businessDate","taskId","tagId"));
+        allowed(body,Set.of("body","businessDate","taskId","tagIds"));
         var row = ownedLog(a,logId);
         LocalDate rowDate = LocalDate.parse(s(row,"businessDate"));
         requireWritable(row);
@@ -333,14 +333,16 @@ public class WorkspaceService {
         String text = body.containsKey("body") ? required(body,"body",10000) : s(row,"body");
         String taskId = body.containsKey("taskId") ? nullable(body,"taskId") : s(row,"taskId");
         if (body.containsKey("taskId") && taskId != null) tasks.detail(a,taskId);
-        Map<String,Object> tag = body.containsKey("tagId")
-                ? tags.resolveForWrite(a,nullable(body,"tagId"),s(row,"tagId"))
-                : tags.view(a,s(row,"tagId"));
-        // An unchanged tag is kept verbatim even if its catalogue row cannot be resolved; only an
-        // explicit request can clear the association.
-        String tagId = tag != null ? s(tag,"id") : (body.containsKey("tagId") ? null : s(row,"tagId"));
+        List<Map<String,Object>> wantedTags = null;
+        if (body.containsKey("tagIds")) {
+            var current = logTags(a,List.of(logId)).getOrDefault(logId,List.of());
+            var currentIds = new HashSet<String>();
+            current.forEach(tag -> currentIds.add(s(tag,"id")));
+            wantedTags = requestedLogTags(a,body.get("tagIds"),currentIds);
+        }
         // Editing text never moves created_at, so the freeze instant is unchanged (chapter 7.1).
-        db.update("UPDATE work_logs SET body=?,task_id=?,tag_id=?,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) WHERE id=? AND organization_id=?",text,taskId,tagId,logId,a.organizationId());
+        db.update("UPDATE work_logs SET body=?,task_id=?,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) WHERE id=? AND organization_id=?",text,taskId,logId,a.organizationId());
+        if (wantedTags != null) replaceLogTags(a,logId,wantedTags);
         events.record(a,null,"log.updated",List.of(),Map.of("logId",logId));
         return Map.of("logId",logId,"rowVersion",n(row,"rowVersion")+1,"businessDate",rowDate.toString());
     }
@@ -378,8 +380,9 @@ public class WorkspaceService {
         var rows = notificationMetadata(a,false);
         var readable = notificationReadableTasks(a,rows);
         var visible = rows.stream().filter(row -> notificationVisible(row,now,readable)).toList();
+        var requestAccess=tasks.requestAccess(a,visible.stream().map(row->s(row,"requestId")).toList());
         var filtered=visible.stream().filter(row -> "all".equals(read) || ("unread".equals(read)==(row.get("readAt")==null)))
-                .filter(row -> "all".equals(category) || category.equals(notificationMetadataCategory(a,row,now,readable))).toList();
+                .filter(row -> "all".equals(category) || category.equals(notificationMetadataCategory(row,requestAccess))).toList();
         var result=page(filtered,filters);
         @SuppressWarnings("unchecked") var selected=(List<Map<String,Object>>)result.get("items");
         var complete=rowsById(a,"notifications","*",selected.stream().map(row->s(row,"id")).toList());
@@ -597,7 +600,7 @@ public class WorkspaceService {
             view.put("relationLost",true);
         }
         view.put("taskId",objectOpen?row.get("taskId"):null);
-        view.put("requestId",objectOpen?row.get("requestId"):null);
+        view.put("requestId",null);
         if (revoked) {
             view.put("title",canReadWithdrawnDetails ? event.get("title") : null);
             view.put("summary",canReadWithdrawnDetails ? event.get("changeSummary") : "该通知已被撤回。");
@@ -626,6 +629,8 @@ public class WorkspaceService {
         view.put("canWithdraw",!revoked && withinWithdrawal && (manager || (!automatic && event!=null && a.id().equals(s(event,"initiatorId")))));
         view.put("canOpenTask",objectOpen && s(row,"taskId")!=null);
         view.put("canReview",false);
+        view.put("canReadRequest",false);
+        view.put("canWithdrawRequest",false);
         view.put("requestStatus",null);
         view.put("requestKind",null);
         view.put("objectType",objectOpen?objectType:null);
@@ -633,21 +638,39 @@ public class WorkspaceService {
         view.put("focus",objectOpen && commentEvent ? "comments" : null);
         view.put("commentId",objectOpen && objectDetails.get("commentId") instanceof String id ? id : null);
         view.put("purpose",notificationPurpose(eventType));
+        view.put("eventResult",objectOpen?notificationResult(eventType):null);
+        view.put("changes",List.of());
         view.put("objectName",objectOpen ? (batch == null ? objectName(a,objectType,objectId,row,event) : batchObjectName(objectType,objectId,row,event,batch)) : null);
         String requestId = objectOpen ? s(row,"requestId") : null;
         if (requestId != null) {
-            var request = batch == null ? db.find("SELECT id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline FROM approval_requests WHERE organization_id=? AND id=?",a.organizationId(),requestId)
+            var request = batch == null ? db.find("SELECT id,task_id,applicant_id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline FROM approval_requests WHERE organization_id=? AND id=?",a.organizationId(),requestId)
                     : batch.requests.get(requestId);
-            if (request != null) {
+            boolean bound=request!=null && Objects.equals(s(request,"taskId"),s(row,"taskId"))
+                    && (!"task".equals(objectType) || Objects.equals(objectId,s(request,"taskId")));
+            var accessResult=batch==null ? tasks.requestAccess(a,List.of(requestId)) : batch.requestAccess;
+            boolean canRead=bound && accessResult.readable().contains(requestId);
+            view.put("canReadRequest",canRead);
+            view.put("requestUnavailable",!canRead);
+            if (canRead) {
+                view.put("requestId",requestId);
+                view.put("canWithdrawRequest",canRead && "pending".equals(s(request,"status")) && a.id().equals(s(request,"applicantId")));
                 view.put("requestStatus",s(request,"status"));
                 view.put("requestKind",s(request,"kind"));
                 view.put("requestComment",request.get("comment"));
                 view.put("requestDecidedAt",request.get("decidedAt"));
-                boolean deadlineOpen = request.get("applicableDeadline")==null
-                        || now.isBefore(Instant.parse(String.valueOf(request.get("applicableDeadline"))));
-                view.put("canReview",!revoked && "pending".equals(s(request,"status")) && deadlineOpen
-                        && a.id().equals(s(request,"currentReviewerId")));
+                view.put("canReview",!revoked && accessResult.reviewable().contains(requestId));
             }
+        }
+        boolean currentTaskRead=objectOpen && s(row,"taskId")!=null && (batch==null
+                ? canReadTask(a,s(row,"taskId"),false) : batch.readableTasks.contains(s(row,"taskId")));
+        if (objectOpen && (Boolean.TRUE.equals(view.get("canReadRequest")) || currentTaskRead)
+                && details.get("changes") instanceof List<?> savedChanges) {
+            var changes=new ArrayList<Map<String,String>>();
+            for (Object value:savedChanges) if (value instanceof Map<?,?> item
+                    && item.get("field") instanceof String field && item.get("label") instanceof String label
+                    && item.get("before") instanceof String before && item.get("after") instanceof String after)
+                changes.add(Map.of("field",field,"label",label,"before",before,"after",after));
+            view.put("changes",changes);
         }
         view.put("category",notificationCategory(view));
         return view;
@@ -656,7 +679,7 @@ public class WorkspaceService {
     /** Inbox counts and page boundaries need lifecycle metadata, never message bodies. */
     private List<Map<String,Object>> notificationMetadata(Actor a,boolean unreadOnly) {
         return db.list("SELECT n.id,n.event_id,n.task_id,n.hidden_at,n.expires_at,n.read_at,n.source,n.delivered_at,n.event_type,n.request_id,"
-                + "r.status AS request_status,r.current_reviewer_id AS reviewer_id,r.applicable_deadline,"
+                + "r.status AS request_status,r.task_id AS request_task_id,r.current_reviewer_id AS reviewer_id,r.applicable_deadline,"
                 + "e.revoked_at AS event_revoked_at,e.expires_at AS event_expires_at FROM notifications n "
                 + "LEFT JOIN domain_events e ON e.organization_id=n.organization_id AND e.id=n.event_id "
                 + "LEFT JOIN approval_requests r ON r.organization_id=n.organization_id AND r.id=n.request_id "
@@ -683,14 +706,16 @@ public class WorkspaceService {
     private static final class NotificationBatch {
         Map<String,Map<String,Object>> events,requests,logs,comments,taskRows;
         Set<String> readableTasks,readableWithApprovals;
+        TaskService.RequestAccess requestAccess;
     }
 
     private NotificationBatch notificationBatch(Actor a,List<Map<String,Object>> rows) {
         var batch=new NotificationBatch();
         batch.events=rowsById(a,"domain_events","id,revoked_at,occurred_at,expires_at,initiator_id,title,change_summary,details_json",
                 rows.stream().map(row -> s(row,"eventId")).toList());
-        batch.requests=rowsById(a,"approval_requests","id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline",
+        batch.requests=rowsById(a,"approval_requests","id,task_id,applicant_id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline",
                 rows.stream().map(row -> s(row,"requestId")).toList());
+        batch.requestAccess=tasks.requestAccess(a,batch.requests.keySet());
         var taskIds=new LinkedHashSet<String>();
         var logIds=new LinkedHashSet<String>();
         var commentIds=new LinkedHashSet<String>();
@@ -795,11 +820,11 @@ public class WorkspaceService {
         return null;
     }
 
-    private String notificationMetadataCategory(Actor actor,Map<String,Object> row,Instant now,Set<String> readable) {
+    private String notificationMetadataCategory(Map<String,Object> row,TaskService.RequestAccess requestAccess) {
         Map<String,Object> classification=new HashMap<>(row);
-        boolean deadlineOpen=row.get("applicableDeadline")==null || now.isBefore(Instant.parse(String.valueOf(row.get("applicableDeadline"))));
-        classification.put("canReview",row.get("eventRevokedAt")==null && "pending".equals(s(row,"requestStatus"))
-                && actor.id().equals(s(row,"reviewerId")) && deadlineOpen && readable.contains(s(row,"taskId")));
+        classification.put("canReview",row.get("eventRevokedAt")==null
+                && Objects.equals(s(row,"taskId"),s(row,"requestTaskId"))
+                && requestAccess.reviewable().contains(s(row,"requestId")));
         return notificationCategory(classification);
     }
 
@@ -807,7 +832,8 @@ public class WorkspaceService {
         if(Boolean.TRUE.equals(view.get("canReview"))) return "review";
         String type=Objects.toString(view.get("eventType"),"");
         if(type.startsWith("comment.")) return "comment";
-        if(type.startsWith("reminder.") || type.startsWith("task.deadline.")) return "reminder";
+        if(type.startsWith("reminder.") || type.startsWith("task.deadline.")
+                || type.startsWith("task.reminder_") || type.equals("task.overdue")) return "reminder";
         if(type.startsWith("task.") && (type.endsWith(".approved") || type.endsWith(".rejected") || type.endsWith(".withdrawn") || type.endsWith(".expired") || type.endsWith(".direct") || type.endsWith(".applied"))) return "result";
         return "other";
     }
@@ -823,9 +849,22 @@ public class WorkspaceService {
         if (type.startsWith("task.complete.")) return type.endsWith(".submitted") ? "完成待审" : "完成结果";
         if (type.startsWith("task.reopen.")) return type.endsWith(".submitted") ? "重开待审" : "重开结果";
         if (type.startsWith("task.handover.")) return type.endsWith(".submitted") ? "交接待审" : "交接结果";
-        if (type.startsWith("task.deadline.") || type.startsWith("reminder.")) return "截止提醒";
+        if (type.startsWith("task.deadline.") || type.startsWith("reminder.")
+                || type.startsWith("task.reminder_") || type.equals("task.overdue")) return "截止提醒";
         if (type.startsWith("home_item.")) return "公司信息";
         return "工作通知";
+    }
+
+    private static String notificationResult(String eventType) {
+        String type=Objects.toString(eventType,"");
+        if (type.endsWith(".approved") || type.endsWith(".applied") || type.endsWith(".direct")) return "已通过并生效";
+        if (type.endsWith(".rejected")) return "已退回";
+        if (type.endsWith(".withdrawn")) return "申请已撤销";
+        if (type.endsWith(".expired")) return "申请已失效";
+        if (type.endsWith(".submitted")) return "等待审核";
+        if (type.equals("task.overdue")) return "任务已逾期";
+        if (type.startsWith("task.reminder_") || type.startsWith("reminder.")) return "任务即将截止";
+        return null;
     }
 
     /** Whether the business object (or the exact comment) a message refers to no longer exists. */
@@ -1257,16 +1296,64 @@ public class WorkspaceService {
     private Map<String,Object> ownedLog(Actor a,String logId) {
         return db.one("SELECT * FROM work_logs WHERE organization_id=? AND author_id=? AND id=? AND deleted_at IS NULL FOR UPDATE",a.organizationId(),a.id(),logId);
     }
-    private Map<String,Object> safeLog(Actor a,Map<String,Object> row) {
-        return safeLog(a,row,null,null);
+
+    private Map<String,List<Map<String,Object>>> logTags(Actor a,Collection<String> logIds) {
+        Map<String,List<Map<String,Object>>> result = new HashMap<>();
+        if (logIds.isEmpty()) return result;
+        var args = new ArrayList<Object>();
+        args.add(a.organizationId());
+        args.addAll(logIds);
+        String sql = "SELECT wt.log_id,wt.tag_id,wt.ordinal,wt.tag_name_snapshot,wt.tag_color_snapshot,"
+                + "t.name,t.color,t.deleted_at,t.row_version FROM work_log_tags wt "
+                + "JOIN tags t ON t.organization_id=wt.organization_id AND t.id=wt.tag_id "
+                + "WHERE wt.organization_id=? AND wt.log_id IN ("
+                + String.join(",",Collections.nCopies(logIds.size(),"?")) + ") ORDER BY wt.log_id,wt.ordinal";
+        for (var row : db.list(sql,args.toArray())) {
+            var tag = new LinkedHashMap<String,Object>();
+            tag.put("id",s(row,"tagId"));
+            tag.put("name",s(row,"name"));
+            tag.put("color",s(row,"color"));
+            tag.put("border",Tags.PALETTE.stream().filter(entry -> entry.color().equalsIgnoreCase(Objects.toString(tag.get("color"),"")))
+                    .map(Tags.PaletteColor::border).findFirst().orElse("#8A8F98"));
+            tag.put("deleted",row.get("deletedAt") != null);
+            tag.put("rowVersion",n(row,"rowVersion"));
+            result.computeIfAbsent(s(row,"logId"),ignored -> new ArrayList<>()).add(tag);
+        }
+        return result;
     }
-    private Map<String,Object> safeLog(Actor a,Map<String,Object> row,Set<String> readable,Map<String,Map<String,Object>> tagRows) {
+
+    private List<Map<String,Object>> requestedLogTags(Actor a,Object raw,Set<String> currentIds) {
+        if (!(raw instanceof List<?> ids)) throw bad("tagIds 必须为标签 ID 数组");
+        var seen = new HashSet<String>();
+        var resolved = new ArrayList<Map<String,Object>>();
+        for (Object value : ids) {
+            if (!(value instanceof String tagId) || tagId.isBlank() || !seen.add(tagId))
+                throw bad("tagIds 必须是不重复的标签 ID 数组");
+            var tag = tags.resolveForWrite(a,tagId,currentIds.contains(tagId) ? tagId : null);
+            resolved.add(tag);
+        }
+        return resolved;
+    }
+
+    private void replaceLogTags(Actor a,String logId,List<Map<String,Object>> values) {
+        db.update("DELETE FROM work_log_tags WHERE organization_id=? AND log_id=?",a.organizationId(),logId);
+        for (int ordinal=0;ordinal<values.size();ordinal++) {
+            var tag=values.get(ordinal);
+            db.update("INSERT INTO work_log_tags(organization_id,log_id,tag_id,ordinal,tag_name_snapshot,tag_color_snapshot) VALUES(?,?,?,?,?,?)",
+                    a.organizationId(),logId,s(tag,"id"),ordinal,s(tag,"name"),s(tag,"color"));
+        }
+    }
+
+    private Map<String,Object> safeLog(Actor a,Map<String,Object> row) {
+        return safeLog(a,row,null,logTags(a,List.of(s(row,"id"))));
+    }
+    private Map<String,Object> safeLog(Actor a,Map<String,Object> row,Set<String> readable,Map<String,List<Map<String,Object>>> tagRows) {
         row.remove("organizationId");
         String taskId=s(row,"taskId");
         if (taskId!=null && !(readable == null ? canReadTask(a,taskId,false) : readable.contains(taskId))) row.remove("taskId");
-        Map<String,Object> tag = tagRows == null ? tags.view(a,s(row,"tagId")) : tags.view(tagRows.get(s(row,"tagId")));
-        row.put("tagId", tag == null ? null : s(tag,"id"));
-        row.put("tag", tag);
+        var values = tagRows.getOrDefault(s(row,"id"),List.of());
+        row.put("tagIds",values.stream().map(tag -> s(tag,"id")).toList());
+        row.put("tags",values);
         Instant freezeAt = freezeAt(row);
         boolean frozen = freezeAt == null || !clock.instant().isBefore(freezeAt);
         boolean owner = a.id().equals(s(row,"authorId"));

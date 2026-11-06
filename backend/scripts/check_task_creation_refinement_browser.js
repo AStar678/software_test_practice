@@ -12,7 +12,7 @@ async function main(){
   check('login ready',await waitFor(b,"!!document.getElementById('backend-login')"),await ev("({url:location.href,title:document.title,body:document.body?.innerText.slice(0,350)})"));
   await ev(`document.getElementById('login-user').value=${js(fixture.identities.founder.identifier)};document.getElementById('login-password').value='Fixture@123456';document.getElementById('backend-login').requestSubmit()`);
   check('real authenticated UI',await waitFor(b,'Pandora.ready&&Pandora.idle()',20000));
-  check('calendar honors private first shared and default colors',await ev(`taskColorVars(TASKS.find(t=>t.id===${js(fixture.taskId)})).includes('#E4DEF3')&&taskColorVars(TASKS.find(t=>t.id===${js(fixture.sharedTaskId)})).includes('#F6D5D2')&&taskColorVars(TASKS.find(t=>t.id===${js(fixture.emptyTaskId)})).includes('#ffe1ea')`));
+  check('calendar honors first shared and default colors',await ev(`taskColorVars(TASKS.find(t=>t.id===${js(fixture.taskId)})).includes('#F6D5D2')&&taskColorVars(TASKS.find(t=>t.id===${js(fixture.sharedTaskId)})).includes('#F6D5D2')&&taskColorVars(TASKS.find(t=>t.id===${js(fixture.emptyTaskId)})).includes('#ffe1ea')`));
   await sleep(5100);
   await ev(`openTaskForm('edit',${js(fixture.deletedTaskId)})`);
   check('editing retains deleted selected tag control',await waitFor(b,`Pandora.idle()&&!!document.querySelector('[data-action="p-task-tag"][data-id="${fixture.deletedTagId}"][aria-pressed="true"][data-deleted="true"]')`));

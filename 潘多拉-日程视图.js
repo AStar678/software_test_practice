@@ -197,7 +197,7 @@
     return {days,shown,hidden,segments};
   }
   function resizeHandle(task, edge, mode) {
-    if (!P.canRescheduleTask(actor(),task)) return '';
+    if (!P.canRescheduleTask(actor(),task) || (mode!=='month' && !canDragDay(task,state.viewAnchor))) return '';
     const unit=mode==='month'?'日期':'时间';
     const label='调整'+(edge==='start'?'开始':'截止')+unit+'：'+task.title;
     return '<span role="separator" tabindex="0" class="p-resize-handle p-resize-'+edge+'" data-resize="'+edge+'" data-resize-mode="'+mode+'" data-resize-task="'+esc(task.id)+'" aria-orientation="'+(mode==='vertical'||mode==='allday'?'horizontal':'vertical')+'" aria-label="'+esc(label)+'" title="'+esc(label+' · '+fmtSchedule(task)+'；拖动边缘或用方向键按'+(mode==='month'?'天':'小时')+'调整')+'"></span>';
@@ -586,6 +586,12 @@
     const fullDay=range.start<=bounds.start&&range.end>=bounds.end;
     return {start:minuteAt(range.start,d),end:minuteAt(range.end,d),point:false,fullDay};
   }
+  function canDragDay(task,d) {
+    if (task.allDay || !P.canRescheduleTask(actor(),task)) return false;
+    const bounds=businessBounds(d),range=calendarRange(task);
+    return range.start>=bounds.start && range.end<=bounds.end &&
+      (range.start<range.end ? range.end-range.start<bounds.end-bounds.start : range.start<bounds.end);
+  }
   function dayEvents(d) {
     return dayTasks(d).filter(task=>!task.allDay).map(task=>{const coverage=dayCoverage(task,d);
       return coverage&&!coverage.fullDay?Object.assign({task},coverage):null;}).filter(Boolean);
@@ -638,7 +644,7 @@
       '" data-lane="' + event.lane + '" data-columns="' + event.columns + '" style="' + taskColorVars(task) +
       'top:' + top + 'px;height:' + height + 'px;left:' + (event.lane*width) + '%;width:' + width + '%;--axis-true-top:' + trueTop + 'px;--axis-true-height:' + trueHeight + 'px" aria-label="' +
       esc(taskAriaLabel(task,actor())+'，'+minuteLabel(event.start)+(event.start===event.end?'':' 至 '+minuteLabel(event.end)))+'" title="' + esc(task.title+' · '+fmtSchedule(task)) + '">' +
-      '<span class="p-axis-true"'+(P.canRescheduleTask(actor(),task)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="vertical"':'')+'><span class="p-axis-caption"><strong>'+esc((task.pinned?'★ ':'')+task.title)+'</strong><span class="p-axis-event-time">'+esc((event.start===event.end?minuteLabel(event.start):minuteLabel(event.start)+' – '+minuteLabel(event.end))+(task.frozen?' · 审核中':''))+'</span></span></span>'+
+      '<span class="p-axis-true"'+(canDragDay(task,state.viewAnchor)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="vertical"':'')+'><span class="p-axis-caption"><strong>'+esc((task.pinned?'★ ':'')+task.title)+'</strong><span class="p-axis-event-time">'+esc((event.start===event.end?minuteLabel(event.start):minuteLabel(event.start)+' – '+minuteLabel(event.end))+(task.frozen?' · 审核中':''))+'</span></span></span>'+
       (calendarRange(task).start>=businessBounds(state.viewAnchor).start?resizeHandle(task,'start','vertical'):'')+
       (calendarRange(task).end<=businessBounds(state.viewAnchor).end?resizeHandle(task,'end','vertical'):'')+'</div>';
   }
@@ -655,12 +661,10 @@
   function allDayHTML(d) {
     const tasks = allDayTasks(d);
     if (!tasks.length) return '<span class="p-all-day-empty">—</span>';
-    /* 全天区仍只在这里展示；有仅排期权限时给出整条平移与真实端点，按日轴小时步长调整并进入原确认流程。 */
+    /* 全天和整日覆盖片段可读；精确调时从正常任务详情进入。 */
     return '<div class="p-allday-list">' + tasks.map(t => {
-      const reschedule=P.canRescheduleTask(actor(),t);
       return '<div role="group" tabindex="0" class="p-all-day-event'+(t.frozen?' is-pending-review':'')+'" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '" aria-label="' + esc(taskAriaLabel(t,actor())) + '" title="'+esc(t.title+' · '+fmtSchedule(t))+'">' +
-        '<span class="p-allday-move"'+(reschedule?' data-schedule-move="'+esc(t.id)+'" data-resize-mode="allday"':'')+'><strong>'+esc((t.pinned?'★ ':'')+t.title)+'</strong><small>'+esc(fmtSchedule(t))+'</small></span>' +
-        (reschedule?resizeHandle(t,'start','allday'):'')+(reschedule?resizeHandle(t,'end','allday'):'')+'</div>';
+        '<span class="p-allday-move"><strong>'+esc((t.pinned?'★ ':'')+t.title)+'</strong><small>'+esc(fmtSchedule(t))+'</small></span></div>';
     }).join('') + '</div>';
   }
   function horizontalDayHTML(d) {
@@ -669,14 +673,14 @@
     const rows=tasks.map(task=>{
       const timed=Object.assign({},task,{allDay:false}), coverage=dayCoverage(timed,d), range=calendarRange(timed);
       const left=coverage.start, width=Math.max(1,coverage.end-coverage.start);
-      return '<div class="p-horizontal-row" style="'+taskColorVars(task)+'"><div class="p-horizontal-bar'+(task.frozen?' is-pending-review':'')+'" data-task="'+esc(task.id)+'" title="'+esc(task.title+' · '+fmtSchedule(task))+'"'+(P.canRescheduleTask(actor(),task)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="day"':'')+' style="left:'+left+'px;width:'+width+'px">'+
+      return '<div class="p-horizontal-row" style="'+taskColorVars(task)+'"><div class="p-horizontal-bar'+(task.frozen?' is-pending-review':'')+'" data-task="'+esc(task.id)+'" title="'+esc(task.title+' · '+fmtSchedule(task))+'"'+(canDragDay(task,d)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="day"':'')+' style="left:'+left+'px;width:'+width+'px">'+
         '<button type="button" class="p-horizontal-task" data-task="'+esc(task.id)+'" aria-label="'+esc(taskAriaLabel(task,actor())+' '+scheduleText(timed,d))+'"><span class="p-horizontal-caption"><strong>'+esc((task.pinned?'★ ':'')+task.title)+'</strong><small>'+esc(scheduleText(timed,d))+'</small></span></button>'+
         (range.start>=bounds.start?resizeHandle(task,'start','day'):'')+(range.end<=bounds.end?resizeHandle(task,'end','day'):'')+'</div></div>';
     }).join('');
     return '<section id="p-day-panel" class="p-horizontal-panel"><p class="p-drag-hint">拖动任务框移动，拖动边缘调整起止；松开后确认提交，每次调整1小时。</p><div class="p-timeline-scroll p-horizontal-scroll" tabindex="0" aria-label="横向排期，00:00至24:00，可左右滚动"><div class="p-horizontal-axis"><div class="p-horizontal-ruler">'+hours+'</div>'+(rows||'<div class="p-horizontal-empty">当天暂无任务</div>')+'</div></div></section>';
   }
 
-  // Drag changes only a proposal. The original form owns validation, review and persistence.
+  // Drag computes a proposal; the lightweight confirmation owns validation and submission.
   let scheduleDrag=null;
   /* 月历按公司日期调整：保留公司时区内的日内时刻，不依赖设备时区或固定 24 小时偏移。 */
   function shiftCompanyDays(value, days) {
@@ -716,8 +720,10 @@
     if(!drag||event.pointerId!==drag.pointer)return;
     const apply=event.type==='pointerup'&&drag.steps!==0;
     const moved=drag.steps!==0;
+    const endpoint=drag.edge!=='move';
     if(moved){event.preventDefault();event.stopImmediatePropagation();}
-    clearScheduleDrag(moved);
+    /* 端点手柄上的按下—松开即使没有位移也只是一次调整手势，不能冒泡成打开详情/日期清单。 */
+    clearScheduleDrag(moved||endpoint);
     if(!apply)return;
     if(drag.range.due<drag.range.start) {P.notice('截止不得早于开始，本次调整未保存。');return;}
     P.openScheduleChange(drag.task.id,drag.range.start,drag.range.due,drag.version);

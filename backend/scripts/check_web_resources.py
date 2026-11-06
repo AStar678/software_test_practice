@@ -64,9 +64,9 @@ def main() -> int:
     employee = repo / "潘多拉-交互原型.html"
     admin = repo / "admin.html"
     pom = repo / "backend" / "pom.xml"
-    html = employee.read_text()
-    admin_html = admin.read_text()
-    pom_text = pom.read_text()
+    html = employee.read_text(encoding="utf-8")
+    admin_html = admin.read_text(encoding="utf-8")
+    pom_text = pom.read_text(encoding="utf-8")
 
     refs = references(html)
     names = [without_query(path)[0] for _, path in refs]
@@ -137,7 +137,7 @@ def main() -> int:
         args.output.write_text(json.dumps({
             "generatedAt": datetime.now(timezone.utc).isoformat(),
             "passed": passed, "total": len(RESULTS), "checks": RESULTS,
-        }, ensure_ascii=False, indent=2) + "\n")
+        }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"wrote {args.output}")
     return 0 if passed == len(RESULTS) else 1
 

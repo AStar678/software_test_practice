@@ -652,7 +652,7 @@ function paletteIndexOf(t){
 /* 无标签任务的统一默认粉色：只在未标记时使用，且刻意不进入标签色板 */
 const DEFAULT_TASK_COLOR = { bg: "#ffe1ea", bd: "#e39ab4" };
 const TAG_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
-/* 任务底色优先私人标签，否则取首个共用标签；日志仍单选，无标签用默认粉色。 */
+/* 任务底色取首个共用标签；无标签时用默认粉色。 */
 function taskColorVars(t){
   const tag = t && t.tag;
   if (tag && TAG_COLOR_PATTERN.test(String(tag.color || ""))) {
@@ -1159,7 +1159,7 @@ function logFindingHTML(){
         '<button type="button" class="btn tiny-btn" id="clearLogAuthor" data-action="clear-log-author"' +
           (q ? "" : " disabled") + ' aria-label="清除作者查找">清除</button>' +
       "</div>" +
-      '<span class="tiny muted">不区分大小写，匹配作者姓名片段；与“只看自己”同时启用时取交集。</span>' +
+      '<span class="tiny muted">按作者姓名筛选。</span>' +
     "</div></section>";
 }
 /* 各筛选对应的唯一内容块 */
@@ -1424,6 +1424,17 @@ function openSheet(view){
   if (sheetStack.some(item => item.notification)) {
     view = { ...view, notification: true };
   }
+  if (sheetStack.some(item => item.subordinate)) view = { ...view, subordinate: true };
+  const current = sheetStack[sheetStack.length - 1];
+  if (current) {
+    current.savedScroll = sheetBodyEl.scrollTop;
+    const focused = document.activeElement;
+    if (focused?.id) current.savedFocus = '#'+CSS.escape(focused.id);
+    else if (focused?.dataset?.task) current.savedFocus = '[data-task="'+CSS.escape(focused.dataset.task)+'"]';
+    else if (focused?.dataset?.action && focused?.dataset?.id) current.savedFocus = '[data-action="'+CSS.escape(focused.dataset.action)+'"][data-id="'+CSS.escape(focused.dataset.id)+'"]';
+    else if (focused?.dataset?.action && focused?.dataset?.date) current.savedFocus = '[data-action="'+CSS.escape(focused.dataset.action)+'"][data-date="'+CSS.escape(focused.dataset.date)+'"]';
+    else current.savedFocus = null;
+  }
   if (!lastFocused) lastFocused = document.activeElement;
   sheetStack.push(view);
   renderSheet();
@@ -1442,8 +1453,13 @@ function backSheet(){
   const top = sheetStack[sheetStack.length - 1];
   if (top && typeof top.rebuild === "function") sheetStack[sheetStack.length - 1] = top.rebuild();
   renderSheet();
+  if (top) {
+    sheetBodyEl.scrollTop = top.savedScroll || 0;
+    if (top.savedFocus) sheetBodyEl.querySelector(top.savedFocus)?.focus({preventScroll:true});
+  }
 }
 function closeSheet(){
+  if (sheetStack.length > 1 && sheetStack.some(item => item.subordinate)) {backSheet();return;}
   sheetStack = [];
   clearDrafts();
   renderSheet();
@@ -1514,7 +1530,6 @@ function taskDetailView(id){
           '<span class="task-meta">' + kindTag(k, a) + statusBadge(k) + urgencyBadge(k.urgency) +
             "<span>" + esc(fmtTaskDue(k)) + "</span></span></button>";
       }).join("") + "</div>";
-    body += '<div class="tiny muted">父任务与子任务都是可执行任务；父任务由自身负责人和审核流程推进，不因子任务状态变化而自动完成。</div>';
   }
   if (siblings.length){
     body += '<div class="divider"></div><div class="card-head"><h2>同级任务</h2><span class="hint">同一上级任务下</span></div><div class="stack">' +
@@ -1740,7 +1755,7 @@ function taskFormView(){
       '<div class="field" style="flex:1" id="tf-end-time-field"' + '><label for="tf-end-time-hour">截止时刻</label>' +
         timeControl("tf-end-time", d.endTime) + '</div>' +
     "</div>" +
-    '<span class="tiny muted">均按组织时区填写。全天快捷：开始日00:00至截止日次日00:00，可继续修改。</span></div>';
+    '<span class="tiny muted">全天快捷：开始日00:00至截止日次日00:00，可继续修改。</span></div>';
 
   body += '<div class="field"><label>紧急程度</label><div class="choice-row" id="tf-urgency">' +
     ["紧急", "高", "中", "低"].map(function(u){
@@ -1749,12 +1764,12 @@ function taskFormView(){
 
   body += '<div class="field"><label>负责人（可多选）</label>' + assigneeSummaryHTML(d.assigneeIds) +
     (canPickAssignees ? '<button type="button" class="btn tiny-btn" data-action="pick-assignees" style="align-self:flex-start">选择负责人</button>' : "") +
-    '<div class="tiny muted">负责人可选本公司全部有效员工（含其他部门、直属上级与创始人）；至少保留一位，本人可移除且不会自动加回。创建审核只按创建人的直属上级，与负责人选择无关。</div>' +
+    '<div class="tiny muted">至少保留一位负责人。</div>' +
     "</div>";
 
   body += '<div class="callout" id="tf-error" hidden></div>';
   if (a.role === "lower" || a.role === "middle"){
-    body += '<div class="callout info">' + (a.role === "lower" ? "下层" : "中层") + "自建任务需经直属上级审核通过后才进入执行状态。</div>";
+    body += '<div class="callout info">提交后需直属上级审核。</div>';
   }
 
   return { title: d.mode === "create" ? "创建任务" : "编辑任务", body: body,
@@ -1839,7 +1854,7 @@ function taskPickerView(){
         '<input id="tp-search" type="search" autocomplete="off" placeholder="输入任务名称片段" value="' + esc(taskPicker.query) + '" data-autofocus />' +
         '<button type="button" class="btn tiny-btn" data-action="picker-task-clear-query"' + (taskPicker.query ? "" : " disabled") + ' aria-label="清除搜索词">清除</button>' +
       "</div>" +
-      '<span class="tiny muted">不区分大小写，按名称包含匹配；空查询显示全部可选任务。</span></div>' +
+      '<span class="tiny muted">输入任务名称筛选。</span></div>' +
     '<div class="field"><label>候选任务</label><div id="tpResults">' + taskPickerResultsHTML() + "</div></div>";
   return { title: isParent ? "选择上级任务" : "选择关联任务", body: body,
     foot: '<button type="button" class="btn" data-action="sheet-back">取消</button>' +
@@ -1977,8 +1992,7 @@ function noteFormView(id){
   const a = actor();
   const t = taskById(id);
   if (!t || !canUpdateTaskNote(a, t)) return null;
-  const body = '<div class="callout info">负责人只能维护文字进展备注与提交完成，不能修改名称、排期、紧急程度或负责人。</div>' +
-    '<div class="field"><label for="pf-note">进展备注</label><textarea id="pf-note" data-autofocus>' + esc(t.progressNote) + "</textarea></div>" +
+  const body = '<div class="field"><label for="pf-note">进展备注</label><textarea id="pf-note" data-autofocus>' + esc(t.progressNote) + "</textarea></div>" +
     '<div class="callout" id="pf-error" hidden></div>';
   return { title: "更新进展", body: body,
     foot: withBack('<button type="button" class="btn primary" data-action="save-note" data-id="' + t.id + '">保存进展</button>', a) };
@@ -1989,8 +2003,8 @@ function submitCompleteView(id){
   if (!t || !canUpdateTaskNote(a, t)) return null;
   const reviewer = completionReviewer(t);
   const body = reviewer
-    ? '<div class="callout info">提交后任务进入待完成审核，审核人：' + esc(reviewer.name) + "。批准后任务标记为已完成，退回则恢复进行中。</div>"
-    : '<div class="callout info">该任务没有更高的审核人（上层自建任务），提交后直接标记为已完成。</div>' +
+    ? '<div class="callout info">审核人：' + esc(reviewer.name) + "。通过后标记为已完成，退回则恢复进行中。</div>"
+    : '<div class="callout info">无需上级审核，提交后直接标记为已完成。</div>' +
       '<div class="field"><label for="cf-note">完成说明</label><textarea id="cf-note">' + esc(t.progressNote) + "</textarea></div>";
   return { title: "提交完成", body: body,
     foot: withBack('<button type="button" class="btn ok" data-action="confirm-complete" data-id="' + t.id + '">确认提交</button>', a) };
@@ -1999,7 +2013,7 @@ function consultFormView(){
   const a = actor();
   if (a.role !== "middle") return null;
   const sup = directSuperiorOf(a.id);
-  const body = '<div class="callout info">请示发送给直属上层：' + esc(sup ? sup.name : "无") + "。仅用于上下级沟通，不用于修改任务字段。</div>" +
+  const body = '<div class="callout info">请示发送给直属上级：' + esc(sup ? sup.name : "无") + "。</div>" +
     '<div class="field"><label for="qk-content">请示内容</label><textarea id="qk-content" data-autofocus></textarea></div>' +
     '<div class="callout" id="qk-error" hidden></div>';
   return { title: "发起请示", body: body,
@@ -2036,7 +2050,7 @@ function companyItemFormView(id){
   if (id && !it) return null;
   return { title: it ? "编辑公司信息" : "添加公司信息",
     body: '<div class="field"><label for="ci-text">内容</label><input id="ci-text" type="text" value="' + esc(it ? it.text : "") + '" data-autofocus /></div>' +
-      '<div class="tiny muted">公司统一信息对所有身份可见，最多 10 条。</div>' +
+      '<div class="tiny muted">对所有身份可见，最多 10 条。</div>' +
       '<div class="callout" id="ci-error" hidden></div>',
     foot: withBack('<button type="button" class="btn primary" data-action="save-company"' + (it ? ' data-id="' + it.id + '"' : "") + ">保存</button>", a) };
 }
@@ -2068,7 +2082,7 @@ function personalItemFormView(id){
   if (id && !it) return null;
   return { title: it ? "编辑个人信息" : "添加个人信息",
     body: '<div class="field"><label for="pi-text">内容</label><input id="pi-text" type="text" value="' + esc(it ? it.text : "") + '" data-autofocus /></div>' +
-      '<div class="tiny muted">个人信息由本人维护，默认取自本人日志摘录，编辑个人信息不会改写原始日志。</div>' +
+      '<div class="tiny muted">最多 10 条，独立保存。</div>' +
       '<div class="callout" id="pi-error" hidden></div>',
     foot: withBack('<button type="button" class="btn primary" data-action="save-personal"' + (it ? ' data-id="' + it.id + '"' : "") + ">保存</button>", a) };
 }
