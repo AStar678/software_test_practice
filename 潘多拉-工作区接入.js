@@ -398,7 +398,7 @@ saveLog = function () {
     rememberHome("personal", id);
     const view = oldPersonalForm(id);
     if (view) view.body = view.body.replace('id="pi-text"', 'id="pi-text" maxlength="2000"')
-      .replace("个人信息由本人维护，默认取自本人日志摘录，编辑个人信息不会改写原始日志。", "个人信息由本人维护，最多 10 条，独立保存，不会改写日志。");
+      .replace("个人信息由本人维护，默认取自本人日志摘录，编辑个人信息不会改写原始日志。", "最多 10 条，独立保存。");
     return view;
   };
   confirmDeleteView = function (kind, id) {
@@ -530,7 +530,7 @@ saveLog = function () {
     if (revoked && !raw.canReadWithdrawnDetails) {
       body += '<div class="divider"></div><p>该通知已被撤回。</p>';
     } else {
-      if (revoked) body += '<div class="callout info">该通知已撤回。你作为发起人的上级，可查看原通知内容；此页仅供只读查看。</div>';
+      if (revoked) body += '<div class="callout info">该通知已撤回，仅供只读查看。</div>';
       const summary = notificationSummary(raw, changes);
       const changeSummary = notificationSummary({ ...raw, summary: raw.changeSummary }, []);
       if (!changes.length && summary) body += '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(summary) + '</p>';
@@ -539,7 +539,7 @@ saveLog = function () {
       if (!changes.length && changeSummary && changeSummary !== summary) body += '<p class="tiny muted" style="white-space:pre-wrap">' + esc(changeSummary) + '</p>';
       if (raw.requestStatus) body += '<div class="callout info">申请：' + esc(requestResultText(raw)) + '</div>';
       if (raw.requestUnavailable) body += '<p class="tiny muted">原申请不可查看。</p>';
-      if (raw.relationLost) body += '<div class="callout info">你已不再是该任务负责人；此消息仅保留只读摘要，不能用于修改或审核。</div>';
+      if (raw.relationLost) body += '<div class="callout info">你已不再是该任务负责人，此消息仅供只读查看。</div>';
     }
     body += '<div class="callout" id="notification-error" hidden></div>';
     const buttons = [];

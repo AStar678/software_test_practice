@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Real-service regression for ordered shared work-log tags in a disposable database."""
 import datetime as dt
+import json
+import os
+import subprocess
 import uuid
 
 from fixed_model_fixture import Fixture
+from migration_precheck import BASE
 
 
 def main():
@@ -61,6 +65,21 @@ def main():
         latest = detail()
         ok('alpha-one-employee', 'PATCH', '/work-logs/' + log_id, {'tagIds': []}, latest['rowVersion'])
         check('explicit empty collection clears tags', detail()['tagIds'] == [])
+        # Browser phase: the same ordered picker in the real work-log create and edit forms.
+        names = [('界面甲', '#F6D5D2'), ('界面乙', '#D8EAF4'), ('界面丙', '#DCEEE0')]
+        ui = [ok('founder', 'POST', '/tags', {'name': name, 'color': color})['tagId'] for name, color in names]
+        deleted = ok('founder', 'POST', '/tags', {'name': '界面待删标签', 'color': '#FBE3CB'})['tagId']
+        current = detail()
+        ok('alpha-one-employee', 'PATCH', '/work-logs/' + log_id, {'tagIds': [deleted, ui[1]]}, current['rowVersion'])
+        ok('founder', 'DELETE', '/tags/' + deleted, version=1)
+        task = ok('founder', 'POST', '/tasks', {'title': '日志关联任务', 'description': '日志标签界面验证',
+                                                'assigneeIds': [fixture.identities['founder']['id']],
+                                                'allDay': False, 'startAt': '2031-03-01T01:00:00Z', 'dueAt': '2031-03-01T03:00:00Z'})['taskId']
+        manifest = {'base': f'http://127.0.0.1:{fixture.port}', 'identities': fixture.identities, 'tags': ui,
+                    'tagNames': {tag_id: name for tag_id, (name, _) in zip(ui, names)},
+                    'deletedTag': deleted, 'logId': log_id, 'task': task}
+        subprocess.run(['node', str(BASE / 'scripts/check_apply_log_tags_browser.js')],
+                       env={**os.environ, 'PANDORA_LOG_TAG_FIXTURE': json.dumps(manifest)}, check=True)
 
 
 if __name__ == '__main__':

@@ -241,13 +241,13 @@
     if (preview.requiresApproval) {
       const who = personName(preview.reviewerId, preview.route || {});
       return kind === "creation"
-        ? "创建审核人：" + who + "（按创建人的直属上级审核；负责人换序、更换或跨部门都不改变审核人）。"
-        : "本次审核人：" + who + "；提交后由该审核人处理。";
+        ? "创建审核人：" + who + "。"
+        : "本次审核人：" + who + "，提交后由其处理。";
     }
     const reason = preview.exemptionReason || (preview.route && preview.route.reasonText) || "申请人即审核人";
     return kind === "creation"
       ? "无需审核：" + reason + "；提交后直接生效。"
-      : "直接生效：" + reason + "；提交后记录原因直接生效。";
+      : "无需审核：" + reason + "；提交后直接生效。";
   }
   function creationMode(mode) { return mode === "create" || mode === "resubmit"; }
   /* Named distinctly: a local `taskFormView` declaration would shadow the captured base function
@@ -268,7 +268,7 @@
     view.body = view.body.replace('id="tf-title" type="text"', 'id="tf-title" type="text" maxlength="80"')
       .replace('<textarea id="tf-desc">', '<textarea id="tf-desc" maxlength="5000">')
       .replace('说明</label>', '任务说明（必填）</label>')
-      .replace('创建时间在保存时单独记录，编辑排期不会改变创建时间。', '全天任务按截止日18:00（组织时区）截止；日历仍展示完整日期。');
+      .replace('创建时间在保存时单独记录，编辑排期不会改变创建时间。', '全天任务按公司截止时刻结束，日历展示完整日期。');
     /* Ordered company tags belong to the proposed task version. */
     if (P.taskTagsHTML) {
       view.body = view.body.replace('<div class="field"><label>紧急程度</label>',
@@ -435,11 +435,18 @@
   }
 
   let scheduleDraft=null;
+  /* 全天任务按月只表达日期；定时任务保留精确时刻，秒级差量不被四舍五入。 */
+  function scheduleDraftText(start, due) {
+    if (!scheduleDraft || !scheduleDraft.allDay) return timeText(start)+' — '+timeText(due);
+    const from=P.companyDateKey(start);
+    const to=P.companyDateKey(due);
+    return from===to ? '全天 · '+from : '全天 · '+from+' — '+to;
+  }
   function scheduleConfirmationView() {
     const d=scheduleDraft;
     if (!d) return null;
-    const before=timeText(d.oldStart)+' — '+timeText(d.oldDue);
-    const after=timeText(d.newStart)+' — '+timeText(d.newDue);
+    const before=scheduleDraftText(d.oldStart,d.oldDue);
+    const after=scheduleDraftText(d.newStart,d.newDue);
     return {title:'确认排期调整',draftKind:'schedule',rebuild:scheduleConfirmationView,
       body:'<div class="kv">'+kv('原排期',before)+kv('新排期',after)+'</div>'+
         (d.stale?'<div class="callout reject">任务版本已变化，请取消后重新调整。</div>':'')+
@@ -451,14 +458,27 @@
       const d=scheduleDraft,field=document.getElementById('sc-reason');
       if (!d || !field || d.epoch!==P.epoch || d.stale) throw new Error('排期草稿已失效，请重新调整。');
       d.reason=field.value;
-      const latest=await P.request('/tasks/'+encodeURIComponent(d.id));
-      if (latest.rowVersion!==d.rowVersion || !latest.canReschedule || latest.frozen || latest.executionState==='done') {
-        d.stale=true;replaceTopSheet(scheduleConfirmationView());throw new Error('任务版本或资格已变化，请重新调整排期。');
-      }
       const body={command:'reschedule',allDay:!!d.allDay,reason:required(d.reason,'调整原因',500)};
       if (d.allDay) { body.startDate=P.companyDateKey(d.newStart);body.dueDate=P.companyDateKey(d.newDue); }
       else {body.startAt=d.newStart.toISOString();body.dueAt=d.newDue.toISOString();}
-      const result=await P.mutation(d.slot,'PATCH','/tasks/'+encodeURIComponent(d.id),body,'"'+d.rowVersion+'"');
+      const latest=await P.request('/tasks/'+encodeURIComponent(d.id));
+      // 首次提交前再校验版本/资格。失败重试沿用同一载荷与幂等键，由服务端回放已提交结果，
+      // 因此不能再把本人刚提交造成的版本变化当成他人改动而阻断重试。
+      const blocked=latest.executionState==='done'
+        || (!d.attempted && (latest.rowVersion!==d.rowVersion || !latest.canReschedule || latest.frozen));
+      if (blocked) {
+        d.stale=true;replaceTopSheet(scheduleConfirmationView());throw new Error('任务版本或资格已变化，请重新调整排期。');
+      }
+      d.attempted=true;
+      let result;
+      try {
+        result=await P.mutation(d.slot,'PATCH','/tasks/'+encodeURIComponent(d.id),body,'"'+d.rowVersion+'"');
+      } catch (error) {
+        if (error.status===412 || (error.status===409 && !['ROUTE_BLOCKED','AUTHORIZATION_CHANGED'].includes(error.code))) {
+          d.stale=true;replaceTopSheet(scheduleConfirmationView());
+        }
+        throw error;
+      }
       await finish(result,d.mark);
       scheduleDraft=null;
     },'sc-error');
@@ -468,12 +488,13 @@
     if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     if (!Number.isFinite(+start) || !Number.isFinite(+due) || due<start) { P.notice('截止不得早于开始。');return; }
     return P.busy(async function () {
-      const mark=session(),original=taskById(id),raw=await P.request('/tasks/'+encodeURIComponent(id));
+      const mark=session(),raw=await P.request('/tasks/'+encodeURIComponent(id));
       if (!stillHere(mark)) return;
-      const old=original?.raw || raw;
+      const allDay=!!raw.allDay;
       scheduleDraft={id,epoch:P.epoch,mark,slot:newSlot('schedule'),rowVersion,
-        oldStart:new Date(old.startAt),oldDue:new Date(old.dueAt),newStart:new Date(start),newDue:new Date(due),
-        allDay:!!old.allDay,reason:'',stale:raw.rowVersion!==rowVersion || !raw.canReschedule || raw.frozen || raw.executionState==='done'};
+        oldStart:new Date(raw.startAt),oldDue:new Date(raw.dueAt),
+        newStart:new Date(start),newDue:new Date(due),allDay,reason:'',attempted:false,
+        stale:raw.rowVersion!==rowVersion || !raw.canReschedule || raw.frozen || raw.executionState==='done'};
       openSheet(scheduleConfirmationView());
     });
   };
@@ -492,7 +513,7 @@
       kv("任务排期", fmtSchedule(task)) + kv("截止", when(raw.dueAt) + (isOverdue(task) ? " · 已逾期" : "")) +
       kv("负责人", peopleText(task.assigneeIds, raw)) +
       kv("任务说明", task.desc || "暂无") + (raw.acceptanceCriteria ? kv("完成标准", raw.acceptanceCriteria) : "") + kv("当前进展", task.progressNote || "暂无") + '</div>';
-    if (raw.parentUnavailable) body += '<div class="callout info">上级任务不可查看。关联关系不扩大访问权限。</div>';
+    if (raw.parentUnavailable) body += '<div class="callout info">上级任务不可查看。</div>';
     else if (task.parentId) body += '<div class="divider"></div><div class="card-head"><h2>上级任务</h2></div>' + taskLink(task.parentId, taskName(task.parentId));
     const children = Array.isArray(raw.children) ? raw.children : childrenOf(id).map(function (child) { return { id: child.id, title: child.title, executionState: child.status }; });
     if (children.length) body += '<div class="divider"></div><div class="card-head"><h2>子任务</h2></div><div class="stack">' + children.map(function (child) { return taskLink(child.id, child.title, child.executionState); }).join("") + '</div>';
@@ -500,7 +521,7 @@
     if (siblings.length) body += '<div class="divider"></div><div class="card-head"><h2>同级任务</h2><span class="hint">同一上级任务下</span></div><div class="stack">' + siblings.map(function (other) { return taskLink(other.id, other.title, other.status); }).join("") + '</div>';
     const request = pendingForTask(id);
     const requestId = raw.pendingRequestId || request && request.id;
-    if (task.frozen) body += '<div class="callout info">该任务有待审核申请。当前展示的是有效版本；审核结束前暂停资料修改、进展、完成及重开操作。</div>';
+    if (task.frozen) body += '<div class="callout info">该任务有待审核申请，当前展示的是有效版本。</div>';
     const buttons = [];
     if (!P.subordinateMode()) {
       if (canEditTask(actor(), task)) buttons.push('<button type="button" class="btn primary" data-action="edit-task" data-id="' + attr(id) + '">编辑任务</button>');
@@ -586,7 +607,7 @@
     let body;
     if (command === "reopen") {
       reopenDraft = Object.assign(reopenSchedule(task),{assigneeIds:task.assigneeIds.slice()});
-      body = '<div class="callout info">仅任务当前责任方可重开，并同步安排新的有效负责人；保存后进入新执行轮次。</div>' +
+      body = '<div class="callout info">重开需提交完整新排期，保存后进入新执行轮次。</div>' +
         '<div class="callout info">' + esc(previewHint(context.preview, "non-creation")) + '</div>' +
         reopenScheduleHTML() + reopenOwnersHTML() + textField("reopen-reason", "重开原因（必填，最多500字）", "", 500, true) + errorBox(errorId);
     } else {
