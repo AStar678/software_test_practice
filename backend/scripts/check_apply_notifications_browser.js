@@ -36,6 +36,12 @@ async function main(){
    check('detail fits '+width,await ev("document.documentElement.scrollWidth<=innerWidth+1&&!!document.querySelector('.p-notice-changes')&&!!document.querySelector('#sheetFoot .btn.primary')"));
    await b.screenshot(path.join(out,'detail-'+width+'.png'));
   }
+  check('applicant sees the authorized original-request action',initial.primaryText.includes('查看原申请'),initial.primaryText);
+  await ev("document.querySelector('#sheetFoot [data-action=p-open-approval]').click()");
+  check('original request opens from the notification',await waitFor(b,"document.getElementById('sheetTitle').textContent!=='通知详情'&&document.getElementById('sheetBody').innerText.includes('申请人')&&Pandora.idle()",20000));
+  check('original request keeps the applicant projection without the reviewer diff',await ev("!document.querySelector('.p-review-diffs')&&document.getElementById('sheetBody').innerText.includes('申请人')"));
+  await ev("document.getElementById('sheetBack').click()");
+  check('returns to the same notification detail',await waitFor(b,"document.getElementById('sheetTitle').textContent==='通知详情'&&Pandora.idle()",20000));
   await ev("document.getElementById('sheetBack').click()");await waitFor(b,"document.getElementById('sheetTitle').textContent==='通知'");
   check('reminder detail opens for deletion',await detail(f.reminderNoticeId));
   check('reminder deletion more menu opens',await more());

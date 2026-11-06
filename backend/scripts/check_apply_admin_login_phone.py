@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Admin-only full login-phone readback in an isolated authenticated service."""
+import json
+import os
+import subprocess
 import uuid
 
 from fixed_model_fixture import Fixture, PASSWORD
+from migration_precheck import BASE
 
 
 def main():
@@ -39,6 +43,10 @@ def main():
         check('new phone authenticates the original employee',new_login_code==200 and new_login_body['user']['id']==ids[who])
         check('old phone stops authenticating',login(person['identifier'])[0] in (400,401,404))
         check('old employee session is revoked',call(who,'GET','/me/profile')[0]==401)
+        manifest={'base':f'http://127.0.0.1:{f.port}','admin':f.identities['admin'],
+                  'employeeName':updated['displayName'],'phone':new_phone}
+        subprocess.run(['node',str(BASE/'scripts/check_apply_admin_login_phone_browser.js')],
+                       env={**os.environ,'PANDORA_ADMIN_PHONE_FIXTURE':json.dumps(manifest)},check=True)
 
 
 if __name__=='__main__':main()

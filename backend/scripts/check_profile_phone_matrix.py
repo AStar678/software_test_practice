@@ -26,9 +26,27 @@ def main():
                 check(reader+' contact detail follows actual management relationship',
                       (status==200 and result.get('phone')==old_phone and 'email' not in result and 'username' not in result) if allowed else status in (403,404))
             for who,path in (('founder','/users?limit=100'),('alpha-head','/work-log-authors'),('alpha-one-employee','/assignee-candidates?purpose=create'),
-                    ('alpha-one-employee','/assignee-candidates?purpose=edit'),('admin','/admin/employees'),('admin','/admin/organization-plans')):
+                    ('alpha-one-employee','/assignee-candidates?purpose=edit'),('admin','/admin/organization-plans')):
                 status,result=f.call('GET',path,token=tokens[who])
                 check(path+' summary has no contact, credential or username fields',status==200 and not any(field in json.dumps(result) for field in ('"phone"','"loginPhone"','"email"','"username"','"passwordHash"')))
+            def admin_phone_readback(expected):
+                status,listing=f.call('GET','/admin/employees',token=tokens['admin'])
+                detail_status,detail=f.call('GET','/admin/employees/'+target,token=tokens['admin'])
+                listed=next((row for row in listing.get('items',[]) if row['id']==target),{})
+                check('same-company administrator list and detail show the current full login phone',
+                      status==200 and detail_status==200 and listed.get('loginPhone')==expected and detail.get('loginPhone')==expected)
+                check('management readback exposes no other contact, credential or username fields',
+                      not any(field in json.dumps([listing,detail]) for field in ('"phone"','"email"','"username"','"passwordHash"')))
+            admin_phone_readback(old_phone)
+            for who in ('founder','alpha-one-employee'):
+                for path in ('/admin/employees','/admin/employees/'+target):
+                    check(who+' cannot read management login phones via '+path,
+                          f.call('GET',path,token=tokens[who])[0] in (403,404))
+            check('cross-company administrator cannot read target management detail',
+                  f.call('GET','/admin/employees/'+target,token=tokens['other-admin'])[0]==404)
+            status,other_listing=f.call('GET','/admin/employees',token=tokens['other-admin'])
+            check('cross-company administrator list excludes target and login phone',
+                  status==200 and target not in json.dumps(other_listing) and old_phone not in json.dumps(other_listing))
             token=tokens['alpha-one-employee']
             status,profile=f.call('GET','/me/profile',token=token)
             for body in ({'phone':'13988880001'},{'displayName':'Injected'},{'email':'self@private.example.test','phone':'13988880001'}):
@@ -45,6 +63,7 @@ def main():
             body={'phone':'+86 (139) 8888-0001','displayName':'Administrator renamed employee'}
             status,receipt=f.call('PATCH','/admin/employees/'+target,body,tokens['admin'],'phone-'+uuid.uuid4().hex,1)
             check('administrator normalized phone/name command succeeds with contact-free receipt',status==200 and not any(key in receipt for key in ('phone','loginPhone','email')))
+            admin_phone_readback('+8613988880001')
             check('phone change revokes all employee sessions',f.call('GET','/auth/session',token=token)[0]==401 and f.call('GET','/auth/session',token=second)[0]==401)
             check('old phone cannot log in after change',f.login('alpha-one-employee')[0]==401)
             status,session=f.call('POST','/auth/sessions',{'accountType':'employee','phone':'+8613988880001','password':'Fixture@123456'})

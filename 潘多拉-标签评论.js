@@ -340,7 +340,7 @@
     if (comment) comment.editBody = event.target.value;
   });
 
-  /* 每位员工均可维护自己的标签，共用标签写入仍由服务器鉴权。 */
+  /* 标签维护仅对创始人开放，写入仍由服务器鉴权。 */
   renderMe = function () {
     previousRenderMe();
     if (!P.ready) return;
@@ -348,7 +348,7 @@
     if (!page || !canManageTags()) return;
     const card = document.createElement('section');
     card.className = 'card';
-    card.innerHTML = '<div class="card-head"><h2>标签管理</h2><span class="hint">私人 / 共用</span></div>' +
+    card.innerHTML = '<div class="card-head"><h2>标签管理</h2><span class="hint">公司共用</span></div>' +
       '<button type="button" class="btn" data-action="p-manage-tags">打开标签管理</button>';
     page.appendChild(card);
   };

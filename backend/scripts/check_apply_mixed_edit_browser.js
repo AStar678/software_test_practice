@@ -60,6 +60,8 @@ async function main(){
    check('owner browser has no exceptions',o.errors.length===0,o.errors);
   }finally{await o.kill();}
  }
+ const reportFile=f.skipReview?'owner-report.json':'review-report.json';
+ fs.writeFileSync(path.join(out,reportFile),JSON.stringify(report,null,2));
  fs.writeFileSync(path.join(out,'browser-report.json'),JSON.stringify(report,null,2));
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

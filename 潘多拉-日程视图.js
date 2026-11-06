@@ -720,8 +720,10 @@
     if(!drag||event.pointerId!==drag.pointer)return;
     const apply=event.type==='pointerup'&&drag.steps!==0;
     const moved=drag.steps!==0;
+    const endpoint=drag.edge!=='move';
     if(moved){event.preventDefault();event.stopImmediatePropagation();}
-    clearScheduleDrag(moved);
+    /* 端点手柄上的按下—松开即使没有位移也只是一次调整手势，不能冒泡成打开详情/日期清单。 */
+    clearScheduleDrag(moved||endpoint);
     if(!apply)return;
     if(drag.range.due<drag.range.start) {P.notice('截止不得早于开始，本次调整未保存。');return;}
     P.openScheduleChange(drag.task.id,drag.range.start,drag.range.due,drag.version);
