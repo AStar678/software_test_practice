@@ -263,6 +263,69 @@ A SHALL 以 2026-11-08 更改指导、Flutter 完整迁移盘点及本增量作�
 - **WHEN** 从文件系统打开旧静态页面或直接读取未构建脚本
 - **THEN** 验收 SHALL 使用真实服务、认证、持久化及事件路径，静态内容不视为通过，本次按更改指导及本增量规格判定
 
+### Requirement: Account password lifecycle
+账号 SHALL 由管理员手动创建，不开放自助注册；员工使用本人手机号登录，独立管理员使用独立管理员账号名和密码模型。手机号 SHALL 统一规范化并在认证可识别范围唯一，不得歧义登录；非演示升级迁移保留员工 ID、原凭据和业务历史，组织关系按显式合法位置映射转换；非演示不得以新建任意账号替代原身份，演示库可按受控流程重建。管理员建号和管理员合法改号 SHALL 同步登录标识，空号与重复号有明确处理反馈。系统 SHALL 生成随机初始密码并强制首次改密；管理员重置密码 SHALL 再次强制改密。新密码 SHALL 至少 10 个字符、含字母与数字且 UTF-8 长度不超过 72 字节。强制改密会话 SHALL 仅可办理本人改密及退出，不能读取或修改业务数据；日常改密 SHALL 校验旧密码，成功后撤销包括当前会话在内的全部会话并要求重新登录。管理员 SHALL 可录入/覆盖员工手机号，并在本公司专用员工管理列表及详情读取完整登录手机号；普通目录和审计不得回显他人手机号；本人仅可编辑头像、邮箱和密码，姓名与手机号仅管理员可改。
+
+按 2026-10-19 调整，员工业务中的手机号 SHALL 仅本人及实际管理链上的上级可见；本公司独立管理员另可通过员工管理列表及详情读取完整登录手机号；他人读取 SHALL 同时满足当前资料查看权、同组织有效人员关系及更高组织层级，且仅通过鉴权人员详情返回。邮箱 SHALL 仅本人，以及同时满足当前资料查看权、同组织有效人员关系和更高组织层级的实际管理链上级，在授权人员详情中可见；不因管理员身份自动开放业务邮箱。同级、下属、其他管理链或仅有公司/部门资料范围 SHALL 不因此取得手机号权；管理员仅通过专用同组织员工管理接口读取，不能扩散到业务目录。目录、任务人员摘要、日志筛选、通知、分析、审计、outbox 及普通人员缓存 SHALL 不含号码；历史通知只读例外 SHALL 不授予手机号权。
+
+员工 SHALL 用明确手机号字段登录，以姓名展示、稳定内部标识关联任务/日志/组织/通知，最终员工结构、索引、当前接口字段/解析、生成器、搜索、展示、准备脚本及当前测试不再依赖员工用户名。历史已应用迁移和历史文档不机械删改，但通过新迁移清除最终结构中的用户名及映射残留；不得用手机号充当公开用户名。手机号建号必填、不可清空、规范化且在无租户选择的员工认证范围唯一；管理员改号同步登录键且员工 ID 不变。
+
+管理员凭据 SHALL 独立于员工用户名存储，每公司一个账号，在“管理员账号”区域维护，不出现在员工名单、组织树、任务候选、日志目录或业务审核，不要求员工部门/团队/职位。登录 SHALL 显式区分 employee/admin，不跨类型回退；缺失类型或旧员工 username 载荷返回明确契约错误且不创建会话，拒绝歧义身份及重复员工手机号，保留显式管理员修复入口。改号 SHALL 撤销该员工既有会话，管理员凭据更新也撤销其原会话；首登和密码策略、重置、日常改密规则继续生效。
+
+管理员员工列表、详情及编辑回读 SHALL 显示真实完整登录手机号以核对账号，缺失时明确未设置，不以普通联系电话或公开用户名替代。改号 SHALL 仍规范化并校验唯一性、保留员工 ID、更新登录键及撤销原会话。管理手机号 SHALL 不进入普通人员缓存、任务参与人、候选、日志、通知、分析、审计或事件载荷；读取管理权限和同组织范围必须由服务端校验。
+
+#### Scenario: Initial login cannot enter business pages
+- **WHEN** 新员工用生成的初始密码登录并尝试直接访问业务接口
+- **THEN** 系统 SHALL 提示必须改密并拒绝业务访问，改密成功后旧会话失效，使用新密码重新登录后方可进入
+
+#### Scenario: Password validation and reset
+- **WHEN** 本人提交错误旧密码、少于 10 字符、缺字母/数字或超过 72 UTF-8 字节的新密码
+- **THEN** 系统 SHALL 拒绝修改；管理员重置后 SHALL 生成新初始密码、撤销旧会话并恢复首次改密门禁
+
+#### Scenario: Edit contacts without exposing another employee phone
+- **WHEN** 管理员录入员工号码或其他用户读取目录、人员摘要、日志筛选、通知及分析
+- **THEN** 系统 SHALL 允许管理员授权写入并在员工管理列表/详情读取登录号，其他上述读取结果 SHALL 不含号码；本人资料接口 SHALL 可读取自己姓名/手机号并编辑邮箱、头像，姓名和手机号由管理员维护
+
+#### Scenario: Read phones only through authorized person details
+- **WHEN** 本人、直属上级、间接上级、同级、下属、其他管理链上级及管理员读取人员详情
+- **THEN** 本人 SHALL 可读自己的手机号；直属或间接上级 SHALL 仅在具有当前资料权且组织层级更高时可读下属号码；本公司管理员 SHALL 仅从专用员工管理列表/详情读取登录号，其余人不获得号码，业务资料权不足 SHALL 拒绝整个详情，邮箱 SHALL 仅本人及上述有权实际链上级在授权详情读取，同级、下属、其他管理链及普通目录不得获得邮箱
+
+#### Scenario: Recheck the management chain after an organization change
+- **WHEN** 员工转岗、管理关系变化、链上中间账号失效，或管理链出现环/跨公司引用
+- **THEN** 后续人员详情请求 SHALL 按当前有效关系鉴权，旧上级及无法证明有效上级关系者 SHALL 不再获得号码或邮箱；旧页面或缓存 SHALL 不构成继续读取的凭据
+
+#### Scenario: Authenticate the original employee by phone after migration
+- **WHEN** 存量员工以手机号及原密码登录，之后合法改号
+- **THEN** 登录 SHALL 始终对应原员工 ID 和业务关系，新手机号可登录，旧手机号不再作为其员工登录标识，重复手机号被拒；独立管理员以新独立账号模型和明确身份契约可登录
+
+#### Scenario: Do not publish phone identifiers as usernames
+- **WHEN** 读取普通目录、创建候选、日志筛选或通知
+- **THEN** 手机号 SHALL 不因成为登录标识而作为公开用户名泄露，手机号邮箱继续遵守资料详情隐私规则
+
+#### Scenario: Use the new phone contract and isolate administrator credentials
+- **WHEN** 员工以 phone/密码及 employee 类型登录，管理员以独立账号名/密码及 admin 类型登录；再交换类型或传旧员工 username
+- **THEN** 各自合法凭据 SHALL 只建立指定身份会话；错误类型无回退，旧载荷或缺类型明确拒绝，标识/密码跨类型相同不静默选身份
+
+#### Scenario: Reject duplicate phones and preserve administrator repair access
+- **WHEN** 导入数据出现重复有效员工手机号且数字管理员账号名与之相同
+- **THEN** 员工登录 SHALL 拒绝歧义，显式管理员登录仍只查独立管理员凭据用于修复，不因重复员工号码被阻断或降级到员工
+
+#### Scenario: Remove employee username without breaking internal references
+- **WHEN** 新结构生成、当前接口/搜索/脚本执行及存量升级完成后检查员工数据
+- **THEN** 员工用户名字段/索引和当前运行依赖 SHALL 不存在，稳定员工 ID、任务日志及操作来源可追溯，目录和审计不泄露手机号
+
+#### Scenario: Let only administrators change employee identity
+- **WHEN** 员工提交姓名/手机号修改或管理员合法改号并重置密码
+- **THEN** 员工越权修改 SHALL 被拒，管理员改号后新号可登录、旧号失效且 ID 不变，旧会话撤销；重置后重新强制改密
+
+#### Scenario: Verify the stored login phone after an administrator change
+- **WHEN** 本公司管理员读取员工管理列表和详情，合法改号并重新读取，同时普通员工或跨组织管理员直连同一数据
+- **THEN** 合法管理员 SHALL 在两处看到当前完整登录号，改号后登录键和会话处理按原规则；其他人越权请求拒绝，公共DTO及审计不含新增号码字段
+
+#### Scenario: Keep subordinate email out of summaries
+- **WHEN** 实际链上级读取授权下属详情，再读取树、负责人候选、任务参与人摘要，或同级/其他链用户读取该人员
+- **THEN** 邮箱 SHALL 仅在当前有权详情出现；所有普通摘要和候选不附带邮箱，其他链/同级无邮箱读取权，账号或组织变化后不得从旧缓存恢复
+
 ### Requirement: Organization and administration
 系统 SHALL 提供独立 PC 浏览器 Web 管理端（`/admin.html`），仅独立管理员可维护员工、部门、团队、负责人、展示职位和人员位置，并查询完整任务历史、维护公司信息与通知。组织 SHALL 固定为一位 Founder → 每部门一位 Department Head → 每团队一位 Team Head → Employee；每人仅一个位置，不兼任、副职、联合负责人或多管理链，普通员工必须归团队、团队必须归部门。直属上级和层级 SHALL 从位置唯一推导，创始人身份有明确固定依据，不用任意无上级根节点猜测；普通管理流程不提供创始人交接、调任或停用。创始人为公司层、部门负责人为部门层、团队负责人及普通员工为部门团队层；所有业务员工职位必填且仅用于展示，不作为授权来源。每公司一位独立管理员，不占员工位置且无默认员工业务权。
 
@@ -371,6 +434,12 @@ GET `/tasks/table` SHALL 提供原始创建或当前负责且有正常读取权�
 
 系统 SHALL 先当前授权及个人关系限域，后完整组合筛选/ID 去重，再按 tablePinned 分组及组内六列稳定排序，计数后分页。响应 SHALL 为 items/total/limit/offset/nextOffset，行含有效版字段、待审/冻结状态及 tablePinned/canTablePin，不带未授权提议/diff。既有 `/tasks` 的正常可见范围与分页形式不得被这个接口收窄。过渡 Web SHALL 使用该服务端管线，不再对已分页的当前页执行局部过滤/置顶/重排冒充全局结果。
 
+名称排序 SHALL 采用 A 设计 D3 固定的简体中文 Java Collator（TERTIARY、CANONICAL_DECOMPOSITION），不随客户端语言或数据库默认排序变化；数字按文本而非自然数比较，比较相等后 ID 始终升序。实施 SHALL 锁定运行时并提供混合字符升降序样例，Web/Flutter 消费相同服务顺序。
+
+#### Scenario: Sort Chinese and mixed titles consistently
+- **WHEN** 多页结果含“阿”“波”“分镜2”“分镜10”、a/A、规范等价文本及同名异 ID，客户端设备语言不同
+- **THEN** 同一请求 SHALL 得到固定中文比较器顺序，“阿”在“波”前、“分镜10”在“分镜2”前；降序只反转标题比较，同值 ID 仍升序，置顶分组和分页不改变比较规则
+
 #### Scenario: Search and pin beyond the first backend pages
 - **WHEN** 个人任务超过 100 条，名称命中或置顶任务在后续页，并组合关系/完成/日期条件
 - **THEN** 服务 SHALL 在完整个人结果处理全部条件和置顶分组，所有页拼合等于全局正确序列，total 不随页大小/排序变化
@@ -407,7 +476,7 @@ GET `/tasks/table` SHALL 提供原始创建或当前负责且有正常读取权�
 
 ### Requirement: Read-only log date fill source
 
-GET `/work-logs/fill-source?businessDate=D` SHALL 只供当前有效员工读取指定合法公历业务日的本人完整名称源，不接受 userId，不用日志创建的近三日窗口限制纯读取。创建/编辑界面能否追加仍按日志当前写权限，前天补写后次日尚未满 24 小时的合法编辑 SHALL 仍可获得对应日志日名称。响应 SHALL 包含业务日/公司时区、dailyItems 和 tasks 两组 id/name 数组及 complete=true；不分页截断，不省略已完成项目。无数据为空组，任一读取失败为整体错误，不返回虚假完整结果。
+GET `/work-logs/fill-source?businessDate=D` SHALL 只供当前有效员工读取指定合法公历业务日的本人完整名称源，不接受 userId，不用日志创建的近三日窗口限制纯读取。创建/编辑界面能否追加仍按日志当前写权限，前天补写后次日尚未满 24 小时的合法编辑 SHALL 仍可获得对应日志日名称。响应 SHALL 包含业务日/公司时区、dailyItems 和 tasks 两组 id/name 数组及 complete=true；不分页截断，不省略已完成项目；不因日志正文现有 10000 个 UTF-16 code unit 上限截短名称源或扩大写入上限，完整多行 body 与长度口径交接给 B。无数据为空组，任一读取失败为整体错误，不返回虚假完整结果。
 
 事项 SHALL 为范围覆盖 D 的本人记录，name 使用其完整纯文本 body，不新增标题；任务 SHALL 为正常发布且本人当前有效负责、有效时段覆盖 D 的任务，name 用有效标题，按真实 ID 去重。旧全天首尾包含；定时使用实际业务日时段交集，午夜截止不多算次日，零时长归其所在日，不用待审投影或个人表单的日期筛选代替。组内分别按事项创建时间/id、任务有效开始/id 升序稳定返回。
 

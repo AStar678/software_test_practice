@@ -18,6 +18,8 @@ Flutter 客户端 SHALL 覆盖迁移盘点中全部员工业务，而非只覆�
 ### Requirement: Employee authentication and restricted password sessions
 客户端 SHALL 使用 employee、手机号和密码的严格登录契约，不提供管理员移动登录或自助注册。登录的 passwordChangeRequired 与会话的 mustChangePassword SHALL 正确归一；受限会话只允许会话读取、改密和退出，不发业务或刷新请求。改密 SHALL 校验原密码及至少十位、含字母数字、UTF-8 至多 72 字节的新密码，成功后清理本地会话并要求重新登录，不能复用任何旧 token。
 
+正常会话 SHALL 只在当前 token 尚有效时按 expiresAt 合并刷新；已过期或撤销不得刷新恢复。刷新成功 SHALL 安全保存新凭证再释放队列，按凭证代次处理401，旧 token 的迟到失败不得撤销新会话。刷新结果不确定 SHALL 暂停业务并核验所持凭证；无有效凭证则重登，网络核验失败明确重试，不将 refresh 当支持业务幂等回放的端点。
+
 #### Scenario: Enter with an initial or reset password
 - **WHEN** 任一员工角色获得受限会话
 - **THEN** 客户端 SHALL 只呈现改密/退出路径，不预取首页、资料、下属或通知；错误原密码保留输入并明确反馈，成功改密后重新登录
@@ -25,6 +27,14 @@ Flutter 客户端 SHALL 覆盖迁移盘点中全部员工业务，而非只覆�
 #### Scenario: Restore a normal or revoked session
 - **WHEN** 应用重开或正常会话临近过期，而服务端会话仍有效、已撤销或账号已停用
 - **THEN** 客户端 SHALL 经实际会话检查和允许的刷新恢复或转回登录，撤销/停用不得恢复旧业务内容
+
+#### Scenario: Rotate a live token and reject a truly expired token
+- **WHEN** 多请求同时遇到临期token，或启动时token已过期
+- **THEN** 前者 SHALL 等待同一次有效刷新，后者统一进入重登而不循环刷新；受限改密会话仍不刷新
+
+#### Scenario: Lose a refresh response or receive an old unauthorized response
+- **WHEN** 刷新已在服务端提交但响应丢失/本地保存失败，或成功保存新token后旧代次请求返回401
+- **THEN** 前者 SHALL 暂停业务并核验所持token，已撤销则重登、离线则提示重试；后者不得清除新token，按当前凭证与操作规则重新读取/确认，不盲重放写请求
 
 ### Requirement: Secure session storage and account isolation
 持久化凭证 SHALL 使用安卓系统保护的安全存储，不放入明文偏好、日志或包资产；凭证与业务缓存不得从旧套壳导入。退出、撤销或账号切换 SHALL 取消待请求、清理账号数据/草稿/路由，丢弃迟到响应；组织或权限变化 SHALL 重新鉴权并清理失权正文。网络失败 SHALL 区别于失权和空数据，禁止离线写入后伪装服务端成功。
@@ -111,11 +121,15 @@ Flutter SHALL 实现普通任务标题、说明、有序多负责人、排期、
 - **THEN** SHALL 仅提供排期，按实际操作者审核；下属/历史入口不因该员工有另一身份恢复编辑
 
 ### Requirement: Progress completion and reopening workflows
-Flutter SHALL 保留每次文字进展审核、首次有效进展进入进行中、完成的批准/退回/撤销分支及退回必填意见。重开 SHALL 使用专用流程，仅合法业务责任方发起并可提交完整新排期；通过增加轮次并进入进行中，拒绝/撤销/失效保留完成及旧有效排期，不改原创建者/时间。执行状态与审核状态 SHALL 分别展示，不用本地按钮直接改最终状态。
+Flutter SHALL 保留每次文字进展审核、首次有效进展进入进行中、完成的批准/退回/撤销分支及退回必填意见。重开 SHALL 使用专用流程，仅合法业务责任方发起并可提交完整新排期及有序负责人；可用本公司有效员工候选替换已停用旧负责人，至少一人，不自动添加接管人。负责人及排期 SHALL 随同一申请原子生效，拒绝/撤销/失效均保留旧负责人和排期；通过增加轮次并进入进行中，拒绝/撤销/失效仍保持完成，不改原创建者/时间。执行状态与审核状态 SHALL 分别展示，不用本地按钮直接改最终状态。
 
 #### Scenario: Resolve completion and reopen
 - **WHEN** 当前负责人提交完成，随后合法责任方重开，而审核分别批准、拒绝、撤销或失效
 - **THEN** 各分支 SHALL 遵守原状态机和原子排期规则；不允许客户端绕过批准，也不因失败丢掉原完成状态
+
+#### Scenario: Reopen taken-over work with inactive former assignees
+- **WHEN** PC 完成业务接管后，合法接管人在 Flutter 重开旧负责人已停用的已完成任务
+- **THEN** SHALL 能选择/调整有序有效负责人并与完整新排期一次提交，批准后两者及新轮次同时生效；空集合/失效/跨公司候选拒绝，失败保草稿，拒绝/撤销/失效保留旧版，不需先对已完成任务做普通编辑，不改原创建来源
 
 ### Requirement: Actual-applicant review and application lifecycle
 创建、编辑、进展、完成、重开与交接 SHALL 按实际申请人的当前直属上级审核；只有固定创始人合法免审，缺上级阻断。预览不代表提交授权，成功展示实际保存审核人。同任务最多一待审，冻结业务写入且评论独立；仅申请人撤销，修改先撤后重提。我的申请、详情、批准/拒绝及失效反馈 SHALL 完整；diff 仅当前有权审核人看，按变更字段原上新下、有序集合可辨；申请人看合法自身提议及结果，旁观者不泄漏完整提议。改派、资格、期限、并发决定 SHALL 服务端重验，旧按钮不可复活。
@@ -136,11 +150,15 @@ Flutter SHALL 提供专用交接、合法来源位置和目标候选、原因及
 - **THEN** SHALL 使用专用候选重验，不合法时提示重新选择；间接上级、同级及下属浏览路径不能因此操作，批准后仅合法来源被替换
 
 ### Requirement: Complete personal month and day calendars
-Flutter 公司日历 SHALL 只包含本人当前有效负责的正常已发布任务含完成，支持连续双向月份/跨年、补载重试、定位/今天、密度保存、日期完整清单、默认横向且可切纵向日轴、局部侧抽屉、申请/表单及创建入口。月条按天占用，日轴 00:00—24:00 按真实时间，所有重叠任务含超过五项均可到达，全天/整日覆盖区与普通轴分开，完成和待审可辨。日格/条/空白/溢出 SHALL 先开真实命中日完整清单，去重含完成；抽屉约占 40%–45% 视口且不改变底层布局。置顶不改日轴时间，共用首标签颜色及快照语义保持。
+Flutter 公司日历 SHALL 只包含本人当前有效负责的正常已发布任务含完成，支持连续双向月份/跨年、补载重试、定位/今天、密度保存、日期完整清单、默认横向且可切纵向日轴、局部侧抽屉、申请/表单及创建入口。月条按天占用，日轴 00:00—24:00 按真实时间，所有重叠任务含超过五项均可到达，横向轴对旧全天及整日覆盖任务仍各显示一行，不另设全天区；仅纵向将旧全天/整日覆盖放独立全天区、不在轴重复，其他定时任务全量分栏，完成和待审可辨。日格/条/空白/溢出 SHALL 先开真实命中日完整清单，去重含完成；抽屉约占 40%–45% 视口且不改变底层布局。置顶不改日轴时间，共用首标签颜色及快照语义保持。
 
 #### Scenario: Browse dense and boundary schedules
 - **WHEN** 本人有跨周/月/年、午夜截止、零时长、旧全天及超过五重叠任务
 - **THEN** 月/日/清单 SHALL 全量可达且语义一致，只创建未负责/未发布/历史例外不混入，任一续接点打开实际日期清单，返回保持日期/密度/位置
+
+#### Scenario: Preserve distinct horizontal and vertical all-day layouts
+- **WHEN** 同一天含旧全天、整日覆盖、部分跨日和超过五项重叠任务，用户切换日轴方向
+- **THEN** 横向 SHALL 每任务一行且包含旧全天/整日覆盖；纵向仅在全天区显示旧全天/整日覆盖，其余真实覆盖分栏，均全量可点且不重复，切换不改变排期或拖动资格
 
 #### Scenario: Cancel an overlay without changing the canvas
 - **WHEN** 用户打开抽屉、日期清单或详情后关闭/系统返回
@@ -182,6 +200,8 @@ Flutter 任务表单 SHALL 使用 A 的全局管线：正常授权下原创建�
 ### Requirement: Active append-only log name filling
 新建及仍有编辑权的日志 SHALL 提供用户主动填充，使用该日志 businessDate 的 A 完整名称源，含完成事项与正常当前负责任务、按各组 ID 去重、保留服务顺序。追加 SHALL 以“每日事项”“任务”分组及逐项换行接在现有正文后，用户可继续修改；不覆盖正文、不更改关联/状态/审批。源失败/不完整 SHALL 不追加部分文本，空集合明确提示；填充资格按日志编辑窗口，不错误限于近三日。不得在冻结后或下属只读路径填充。
 
+追加 SHALL 保持现有日志正文 10000 个 UTF-16 code unit 上限，包含分组/换行/原正文，按服务端 Java String.trim 去首尾 U+0000–U+0020 后计算长度，不能使用更宽泛的 Dart Unicode trim 代替；此计数不改写界面原文。事项多行 body 不截首行。合并超限 SHALL 保留原正文并提供完整待追加文本的独立临时预览和超限反馈，允许用户主动删减后确认；不得自动截断、部分追加冒称完整。确认时重验最新正文合并长度、目标/会话及当前编辑资格；取消或仍超限不改原文，不扩大后端上限。
+
 #### Scenario: Fill a still-editable backfilled log beyond the creation window
 - **WHEN** 日志所属日已不在近三日而首次创建未满 24 小时，用户点击填充
 - **THEN** SHALL 按其所属日完整追加两组名称，午夜截止不多算一天、跨日事项同 ID 一次，不修改原有关联；冻结则拒绝追加
@@ -189,6 +209,14 @@ Flutter 任务表单 SHALL 使用 A 的全局管线：正常授权下原创建�
 #### Scenario: Keep user text on fill failure
 - **WHEN** 名称源为空、失败或用户在等待中修改正文
 - **THEN** SHALL 保留当前正文；成功仅在当前编辑目标仍合法时追加到最新正文，不覆盖等待期间输入，失败不产生半组或重复自动重放
+
+#### Scenario: Review an oversized fill without losing the existing log
+- **WHEN** 原正文接近上限或名称源含六条接近2000字的多行事项，分组拼接后超过10000个UTF-16 code unit
+- **THEN** SHALL 不直接改变原文，完整候选可预览并由用户主动删减，取消保原文；确认时重新校验，合法文本一次追加，不静默截断或改关联
+
+#### Scenario: Count separators and supplementary characters at the limit
+- **WHEN** 填充包含多行、分组标题、emoji，或预览期间原正文变化/日志冻结
+- **THEN** SHALL 按UTF-16长度检查合并后10000可保存、10001拒绝，等待期间输入保留；冻结/目标改变不得追加，既有正文不丢失
 
 ### Requirement: Ordered shared tags and founder maintenance
 任务和日志 SHALL 使用共用有序多标签，零项/省略保留/显式清空区分，取消选择回滚。只有固定创始人在“我的”维护目录，管理员和其他员工无此权；不提供私人标签/颜色覆盖。任务标签随审批，日志受冻结；合法删除快照保留且首项决定稳定颜色，移除后不能新挂回已删除项。详情/清单/月日历 SHALL 同源颜色并同时以文字表达状态。
