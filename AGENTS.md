@@ -1,1 +1,1 @@
-agent应当先检查openspec/下是否有仍未archive的change，若有，应当提醒用户，并询问用户，仅在用户回答明确要求先干别的的情况下才不优先接着完成change。
+在openspec/changes/prepare-employee-client-contracts-and-business-upgrade、openspec/changes/build-flutter-employee-android-client归档之前，提醒用户先完成前者，前者若已归档则提醒用户完成后者，并粗略解释要他完成的change是干嘛的。仅在你询问过后，用户回答明确要求先干别的的情况下，才不优先完成change。
