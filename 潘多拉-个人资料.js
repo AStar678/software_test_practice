@@ -37,7 +37,17 @@
   function readonlyRows(user) {
     return row("组织身份", identityLabel(user)) +
       row("部门", user.departmentName || "公司层") + row("职位", user.positionName) +
-      (user.teamName ? row("团队", user.teamName) : "") + row("直属上级", superior(user));
+      (user.teamName ? row("团队", user.teamName) : "") + row("直属上级", superior(user)) +
+      row("入职日期", user.hireDate || "入职日期未设置") +
+      row("已入职时长", tenureText(user.tenure));
+  }
+  function tenureText(tenure) {
+    if (!tenure || tenure.years == null) return "入职日期未设置";
+    const parts = [];
+    if (Number(tenure.years)) parts.push(Number(tenure.years) + "年");
+    if (Number(tenure.months)) parts.push(Number(tenure.months) + "个月");
+    if (Number(tenure.days) || !parts.length) parts.push(Number(tenure.days || 0) + "天");
+    return parts.join("") + (tenure.asOfDate ? "（截至 " + tenure.asOfDate + "）" : "");
   }
   function field(id, type, label, value, max, autocomplete, required) {
     return '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" type="' + type + '" value="' + esc(value || "") + '" maxlength="' + max + '" autocomplete="' + autocomplete + '"' + (required ? ' required data-autofocus' : '') + ' /></div>';
@@ -126,7 +136,7 @@
     if(!staff)return null;
     const p=staff.person;
     return {title:p.displayName+'的资料',subordinate:true,body:'<div class="profile-details">'+readonlyRows(p)+
-      (p.phone?row('手机号',p.phone):'')+'</div><div class="action-grid"><button type="button" class="btn primary" data-action="p-staff-enter" data-tab="schedule">查看日程</button><button type="button" class="btn" data-action="p-staff-enter" data-tab="logs">查看日志</button></div>',
+      (p.phone?row('手机号',p.phone):'')+(p.email?row('邮箱',p.email):'')+'</div><div class="action-grid"><button type="button" class="btn primary" data-action="p-staff-enter" data-tab="schedule">查看日程</button><button type="button" class="btn" data-action="p-staff-enter" data-tab="logs">查看日志</button></div>',
       foot:withBack(button('sheet-close','关闭'))};
   }
   P.subordinateKey = function () { return staff && staff.epoch === P.epoch ? staff.person.id + ':' + P.epoch : null; };
@@ -178,7 +188,7 @@
     document.getElementById("page-me").innerHTML = '<section class="card profile-card"><div class="profile-hero"><div class="avatar">' +
       avatarHTML(user) + '</div><div class="profile-heading"><p class="eyebrow">MY WORKSPACE</p><h2>' + esc(user.displayName) + '</h2><p>' + esc(user.positionName || ROLE_LABEL[user.role] || "团队成员") + '</p></div>' +
       '<button type="button" class="profile-settings" data-action="p-open-settings" aria-label="个人设置">' + gear + '</button></div>' +
-      '<div class="profile-details">' + row("联系电话", user.phone) + row("邮箱", user.email) + '</div></section>' +
+      '<div class="profile-details">' + row("联系电话", user.phone) + row("邮箱", user.email) + row("入职日期", user.hireDate || "入职日期未设置") + row("已入职时长", tenureText(user.tenure)) + '</div></section>' +
       '<details class="card profile-fold" data-profile-fold="organization"' + (folds.organization ? ' open' : '') + '><summary><span>组织信息</span><span class="fold-hint">由管理员维护</span><span class="fold-chevron" aria-hidden="true">⌄</span></summary><div class="profile-details fold-content">' + readonlyRows(user) + '</div></details>' + reportsSection();
   };
 

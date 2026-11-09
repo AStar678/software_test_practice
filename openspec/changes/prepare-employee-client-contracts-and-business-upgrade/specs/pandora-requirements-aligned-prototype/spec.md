@@ -408,9 +408,7 @@ A SHALL 以 2026-11-08 更改指导、Flutter 完整迁移盘点及本增量作�
 
 ### Requirement: Range daily-item retrieval and legacy compatibility
 
-系统 SHALL 提供本人事项的覆盖日及范围相交读取，含完成项、原始完整起止日及真实 ID，稳定按 createdAt/id 升序分页。GET `/daily-items?date=D` 返回所有覆盖 D 的记录；新增 from/to 模式要求两端均有值且与 date 互斥，查询窗口最多 93 天。分页 SHALL 返回 items/total/limit/offset/nextOffset 和查询日期/范围、公司业务日期及时区，计数覆盖完整结果，不把首屏当全量。查询窗口不限制记录自身跨度，同一记录跨窗口回读仍保持同一 ID。
-
-新创建 SHALL 使用 startDate/endDate/body，旧 date/body 映射单日；混合两种日期格式、缺半个日期对、非法/倒置日期 SHALL 400 拒绝。PATCH 日期对一起提供或一起省略，省略保留范围；旧式 date 改期仅对当前单日可用，对当前跨日项 SHALL 409 DAILY_ITEM_RANGE_REQUIRED 且无任何部分修改。已有 rowVersion/If-Match、幂等及本人同组织权限继续适用。响应可保留 date=startDate 的旧起点投影，但新客户端 SHALL 不将其当完整范围。
+系统 SHALL 提供本人事项的覆盖日及 from/to 相交读取，含完成项、原始完整起止日与真实 ID，稳定按 createdAt/id 升序分页。覆盖日读取用 date；from/to 两端均必填、与 date 互斥且窗口最多 93 天，窗口不限制记录自身跨度。响应含 items/total/limit/offset/nextOffset、查询范围、公司业务日期及时区，计数覆盖完整结果。新写入用 startDate/endDate/body，旧 date/body 映射单日；混合格式、缺端点、非法/倒置日期 400。PATCH 日期对一起提供或省略；旧 date 改期跨日项 409 DAILY_ITEM_RANGE_REQUIRED 且不部分写入；现有版本/幂等/本人同组织权限继续适用。
 
 #### Scenario: Read all intersections across month boundaries
 - **WHEN** 查询范围内有开始早于窗口、结束晚于窗口、已完成和超一页的本人事项
@@ -430,11 +428,7 @@ A SHALL 以 2026-11-08 更改指导、Flutter 完整迁移盘点及本增量作�
 
 ### Requirement: Server-side personal task table query
 
-GET `/tasks/table` SHALL 提供原始创建或当前负责且有正常读取权的已发布有效任务并集，排除仅组织/下属可见、未发布及历史通知只读例外。请求 SHALL 支持 relation=all/assigned/created、completion=all/unfinished/completed、q、可单端 from/to、sort=title/createdAt/startAt/dueAt/priority/state、direction=asc/desc、limit/offset；默认 all/all、全部日期、startAt/asc、50/0，limit 最多 100。未知/非法参数 SHALL 400，名称/日期规则沿既有表单规格。
-
-系统 SHALL 先当前授权及个人关系限域，后完整组合筛选/ID 去重，再按 tablePinned 分组及组内六列稳定排序，计数后分页。响应 SHALL 为 items/total/limit/offset/nextOffset，行含有效版字段、待审/冻结状态及 tablePinned/canTablePin，不带未授权提议/diff。既有 `/tasks` 的正常可见范围与分页形式不得被这个接口收窄。过渡 Web SHALL 使用该服务端管线，不再对已分页的当前页执行局部过滤/置顶/重排冒充全局结果。
-
-名称排序 SHALL 采用 A 设计 D3 固定的简体中文 Java Collator（TERTIARY、CANONICAL_DECOMPOSITION），不随客户端语言或数据库默认排序变化；数字按文本而非自然数比较，比较相等后 ID 始终升序。实施 SHALL 锁定运行时并提供混合字符升降序样例，Web/Flutter 消费相同服务顺序。
+GET `/tasks/table` SHALL 提供原始创建或当前负责且有正常读取权的已发布有效任务并集，排除仅组织/下属可见、未发布及历史通知例外。参数支持 relation、completion、q、单端 from/to、六种 sort、direction、limit/offset，默认 all/all/全部日期/startAt/asc/50，limit≤100；未知或非法参数 400。系统先授权/关系限域，再完整筛选/去重，按 tablePinned 分组及六列稳定排序，计数后分页；行含 tablePinned/canTablePin，不含未授权提议/diff。名称用固定简体中文 Java Collator（TERTIARY、CANONICAL_DECOMPOSITION），数字按文本、同值 ID 升序；Web/Flutter 消费同一顺序，过渡 Web 不再局部重排当前页。
 
 #### Scenario: Sort Chinese and mixed titles consistently
 - **WHEN** 多页结果含“阿”“波”“分镜2”“分镜10”、a/A、规范等价文本及同名异 ID，客户端设备语言不同
@@ -476,11 +470,7 @@ GET `/tasks/table` SHALL 提供原始创建或当前负责且有正常读取权�
 
 ### Requirement: Read-only log date fill source
 
-GET `/work-logs/fill-source?businessDate=D` SHALL 只供当前有效员工读取指定合法公历业务日的本人完整名称源，不接受 userId，不用日志创建的近三日窗口限制纯读取。创建/编辑界面能否追加仍按日志当前写权限，前天补写后次日尚未满 24 小时的合法编辑 SHALL 仍可获得对应日志日名称。响应 SHALL 包含业务日/公司时区、dailyItems 和 tasks 两组 id/name 数组及 complete=true；不分页截断，不省略已完成项目；不因日志正文现有 10000 个 UTF-16 code unit 上限截短名称源或扩大写入上限，完整多行 body 与长度口径交接给 B。无数据为空组，任一读取失败为整体错误，不返回虚假完整结果。
-
-事项 SHALL 为范围覆盖 D 的本人记录，name 使用其完整纯文本 body，不新增标题；任务 SHALL 为正常发布且本人当前有效负责、有效时段覆盖 D 的任务，name 用有效标题，按真实 ID 去重。旧全天首尾包含；定时使用实际业务日时段交集，午夜截止不多算次日，零时长归其所在日，不用待审投影或个人表单的日期筛选代替。组内分别按事项创建时间/id、任务有效开始/id 升序稳定返回。
-
-接口 SHALL 纯读取，不修改正文/关联任务/完成/日志冻结/审批。后续客户端主动分两组追加可编辑文本；A 只交付源契约，不把冻结日志变成可写，也不要求在过渡 Web 实现新的填充按钮。
+GET `/work-logs/fill-source?businessDate=D` SHALL 只供当前有效员工读取指定合法公历业务日的本人完整名称源，不接受 userId，不受日志创建近三日窗口限制；能否追加仍按日志当前写权限，前天补写后次日未满 24 小时的合法编辑仍可读取。响应含业务日/公司时区、dailyItems/tasks 两组 id/name 与 complete=true；不分页截断、不省略完成项、不因日志 10000 UTF-16 上限截短或放宽写入，无数据为空组，任一读取失败为整体错误。事项取覆盖 D 的本人记录并用完整纯文本 body；任务取正常发布、本人当前有效负责且有效时段覆盖 D 的任务并用有效标题，按真实 ID 去重；旧全天首尾包含，定时按半开区间，午夜不多算次日，零时长归所在日，组内稳定升序。接口纯读取，不修改正文/关联/完成/冻结/审批。
 
 #### Scenario: Read a backfilled day and include completed work
 - **WHEN** 今天读取昨天或前天的日志填充源，存在跨日事项/任务及完成项

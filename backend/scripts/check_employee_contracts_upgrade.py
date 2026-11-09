@@ -64,9 +64,10 @@ def witness(port: int):
         org = f.identities["founder"]["organizationId"]
         owner = f.identities["alpha-one-employee"]["id"]
         business_day = call(f, "GET", "/home", token=founder)[1]["businessDate"]
+        witness_day = (dt.date.fromisoformat(business_day) + dt.timedelta(days=1)).isoformat()
         task = ok(f, "POST", "/tasks", {"title": "升级见证任务", "description": "任务与标签在升级后不变",
                     "priority": "high", "allDay": False,
-                    "startAt": business_day + "T09:00:00+08:00", "dueAt": business_day + "T10:00:00+08:00",
+                    "startAt": witness_day + "T09:00:00+08:00", "dueAt": witness_day + "T10:00:00+08:00",
                     "assigneeIds": [f.identities["founder"]["id"]]}, founder, "witness-task-" + uuid.uuid4().hex)
         tag = ok(f, "POST", "/tags", {"name": "升级见证标签", "color": "#F6D5D2"}, founder,
                  "witness-tag-" + uuid.uuid4().hex)
@@ -115,9 +116,9 @@ def witness(port: int):
                      "SELECT constraint_name,constraint_type FROM information_schema.table_constraints "
                      "WHERE table_schema=DATABASE() AND table_name='" + table + "' ORDER BY constraint_name")
                      for table in ("daily_items", "user_task_table_pins")}}
-        check("V32-V34 are applied and historical checksums never change",
+        check("V32-V35 are applied and historical checksums never change",
               all(after["checksums"].get(version) == checksum for version, checksum in before["checksums"].items())
-              and all(after["checksums"].get(version) for version in ("32", "33", "34")),
+              and all(after["checksums"].get(version) for version in ("32", "33", "34", "35")),
               {"before": before["checksums"], "after": after["checksums"]})
         before_row = dict(zip(["id", "organization_id", "owner_id", "item_date", "body", "completed", "row_version"], before["daily"][0]))
         row = after["daily"][0]
@@ -186,7 +187,7 @@ def witness(port: int):
             "SELECT column_name FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='" + table + "'")}
             for table in ("daily_items", "user_task_table_pins", "holiday_calendar_years", "holiday_calendar_days")}
         check("an empty database completes the full chain and converges on the new structures",
-              version == "34" and {"start_date", "end_date"} <= columns["daily_items"]
+              version == "35" and {"start_date", "end_date"} <= columns["daily_items"]
               and columns["user_task_table_pins"] and columns["holiday_calendar_years"] and columns["holiday_calendar_days"],
               {"version": version, "columns": {key: sorted(value) for key, value in columns.items()}})
 

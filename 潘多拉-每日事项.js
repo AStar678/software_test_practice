@@ -44,6 +44,29 @@
     const d = parseKey(key); if (!d) return key;
     return (d.getMonth() + 1) + "月" + d.getDate() + "日";
   }
+  /* A ranged item is one record: every covered date is affected by a completion, edit or delete. */
+  function eachDate(start, end) {
+    const first = parseKey(start), last = parseKey(end);
+    if (!first || !last || last < first) return [];
+    const result = [], cursor = new Date(first.getFullYear(), first.getMonth(), first.getDate());
+    for (let guard = 0; guard < 3660 && cursor <= last; guard++) {
+      result.push(dateKey(cursor)); cursor.setDate(cursor.getDate() + 1);
+    }
+    return result;
+  }
+  function rangeLabel(start, end) {
+    if (!start) return "—";
+    return !end || start === end ? longDate(start) : longDate(start) + " 至 " + longDate(end);
+  }
+  function itemRange(item) {
+    const start = item && (item.startDate || item.date);
+    const end = item && (item.endDate || start);
+    return { start: start, end: end };
+  }
+  function itemStatus(item) {
+    return String(item && item.status || (item && item.completed ? "completed" : "open"));
+  }
+  const STATUS_TEXT = { completed: "已完成", open: "未完成", overdue: "已逾期" };
 
   /* ------------------------------------------------------------ 月份窗口 */
   /* Every month owns the whole weeks from the week of its 1st to the week of its last day.
@@ -642,18 +665,22 @@
     }
   }
   function firstLine(text) { return String(text || "").split("\n")[0].slice(0, 40); }
-  function rowHTML(item) {
-    return '<div class="daily-row' + (item.completed ? " is-done" : "") + '" data-daily-row="' + esc(item.id) + '">' +
+  function rowHTML(item, hitDate) {
+    const range = itemRange(item), status = itemStatus(item);
+    const date = hitDate || range.start || item.date;
+    return '<div class="daily-row' + (item.completed ? " is-done" : "") + (status === "overdue" ? " is-overdue" : "") + '" data-daily-row="' + esc(item.id) + '">' +
       '<button type="button" class="daily-check" role="checkbox" aria-checked="' + (item.completed ? "true" : "false") + '"' +
         ' aria-label="' + esc((item.completed ? "取消完成：" : "标记完成：") + firstLine(item.body)) + '"' +
-        ' data-action="daily-toggle" data-id="' + esc(item.id) + '" data-date="' + esc(item.date) + '"><span aria-hidden="true">' + (item.completed ? "✓" : "") + "</span></button>" +
-      '<button type="button" class="daily-text" data-action="daily-open" data-id="' + esc(item.id) + '"><span>' + esc(item.body) + "</span></button>" +
+        ' data-action="daily-toggle" data-id="' + esc(item.id) + '" data-date="' + esc(date) + '"><span aria-hidden="true">' + (item.completed ? "✓" : "") + "</span></button>" +
+      '<button type="button" class="daily-text" data-action="daily-open" data-id="' + esc(item.id) + '" title="' + esc(rangeLabel(range.start, range.end) + " · " + (STATUS_TEXT[status] || status)) + '">' +
+        '<span>' + esc(item.body) + "</span>" +
+        '<small class="daily-row-meta">' + esc(rangeLabel(range.start, range.end)) + " · " + esc(STATUS_TEXT[status] || status) + "</small></button>" +
       "</div>";
   }
   function listView(date) {
     const entry = S.lists.get(date) || { items: [], total: 0, next: null, loading: false, error: null };
     const body = '<div class="daily-list-meta"><span>' + esc(longDate(date)) + '</span><span class="tiny muted">' + (entry.total || entry.items.length) + " 条</span></div>" +
-      (entry.items.length ? '<div class="daily-rows">' + entry.items.map(rowHTML).join("") + "</div>" : '<div class="empty">这一天还没有每日事项</div>') +
+      (entry.items.length ? '<div class="daily-rows">' + entry.items.map(item => rowHTML(item, date)).join("") + "</div>" : '<div class="empty">这一天还没有每日事项</div>') +
       (entry.next != null ? '<div class="row"><button type="button" class="btn tiny-btn" data-action="daily-more" data-date="' + esc(date) + '">加载更多</button></div>' : "") +
       (entry.loading ? '<div class="tiny muted" role="status">正在加载…</div>' : "") +
       (entry.error ? '<div class="callout" role="alert">加载失败，请重试。</div><div class="row"><button type="button" class="btn tiny-btn" data-action="daily-reload" data-date="' + esc(date) + '">重试</button></div>' : "") +
@@ -719,19 +746,22 @@
 
   /* ------------------------------------------------------------ 详情 */
   function detailView(raw) {
+    const range = itemRange(raw), status = itemStatus(raw);
+    const hit = (S.detail && S.detail.hitDate) || range.start;
     return { title: "每日事项详情", dailyKind: "detail", rebuild: () => detailView(S.detail ? S.detail.raw : raw),
-      body: '<div class="daily-detail-head"><span class="daily-detail-date">' + esc(longDate(raw.date)) + "</span>" +
-        '<span class="badge ' + (raw.completed ? "b-ok" : "b-normal") + '">' + (raw.completed ? "已完成" : "未完成") + "</span></div>" +
+      body: '<div class="daily-detail-head"><span class="daily-detail-date">' + esc(rangeLabel(range.start, range.end)) + "</span>" +
+        '<span class="badge ' + (status === "completed" ? "b-ok" : status === "overdue" ? "b-danger" : "b-normal") + '">' + esc(STATUS_TEXT[status] || status) + "</span></div>" +
         '<p class="daily-detail-body">' + esc(raw.body) + "</p>" +
         '<div class="callout" id="daily-detail-error" role="alert" hidden></div>',
-      foot: dailyWithBack('<button type="button" class="btn ' + (raw.completed ? "" : "ok") + '" data-action="daily-toggle" data-id="' + esc(raw.id) + '" data-date="' + esc(raw.date) + '" data-target="' + (raw.completed ? "false" : "true") + '">' + (raw.completed ? "取消完成" : "标记完成") + "</button>" +
+      foot: dailyWithBack('<button type="button" class="btn ' + (raw.completed ? "" : "ok") + '" data-action="daily-toggle" data-id="' + esc(raw.id) + '" data-date="' + esc(hit) + '" data-target="' + (raw.completed ? "false" : "true") + '">' + (raw.completed ? "取消完成" : "标记完成") + "</button>" +
         '<button type="button" class="btn" data-action="daily-edit" data-id="' + esc(raw.id) + '">编辑</button>' +
         '<button type="button" class="btn danger" data-action="daily-delete" data-id="' + esc(raw.id) + '">删除</button>') };
   }
   function openDetail(id) {
     if (topKind() === "list") S.listScroll = { date: openListDate(), top: sheetBodyEl.scrollTop, focus: id };
+    const hit = openListDate();
     queryForSheet(() => P.request("/daily-items/" + encodeURIComponent(id)), raw => {
-      S.detail = { raw: raw, etag: '"' + raw.rowVersion + '"' };
+      S.detail = { raw: raw, etag: '"' + raw.rowVersion + '"', hitDate: hit || itemRange(raw).start };
       openSheet(detailView(raw));
     }, "daily-list-error");
   }
@@ -743,8 +773,10 @@
     if (!d) return null;
     return { title: d.mode === "edit" ? "编辑每日事项" : "新增每日事项", draftKind: "daily", dailyKind: "form",
       rebuild: formView,
-      body: '<div class="field"><label for="daily-date">日期</label><input id="daily-date" type="date" value="' + esc(d.date) + '" data-autofocus /></div>' +
+      body: '<div class="field"><label for="daily-start-date">开始日期</label><input id="daily-start-date" type="date" value="' + esc(d.startDate) + '" data-autofocus /></div>' +
+        '<div class="field"><label for="daily-end-date">结束日期</label><input id="daily-end-date" type="date" value="' + esc(d.endDate) + '" /></div>' +
         '<div class="field daily-body-field"><label for="daily-body">内容</label><textarea id="daily-body" maxlength="2000" placeholder="写下今天要记住的事">' + esc(d.body) + "</textarea></div>" +
+        '<div class="tiny muted">起止日均包含；跨日仍是同一条事项。</div>' +
         '<div class="callout" id="daily-form-error" role="alert" hidden></div>',
       foot: dailyWithBack('<button type="button" class="btn primary" data-action="daily-save">保存</button>') };
   }
@@ -753,20 +785,26 @@
     if (mode === "edit") {
       S.formOrigin = "detail";
       S.listScroll = S.listScroll || null;
-      drafts.daily = { mode: "edit", id: opts.id, originalDate: opts.date, date: opts.date, body: opts.body, etag: opts.etag, epoch: P.epoch, slot: newSlot() };
+      const start = opts.startDate || opts.date, end = opts.endDate || start;
+      drafts.daily = { mode: "edit", id: opts.id, originalStart: start, originalEnd: end, startDate: start, endDate: end,
+        originalDate: start, date: start, body: opts.body, etag: opts.etag, epoch: P.epoch, slot: newSlot() };
     } else {
       S.formOrigin = opts.origin || "calendar";
       if (S.formOrigin === "list" && S.lists.has(opts.date)) S.listScroll = { date: opts.date, top: sheetBodyEl.scrollTop };
-      drafts.daily = { mode: "create", id: null, originalDate: null, date: opts.date || S.selected || S.companyToday, body: "", etag: null, epoch: P.epoch, slot: newSlot() };
+      const date = opts.date || S.selected || S.companyToday;
+      drafts.daily = { mode: "create", id: null, originalStart: null, originalEnd: null, startDate: date, endDate: date,
+        originalDate: null, date: date, body: "", etag: null, epoch: P.epoch, slot: newSlot() };
     }
     openSheet(formView());
   }
   function syncDraft() {
     const d = drafts.daily;
     if (!d) return;
-    const date = document.getElementById("daily-date");
+    const start = document.getElementById("daily-start-date");
+    const end = document.getElementById("daily-end-date");
     const body = document.getElementById("daily-body");
-    if (date) d.date = date.value;
+    if (start) d.startDate = start.value;
+    if (end) d.endDate = end.value;
     if (body) d.body = body.value;
   }
   function saveDraft() {
@@ -774,17 +812,19 @@
       syncDraft();
       const d = drafts.daily;
       if (!d || d.epoch !== P.epoch) throw new Error("请重新打开后再保存。");
-      const date = String(d.date || "").trim();
+      const start = String(d.startDate || "").trim();
+      const end = String(d.endDate || "").trim();
       const body = String(d.body || "").trim();
-      if (!parseKey(date)) throw new Error("请填写有效的公历日期。");
+      if (!parseKey(start) || !parseKey(end)) throw new Error("请填写有效的公历起止日期。");
+      if (end < start) throw new Error("结束日期不能早于开始日期。");
       if (!body) throw new Error("请填写内容。");
       if (body.length > 2000) throw new Error("内容不得超过 2000 字。");
-      const oldDate = d.originalDate || date;
+      const oldDates = d.mode === "edit" ? eachDate(d.originalStart, d.originalEnd) : [];
       await P.mutation("daily-item:" + d.slot, d.mode === "edit" ? "PATCH" : "POST",
-        "/daily-items" + (d.id ? "/" + encodeURIComponent(d.id) : ""), { date: date, body: body }, d.etag);
+        "/daily-items" + (d.id ? "/" + encodeURIComponent(d.id) : ""), { startDate: start, endDate: end, body: body }, d.etag);
       d.epoch = -1;
       S.detail = null;
-      await refreshDates([oldDate, date]);
+      await refreshDates(oldDates.concat(eachDate(start, end)));
       if (S.formOrigin === "list" || S.formOrigin === "detail") returnToList(); else closeSheet();
       P.notice(d.mode === "edit" ? "修改已保存。" : "每日事项已新增。");
     }, "daily-form-error");
@@ -802,10 +842,10 @@
     const detail = S.detail;
     if (!detail || detail.raw.id !== id) { P.notice("请重新打开后再删除。"); return; }
     P.busy(async () => {
-      const date = detail.raw.date;
+      const range = itemRange(detail.raw);
       await P.mutation("daily-item:delete:" + id, "DELETE", "/daily-items/" + encodeURIComponent(id), null, detail.etag);
       S.detail = null;
-      await refreshDates([date]);
+      await refreshDates(eachDate(range.start, range.end));
       returnToList();
       P.notice("每日事项已删除。");
     }, "daily-confirm-error");
@@ -826,16 +866,17 @@
     const row = entry && entry.items.find(item => item.id === id);
     const etag = detail ? detail.etag : row ? '"' + row.rowVersion + '"' : null;
     if (!etag) { P.notice("请重新打开后再操作。"); return; }
+    const range = itemRange(detail ? detail.raw : row);
     P.busy(async () => {
       await P.mutation("daily-item:complete:" + id, "PATCH", "/daily-items/" + encodeURIComponent(id), { completed: true === target }, etag);
-      await refreshDates([date], true);
+      await refreshDates(eachDate(range.start, range.end), true);
       const raw = await P.request("/daily-items/" + encodeURIComponent(id));
       if (!sameSession()) return;
       if (detail) {
-        S.detail = { raw: raw, etag: '"' + raw.rowVersion + '"' };
+        S.detail = { raw: raw, etag: '"' + raw.rowVersion + '"', hitDate: detail.hitDate };
         replaceTopSheet(detailView(raw));
       }
-      if (row) { row.completed = raw.completed; row.rowVersion = raw.rowVersion; }
+      if (row) { row.completed = raw.completed; row.status = raw.status; row.rowVersion = raw.rowVersion; row.startDate = raw.startDate; row.endDate = raw.endDate; }
       if (openListDate() === date && !detail) rerenderOpenList(date, sheetBodyEl.scrollTop);
       P.notice(raw.completed ? "已标记完成。" : "已取消完成。");
     }, detail ? "daily-detail-error" : "daily-list-error");
@@ -887,7 +928,8 @@
       case "daily-toggle": toggleItem(element.dataset.id, date, element.dataset.target ? element.dataset.target === "true" : !currentCompleted(element.dataset.id, date)); return true;
       case "daily-edit": {
         if (!S.detail || S.detail.raw.id !== element.dataset.id) { P.notice("请重新打开后再编辑。"); return true; }
-        openForm("edit", { id: element.dataset.id, date: S.detail.raw.date, body: S.detail.raw.body, etag: S.detail.etag }); return true;
+        const range = itemRange(S.detail.raw);
+        openForm("edit", { id: element.dataset.id, startDate: range.start, endDate: range.end, date: range.start, body: S.detail.raw.body, etag: S.detail.etag }); return true;
       }
       case "daily-delete": openDelete(element.dataset.id); return true;
       case "daily-confirm-delete": confirmDelete(element.dataset.id); return true;

@@ -1,0 +1,1030 @@
+{
+  "updated": "2026-11-09T13:59:34.633872+00:00",
+  "checks": [
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "GET /tasks/table succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "the isolated fixture has more than 100 table rows",
+      "pass": true,
+      "evidence": 120
+    },
+    {
+      "check": "GET /tasks/table succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "the second page contains the remaining extreme rows",
+      "pass": true,
+      "evidence": 20
+    },
+    {
+      "check": "GET /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "the same day holds more than one page of personal items",
+      "pass": true,
+      "evidence": 101
+    },
+    {
+      "check": "GET /tasks/table succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "GET /tasks/table succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "six overlapping timed tasks and six all-day tasks are real rows",
+      "pass": true,
+      "evidence": {
+        "overlap": 6,
+        "allDay": 6
+      }
+    },
+    {
+      "check": "GET /tasks/f0f83b5e-3816-4d50-8733-9b223e65e044 succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "GET /tasks/77e5d0b7-54ba-4e1b-92a6-3c97b28b6f53 succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "GET /tasks/17302575-cd21-4a60-80e8-871c99da6d63 succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "cross-year/midnight/zero-length tasks are readable with real ids",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "another organization cannot read the extreme personal items",
+      "pass": true,
+      "evidence": 200
+    }
+  ]
+}
