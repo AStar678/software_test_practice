@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-29T02:11:52.260107+00:00",
+  "updated": "2026-11-04T11:46:10.630307+00:00",
   "task": "6.3 admin console and notification contract",
   "checks": [
     {
@@ -127,16 +127,16 @@
       "pass": true,
       "evidence": {
         "pass": {
-          "eventId": "92ea1a6b-efcf-4d21-bf31-4601c4f1c8d6",
-          "taskId": "27c9c754-7312-40ff-bdd6-7c20c03be8ae"
+          "eventId": "d5fabc5f-a965-4225-b3a9-9fe0d63e6549",
+          "taskId": "b4dbc1df-b17c-4167-87d5-058c249df3d4"
         },
         "closed": {
-          "eventId": "d085ba7a-4858-4917-8c6a-59c1813cad86",
-          "taskId": "0cf4a366-1f54-4d2e-901e-ce12b2780e2f"
+          "eventId": "9d5b3fe7-a989-4de7-b235-05f434b92b58",
+          "taskId": "d72bd662-12e3-4db9-9412-250bede07441"
         },
         "edge": {
-          "eventId": "98be68a0-14f8-4b47-9403-42d06183b261",
-          "taskId": "0ba9e42d-685e-4b37-9437-ff83b0cff442"
+          "eventId": "3a52bc03-9553-4b4c-9890-1ad68abe8005",
+          "taskId": "c03075f8-16a5-4764-8c93-12823611cf06"
         }
       }
     },
@@ -145,9 +145,9 @@
       "pass": true,
       "evidence": {
         "status": 200,
-        "ageMs": 179009,
+        "ageMs": 179014,
         "body": {
-          "eventId": "98be68a0-14f8-4b47-9403-42d06183b261",
+          "eventId": "3a52bc03-9553-4b4c-9890-1ad68abe8005",
           "withdrawn": true,
           "copies": 1
         }
@@ -157,7 +157,7 @@
       "check": "179.x withdrawal clears the copy but keeps the approval request and task history",
       "pass": true,
       "evidence": {
-        "revokedAt": "2026-10-29 02:11:57.410950",
+        "revokedAt": "2026-11-04 11:46:16.087574",
         "copy": [
           "该通知已被撤回。",
           "NULL",
@@ -188,7 +188,7 @@
       "evidence": {
         "status": 409,
         "code": "WITHDRAW_WINDOW_CLOSED",
-        "ageMs": 180010
+        "ageMs": 180014
       }
     },
     {
@@ -199,7 +199,7 @@
         "copy": [
           "提交创建任务《Contract window closed》，等待审核。",
           "Contract window closed",
-          "0cf4a366-1f54-4d2e-901e-ce12b2780e2f"
+          "d72bd662-12e3-4db9-9412-250bede07441"
         ],
         "requestStatus": "pending"
       }
@@ -335,7 +335,7 @@
       "check": "browser created and renamed display positions without touching the placement id",
       "pass": true,
       "evidence": {
-        "56ea47d5-060b-41ad-8bba-fb06ebc1e5a7": "Browser Catalog Analyst",
+        "5992cc8d-b525-427f-8515-cece670cb948": "Browser Catalog Analyst",
         "fixture-company-title": "Browser Renamed Title"
       }
     },
@@ -393,7 +393,7 @@
       "check": "browser under-180 withdrawal clears the copy but keeps the approval request and task history",
       "pass": true,
       "evidence": {
-        "revokedAt": "2026-10-29 02:11:59.335486",
+        "revokedAt": "2026-11-04 11:46:18.105988",
         "copy": [
           "该通知已被撤回。",
           "NULL",
@@ -414,7 +414,7 @@
         "copy": [
           "提交创建任务《Contract window closed》，等待审核。",
           "Contract window closed",
-          "0cf4a366-1f54-4d2e-901e-ce12b2780e2f"
+          "d72bd662-12e3-4db9-9412-250bede07441"
         ]
       }
     },
@@ -430,7 +430,7 @@
     }
   ],
   "browser": {
-    "updated": "2026-10-29T02:11:57.573Z",
+    "updated": "2026-11-04T11:46:16.305Z",
     "checks": [
       {
         "check": "independent admin enters real management console",
@@ -699,7 +699,7 @@
         "check": "closed-window notification remains unread and withdrawable",
         "pass": true,
         "evidence": {
-          "text": "\n      alpha-one-head\n      Contract window closedtask.create.submitted\n      未读2026/10/29 10:11:572027/1/29 10:11:57\n      撤回",
+          "text": "\n      alpha-one-head\n      Contract window closedtask.create.submitted\n      未读2026/11/4 19:46:152027/2/4 19:46:15\n      撤回",
           "withdraw": true
         }
       },
@@ -748,7 +748,13 @@
       },
       {
         "check": "browser commits completed responsibility takeover and employee deactivation",
-        "pass": true
+        "pass": true,
+        "evidence": {
+          "active": 0,
+          "planError": "",
+          "notice": null,
+          "body": "two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nbeta-one-employee\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nbeta-two-employee\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nfounder\n\t\n创始人（固定）\n\t\n公司\n\t\n—\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nbeta-two-head\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n停用与业务责任安排\n待停用 0 人，业务责任接管 0 项，管理撤销未发布创建 0 项。\n调整原因\n保存完整结果\n完整组织结果已保存"
+        }
       },
       {
         "check": "admin account has independent account fields",

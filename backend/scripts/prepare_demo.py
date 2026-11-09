@@ -19,6 +19,8 @@ import urllib.request
 from migration_precheck import BASE, Mysql, DEFAULT_OPTION_FILE, cell
 from fixed_model_fixture import quote
 
+MANIFEST_VERSION=3
+
 
 def database_env():
     values={}
@@ -43,7 +45,7 @@ def manifest(db):
             'preparedAt':identity[0][3],'identities':people,'objects':keys,
             'counts':{table:db.scalar('SELECT COUNT(*) FROM '+table) for table in
                       ('users','admin_accounts','employee_placements','departments','teams','tasks','task_versions',
-                       'approval_requests','work_logs','home_items','task_business_transfers','handover_requests','task_log_comments','notifications')}}
+                       'approval_requests','work_logs','home_items','task_business_transfers','handover_requests','task_log_comments','notifications','daily_items','work_log_task_references','work_log_daily_references')}}
 
 
 def prepare(database,marker,initialize=False,port=18194,output=None):
@@ -59,8 +61,11 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
             raise ValueError('Target has existing data but no demo identity; refusing preparation')
         identity=db.rows('SELECT database_name,marker,manifest_version FROM demo_database_identity WHERE singleton=1')
         if identity:
-            if identity[0]!=[database,marker,'2']:raise ValueError('Target demo identity does not match')
+            if identity[0][:2]!=[database,marker]:raise ValueError('Target demo identity does not match')
             already_prepared=bool(db.scalar('SELECT COUNT(*) FROM demo_database_identity WHERE prepared_at IS NOT NULL'))
+            legacy_prepared=identity[0][2]=='2' and already_prepared and not initialize
+            if identity[0][2]!=str(MANIFEST_VERSION) and not legacy_prepared:
+                raise ValueError('Target demo manifest does not match')
         elif not initialize or ('organizations' in present and db.scalar('SELECT COUNT(*) FROM organizations')):
             raise ValueError('An empty target and --initialize are required for first preparation')
     elif not initialize:raise ValueError('First preparation requires --initialize')
@@ -68,22 +73,26 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
     env={**os.environ,**values,'PANDORA_DB_URL':f'jdbc:mysql://127.0.0.1:13306/{database}?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED',
          'PANDORA_PORT':str(port),'PANDORA_BIND_ADDRESS':'127.0.0.1','PANDORA_SEED':'true','PANDORA_WORKER_ENABLED':'true'}
     log_path=BASE/'.runtime/demo-prepare.log'
-    args=['java','-jar',str(BASE/'target/pandora-backend-0.1.0.jar'),'--pandora.demo-target='+database,
+    args=[os.environ.get('JAVA_BIN','java'),'-jar',str(BASE/'target/pandora-backend-0.1.0.jar'),'--pandora.demo-target='+database,
           '--pandora.demo-marker='+marker,'--pandora.demo-initialize='+str(initialize).lower(),
           '--pandora.worker.initial-delay-ms=3600000','--pandora.worker.delay-ms=3600000']
     process=None
     try:
+        print('启动演示数据准备服务，日志：'+str(log_path),flush=True)
         with log_path.open('w') as log:process=subprocess.Popen(args,env=env,stdout=log,stderr=subprocess.STDOUT)
-        for _ in range(240):
-            if process.poll() is not None:raise RuntimeError('Preparation failed; see '+str(log_path))
+        for attempt in range(240):
+            if process.poll() is not None:
+                raise RuntimeError('Preparation failed; see '+str(log_path)+'\n'+log_path.read_text(errors='replace')[-8192:])
             present={row[0] for row in db.rows('SHOW TABLES')}
             if 'demo_database_identity' in present and db.scalar('SELECT COUNT(*) FROM demo_database_identity WHERE prepared_at IS NOT NULL'):
                 try:
                     with urllib.request.urlopen(f'http://127.0.0.1:{port}/health',timeout=1) as response:
                         if response.status==200:break
                 except OSError:pass
+            if attempt and attempt%20==0:
+                print(f'等待演示数据准备完成（第 {attempt}/240 次检查），日志：{log_path}',flush=True)
             time.sleep(.5)
-        else:raise RuntimeError('Preparation timeout; see '+str(log_path))
+        else:raise RuntimeError('Preparation timeout; see '+str(log_path)+'\n'+log_path.read_text(errors='replace')[-8192:])
         # Only a new seed needs delivery. Repeated preparation must also work after the real
         # administrator has changed their name/password; never reset credentials to drain events.
         if not already_prepared:
@@ -97,7 +106,7 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
         result=manifest(db)
         if output:
             output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n');output.chmod(0o600)
-        print(json.dumps({'database':database,'manifestVersion':2,'businessDate':result['businessDate'],'counts':result['counts']},ensure_ascii=False))
+        print(json.dumps({'database':database,'manifestVersion':result['manifestVersion'],'businessDate':result['businessDate'],'counts':result['counts']},ensure_ascii=False))
         return result
     finally:
         if process and process.poll() is None:

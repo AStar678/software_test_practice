@@ -76,7 +76,7 @@ class TaskBatchReadTest {
             if(sql.startsWith("SELECT task_id,employee_id FROM task_business_owners")) {
                 var result=new ArrayList<Map<String,Object>>();for(int i=1;i<args.length;i++) if(businessOwners.containsKey(args[i])) result.add(row("taskId",args[i],"employeeId",businessOwners.get(args[i])));return result;
             }
-            if(sql.startsWith("SELECT task_id FROM user_task_pins")) return List.of();
+            if(sql.startsWith("SELECT task_id FROM user_task_pins") || sql.startsWith("SELECT task_id FROM user_task_table_pins")) return List.of();
             if(sql.startsWith("SELECT * FROM approval_requests") || sql.startsWith("SELECT id,task_id,proposed_version_id")) {
                 if(sql.contains("status='pending' AND task_id IN")) return requests.values().stream().filter(r->"pending".equals(s(r,"status")) && Arrays.asList(args).contains(s(r,"taskId"))).map(LinkedHashMap::new).map(r->(Map<String,Object>)r).toList();
                 if(sql.contains("task_id=? AND status='pending'")) return requests.values().stream().filter(r->Objects.equals(args[1],s(r,"taskId")) && "pending".equals(s(r,"status"))).map(LinkedHashMap::new).map(r->(Map<String,Object>)r).toList();
@@ -108,7 +108,7 @@ class TaskBatchReadTest {
                 var version=f.db.versions.get(s(task,"currentVersionId"));var owners=f.db.owners.get(s(version,"id"));
                 if(!f.access.canSeeTask(actor,task,version,owners)) continue;
                 Map<String,Object> view=ReflectionTestUtils.invokeMethod(f.service,"taskView",actor,task,version,owners);
-                view.put("pinned",false);expected.add(view);
+                view.put("pinned",false);view.put("tablePinned",false);expected.add(view);
             }
             var result=f.service.list(actor,Map.of("limit","3","offset","1"));
             assertEquals(expected.size(),result.get("total"),"actor "+person);

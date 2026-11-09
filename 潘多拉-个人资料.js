@@ -27,9 +27,19 @@
     return person ? person.name : user.managerId ? "已分配直属上级" : "无";
   }
   function identityLabel(user) { return ({founder:"创始人",department_head:"部门负责人",team_head:"团队负责人",employee:"员工"})[user.placementType || user.role] || "员工"; }
+  P.staffOrgLine = function (user) {
+    return user ? [user.departmentName || "公司层", user.teamName, user.positionName].filter(Boolean).join(" › ") : "";
+  };
+  function employmentRows(user) {
+    if (!Object.hasOwn(user,"employmentStartDate")) return "";
+    const date=user.employmentStartDate;
+    const formatted=date ? date.slice(0,4)+"年"+date.slice(5,7)+"月"+date.slice(8,10)+"日" : "未登记";
+    const days=user.employmentDays;
+    return row("入职日期",formatted)+row("入职天数",days==null?"未登记":days===0?"尚未入职":days+" 天");
+  }
   function readonlyRows(user) {
     return row("组织身份", identityLabel(user)) +
-      (user.departmentName ? row("部门", user.departmentName) : "") + row("职位", user.positionName) +
+      row("部门", user.departmentName || "公司层") + row("职位", user.positionName) +
       (user.teamName ? row("团队", user.teamName) : "") + row("直属上级", superior(user));
   }
   function field(id, type, label, value, max, autocomplete, required) {
@@ -49,121 +59,390 @@
     function nodes(parent){return (children.get(parent)||[]).map(person=>{
       if(seen.has(person.id))return '';seen.add(person.id);
       const has=(children.get(person.id)||[]).length>0, open=expandedReports.has(person.id);
-      return '<li><div class="staff-tree-node">'+(has?'<button type="button" class="staff-tree-toggle" data-action="p-report-toggle" data-id="'+esc(person.id)+'" aria-expanded="'+open+'" aria-label="'+(open?'收起':'展开')+esc(person.displayName)+'的下属">'+(open?'−':'+')+'</button>':'<span class="staff-tree-spacer"></span>')+'<button type="button" class="staff-tree-person" data-action="p-open-person" data-id="'+esc(person.id)+'"><strong>'+esc(person.displayName)+'</strong><small>'+esc(identityLabel(person)+' · '+(person.positionName||person.teamName||person.departmentName||''))+'</small></button></div>'+(has&&open?'<ul>'+nodes(person.id)+'</ul>':'')+'</li>';
+      return '<li><div class="staff-tree-node">'+(has?'<button type="button" class="staff-tree-toggle" data-action="p-report-toggle" data-id="'+esc(person.id)+'" aria-expanded="'+open+'" aria-label="'+(open?'收起':'展开')+esc(person.displayName)+'的下属">'+(open?'−':'+')+'</button>':'<span class="staff-tree-spacer"></span>')+'<button type="button" class="staff-tree-person" data-action="p-open-person" data-id="'+esc(person.id)+'"><strong>'+esc(person.displayName)+'</strong><small>'+esc(P.staffOrgLine(person))+'</small></button></div>'+(has&&open?'<ul>'+nodes(person.id)+'</ul>':'')+'</li>';
     }).join('');}
     return '<details class="card profile-fold" data-profile-fold="reports"'+(folds.reports?' open':'')+'><summary><span>下属资料</span><span class="fold-hint">'+list.length+' 人</span><span class="fold-chevron" aria-hidden="true">⌄</span></summary><div class="fold-content">'+(list.length?'<ul class="staff-tree" aria-label="下属组织层级">'+nodes(me().id)+'</ul>':'<p class="empty">暂无下属</p>')+'</div></details>';
   }
-  function staffDate(d){return d.slice(5).replace('-','月')+'日';}
   function shiftStaffDate(date,days){return toDateInput(addDays(parseDateInput(date),days));}
   function instantLabel(value){const p=P.companyParts(new Date(value));return p.month+'月'+p.day+'日 '+p.hour+':'+p.minute;}
   function taskRange(raw){
     if(raw.allDay)return {start:P.companyDayStart(raw.startDate),end:P.companyDayStart(shiftStaffDate(raw.dueDate,1))};
     return {start:new Date(raw.startAt),end:new Date(raw.dueAt)};
   }
-  function staffTaskHTML(raw){
-    const id=raw.taskId||raw.id,range=taskRange(raw),start=P.companyDayStart(staff.date),end=P.companyDayStart(shiftStaffDate(staff.date,1));
+  function staffTaskHTML(raw,selectedDate=staff.date){
+    const id=raw.taskId||raw.id,range=taskRange(raw),start=P.companyDayStart(selectedDate),end=P.companyDayStart(shiftStaffDate(selectedDate,1));
     const time=raw.allDay?'全天':(+range.start===+range.end?'时点 · ':'')+(range.start<start?'前日延续':instantLabel(raw.startAt).split(' ')[1])+' — '+(range.end>=end?'24:00':instantLabel(raw.dueAt).split(' ')[1]);
     const tag=(raw.tags||[])[0]||raw.tag;
     return '<button type="button" class="staff-work-item'+(raw.frozen?' is-pending-review':'')+'" data-task="'+esc(id)+'" style="--staff-accent:'+esc(tag?.color||'#f5ccdE')+'"><span class="staff-work-time">'+esc(time)+'</span><strong>'+esc(raw.title)+'</strong><span class="staff-work-meta">'+esc(({todo:'待开始',doing:'进行中',done:'已完成'})[raw.executionState]||'待开始')+(raw.frozen?' · 审核中':'')+'</span><small>'+esc(instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt))+'</small></button>';
   }
-  function staffLogHTML(raw){return '<button type="button" class="staff-log-card" data-action="p-staff-log" data-id="'+esc(raw.id)+'"><span class="staff-work-time">'+esc(raw.businessDate)+'</span><strong>'+esc(raw.body)+'</strong><small>'+esc(raw.tag?.name||'无标签')+' · 查看全文与评论 →</small></button>';}
-  function staffMonthBounds(date){
-    const d=parseDateInput(date),first=new Date(d.getFullYear(),d.getMonth(),1),last=new Date(d.getFullYear(),d.getMonth()+1,0);
-    const start=addDays(first,-((first.getDay()+6)%7)),end=addDays(last,7-((last.getDay()+6)%7));
-    return {start:toDateInput(start),end:toDateInput(end),first,last};
+  function staffLogMonthHTML(s,key) {
+    const anchor=P.calendar.monthFromKey(key);
+    const entry=s.months.logs.entries.get(key);
+    const weeks=monthGrid(anchor).weeks.map(week=>{
+      const cells=Array.from({length:7},(_,index)=>{
+        const day=addDays(week.start,index), date=toDateInput(day);
+        if (day.getMonth()!==anchor.getMonth()) return '<span class="p-month-date is-blank" aria-hidden="true"></span>';
+        const log=entry?.logs.get(date);
+        if (!log) return '<span class="p-month-date"><span class="p-month-date-label"><strong>'+day.getDate()+'</strong></span></span>';
+        return P.calendar.monthDateHTML(day,'data-action="p-staff-log" data-date="'+date+'" data-id="'+esc(log.id)+'"',date+" 有日志，查看全文",
+          date===s.logSelected,date===P.data.home.businessDate,'<span class="staff-log-dot" aria-hidden="true"></span>');
+      });
+      return P.calendar.monthWeekHTML(week,cells.join(""));
+    });
+    const status=entry?.error ? '<button type="button" class="btn tiny-btn" data-action="p-staff-log-retry" data-date="'+key+'">重试 '+key+'</button>' :
+      !entry?.loaded ? '<span class="tiny muted" role="status">加载中</span>' :
+      !entry.logs.size ? '<span class="tiny muted">本月暂无日志</span>' : '';
+    return P.calendar.monthFrameHTML(anchor,weeks,status);
   }
-  function staffQueryRange(s){if(s.mode==='month')return staffMonthBounds(s.date);return {start:s.date,end:shiftStaffDate(s.date,1)};}
+  function staffLogCalendarHTML(s) {
+    const date=s.logDate || P.data.home.businessDate;
+    return '<div class="staff-date-nav staff-log-nav"><button type="button" data-action="p-staff-log-prev" aria-label="上一月">‹</button>'+
+      '<input type="month" id="staff-log-month" aria-label="跳转日志月份" value="'+date.slice(0,7)+'">'+
+      '<button type="button" data-action="p-staff-log-next" aria-label="下一月">›</button>'+
+      '<button type="button" data-action="p-staff-log-today">今天</button></div>'+
+      P.calendar.readMonthViewHTML("员工日志月历，上下滚动浏览月份",s.months.logs.keys.map(key=>staffLogMonthHTML(s,key)).join(""),s.months.logs.density,"staffLogScroll");
+  }
+  function staffMonthCurrent(s, tab, scroller) {
+    return staff===s && s.epoch===P.epoch && s.tab===tab && scroller.isConnected;
+  }
+  function monthState() { return {keys:[],entries:new Map(),position:null,density:undefined}; }
+  function resetStaffMonth(s, tab) {
+    const model=s.months[tab];
+    model.keys=[];
+    model.position=null;
+    model.entries.clear();
+  }
+  function prepareStaffMonths(model,date) {
+    if (!model.keys.length) {
+      const anchor=parseDateInput(date);
+      model.keys=[-1,0,1].map(delta=>P.calendar.monthKey(P.calendar.shiftMonth(anchor,delta)));
+    }
+    model.entries.clear();
+  }
+  async function loadStaffLogMonth(s,key,scroller) {
+    const entry={logs:new Map(),loaded:false};
+    s.months.logs.entries.set(key,entry);
+    const from=P.calendar.monthFromKey(key), to=toDateInput(addDays(P.calendar.shiftMonth(from,1),-1));
+    try {
+      for (let offset=0;;) {
+        const response=await P.request('/work-logs?scope=visible&authorId='+encodeURIComponent(s.person.id)+
+          '&from='+key+'-01&to='+to+'&limit=100&offset='+offset);
+        if (!staffMonthCurrent(s,"logs",scroller) || s.months.logs.entries.get(key)!==entry) return;
+        for (const log of response.items || []) entry.logs.set(log.businessDate,log);
+        if (response.nextOffset==null) break;
+        if (Number(response.nextOffset)<=offset) throw new Error("日志分页异常");
+        offset=Number(response.nextOffset);
+      }
+      entry.loaded=true;
+    } catch (error) {
+      if (!staffMonthCurrent(s,"logs",scroller) || s.months.logs.entries.get(key)!==entry) return;
+      if (error.status===403 || error.status===404 || error.code==="AUTHORIZATION_CHANGED") {
+        s.months.logs.entries.clear();
+        P.subordinateLogs.clear();
+        delete s.person.phone; delete s.person.employmentStartDate; delete s.person.employmentDays;
+        s.error="当前无权查看此人的日志。";
+        replaceTopSheet(staffView());
+        return;
+      }
+      entry.logs.clear();
+      entry.error=true;
+    }
+    const section=scroller.querySelector('[data-month-key="'+key+'"]');
+    if (!section || !staffMonthCurrent(s,"logs",scroller)) return;
+    const position=P.calendar.monthAnchor(scroller);
+    section.outerHTML=staffLogMonthHTML(s,key);
+    if (position) P.calendar.placeMonthAnchor(scroller,position);
+    if (s.restoreFocus) {
+      const trigger=scroller.querySelector(s.restoreFocus);
+      if (trigger) { trigger.focus({preventScroll:true}); s.restoreFocus=null; }
+    }
+  }
+  function extendStaffMonths(scroller, model, renderMonth, loadMonth, direction) {
+    const edge=direction<0?model.keys[0]:model.keys.at(-1);
+    const key=P.calendar.monthKey(P.calendar.shiftMonth(P.calendar.monthFromKey(edge),direction));
+    const holder=document.createElement("div");
+    holder.innerHTML=renderMonth(key);
+    const stream=scroller.querySelector(".p-month-stream");
+    if (direction<0) model.keys.unshift(key);
+    else model.keys.push(key);
+    P.calendar.growMonthStream(scroller,stream,holder.firstElementChild,direction<0);
+    if (model.keys.length>12) {
+      const removed=direction>0?model.keys.shift():model.keys.pop();
+      const height=scroller.scrollHeight;
+      stream.querySelector('.p-month-section[data-month-key="'+removed+'"]').remove();
+      if (direction>0) scroller.scrollTop-=height-scroller.scrollHeight;
+      model.entries.delete(removed);
+    }
+    loadMonth(key,scroller);
+  }
+  function staffMonthAnchor(scroller) {
+    const header=scroller.querySelector(".p-weekday-row");
+    return P.calendar.monthAnchor(scroller,header?.getBoundingClientRect().height||0);
+  }
+  function bindStaffMonthCalendar(s) {
+    const tab=s.tab, logs=tab==="logs", model=s.months[tab];
+    const scroller=document.getElementById(logs?"staffLogScroll":"staffScheduleScroll");
+    if (!scroller) return;
+    const renderMonth=key=>logs?staffLogMonthHTML(s,key):staffScheduleMonthHTML(s,key);
+    const loadMonth=(key,view)=>logs?loadStaffLogMonth(s,key,view):loadStaffScheduleMonth(s,key,view);
+    if (logs) {
+      const view=scroller.closest(".p-month-view");
+      P.calendar.bindReadMonthDensity(view);
+      view.addEventListener("monthdensity",()=>{model.density=Number(view.dataset.rowHeight);});
+    }
+    const date=logs?s.logDate:s.date;
+    const target=scroller.querySelector('.p-month-section[data-month-key="'+date.slice(0,7)+'"]');
+    if (model.position) P.calendar.placeMonthAnchor(scroller,model.position);
+    else if (target) {
+      const header=scroller.querySelector(".p-weekday-row");
+      scroller.scrollTop+=target.getBoundingClientRect().top-scroller.getBoundingClientRect().top-header.getBoundingClientRect().height;
+    }
+    let frame;
+    scroller.addEventListener("scroll",()=>{
+      const position=staffMonthAnchor(scroller);
+      if (!position) return;
+      model.position=position;
+      const picker=document.getElementById(logs?"staff-log-month":"staff-calendar-date");
+      if (picker && document.activeElement!==picker) picker.value=logs?position.month:
+        s.date.startsWith(position.month+"-")?s.date:position.month+"-01";
+      cancelAnimationFrame(frame);
+      frame=requestAnimationFrame(()=>{
+        if (!staffMonthCurrent(s,tab,scroller) || !scroller.clientHeight) return;
+        if (scroller.scrollTop<scroller.clientHeight*.75) extendStaffMonths(scroller,model,renderMonth,loadMonth,-1);
+        else if (scroller.scrollHeight-scroller.scrollTop-scroller.clientHeight<scroller.clientHeight*.75) extendStaffMonths(scroller,model,renderMonth,loadMonth,1);
+      });
+    },{passive:true});
+    for (const key of model.keys) loadMonth(key,scroller);
+  }
+  function jumpStaffLogs(date) {
+    staff.logDate=date;
+    resetStaffMonth(staff,"logs");
+    return refreshStaff();
+  }
+  function staffRangeRows(rows,startDate,endDate) {
+    const start=P.companyDayStart(startDate),end=P.companyDayStart(endDate);
+    return rows.filter(raw=>{
+      const range=taskRange(raw);
+      return +range.start===+range.end?range.start>=start&&range.start<end:range.end>start&&range.start<end;
+    });
+  }
+  async function readStaffSchedule(s,from,until,current) {
+    const effective=[];
+    for (let offset=0;;) {
+      const result=await P.request('/tasks?assigneeId='+encodeURIComponent(s.person.id)+'&calendarPreview=true&from='+from+
+        '&to='+shiftStaffDate(until,-1)+'&limit=100&offset='+offset);
+      if (!current()) return null;
+      effective.push(...(result.items||[]));
+      const cursor=result.nextCursor??result.nextOffset;
+      if (cursor==null) break;
+      if (Number(cursor)<=offset) throw new Error('日程分页异常，请重新读取。');
+      offset=Number(cursor);
+    }
+    const tasks=effective.map(P.mapTask);
+    const rows=staffRangeRows(tasks.map(task=>P.calendarTask(task).raw),from,until)
+      .sort((a,b)=>+taskRange(a).start-+taskRange(b).start||String(a.taskId||a.id).localeCompare(String(b.taskId||b.id)));
+    return {rows,tasks};
+  }
+  async function loadStaffScheduleMonth(s,key,scroller) {
+    const model=s.months.schedule, entry={rows:[],tasks:[]};
+    model.entries.set(key,entry);
+    const current=()=>staffMonthCurrent(s,"schedule",scroller)&&model.entries.get(key)===entry;
+    const next=toDateInput(P.calendar.shiftMonth(P.calendar.monthFromKey(key),1));
+    try {
+      const directory=await P.request('/me/reports');
+      if (!current()) return;
+      if (!(directory.items||[]).some(person=>person.id===s.person.id)) {
+        throw Object.assign(new Error("已无权查看该人员的日程。"),{status:403});
+      }
+      const result=await readStaffSchedule(s,key+"-01",next,current);
+      if (!result || !current()) return;
+      Object.assign(entry,result,{loaded:true});
+    } catch (error) {
+      if (!current()) return;
+      if (error.status===403||error.status===404||error.code==="AUTHORIZATION_CHANGED") {
+        model.entries.clear();
+        P.subordinateTasks.clear();
+        s.person={id:s.person.id,displayName:s.person.displayName};
+        s.error="已无权查看该人员的日程。";
+        s.daySheetDate=null;
+        replaceTopSheet(staffView());
+        return;
+      }
+      entry.error=true;
+    }
+    const section=scroller.querySelector('.p-month-section[data-month-key="'+key+'"]');
+    if (!section || !current()) return;
+    const anchor=staffMonthAnchor(scroller);
+    section.outerHTML=staffScheduleMonthHTML(s,key);
+    if (anchor) P.calendar.placeMonthAnchor(scroller,anchor);
+    if (s.daySheetDate?.startsWith(key+"-")) syncStaffDaySheet(s);
+    restoreStaffFocus(s);
+  }
   function staffRawColor(raw){return (raw.tags||[])[0]?.color||raw.tag?.color||'#ffe1ea';}
-  function staffMonthHTML(){
-    const s=staff,bounds=staffMonthBounds(s.date),tasks=s.rows.map(P.mapTask),weeks=[];
-    for(let date=bounds.start;date<bounds.end;date=shiftStaffDate(date,7)){
-      const week=P.calendar.monthWeek({start:parseDateInput(date)},tasks,3);
+  function staffScheduleMonthHTML(s,key){
+    const anchor=P.calendar.monthFromKey(key),end=P.calendar.shiftMonth(anchor,1);
+    const entry=s.months.schedule.entries.get(key), tasks=(entry?.rows||[]).map(P.mapTask);
+    const weeks=monthGrid(anchor).weeks.map(gridWeek=>{
+      const date=toDateInput(gridWeek.start);
+      const week=P.calendar.monthWeek(gridWeek,tasks,3,{start:anchor,end});
       const dates=week.days.map(d=>toDateInput(d));
-      const cells=dates.map(d=>'<button type="button" class="staff-month-date'+(d.slice(0,7)!==s.date.slice(0,7)?' is-outside':'')+'" data-action="p-staff-date" data-date="'+d+'" aria-label="'+d+'，查看日视图" aria-pressed="'+(d===s.date)+'"><span>'+Number(d.slice(-2))+'</span></button>').join('');
-      const bars=week.shown.map(segment=>{const task=segment.task,raw=task.raw,range=taskRange(raw),bounds=staffMonthBounds(staff.date);
-        const detail=(segment.before?'延续 · ':'')+instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt)+(raw.frozen?' · 审核中':'');
-        return '<div role="group" tabindex="0" class="staff-month-event'+(segment.width===0?' is-point':'')+(raw.frozen?' is-pending-review':'')+(segment.before?' continues-before':'')+(segment.after?' continues-after':'')+'" data-task="'+esc(task.id)+'" style="grid-column:'+(segment.start+1)+' / '+(segment.end+1)+';grid-row:'+(segment.lane+1)+';--month-left:'+segment.left+'%;--month-width:'+segment.width+'%;--staff-accent:'+esc(staffRawColor(raw))+'" title="'+esc(raw.title+' · '+detail)+'"><span class="staff-month-duration"'+(P.canRescheduleTask(actor(),task)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="month"':'')+'><span class="p-month-caption"><strong>'+esc(raw.title)+'</strong><small>'+esc(detail)+'</small></span>'+(!segment.before?P.calendar.resizeHandle(task,'start','month'):'')+(!segment.after?P.calendar.resizeHandle(task,'end','month'):'')+'</span></div>';
+      const cells=dates.map(d=>!d.startsWith(key+"-")?'<span class="staff-month-date is-outside" aria-hidden="true"></span>':
+        '<button type="button" class="staff-month-date" data-action="p-staff-date" data-date="'+d+'" aria-label="'+d+
+        '，查看当日任务" aria-pressed="'+(d===s.date)+'"><span>'+Number(d.slice(-2))+'</span></button>').join('');
+      const bars=week.shown.map(segment=>{const task=segment.task,raw=task.raw,done=raw.executionState==='done';
+        const detail=(segment.before?'延续 · ':'')+instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt)+(done?' · 已完成':'')+(raw.frozen?' · 审核中':'');
+        return '<div role="group" tabindex="0" class="staff-month-event'+(segment.point?' is-point':'')+(done?' is-done':'')+(raw.frozen?' is-pending-review':'')+(segment.before?' continues-before':'')+(segment.after?' continues-after':'')+'" data-task="'+esc(task.id)+'" data-col-start="'+segment.start+'" data-col-end="'+segment.end+'" style="grid-column:'+(segment.start+1)+' / '+(segment.end+1)+';grid-row:'+(segment.lane+1)+';--month-left:'+segment.left+'%;--month-width:'+segment.width+'%;--staff-accent:'+esc(staffRawColor(raw))+'" title="'+esc(raw.title+' · '+detail)+'"><span class="staff-month-duration"><span class="p-month-caption"><strong>'+esc(raw.title)+'</strong><small>'+esc(detail)+'</small></span></span></div>';
       }).join('');
       const more=week.hidden.map((rows,col)=>rows.length?'<button type="button" data-action="p-staff-date" data-date="'+dates[col]+'" class="staff-month-more" style="grid-column:'+(col+1)+'" aria-label="'+dates[col]+'，还有'+rows.length+'项，查看全天">+'+rows.length+'</button>':'').join('');
-      weeks.push('<div class="staff-month-week"><div class="staff-month-days">'+cells+'</div><div class="staff-month-tracks">'+bars+'</div><div class="staff-month-overflow">'+more+'</div></div>');
-    }
-    return '<div class="staff-month-view" aria-label="'+s.date.slice(0,7)+'月历"><div class="staff-month-weekdays">'+['一','二','三','四','五','六','日'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="staff-month-scroll">'+weeks.join('')+'</div></div>';
+      return '<div class="p-month-week staff-month-week" data-week-start="'+date+'"><div class="staff-month-days">'+cells+
+        '</div><div class="staff-month-tracks">'+bars+'</div><div class="staff-month-overflow">'+more+'</div></div>';
+    });
+    const status=entry?.error?'<button type="button" class="btn tiny-btn" data-action="p-staff-schedule-retry" data-date="'+key+'">重试 '+key+'</button>':
+      !entry?.loaded?'<span class="tiny muted" role="status">加载中</span>':
+      !entry.rows.length?'<span class="tiny muted">本月暂无日程</span>':'';
+    return P.calendar.monthFrameHTML(anchor,weeks,status);
+  }
+  function staffScheduleCalendarHTML(s) {
+    const weeks=['一','二','三','四','五','六','日'].map(day=>'<span>'+day+'</span>').join("");
+    return '<div class="p-month-view staff-month-view staff-schedule-stream"><div class="p-month-scroll staff-month-scroll" id="staffScheduleScroll" tabindex="0" aria-label="员工日程月历，上下滚动浏览月份">'+
+      '<div class="p-month-layout"><div class="p-weekday-row staff-month-weekdays">'+weeks+'</div><div class="p-month-stream">'+
+      s.months.schedule.keys.map(key=>staffScheduleMonthHTML(s,key)).join("")+'</div></div></div></div>';
   }
   function staffDayHTML(){
     const s=staff,date=parseDateInput(s.date),all=[],timed=[];
     s.rows.forEach(raw=>{const task=P.mapTask(raw),coverage=P.calendar.dayCoverage(task,date);if(!coverage)return;if(task.allDay||coverage.fullDay)all.push(raw);else timed.push(Object.assign({task},coverage));});
     const modes='<div class="staff-day-formats" role="group" aria-label="日视图显示方式">'+[['axis','时间轴'],['list','任务清单']].map(([mode,label])=>'<button type="button" data-action="p-staff-format" data-format="'+mode+'" aria-pressed="'+(s.dayFormat===mode)+'">'+label+'</button>').join('')+'</div>';
-    if(s.dayFormat==='list')return modes+(s.rows.length?s.rows.map(staffTaskHTML).join(''):'<div class="staff-state">这一天暂无负责的任务</div>');
+    if(s.dayFormat==='list')return modes+(s.rows.length?s.rows.map(raw=>staffTaskHTML(raw)).join(''):'<div class="staff-state">这一天暂无负责的任务</div>');
     const events=P.calendar.layoutDayEvents(timed),hours=Array.from({length:25},(_,h)=>'<div class="staff-axis-hour" style="top:'+h*60+'px"><span>'+pad2(h)+':00</span></div>').join('');
     const bars=events.map(e=>{
-      const task=e.task,raw=task.raw,range=taskRange(raw),start=P.companyDayStart(s.date),end=P.companyDayStart(shiftStaffDate(s.date,1));
-      return '<div role="group" tabindex="0" class="staff-axis-event'+(e.point?' is-point':'')+(task.frozen?' is-pending-review':'')+'" data-task="'+esc(task.id)+'" data-start-minute="'+e.start+'" data-end-minute="'+e.end+'" data-columns="'+e.columns+'" style="top:'+e.drawStart+'px;height:'+(e.drawEnd-e.drawStart)+'px;left:'+(e.lane*100/e.columns)+'%;width:'+(100/e.columns)+'%;--staff-accent:'+esc(staffRawColor(raw))+';--true-top:'+(e.start-e.drawStart)+'px;--true-height:'+Math.max(2,e.end-e.start)+'px" aria-label="'+esc(task.title+'，'+instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt))+'" title="'+esc(task.title+' · '+instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt))+'"><span class="staff-axis-true"'+(P.canRescheduleTask(actor(),task)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="vertical"':'')+'><span class="p-axis-caption"><strong>'+esc(task.title)+'</strong><small>'+esc(instantLabel(raw.startAt).split(' ')[1]+(task.frozen?' · 审核中':''))+'</small></span></span>'+(range.start>=start?P.calendar.resizeHandle(task,'start','vertical'):'')+(range.end<=end?P.calendar.resizeHandle(task,'end','vertical'):'')+'</div>';
+      const task=e.task,raw=task.raw,range=taskRange(raw),start=P.companyDayStart(s.date),end=P.companyDayStart(shiftStaffDate(s.date,1)),done=raw.executionState==='done';
+      return '<div role="group" tabindex="0" class="staff-axis-event'+(e.point?' is-point':'')+(done?' is-done':'')+(task.frozen?' is-pending-review':'')+'" data-task="'+esc(task.id)+'" data-start-minute="'+e.start+'" data-end-minute="'+e.end+'" data-columns="'+e.columns+'" style="top:'+e.drawStart+'px;height:'+(e.drawEnd-e.drawStart)+'px;left:'+(e.lane*100/e.columns)+'%;width:'+(100/e.columns)+'%;--staff-accent:'+esc(staffRawColor(raw))+';--true-top:'+(e.start-e.drawStart)+'px;--true-height:'+Math.max(2,e.end-e.start)+'px" aria-label="'+esc(task.title+'，'+instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt)+(done?'，已完成':''))+'" title="'+esc(task.title+' · '+instantLabel(raw.startAt)+' 至 '+instantLabel(raw.dueAt)+(done?' · 已完成':''))+'"><span class="staff-axis-true"><span class="p-axis-caption"><strong>'+esc(task.title)+'</strong><small>'+esc(instantLabel(raw.startAt).split(' ')[1]+(done?' · 已完成':'')+(task.frozen?' · 审核中':''))+'</small></span></span></div>';
     }).join('');
-    return modes+(all.length?'<div class="staff-allday"><span>全天</span><div>'+all.map(raw=>'<button type="button" class="'+(raw.frozen?'is-pending-review':'')+'" data-task="'+esc(raw.taskId||raw.id)+'" style="--staff-accent:'+esc(staffRawColor(raw))+'">'+esc(raw.title+(raw.frozen?' · 审核中':''))+'</button>').join('')+'</div></div>':'')+'<div class="staff-axis-scroll" tabindex="0" aria-label="当天00:00至24:00时间轴，可上下滚动"><div class="staff-day-axis">'+hours+'<div class="staff-axis-events">'+bars+'</div></div></div>';
+    return modes+(all.length?'<div class="staff-allday"><span>全天</span><div>'+all.map(raw=>{const done=raw.executionState==='done';return '<button type="button" class="'+(done?'is-done ':'')+(raw.frozen?'is-pending-review':'')+'" data-task="'+esc(raw.taskId||raw.id)+'" style="--staff-accent:'+esc(staffRawColor(raw))+'">'+esc(raw.title+(done?' · 已完成':'')+(raw.frozen?' · 审核中':''))+'</button>';}).join('')+'</div></div>':'')+'<div class="staff-axis-scroll" tabindex="0" aria-label="当天00:00至24:00时间轴，可上下滚动"><div class="staff-day-axis">'+hours+'<div class="staff-axis-events">'+bars+'</div></div></div>';
   }
   function staffCalendarNav(){
     const s=staff,dates=Array.from({length:7},(_,i)=>shiftStaffDate(s.date,i-3));
     return '<div class="staff-calendar-modes" role="group" aria-label="人员日程视图">'+[['month','月视图'],['day','日视图']].map(([mode,label])=>'<button type="button" data-action="p-staff-mode" data-mode="'+mode+'" aria-pressed="'+(s.mode===mode)+'">'+label+'</button>').join('')+'</div><div class="staff-date-nav"><button type="button" data-action="p-staff-nav" data-step="-1" aria-label="上一'+(s.mode==='month'?'月':'天')+'">‹</button><label class="staff-calendar-picker"><span class="sr-only">跳转日期</span><input type="date" id="staff-calendar-date" value="'+s.date+'" aria-label="跳转日期"></label><button type="button" data-action="p-staff-today">今天</button><button type="button" data-action="p-staff-nav" data-step="1" aria-label="下一'+(s.mode==='month'?'月':'天')+'">›</button></div>'+(s.mode==='day'?'<div class="staff-date-strip" role="group" aria-label="查看日期">'+dates.map(date=>'<button type="button" data-action="p-staff-date" data-date="'+date+'" aria-pressed="'+(date===s.date)+'"><small>'+['日','一','二','三','四','五','六'][parseDateInput(date).getDay()]+'</small><strong>'+Number(date.slice(-2))+'</strong></button>').join('')+'</div>':'');
   }
-  function rememberStaffScroll(s){
-    if(staff!==s||s.epoch!==P.epoch)return;
-    s.savedScroll=['#sheetBody','.staff-month-scroll','.staff-axis-scroll'].map(selector=>{
-      const node=document.querySelector(selector);return node?{selector,top:node.scrollTop,left:node.scrollLeft}:null;
-    }).filter(Boolean);
+  function restoreStaffAxis(){requestAnimationFrame(()=>{const axis=document.querySelector('.staff-axis-scroll');if(!axis||!staff)return;const date=parseDateInput(staff.date),events=staff.rows.map(raw=>P.calendar.dayCoverage(P.mapTask(raw),date)).filter(e=>e&&!e.fullDay);axis.scrollTop=Math.max(0,(events[0]?.start??480)-60);});}
+  function staffDaySheetHTML(s) {
+    if (!s.daySheetDate || s.loading || s.error) return '';
+    const date=s.daySheetDate, key=date.slice(0,7), entry=s.months.schedule.entries.get(key);
+    const rows=entry?.loaded ? staffRangeRows(entry.rows,date,shiftStaffDate(date,1)) : [];
+    const content=entry?.error ? '<button type="button" class="btn" data-action="p-staff-schedule-retry" data-date="'+key+'">重试日程</button>' :
+      !entry?.loaded ? '<p class="tiny muted" role="status">正在读取日程…</p>' :
+      rows.length ? rows.map(raw=>staffTaskHTML(raw,date)).join("") : '<p class="empty">这一天暂无负责的任务</p>';
+    return '<section class="staff-day-popup" role="dialog" aria-label="'+date+'完整任务清单"><h3>'+date+' 日程</h3>'+content+
+      '<div class="row"><button type="button" class="btn" data-action="p-staff-day-view">进入日视图</button><button type="button" class="btn" data-action="p-staff-day-close">关闭清单</button></div></section>';
   }
-  function restoreStaffAxis(){const s=staff;requestAnimationFrame(()=>{
-    if(!s||staff!==s||s.epoch!==P.epoch)return;
-    P.calendar.bindScheduleResize();
-    if(s.restoreScroll){
-      (s.savedScroll||[]).forEach(pos=>{const node=document.querySelector(pos.selector);if(node){node.scrollTop=pos.top;node.scrollLeft=pos.left;}});
-      s.restoreScroll=false;return;
-    }
-    const axis=document.querySelector('.staff-axis-scroll');if(!axis)return;
-    const date=parseDateInput(s.date),events=s.rows.map(raw=>P.calendar.dayCoverage(P.mapTask(raw),date)).filter(e=>e&&!e.fullDay);
-    axis.scrollTop=Math.max(0,(events[0]?.start??480)-60);
-  });}
+  function syncStaffDaySheet(s) {
+    const host=document.getElementById("staff-day-popup-host");
+    if (host) host.innerHTML=staffDaySheetHTML(s);
+  }
+  function restoreStaffFocus(s) {
+    if (!s.restoreFocus) return;
+    const scope=s.daySheetDate?document.getElementById("staff-day-popup-host"):sheetBodyEl;
+    const node=scope?.querySelector(s.restoreFocus);
+    if (node) {node.focus({preventScroll:true});s.restoreFocus=null;}
+  }
   function staffView(){
     const s=staff,p=s.person;
     const dateBar=s.tab==='schedule'?staffCalendarNav():'';
-    const content=s.loading?'<div class="staff-state" role="status">正在读取'+(s.tab==='schedule'?'日程':'日志')+'…</div>':s.error?'<div class="staff-state" role="alert">'+esc(s.error)+'<button type="button" class="btn" data-action="p-staff-retry">重新读取</button></div>':s.tab==='schedule'?(s.mode==='month'?staffMonthHTML():staffDayHTML()):s.rows.length?s.rows.map(staffLogHTML).join(''):'<div class="staff-state">'+(s.tab==='schedule'?'这一天暂无负责的任务':'暂无可查看的日志')+'</div>';
-    return {title:p.displayName+'的工作',fullscreen:true,returnContext:'staff',suspend:()=>rememberStaffScroll(s),body:'<section class="staff-panel" data-staff-panel="'+esc(p.id)+'"><header class="staff-person"><span class="staff-avatar">'+esc(Array.from(p.displayName||'')[0]||'人')+'</span><div><h2>'+esc(p.displayName)+'</h2><p>'+esc(identityLabel(p)+' · '+(p.positionName||''))+'</p><small>'+esc([p.departmentName,p.teamName].filter(Boolean).join(' / ')||'公司层')+'</small></div></header><details class="staff-person-info"><summary>人员资料</summary>'+readonlyRows(p)+(p.phone?row('手机号',p.phone):'')+(p.canSetHandoverPreset?'<button type="button" class="btn" data-action="p-open-handover-preset" data-id="'+esc(p.id)+'" data-name="'+esc(p.displayName)+'">设置交接预设</button>':'')+'</details><div class="staff-tabs" role="group" aria-label="下属工作类型">'+[['schedule','日程'],['logs','日志']].map(([tab,label])=>'<button type="button" data-action="p-staff-tab" data-tab="'+tab+'" aria-pressed="'+(s.tab===tab)+'">'+label+'</button>').join('')+'</div>'+dateBar+'<div class="staff-content">'+content+'</div>'+(!s.loading&&!s.error&&s.next!=null?'<button type="button" class="btn staff-more" data-action="p-staff-more">加载更早日志</button>':'')+'</section>',foot:'',rebuild:function(){if(staff!==s||s.epoch!==P.epoch)return {title:'人员工作',body:'<p>请重新打开人员资料。</p>',returnContext:'staff'};s.rows=[];s.loading=true;s.restoreScroll=true;setTimeout(()=>{if(staff===s&&s.epoch===P.epoch)refreshStaff(false);},0);return staffView();}};
+    const content=s.loading?'<div class="staff-state" role="status">正在读取'+(s.tab==='schedule'?'日程':'日志')+'…</div>':s.error?'<div class="staff-state" role="alert">'+esc(s.error)+'<button type="button" class="btn" data-action="p-staff-retry">重新读取</button></div>':s.tab==='schedule'?(s.mode==='month'?staffScheduleCalendarHTML(s):staffDayHTML()):staffLogCalendarHTML(s);
+    return {title:p.displayName+'的工作',fullscreen:true,subordinate:true,body:'<section class="staff-panel" data-staff-panel="'+esc(p.id)+'"><header class="staff-person"><span class="staff-avatar">'+esc(Array.from(p.displayName||'')[0]||'人')+'</span><div><h2>'+esc(p.displayName)+'</h2><p>'+esc(P.staffOrgLine(p))+'</p></div></header><div class="staff-tabs" role="group" aria-label="下属工作类型">'+[['schedule','日程'],['logs','日志']].map(([tab,label])=>'<button type="button" data-action="p-staff-tab" data-tab="'+tab+'" aria-pressed="'+(s.tab===tab)+'">'+label+'</button>').join('')+'</div>'+dateBar+'<div class="staff-content">'+content+'</div>'+'<div id="staff-day-popup-host">'+staffDaySheetHTML(s)+'</div></section>',foot:'',rebuild:function(){if(staff===s){s.loading=true;s.restoreScroll=this.savedScroll??0;s.restoreFocus=this.savedFocus||null;setTimeout(()=>refreshStaff(),0);}return staffView();}};
   }
+  function staffCardView(){
+    if(!staff)return null;
+    const p=staff.person;
+    return {title:p.displayName+'的资料',subordinate:true,body:'<div class="profile-details">'+row("职务",P.staffOrgLine(p))+row("直属上级",superior(p))+
+      (p.phone?row("手机号",p.phone):"")+employmentRows(p)+'</div><div class="action-grid"><button type="button" class="btn primary" data-action="p-staff-enter" data-tab="schedule">查看日程</button><button type="button" class="btn" data-action="p-staff-enter" data-tab="logs">查看日志</button></div>',
+      foot:withBack(button('sheet-close','关闭'))};
+  }
+  P.subordinateKey = function () { return staff && staff.epoch === P.epoch ? staff.person.id + ':' + P.epoch : null; };
   function staffCurrent(s,seq){return staff===s&&s.epoch===P.epoch&&seq===staffSequence&&!!document.querySelector('[data-staff-panel="'+s.person.id+'"]');}
-  async function refreshStaff(more){
-    const s=staff;if(!s||s.epoch!==P.epoch)return;
-    return (async()=>{
-      const seq=++staffSequence, queryRange=staffQueryRange(s);s.loading=true;s.error=null;if(!more)s.rows=[];replaceTopSheet(staffView());
-      try{
-        const directory=await P.request('/me/reports');
-        if(!(directory.items||[]).some(p=>p.id===s.person.id))throw Error('已无权查看该人员，请关闭后刷新下属资料。');
-        const person=await P.request('/users/'+encodeURIComponent(s.person.id));
-        let rows=[],next=null,effectiveRows=[];
-        if(s.tab==='logs'){
-          if(!person.canReadLogs)throw Error('当前无权查看此人的日志。');
-          const result=await P.request('/work-logs?scope=visible&authorId='+encodeURIComponent(person.id)+'&limit=10&offset='+(more?s.next:0));
-          rows=result.items||[];next=result.nextOffset??null;
-        }else{
-          let offset=0;do{
-            const result=await P.request('/tasks?assigneeId='+encodeURIComponent(person.id)+'&calendarPreview=true&from='+queryRange.start+'&to='+shiftStaffDate(queryRange.end,-1)+'&limit=100&offset='+offset);
-            rows.push(...(result.items||[]));const cursor=result.nextCursor??result.nextOffset;
-            if(cursor==null)break;if(Number(cursor)<=offset)throw Error('日程分页异常，请重新读取。');offset=Number(cursor);
-          }while(true);
-          const start=P.companyDayStart(queryRange.start),end=P.companyDayStart(queryRange.end);
-          effectiveRows=rows;rows=rows.map(raw=>P.calendarTask(P.mapTask(raw)).raw).filter(r=>{const range=taskRange(r);return +range.start===+range.end?range.start>=start&&range.start<end:range.end>start&&range.start<end;}).sort((a,b)=>+taskRange(a).start-+taskRange(b).start||String(a.taskId||a.id).localeCompare(String(b.taskId||b.id)));
-        }
-        if(!staffCurrent(s,seq))return;
-        effectiveRows.forEach(raw=>P.upsertTask(raw));
-        P.rememberPeople([person]);s.person=person;s.rows=more?s.rows.concat(rows):rows;s.next=next;s.loading=false;replaceTopSheet(staffView());restoreStaffAxis();
-      }catch(error){if(!staffCurrent(s,seq))return;s.rows=[];s.next=null;s.person=Object.assign({},s.person,{canSetHandoverPreset:false});delete s.person.phone;s.loading=false;s.error=error.message;replaceTopSheet(staffView());}
-    })();
+  async function refreshStaff(){
+    const s=staff;
+    if(!s||s.epoch!==P.epoch)return;
+    const seq=++staffSequence, current=()=>staffCurrent(s,seq);
+    s.loading=true;
+    s.error=null;
+    s.rows=[];
+    P.subordinateTasks.clear();
+    P.subordinateLogs.clear();
+    replaceTopSheet(staffView());
+    try {
+      const directory=await P.request('/me/reports');
+      if (!current()) return;
+      if (!(directory.items||[]).some(p=>p.id===s.person.id)) throw Error('已无权查看该人员，请关闭后刷新下属资料。');
+      const person=await P.request('/users/'+encodeURIComponent(s.person.id));
+      if (!current()) return;
+      s.person=person;
+      if (s.tab==="logs") {
+        if (!person.canReadLogs) throw Error('当前无权查看此人的日志。');
+        s.logDate=s.months.logs.position ? s.months.logs.position.month+"-01" : s.logDate || P.data.home.businessDate;
+        prepareStaffMonths(s.months.logs,s.logDate);
+      } else if (s.mode==="month") {
+        prepareStaffMonths(s.months.schedule,s.date);
+      } else {
+        const result=await readStaffSchedule(s,s.date,shiftStaffDate(s.date,1),current);
+        if (!result || !current()) return;
+        s.rows=result.rows;
+        result.tasks.forEach(task=>P.subordinateTasks.set(task.id,task));
+      }
+      s.loading=false;
+      replaceTopSheet(staffView());
+      if (s.tab==="logs"||s.mode==="month") bindStaffMonthCalendar(s);
+      else restoreStaffAxis();
+      if (s.restoreScroll!=null) {
+        sheetBodyEl.scrollTop=s.restoreScroll;
+        s.restoreScroll=null;
+      }
+      restoreStaffFocus(s);
+    } catch(error) {
+      if (!current()) return;
+      P.subordinateTasks.clear();
+      P.subordinateLogs.clear();
+      s.rows=[];
+      s.daySheetDate=null;
+      s.person={id:s.person.id,displayName:s.person.displayName};
+      s.months.logs.entries.clear();
+      s.months.schedule.entries.clear();
+      s.loading=false;
+      s.error=error.message;
+      replaceTopSheet(staffView());
+    }
   }
   function openPerson(id){
     const person=reports().find(p=>p.id===id);
     if(!person){P.notice('当前下属资料中没有此人，请刷新后重试。');return;}
-    staff={person,epoch:P.epoch,tab:'schedule',mode:'month',dayFormat:'axis',date:P.data.home.businessDate,rows:[],next:null,loading:true,error:null};
-    openSheet(staffView());return refreshStaff(false);
+    staff={person,epoch:P.epoch,tab:'schedule',mode:'month',dayFormat:'axis',date:P.data.home.businessDate,rows:[],loading:false,error:null,daySheetDate:null,logDate:null,months:{logs:monthState(),schedule:monthState()}};
+    P.subordinateTasks.clear();P.subordinateLogs.clear();
+    openSheet(staffCardView());
+    return P.busy(async()=>{const raw=await P.request('/users/'+encodeURIComponent(id));if(staff?.person.id!==id||staff.epoch!==P.epoch)return;staff.person=raw;replaceTopSheet(staffCardView());});
   }
   function openPersonLogs(id){openPerson(id);}
+  function openStaffDaySheet(date,trigger){
+    if (!staff) return;
+    staff.date=date;
+    staff.daySheetDate=date;
+    staff.dayTrigger=trigger;
+    staff.dayOuterScroll=sheetBodyEl.scrollTop;
+    const scroller=document.getElementById("staffScheduleScroll");
+    if (scroller) {
+      staff.months.schedule.position=staffMonthAnchor(scroller);
+      scroller.querySelectorAll('button.staff-month-date[aria-pressed="true"]').forEach(cell=>cell.setAttribute("aria-pressed","false"));
+      scroller.querySelector('button.staff-month-date[data-date="'+date+'"]')?.setAttribute("aria-pressed","true");
+    }
+    const entry=staff.months.schedule.entries.get(date.slice(0,7));
+    entry?.tasks.forEach(task=>P.subordinateTasks.set(task.id,task));
+    syncStaffDaySheet(staff);
+    document.querySelector('#staff-day-popup-host button')?.focus({preventScroll:true});
+  }
+  function changeStaffDate(date) {
+    staff.date=date;
+    resetStaffMonth(staff,"schedule");
+    return refreshStaff();
+  }
 
   renderMe = function () {
     const user = me();
@@ -194,8 +473,8 @@
         '<div class="field avatar-upload"><label for="profile-avatar-file">上传照片（PNG / JPG，最大10MB）</label><input id="profile-avatar-file" type="file" accept="image/png,image/jpeg"><p class="tiny muted" id="avatar-upload-status" role="status">' + (/^data:image\//.test(raw.avatar || "") ? '照片已选好，保存资料后生效。' : '照片会自动裁成方形，保存资料后生效。') + '</p></div>' +
         row("姓名", raw.displayName) + row("登录手机号", raw.phone) +
         field("profile-email", "email", "邮箱（选填）", raw.email, 254, "email", false) +
-        '<p class="tiny muted">邮箱仅本人可见，留空可清除。</p><div class="divider"></div>' + readonlyRows(raw) +
-        '<div class="callout reject" id="profile-error" role="alert" hidden></div>',
+        '<p class="tiny muted">姓名和登录手机号由管理员维护。邮箱仅本人可见，可留空清除。</p><div class="divider"></div>' + readonlyRows(raw) +
+        '<p class="tiny muted">账号、部门、身份和直属上级由管理员维护。</p><div class="callout reject" id="profile-error" role="alert" hidden></div>',
       foot: button("sheet-back", "返回设置") + button("p-save-profile", "保存资料", "primary")
     };
   }
@@ -274,7 +553,7 @@
       body: '<div class="field"><label for="cp-current">当前密码</label><input id="cp-current" type="password" autocomplete="current-password" required data-autofocus></div>' +
         '<div class="field"><label for="cp-new">新密码</label><input id="cp-new" type="password" autocomplete="new-password" required></div>' +
         '<div class="field"><label for="cp-confirm">确认新密码</label><input id="cp-confirm" type="password" autocomplete="new-password" required></div>' +
-        '<p class="tiny muted">至少10个字符，包含字母和数字，最多72字节。修改后需重新登录。</p>' +
+        '<p class="tiny muted">至少10个字符，须同时包含字母和数字，UTF-8 长度不超过72字节。修改成功后包括当前会话在内的全部会话失效，需重新登录。</p>' +
         '<div class="callout reject" id="password-error" role="alert" hidden></div>',
       foot: button("sheet-back", "返回设置") + button("p-save-password", "修改密码", "primary")
     };
@@ -302,16 +581,48 @@
   runAction = function (element) {
     const action=element.dataset.action;
     if(action==='p-report-toggle') {const id=element.dataset.id;if(expandedReports.has(id))expandedReports.delete(id);else expandedReports.add(id);renderMe();document.querySelector('[data-action="p-report-toggle"][data-id="'+id+'"]')?.focus();return;}
-    if(action==='p-staff-log')return openLogDetail(element.dataset.id);
+    if(action==='p-staff-log' && staff) {
+      staff.logSelected=element.dataset.date;
+      return openLogDetail(element.dataset.id);
+    }
+    if(staff && action==='p-staff-log-retry') {
+      const scroller=document.getElementById("staffLogScroll");
+      if (scroller) return loadStaffLogMonth(staff,element.dataset.date,scroller);
+    }
+    if(staff && action==='p-staff-log-today')return jumpStaffLogs(P.data.home.businessDate);
+    if(staff && (action==='p-staff-log-prev'||action==='p-staff-log-next')) {
+      const date=staff.months.logs.position?.month ? staff.months.logs.position.month+"-01" : staff.logDate;
+      return jumpStaffLogs(toDateInput(P.calendar.shiftMonth(parseDateInput(date),action.endsWith("prev")?-1:1)));
+    }
+    if(staff && action==='p-staff-schedule-retry') {
+      const scroller=document.getElementById("staffScheduleScroll");
+      if (scroller) return loadStaffScheduleMonth(staff,element.dataset.date,scroller);
+    }
+    if(action==='p-staff-enter'&&staff){staff.tab=element.dataset.tab==='logs'?'logs':'schedule';staff.daySheetDate=null;openSheet(staffView());return refreshStaff();}
+    if(action==='p-staff-day-close'&&staff){
+      const date=staff.daySheetDate, trigger=staff.dayTrigger;
+      staff.daySheetDate=null;staff.dayTrigger=null;
+      syncStaffDaySheet(staff);
+      sheetBodyEl.scrollTop=staff.dayOuterScroll || 0;
+      (trigger?.isConnected?trigger:document.querySelector('#staffScheduleScroll [data-date="'+date+'"]'))?.focus({preventScroll:true});
+      return;
+    }
+    if(action==='p-staff-day-view'&&staff){staff.date=staff.daySheetDate;staff.daySheetDate=null;staff.mode='day';return refreshStaff();}
     if(action?.startsWith('p-staff-')&&staff){
       if(action==='p-staff-tab')staff.tab=element.dataset.tab==='logs'?'logs':'schedule';
-      if(action==='p-staff-date'){staff.date=element.dataset.date;staff.mode='day';}
+      if(action==='p-staff-date'){if(staff.mode==='month')return openStaffDaySheet(element.dataset.date,element);return changeStaffDate(element.dataset.date);}
       if(action==='p-staff-mode')staff.mode=element.dataset.mode==='day'?'day':'month';
+      staff.daySheetDate=null;
       if(action==='p-staff-format'){staff.dayFormat=element.dataset.format==='list'?'list':'axis';replaceTopSheet(staffView());restoreStaffAxis();return;}
-      if(action==='p-staff-nav'){const d=parseDateInput(staff.date),step=Number(element.dataset.step);staff.date=staff.mode==='month'?toDateInput(new Date(d.getFullYear(),d.getMonth()+step,1)):shiftStaffDate(staff.date,step);}
+      if(action==='p-staff-nav'){
+        const step=Number(element.dataset.step);
+        if (staff.mode==='day') return changeStaffDate(shiftStaffDate(staff.date,step));
+        const month=staff.months.schedule.position?.month || staff.date.slice(0,7);
+        return changeStaffDate(toDateInput(P.calendar.shiftMonth(P.calendar.monthFromKey(month),step)));
+      }
       if(action==='p-staff-week')staff.date=shiftStaffDate(staff.date,Number(element.dataset.step));
-      if(action==='p-staff-today')staff.date=P.data.home.businessDate;
-      return refreshStaff(action==='p-staff-more');
+      if(action==='p-staff-today')return changeStaffDate(P.data.home.businessDate);
+      return refreshStaff();
     }
     if (element.dataset.action === "p-open-settings") return openSettings();
     if (element.dataset.action === "p-select-avatar") return selectAvatar(element.dataset.avatar);
@@ -325,9 +636,20 @@
   };
   document.addEventListener('keydown',event=>{
     if(event.target.matches?.('.staff-month-event,.staff-axis-event')&&['Enter',' '].includes(event.key)){
-      event.preventDefault();event.stopPropagation();openTaskDetail(event.target.dataset.task);
+      event.preventDefault();event.stopPropagation();
+      if(event.target.matches('.staff-month-event')){
+        const week=event.target.closest('.staff-month-week');
+        openStaffDaySheet(shiftStaffDate(week.dataset.weekStart,Number(event.target.dataset.colStart)),event.target);
+      } else openTaskDetail(event.target.dataset.task);
     }
   });
-  document.addEventListener('change',function(event){if(event.target.id==='staff-calendar-date'&&staff){const value=event.target.value,d=parseDateInput(value);if(d&&toDateInput(d)===value){staff.date=value;refreshStaff(false);}}});
+  document.addEventListener('click',event=>{
+    const bar=event.target.closest?.('.staff-month-event');
+    if(!bar||!staff)return;
+    const week=bar.closest('.staff-month-week'),track=week.querySelector('.staff-month-tracks');
+    const rect=track.getBoundingClientRect(),column=Math.max(Number(bar.dataset.colStart),Math.min(Number(bar.dataset.colEnd)-1,Math.floor((event.clientX-rect.left)/(rect.width/7))));
+    event.preventDefault();event.stopImmediatePropagation();openStaffDaySheet(shiftStaffDate(week.dataset.weekStart,column),bar);
+  },true);
+  document.addEventListener('change',function(event){if(event.target.id==='staff-log-month'&&staff&&parseDateInput(event.target.value+'-01'))return jumpStaffLogs(event.target.value+'-01');if(event.target.id==='staff-calendar-date'&&staff){const value=event.target.value,d=parseDateInput(value);if(d&&toDateInput(d)===value){changeStaffDate(value);}}});
   RENDER.me = renderMe;
 })();

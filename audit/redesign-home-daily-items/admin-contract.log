@@ -1,0 +1,42 @@
+PASS  disposable fixture service is healthy and seeded
+PASS  retired authorization tables are absent from the final schema
+PASS  GET /admin/roles is retired with 410
+PASS  POST /admin/employees/{id}/roles is retired with 410
+PASS  direct department creation requires the complete organization plan
+PASS  legacy role/rank rows do not change the fixed /me identity
+PASS  creation reviewer is the real direct manager before the position rename
+PASS  sequential eleventh company item is refused with HOME_ITEM_LIMIT
+PASS  company information is capped at ten and admin/App order agree
+PASS  real departure work and unpublished creation are prepared
+PASS  real approval requests and notification copies exist for boundary checks
+PASS  notification at 179.x seconds is withdrawable through the admin API
+PASS  179.x withdrawal clears the copy but keeps the approval request and task history
+PASS  withdrawal writes the immutable notification.withdrawn audit record
+PASS  admin task history still opens after notification withdrawal
+PASS  notification at 180 seconds is refused with WITHDRAW_WINDOW_CLOSED
+PASS  refused withdrawal leaves the event, copy and approval request untouched
+PASS  employee token is refused by GET /admin/users
+PASS  employee token is refused by POST /admin/positions
+PASS  employee token is refused by GET /admin/notifications
+PASS  employee token is refused by GET /admin/company
+PASS  administrator can read the management employee list
+PASS  administrator can read notification management
+PASS  administrator can read company information
+PASS  employee pages contain no management API path
+PASS  admin markup has no retired role/scope/rank/manual-manager editor
+PASS  real Chrome admin browser suite exits successfully
+PASS  browser report preserves every existing admin-browser check
+PASS  browser report ran every task 6.3 contract check
+PASS  browser report result is PASS
+PASS  administrator re-authenticates after the preserved account-rename check
+PASS  browser position rename left every authorization-relevant placement field unchanged
+PASS  browser position rename left the creation reviewer and route basis unchanged
+PASS  browser created and renamed display positions without touching the placement id
+PASS  browser reorder persists and the App reads the identical admin order
+PASS  eleventh company item is still refused after the browser reorder
+PASS  browser under-180 withdrawal clears the copy but keeps the approval request and task history
+PASS  browser 180+ refusal left the closed-window notification unrevoked and readable
+PASS  browser withdrawal wrote its own immutable audit record
+PASS  real fixture service log was produced
+
+PASS: 40 passed, 0 failed -> /Users/watuji/MyGitDev/software_test_practice/audit/refactor-pandora-organization-and-workflows/admin-contract-check.json

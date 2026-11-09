@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-29T02:11:29.886025+00:00",
+  "updated": "2026-11-01T09:42:36.773455+00:00",
   "checks": [
     {
       "check": "create real task for alpha-one-employee",
@@ -63,10 +63,11 @@
       "evidence": null
     },
     {
-      "check": "valid takeover directly applies qualified applicant becoming reviewer",
+      "check": "valid takeover keeps the pending review with the applicant direct manager",
       "pass": true,
       "evidence": {
         "status": 200,
+        "refreshed": 0,
         "code": null
       }
     },
@@ -76,17 +77,35 @@
       "evidence": null
     },
     {
-      "check": "pending request has one direct terminal with original applicant decision",
+      "check": "takeover rewrites neither the applicant nor the reviewer of the pending request",
       "pass": true,
       "evidence": null
     },
     {
-      "check": "direct business event records applicant and administrative refresh separately",
+      "check": "pending business event records the applicant and the applicant direct manager",
       "pass": true,
       "evidence": null
     },
     {
-      "check": "takeover applied progress exactly once",
+      "check": "takeover does not publish the pending progress",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "qualified participant reads approve",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "applicant direct manager approves the progress after takeover",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "approved progress applies exactly once",
       "pass": true,
       "evidence": null
     },
@@ -101,7 +120,29 @@
       "evidence": null
     },
     {
-      "check": "receiver can continue base edits directly",
+      "check": "receiver base edit waits for the applicant direct manager",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "outcome": "pending",
+        "code": null
+      }
+    },
+    {
+      "check": "qualified participant reads approve",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "applicant direct manager approves the base edit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "approved base edit changes the effective title",
       "pass": true,
       "evidence": null
     },
@@ -142,17 +183,27 @@
       "evidence": null
     },
     {
-      "check": "takeover to another employee reassigns active request",
+      "check": "takeover to another employee succeeds",
       "pass": true,
       "evidence": null
     },
     {
-      "check": "old reviewer cannot read old diff",
+      "check": "applicant direct manager keeps the review after reassignment",
       "pass": true,
       "evidence": null
     },
     {
-      "check": "old reviewer cannot decide from old page",
+      "check": "new business owner cannot read the pending diff",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "old business owner cannot read the pending diff",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "new business owner cannot decide the pending request",
       "pass": true,
       "evidence": null
     },
@@ -165,7 +216,7 @@
       }
     },
     {
-      "check": "new current business owner can approve",
+      "check": "applicant direct manager approves after reassignment",
       "pass": true,
       "evidence": null
     },
@@ -201,7 +252,7 @@
       "evidence": null
     },
     {
-      "check": "expired applicant-becomes-reviewer request stays expired and ineffective",
+      "check": "expired pending request stays expired and ineffective after takeover",
       "pass": true,
       "evidence": null
     },
@@ -227,7 +278,29 @@
       "evidence": null
     },
     {
-      "check": "self completion directly applies",
+      "check": "self completion waits for the applicant direct manager",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "outcome": "pending",
+        "code": null
+      }
+    },
+    {
+      "check": "qualified participant reads approve",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "applicant direct manager approves the completion",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "approved completion leaves the task done",
       "pass": true,
       "evidence": null
     },
@@ -271,7 +344,7 @@
       }
     },
     {
-      "check": "business owner approves departure handover",
+      "check": "applicant direct manager approves departure handover",
       "pass": true,
       "evidence": null
     },
@@ -367,12 +440,25 @@
       "evidence": null
     },
     {
-      "check": "takeover owner reopens completed work with ordered active replacements",
+      "check": "takeover owner reopen waits for the applicant direct manager",
       "pass": true,
       "evidence": {
         "status": 200,
         "code": null
       }
+    },
+    {
+      "check": "qualified participant reads approve",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "applicant direct manager approves the takeover reopen",
+      "pass": true,
+      "evidence": null
     },
     {
       "check": "reopen increments round and never automatically assigns takeover owner",
@@ -407,8 +493,8 @@
       "pass": true,
       "evidence": {
         "statuses": [
-          409,
-          200
+          200,
+          409
         ]
       }
     },
@@ -430,8 +516,8 @@
       "pass": true,
       "evidence": {
         "statuses": [
-          409,
-          200
+          200,
+          409
         ]
       }
     }

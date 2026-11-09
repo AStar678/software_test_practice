@@ -14,9 +14,23 @@ if name not in {'mysql', 'backend', 'demo'}:
     raise SystemExit('unknown project service')
 pidfile = runtime / (name + '.pid')
 if sys.argv[1] == 'start':
-    with (runtime / (name + '-console.log')).open('ab') as log:
-        process = subprocess.Popen(sys.argv[3:], cwd=base, stdin=subprocess.DEVNULL,
-                                   stdout=log, stderr=log, start_new_session=True, close_fds=True)
+    log_path = runtime / (name + '-console.log')
+    with log_path.open('ab') as log:
+        log_start = log.tell()
+        try:
+            process = subprocess.Popen(sys.argv[3:], cwd=base, stdin=subprocess.DEVNULL,
+                                       stdout=log, stderr=log, start_new_session=True, close_fds=True)
+        except OSError as error:
+            raise SystemExit(f'{name} 无法启动：{error}')
+    # Loader errors and invalid server options often terminate before a readiness probe.
+    # Show only this attempt's output, so an old failure cannot masquerade as the cause.
+    time.sleep(0.25)
+    if process.poll() is not None:
+        print(f'{name} 启动进程已退出（退出码 {process.returncode}），日志：{log_path}', file=sys.stderr)
+        with log_path.open('rb') as log:
+            log.seek(max(log_start, log_path.stat().st_size - 8192))
+            print(log.read().decode(errors='replace'), file=sys.stderr)
+        raise SystemExit(1)
     if name in {'backend', 'demo'}:
         pidfile.write_text(str(process.pid))
         pidfile.chmod(0o600)

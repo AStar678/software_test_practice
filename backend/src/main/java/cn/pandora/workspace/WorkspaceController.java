@@ -11,15 +11,16 @@ import java.util.Map;
 public class WorkspaceController {
     private final WorkspaceService workspace;
     private final CommentService comments;
+    private final DailyItemService dailyItems;
     private final Writes writes;
     /** Test seam kept for controller-only unit tests; production injects the dependency explicitly. */
     public WorkspaceController(WorkspaceService workspace,Writes writes) {
-        this(workspace,null,writes);
+        this(workspace,null,null,writes);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
-    public WorkspaceController(WorkspaceService workspace,CommentService comments,Writes writes) {
-        this.workspace=workspace;this.comments=comments;this.writes=writes;
+    public WorkspaceController(WorkspaceService workspace,CommentService comments,DailyItemService dailyItems,Writes writes) {
+        this.workspace=workspace;this.comments=comments;this.dailyItems=dailyItems;this.writes=writes;
     }
 
     @GetMapping("/me") public Map<String,Object> me(@RequestAttribute("actor") Actor a) {return workspace.me(a);}
@@ -43,9 +44,28 @@ public class WorkspaceController {
         workspace.checkHomeItemWriteAccess(a,id);
         return writes.run(a,key,"DELETE /home/items/"+id,Map.of(),match,()->workspace.deleteHomeItem(a,id,match));
     }
+    /* Daily items: private to the actor; every route filters by organization and owner. */
+    @GetMapping("/daily-items/summary") public Map<String,Object> dailySummary(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return dailyItems.summary(a,filters);}
+    @GetMapping("/daily-items") public Map<String,Object> dailyList(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return dailyItems.list(a,filters);}
+    @GetMapping("/daily-items/{id}") public ResponseEntity<Map<String,Object>> dailyDetail(@RequestAttribute("actor") Actor a,@PathVariable String id) {
+        var result=dailyItems.detail(a,id);return ResponseEntity.ok().eTag("\""+result.get("rowVersion")+"\"").body(result);
+    }
+    @PostMapping("/daily-items") public Map<String,Object> createDailyItem(@RequestAttribute("actor") Actor a,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestBody Map<String,Object> body) {
+        return writes.run(a,key,"POST /daily-items",body,null,()->dailyItems.create(a,body));
+    }
+    @PatchMapping("/daily-items/{id}") public Map<String,Object> changeDailyItem(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestHeader(value="If-Match",required=false) String match,@RequestBody Map<String,Object> body) {
+        return writes.run(a,key,"PATCH /daily-items/"+id,body,match,()->dailyItems.change(a,id,match,body));
+    }
+    @DeleteMapping("/daily-items/{id}") public Map<String,Object> deleteDailyItem(@RequestAttribute("actor") Actor a,@PathVariable String id,@RequestHeader(value="Idempotency-Key",required=false) String key,@RequestHeader(value="If-Match",required=false) String match) {
+        return writes.run(a,key,"DELETE /daily-items/"+id,Map.of(),match,()->dailyItems.delete(a,id,match));
+    }
     @GetMapping("/work-logs") public Map<String,Object> logs(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.logs(a,filters);}
     /** Author filter (list + tree) for the log page, limited to the reader's log range. */
     @GetMapping("/work-log-authors") public Map<String,Object> logAuthors(@RequestAttribute("actor") Actor a,@RequestParam Map<String,String> filters) {return workspace.logAuthors(a,filters);}
+    @GetMapping("/work-logs/reference-preview")
+    public Map<String,Object> logReferences(@RequestAttribute("actor") Actor a, @RequestParam String businessDate) {
+        return workspace.logReferences(a,businessDate);
+    }
     @GetMapping("/work-logs/{id}") public ResponseEntity<Map<String,Object>> log(@RequestAttribute("actor") Actor a,@PathVariable String id) {
         var result=workspace.log(a,id);return ResponseEntity.ok().eTag("\""+result.get("rowVersion")+"\"").body(result);
     }

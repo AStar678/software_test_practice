@@ -3,16 +3,39 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
-<title>潘多拉 · 工作台</title>
+<title>潘多拉 · 首页</title>
 <meta name="theme-color" content="#fff9fc" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <script>if (location.protocol === 'file:') location.replace('http://127.0.0.1:8080/' + location.search + location.hash);</script>
 <link rel="stylesheet" href="潘多拉-交互原型.css?v=77d2420332cf" />
 <link rel="stylesheet" href="潘多拉-界面调整.css?v=4444b358ce21" />
-<link rel="stylesheet" href="潘多拉-正式版.css?v=6248af15efff" />
-<link rel="stylesheet" href="潘多拉-日历.css?v=b8c2b488ed26" />
-<link rel="stylesheet" href="潘多拉-任务表单.css?v=31edf8ca61b7" />
-<link rel="stylesheet" href="潘多拉-手账主题.css?v=d8f7d0e8f0bf" />
+<link rel="stylesheet" href="潘多拉-正式版.css?v=8b3dc274e440" />
+<link rel="stylesheet" href="潘多拉-日历.css?v=c3cc73d61850" />
+<link rel="stylesheet" href="潘多拉-任务表单.css?v=0b5b0dedfc38" />
+<link rel="stylesheet" href="潘多拉-手账主题.css?v=7d33509cd538" />
+<link rel="stylesheet" href="潘多拉-每日事项.css?v=a145b3db3b68" />
+<style>
+.android-native .app:not(.is-auth) #tabbar { display: grid !important; }
+</style>
+<script>
+if (/PandoraAndroid\/2/.test(navigator.userAgent)) {
+  let androidUI;
+  Object.defineProperty(window, "AndroidUI", {
+    configurable: true,
+    get() { return androidUI; },
+    set(adapter) {
+      androidUI = {
+        ...adapter,
+        snapshot() {
+          // The installed shell hides its built-in tabs while its overlay flag is set.
+          // Keep its title and notification bridge active while the website owns the tabs.
+          return { ...adapter.snapshot(), overlay: true };
+        }
+      };
+    }
+  });
+}
+</script>
 <link rel="icon" type="image/svg+xml" href="潘多拉-手账标记.svg?v=51ec58a6ecee" />
 </head>
 <body>
@@ -23,7 +46,7 @@
   <div class="phone">
     <div class="app is-auth">
       <header class="app-header">
-        <div class="app-brand" aria-label="潘多拉"><img src="潘多拉-手账标记.svg?v=51ec58a6ecee" alt="" width="32" height="32" /></div><h1 id="pageTitle">工作台</h1>
+        <div class="app-brand" aria-label="潘多拉"><img src="潘多拉-手账标记.svg?v=51ec58a6ecee" alt="" width="32" height="32" /></div><h1 id="pageTitle">首页</h1>
         <span class="who" id="whoami">—</span>
         <button class="bell" id="bellBtn" type="button" aria-label="通知">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
@@ -46,11 +69,11 @@
       <nav class="tabbar" id="tabbar" role="tablist" aria-label="主导航">
         <button type="button" role="tab" data-page="map" aria-selected="true" aria-controls="page-map">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-          <span>工作台</span>
+          <span>首页</span>
         </button>
         <button type="button" role="tab" data-page="view" aria-selected="false" aria-controls="page-view">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
-          <span>日程</span>
+          <span>公司</span>
         </button>
         <button type="button" role="tab" data-page="log" aria-selected="false" aria-controls="page-log">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
@@ -83,13 +106,14 @@
   </div>
 </div>
 
-<script src="潘多拉-交互原型.js?v=015eaca40811" defer></script>
-<script src="潘多拉-api.js?v=411359f38c7e" defer></script>
-<script src="潘多拉-任务接入.js?v=b9babb8796b1" defer></script>
-<script src="潘多拉-工作区接入.js?v=9d93cc657bec" defer></script>
-<script src="潘多拉-日程视图.js?v=4ac68ad5ce2f" defer></script>
-<script src="潘多拉-任务表单.js?v=8b7fae2e630c" defer></script>
-<script src="潘多拉-个人资料.js?v=5391c0917fc4" defer></script>
-<script src="潘多拉-标签评论.js?v=55f013154e9b" defer></script>
+<script src="潘多拉-交互原型.js?v=a33f9f0fe91b" defer></script>
+<script src="潘多拉-api.js?v=3fcad96d496d" defer></script>
+<script src="潘多拉-任务接入.js?v=430211da3945" defer></script>
+<script src="潘多拉-工作区接入.js?v=b7edc537fb14" defer></script>
+<script src="潘多拉-日程视图.js?v=0b020735d665" defer></script>
+<script src="潘多拉-任务表单.js?v=4d0981f2674e" defer></script>
+<script src="潘多拉-个人资料.js?v=cd18f41d0053" defer></script>
+<script src="潘多拉-标签评论.js?v=be7852ecc865" defer></script>
+<script src="潘多拉-每日事项.js?v=69d32d992f61" defer></script>
 </body>
 </html>

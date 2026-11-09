@@ -1,0 +1,134 @@
+PASS login form is ready
+PASS employee login loads the home page
+PASS navigation uses 首页 and 公司 while keeping five entries
+PASS home has exactly 事件纪、任务看板、每日事项 and no old log/personal card
+PASS the daily section spans both columns below the two upper cards
+PASS task items keep their title and a fully visible right-aligned priority
+PASS calendar shows a fixed Monday-to-Sunday header and seven-row week columns
+PASS the calendar exposes real month labels, a horizontal scroller and a floating add action
+PASS the loaded week sequence is consecutive with no duplicate date
+PASS the calendar initially positions the company today inside the viewport
+PASS day 0 renders 1 open item(s) with the clamped marker width 4
+PASS day 1 renders 2 open item(s) with the clamped marker width 7
+PASS day 2 renders 3 open item(s) with the clamped marker width 10
+PASS day 3 renders 4 open item(s) with the clamped marker width 13
+PASS day 4 renders 5 open item(s) with the clamped marker width 16
+PASS day 5 renders 6 open item(s) with the clamped marker width 16
+PASS a mixed day shows blue and grey marks side by side with exact accessible counts
+PASS a horizontal drag does not open a day list
+PASS the calendar scrolls horizontally within its own region
+PASS arrow keys move focus between real date cells
+PASS Enter opens the day list for the keyboard-focused date
+PASS the day list shows that date, its items and a create action
+PASS an empty day shows an empty state and a create action
+PASS creating from a day uses that day as the default date
+PASS saving creates a real item with the plain text preserved
+PASS the empty day now shows one open marker
+PASS the inline completion control never opens the detail and keeps the row in place
+PASS the inline completion updates the calendar marker
+PASS toggling back restores the inline unchecked state
+PASS detail shows the date and the text literally without executing HTML
+PASS detail exposes the explicit completed state and its reverse action
+PASS the calendar marker follows a completion made in the detail
+PASS reopening the item restores the open count
+PASS saving an edit returns to the original day list
+PASS moving the item updates both real days
+PASS confirming deletion returns to the original day list
+PASS the deleted item no longer exists on the server or in the open list
+PASS a failed save keeps the form open with the draft and an explicit error
+PASS retrying the same draft after connectivity returns saves exactly one item
+PASS a day with more than one page reaches every item without duplicates
+PASS complete seven-row calendar and safe floating add at 320
+PASS the complete daily section is reachable without being covered by the navigation at 320
+PASS complete seven-row calendar and safe floating add at 390
+PASS the complete daily section is reachable without being covered by the navigation at 390
+PASS complete seven-row calendar and safe floating add at 1440
+PASS the complete daily section is reachable without being covered by the navigation at 1440
+PASS a short screen keeps the seven-row calendar and the add action above the navigation
+PASS a remote leap February loads with a Monday first cell, February 29 and no duplicate dates
+PASS 回到今天 returns to the company today month inside the viewport
+PASS switching to 公司 and back restores the daily horizontal position and anchor date
+PASS December to January stays one consecutive date sequence across the year boundary
+PASS a failed range load keeps the calendar and offers a retry instead of a confirmed zero
+PASS retrying the failed range loads its real counts
+PASS a loaded range with no items reports confirmed zero counts without drawing marks
+PASS Escape closes the day list and returns focus to its date cell
+PASS a second account logs in after the first logs out
+PASS switching accounts clears the previous daily state and never shows its counts
+
+57 browser checks passed
+PASS  V28 fixture writes a real task and log before the migration
+PASS  baseline is V28 and still holds the old personal item
+PASS  V29 creates daily_items and records the actual migration version
+PASS  V29 removes only the old personal home items
+PASS  V29 leaves tasks and logs byte-identical
+PASS  a valid leap-day item with internal newlines is created
+PASS  detail returns the exact leap date and plain text with rowVersion
+PASS  create rejects invalid leap date
+PASS  create rejects impossible month
+PASS  create rejects non-padded date
+PASS  create rejects blank body
+PASS  create rejects whitespace only
+PASS  create rejects unknown owner injection
+PASS  create rejects unknown task injection
+PASS  2000-character body boundary is accepted
+PASS  2001-character body is rejected without partial save
+PASS  completed must be an explicit boolean
+PASS  update without If-Match is rejected with 428
+PASS  stale version is rejected with 412 instead of silent overwrite
+PASS  date, body and completed are saved atomically with a new version
+PASS  completion is explicitly reversible
+PASS  one page is capped at 100 and reports the complete total
+PASS  the second page returns the remaining items without duplicates
+PASS  paging order is created_at then id, independent of completion
+PASS  items with identical bodies keep distinct real ids
+PASS  summary omits a truly zero day, so absence means zero
+PASS  summary counts 1 open item(s) on day 11
+PASS  summary counts 2 open item(s) on day 12
+PASS  summary counts 3 open item(s) on day 13
+PASS  summary counts 4 open item(s) on day 14
+PASS  summary counts 5 open item(s) on day 15
+PASS  summary counts 7 open item(s) on day 16
+PASS  summary keeps 105 items independent of the 100-row list page
+PASS  summary reports mixed open/completed counts
+PASS  summary reports an all-completed day as zero open
+PASS  summary rejects a range longer than 93 closed days
+PASS  summary rejects an inverted range
+PASS  same-team peer cannot read another person's daily list
+PASS  same-team peer cannot read another person's detail
+PASS  same-team peer cannot modify another person's item
+PASS  same-team peer cannot delete another person's item
+PASS  same-team peer summary does not expose another person's count
+PASS  department head cannot read another person's daily list
+PASS  department head cannot read another person's detail
+PASS  department head cannot modify another person's item
+PASS  department head cannot delete another person's item
+PASS  department head summary does not expose another person's count
+PASS  founder cannot read another person's daily list
+PASS  founder cannot read another person's detail
+PASS  founder cannot modify another person's item
+PASS  founder cannot delete another person's item
+PASS  founder summary does not expose another person's count
+PASS  other company cannot read another person's daily list
+PASS  other company cannot read another person's detail
+PASS  other company cannot modify another person's item
+PASS  other company cannot delete another person's item
+PASS  other company summary does not expose another person's count
+PASS  an independent administrator cannot use the employee daily-item API
+PASS  an invalid session is rejected
+PASS  the retired personal home-item create path is rejected
+PASS  daily-item maintenance writes no notification and leaves tasks/logs untouched
+PASS  the audit event carries the item identity but never its body and has no recipients
+PASS  the same create request replays without a duplicate item
+PASS  deleting and replaying the same idempotent request returns the cached result
+PASS  the deleted item is gone after the replayed delete
+PASS  one idempotency key cannot be reused for a different request
+PASS  the home board includes self-created tasks the actor currently owns
+PASS  the home board excludes completed, removed and not-created tasks
+PASS  the home board is capped at ten and ordered by assignment time then id
+PASS  the home response no longer carries personalItems or recentLogs
+PASS  another employee's board shows tasks assigned by someone else
+PASS  an unpublished creation never enters the board
+PASS  the administrator company-information limit still rejects the eleventh item
+
+73 checks passed; wrote /Users/watuji/MyGitDev/software_test_practice/audit/redesign-home-daily-items/daily-items-run.json

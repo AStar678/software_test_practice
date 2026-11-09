@@ -41,6 +41,31 @@ async function loginBrowser(browser, key) {
   await browser.evaluate(`document.getElementById('login-user').value=${JSON.stringify(person.identifier)};document.getElementById('login-password').value='Fixture@123456';document.getElementById('backend-login').requestSubmit()`);
   return waitFor(browser, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${JSON.stringify(person.id)}`);
 }
+async function pendingFor(key, taskId, kind) {
+  const token = await loginApi(key);
+  const list = (await api('GET', '/api/v1/approval-requests?mine=reviewer', { token })).body.items || [];
+  const row = list.find((item) => item.taskId === taskId && item.kind === kind && item.status === 'pending');
+  return row ? { ...row, id: row.requestId || row.id } : null;
+}
+async function waitPending(key, taskId, kind, timeout = 20000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    const row = await pendingFor(key, taskId, kind);
+    if (row) return row;
+    await sleep(300);
+  }
+  throw new Error('pending ' + kind + ' never appeared for ' + taskId);
+}
+async function approveAs(key, taskId, kind, comment) {
+  const row = await waitPending(key, taskId, kind);
+  const token = await loginApi(key);
+  const result = await api('PATCH', '/api/v1/approval-requests/' + row.id, {
+    token, key: 'chain-approve-' + kind + '-' + Date.now() + '-' + Math.random().toString(16).slice(2),
+    etag: '"' + row.rowVersion + '"', body: { decision: 'approve', comment },
+  });
+  if (result.status !== 200) throw new Error('approve ' + kind + ' ' + result.status + ' ' + JSON.stringify(result.body));
+  return result.body;
+}
 async function main() {
   const adminToken = await loginApi('admin');
   const employeeToken = await loginApi('beta-two-employee');
@@ -83,18 +108,22 @@ async function main() {
     await ee("document.querySelector('[data-action=edit-task]').click()");
     check('takeover recipient reaches the real edit form', await waitFor(employee, "!!document.getElementById('tf-title')"));
     await ee("document.getElementById('tf-title').value='Chain active edited by takeover recipient';document.getElementById('tf-reason').value='Takeover recipient continues base maintenance';document.querySelector('[data-action=save-task]').click()");
-    check('takeover recipient directly edits the active task', await waitFor(employee, `Pandora.idle()&&TASKS.some(t=>t.id===${JSON.stringify(fixture.active)}&&t.title==='Chain active edited by takeover recipient')`));
+    await waitPending('beta-two-head', fixture.active, 'change');
+    const pendingEdit = await api('GET', '/api/v1/tasks/' + fixture.active, { token: employeeToken });
+    check('takeover recipient base edit waits for the applicant direct manager', pendingEdit.body.title !== 'Chain active edited by takeover recipient', pendingEdit.body.title);
+    await approveAs('beta-two-head', fixture.active, 'change', 'Direct manager approves takeover maintenance');
+    await ee('Pandora.reload()');
+    check('manager approval publishes the takeover edit', await waitFor(employee, `Pandora.idle()&&TASKS.some(t=>t.id===${JSON.stringify(fixture.active)}&&t.title==='Chain active edited by takeover recipient')`));
     const activeDetail = await api('GET', '/api/v1/tasks/' + fixture.active, { token: employeeToken });
     const progress = await api('PATCH', '/api/v1/tasks/' + fixture.active, {
       token: alphaToken, key: 'chain-progress-' + Date.now(),
       etag: '"' + activeDetail.body.rowVersion + '"',
       body: { command: 'progress', progressNote: 'Progress after takeover' },
     });
-    check('assignee progress waits for the takeover business owner', progress.status === 200 && progress.body.outcome === 'pending', progress);
-    await ee(`Pandora.openApproval(${JSON.stringify(progress.body.requestId)})`);
-    check('takeover recipient opens the real review sheet', await waitFor(employee, "!!document.querySelector('[data-action=p-approve-request]')"));
-    await ee("document.querySelector('[data-action=p-approve-request]').click()");
-    check('takeover recipient approves the pending progress', await waitFor(employee, `Pandora.idle()&&TASKS.find(t=>t.id===${JSON.stringify(fixture.active)}).progressNote==='Progress after takeover'`));
+    check('assignee progress waits for the applicant direct manager', progress.status === 200 && progress.body.outcome === 'pending', progress);
+    await approveAs('alpha-one-head', fixture.active, 'progress', 'Direct manager approves the progress');
+    await ee('Pandora.reload()');
+    check('manager approval applies the pending progress', await waitFor(employee, `Pandora.idle()&&TASKS.find(t=>t.id===${JSON.stringify(fixture.active)}).progressNote==='Progress after takeover'`));
 
     await ee(`openTaskDetail(${JSON.stringify(fixture.completed)})`);
     check('takeover recipient opens the original completed task', await waitFor(employee, "!!document.querySelector('[data-action=p-reopen-task]')"));
@@ -104,7 +133,10 @@ async function main() {
     const later = new Date(Date.now() + 6 * 24 * 3600 * 1000);
     const date = (value) => value.toISOString().slice(0, 10);
     await ee(`document.querySelectorAll('[data-action=rp-owner-remove]').forEach(button=>button.click());document.getElementById('rp-owner-add').value=${JSON.stringify(ids['alpha-one-employee'].id)};document.querySelector('[data-action=rp-owner-add]').click();document.getElementById('rp-start-date').value=${JSON.stringify(date(future))};document.getElementById('rp-end-date').value=${JSON.stringify(date(later))};document.getElementById('rp-start-time-hour').value='09';document.getElementById('rp-start-time-minute').value='00';document.getElementById('rp-end-time-hour').value='18';document.getElementById('rp-end-time-minute').value='00';document.getElementById('reopen-reason').value='Takeover recipient reopens original completed work';document.querySelector('[data-action=p-confirm-reopen]').click()`);
-    check('takeover recipient reopens with a new round and active assignee', await waitFor(employee, `Pandora.idle()&&TASKS.find(t=>t.id===${JSON.stringify(fixture.completed)}).status!=='done'`) && await ee(`(()=>{const t=TASKS.find(t=>t.id===${JSON.stringify(fixture.completed)});return t.assigneeIds.length===1&&t.assigneeIds[0]===${JSON.stringify(ids['alpha-one-employee'].id)}&&t.businessOwnerId===${JSON.stringify(ids['beta-two-employee'].id)}&&t.creatorId===${JSON.stringify(ids['alpha-two-employee'].id)}})()`));
+    check('takeover recipient reopen waits for the applicant direct manager', !!(await waitPending('beta-two-head', fixture.completed, 'reopen')) && (await api('GET', '/api/v1/tasks/' + fixture.completed, { token: employeeToken })).body.executionState === 'done');
+    await approveAs('beta-two-head', fixture.completed, 'reopen', 'Direct manager approves the reopen');
+    await ee('Pandora.reload()');
+    check('manager approval reopens with a new round and active assignee', await waitFor(employee, `Pandora.idle()&&TASKS.find(t=>t.id===${JSON.stringify(fixture.completed)}).status!=='done'`) && await ee(`(()=>{const t=TASKS.find(t=>t.id===${JSON.stringify(fixture.completed)});return t.assigneeIds.length===1&&t.assigneeIds[0]===${JSON.stringify(ids['alpha-one-employee'].id)}&&t.businessOwnerId===${JSON.stringify(ids['beta-two-employee'].id)}&&t.creatorId===${JSON.stringify(ids['alpha-two-employee'].id)}})()`));
 
     await ae("selectTab('history',document.querySelector('[data-tab=history]'));loadHistory(0)");
     check('administrator locates the completed task in formal history', await waitFor(admin, `!!document.querySelector('[data-history-task="${fixture.completed}"]')`));

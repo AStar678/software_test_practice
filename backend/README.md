@@ -1,6 +1,6 @@
 # 潘多拉后端与本机演示
 
-Java 21 / Spring Boot 3.5.16 / MySQL / Flyway。后端托管根目录员工 Web 和独立 PC 管理端 `/admin.html`，API 前缀 `/api/v1`，`/health` 检查数据库连接。员工界面保留工作台、月/日日程、日志、统计和我的。
+Java 21 / Spring Boot 3.5.16 / MySQL / Flyway。后端托管根目录员工 Web 和独立 PC 管理端 `/admin.html`，API 前缀 `/api/v1`，`/health` 检查数据库连接。员工界面保留首页（事件纪、任务看板、每日事项）、公司页（月/日任务日程）、日志、统计和我的。
 
 ## 启动与演示
 
@@ -13,6 +13,8 @@ cd backend
 
 服务默认 http://127.0.0.1:8080，项目 MySQL 端口13306。普通启动 `PANDORA_SEED=false`，迁移保留已有数据，不自动初始化或清理。`./scripts/stop.sh` 停止应用但保留数据库。已有旧库先执行 [升级/恢复流程](docs/fixed-model-upgrade.md)。数据库凭据保存在本机 `.runtime`，不提交。
 
+启动会检查所需命令及 MySQL 客户端、服务端能否运行；失败会直接显示错误。服务启动后立即退出会显示本次日志，等待数据库、演示准备服务和后端就绪时定期输出进度，失败或超时附带最近日志；构建会显示 Maven 输出。macOS 上若 Homebrew 更新依赖后出现 `Library not loaded`，应修复或升级 MySQL，使其与依赖版本配套；升级前确认官方支持的升级路径。若兼容的旧版依赖仍在本机，也可临时用 `MYSQLD_LIBRARY_PATH` 指定其 `lib` 目录，此设置仅传给项目 MySQL，不修改 Homebrew 全局链接。依赖修复后正常启动无需此变量。启动日志位于 `.runtime/mysql-console.log` 和 `.runtime/mysql.log`。
+
 ### 演示：每次启动都是同一份初始数据
 
 演示统一用 `pandora_demo` 库，占 8080。脚本默认**整库重建**：停掉占用 8080 的本项目后端 → drop 并重建 `pandora_demo` → 重新授权 → 构建 JAR → `--initialize` 首次准备 → 以 `PANDORA_DB_URL` 指向演示库启动。普通库 `pandora` 不受影响。
@@ -23,6 +25,8 @@ cd backend
 ./scripts/start-demo.sh --keep   # 沿用上次演示数据（保留界面编辑）
 ./scripts/stop.sh                # 同时停止演示实例
 ```
+
+演示清单 v3 围绕客户工作台灰度上线组织四层角色、日志、通知和入职资料。已有 v2 演示库可用 `--keep` 继续使用并保留原数据。查看 v3 初始内容请使用新演示库。
 
 种子 UUID 由 seed key 确定性派生（`UUID.nameUUIDFromBytes("pandora.demo.v2/"+key)`），因此每次重建得到**逐位一致**的员工/任务/日志 ID，只有业务日期随启动当天取值。这也是本脚本选择「整库重建」而不是「清表」的原因：`DemoSeed` 的契约是幂等且**绝不删除或重置**已有数据，并拒绝在无标识的非空库上初始化；要拿到干净初始态只能重建库，不能在活动 schema 里清行。`PANDORA_DEMO_DB`、`PANDORA_DEMO_MARKER`、`PANDORA_PORT`、`PANDORA_SKIP_BUILD=1` 可覆盖默认值。
 
@@ -61,10 +65,17 @@ python3 backend/scripts/prepare_demo.py --database pandora_demo --demo-marker lo
 
 写命令需 `Idempotency-Key`；对象修改携带最新 GET 的 ETag 到 `If-Match`，完整组织计划使用公司版本及各行版本。缺版本428、旧版本412、同键不同请求409，无权对象通常404。版本与当前权限检查先于重放缓存。登录/会话与密码接口按各自契约处理。
 
+## 节假日数据
+
+员工端通过 `GET /api/v1/holidays/{year}` 获取公司日历与每日事项的节假日和补班日期。后端默认使用每日跟踪国务院公告的 [holiday-cn 年度 JSON](https://github.com/NateScarlet/holiday-cn)，仅向该服务发送年份对应的公开文件请求。设置 `PANDORA_HOLIDAY_SOURCE` 可使用兼容的年度 JSON 源。
+
+服务启动后在后台检查北京时间当年和次年，每五分钟检查缓存，成功与未发布结果均缓存一小时。上游短时不可用时沿用进程内最近成功结果，随后自动重试。次年公告中涉及当年十二月的日期按实际日期显示。已打开的日历约每五分钟更新标记，切回页面时检查缓存。
+
 ## 构建与检查
 
 ```sh
 cd backend
+python3 scripts/check_startup_failures.py
 mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test package
 cd ..
 python3 backend/scripts/check_final_workflow.py --phase all

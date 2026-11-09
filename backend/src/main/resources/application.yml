@@ -27,3 +27,5 @@ pandora:
   startup-maintenance-enabled: ${PANDORA_STARTUP_MAINTENANCE_ENABLED:true}
   worker-enabled: ${PANDORA_WORKER_ENABLED:true}
   demo-password: ${PANDORA_DEMO_PASSWORD:Demo@123456}
+  holidays:
+    source: ${PANDORA_HOLIDAY_SOURCE:https://raw.githubusercontent.com/NateScarlet/holiday-cn/master/}

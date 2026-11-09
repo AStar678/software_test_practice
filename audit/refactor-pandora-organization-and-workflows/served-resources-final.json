@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-29T03:47:41.996808+00:00",
+  "updated": "2026-11-05T07:01:36.365407+00:00",
   "checks": [
     {
       "resource": "admin.html",
@@ -71,6 +71,14 @@
     },
     {
       "resource": "潘多拉-正式版.css",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-每日事项.css",
+      "pass": true
+    },
+    {
+      "resource": "潘多拉-每日事项.js",
       "pass": true
     },
     {

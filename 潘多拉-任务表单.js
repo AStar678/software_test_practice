@@ -122,6 +122,8 @@
     let collator = null;
     try { collator = new Intl.Collator("zh-Hans-CN"); } catch (_) { collator = null; }
     return rows.slice().sort(function (left, right) {
+      const pins = Number(!!taskRaw(right).tablePinned) - Number(!!taskRaw(left).tablePinned);
+      if (pins) return pins;
       let value = 0;
       if (key === "title") {
         const a = String(left && left.title || ""), b = String(right && right.title || "");
@@ -237,7 +239,9 @@
     return '<time datetime="' + esc(task.allDay ? raw[key === "start" ? "startDate" : "dueDate"] : raw[key === "start" ? "startAt" : "dueAt"]) + '" title="' + esc(value) + '" aria-label="' + esc(value) + '">' + parts.map(part => '<span>' + esc(part) + '</span>').join("") + '</time>';
   }
   function titleCell(task) {
+    const pinned = !!taskRaw(task).tablePinned;
     return '<th scope="row" data-field="title"><button type="button" class="p-table-title" data-task="' + esc(task.id) + '" title="' + esc(task.title || "任务") + '"><span class="p-table-title-text">' + esc(task.title || "任务") + '</span></button>' +
+      '<button type="button" class="p-table-pin btn tiny-btn" data-action="task-table-pin" data-id="'+esc(task.id)+'" aria-pressed="'+pinned+'">'+(pinned?'取消置顶':'置顶')+'</button>'+
       (T.columns === "overview" ? '<div class="p-table-title-meta">' + relationTags(task) + '<span class="p-table-priority" data-priority="' + esc(task.urgency || "中") + '">' + esc(task.urgency || "中") + '</span></div>' : '') + '</th>';
   }
   function summaryCell(task) {
@@ -556,6 +560,16 @@
   const previousAction = runAction;
   runAction = function (element) {
     const action = element.dataset.action;
+    if (action === "task-table-pin") {
+      const id = element.dataset.id, pinned = element.getAttribute("aria-pressed") === "true", epoch = P.epoch;
+      return P.busy(async () => {
+        await P.mutation("task-table-pin:"+id, pinned?"DELETE":"PUT", "/tasks/"+encodeURIComponent(id)+"/table-pin");
+        if (P.epoch!==epoch || !tableActive()) return;
+        T.page = 0;
+        await refreshTable();
+        document.querySelector('[data-action="task-table-pin"][data-id="'+CSS.escape(id)+'"]')?.focus({preventScroll:true});
+      });
+    }
     if (action === "task-table-open") { openTable(); return; }
     if (action === "task-table-close") { closeTable(); return; }
     if (action === "task-table-refresh" || action === "task-table-retry") { refreshTable(); return; }

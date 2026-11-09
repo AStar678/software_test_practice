@@ -46,6 +46,7 @@
     plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>'
   };
   function dateKey(d) { return toDateInput(d); }
+  function calendarToday() { return parseDateInput(P.data?.home?.businessDate || '') || startOfDay(new Date()); }
   function dayLabel(d) { return (d.getMonth() + 1) + '月' + d.getDate() + '日'; }
   function weekday(d) { return WEEK_NAMES[(d.getDay() + 6) % 7]; }
   function monthKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
@@ -159,7 +160,7 @@
     return (sideOpen ? drawerHTML() : '') + (daySheet ? daySheetHTML(daySheet.date) : '');
   }
   function dayStrip() {
-    const start = viewRange('week', state.viewAnchor).start, today = startOfDay(new Date());
+    const start = viewRange('week', state.viewAnchor).start, today = calendarToday();
     return '<div class="p-day-strip" aria-label="本周日期">' + Array.from({length:7}, (_,i) => {
       const d = addDays(start, i), selected = sameDay(d, state.viewAnchor);
       return '<button type="button" class="' + (selected ? 'is-selected ' : '') + (sameDay(d,today) ? 'is-today' : '') + '" data-action="schedule-date" data-date="' + dateKey(d) + '" aria-pressed="' + selected + '" aria-label="' + dayLabel(d) + ' ' + weekday(d) + '"><span>' + weekday(d).slice(-1) + '</span><strong>' + d.getDate() + '</strong></button>';
@@ -185,24 +186,25 @@
       if (lane < 0) lane = occupied.length;
       occupied[lane] = (occupied[lane] || 0) | mask;
       const range = calendarRange(task);
-      const first=P.companyDayStart(dateKey(days[start])),firstEnd=P.companyDayStart(dateKey(addDays(days[start],1))),
-        last=P.companyDayStart(dateKey(days[end-1])),lastEnd=P.companyDayStart(dateKey(addDays(days[end-1],1))),span=end-start;
-      const left=Math.max(0,Math.min(1,(range.start-first)/(firstEnd-first)))*100/span;
-      const right=(span-1+Math.max(0,Math.min(1,(range.end-last)/(lastEnd-last))))*100/span;
-      segments.push({task,start,end,lane,left,width:Math.max(0,right-left),
-        before: range.start < first,after: range.end > lastEnd});
+      const first=P.companyDayStart(dateKey(days[start])),
+        lastEnd=P.companyDayStart(dateKey(addDays(days[end-1],1)));
+      /* 月历是日级画布：任务占满其占用的公司日期，不按日内小时缩窄或偏移。
+         精确到小时的几何只保留在日轴与详情中。 */
+      segments.push({task,start,end,lane,left:0,width:100,
+        before: range.start < first,after: range.end > lastEnd,point:+range.start===+range.end});
     }
     const shown = segments.filter(s => s.lane < capacity);
     const hidden = days.map((d,col) => segments.filter(s => s.lane >= capacity && s.start <= col && s.end > col).map(s => s.task));
     return {days,shown,hidden,segments};
   }
   function resizeHandle(task, edge, mode) {
-    if (!P.canRescheduleTask(actor(),task)) return '';
-    const label='调整'+(edge==='start'?'开始':'截止')+'时间：'+task.title;
-    return '<span role="separator" tabindex="0" class="p-resize-handle p-resize-'+edge+'" data-resize="'+edge+'" data-resize-mode="'+mode+'" data-resize-task="'+esc(task.id)+'" aria-orientation="'+(mode==='vertical'?'horizontal':'vertical')+'" aria-label="'+esc(label)+'" title="'+esc(label+' · '+fmtSchedule(task)+'；拖动边缘或用方向键按小时调整')+'"></span>';
+    if (!P.canRescheduleTask(actor(),task) || (mode!=='month' && !canDragDay(task,state.viewAnchor))) return '';
+    const unit=mode==='month'?'日期':'时间';
+    const label='调整'+(edge==='start'?'开始':'截止')+unit+'：'+task.title;
+    return '<span role="separator" tabindex="0" class="p-resize-handle p-resize-'+edge+'" data-resize="'+edge+'" data-resize-mode="'+mode+'" data-resize-task="'+esc(task.id)+'" aria-orientation="'+(mode==='vertical'||mode==='allday'?'horizontal':'vertical')+'" aria-label="'+esc(label)+'" title="'+esc(label+' · '+fmtSchedule(task)+'；拖动边缘或用方向键按'+(mode==='month'?'天':'小时')+'调整')+'"></span>';
   }
   function connectedTaskHTML(s, hidden, key) {
-    const t=s.task,classes=(s.before?' continues-before':'')+(s.after?' continues-after':'')+(t.status==='done'?' is-done':'')+(t.frozen?' is-pending-review':'')+(s.width===0?' is-point':'');
+    const t=s.task,classes=(s.before?' continues-before':'')+(s.after?' continues-after':'')+(t.status==='done'?' is-done':'')+(t.frozen?' is-pending-review':'')+(s.point?' is-point':'');
     const detail=(s.before?'延续 · ':'')+fmtSchedule(t)+(t.frozen?' · 审核中':'');
     return '<div role="group" tabindex="0"'+(hidden?' hidden':'')+' class="p-month-event'+classes+'" data-task="'+esc(t.id)+'" data-month-key="'+esc(key)+'" data-start-column="'+s.start+'" data-end-column="'+s.end+'" data-lane="'+s.lane+'" data-span="'+(s.end-s.start)+
       '" style="grid-column:'+(s.start+1)+' / '+(s.end+1)+';grid-row:'+(s.lane+1)+';--month-left:'+s.left+'%;--month-width:'+s.width+'%;'+taskColorVars(t)+'" aria-label="'+esc(taskAriaLabel(t,actor()))+'" title="'+esc(t.title+' · '+detail)+'"><div class="p-month-duration"'+(P.canRescheduleTask(actor(),t)?' data-schedule-move="'+esc(t.id)+'" data-resize-mode="month"':'')+'><span class="p-month-caption"><strong class="p-month-event-title">'+esc((t.pinned?'★ ':'')+t.title)+'</strong><small class="p-month-event-time">'+esc(detail)+'</small></span>'+(!s.before?resizeHandle(t,'start','month'):'')+(!s.after?resizeHandle(t,'end','month'):'')+'</div></div>';
@@ -212,26 +214,152 @@
     const capacity = Math.max(1, Math.min(8, Math.floor((height - 50 + gap) / (track + gap))));
     return {mode: 'stacked', track, gap, capacity};
   }
-  function monthStyle(metrics) {
-    return '--month-week-height:'+monthHeight+'px;--month-track-height:'+metrics.track+'px;--month-track-gap:'+metrics.gap+'px;--month-rows:'+Math.max(1,metrics.capacity);
+  function monthStyle(metrics, height = monthHeight) {
+    return '--month-week-height:'+height+'px;--month-track-height:'+metrics.track+'px;--month-track-gap:'+metrics.gap+'px;--month-rows:'+Math.max(1,metrics.capacity);
   }
   function monthOverflowButton(tasks, date, column) {
     return '<button type="button" class="p-month-more"'+(tasks.length?'':' hidden')+' data-action="schedule-month-overflow" data-date="'+dateKey(date)+'" data-hidden-count="'+tasks.length+'" style="grid-column:'+(column+1)+'" aria-label="'+dayLabel(date)+'，还有'+tasks.length+'项日程，打开当日任务清单">+'+tasks.length+'</button>';
   }
+  const holidayYears = new Map();
+  const HOLIDAY_REFRESH_MS = 5 * 60 * 1000;
+  P.sessionReset.push(() => holidayYears.clear());
+  function refreshVisibleHolidays() {
+    if (!P.token || document.hidden) return;
+    const years = new Set();
+    document.querySelectorAll('.page.is-active [data-holiday-date]').forEach(slot=>{
+      years.add(slot.dataset.holidayDate.slice(0,4));
+    });
+    years.forEach(loadHolidayYear);
+  }
+  setInterval(refreshVisibleHolidays,60 * 1000);
+  document.addEventListener('visibilitychange',refreshVisibleHolidays);
+  function loadHolidayYear(year) {
+    const previous=holidayYears.get(year);
+    if (!P.token || previous?.loading || (previous && Date.now()<previous.refreshAt)) return;
+    const entry={loading:true,days:previous?.days || new Map(),refreshAt:0};
+    holidayYears.set(year,entry);
+    P.request('/holidays/'+year,{background:true}).then(result=>{
+      if (holidayYears.get(year)!==entry) return;
+      if (result.status==='available') entry.days=new Map(result.days.map(day=>[day.date,day]));
+      entry.refreshAt=Date.now()+(result.stale || result.status==='unavailable'?120000:HOLIDAY_REFRESH_MS);
+    }).catch(()=>{
+      entry.refreshAt=Date.now()+120000;
+    }).finally(()=>{
+      if (holidayYears.get(year)!==entry) return;
+      entry.loading=false;
+      document.querySelectorAll('[data-holiday-date^="'+year+'-"]').forEach(slot=>{
+        const day=entry.days.get(slot.dataset.holidayDate), label=holidayText(day);
+        const button=slot.closest('.p-month-date');
+        if (button?.hasAttribute('aria-label')) {
+          let accessible=button.getAttribute('aria-label');
+          const old=slot.dataset.holidayLabel;
+          if (old && accessible.endsWith(old)) accessible=accessible.slice(0,-old.length);
+          button.setAttribute('aria-label',accessible+label);
+        }
+        slot.dataset.holidayLabel=label;
+        slot.innerHTML=holidayBadge(day);
+        slot.hidden=!day;
+      });
+    });
+  }
+  function holiday(date) {
+    const key=dateKey(date);
+    return holidayYears.get(key.slice(0,4))?.days.get(key);
+  }
+  function holidayText(day) { return day ? '，'+day.name+(day.work?'调休上班':'放假') : ''; }
+  function holidayLabel(date) { return holidayText(holiday(date)); }
+  function holidayBadge(day) {
+    return day ? '<span class="p-holiday '+(day.work?'is-workday':'is-holiday')+'" title="'+esc(holidayText(day).slice(1))+'">'+esc(day.name)+' '+(day.work?'班':'休')+'</span>' : '';
+  }
+  function holidayHTML(date) {
+    const key=dateKey(date), day=holiday(date);
+    loadHolidayYear(key.slice(0,4));
+    return '<span data-holiday-date="'+key+'" data-holiday-label="'+esc(holidayText(day))+'"'+(day?'':' hidden')+'>'+holidayBadge(day)+'</span>';
+  }
+  function monthDateHTML(date, attributes, label, selected, today, content = '') {
+    return '<button type="button" class="p-month-date'+(selected?' is-selected':'')+(today?' is-today':'')+
+      '" '+attributes+' aria-pressed="'+selected+'" aria-label="'+esc(label)+'"><span class="p-month-date-label"><strong>'+
+      date.getDate()+'</strong></span>'+content+'</button>';
+  }
+  function monthWeekHTML(week, dates, content = '') {
+    return '<div class="p-month-week" data-week-start="'+dateKey(week.start)+'"><div class="p-month-days">'+dates+'</div>'+content+'</div>';
+  }
+  function monthFrameHTML(anchor, weeks, extra = '') {
+    const key = monthKey(anchor), title = monthTitle(anchor);
+    const end = addDays(shiftMonth(anchor,1),-1);
+    return '<section class="p-month-section" data-month-key="'+key+'" data-month-start="'+dateKey(anchor)+'" aria-label="'+title+'">'+
+      '<header class="p-month-section-head"><h2>'+title+'</h2><span class="p-month-section-range">'+dateKey(anchor)+' — '+dateKey(end)+'</span>'+extra+'</header>'+
+      '<div class="p-month-grid" style="--calendar-weeks:'+weeks.length+'" aria-label="'+title+'日历">'+weeks.join('')+'</div></section>';
+  }
+  function monthWeekdaysHTML() {
+    return '<div class="p-weekday-row">'+WEEK_NAMES.map(w=>'<span>'+w.slice(-1)+'</span>').join('')+'</div>';
+  }
+  function monthAnchor(scroller, inset = 0) {
+    const top = scroller.getBoundingClientRect().top;
+    const week = Array.from(scroller.querySelectorAll('.p-month-week')).find(node => node.getBoundingClientRect().bottom > top + inset + 1);
+    if (!week) return null;
+    return {key: week.dataset.weekStart, month: week.closest('.p-month-section').dataset.monthKey,
+      offset: (week.getBoundingClientRect().top - top) / calendarScale(scroller)};
+  }
+  function placeMonthAnchor(scroller, anchor) {
+    const week = scroller.querySelector('[data-month-key="'+anchor.month+'"] [data-week-start="'+anchor.key+'"]');
+    if (week) scroller.scrollTop += (week.getBoundingClientRect().top - scroller.getBoundingClientRect().top) / calendarScale(scroller) - anchor.offset;
+  }
+  function growMonthStream(scroller, stream, node, prepend) {
+    const previous = scroller.scrollHeight;
+    if (prepend) {
+      stream.prepend(node);
+      scroller.scrollTop += scroller.scrollHeight - previous;
+    } else stream.append(node);
+  }
+  function bindReadMonthDensity(view) {
+    const handle = view.querySelector('.p-month-resize-handle'), scroller = view.querySelector('.p-month-scroll');
+    const change = value => {
+      const anchor = monthAnchor(scroller);
+      const height = Math.min(MONTH_MAX_HEIGHT, Math.max(MONTH_MIN_HEIGHT, value));
+      view.dataset.rowHeight = String(height);
+      view.style.cssText = monthStyle(monthMetrics(height), height);
+      handle.setAttribute('aria-valuenow', String(height));
+      if (anchor) placeMonthAnchor(scroller, anchor);
+      view.dispatchEvent(new Event('monthdensity'));
+    };
+    handle.addEventListener('keydown', event => {
+      const steps = {ArrowUp:8, ArrowRight:8, ArrowDown:-8, ArrowLeft:-8, PageUp:24, PageDown:-24};
+      if (!(event.key in steps) && event.key !== 'Home' && event.key !== 'End') return;
+      event.preventDefault();
+      change(event.key === 'Home' ? MONTH_MIN_HEIGHT : event.key === 'End' ? MONTH_MAX_HEIGHT : Number(view.dataset.rowHeight) + steps[event.key]);
+    });
+    let drag;
+    handle.addEventListener('pointerdown', event => {
+      if (!event.isPrimary || event.button !== 0) return;
+      drag = {id:event.pointerId, y:event.clientY, height:Number(view.dataset.rowHeight)};
+      handle.setPointerCapture(event.pointerId);
+    });
+    handle.addEventListener('pointermove', event => {
+      if (drag?.id === event.pointerId) change(drag.height + event.clientY - drag.y);
+    });
+    handle.addEventListener('lostpointercapture', () => { drag = null; });
+  }
+  function readMonthViewHTML(label, content, height = monthHeight, id = '') {
+    return '<div class="p-month-view p-read-month" data-row-height="'+height+'" style="'+monthStyle(monthMetrics(height),height)+'">'+
+      '<div class="p-month-scroll" '+(id?'id="'+id+'" ':'')+'tabindex="0" aria-label="'+esc(label)+'"><div class="p-month-layout">'+monthWeekdaysHTML()+
+      '<div class="p-month-stream">'+content+'</div></div></div><div class="p-month-footer">'+
+      '<div class="p-month-resize-handle" role="slider" tabindex="0" aria-label="调整月历密度" aria-orientation="vertical" aria-valuemin="'+MONTH_MIN_HEIGHT+
+      '" aria-valuemax="'+MONTH_MAX_HEIGHT+'" aria-valuenow="'+height+'"><span class="p-month-handle-bar" aria-hidden="true"></span><span>上下拖动调整月历</span></div></div></div>';
+  }
   function monthSectionHTML(key) {
     const anchor = monthFromKey(key);
     if (!anchor) return '';
-    const grid = monthGrid(anchor), today = startOfDay(new Date()), list = viewTasks(actor()), metrics = monthMetrics();
+    const grid = monthGrid(anchor), today = calendarToday(), list = viewTasks(actor()), metrics = monthMetrics();
     const bounds = { start: anchor, end: new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1) };
     const weeks = grid.weeks.map(week => {
       const data = monthWeek(week, list, metrics.capacity, bounds);
       const dates = data.days.map((d,col) => {
         if (d.getFullYear() !== anchor.getFullYear() || d.getMonth() !== anchor.getMonth())
           return '<span class="p-month-date is-blank" aria-hidden="true"></span>';
-        const selected = sameDay(d,state.viewAnchor), current = sameDay(d,today), other = false;
         const count = data.segments.filter(s=>s.start<=col&&s.end>col).length;
-        return '<button type="button" class="p-month-date' + (selected?' is-selected':'') + (current?' is-today':'') + (other?' is-other-month':'') +
-          '" data-action="schedule-month-date" data-date="'+dateKey(d)+'" aria-pressed="'+selected+'" aria-label="'+dayLabel(d)+' '+weekday(d)+'，'+(count ? count+'项任务' : '暂无任务')+'，查看日程"><span class="p-month-date-label"><strong>'+d.getDate()+'</strong>'+'</span></button>';
+        return monthDateHTML(d,'data-action="schedule-month-date" data-date="'+dateKey(d)+'"',
+          dayLabel(d)+' '+weekday(d)+'，'+(count ? count+'项任务' : '暂无任务')+'，查看日程'+holidayLabel(d),sameDay(d,state.viewAnchor),sameDay(d,today),holidayHTML(d));
       }).join('');
       const indicators = data.days.map((d,col)=>{
         if (d.getFullYear() !== anchor.getFullYear() || d.getMonth() !== anchor.getMonth()) return '';
@@ -240,11 +368,11 @@
         const colors = Array.from(new Set(tasks.map(taskColorVars)));
         return '<span class="p-month-day-indicator" data-date="'+dateKey(d)+'" data-task-count="'+tasks.length+'" style="grid-column:'+(col+1)+'" aria-hidden="true">'+colors.map(color=>'<i style="'+color+'"></i>').join('')+'</span>';
       }).join('');
-      return '<div class="p-month-week" data-week-start="'+dateKey(week.start)+'"><div class="p-month-days">'+dates+'</div><div class="p-month-tracks">'+data.segments.map(s=>connectedTaskHTML(s,s.lane>=metrics.capacity,key)).join('')+'</div><div class="p-month-indicators" aria-hidden="true">'+indicators+'</div><div class="p-month-overflow">'+data.hidden.map((tasks,col)=>monthOverflowButton(tasks,data.days[col],col)).join('')+'</div></div>';
-    }).join('');
-    return '<section class="p-month-section" data-month-key="'+esc(key)+'" data-month-start="'+dateKey(anchor)+'" aria-label="'+monthTitle(anchor)+'">' +
-      '<header class="p-month-section-head"><h2>'+monthTitle(anchor)+'</h2><span class="p-month-section-range">'+esc(dateKey(bounds.start))+' — '+esc(dateKey(addDays(bounds.end,-1)))+'</span></header>' +
-      '<div class="p-month-grid" style="--calendar-weeks:'+grid.weeks.length+'" aria-label="'+monthTitle(anchor)+'日历">'+weeks+'</div></section>';
+      return monthWeekHTML(week, dates, '<div class="p-month-tracks">'+data.segments.map(s=>connectedTaskHTML(s,s.lane>=metrics.capacity,key)).join('')+
+        '</div><div class="p-month-indicators" aria-hidden="true">'+indicators+'</div><div class="p-month-overflow">'+
+        data.hidden.map((tasks,col)=>monthOverflowButton(tasks,data.days[col],col)).join('')+'</div>');
+    });
+    return monthFrameHTML(anchor, weeks);
   }
   function streamMonths() {
     const metrics = monthMetrics();
@@ -260,7 +388,7 @@
     const metrics = monthMetrics();
     if (!monthStream.length) resetStream(state.viewAnchor);
     return '<div class="p-month-view" data-density="'+metrics.mode+'" data-row-height="'+monthHeight+'" style="'+monthStyle(metrics)+'">'+
-      '<div class="p-month-scroll" tabindex="0" aria-label="月日历，连续上下滚动浏览相邻月份，双指上下拉合调整日程显示"><section class="p-month-layout" aria-label="月日历"><div class="p-weekday-row">'+WEEK_NAMES.map(w=>'<span>'+w.slice(-1)+'</span>').join('')+'</div><div class="p-month-stream">'+streamMonths()+'</div></section></div>'+
+      '<div class="p-month-scroll" tabindex="0" aria-label="月日历，连续上下滚动浏览相邻月份，双指上下拉合调整日程显示"><section class="p-month-layout" aria-label="月日历">'+monthWeekdaysHTML()+'<div class="p-month-stream">'+streamMonths()+'</div></section></div>'+
       '<div class="p-month-footer"><div class="p-month-resize-handle" role="slider" tabindex="0" aria-label="调整月历日程显示" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round((monthHeight-MONTH_MIN_HEIGHT)/(MONTH_MAX_HEIGHT-MONTH_MIN_HEIGHT)*100)+'" aria-valuetext="'+metrics.capacity+'条叠放日程" aria-describedby="p-month-resize-help"><span class="p-month-handle-bar" aria-hidden="true"></span><span id="p-month-resize-help">上下拖动展开日程</span></div></div></div>';
   }
   /* 补载一个相邻月份只追加已完整生成的节点：生成失败时 DOM 与月份序列都不变，并给出可重试的边界提示。 */
@@ -276,7 +404,7 @@
       '<button type="button" class="p-text-button" data-action="schedule-stream-retry" data-direction="' + streamError.direction + '">重试</button></div>';
   }
   function paintStreamBoundary() {
-    const scroller = document.querySelector('.p-month-scroll');
+    const scroller = document.querySelector('#page-view .p-month-scroll');
     const stream = scroller && scroller.querySelector('.p-month-stream');
     if (!stream) return;
     stream.querySelectorAll('.p-month-stream-error').forEach(node => node.remove());
@@ -287,7 +415,7 @@
     if (streamError.direction === 'down') stream.appendChild(node); else stream.insertBefore(node, stream.firstChild);
   }
   function appendStreamMonth(direction) {
-    const scroller = document.querySelector('.p-month-scroll');
+    const scroller = document.querySelector('#page-view .p-month-scroll');
     const stream = scroller && scroller.querySelector('.p-month-stream');
     if (!stream || !monthStream.length) return false;
     const first = monthFromKey(monthStream[0]), last = monthFromKey(monthStream[monthStream.length-1]);
@@ -308,16 +436,9 @@
     }
     streamError = null;
     paintStreamBoundary();
-    if (direction === 'down') {
-      monthStream.push(key);
-      stream.appendChild(node);
-    } else {
-      const height = scroller.scrollHeight;
-      monthStream.unshift(key);
-      stream.insertBefore(node, stream.firstChild);
-      // Prepend keeps the reader in place: the inserted height is added to the scroll offset.
-      scroller.scrollTop += scroller.scrollHeight - height;
-    }
+    if (direction === 'down') monthStream.push(key);
+    else monthStream.unshift(key);
+    growMonthStream(scroller, stream, node, direction === 'up');
     trimStream(scroller);
     bindScheduleResize();
     return true;
@@ -344,7 +465,7 @@
     }
   }
   function mountMonthAround() {
-    const scroller = document.querySelector('.p-month-scroll');
+    const scroller = document.querySelector('#page-view .p-month-scroll');
     if (!scroller || state.viewMode !== 'month') return;
     if (!streamError || streamError.direction !== 'up') {
       if (scroller.scrollTop < scroller.clientHeight * 0.75) appendStreamMonth('up');
@@ -361,25 +482,16 @@
   }
   /* 可视日锚点：记录视口顶部所在周与其偏移，任何高度或月份挂载后都回到同一业务日。 */
   function captureMonthAnchor() {
-    const scroller = document.querySelector('.p-month-scroll');
+    const scroller = document.querySelector('#page-view .p-month-scroll');
     if (!scroller) return null;
-    const scale = calendarScale(scroller), top = scroller.getBoundingClientRect().top;
-    const week = Array.from(scroller.querySelectorAll('.p-month-week'))
-      .find(element => element.getBoundingClientRect().bottom > top + 1);
-    if (!week) return null;
-    return { key: week.dataset.weekStart, offset: (week.getBoundingClientRect().top - top) / scale };
+    return monthAnchor(scroller);
   }
   function restoreMonthAnchor(anchor) {
-    const scroller = document.querySelector('.p-month-scroll');
-    if (!scroller || !anchor) return;
-    const week = scroller.querySelector('[data-week-start="' + anchor.key + '"]');
-    if (!week) return;
-    const scale = calendarScale(scroller);
-    const top = scroller.getBoundingClientRect().top;
-    scroller.scrollTop += (week.getBoundingClientRect().top - top) / scale - anchor.offset;
+    const scroller = document.querySelector('#page-view .p-month-scroll');
+    if (scroller && anchor) placeMonthAnchor(scroller, anchor);
   }
   function updateMonthHeight(value, anchor, persist) {
-    const view = document.querySelector('.p-month-view');
+    const view = document.querySelector('#page-view .p-month-view');
     if (!view || state.viewMode!=='month') return;
     const scroller = view.querySelector('.p-month-scroll');
     const position = anchor || captureMonthAnchor();
@@ -416,7 +528,7 @@
   }
   function bindMonthGestures() {
     bindScheduleResize();
-    const view=document.querySelector('.p-month-view');
+    const view=document.querySelector('#page-view .p-month-view');
     if(!view) return;
     const scroller=view.querySelector('.p-month-scroll'),handle=view.querySelector('.p-month-resize-handle');
     let drag=null,pinch=null,pinchLock=false;
@@ -529,7 +641,7 @@
   document.addEventListener('click',event=>{
     const target=event.target;
     if (!target||typeof target.closest!=='function') return;
-    const week=target.closest('.p-month-week');
+    const week=target.closest('#page-view .p-month-week');
     if (!week) return;
     if (Date.now()<suppressCalendarClickUntil) {
       event.preventDefault();
@@ -585,6 +697,12 @@
     const fullDay=range.start<=bounds.start&&range.end>=bounds.end;
     return {start:minuteAt(range.start,d),end:minuteAt(range.end,d),point:false,fullDay};
   }
+  function canDragDay(task,d) {
+    if (task.allDay || !P.canRescheduleTask(actor(),task)) return false;
+    const bounds=businessBounds(d),range=calendarRange(task);
+    return range.start>=bounds.start && range.end<=bounds.end &&
+      (range.start<range.end ? range.end-range.start<bounds.end-bounds.start : range.start<bounds.end);
+  }
   function dayEvents(d) {
     return dayTasks(d).filter(task=>!task.allDay).map(task=>{const coverage=dayCoverage(task,d);
       return coverage&&!coverage.fullDay?Object.assign({task},coverage):null;}).filter(Boolean);
@@ -637,7 +755,7 @@
       '" data-lane="' + event.lane + '" data-columns="' + event.columns + '" style="' + taskColorVars(task) +
       'top:' + top + 'px;height:' + height + 'px;left:' + (event.lane*width) + '%;width:' + width + '%;--axis-true-top:' + trueTop + 'px;--axis-true-height:' + trueHeight + 'px" aria-label="' +
       esc(taskAriaLabel(task,actor())+'，'+minuteLabel(event.start)+(event.start===event.end?'':' 至 '+minuteLabel(event.end)))+'" title="' + esc(task.title+' · '+fmtSchedule(task)) + '">' +
-      '<span class="p-axis-true"'+(P.canRescheduleTask(actor(),task)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="vertical"':'')+'><span class="p-axis-caption"><strong>'+esc((task.pinned?'★ ':'')+task.title)+'</strong><span class="p-axis-event-time">'+esc((event.start===event.end?minuteLabel(event.start):minuteLabel(event.start)+' – '+minuteLabel(event.end))+(task.frozen?' · 审核中':''))+'</span></span></span>'+
+      '<span class="p-axis-true"'+(canDragDay(task,state.viewAnchor)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="vertical"':'')+'><span class="p-axis-caption"><strong>'+esc((task.pinned?'★ ':'')+task.title)+'</strong><span class="p-axis-event-time">'+esc((event.start===event.end?minuteLabel(event.start):minuteLabel(event.start)+' – '+minuteLabel(event.end))+(task.frozen?' · 审核中':''))+'</span></span></span>'+
       (calendarRange(task).start>=businessBounds(state.viewAnchor).start?resizeHandle(task,'start','vertical'):'')+
       (calendarRange(task).end<=businessBounds(state.viewAnchor).end?resizeHandle(task,'end','vertical'):'')+'</div>';
   }
@@ -654,8 +772,11 @@
   function allDayHTML(d) {
     const tasks = allDayTasks(d);
     if (!tasks.length) return '<span class="p-all-day-empty">—</span>';
-    return '<div class="p-allday-list">' + tasks.map(t =>
-      '<button type="button" class="p-all-day-event'+(t.frozen?' is-pending-review':'')+'" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '" aria-label="' + esc(taskAriaLabel(t,actor())) + '">' + esc(t.title) + '</button>').join('') + '</div>';
+    /* 全天和整日覆盖片段可读；精确调时从正常任务详情进入。 */
+    return '<div class="p-allday-list">' + tasks.map(t => {
+      return '<div role="group" tabindex="0" class="p-all-day-event'+(t.frozen?' is-pending-review':'')+'" data-task="' + esc(t.id) + '" style="' + taskColorVars(t) + '" aria-label="' + esc(taskAriaLabel(t,actor())) + '" title="'+esc(t.title+' · '+fmtSchedule(t))+'">' +
+        '<span class="p-allday-move"><strong>'+esc((t.pinned?'★ ':'')+t.title)+'</strong><small>'+esc(fmtSchedule(t))+'</small></span></div>';
+    }).join('') + '</div>';
   }
   function horizontalDayHTML(d) {
     const bounds=businessBounds(d), tasks=sortedDay(d);
@@ -663,22 +784,45 @@
     const rows=tasks.map(task=>{
       const timed=Object.assign({},task,{allDay:false}), coverage=dayCoverage(timed,d), range=calendarRange(timed);
       const left=coverage.start, width=Math.max(1,coverage.end-coverage.start);
-      return '<div class="p-horizontal-row" style="'+taskColorVars(task)+'"><div class="p-horizontal-bar'+(task.frozen?' is-pending-review':'')+'" data-task="'+esc(task.id)+'" title="'+esc(task.title+' · '+fmtSchedule(task))+'"'+(P.canRescheduleTask(actor(),task)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="day"':'')+' style="left:'+left+'px;width:'+width+'px">'+
+      return '<div class="p-horizontal-row" style="'+taskColorVars(task)+'"><div class="p-horizontal-bar'+(task.frozen?' is-pending-review':'')+'" data-task="'+esc(task.id)+'" title="'+esc(task.title+' · '+fmtSchedule(task))+'"'+(canDragDay(task,d)?' data-schedule-move="'+esc(task.id)+'" data-resize-mode="day"':'')+' style="left:'+left+'px;width:'+width+'px">'+
         '<button type="button" class="p-horizontal-task" data-task="'+esc(task.id)+'" aria-label="'+esc(taskAriaLabel(task,actor())+' '+scheduleText(timed,d))+'"><span class="p-horizontal-caption"><strong>'+esc((task.pinned?'★ ':'')+task.title)+'</strong><small>'+esc(scheduleText(timed,d))+'</small></span></button>'+
         (range.start>=bounds.start?resizeHandle(task,'start','day'):'')+(range.end<=bounds.end?resizeHandle(task,'end','day'):'')+'</div></div>';
     }).join('');
     return '<section id="p-day-panel" class="p-horizontal-panel"><p class="p-drag-hint">拖动任务框移动，拖动边缘调整起止；松开后确认提交，每次调整1小时。</p><div class="p-timeline-scroll p-horizontal-scroll" tabindex="0" aria-label="横向排期，00:00至24:00，可左右滚动"><div class="p-horizontal-axis"><div class="p-horizontal-ruler">'+hours+'</div>'+(rows||'<div class="p-horizontal-empty">当天暂无任务</div>')+'</div></div></section>';
   }
 
-  // Drag changes only a proposal. The original form owns validation, review and persistence.
+  // Drag computes a proposal; the lightweight confirmation owns validation and submission.
   let scheduleDrag=null;
-  function proposedRange(task, edge, steps) {
-    const start=new Date(task.raw.startAt), due=new Date(task.raw.dueAt), delta=steps*3600000;
-    return {start:['start','move'].includes(edge)?new Date(+start+delta):start,due:['end','move'].includes(edge)?new Date(+due+delta):due};
+  /* 月历按公司日期调整：保留公司时区内的日内时刻，不依赖设备时区或固定 24 小时偏移。 */
+  function shiftCompanyDays(value, days) {
+    const p=P.companyParts(value);
+    const date=new Date(Date.UTC(Number(p.year),Number(p.month)-1,Number(p.day)));
+    date.setUTCDate(date.getUTCDate()+days);
+    const base=P.companyDayStart(date.toISOString().slice(0,10));
+    const offset=(Number(p.hour)*60+Number(p.minute))*60000+Math.round(Number(p.second)*1000);
+    return new Date(+base+offset);
+  }
+  function taskInstants(task) {
+    const raw=task.raw||{};
+    const start=raw.startAt?new Date(raw.startAt):P.companyDayStart(raw.startDate||P.companyDateKey(+task.start));
+    const dueDate=raw.dueDate?dateKey(addDays(parseDateInput(raw.dueDate),1)):P.companyDateKey(+task.due);
+    const due=raw.dueAt?new Date(raw.dueAt):P.companyDayStart(dueDate);
+    return {start,due};
+  }
+  function proposedRange(task, edge, steps, mode) {
+    const range=taskInstants(task);
+    const shift=mode==='month'?(value=>shiftCompanyDays(value,steps)):(value=>new Date(+value+steps*3600000));
+    return {start:['start','move'].includes(edge)?shift(range.start):range.start,due:['end','move'].includes(edge)?shift(range.due):range.due};
+  }
+  function hourUnitPx(node) {
+    const axis=(node&&node.closest&&node.closest('.p-timeline-scroll')||document).querySelector?.('.p-day-axis');
+    const height=axis?axis.getBoundingClientRect().height:0;
+    return height?height/24:60;
   }
   function clearScheduleDrag(suppress=true) {
     if (!scheduleDrag) return;
     const drag=scheduleDrag; scheduleDrag=null;
+    cancelAnimationFrame(drag.frame);
     drag.tip.remove(); drag.ghost.remove();
     try { if(drag.handle.hasPointerCapture(drag.pointer)) drag.handle.releasePointerCapture(drag.pointer); } catch (_) {}
     if(suppress)suppressCalendarClickUntil=Date.now()+450;
@@ -686,16 +830,22 @@
   function completeScheduleDrag(event) {
     const drag=scheduleDrag;
     if(!drag||event.pointerId!==drag.pointer)return;
-    const apply=event.type==='pointerup'&&drag.steps!==0;
+    if (event.type==='pointerup') updateScheduleDrag(drag,event.clientX,event.clientY);
+    const apply=event.type==='pointerup'&&drag.validTarget&&drag.steps!==0;
     const moved=drag.steps!==0;
+    const endpoint=drag.edge!=='move';
     if(moved){event.preventDefault();event.stopImmediatePropagation();}
-    clearScheduleDrag(moved);
+    /* 端点手柄上的按下—松开即使没有位移也只是一次调整手势，不能冒泡成打开详情/日期清单。 */
+    clearScheduleDrag(moved||endpoint||drag.held);
     if(!apply)return;
     if(drag.range.due<drag.range.start) {P.notice('截止不得早于开始，本次调整未保存。');return;}
     P.openScheduleChange(drag.task.id,drag.range.start,drag.range.due,drag.version);
   }
-  function bindScheduleResize() {
-    document.querySelectorAll('[data-resize],[data-schedule-move]').forEach(handle=>{
+  /* 拖动手势只属于本人日程页根节点；任务表单与下属弹层即使渲染了授权任务也不绑定。 */
+  function bindScheduleResize(root) {
+    const scope = root || document.getElementById('page-view');
+    if (!scope) return;
+    scope.querySelectorAll('[data-resize],[data-schedule-move]').forEach(handle=>{
       if(handle.dataset.resizeBound)return;
       handle.dataset.resizeBound='1';
       handle.addEventListener('pointerdown',event=>{
@@ -703,19 +853,50 @@
         if(handle.dataset.scheduleMove&&event.target.closest('[data-action],[data-resize]'))return;
         const task=taskById(handle.dataset.resizeTask||handle.dataset.scheduleMove);
         if(!task||!P.canRescheduleTask(actor(),task))return;
+        const begin=(x,y,held=false)=>{
+          clearScheduleDrag();
+          const bar=handle.closest('.p-month-event,.p-horizontal-bar,.p-axis-event,.p-all-day-event');
+          if(!bar||!handle.isConnected||!P.canRescheduleTask(actor(),task))return;
+          const mode=handle.dataset.resizeMode||'month',edge=handle.dataset.resize||'move';
+          const frame=mode==='month'?bar.querySelector('.p-month-duration'):mode==='vertical'?bar.querySelector('.p-axis-true'):bar;
+          const rect=(frame||bar).getBoundingClientRect();
+          const vertical=mode==='vertical'||mode==='allday';
+          const unit=mode==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7:vertical?hourUnitPx(bar):bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24;
+          const tip=document.createElement('div');tip.className='p-drag-preview';tip.setAttribute('role','status');document.body.appendChild(tip);
+          const ghost=document.createElement('div');ghost.className='p-drag-ghost';ghost.style.cssText='left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;height:'+rect.height+'px';
+          ghost.innerHTML='<span class="p-month-caption"><strong>'+esc(task.title)+'</strong><small>'+esc(fmtSchedule(task))+'</small></span>';document.body.appendChild(ghost);
+          const scroller=bar.closest('.p-month-scroll,.p-timeline-scroll');
+          const monthHitAtGrab=mode==='month' ? monthHit({clientX:x,target:handle},bar.closest('.p-month-week')) : null;
+          if (mode==='month'&&!monthHitAtGrab) { tip.remove(); ghost.remove(); return; }
+          const capture=held ? scroller : handle;
+          scheduleDrag={task,version:task.raw.rowVersion,edge,mode,handle:capture,pointer:event.pointerId,x,y,vertical,unit,
+            steps:0,rect,tip,ghost,range:proposedRange(task,edge,0,mode),scroller,held,
+            startDate:monthHitAtGrab?.date, startScroll:vertical ? scroller.scrollTop : scroller.scrollLeft, validTarget:true};
+          tip.textContent='已抓取 · 拖动调整排期 · Esc取消';
+          if (held && typeof navigator.vibrate === "function") navigator.vibrate(18);
+          try { capture.setPointerCapture(event.pointerId); } catch (_) { /* document listeners provide capture fallback */ }
+        };
+        if(event.pointerType==='touch'){
+          const x=event.clientX,y=event.clientY;
+          const timer=setTimeout(()=>{cleanup();begin(x,y,true);},400);
+          const cleanup=()=>{
+            clearTimeout(timer);
+            document.removeEventListener('pointermove',moved,true);
+            document.removeEventListener('pointerup',finished,true);
+            document.removeEventListener('pointercancel',finished,true);
+            document.removeEventListener('pointerdown',cancelOther,true);
+          };
+          const moved=move=>{if(move.pointerId===event.pointerId&&Math.hypot(move.clientX-x,move.clientY-y)>8)cleanup();};
+          const finished=finish=>{if(finish.pointerId===event.pointerId)cleanup();};
+          const cancelOther=other=>{if(other.pointerId!==event.pointerId)cleanup();};
+          document.addEventListener('pointermove',moved,true);
+          document.addEventListener('pointerup',finished,true);
+          document.addEventListener('pointercancel',finished,true);
+          document.addEventListener('pointerdown',cancelOther,true);
+          return;
+        }
         event.preventDefault();event.stopPropagation();
-        clearScheduleDrag();
-        const bar=handle.closest('.p-month-event,.p-horizontal-bar,.p-axis-event,.staff-month-event,.staff-axis-event');
-        const mode=handle.dataset.resizeMode||'month',edge=handle.dataset.resize||'move';
-        const rect=(mode==='month'?bar.querySelector('.p-month-duration,.staff-month-duration'):mode==='vertical'?bar.querySelector('.p-axis-true,.staff-axis-true'):bar).getBoundingClientRect();
-        const vertical=mode==='vertical';
-        const unit=mode==='month'?bar.closest('.p-month-week,.staff-month-week').getBoundingClientRect().width/7/24:vertical?bar.closest('.p-axis-events,.staff-axis-events').getBoundingClientRect().height/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24;
-        const tip=document.createElement('div');tip.className='p-drag-preview';tip.setAttribute('role','status');document.body.appendChild(tip);
-        const ghost=document.createElement('div');ghost.className='p-drag-ghost';ghost.style.cssText='left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;height:'+rect.height+'px';
-        ghost.innerHTML='<span class="p-month-caption"><strong>'+esc(task.title)+'</strong><small>'+esc(fmtSchedule(task))+'</small></span>';document.body.appendChild(ghost);
-        scheduleDrag={task,version:task.raw.rowVersion,edge,mode,handle,pointer:event.pointerId,x:event.clientX,y:event.clientY,vertical,unit,steps:0,rect,tip,ghost,range:proposedRange(task,edge,0,mode)};
-        tip.textContent=(vertical?'上下':'左右')+'拖动调整'+(edge==='move'?'完整排期':edge==='start'?'开始':'截止')+'，每步1小时；Esc取消';
-        try { handle.setPointerCapture(event.pointerId); } catch (_) { /* document listeners provide capture fallback */ }
+        begin(event.clientX,event.clientY);
       });
       handle.addEventListener('keydown',event=>{
         if(!handle.dataset.resize||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
@@ -728,25 +909,76 @@
       });
     });
   }
+  function updateScheduleDrag(drag,clientX,clientY){
+    if(!drag)return;
+    drag.clientX=clientX;
+    drag.clientY=clientY;
+    const box=drag.scroller.getBoundingClientRect();
+    drag.validTarget=clientX>=box.left&&clientX<box.right&&clientY>=box.top&&clientY<box.bottom;
+    if (drag.mode==='month') {
+      const week=document.elementFromPoint(clientX,clientY)?.closest('.p-month-week');
+      const date=week&&drag.scroller.contains(week) ? addDays(parseDateInput(week.dataset.weekStart),monthColumn(week,clientX)) : null;
+      // 桌面端点仍可沿同一周拖到月界留白的真实相邻日期。长按跨屏移动以可见所属月为目标。
+      const hit=date&&(!drag.held||week.closest('.p-month-section').dataset.monthKey===monthKey(date));
+      drag.validTarget=drag.validTarget&&!!hit;
+      if (hit) {
+        const ordinal=date=>Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())/86400000;
+        drag.steps=ordinal(date)-ordinal(drag.startDate);
+      }
+    } else {
+      const delta=drag.vertical ? clientY-drag.y+drag.scroller.scrollTop-drag.startScroll : clientX-drag.x+drag.scroller.scrollLeft-drag.startScroll;
+      drag.steps=Math.round(delta/drag.unit);
+    }
+    drag.range=proposedRange(drag.task,drag.edge,drag.steps,drag.mode);
+    const format=value=>toDateInput(value)+' '+toTimeInput(value),valid=drag.range.due>=drag.range.start;
+    drag.tip.textContent=format(drag.range.start)+' → '+format(drag.range.due)+(valid?' · 松开后确认（'+(drag.mode==='month'?'1天':'1小时')+'/步）':' · 截止不得早于开始');
+    drag.ghost.querySelector('small').textContent=format(drag.range.start)+' → '+format(drag.range.due);
+    drag.tip.classList.toggle('is-invalid',!valid);
+    if (drag.mode==='month') {
+      drag.ghost.style.left=(drag.rect.left+clientX-drag.x)+'px';
+      drag.ghost.style.top=(drag.rect.top+clientY-drag.y)+'px';
+      return;
+    }
+    const step=drag.steps*drag.unit;
+    if(drag.vertical){drag.ghost.style.top=(drag.rect.top+(['start','move'].includes(drag.edge)?step:0))+'px';drag.ghost.style.height=Math.max(2,drag.rect.height+(drag.edge==='start'?-step:drag.edge==='end'?step:0))+'px';}
+    else {drag.ghost.style.left=(drag.rect.left+(['start','move'].includes(drag.edge)?step:0))+'px';drag.ghost.style.width=Math.max(2,drag.rect.width+(drag.edge==='start'?-step:drag.edge==='end'?step:0))+'px';}
+  }
+  function scrollDuringDrag(drag) {
+    drag.frame=0;
+    if (scheduleDrag!==drag||!drag.scroller.isConnected) return;
+    const rect=drag.scroller.getBoundingClientRect();
+    const vertical=drag.mode==='month'||drag.vertical;
+    const position=vertical?drag.clientY:drag.clientX;
+    const start=vertical?rect.top:rect.left, end=vertical?rect.bottom:rect.right;
+    const margin=Math.min(56,(end-start)/4);
+    const cross=vertical?drag.clientX:drag.clientY;
+    if (cross < (vertical?rect.left:rect.top) || cross >= (vertical?rect.right:rect.bottom) || position < start || position >= end) return;
+    const rate=position<start+margin ? -Math.ceil((start+margin-position)/4) : position>end-margin ? Math.ceil((position-end+margin)/4) : 0;
+    if (!rate) return;
+    if (vertical) drag.scroller.scrollTop+=rate;
+    else drag.scroller.scrollLeft+=rate;
+    if (drag.mode==='month') mountMonthAround();
+    updateScheduleDrag(drag,drag.clientX,drag.clientY);
+    drag.frame=requestAnimationFrame(()=>scrollDuringDrag(drag));
+  }
+  document.addEventListener('contextmenu',event=>{
+    if (scheduleDrag?.held) event.preventDefault();
+  },true);
+  document.addEventListener('touchmove',event=>{
+    if (scheduleDrag?.held && event.cancelable) event.preventDefault();
+  },{passive:false,capture:true});
   document.addEventListener('pointermove',event=>{
     const drag=scheduleDrag;if(!drag||event.pointerId!==drag.pointer)return;
     event.preventDefault();event.stopImmediatePropagation();
-    drag.steps=Math.round((drag.vertical?event.clientY-drag.y:event.clientX-drag.x)/drag.unit);
-    drag.range=proposedRange(drag.task,drag.edge,drag.steps);
-    const format=value=>toDateInput(value)+' '+toTimeInput(value),valid=drag.range.due>=drag.range.start;
-    drag.tip.textContent=format(drag.range.start)+' → '+format(drag.range.due)+(valid?' · 松开后确认（1小时/步）':' · 截止不得早于开始');
-    drag.ghost.querySelector('small').textContent=format(drag.range.start)+' → '+format(drag.range.due);
-    drag.tip.classList.toggle('is-invalid',!valid);
-    const delta=drag.steps*drag.unit;
-    if(drag.vertical){drag.ghost.style.top=(drag.rect.top+(['start','move'].includes(drag.edge)?delta:0))+'px';drag.ghost.style.height=Math.max(2,drag.rect.height+(drag.edge==='start'?-delta:drag.edge==='end'?delta:0))+'px';}
-    else {drag.ghost.style.left=(drag.rect.left+(['start','move'].includes(drag.edge)?delta:0))+'px';drag.ghost.style.width=Math.max(2,drag.rect.width+(drag.edge==='start'?-delta:drag.edge==='end'?delta:0))+'px';}
+    updateScheduleDrag(drag,event.clientX,event.clientY);
+    if (!drag.frame) drag.frame=requestAnimationFrame(()=>scrollDuringDrag(drag));
   },{capture:true,passive:false});
   ['pointerup','pointercancel','lostpointercapture'].forEach(type=>document.addEventListener(type,completeScheduleDrag,true));
   document.addEventListener('click',event=>{
-    if(Date.now()<suppressCalendarClickUntil&&event.target.closest?.('.p-axis-event,.p-horizontal-bar,.staff-month-event,.staff-axis-event')){event.preventDefault();event.stopImmediatePropagation();}
+    if(Date.now()<suppressCalendarClickUntil&&event.target.closest?.('.p-axis-event,.p-horizontal-bar,.p-all-day-event,.staff-month-event,.staff-axis-event')){event.preventDefault();event.stopImmediatePropagation();}
   },true);
   document.addEventListener('keydown',event=>{
-    if(event.target.matches?.('.p-axis-event')&&['Enter',' '].includes(event.key)){
+    if(event.target.matches?.('.p-axis-event,.p-all-day-event')&&['Enter',' '].includes(event.key)){
       event.preventDefault();event.stopPropagation();openTaskDetail(event.target.dataset.task);
     }
   });
@@ -755,7 +987,7 @@
 
   function dayHTML() {
     const d = state.viewAnchor;
-    const heading = '<header class="p-day-view-heading"><div class="p-day-heading-main"><button type="button" class="p-day-month-return" data-action="schedule-return-month">' + icons.left + '<span>返回月视图</span></button><h2 tabindex="-1">' + dayLabel(d) + ' <span>' + weekday(d) + '</span></h2></div><div class="p-day-display-modes" role="group" aria-label="当日日程显示方式">' +
+    const heading = '<header class="p-day-view-heading"><div class="p-day-heading-main"><button type="button" class="p-day-month-return" data-action="schedule-return-month">' + icons.left + '<span>返回月视图</span></button><h2 tabindex="-1">' + dayLabel(d) + ' <span>' + weekday(d) + '</span>' + holidayHTML(d) + '</h2></div><div class="p-day-display-modes" role="group" aria-label="当日日程显示方式">' +
       [['horizontal','横向排期'],['timeline','纵向时间轴'],['list','任务清单']].map(([mode,label]) => '<button type="button" data-action="schedule-day-mode" data-day-mode="' + mode + '" aria-pressed="' + (dayDisplay===mode) + '" aria-controls="p-day-panel">' + label + '</button>').join('') + '</div></header>';
     const panel = dayDisplay==='horizontal' ? horizontalDayHTML(d) : dayDisplay==='list' ? dayListHTML(d) : '<section id="p-day-panel" class="p-time-panel" aria-label="'+dayLabel(d)+'日程时间轴">' +
       '<div class="p-day-allday"><span class="p-allday-label">全天</span><div class="p-allday-scroll">' + allDayHTML(d) + '</div></div>' +
@@ -774,7 +1006,7 @@
     if (scheduleScroll.size>60) scheduleScroll.delete(scheduleScroll.keys().next().value);
   }
   function restoreScheduleScroll() {
-    const scroller = document.querySelector('.p-month-scroll, .p-timeline-scroll, .p-day-list');
+    const scroller = document.querySelector('#page-view .p-month-scroll, #page-view .p-timeline-scroll, #page-view .p-day-list');
     if (!scroller) return;
     scroller.dataset.scheduleScrollKey = scrollKey();
     const saved = scheduleScroll.get(scroller.dataset.scheduleScrollKey);
@@ -882,7 +1114,7 @@
   function openDaySheet(value, trigger) {
     const d = value instanceof Date ? value : parseDateInput(value);
     if (!d) return;
-    const scroller = document.querySelector('.p-month-scroll');
+    const scroller = document.querySelector('#page-view .p-month-scroll');
     const focusTarget = trigger && trigger.isConnected ? trigger
       : scroller ? scroller.querySelector('.p-month-date[data-date="' + dateKey(d) + '"]') : null;
     daySheet = { date: dateKey(d), scroll: scroller ? scroller.scrollTop : 0, scrollLeft: scroller ? scroller.scrollLeft : 0,
@@ -907,7 +1139,7 @@
     const previous = daySheet; daySheet = null;
     document.querySelector('.p-schedule-layer[data-layer="day"]')?.remove();
     syncLayerLock();
-    const scroller = document.querySelector('.p-month-scroll');
+    const scroller = document.querySelector('#page-view .p-month-scroll');
     if (scroller) {
       scroller.scrollTop = previous.scroll;
       scroller.scrollLeft = previous.scrollLeft;
@@ -1055,7 +1287,7 @@
     state.viewMode = 'month';
     updateView();
     requestAnimationFrame(function () {
-      document.querySelector('.p-month-date.is-selected')?.focus({preventScroll:true});
+      document.querySelector('#page-view .p-month-date.is-selected')?.focus({preventScroll:true});
     });
   }
   /* 从某一天创建时，等表单完成异步准备后再写入该业务日；不传日期时保留表单默认值。 */
@@ -1135,10 +1367,10 @@
     }
     if (action==='schedule-today') {
       const focused = document.activeElement === el;
-      const scroller = document.querySelector('.p-month-scroll, .p-timeline-scroll, .p-day-list');
+      const scroller = document.querySelector('#page-view .p-month-scroll, #page-view .p-timeline-scroll, #page-view .p-day-list');
       rememberScheduleScroll(scroller);
       if (scroller) delete scroller.dataset.scheduleScrollKey;
-      state.viewAnchor = startOfDay(new Date());
+      state.viewAnchor = calendarToday();
       resetStream(state.viewAnchor);
       scheduleScroll.delete(scrollKey());
       if (state.viewMode==='day') {
@@ -1205,7 +1437,7 @@
     }
     if (event.key === 'Tab') trapTab(event, container);
   }, true);
-  P.calendar = { bindScheduleResize, resizeHandle, dayTasks, dayLogs, dayEvents, dayCoverage, layoutDayEvents, monthWeek, monthSortTasks, dayListSort,
+  P.calendar = { holidayHTML, holidayLabel, monthDateHTML, monthWeekHTML, monthFrameHTML, readMonthViewHTML, bindReadMonthDensity, monthAnchor, placeMonthAnchor, growMonthStream, bindScheduleResize, resizeHandle, dayTasks, dayLogs, dayEvents, dayCoverage, layoutDayEvents, monthWeek, monthSortTasks, dayListSort,
     sortedDay, allDayTasks, monthMetrics, monthKey, monthFromKey, shiftMonth, monthSection: monthSectionHTML,
     openDaySheet, closeDaySheet, appendStreamMonth, mountMonthAround,
     currentDaySheet: () => (daySheet ? { date: daySheet.date } : null),

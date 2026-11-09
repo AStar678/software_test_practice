@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-29T02:12:28.588Z",
+  "updated": "2026-11-01T09:43:33.419Z",
   "checks": [
     {
       "check": "administrator browser logs into the real console",
@@ -51,7 +51,7 @@
         "headers": {
           "connection": "keep-alive",
           "content-type": "application/json",
-          "date": "Thu, 29 Oct 2026 02:12:31 GMT",
+          "date": "Sun, 01 Nov 2026 09:43:36 GMT",
           "keep-alive": "timeout=60",
           "transfer-encoding": "chunked",
           "x-content-type-options": "nosniff",
@@ -72,26 +72,31 @@
       "pass": true
     },
     {
-      "check": "takeover recipient directly edits the active task",
+      "check": "takeover recipient base edit waits for the applicant direct manager",
+      "pass": true,
+      "evidence": "Chain active written-off work"
+    },
+    {
+      "check": "manager approval publishes the takeover edit",
       "pass": true
     },
     {
-      "check": "assignee progress waits for the takeover business owner",
+      "check": "assignee progress waits for the applicant direct manager",
       "pass": true,
       "evidence": {
         "status": 200,
         "body": {
-          "taskId": "8beb6fa5-8186-49ae-9e6a-ef3c8d0973fc",
-          "requestId": "fbc416e5-e9f8-45ee-a970-0c5c694418b8",
+          "taskId": "1d79ccbd-b62e-4b10-b4f2-32fe71be7b76",
+          "requestId": "b3b7dcbe-1812-4239-8f93-c93545668e0f",
           "outcome": "pending",
-          "rowVersion": 8
+          "rowVersion": 10
         },
         "headers": {
           "cache-control": "no-store",
           "connection": "keep-alive",
           "content-type": "application/json",
-          "date": "Thu, 29 Oct 2026 02:12:32 GMT",
-          "etag": "\"8\"",
+          "date": "Sun, 01 Nov 2026 09:43:37 GMT",
+          "etag": "\"10\"",
           "keep-alive": "timeout=60",
           "transfer-encoding": "chunked",
           "x-content-type-options": "nosniff",
@@ -100,11 +105,7 @@
       }
     },
     {
-      "check": "takeover recipient opens the real review sheet",
-      "pass": true
-    },
-    {
-      "check": "takeover recipient approves the pending progress",
+      "check": "manager approval applies the pending progress",
       "pass": true
     },
     {
@@ -116,7 +117,11 @@
       "pass": true
     },
     {
-      "check": "takeover recipient reopens with a new round and active assignee",
+      "check": "takeover recipient reopen waits for the applicant direct manager",
+      "pass": true
+    },
+    {
+      "check": "manager approval reopens with a new round and active assignee",
       "pass": true
     },
     {

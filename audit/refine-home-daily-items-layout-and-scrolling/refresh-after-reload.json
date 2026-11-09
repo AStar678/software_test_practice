@@ -1,0 +1,131 @@
+{
+  "updated": "2026-11-05T06:58:31.645Z",
+  "viewports": [
+    {
+      "viewport": "320x740",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-09",
+          "2026-10",
+          "2026-11",
+          "2026-12",
+          "2027-01"
+        ],
+        "clientWidth": 256,
+        "scrollWidth": 1192,
+        "scrollLeft": 416,
+        "maxLeft": 936,
+        "todayVisible": true
+      },
+      "canSlideBack": true,
+      "canSlideForward": true,
+      "forward": {
+        "left": 859,
+        "open": false
+      },
+      "backward": {
+        "left": 415,
+        "open": false
+      },
+      "movedForward": true,
+      "movedBackward": true
+    },
+    {
+      "viewport": "390x844",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-09",
+          "2026-10",
+          "2026-11",
+          "2026-12",
+          "2027-01"
+        ],
+        "clientWidth": 310,
+        "scrollWidth": 1244,
+        "scrollLeft": 438,
+        "maxLeft": 934,
+        "todayVisible": true
+      },
+      "canSlideBack": true,
+      "canSlideForward": true,
+      "forward": {
+        "left": 881,
+        "open": false
+      },
+      "backward": {
+        "left": 438,
+        "open": false
+      },
+      "movedForward": true,
+      "movedBackward": true
+    },
+    {
+      "viewport": "1440x900",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-06",
+          "2026-07",
+          "2026-08",
+          "2026-09",
+          "2026-10",
+          "2026-11",
+          "2026-12",
+          "2027-01",
+          "2027-02",
+          "2027-03",
+          "2027-04"
+        ],
+        "clientWidth": 1052,
+        "scrollWidth": 2696,
+        "scrollLeft": 1210,
+        "maxLeft": 1644,
+        "todayVisible": true
+      },
+      "canSlideBack": true,
+      "canSlideForward": true,
+      "forward": {
+        "left": 1652,
+        "open": false
+      },
+      "backward": {
+        "left": 1208,
+        "open": false
+      },
+      "movedForward": true,
+      "movedBackward": true
+    },
+    {
+      "viewport": "390x600",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-09",
+          "2026-10",
+          "2026-11",
+          "2026-12",
+          "2027-01"
+        ],
+        "clientWidth": 310,
+        "scrollWidth": 1244,
+        "scrollLeft": 438,
+        "maxLeft": 934,
+        "todayVisible": true
+      },
+      "canSlideBack": true,
+      "canSlideForward": true,
+      "forward": {
+        "left": 880,
+        "open": false
+      },
+      "backward": {
+        "left": 437,
+        "open": false
+      },
+      "movedForward": true,
+      "movedBackward": true
+    }
+  ]
+}

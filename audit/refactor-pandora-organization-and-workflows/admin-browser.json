@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-29T03:47:44.193Z",
+  "updated": "2026-11-05T07:01:38.715Z",
   "checks": [
     {
       "check": "independent admin enters real management console",
@@ -43,7 +43,13 @@
     },
     {
       "check": "browser commits completed responsibility takeover and employee deactivation",
-      "pass": true
+      "pass": true,
+      "evidence": {
+        "active": 0,
+        "planError": "",
+        "notice": null,
+        "body": "splay title\n\n\nbeta-head\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n—\n\t\n请选择\nDisplay title\n\n\nbeta-one-head\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nDisplay title\n\n\nbeta-one-employee\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nDisplay title\n\n\nbeta-two-employee\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nDisplay title\n\n\nfounder\n\t\n创始人（固定）\n\t\n公司\n\t\n—\n\t\n请选择\nDisplay title\n\n\nbeta-two-head\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nDisplay title\n停用与业务责任安排\n待停用 0 人，业务责任接管 0 项，管理撤销未发布创建 0 项。\n调整原因\n保存完整结果\n完整组织结果已保存"
+      }
     },
     {
       "check": "admin account has independent account fields",

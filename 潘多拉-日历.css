@@ -256,7 +256,13 @@
 .p-day-allday .p-allday-label{flex:0 0 auto;width:var(--axis-width,50px);font-size:10px;line-height:1.4;color:#8e8e93;text-align:right;padding:3px 6px 0 0}
 .p-day-allday .p-allday-scroll{flex:1 1 auto;min-width:0;min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .p-day-allday .p-allday-list{display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start}
-.p-day-allday .p-all-day-event{flex:1 1 auto;max-width:100%;min-width:0;min-height:30px;padding:5px 7px;border:0;border-left:3px solid var(--tc-bd);border-radius:5px;background:var(--tc-bg);color:#303036;font-size:11px;line-height:1.35;text-align:left;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.p-day-allday .p-all-day-event{flex:1 1 auto;max-width:100%;min-width:0;min-height:30px;padding:5px 16px;position:relative;display:flex;align-items:center;border:0;border-left:3px solid var(--tc-bd);border-radius:5px;background:var(--tc-bg);color:#303036;font-size:11px;line-height:1.35;text-align:left;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.p-day-allday .p-allday-move{display:flex;flex-direction:column;justify-content:center;gap:1px;min-width:0;flex:1 1 auto}
+.p-day-allday .p-allday-move strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-day-allday .p-allday-move small{display:block;font-size:9px;line-height:11px;color:#666670;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-day-allday .p-resize-handle{top:0;bottom:auto;height:100%;width:14px}
+.p-day-allday .p-resize-start{left:0;right:auto}
+.p-day-allday .p-resize-end{right:0;left:auto}
 .p-day-allday .p-all-day-empty{padding:3px;font-size:11px;color:#a0a0a6}
 .p-day-layout>.p-time-panel{display:flex;flex-direction:column;min-height:0;overflow:hidden}
 @media(min-width:760px){
@@ -352,7 +358,8 @@
 .p-day-display-modes{grid-template-columns:repeat(3,minmax(0,1fr));flex-basis:270px}
 .p-horizontal-panel{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0;overflow:hidden}
 .p-drag-hint{margin:0;padding:8px 12px;color:#776a73;font-size:11px;line-height:1.6}
-.p-day-layout .p-horizontal-scroll{overflow:auto;touch-action:pan-x pan-y;padding:0 24px 30px;min-width:0}
+/* 给 24:00 端点留出一小时的可滚动拖动空间，时间刻度仍止于 24:00。 */
+.p-day-layout .p-horizontal-scroll{overflow:auto;touch-action:pan-x pan-y;padding:0 88px 30px 24px;min-width:0}
 .p-horizontal-axis{position:relative;width:1440px;min-height:100%;background:repeating-linear-gradient(90deg,#e8dfe5 0,#e8dfe5 1px,transparent 1px,transparent 60px)}
 .p-horizontal-ruler{height:30px;position:sticky;top:0;z-index:6;background:#faf6f9;border-bottom:1px solid #e8dfe5}
 .p-horizontal-ruler span{position:absolute;top:5px;transform:translateX(-50%);font-size:10px;color:#7d6c78}
@@ -364,7 +371,7 @@
 .p-horizontal-bar .p-resize-start{left:-22px;bottom:-6px}.p-horizontal-bar .p-resize-end{right:-22px;bottom:-6px}
 .p-horizontal-bar:has(.p-resize-handle):has(.p-horizontal-task){min-width:1px}
 .p-horizontal-empty{position:sticky;left:0;width:200px;padding:30px;color:#84717c}
-@media(max-width:600px){.p-day-view-heading{flex-wrap:wrap}.p-day-view-heading .p-day-display-modes{flex-basis:100%}.p-day-layout .p-horizontal-scroll{padding-inline:24px}.p-day-display-modes button{padding-inline:4px}}
+@media(max-width:600px){.p-day-view-heading{flex-wrap:wrap}.p-day-view-heading .p-day-display-modes{flex-basis:100%}.p-day-layout .p-horizontal-scroll{padding-inline:24px 88px}.p-day-display-modes button{padding-inline:4px}}
 
 /* Keep the task caption readable when its actual time range is scrolled past. */
 .p-horizontal-row{height:88px}
@@ -421,7 +428,10 @@
 .p-month-view[data-density] .p-month-event-title{font-size:12px;line-height:15px;font-weight:500}
 .p-month-view[data-density] .p-month-event-time{font-size:10px;line-height:13px}
 .p-month-event.is-pending-review .p-month-duration{border:0;outline:2px dashed var(--tc-bd,#b66b8c);outline-offset:-2px;box-shadow:none;background:color-mix(in srgb,var(--tc-bg,#ffe1ea) 45%,white)}
-.p-month-event.is-point .p-month-duration,.staff-month-event.is-point .staff-month-duration{min-width:2px}
+.p-month-event.is-point .p-month-duration,.staff-month-event.is-point .staff-month-duration{min-width:0}
+/* 日级月条上的零时长任务仍保留真实零工期，只加一个明确的时点标记。 */
+.p-month-event.is-point .p-month-duration::before{content:'';position:absolute;left:4px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:var(--tc-bd,#e39ab4);pointer-events:none}
+.p-month-event.is-point .p-month-caption{inset-inline-start:12px}
 [data-schedule-move]{cursor:grab}
 .p-resize-handle{display:block;position:absolute;z-index:6;width:12px;height:100%;max-width:none;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;touch-action:none;user-select:none;cursor:ew-resize}
 .p-resize-handle:focus-visible{outline:2px solid #ab3257;outline-offset:-2px}
@@ -446,3 +456,13 @@
 .p-axis-event.is-point .p-resize-end,.staff-axis-event.is-point .p-resize-end{top:auto;bottom:0;height:50%}
 
 .p-drag-ghost{overflow:hidden;color:#493b46}.p-drag-ghost .p-month-caption strong,.p-drag-ghost .p-month-caption small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:14px}
+
+.p-holiday{display:inline-block;font-size:10px;line-height:1.2;font-weight:600;white-space:nowrap}
+.p-holiday.is-holiday{color:#a83229}
+.p-holiday.is-workday{color:#3d566e}
+.p-day-view-heading h2 .p-holiday{margin-inline-start:6px;font-size:12px}
+.p-month-date:has(.p-holiday) .p-month-date-label{height:20px;min-height:20px}
+.p-month-date:has(.p-holiday) strong{height:19px;width:20px;min-width:20px;font-size:14px}
+.staff-panel .p-read-month{height:clamp(280px,55vh,620px)}
+.staff-log-nav input{flex:1;min-width:0}
+.staff-log-dot{width:7px;height:7px;border-radius:50%;background:var(--brand)}

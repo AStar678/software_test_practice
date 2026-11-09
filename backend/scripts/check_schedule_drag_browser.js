@@ -1,304 +1,234 @@
 'use strict';
 const fs=require('fs'),path=require('path');
 const {openBrowser,waitFor,sleep}=require('./browser_fixture');
-const fixture=JSON.parse(process.env.PANDORA_SCHEDULE_FIXTURE),js=JSON.stringify;
+const f=JSON.parse(process.env.PANDORA_SCHEDULE_FIXTURE),q=JSON.stringify;
 const out=path.resolve(__dirname,'../../output/task-schedule');
 const report={checks:[]};
-function check(name,value,evidence){report.checks.push({name,pass:!!value,evidence});console.log((value?'PASS ':'FAIL ')+name);if(!value)throw Error(name+' '+JSON.stringify(evidence));}
+function check(name,pass,evidence){report.checks.push({name,pass:!!pass,evidence});console.log((pass?'PASS ':'FAIL ')+name);if(!pass)throw Error(name+' '+JSON.stringify(evidence));}
 async function main(){
- const b=await openBrowser(fixture.base+'/'+encodeURIComponent('潘多拉-交互原型.html'),{width:1440,height:900,mobile:false}),ev=b.evaluate;
+ const b=await openBrowser(f.base+'/'+encodeURIComponent('潘多拉-交互原型.html'),{width:1440,height:900,mobile:false}),ev=b.evaluate;
  async function login(who){
-  check('login form '+who,await waitFor(b,"!!document.getElementById('backend-login')"));
-  await ev(`document.getElementById('login-user').value=${js(fixture.identities[who].identifier)};document.getElementById('login-password').value='Fixture@123456';document.getElementById('backend-login').requestSubmit()`);
+  check('login form',await waitFor(b,"!!document.getElementById('backend-login')"));
+  await ev(`document.getElementById('login-user').value=${q(f.identities[who].identifier)};document.getElementById('login-password').value='Fixture@123456';document.getElementById('backend-login').requestSubmit()`);
   check('authenticated '+who,await waitFor(b,'Pandora.ready&&Pandora.idle()',20000));
  }
- async function view(mode='day',display='horizontal',date=fixture.day){
-  await ev(`closeSheet();Pandora.calendar.closeDaySheet();state.viewAnchor=parseDateInput(${js(date)});state.viewMode=${js(mode)};state.viewPage='calendar';Pandora.calendar.resetStream(state.viewAnchor);setPage('view');renderAll()`);
+ async function view(mode='day',display='horizontal',day=f.day){
+  await ev(`closeSheet();Pandora.calendar.closeDaySheet();state.viewAnchor=parseDateInput(${q(day)});state.viewMode=${q(mode)};state.viewPage='calendar';Pandora.calendar.resetStream(state.viewAnchor);setPage('view');renderAll()`);
   if(mode==='day')await ev(`document.querySelector('[data-action=schedule-day-mode][data-day-mode="${display}"]').click()`);
   await sleep(200);
  }
- async function raw(id){return ev(`Pandora.request('/tasks/'+${js(id)})`);}
- async function handle(id,edge,mode){
-  const selector=`[data-resize-task="${id}"][data-resize="${edge}"][data-resize-mode="${mode}"]`;
-  return ev(`(()=>{const h=document.querySelector(${js(selector)});if(!h)return null;h.scrollIntoView({block:'center',inline:'center'});const r=h.getBoundingClientRect(),bar=h.closest('.p-month-event,.p-horizontal-bar,.p-axis-event');if(!r.width||!r.height)return null;return {x:r.x+r.width/2,y:r.y+r.height/2,vertical:${js(mode)}==='vertical',unit:${js(mode)}==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7/24:${js(mode)}==='vertical'?bar.closest('.p-axis-events').getBoundingClientRect().height/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24}})()`);
- }
- async function drag(id,edge,mode,steps,cancel){
-  const h=await handle(id,edge,mode);check('handle reachable '+edge+' '+mode,!!h,h);
-  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:h.x,y:h.y});
-  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:h.x,y:h.y,button:'left',clickCount:1});
-  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:h.x+(h.vertical?0:h.unit*steps),y:h.y+(h.vertical?h.unit*steps:0),button:'left',buttons:1});
-  check('drag preview visible',await ev(`!!document.querySelector('.p-drag-preview')&&document.querySelector('.p-drag-ghost').textContent.includes(taskById(${js(id)}).title)`));
+ async function raw(id){return ev(`Pandora.request('/tasks/'+${q(id)})`);}
+ async function point(selector){return ev(`(()=>{const h=document.querySelector(${q(selector)});if(!h)return null;h.scrollIntoView({block:'center',inline:'center'});const r=h.getBoundingClientRect(),bar=h.closest('.p-month-event,.p-horizontal-bar,.p-axis-event');if(!bar||!r.width||!r.height)return null;const mode=h.dataset.resizeMode;return {x:r.x+r.width/2,y:r.y+r.height/2,unit:mode==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7:mode==='vertical'?bar.closest('.p-axis-events').getBoundingClientRect().height/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24,vertical:mode==='vertical'}})()`);}
+ async function drag(selector,steps,cancel,targetDate){
+  const p=await point(selector);check('drag source exists '+selector,!!p,p);
+  const targetSelector='#page-view .p-month-date[data-date="'+targetDate+'"]';
+  const target=targetDate?await ev(`(()=>{const r=document.querySelector(${q(targetSelector)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+40};})()`):null;
+  const x=target?.x??p.x+(p.vertical?0:p.unit*steps),y=target?.y??p.y+(p.vertical?p.unit*steps:0);
+  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y});
+  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',clickCount:1});
+  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x,y,button:'left',buttons:1});
+  check('drag preview',await ev("!!document.querySelector('.p-drag-preview')"));
   if(cancel==='escape')await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
-  if(cancel==='pointercancel')await ev(`document.querySelector(${js(`[data-resize-task="${id}"][data-resize="${edge}"][data-resize-mode="${mode}"]`)}).dispatchEvent(new PointerEvent('pointercancel',{pointerId:1,bubbles:true}))`);
-  await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:h.x+(h.vertical?0:h.unit*steps),y:h.y+(h.vertical?h.unit*steps:0),button:'left',clickCount:1});
-  await sleep(150);
+  if(cancel==='pointercancel')await ev(`document.querySelector(${q(selector)}).dispatchEvent(new PointerEvent('pointercancel',{pointerId:1,bubbles:true}))`);
+  if(cancel==='lostpointercapture')await ev(`document.querySelector(${q(selector)}).dispatchEvent(new PointerEvent('lostpointercapture',{pointerId:1,bubbles:true}))`);
+  await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',clickCount:1});
+  await sleep(180);
  }
- async function moveDay(id,mode,steps){
-  const data=await ev(`(()=>{const n=document.querySelector('${mode==='vertical'?'.p-axis-event':'.p-horizontal-bar'}[data-task="${id}"]'),f=${js(mode)}==='vertical'?n.querySelector('.p-axis-true'):n;f.scrollIntoView({block:'center',inline:'center'});const r=f.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,left:r.left,top:r.top,width:r.width,height:r.height}})()`);
-  const vertical=mode==='vertical';
-  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:data.x,y:data.y,button:'left',clickCount:1});
-  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:data.x+(vertical?0:steps*60),y:data.y+(vertical?steps*60:0),button:'left',buttons:1});
-  const ghost=await ev("(()=>{const r=document.querySelector('.p-drag-ghost').getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height}})()");
-  check('whole day move ghost shifts without resizing '+mode,Math.abs((vertical?ghost.top-data.top:ghost.left-data.left)-steps*60)<1&&Math.abs((vertical?ghost.height-data.height:ghost.width-data.width))<1,ghost);
-  await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:data.x+(vertical?0:steps*60),y:data.y+(vertical?steps*60:0),button:'left',clickCount:1});await form();
+ async function tap(selector){
+  const p=await point(selector);check('handle exists '+selector,!!p,p);
+  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y});
+  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',clickCount:1});
+  await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:p.x,y:p.y,button:'left',clickCount:1});
+  await sleep(400);
  }
- async function moveMonth(id,steps,cancel=false){
-   const p=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${id}"]');n.scrollIntoView({block:'center'});const r=n.querySelector('.p-month-duration').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,unit:n.closest('.p-month-week').getBoundingClientRect().width/7/24}})()`);
-   await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',clickCount:1});
-   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x+steps*p.unit,y:p.y,buttons:1,button:'left'});
-   check('month whole task move shows preview',await ev("!!document.querySelector('.p-drag-preview')"));
-   if(cancel)await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
-   await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:p.x+steps*p.unit,y:p.y,button:'left',clickCount:1});
+ async function confirm(){const opened=await waitFor(b,"!!document.getElementById('sc-reason')&&!document.getElementById('overlay').hidden&&Pandora.idle()",20000);check('lightweight confirmation opens',opened,opened?null:await ev("({overlay:document.getElementById('overlay')?.hidden,reason:!!document.getElementById('sc-reason'),sheet:document.getElementById('sheetBody')?.textContent.slice(0,500),idle:Pandora.idle(),error:document.getElementById('sc-error')?.textContent,notice:document.querySelector('[role=status]')?.textContent})"));check('full task editor absent',await ev("!document.getElementById('tf-start-date')&&!document.getElementById('tf-title')"));}
+ async function save(reason){await ev(`document.getElementById('sc-reason').value=${q(reason)};document.querySelector('[data-action=p-save-schedule]').click()`);check('schedule submitted',await waitFor(b,"Pandora.idle()&&document.getElementById('overlay').hidden",20000),await ev("document.getElementById('sc-error')?.textContent"));}
+ async function barState(taskId){
+  return ev(`(()=>{const bars=Array.from(document.querySelectorAll('.p-month-event[data-task="${taskId}"]'));if(!bars.length)return {count:0};const bar=bars[0],week=bar.closest('.p-month-week');const start=toDateInput(addDays(parseDateInput(week.dataset.weekStart),Number(bar.dataset.startColumn)));return {count:bars.length,date:start,dashed:bar.classList.contains('is-pending-review'),text:bar.textContent,color:bar.style.getPropertyValue('--tc-bg').trim()}})()`);
  }
- async function form(){check('drag opens confirmation form',await waitFor(b,"!!drafts.task&&!document.getElementById('overlay').hidden&&!document.getElementById('overlay').hidden&&Pandora.idle()"));}
- async function save(reason){await ev(`document.getElementById('tf-reason').value=${js(reason)};document.querySelector('[data-action=save-task]').click()`);check('schedule submitted',await waitFor(b,"Pandora.idle()&&document.getElementById('overlay').hidden",20000),await ev("document.getElementById('tf-error')?.textContent"));}
+ async function api(method,path,body,version,token){
+  return ev(`(async()=>{const headers={Accept:'application/json',Authorization:'Bearer '+${q(token)}};let payload=null;if(${q(body)}!=null){headers['Content-Type']='application/json';payload=JSON.stringify(${q(body)})}if(${q(version)}!=null)headers['If-Match']='"'+${q(version)}+'"';headers['Idempotency-Key']=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random());const response=await fetch('/api/v1'+${q(path)},{method:${q(method)},headers,body:payload});let data={};try{data=await response.json()}catch(_){}return {status:response.status,body:data}})()`);
+ }
+ async function decide(requestId,decision,token){
+  const request=await api('GET','/approval-requests/'+requestId,null,null,token);
+  return api('PATCH','/approval-requests/'+requestId,{decision,comment:'排期投影验证'},request.body.rowVersion,token);
+ }
+ async function monthDrag(taskId,days,anchor){
+  await view('month',undefined,anchor);
+  const target=await ev(`toDateInput(addDays(parseDateInput(${q(anchor)}),${days}))`);
+  await drag(`[data-schedule-move="${taskId}"][data-resize-mode=month]`,days,undefined,target);
+  await confirm();
+  await save('月历排期投影');
+ }
+ async function reloadMonth(anchor){await ev('Pandora.reload()');await view('month',undefined,anchor);}
+ if(f.phase==='expire'){
+  try{
+   await login('alpha-one-employee');
+   await view('month',undefined,f.expireDay);
+   const pendingBar=await barState(f.expire);
+   check('expired proposal still projects at its proposed date while pending',pendingBar.date==='2031-02-28'&&pendingBar.dashed,pendingBar);
+   const handoff=JSON.parse(fs.readFileSync(path.join(out,'handoff.json'),'utf8'));
+   const attempt=await decide(handoff.requestId,'approve',f.tokens.head);
+   check('review after the applicable deadline expires the request',attempt.status===409&&attempt.body.code==='REQUEST_EXPIRED',attempt);
+   await reloadMonth(f.expireDay);
+   const restored=await barState(f.expire);
+   check('expired proposal returns the calendar to the effective date',restored.date==='2031-02-26'&&!restored.dashed,restored);
+   const rawExpire=await raw(f.expire);
+   check('expired proposal is unpublished and the task is unfrozen',rawExpire.frozen===false&&rawExpire.dueAt==='2031-02-26T03:00:00Z'&&!rawExpire.pendingSchedule,rawExpire);
+   check('no browser exceptions',b.errors.length===0,b.errors);
+  }finally{fs.writeFileSync(path.join(out,'browser-expire-report.json'),JSON.stringify(report,null,2));await b.kill();}
+  return;
+ }
  try{
   await login('founder');await sleep(5100);await view();
-  check('horizontal day is default',await ev("!!document.querySelector('.p-horizontal-axis')"));
-  check('day contains every task once including full days and points',await ev(`document.querySelectorAll('.p-horizontal-task').length===4&&document.querySelectorAll('.p-horizontal-task[data-task="${fixture.full}"]').length===1`));
-  const original=await raw(fixture.task);
-  for(const width of [320,390,1440]){
-   await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});await view('month');
-   const geometry=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.task}"]'),r=n.getBoundingClientRect(),d=n.querySelector('.p-month-duration').getBoundingClientRect();return {ratio:d.width/r.width,left:(d.left-r.left)/r.width}})()`);
-   check('month paints nine hours rather than whole day '+width,Math.abs(geometry.ratio-9/24)<.004&&Math.abs(geometry.left-(9+20/60)/24)<.004,geometry);
-   check('month text is inside real frame without labeled buttons '+width,await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.task}"]'),f=n.querySelector('.p-month-duration'),c=n.querySelector('.p-month-caption'),r=f.getBoundingClientRect(),t=c.getBoundingClientRect();return t.left>=r.left-1&&t.right<=r.right+1&&t.top>=r.top-1&&t.bottom<=r.bottom+1&&!n.querySelector('button')&&!!f.querySelector('.p-month-event-title')})()`));
-   await b.screenshot(path.join(out,'partial-month-'+width+'.png'));
-  }
-  await b.viewport({width:1440,height:900,mobile:false});await view('month');
-  const clickPoint=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.task}"]');n.scrollIntoView({block:'center'});const r=n.getBoundingClientRect();return {x:r.x+r.width*.25,y:r.y+8}})()`);
-  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:clickPoint.x,y:clickPoint.y,button:'left',clickCount:1});
-  await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:clickPoint.x,y:clickPoint.y,button:'left',clickCount:1});
-  check('plain month click still opens day list',await waitFor(b,`Pandora.calendar.currentDaySheet()?.date===${js(fixture.day)}`));
-  await ev('Pandora.calendar.closeDaySheet()');
-  await b.viewport({width:390,height:844,mobile:true});await view('month');
-  const scrollPoint=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.task}"]');n.scrollIntoView({block:'center'});const r=n.getBoundingClientRect();return {x:r.x+6,y:r.y+8,scroll:document.querySelector('.p-month-scroll').scrollTop}})()`);
-  await b.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:scrollPoint.x,y:scrollPoint.y,id:0}]});
-  await b.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:scrollPoint.x,y:scrollPoint.y-65,id:0}]});
-  await b.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await sleep(250);
-  check('month vertical touch scroll does not submit a move',await ev(`document.getElementById('overlay').hidden&&!document.querySelector('.p-drag-preview')&&Math.abs(document.querySelector('.p-month-scroll').scrollTop-${scrollPoint.scroll})>1`));
-  await b.viewport({width:1440,height:900,mobile:false});await view();
-  const pointClick=await handle(fixture.point,'end','day');
-  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:pointClick.x,y:pointClick.y,button:'left',clickCount:1});
-  await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:pointClick.x,y:pointClick.y,button:'left',clickCount:1});
-  check('point edge click without movement still opens task',await waitFor(b,"Pandora.idle()&&!document.getElementById('overlay').hidden&&document.getElementById('sheetBody').textContent.includes('零时长会议')&&!document.getElementById('tf-start-date')"));
-  await ev('closeSheet()');await view();
-  await moveDay(fixture.task,'day',1);
-  check('horizontal frame moves both endpoints',await ev("drafts.task.startTime==='10:20'&&drafts.task.endTime==='19:20'"));
-  await ev('closeSheet()');await view();
-  await drag(fixture.task,'end','day',2,'escape');
-  check('escape leaves no form or changed version',await ev("!document.querySelector('.p-drag-preview')&&document.getElementById('overlay').hidden")&&(await raw(fixture.task)).rowVersion===original.rowVersion);
-  await drag(fixture.task,'end','day',2,'pointercancel');
-  check('pointercancel does not submit',await ev("document.getElementById('overlay').hidden")&&(await raw(fixture.task)).rowVersion===original.rowVersion);
-  await drag(fixture.task,'end','day',2);await form();
-  check('day end advances two hours preserving minutes',await ev("drafts.task.endTime==='20:20'&&drafts.task.startTime==='09:20'"));
-  check('preview has not persisted', (await raw(fixture.task)).dueAt===original.dueAt);
-  await save('横向调整截止');
-  check('founder saved precise timed range', (await raw(fixture.task)).dueAt==='2030-12-31T12:20:00Z'&&!(await raw(fixture.task)).allDay);
-  await view('month');await drag(fixture.task,'end','month',1);await form();
-  check('month moves one hour not one day',await ev("drafts.task.endDate==='2030-12-31'&&drafts.task.endTime==='21:20'"));
-  await ev('closeSheet()');await view('month');await drag(fixture.task,'end','month',4);await form();
-  check('month drag crosses year and preserves time',await ev("drafts.task.endDate==='2031-01-01'&&drafts.task.endTime==='00:20'&&drafts.task.startDate==='2030-12-31'"));
-  await save('跨年截止');
-  check('cross-year end persisted',(await raw(fixture.task)).dueAt==='2030-12-31T16:20:00Z');
-  await view();
+  await ev("window.__scheduleCalls=[];const originalOpenScheduleChange=Pandora.openScheduleChange;Pandora.openScheduleChange=function(...args){window.__scheduleCalls.push(args.map(a=>a instanceof Date?a.toISOString():a));return originalOpenScheduleChange.apply(this,args)}");
+  const original=await raw(f.task);
+  check('day full and legacy have no hour drag entry',await ev(`!document.querySelector('[data-resize-task="${f.full}"],[data-schedule-move="${f.full}"],[data-resize-task="${f.legacy}"],[data-schedule-move="${f.legacy}"]')`));
+  check('normal and point tasks retain hour handles',await ev(`!!document.querySelector('[data-resize-task="${f.task}"][data-resize=end]')&&!!document.querySelector('[data-resize-task="${f.point}"][data-resize=end]')`));
+  await drag(`[data-resize-task="${f.task}"][data-resize=end][data-resize-mode=day]`,2,'escape');
+  check('escape cancels unchanged',await ev("document.getElementById('overlay').hidden&&!document.querySelector('.p-drag-preview')")&&(await raw(f.task)).rowVersion===original.rowVersion);
+  await drag(`[data-resize-task="${f.task}"][data-resize=end][data-resize-mode=day]`,2,'pointercancel');
+  check('pointercancel cancels unchanged',await ev("document.getElementById('overlay').hidden")&&(await raw(f.task)).rowVersion===original.rowVersion);
+  await drag(`[data-resize-task="${f.task}"][data-resize=end][data-resize-mode=day]`,2);check('drag calls confirmation',await ev('window.__scheduleCalls.length===1'),await ev('window.__scheduleCalls'));await confirm();
+  check('confirmation shows old and exact new time',await ev("(()=>{const t=document.getElementById('sheetBody').textContent;return t.includes('18:20')&&t.includes('20:20')&&t.includes('原排期')&&t.includes('新排期')})()"));
+  check('preview is uncommitted',(await raw(f.task)).dueAt===original.dueAt);
+  await save('日轴调整截止');
+  check('precise hour persisted',(await raw(f.task)).dueAt==='2030-12-31T12:20:00Z');
   await view('month');
-  check('month continuation has no extra schedule button',await ev("!document.querySelector('.p-month-event [data-action=p-adjust-schedule]')"));
-  await moveMonth(fixture.task,1);await form();
-  check('continuation drag retains complete task duration',await ev("drafts.task.startDate==='2030-12-31'&&drafts.task.startTime==='10:20'&&drafts.task.endDate==='2031-01-01'&&drafts.task.endTime==='01:20'"));
+  await drag(`[data-resize-task="${f.task}"][data-resize=end][data-resize-mode=month]`,4);await confirm();
+  check('month drag crosses year and preserves minute',await ev("(()=>{const t=document.getElementById('sheetBody').textContent;return t.includes('2031-01-04')&&t.includes('20:20')})()"));
+  await save('跨年调整截止');
+  check('cross year persisted',(await raw(f.task)).dueAt==='2031-01-04T12:20:00Z');
+  await view('day','horizontal',f.day);
+  check('cross day continuation has no hour drag',await ev(`!document.querySelector('[data-resize-task="${f.task}"],[data-schedule-move="${f.task}"]')`));
+  await view('month');
+  await drag(`[data-schedule-move="${f.task}"][data-resize-mode=month]`,1);await confirm();
+  check('whole month move preserves duration',await ev("(()=>{const t=document.getElementById('sheetBody').textContent;return t.includes('2031-01-01')&&t.includes('2031-01-05')&&t.includes('09:20')&&t.includes('20:20')})()"));
   await ev('closeSheet()');await view();
-  check('clipped continuation has no false end handle',await ev(`!document.querySelector('[data-resize-task="${fixture.task}"][data-resize=end]')`));
-  await drag(fixture.task,'start','day',-1);await form();
-  check('start changes independently',await ev("drafts.task.startTime==='08:20'&&drafts.task.endTime==='00:20'&&drafts.task.endDate==='2031-01-01'"));
-  await ev('closeSheet()');await view();
-  await drag(fixture.point,'start','day',1);
-  check('inverse point range rejected',await ev("document.getElementById('overlay').hidden")&&(await raw(fixture.point)).startAt===(await raw(fixture.point)).dueAt,await ev("({form:!document.getElementById('overlay').hidden,draft:drafts.task&&{id:drafts.task.id,start:drafts.task.startTime,end:drafts.task.endTime},preview:document.querySelector('.p-drag-preview')?.textContent})"));
-  await drag(fixture.point,'end','day',1);await form();
-  check('zero duration endpoint can expand',await ev("drafts.task.startTime==='12:00'&&drafts.task.endTime==='13:00'"));
-  await ev('closeSheet()');await view();
-  await handle(fixture.full,'end','day');
-  await ev(`document.querySelector('[data-resize-task="${fixture.full}"][data-resize=end]').focus()`);
-  await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowLeft',code:'ArrowLeft',windowsVirtualKeyCode:37});await form();
-  check('keyboard midnight endpoint uses correct date',await ev("drafts.task.endDate==='2030-12-31'&&drafts.task.endTime==='23:00'"));
+  await drag(`[data-resize-task="${f.point}"][data-resize=start][data-resize-mode=day]`,1);
+  check('inverse point range rejected',await ev("document.getElementById('overlay').hidden")&&(await raw(f.point)).startAt===(await raw(f.point)).dueAt);
+  await drag(`[data-resize-task="${f.point}"][data-resize=end][data-resize-mode=day]`,1);await confirm();
+  check('point expands by an hour',await ev("document.getElementById('sheetBody').textContent.includes('13:00')"));
   await ev('closeSheet()');
-  const legacy=await raw(fixture.legacy);
-  await ev(`openTaskForm('edit',${js(fixture.legacy)})`);await form();
-  check('legacy all-day edits preserve stored instants',await ev(`!drafts.task.allDay&&parseDateTime(drafts.task.startDate,drafts.task.startTime).toISOString()===new Date(${js(legacy.startAt)}).toISOString()&&parseDateTime(drafts.task.endDate,drafts.task.endTime).toISOString()===new Date(${js(legacy.dueAt)}).toISOString()`));
-  await ev("document.querySelector('[data-action=p-schedule-full-day]').click()");
-  check('shortcut converts inclusive end to following midnight',await ev("drafts.task.startTime==='00:00'&&drafts.task.endTime==='00:00'&&drafts.task.endDate==='2031-01-01'&&!document.getElementById('tf-allday')"));
-  await ev("document.querySelector('[data-action=p-schedule-full-day]').click()");
-  check('shortcut repeat stable',await ev("drafts.task.endDate==='2031-01-01'"));
-  await sleep(5200);
+  /* 6.1 跨日任务的首段、整日覆盖中段和尾段在任何日轴呈现都不提供小时拖动或键盘调时。 */
+  await view('day','horizontal','2031-02-09');
+  check('cross-day first segment has no hour drag',await ev(`!document.querySelector('[data-schedule-move="${f.cross}"],[data-resize-task="${f.cross}"]')`));
+  await view('day','horizontal',f.crossDay);
+  check('cross-day covered middle day has no hour drag',await ev(`!document.querySelector('[data-schedule-move="${f.cross}"],[data-resize-task="${f.cross}"]')`));
+  await view('day','horizontal','2031-02-11');
+  check('cross-day tail segment has no hour drag',await ev(`!document.querySelector('[data-schedule-move="${f.cross}"],[data-resize-task="${f.cross}"]')`));
+  await view('day','timeline','2031-02-09');
+  check('vertical first segment has no move or endpoint handle',await ev(`!document.querySelector('[data-schedule-move="${f.cross}"],[data-resize-task="${f.cross}"]')`));
+  const beforeCross=await raw(f.cross);
+  await ev(`(()=>{const e=document.querySelector('.p-axis-event[data-task="${f.cross}"]');e.focus();e.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))})()`);
+  await sleep(200);
+  check('cross-day segment arrow key opens no time edit',await ev("document.getElementById('overlay').hidden&&!document.querySelector('.p-drag-preview')")&&(await raw(f.cross)).startAt===beforeCross.startAt);
+  await ev(`document.querySelector('.p-axis-event[data-task="${f.cross}"]').click()`);
+  check('cross-day segment ordinary click still opens its detail',await waitFor(b,"!document.getElementById('overlay').hidden&&Pandora.idle()",20000));
+  await ev('closeSheet()');
+  await view('day','timeline',f.crossDay);
+  check('cross-day full coverage stays in the all-day area without handles',await ev(`!!document.querySelector('.p-all-day-event[data-task="${f.cross}"]')&&!document.querySelector('[data-schedule-move="${f.cross}"],[data-resize-task="${f.cross}"]')`));
+  await ev(`document.querySelector('.p-all-day-event[data-task="${f.cross}"]').click()`);
+  check('all-day ordinary click still opens its detail',await waitFor(b,"!document.getElementById('overlay').hidden&&Pandora.idle()",20000));
+  await ev('closeSheet()');
+  /* 午夜截止是当日真实终点：当日只有一份，拖动端点进入次日真实时刻且不多出副本。 */
+  await view('day','timeline',f.crossDay);
+  check('midnight end renders once on its start day',await ev(`document.querySelectorAll('.p-axis-event[data-task="${f.midnight}"]').length===1`));
+  await view('day','timeline','2031-02-11');
+  check('midnight end creates no next-day duplicate',await ev(`!document.querySelector('#page-view [data-task="${f.midnight}"]')`));
+  await view('day','horizontal',f.crossDay);
+  await drag(`[data-resize-task="${f.midnight}"][data-resize=end][data-resize-mode=day]`,1);await confirm();
+  check('midnight endpoint drag proposes the real next instant',await ev("(()=>{const t=document.getElementById('sheetBody').textContent;return t.includes('2031-02-11')&&t.includes('01:00')})()"));
+  await ev('closeSheet()');
+  /* 6.3 端点手柄上的无位移按下—松开只取消手势，不打开确认或详情。 */
+  await view('day','horizontal',f.quiet);
+  const callsBefore=await ev('(window.__scheduleCalls||[]).length');
+  await tap(`[data-resize-task="${f.short}"][data-resize=end][data-resize-mode=day]`);
+  const tapState=await ev("({overlay:document.getElementById('overlay').hidden,preview:!!document.querySelector('.p-drag-preview'),calls:(window.__scheduleCalls||[]).length})");
+  check('endpoint press without movement opens no confirmation or detail',tapState.overlay&&!tapState.preview&&tapState.calls===callsBefore,tapState);
+  await view('month',undefined,f.quiet);
+  await tap(`[data-resize-task="${f.short}"][data-resize=end][data-resize-mode=month]`);
+  check('month endpoint press without movement opens no day list or detail',await ev("document.getElementById('overlay').hidden&&!Pandora.calendar.currentDaySheet()"));
+  await view('day','horizontal',f.quiet);
+  const beforeCapture=await raw(f.short);
+  await drag(`[data-resize-task="${f.short}"][data-resize=end][data-resize-mode=day]`,1,'lostpointercapture');
+  check('lost pointer capture cancels unchanged',await ev("document.getElementById('overlay').hidden&&!document.querySelector('.p-drag-preview')")&&(await raw(f.short)).rowVersion===beforeCapture.rowVersion);
+  /* 6.2 全天任务按月拖动仍只表达完整日期，不出现伪造的起止时刻。 */
+  await view('month',undefined,f.day);
+  await drag(`[data-schedule-move="${f.legacy}"][data-resize-mode=month]`,1);await confirm();
+  check('all-day confirmation shows complete dates without invented times',await ev("(()=>{const t=document.getElementById('sheetBody').textContent;return t.includes('全天')&&t.includes('2030-12-31')&&t.includes('2031-01-01')&&!t.includes('00:00')})()"));
+  await ev('closeSheet()');
   for(const width of [320,390,1440]){
-   await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});
-   await ev("document.getElementById('tf-start-date').scrollIntoView({block:'center'})");
-   const geometry=await ev("(()=>{const n=document.getElementById('sheetBody');return {w:n.clientWidth,scroll:n.scrollWidth}})()");
-   check('explicit schedule fits '+width,geometry.scroll<=geometry.w+2,geometry);
-   await b.screenshot(path.join(out,'form-'+width+'.png'));
+   await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});await view('day','horizontal',f.day);
+   check('day axis fits viewport '+width,await ev("document.documentElement.scrollWidth<=innerWidth+1"));
+   await b.screenshot(path.join(out,'apply-day-'+width+'.png'));
   }
-  await ev('closeSheet()');
-  await sleep(5200);
-  for(const width of [320,390,1440]){
-   await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});await view();
-   check('horizontal axis stays inside viewport '+width,await ev("document.documentElement.scrollWidth<=innerWidth+1&&document.querySelector('.p-horizontal-scroll').scrollWidth>document.querySelector('.p-horizontal-scroll').clientWidth"));
-   check('horizontal captions stay inside actual frames '+width,await ev("[...document.querySelectorAll('.p-horizontal-caption')].length>0&&[...document.querySelectorAll('.p-horizontal-caption')].every(n=>{const r=n.getBoundingClientRect(),f=n.closest('.p-horizontal-bar').getBoundingClientRect();return r.left>=f.left-1&&r.right<=f.right+1&&r.top>=f.top-1&&r.bottom<=f.bottom+1&&getComputedStyle(n.querySelector('strong')).visibility==='visible'})&&!document.querySelector('.p-horizontal-label')"));
-   await b.screenshot(path.join(out,'day-'+width+'.png'));
-  }
-  await b.viewport({width:390,height:844,mobile:true});await view();
-  const touchHandle=await handle(fixture.task,'start','day');
-  await b.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:touchHandle.x,y:touchHandle.y,id:0}]});
-  await b.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:touchHandle.x-touchHandle.unit,y:touchHandle.y,id:0}]});
-  await b.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await form();
-  check('touch drag adjusts by one hour',await ev("drafts.task.startTime==='08:20'"));
-  await ev('closeSheet()');
   await b.viewport({width:1440,height:900,mobile:false});await view('day','timeline');
-  check('vertical timeline has accessible endpoint handles',await ev(`!!document.querySelector('[data-resize-task="${fixture.task}"][data-resize-mode=vertical]')`));
-  await moveDay(fixture.task,'vertical',1);
-  check('vertical frame moves both complete endpoints',await ev("drafts.task.startTime==='10:20'&&drafts.task.endTime==='01:20'&&drafts.task.endDate==='2031-01-01'"));
-  await ev('closeSheet()');await view('day','timeline');
-  await drag(fixture.task,'start','vertical',-1);await form();
-  check('vertical drag keeps minutes and other endpoint',await ev("drafts.task.startTime==='08:20'&&drafts.task.endTime==='00:20'&&drafts.task.endDate==='2031-01-01'"));
-  await ev('closeSheet()');await view('day','timeline');
-  await ev("window.savedPointerCapture=Element.prototype.setPointerCapture;Element.prototype.setPointerCapture=function(){throw new DOMException('simulated unsupported capture')}");
-  await drag(fixture.point,'end','vertical',1);await form();
-  check('document fallback completes drag when pointer capture fails',await ev("drafts.task.endTime==='13:00'"));
-  await save('纵向小时调整并验证捕获回退');
-  check('vertical proposal actually persists',(await raw(fixture.point)).dueAt==='2030-12-31T05:00:00Z');
-  await ev('Element.prototype.setPointerCapture=window.savedPointerCapture');await view('day','timeline');
-  await drag(fixture.task,'start','vertical',-1,'escape');
-  check('vertical cancel leaves effective range unchanged',(await raw(fixture.task)).startAt===original.startAt&&await ev("document.getElementById('overlay').hidden"));
-  for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});await view('day','timeline');await handle(fixture.task,'start','vertical');await b.screenshot(path.join(out,'vertical-hour-'+width+'.png'));}
-  await ev(`document.querySelector('.p-axis-event[data-task="${fixture.task}"]').focus()`);
-  await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
-  check('vertical task wrapper still opens detail with keyboard',await waitFor(b,"Pandora.idle()&&!document.getElementById('overlay').hidden&&document.getElementById('sheetBody').textContent.includes('横向排期验证')"));
+  check('vertical ordinary handles present',await ev(`!!document.querySelector('[data-resize-task="${f.point}"][data-resize-mode=vertical]')`));
+  check('vertical full day handles absent',await ev(`!document.querySelector('[data-resize-task="${f.full}"],[data-schedule-move="${f.full}"]')`));
+  /* 6.3 轻量确认响应丢失后，重试沿用同一幂等键，服务端只保存一个待审排期。
+     申请人不是固定创始人，因此保存后进入待审而不是直接生效。 */
+  await ev("Pandora.logout()");
+  check('login form is ready for the applicant',await waitFor(b,"!!document.getElementById('login-user')"));
+  await login('alpha-one-employee');
+  await view('day','horizontal',f.retryDay);
+  const beforeRetry=await raw(f.retry);
+  check('retry task exposes an hour handle',await ev(`!!document.querySelector('[data-resize-task="${f.retry}"][data-resize=end]')`));
+  await drag(`[data-resize-task="${f.retry}"][data-resize=end][data-resize-mode=day]`,2);await confirm();
+  await ev(`window.__schedWrites=[];window.__schedFetch=window.fetch;window.fetch=async function(url,opts){const target=String(url)==='/api/v1/tasks/'+${q(f.retry)}&&opts?.method==='PATCH';if(target)window.__schedWrites.push(new Headers(opts.headers).get('Idempotency-Key'));const response=await window.__schedFetch(url,opts);if(target&&window.__schedWrites.length===1)throw new TypeError('simulated response loss after server commit');return response;}`);
+  await ev(`document.getElementById('sc-reason').value='轻量确认响应丢失';document.querySelector('[data-action=p-save-schedule]').click()`);
+  check('response loss keeps the lightweight draft and reason',await waitFor(b,"Pandora.idle()&&!document.getElementById('sc-error').hidden",20000)&&await ev("document.getElementById('sc-reason').value==='轻量确认响应丢失'&&!document.getElementById('overlay').hidden"));
+  await ev("document.querySelector('[data-action=p-save-schedule]').click()");
+  check('retry succeeds after the lost response',await waitFor(b,"Pandora.idle()&&document.getElementById('overlay').hidden",20000));
+  const scheduleKeys=await ev('window.__schedWrites');
+  check('retry reuses one idempotency key',scheduleKeys.length===2&&scheduleKeys[0]===scheduleKeys[1],scheduleKeys);
+  const retried=await raw(f.retry);
+  check('one pending schedule is saved without publishing it',retried.frozen&&retried.pendingSchedule.dueAt==='2031-02-12T05:00:00Z'&&retried.dueAt===beforeRetry.dueAt,retried);
+  await ev('window.fetch=window.__schedFetch;');
+  /* 6.4 轻量提交后的待审虚线位置、标题时刻、标签颜色、有效版详情和结果恢复。 */
+  const employeeToken=await ev('Pandora.token');
+  await monthDrag(f.proposal,2,f.proposalDay);
+  const pendingBar=await barState(f.proposal);
+  check('pending proposal is drawn once at the proposed date',pendingBar.count===1&&pendingBar.date==='2031-02-22'&&pendingBar.dashed,pendingBar);
+  check('pending proposal keeps the exact proposed times',pendingBar.text.includes('2月22日 09:00')&&pendingBar.text.includes('11:00'),pendingBar);
+  check('pending proposal keeps the shared first-tag colour',pendingBar.color===f.tag.color,pendingBar);
+  const proposalRaw=await raw(f.proposal);
+  check('effective task still holds its old schedule',proposalRaw.dueAt==='2031-02-20T03:00:00Z'&&proposalRaw.pendingSchedule.dueAt==='2031-02-22T03:00:00Z',proposalRaw);
+  await ev(`Pandora.openTask(${q(f.proposal)})`);
+  check('ordinary detail opens on the effective schedule',await waitFor(b,"!document.getElementById('overlay').hidden&&Pandora.idle()",20000)&&await ev("(()=>{const t=document.getElementById('sheetBody').textContent;return t.includes('2月20日')&&t.includes('09:00')&&!t.includes('2月22日')})()"));
   await ev('closeSheet()');
-  await b.viewport({width:390,height:844,mobile:true});await view('day','timeline');
-  const vTouch=await handle(fixture.task,'start','vertical');
-  await b.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:vTouch.x,y:vTouch.y,id:0}]});
-  await b.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:vTouch.x,y:vTouch.y-vTouch.unit,id:0}]});
-  await b.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await form();
-  check('vertical touch drag is not swallowed by scroll',await ev("drafts.task.startTime==='08:20'"));
-  await ev('closeSheet()');
-  for(const width of [320,390]){
-   await b.viewport({width,height:844,mobile:true});await view('month');
-   const before=await raw(fixture.full),mh=await handle(fixture.full,'end','month');
-   check('month touch handle reachable '+width,!!mh,mh);
-   await b.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:mh.x,y:mh.y,id:0}]});
-   await b.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:mh.x+mh.unit,y:mh.y,id:0}]});
-   await b.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await form();
-   check('month touch adds one hour '+width,await ev(`parseDateTime(drafts.task.endDate,drafts.task.endTime).getTime()===${new Date(before.dueAt).getTime()+3600000}`));
-   await save('小屏月历触摸调整 '+width);
-   const after=await raw(fixture.full);
-   check('month touch persists endpoint only '+width,new Date(after.dueAt).getTime()===new Date(before.dueAt).getTime()+3600000&&after.startAt===before.startAt);
-   await ev('Pandora.reload()');await view('month');await handle(fixture.full,'end','month');
-   check('month small screen has no overflow '+width,await ev('document.documentElement.scrollWidth<=innerWidth+1'));
-   await b.screenshot(path.join(out,'month-touch-'+width+'.png'));
-  }
-  await b.viewport({width:1440,height:900,mobile:false});
-  await view('month');await handle(fixture.task,'start','month');await b.screenshot(path.join(out,'month-1440.png'));
-  const stale=await raw(fixture.task);
-  await ev(`Pandora.mutation('stale-schedule-test','PATCH','/tasks/'+${js(fixture.task)},{command:'change',reason:'并发验证',description:'已由新版本更新'},'"'+${stale.rowVersion}+'"')`);
-  await ev(`Pandora.openScheduleChange(${js(fixture.task)},new Date('2030-12-31T02:00:00Z'),new Date('2031-01-01T11:00:00Z'),${stale.rowVersion})`);
-  check('stale drag reports conflict without overriding latest values',await ev("document.getElementById('tf-error').textContent.includes('已被更新')&&drafts.task.startTime==='09:20'"));
-  await ev('closeSheet()');
-  const completeRaw=await raw(fixture.legacy);
-  await ev(`Pandora.mutation('complete-reopen-schedule','PATCH','/tasks/'+${js(fixture.legacy)},{command:'complete',completionNote:'重开表单验证'},'"'+${completeRaw.rowVersion}+'"')`);
-  await ev('Pandora.reload()');
-  await ev(`openTaskDetail(${js(fixture.legacy)})`);
-  check('completed task can reopen',await waitFor(b,"Pandora.idle()&&!!document.querySelector('[data-action=p-reopen-task]')"));
-  await ev("document.querySelector('[data-action=p-reopen-task]').click()");
-  check('reopen uses explicit date/time controls',await waitFor(b,"Pandora.idle()&&!!document.getElementById('rp-start-date')&&!document.getElementById('rp-allday')&&!document.getElementById('rp-start-time-field').hidden"));
-  await ev("document.querySelector('[data-action=p-schedule-full-day][data-prefix=rp]').click();document.querySelector('[data-action=p-schedule-full-day][data-prefix=rp]').click()");
-  check('reopen shortcut next midnight and repeat stable',await ev("document.getElementById('rp-end-date').value==='2031-01-01'&&Pandora.readTimeControl('rp-start-time')==='00:00'&&Pandora.readTimeControl('rp-end-time')==='00:00'"));
-  await ev("document.getElementById('reopen-reason').value='新排期重开';document.querySelector('[data-action=p-confirm-reopen]').click()");
-  check('reopen shortcut saves explicit future instants',await waitFor(b,"Pandora.idle()&&document.getElementById('overlay').hidden",20000));
-  const reopened=await raw(fixture.legacy);check('reopened range is timed through next midnight',!reopened.allDay&&reopened.dueAt==='2030-12-31T16:00:00Z');
-  await ev('Pandora.logout()');await login('alpha-one-employee');await view();
-  check('visible assignee has schedule handles without metadata permission',await ev(`!!document.querySelector('[data-resize-task="${fixture.forbidden}"]')&&!canEditTask(actor(),taskById(${js(fixture.forbidden)}))`));
-  await view('month');await moveMonth(fixture.forbidden,2,true);
-  check('cancelled whole month movement preserves effective data',await ev("document.getElementById('overlay').hidden")&&(await raw(fixture.forbidden)).startAt==='2030-12-31T01:00:00Z');
-  await view('month');await moveMonth(fixture.forbidden,1);await form();
-  check('month moves both endpoints preserving duration',await ev("drafts.task.startTime==='10:00'&&drafts.task.endTime==='19:00'"));
-  check('schedule-only form hides other task fields',await ev("drafts.task.mode==='schedule'&&!document.getElementById('tf-title')&&!document.getElementById('tf-assignees')&&!document.getElementById('tf-urgency')"));
-  check('non-owner schedule review follows operator manager',await ev(`drafts.task.preview.reviewerId===${js(fixture.identities['alpha-one-head'].id)}`));
-  await save('本人可见任务月历直接移动');
-  const viewerPending=await raw(fixture.forbidden);
-  check('non-owner proposal leaves effective schedule pending',viewerPending.frozen&&viewerPending.pendingSchedule.startAt==='2030-12-31T02:00:00Z'&&viewerPending.startAt==='2030-12-31T01:00:00Z');
-  await view();
-  const prior=await raw(fixture.employee);
-  await drag(fixture.employee,'end','day',1);await form();
-  check('drag review uses operator manager',await ev(`drafts.task.preview.requiresApproval&&drafts.task.preview.reviewerId===${js(fixture.identities['alpha-one-head'].id)}`));
-  await save('员工调整排期需审核');
-  const pending=await raw(fixture.employee);
-  check('pending change keeps effective schedule and freezes',pending.dueAt===prior.dueAt&&pending.frozen);
-  await view();check('frozen task has no handles',await ev(`!document.querySelector('[data-resize-task="${fixture.employee}"]')`));
-  check('pending API carries only schedule proposal',pending.pendingSchedule?.dueAt==='2030-12-31T11:00:00Z'&&Object.keys(pending.pendingSchedule).sort().join(',')==='allDay,dueAt,dueDate,startAt,startDate');
-  check('calendar uses pending placement without changing effective TASKS',await ev(`viewTasks(actor()).find(t=>t.id===${js(fixture.employee)}).raw.dueAt==='2030-12-31T11:00:00Z'&&taskById(${js(fixture.employee)}).raw.dueAt===${js(prior.dueAt)}`));
-  check('horizontal pending bar is dashed',await ev(`getComputedStyle(document.querySelector('.p-horizontal-bar[data-task="${fixture.employee}"]')).borderTopStyle==='dashed'&&document.querySelector('.p-horizontal-row:has([data-task="${fixture.employee}"])').textContent.includes('审核中')`));
-  await view('day','timeline');
-  check('vertical pending true range is dashed',await ev(`getComputedStyle(document.querySelector('.p-axis-event[data-task="${fixture.employee}"] .p-axis-true')).borderTopStyle==='dashed'`));
-  await view('month');
-  check('month pending bar is dashed',await ev(`getComputedStyle(document.querySelector('.p-month-event[data-task="${fixture.employee}"] .p-month-duration')).outlineStyle==='dashed'`));
-  await ev('Pandora.logout()');await login('alpha-one-employee');await view();
-  check('pending projection survives relogin',await ev(`document.querySelector('.p-horizontal-bar[data-task="${fixture.employee}"]').classList.contains('is-pending-review')&&viewTasks(actor()).find(t=>t.id===${js(fixture.employee)}).due.toISOString()==='2030-12-31T11:00:00.000Z'`));
-  async function as(who,method,url,body,version){return ev(`(async()=>{
-   const login=await fetch('/api/v1/auth/sessions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(${js({accountType:fixture.identities[who].accountType,...(fixture.identities[who].accountType==='admin'?{accountName:fixture.identities[who].identifier}:{phone:fixture.identities[who].identifier}),password:'Fixture@123456'})})});const token=(await login.json()).token;
-   const r=await fetch('/api/v1'+${js(url)},{method:${js(method)},headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'Idempotency-Key':crypto.randomUUID(),...(typeof ${js(version)}==='number'?{'If-Match':'"'+${js(version)}+'"'}:{})},...(${js(body)}===null?{}:{body:JSON.stringify(${js(body)})})});const data=await r.json();if(!r.ok)throw new Error(JSON.stringify(data));return data;
-  })()`);}
-  async function decide(decision){const task=await raw(fixture.employee),who=decision==='withdraw'?'alpha-one-employee':'alpha-one-head';const request=await as(who,'GET','/approval-requests/'+task.pendingRequestId,null);await as(who,'PATCH','/approval-requests/'+task.pendingRequestId,{decision,comment:decision==='reject'?'恢复原排期':undefined},request.rowVersion);await ev('Pandora.reload()');}
-  async function propose(command,extra={}){const task=await raw(fixture.employee);await as('alpha-one-employee','PATCH','/tasks/'+fixture.employee,{command,...(['change','reopen'].includes(command)?{reason:'待审日程投影验证'}:{}),...extra},task.rowVersion);await ev('Pandora.reload()');}
-  await decide('approve');await view();
-  check('approval applies new time and removes dash',!(await raw(fixture.employee)).pendingSchedule&&(await raw(fixture.employee)).dueAt==='2030-12-31T11:00:00Z'&&await ev(`!document.querySelector('.p-horizontal-bar[data-task="${fixture.employee}"]').classList.contains('is-pending-review')`));
-  const janStart='2031-01-02T02:20:00Z',janEnd='2031-01-02T09:20:00Z';
-  for(const decision of ['reject','withdraw']){
-   await propose('change',{allDay:false,startAt:janStart,dueAt:janEnd});await view();
-   check('old day does not retain duplicate '+decision,await ev(`!document.querySelector('.p-horizontal-bar[data-task="${fixture.employee}"]')`));
-   await view('day','horizontal','2031-01-02');
-   check('cross-month proposal shown once at new time '+decision,await ev(`document.querySelectorAll('.p-horizontal-bar[data-task="${fixture.employee}"]').length===1&&viewTasks(actor()).find(t=>t.id===${js(fixture.employee)}).start.toISOString()==='2031-01-02T02:20:00.000Z'`));
-   const query='/tasks?assigneeId='+fixture.identities['alpha-one-employee'].id+'&from=2031-01-02&to=2031-01-02';
-   const rows=await as('alpha-one-head','GET',query+'&calendarPreview=true',null),effective=await as('alpha-one-head','GET',query,null);
-   check('authorized subordinate range follows proposal '+decision,rows.items.some(t=>t.id===fixture.employee)&&!effective.items.some(t=>t.id===fixture.employee));
-   const outside=await as('beta-one-head','GET',query+'&calendarPreview=true',null);check('proposal range does not widen task authorization '+decision,!outside.items.some(t=>t.id===fixture.employee));
-   if(decision==='reject'){
-    await ev('Pandora.logout()');await login('founder');
-    await ev(`setPage('me');runAction({dataset:{action:'p-open-person',id:${js(fixture.identities['alpha-one-employee'].id)}}})`);
-    check('authorized staff workspace opens for pending task',await waitFor(b,"Pandora.idle()&&!!document.querySelector('[data-staff-panel]')&&!document.querySelector('.staff-state[role=status]')"));
-    await ev("document.getElementById('staff-calendar-date').value='2031-01-02';document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))");
-    check('staff month finds moved pending proposal',await waitFor(b,`!!document.querySelector('.staff-month-event.is-pending-review[data-task="${fixture.employee}"]')`));
-    check('staff month pending color keeps dashed border',await ev(`getComputedStyle(document.querySelector('.staff-month-event[data-task="${fixture.employee}"] .staff-month-duration')).outlineStyle==='dashed'`));
-    await ev("document.querySelector('[data-action=p-staff-mode][data-mode=day]').click()");
-    check('staff day uses proposed minute range',await waitFor(b,`!!document.querySelector('.staff-axis-event.is-pending-review[data-task="${fixture.employee}"][data-start-minute="620"][data-end-minute="1040"]')`));
-    await b.screenshot(path.join(out,'pending-staff-day.png'));
-    await ev("document.querySelector('[data-action=p-staff-format][data-format=list]').click()");
-    check('staff pending list shows proposed date and dash',await ev(`getComputedStyle(document.querySelector('.staff-work-item[data-task="${fixture.employee}"]')).borderTopStyle==='dashed'&&document.querySelector('.staff-work-item[data-task="${fixture.employee}"]').textContent.includes('审核中')`));
-    await ev('closeSheet();Pandora.logout()');await login('alpha-one-employee');
-    for(const width of [320,390,1440]){
-     await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});await view('day','horizontal','2031-01-02');await b.screenshot(path.join(out,'pending-day-'+width+'.png'));
-     await view('month','horizontal','2031-01-02');
-     const frame=await ev(`(()=>{const n=document.querySelector('.p-month-event[data-task="${fixture.employee}"]'),o=n.getBoundingClientRect(),f=n.querySelector('.p-month-duration'),r=f.getBoundingClientRect(),c=f.querySelector('.p-month-caption').getBoundingClientRect();return {left:(r.left-o.left)/o.width,width:r.width/o.width,inside:c.left>=r.left-1&&c.right<=r.right+1&&c.top>=r.top-1&&c.bottom<=r.bottom+1,text:f.textContent,noButtons:!n.querySelector('button')}})()`);
-     check('pending frame and its text match proposed time '+width,Math.abs(frame.left-(10+20/60)/24)<.004&&Math.abs(frame.width-7/24)<.004&&frame.inside&&frame.text.includes('10:20')&&frame.text.includes('17:20')&&frame.noButtons,frame);
-     await b.screenshot(path.join(out,'pending-month-'+width+'.png'));
-    }
-   }
-   await decide(decision);await view();
-   check('resolved proposal restores effective position '+decision,!(await raw(fixture.employee)).pendingSchedule&&await ev(`!!document.querySelector('.p-horizontal-bar[data-task="${fixture.employee}"]:not(.is-pending-review)')`));
-  }
-  await propose('progress',{progressNote:'进展审核虚线'});await view();
-  check('progress review also uses dashed style',await ev(`!!document.querySelector('.p-horizontal-bar.is-pending-review[data-task="${fixture.employee}"]')`));
-  await decide('withdraw');
-  await propose('complete',{completionNote:'完成审核虚线'});await view();
-  check('completion review also uses dashed style',await ev(`!!document.querySelector('.p-horizontal-bar.is-pending-review[data-task="${fixture.employee}"]')`));
-  await decide('approve');await propose('reopen',{allDay:false,startAt:janStart,dueAt:janEnd,assigneeIds:[fixture.identities['alpha-one-employee'].id]});await view('day','timeline','2031-01-02');
-  check('reopen review uses proposed range and dash',await ev(`!!document.querySelector('.p-axis-event.is-pending-review[data-task="${fixture.employee}"]')`));
-  await decide('approve');
-  const handoverRaw=await raw(fixture.employee);
-  await as('alpha-one-employee','POST','/tasks/'+fixture.employee+'/handover',{sourceUserId:fixture.identities['alpha-one-employee'].id,targetUserId:fixture.identities['alpha-one-head'].id,reason:'交接审核虚线'},handoverRaw.rowVersion);await ev('Pandora.reload()');await view('day','horizontal','2031-01-02');
-  check('handover review is dashed without applying owners',await ev(`!!document.querySelector('.p-horizontal-bar.is-pending-review[data-task="${fixture.employee}"]')`)&&(await raw(fixture.employee)).assigneeIds.includes(fixture.identities['alpha-one-employee'].id));
-  await decide('withdraw');
-  await propose('change',{allDay:false,startAt:'2031-01-03T02:20:00Z',dueAt:'2031-01-03T09:20:00Z'});
-  for(let i=0;i<4;i++)await as('admin','POST','/admin/clock/advance',{seconds:86400*400});
-  await as('admin','POST','/admin/worker/run-once',{});await ev('Pandora.reload()');await view('day','horizontal','2031-01-02');
-  const expired=await raw(fixture.employee);
-  check('expired review removes proposal and restores effective placement',!expired.frozen&&!expired.pendingSchedule&&expired.startAt===janStart&&await ev(`!!document.querySelector('.p-horizontal-bar:not(.is-pending-review)[data-task="${fixture.employee}"]')`));
+  const withdrawRequest=await api('GET','/approval-requests/'+proposalRaw.pendingRequestId,null,null,employeeToken);
+  const withdrawn=await api('PATCH','/approval-requests/'+proposalRaw.pendingRequestId,{decision:'withdraw'},withdrawRequest.body.rowVersion,employeeToken);
+  check('applicant withdraws the pending schedule proposal',withdrawn.status===200,withdrawn);
+  await reloadMonth(f.proposalDay);
+  const withdrawnBar=await barState(f.proposal);
+  check('withdrawn proposal restores the effective calendar position',withdrawnBar.date==='2031-02-20'&&!withdrawnBar.dashed,withdrawnBar);
+  await monthDrag(f.proposal,3,f.proposalDay);
+  const rejectedBar=await barState(f.proposal);
+  check('re-reviewed proposal is drawn at the new proposed date',rejectedBar.date==='2031-02-23'&&rejectedBar.dashed,rejectedBar);
+  const rejectRaw=await raw(f.proposal);
+  const rejected=await decide(rejectRaw.pendingRequestId,'reject',f.tokens.head);
+  check('reviewer rejects the schedule proposal',rejected.status===200,rejected);
+  await reloadMonth(f.proposalDay);
+  const afterReject=await barState(f.proposal);
+  check('rejection returns the calendar to the effective date',afterReject.date==='2031-02-20'&&!afterReject.dashed,afterReject);
+  await monthDrag(f.proposal,4,f.proposalDay);
+  const approvedBar=await barState(f.proposal);
+  check('approved candidate projects as pending before the decision',approvedBar.date==='2031-02-24'&&approvedBar.dashed,approvedBar);
+  const approveRaw=await raw(f.proposal);
+  const approved=await decide(approveRaw.pendingRequestId,'approve',f.tokens.head);
+  check('reviewer approves the schedule proposal',approved.status===200,approved);
+  await reloadMonth(f.proposalDay);
+  const afterApprove=await barState(f.proposal);
+  check('approval publishes the proposed date without a dashed frame',afterApprove.date==='2031-02-24'&&!afterApprove.dashed,afterApprove);
+  const approvedRaw=await raw(f.proposal);
+  check('approval publishes the exact effective times',approvedRaw.dueAt==='2031-02-24T03:00:00Z'&&!approvedRaw.frozen,approvedRaw);
+  /* Leave one proposal pending so the parent check can expire it and verify the calendar recovery. */
+  await monthDrag(f.expire,2,f.expireDay);
+  const expireBar=await barState(f.expire);
+  check('expiry fixture is pending at its proposed date',expireBar.date==='2031-02-28'&&expireBar.dashed,expireBar);
+  const expireRaw=await raw(f.expire);
+  fs.writeFileSync(path.join(out,'handoff.json'),JSON.stringify({task:f.expire,requestId:expireRaw.pendingRequestId}));
   check('no browser exceptions',b.errors.length===0,b.errors);
  }finally{fs.writeFileSync(path.join(out,'browser-report.json'),JSON.stringify(report,null,2));await b.kill();}
 }

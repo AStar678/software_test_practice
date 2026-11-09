@@ -54,14 +54,6 @@ public class TaskController {
         return tasks.list(actor, filters);
     }
 
-    @PutMapping("/tasks/{id}/personal-tag")
-    public Map<String,Object> personalTag(@RequestAttribute("actor") Actor actor,@PathVariable String id,
-            @RequestHeader(value="Idempotency-Key",required=false) String key,
-            @RequestBody Map<String,Object> input) {
-        return writes.run(actor,key,"PUT /tasks/"+id+"/personal-tag",input,null,
-                () -> tasks.setPersonalTag(actor,id,input));
-    }
-
     /** Authorized assignee candidates; reading a department never puts its people in this list. */
     @GetMapping("/assignee-candidates")
     public Map<String, Object> assigneeCandidates(@RequestAttribute("actor") Actor actor,
@@ -130,6 +122,18 @@ public class TaskController {
             @RequestHeader(value = "Idempotency-Key", required = false) String key) {
         return writes.run(actor, key, "DELETE /tasks/" + id + "/pin", Map.of(), null,
                 () -> tasks.setPinned(actor, id, false));
+    }
+
+    @PutMapping("/tasks/{id}/table-pin")
+    public Map<String,Object> tablePin(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value="Idempotency-Key",required=false) String key) {
+        return writes.run(actor,key,"PUT /tasks/"+id+"/table-pin",Map.of(),null,()->tasks.setTablePinned(actor,id,true));
+    }
+
+    @DeleteMapping("/tasks/{id}/table-pin")
+    public Map<String,Object> removeTablePin(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value="Idempotency-Key",required=false) String key) {
+        return writes.run(actor,key,"DELETE /tasks/"+id+"/table-pin",Map.of(),null,()->tasks.setTablePinned(actor,id,false));
     }
 
     @GetMapping("/tasks/{id}")

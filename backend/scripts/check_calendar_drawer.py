@@ -81,8 +81,16 @@ def main():
         call('PATCH', '/approval-requests/' + created['requestId'], {'decision': 'approve'}, 'alpha-one-head',
              request['rowVersion'])
         view = call('GET', '/tasks/' + created['taskId'], who='alpha-one-employee')
-        call('PATCH', '/tasks/' + created['taskId'], {'command': 'complete', 'completionNote': 'Calendar completed note'},
-             'alpha-one-employee', view['rowVersion'])
+        completion = call('PATCH', '/tasks/' + created['taskId'],
+                          {'command': 'complete', 'completionNote': 'Calendar completed note'},
+                          'alpha-one-employee', view['rowVersion'])
+        if completion.get('outcome') != 'pending':
+            raise AssertionError(('completion outcome', completion))
+        completion_view = call('GET', '/approval-requests/' + completion['requestId'], who='alpha-one-head')
+        call('PATCH', '/approval-requests/' + completion['requestId'], {'decision': 'approve'},
+             'alpha-one-head', completion_view['rowVersion'])
+        if call('GET', '/tasks/' + created['taskId'], who='alpha-one-employee')['executionState'] != 'done':
+            raise AssertionError('completed fixture was not approved into the done state')
         # Concurrent and all-day load for the day view (10.2): more than five of each.
         for index in range(7):
             call('POST', '/tasks', form('Calendar overlap %d' % index, ['alpha-one-employee'],

@@ -50,15 +50,24 @@ public class OrganizationService {
     public Map<String,Object> employees(Actor actor,Map<String,String> filters) {
         access.requireAdmin(actor);access.requireCurrent(actor);
         String query=filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
+        var phones=new HashMap<String,Object>();
+        for (var row:db.list("SELECT id,login_phone FROM users WHERE organization_id=?",actor.organizationId()))
+            phones.put(s(row,"id"),row.get("loginPhone"));
         var rows=access.employeeDirectory(actor,true).stream().filter(row->query.isEmpty()
                 || Objects.toString(row.get("displayName"),"").toLowerCase(Locale.ROOT).contains(query)
-                || Objects.toString(row.get("departmentName"),"").toLowerCase(Locale.ROOT).contains(query)).toList();
+                || Objects.toString(row.get("departmentName"),"").toLowerCase(Locale.ROOT).contains(query))
+                .map(row -> {var item=new LinkedHashMap<>(row);item.put("loginPhone",phones.get(s(row,"id")));return item;}).toList();
         return Map.of("items",rows,"total",rows.size());
     }
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> employee(Actor actor,String id) {
         access.requireAdmin(actor);access.requireCurrent(actor);
-        return access.employeeDirectory(actor,true).stream().filter(row->id.equals(s(row,"id"))).findFirst().orElseThrow(ApiException::notFound);
+        var person=access.employeeDirectory(actor,true).stream().filter(row->id.equals(s(row,"id"))).findFirst().orElseThrow(ApiException::notFound);
+        var item=new LinkedHashMap<>(person);
+        var phone=db.find("SELECT login_phone,employment_start_date FROM users WHERE organization_id=? AND id=?",actor.organizationId(),id);
+        item.put("loginPhone",phone==null?null:phone.get("loginPhone"));
+        item.put("employmentStartDate",phone==null?null:phone.get("employmentStartDate"));
+        return item;
     }
     public List<Map<String,Object>> departmentMembers(Actor actor,String departmentId) {
         access.requireAdmin(actor);requireDepartment(actor,departmentId);
@@ -67,7 +76,7 @@ public class OrganizationService {
 
     @SuppressWarnings("unchecked")
     public Writes.Outcome createEmployee(Actor actor,Map<String,Object> input) {
-        access.requireAdmin(actor);allowed(input,Set.of("displayName","phone","placementType","departmentId","teamId","positionId"));
+        access.requireAdmin(actor);allowed(input,Set.of("displayName","phone","employmentStartDate","placementType","departmentId","teamId","positionId"));
         var draft=plans.draft(actor);String id=Db.id();
         var plan=new LinkedHashMap<String,Object>();
         for(String key:List.of("departments","teams","placements","expectedEmployees")) plan.put(key,draft.get(key));
@@ -77,6 +86,7 @@ public class OrganizationService {
         for(String field:List.of("placementType","departmentId","teamId","positionId")) placement.put(field,input.get(field));
         places.add(placement);plan.put("placements",places);plan.put("reason","新增员工");
         var addition=new LinkedHashMap<String,Object>();addition.put("id",id);addition.put("displayName",input.get("displayName"));addition.put("phone",input.get("phone"));
+        addition.put("employmentStartDate",input.get("employmentStartDate"));
         plan.put("newEmployees",List.of(addition));
         var outcome=plans.save(actor,"\""+draft.get("rowVersion")+"\"",plan);
         var passwords=(Map<String,String>)outcome.oneTimeOnly().get("initialPasswords");
@@ -128,8 +138,8 @@ public class OrganizationService {
 
     public Map<String,Object> updateEmployee(Actor actor,String id,String ifMatch,Map<String,Object> input) {
         access.requireAdmin(actor);
-        allowed(input,Set.of("displayName","phone"));
-        if(input.isEmpty()) throw bad("请至少修改姓名或手机号");
+        allowed(input,Set.of("displayName","phone","employmentStartDate"));
+        if(input.isEmpty()) throw bad("请至少修改一项员工资料");
         var row=db.one("SELECT u.* FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id "
                 + "WHERE u.organization_id=? AND u.id=? AND p.account_type='employee' FOR UPDATE",actor.organizationId(),id);
         Writes.checkVersion(ifMatch,n(row,"orgVersion"));
@@ -140,14 +150,26 @@ public class OrganizationService {
             if(phone==null) throw bad("员工登录手机号不能为空");
             requireUniqueExceptLoginKey(actor,id,phone);login=phone;
         }
+        var startDate=employmentStartDate(input.containsKey("employmentStartDate")?input.get("employmentStartDate"):row.get("employmentStartDate"));
         boolean phoneChanged=!Objects.equals(login,s(row,"loginPhone"));
         try {
-            db.update("UPDATE users SET display_name=?,phone=?,login_phone=?,org_version=org_version+1,profile_version=profile_version+1 WHERE organization_id=? AND id=?",
-                    name,phone,login,actor.organizationId(),id);
+            db.update("UPDATE users SET display_name=?,phone=?,login_phone=?,employment_start_date=?,org_version=org_version+1,profile_version=profile_version+1 WHERE organization_id=? AND id=?",
+                    name,phone,login,startDate,actor.organizationId(),id);
         } catch(org.springframework.dao.DuplicateKeyException error) {throw new ApiException(409,"PHONE_TAKEN","该手机号已被使用");}
         int revoked=phoneChanged?auth.revokeSessions(actor.organizationId(),id):0;
         bumpAuthority(actor,"organization.employee.identity_updated",Map.of("userId",id,"fields",input.keySet(),"sessionsRevoked",revoked));
         return Map.of("userId",id,"rowVersion",n(row,"orgVersion")+1,"phoneUpdated",input.containsKey("phone"),"sessionsRevoked",revoked);
+    }
+
+    static java.sql.Date employmentStartDate(Object value) {
+        if (value==null) return null;
+        String text=value.toString();
+        if (!text.matches("[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}")) throw bad("入职日期必须为 YYYY-MM-DD");
+        try {
+            return java.sql.Date.valueOf(LocalDate.parse(text));
+        } catch (DateTimeException error) {
+            throw bad("请输入有效入职日期");
+        }
     }
 
     public Writes.Outcome resetPassword(Actor actor, String id) {

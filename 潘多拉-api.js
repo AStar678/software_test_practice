@@ -8,6 +8,9 @@
     data: {}, taskEtags: new Map(), approvalEtags: new Map(),
     logEtags: new Map(), notificationEtags: new Map()
   };
+  P.subordinateMode = () => sheetStack.some(item => item.subordinate);
+  P.subordinateTasks = new Map();
+  P.subordinateLogs = new Map();
   const retries = new Map();
   let working = false, reloadSequence = 0, taskSequence = 0;
   /* Per-module session teardown hooks: pages that cache authorized data register here so logout,
@@ -96,6 +99,7 @@
     [PEOPLE, TASKS, LOGS, NOTIFICATIONS, CONSULTATIONS, COMPANY_ITEMS].forEach(a => a.splice(0));
     Object.keys(PERSONAL_STATE).forEach(k => delete PERSONAL_STATE[k]);
     [P.taskEtags, P.approvalEtags, P.logEtags, P.notificationEtags].forEach(m => m.clear());
+    P.subordinateTasks.clear();P.subordinateLogs.clear();
     retries.clear(); state.actorId = null;
     closeSheet();
     document.querySelectorAll(".page").forEach(el => { el.innerHTML = ""; });
@@ -118,12 +122,12 @@
     document.getElementById("pageTitle").textContent = "登录";
     document.querySelectorAll(".role-switch button").forEach(b => b.setAttribute("aria-pressed", "false"));
     document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div>' +
-      '<div class="auth-copy"><p class="eyebrow">PANDORA WORKSPACE</p><h2>让每一天，<br>有序向前。</h2><p>登录你的工作台，查看任务与团队动态。</p></div>' +
+      '<div class="auth-copy"><p class="eyebrow">PANDORA WORKSPACE</p><h2>让每一天，<br>有序向前。</h2><p>登录你的首页，查看每日事项与任务动态。</p></div>' +
       '<form id="backend-login"><div class="field"><label for="login-user">手机号</label><input id="login-user" type="text" name="phone" inputmode="tel" autocomplete="tel" autocapitalize="none" spellcheck="false" placeholder="请输入本人手机号" required value="' + esc(identifier || "") + '"></div>' +
       '<div class="field"><label for="login-password">密码</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required></div>' +
       '<div class="callout" id="login-error" role="alert"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
-      '<button type="submit" class="btn primary auth-submit">登录工作台</button></form>' +
-      '<p class="auth-help">初始密码及密码重置请联系管理员。</p>' +
+      '<button type="submit" class="btn primary auth-submit">登录首页</button></form>' +
+      '<p class="auth-help">员工使用本人手机号登录，初始密码由公司管理员提供；忘记密码请联系管理员。管理员请通过下方“进入管理后台”入口使用管理账号登录。</p>' +
       '<a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
     gate();
     document.getElementById("backend-login").addEventListener("submit", event => {
@@ -134,7 +138,6 @@
         const result = await P.request("/auth/sessions", { method: "POST", body: { phone, password, accountType: "employee" } });
         P.epoch++;
         P.token = result.token; sessionStorage.setItem(SESSION_KEY, P.token);
-        P.notice("");
         // A new account or a reset account must change its password before any business page loads.
         if (result.passwordChangeRequired) { passwordPage(password, ""); return; }
         try { await P.reload(); }
@@ -150,12 +153,12 @@
     document.getElementById("pageTitle").textContent = "修改密码";
     document.querySelectorAll(".role-switch button").forEach(b => b.setAttribute("aria-pressed", "false"));
     document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div><div class="auth-copy"><h2>设置你的新密码</h2>' +
-      '<p>首次登录请先修改初始密码，完成后即可进入工作台。</p></div>' +
+      '<p>首次登录请先修改初始密码，完成后即可进入首页。</p></div>' +
       '<form id="backend-password">' +
       '<div class="field"><label for="pw-current">当前密码</label><input id="pw-current" name="currentPassword" type="password" autocomplete="current-password" required></div>' +
       '<div class="field"><label for="pw-new">新密码</label><input id="pw-new" name="newPassword" type="password" autocomplete="new-password" required></div>' +
       '<div class="field"><label for="pw-confirm">确认新密码</label><input id="pw-confirm" type="password" autocomplete="new-password" required></div>' +
-      '<p class="tiny muted">至少10个字符，包含字母和数字，最多72字节。修改后需重新登录。</p>' +
+      '<p class="tiny muted">至少10个字符，须同时包含字母和数字，UTF-8 长度不超过72字节。修改成功后，请使用新密码重新登录。</p>' +
       '<div class="callout" id="password-error" role="alert"' + (message ? '' : ' hidden') + '>' + esc(message || "") + '</div>' +
       '<div class="row"><button type="submit" class="btn primary">修改密码</button>' +
       '<button type="button" class="btn" id="password-logout">退出登录</button></div></form></section>';
@@ -190,11 +193,11 @@
     P.ready = false; gate();
     document.getElementById("appMain").classList.remove("is-map");
     document.querySelectorAll(".page").forEach(el => { el.classList.toggle("is-active", el.id === "page-map"); el.innerHTML = ""; });
-    document.getElementById("pageTitle").textContent = "连接服务";
+    document.getElementById("pageTitle").textContent = "连接后端";
     document.getElementById("page-map").innerHTML = '<section class="auth-card"><div class="auth-brand"><span class="auth-mark" aria-hidden="true"><img src="潘多拉-手账标记.svg" alt="" width="44" height="44"></span><span>潘多拉</span></div>' +
-      '<div class="auth-copy"><h2>暂时无法打开工作台</h2><p>请检查网络连接后重试。</p></div><div class="callout" role="alert">' + esc(error.message) +
+      '<div class="auth-copy"><h2>暂时无法打开首页</h2><p>请检查网络连接后重试。</p></div><div class="callout" role="alert">' + esc(error.message) +
       '</div><div class="action-grid"><button class="btn primary" data-backend-retry>重新加载</button><button class="btn" data-backend-logout>退出登录</button></div><a class="auth-admin" href="/admin.html">进入管理后台</a></section>';
-    P.notice("数据加载失败，请稍后重试。");
+    P.notice("数据加载失败，请检查后端服务后重试。");
   }
   /* ------------------------------------------------------------------ *
    * Web-owned hour/minute control (chapter 4.2)
@@ -244,7 +247,8 @@
     const saving = !["GET", "HEAD"].includes(method) && !path.startsWith("/auth/") && path !== "/tasks/reviewer-preview";
     const label = path === "/auth/sessions" && method === "POST" ? "正在登录，请稍候…"
       : path === "/auth/sessions/current" ? "正在退出登录…" : "正在加载，请稍候…";
-    const finish = startLoading(label, saving);
+    const finish = opts.background ? () => {} : startLoading(label, saving);
+    delete opts.background;
     requests.add(controller);
     let timedOut = false;
     const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 20000);
@@ -261,7 +265,7 @@
         catch (error) { if (error.name === "AbortError") throw error; result = {}; }
       } catch (error) {
         if (epoch !== P.epoch || externalSignal?.aborted || (controller.signal.aborted && !timedOut)) throw cancelled();
-        throw new Error(timedOut ? "请求超时。请重试，已提交的操作不会重复保存。" : "无法连接服务，请检查网络后重试。");
+        throw new Error(timedOut ? "请求超时。请重试，已提交的操作不会重复保存。" : "无法连接后端，请检查网络后重试。");
       }
       if (epoch !== P.epoch) throw cancelled();
       if (!response.ok) {
@@ -293,6 +297,8 @@
     return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20);
   }
   P.mutation = async function (slot, method, path, body, etag) {
+    if (P.subordinateMode() && !/^(\/comments\/|\/(tasks|work-logs)\/[^/]+\/comments(?:\/|$))/.test(path))
+      throw new Error('下属浏览仅可评论，请从本人正常入口办理其他操作。');
     const signature = JSON.stringify([method, path, body, etag]);
     let retry = retries.get(slot);
     if (!retry || retry.signature !== signature) {
@@ -342,8 +348,12 @@
   function mapPerson(u) {
     /* departmentName is the real department; teamName is an independent team and must never stand in
        for it (a candidate list grouped by team would hide cross-department choices). */
-    return { id: u.id, name: u.displayName || "相关人员", role: u.placementType || u.role || null,
-      dept: u.departmentName || u.department || (u.placementType === "founder" ? "公司层" : ""), superiorId: u.managerId || null, raw: u };
+    const safe={};
+    Object.keys(u || {}).forEach(key => { if (!['phone','loginPhone','contactPhone','mobile','email','employmentStartDate','employmentDays'].includes(key)) safe[key]=u[key]; });
+    return { id: safe.id, name: safe.displayName || "相关人员", role: safe.placementType || safe.role || null,
+      dept: safe.departmentName || safe.department || (safe.placementType === "founder" ? "公司层" : "—"),
+      team: safe.teamName || null, position: safe.positionName || null,
+      superiorId: safe.managerId || null, raw: safe };
   }
   // One company-calendar conversion shared by calendar, log and table projections.
   const companyFormatters=new Map(),dayBoundaryCache=new Map();
@@ -371,7 +381,7 @@
       urgency: ({ urgent: "紧急", high: "高", medium: "中", low: "低" })[t.priority] || "中",
       status: t.executionState || "todo", progressNote: t.progressNote || "", reviewNote: "",
       frozen: !!t.frozen || !!t.pending, pinned: !!t.pinned, assignedAt: t.assignedAt || null,
-      pendingKind: t.pendingKind || null, tag: t.personalTag || t.tag || null, tagId: t.tagId || null,
+      pendingKind: t.pendingKind || null, tag: (t.tags || [])[0] || null, tagId: (t.tagIds || [])[0] || null,
       rowVersion: t.rowVersion, acceptanceCriteria: t.acceptanceCriteria || "", raw: t };
   };
   // A display copy for calendars only; TASKS, task details and all write preconditions remain effective.
@@ -385,13 +395,23 @@
   };
   P.rememberPeople = function (rows) {
     (rows || []).forEach(u => {
-      if (!u.id) return;
-      const known = personById(u.id);
-      // Partial participant summaries contain names only. Explicit nulls in a complete directory
-      // row still clear old department/team/manager values after an organization move.
-      const raw = Object.assign({}, known && known.raw, u);
-      if (known) Object.assign(known, mapPerson(raw));
-      else PEOPLE.push(mapPerson(raw));
+      if (!u || !u.id) return;
+      const existing=personById(u.id);
+      const canonical=(P.data?.users || []).find(person=>person.id===u.id);
+      const summary=Object.keys(u).every(key=>key==='id'||key==='displayName');
+      let merged;
+      if (summary) {
+        merged={...(existing?.raw || {})};
+        for (const [key,value] of Object.entries(canonical || {})) if (!(key in merged)) merged[key]=value;
+        Object.assign(merged,u);
+      } else {
+        // Name-only participant summaries never overwrite organization fields. A complete detail
+        // response is allowed to update a known person, while the current directory still fills
+        // fields that are absent from that response.
+        merged={...(existing?.raw || {}),...(canonical || {}),...u};
+      }
+      const next=mapPerson(merged);
+      if (existing) PEOPLE.splice(PEOPLE.indexOf(existing),1,next); else PEOPLE.push(next);
     });
   };
   P.upsertTask = function (raw) {
@@ -436,7 +456,7 @@
       return commitTaskRows(snapshot.rows);
     });
   };
-  P.reload = function () { return loadingGroup("正在加载工作台，请稍候…", async () => {
+  P.reload = function () { return loadingGroup("正在加载首页，请稍候…", async () => {
     const epoch = P.epoch, sequence = ++reloadSequence;
     const me = await P.request("/me");
     if (me.role === "admin") throw new Error("此页面供业务账号使用。管理员请使用 /admin.html 管理端。");
@@ -466,7 +486,6 @@
     LOGS.splice(0, LOGS.length, ...logs.map(l => ({ id: l.id, authorId: l.authorId, time: new Date(l.createdAt), content: l.body, taskId: l.taskId || null, rowVersion: l.rowVersion, editable: l.editable, raw: l })));
     NOTIFICATIONS.splice(0, NOTIFICATIONS.length, ...notifications.map(n => ({ id: n.id, time: new Date(n.createdAt), summary: n.summary, type: n.eventType, recipients: [me.id], read: n.readAt ? [me.id] : [], targetType: "task", targetId: n.taskId, raw: n })));
     COMPANY_ITEMS.splice(0, COMPANY_ITEMS.length, ...home.companyItems.map(i => ({ id: i.id, text: i.body || i.title, raw: i })));
-    PERSONAL_STATE[me.id] = { edited: true, items: home.personalItems.map(i => ({ id: i.id, text: i.body || i.title, raw: i })) };
     [[approvals, P.approvalEtags], [logs, P.logEtags], [notifications, P.notificationEtags]].forEach(([rows, map]) => { map.clear(); rows.forEach(row => map.set(row.id || row.taskId, version(row))); });
     retries.clear(); P.ready = true; gate(); renderAll();
     return P.data;
@@ -477,7 +496,7 @@
     clearData(); state.logFilter = "logs"; state.logsMineOnly = false; state.logAuthorQuery = "";
     state.logDepartmentId = "__all__";
     state.logAll = false; state.logAuthorId = null; state.pickerOpen = false;
-    loginPage(""); P.notice("已退出登录。");
+    loginPage(""); P.notice("请使用本人手机号登录。");
   };
   visibleTasks = () => TASKS.slice();
   visibleLogs = () => LOGS.slice();
@@ -502,7 +521,7 @@
   }, true);
   clearData(); gate();
   document.addEventListener("DOMContentLoaded", function () {
-    if (!P.token) { loginPage(); return; }
+    if (!P.token) { loginPage(); P.notice("请使用真实账号登录。"); return; }
     P.busy(async () => {
       try {
         // Ask for the identity first: a restricted session must never load the workspace.

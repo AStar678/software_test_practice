@@ -23,6 +23,7 @@ RESULTS: list[dict] = []
 SCRIPT_ORDER = [
     "潘多拉-交互原型.js", "潘多拉-api.js", "潘多拉-任务接入.js", "潘多拉-工作区接入.js",
     "潘多拉-日程视图.js", "潘多拉-任务表单.js", "潘多拉-个人资料.js", "潘多拉-标签评论.js",
+    "潘多拉-每日事项.js",
 ]
 
 
@@ -63,9 +64,9 @@ def main() -> int:
     employee = repo / "潘多拉-交互原型.html"
     admin = repo / "admin.html"
     pom = repo / "backend" / "pom.xml"
-    html = employee.read_text()
-    admin_html = admin.read_text()
-    pom_text = pom.read_text()
+    html = employee.read_text(encoding="utf-8")
+    admin_html = admin.read_text(encoding="utf-8")
+    pom_text = pom.read_text(encoding="utf-8")
 
     refs = references(html)
     names = [without_query(path)[0] for _, path in refs]
@@ -86,6 +87,8 @@ def main() -> int:
     check("10.1 the later modules load in dependency order so their overrides win",
           len(positions) == len(SCRIPT_ORDER) and positions == sorted(positions),
           {"scripts": scripts, "expected": SCRIPT_ORDER})
+    check("10.1 the employee page loads the independent daily-item calendar last",
+          "潘多拉-每日事项.js" in scripts and "潘多拉-每日事项.css" in names, {"scripts": scripts})
     check("10.1 the employee page loads the shared tag/comment and profile modules",
           "潘多拉-标签评论.js" in scripts and "潘多拉-个人资料.js" in scripts, {"scripts": scripts})
     check("10.1 the employee page no longer references an Android-only theme override",
@@ -134,7 +137,7 @@ def main() -> int:
         args.output.write_text(json.dumps({
             "generatedAt": datetime.now(timezone.utc).isoformat(),
             "passed": passed, "total": len(RESULTS), "checks": RESULTS,
-        }, ensure_ascii=False, indent=2) + "\n")
+        }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"wrote {args.output}")
     return 0 if passed == len(RESULTS) else 1
 

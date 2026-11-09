@@ -569,81 +569,35 @@ function personalItemsFor(pid){
 function renderMap(){
   const a = actor();
   const el = document.getElementById("page-map");
+  /* 任务看板只按当前有效负责关系纳入本人未完成任务，不再按创建者排除本人创建的任务。 */
   const assigned = sortTasks(visibleTasks(a).filter(function(t){
-    return t.assigneeIds.indexOf(a.id) !== -1 && t.creatorId !== a.id && !isFinished(t);
+    return t.assigneeIds.indexOf(a.id) !== -1 && !isFinished(t);
   })).slice(0, 10);
-  const personal = personalItemsFor(a.id);
-  const recentLogs = LOGS.filter(function(l){ return l.authorId === a.id; })
-    .filter(function(l){ return dayDiff(l.time, BASE_DAY) >= -1 && dayDiff(l.time, BASE_DAY) <= 0; })
-    .sort(function(x, y){ return y.time.getTime() - x.time.getTime(); });
-  const personalEdited = ensurePersonal(a.id).edited;
-  const canEditCompany = a.role === "upper";
-  const companyAtLimit = COMPANY_ITEMS.length >= 10;
-  const personalAtLimit = personal.length >= 10;
-
   function companyBody(){
     if (!COMPANY_ITEMS.length) return '<div class="empty">暂无公司信息</div>';
     return COMPANY_ITEMS.map(function(it, i){
-      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span></div>" +
-        (canEditCompany
-          ? '<div class="item-actions">' +
-              '<button type="button" class="btn ghost tiny-btn" data-edit-company="' + it.id + '" aria-label="编辑公司信息第' + (i + 1) + '条">编辑</button>' +
-              '<button type="button" class="btn ghost tiny-btn" data-delete-company="' + it.id + '" aria-label="删除公司信息第' + (i + 1) + '条">删除</button>' +
-            "</div>"
-          : "") +
-        "</div>";
+      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span></div></div>";
     }).join("");
   }
   function assignedBody(){
-    if (!assigned.length) return '<div class="empty">暂无被派发的未完成任务</div>';
-    return assigned.map(function(t){ return taskItemHTML(t, a); }).join("");
-  }
-  function personalBody(){
-    if (!personal.length) return '<div class="empty">暂无个人信息，可手动添加</div>';
-    return personal.map(function(it, i){
-      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span></div>" +
-        '<div class="item-actions">' +
-          '<button type="button" class="btn ghost tiny-btn" data-edit-personal="' + it.id + '" aria-label="编辑个人信息第' + (i + 1) + '条">编辑</button>' +
-          '<button type="button" class="btn ghost tiny-btn" data-delete-personal="' + it.id + '" aria-label="删除个人信息第' + (i + 1) + '条">删除</button>' +
-        "</div></div>";
+    if (!assigned.length) return '<div class="empty">暂无本人负责的未完成任务</div>';
+    return assigned.map(function(t){
+      return '<button type="button" class="home-task" data-task="' + t.id + '"><span class="home-task-title">' + esc(t.title) +
+        '</span><span class="home-task-priority">' + esc(t.urgency || "中") + "</span></button>";
     }).join("");
   }
-  function logsBody(){
-    if (!recentLogs.length) return '<div class="empty">今天与昨天暂无日志</div>';
-    return recentLogs.map(function(l){
-      const t = l.taskId ? taskById(l.taskId) : null;
-      return '<button type="button" class="log-line" data-log="' + l.id + '">' +
-        '<span class="lt">' + esc(relativeDayLabel(l.time)) + " " + esc(fmtTime(l.time)) +
-          (t ? " · 关联：" + esc(t.title) : "") + "</span>" +
-        '<span class="lc">' + esc(l.content) + "</span></button>";
-    }).join("");
-  }
-
   el.innerHTML =
     '<div class="map-grid">' +
-      '<section class="quad" aria-labelledby="q1">' +
-        '<div class="card-head' + (canEditCompany ? " has-actions" : "") + '"><h2 id="q1">公司统一信息</h2><span class="hint">' + COMPANY_ITEMS.length + "/10" +
-          (canEditCompany && companyAtLimit ? " · 已达上限" : "") + "</span>" +
-          (canEditCompany ? '<button type="button" class="btn tiny-btn" data-action="new-company"' + (companyAtLimit ? " disabled" : "") + ' aria-label="新增公司信息">新增</button>' : "") +
-        "</div>" +
-        '<div class="q-body">' + companyBody() + "</div>" +
-      "</section>" +
-      '<section class="quad" aria-labelledby="q2">' +
-        '<div class="card-head"><h2 id="q2">我被派发未完成</h2><span class="hint">' + assigned.length + "/10</span></div>" +
-        '<div class="q-body">' + assignedBody() + "</div>" +
-      "</section>" +
-      '<section class="quad" aria-labelledby="q3">' +
-        '<div class="card-head has-actions"><h2 id="q3">个人信息</h2><span class="hint">' + personal.length + "/10 · " +
-          (personalEdited ? "已编辑" : "来自日志") + (personalAtLimit ? " · 已达上限" : "") + "</span>" +
-          '<button type="button" class="btn tiny-btn" data-action="new-personal"' + (personalAtLimit ? " disabled" : "") + ' aria-label="新增个人信息">新增</button>' +
-        "</div>" +
-        '<div class="q-body">' + personalBody() + "</div>" +
-      "</section>" +
-      '<section class="quad" aria-labelledby="q4">' +
-        '<div class="card-head"><h2 id="q4">今天与昨天日志</h2><span class="hint">时间倒序</span></div>' +
-        '<div class="q-body">' + logsBody() + "</div>" +
-      "</section>" +
+      '<section class="quad company-quad" aria-labelledby="q1">' +
+        '<div class="card-head"><h2 id="q1">事件纪</h2><span class="hint">统一发布</span></div>' +
+        '<div class="q-body" tabindex="0" role="region" aria-labelledby="q1">' + companyBody() + "</div></section>" +
+      '<section class="quad tasks-quad" aria-labelledby="q2">' +
+        '<div class="card-head"><h2 id="q2">任务看板</h2><span class="hint">' + assigned.length + "/10</span></div>" +
+        '<div class="q-body" tabindex="0" role="region" aria-labelledby="q2">' + assignedBody() + "</div></section>" +
+      '<section class="quad daily-quad" id="dailyItemsSection" aria-labelledby="q3">' +
+        '<div class="card-head"><h2 id="q3">每日事项</h2><span class="hint">本人维护</span></div></section>' +
     "</div>";
+  if (window.PandoraDaily) window.PandoraDaily.render();
 }
 
 /* ============================== 页面：视图（响应式类甘特） ============================== */
@@ -698,7 +652,7 @@ function paletteIndexOf(t){
 /* 无标签任务的统一默认粉色：只在未标记时使用，且刻意不进入标签色板 */
 const DEFAULT_TASK_COLOR = { bg: "#ffe1ea", bd: "#e39ab4" };
 const TAG_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
-/* 任务底色优先私人标签，否则取首个共用标签；日志仍单选，无标签用默认粉色。 */
+/* 任务底色取首个共用标签；无标签时用默认粉色。 */
 function taskColorVars(t){
   const tag = t && t.tag;
   if (tag && TAG_COLOR_PATTERN.test(String(tag.color || ""))) {
@@ -1205,7 +1159,7 @@ function logFindingHTML(){
         '<button type="button" class="btn tiny-btn" id="clearLogAuthor" data-action="clear-log-author"' +
           (q ? "" : " disabled") + ' aria-label="清除作者查找">清除</button>' +
       "</div>" +
-      '<span class="tiny muted">不区分大小写，匹配作者姓名片段；与“只看自己”同时启用时取交集。</span>' +
+      '<span class="tiny muted">按作者姓名筛选。</span>' +
     "</div></section>";
 }
 /* 各筛选对应的唯一内容块 */
@@ -1446,9 +1400,8 @@ function renderSheet(){
     return;
   }
   const view = sheetStack[sheetStack.length - 1];
-  const useBack = !!view.notification || (!!view.returnContext && sheetStack.length > 1);
-  document.getElementById("sheetClose").hidden = useBack;
-  document.getElementById("sheetBack").hidden = !useBack;
+  document.getElementById("sheetClose").hidden = !!view.notification;
+  document.getElementById("sheetBack").hidden = !view.notification;
   sheet.classList.toggle("is-fullscreen", !!view.fullscreen);
   sheetTitleEl.textContent = view.title;
   sheetBodyEl.innerHTML = view.body;
@@ -1463,16 +1416,24 @@ function renderSheet(){
   const target = sheetBodyEl.querySelector("[data-autofocus]") ||
     sheetFootEl.querySelector("button") ||
     sheetBodyEl.querySelector("button, input, select, textarea") || document.getElementById("sheetClose");
-  const headerTarget = document.getElementById(useBack ? "sheetBack" : "sheetClose");
+  const headerTarget = document.getElementById(view.notification ? "sheetBack" : "sheetClose");
   if (target) (matchMedia("(max-width: 600px)").matches ? headerTarget : target).focus({ preventScroll: true });
 }
 function openSheet(view){
-  const parent = sheetStack[sheetStack.length - 1];
-  if (parent && typeof parent.suspend === "function") parent.suspend();
-  if (parent && parent.returnContext) view = { ...view, returnContext: parent.returnContext };
   // 从通知进入的任务、申请详情继续使用同一套返回导航。
   if (sheetStack.some(item => item.notification)) {
     view = { ...view, notification: true };
+  }
+  if (sheetStack.some(item => item.subordinate)) view = { ...view, subordinate: true };
+  const current = sheetStack[sheetStack.length - 1];
+  if (current) {
+    current.savedScroll = sheetBodyEl.scrollTop;
+    const focused = document.activeElement;
+    if (focused?.id) current.savedFocus = '#'+CSS.escape(focused.id);
+    else if (focused?.dataset?.task) current.savedFocus = '[data-task="'+CSS.escape(focused.dataset.task)+'"]';
+    else if (focused?.dataset?.action && focused?.dataset?.id) current.savedFocus = '[data-action="'+CSS.escape(focused.dataset.action)+'"][data-id="'+CSS.escape(focused.dataset.id)+'"]';
+    else if (focused?.dataset?.action && focused?.dataset?.date) current.savedFocus = '[data-action="'+CSS.escape(focused.dataset.action)+'"][data-date="'+CSS.escape(focused.dataset.date)+'"]';
+    else current.savedFocus = null;
   }
   if (!lastFocused) lastFocused = document.activeElement;
   sheetStack.push(view);
@@ -1481,9 +1442,6 @@ function openSheet(view){
 /* 就地替换栈顶视图：用于表单内不涉及二级界面的本地状态变更（如清空上级/关联任务） */
 function replaceTopSheet(view){
   if (!view) return;
-  const previous = sheetStack[sheetStack.length - 1];
-  if (previous && previous.returnContext) view = { ...view, returnContext: previous.returnContext };
-  if (previous && previous.notification) view = { ...view, notification: true };
   sheetStack[sheetStack.length - 1] = view;
   renderSheet();
 }
@@ -1495,16 +1453,16 @@ function backSheet(){
   const top = sheetStack[sheetStack.length - 1];
   if (top && typeof top.rebuild === "function") sheetStack[sheetStack.length - 1] = top.rebuild();
   renderSheet();
+  if (top) {
+    sheetBodyEl.scrollTop = top.savedScroll || 0;
+    if (top.savedFocus) sheetBodyEl.querySelector(top.savedFocus)?.focus({preventScroll:true});
+  }
 }
 function closeSheet(){
+  if (sheetStack.length > 1 && sheetStack.some(item => item.subordinate)) {backSheet();return;}
   sheetStack = [];
   clearDrafts();
   renderSheet();
-}
-function dismissSheet(){
-  const top = sheetStack[sheetStack.length - 1];
-  if (top && top.returnContext && sheetStack.length > 1) backSheet();
-  else closeSheet();
 }
 function withBack(foot){
   const items = [];
@@ -1572,7 +1530,6 @@ function taskDetailView(id){
           '<span class="task-meta">' + kindTag(k, a) + statusBadge(k) + urgencyBadge(k.urgency) +
             "<span>" + esc(fmtTaskDue(k)) + "</span></span></button>";
       }).join("") + "</div>";
-    body += '<div class="tiny muted">父任务与子任务都是可执行任务；父任务由自身负责人和审核流程推进，不因子任务状态变化而自动完成。</div>';
   }
   if (siblings.length){
     body += '<div class="divider"></div><div class="card-head"><h2>同级任务</h2><span class="hint">同一上级任务下</span></div><div class="stack">' +
@@ -1755,7 +1712,7 @@ function assigneeSummaryHTML(ids){
   if (!people.length) return '<div class="empty">尚未选择负责人</div>';
   return '<div class="chip-row">' + people.map(function(p){
     return '<span class="chip">' + esc(p.name) +
-      '<span class="chip-meta">' + esc([...new Set([ROLE_LABEL[p.role], p.raw && p.raw.positionName, p.dept, p.raw && p.raw.teamName].filter(Boolean))].join(' · ')) + "</span></span>";
+      '<span class="chip-meta">' + esc(ROLE_LABEL[p.role]) + " · " + esc(p.dept) + "</span></span>";
   }).join("") + "</div>";
 }
 function parentTaskLabel(d){
@@ -1798,7 +1755,7 @@ function taskFormView(){
       '<div class="field" style="flex:1" id="tf-end-time-field"' + '><label for="tf-end-time-hour">截止时刻</label>' +
         timeControl("tf-end-time", d.endTime) + '</div>' +
     "</div>" +
-    '<span class="tiny muted">按公司时区填写；全天快捷设为开始日00:00至截止日次日00:00。</span></div>';
+    '<span class="tiny muted">全天快捷：开始日00:00至截止日次日00:00，可继续修改。</span></div>';
 
   body += '<div class="field"><label>紧急程度</label><div class="choice-row" id="tf-urgency">' +
     ["紧急", "高", "中", "低"].map(function(u){
@@ -1807,12 +1764,12 @@ function taskFormView(){
 
   body += '<div class="field"><label>负责人（可多选）</label>' + assigneeSummaryHTML(d.assigneeIds) +
     (canPickAssignees ? '<button type="button" class="btn tiny-btn" data-action="pick-assignees" style="align-self:flex-start">选择负责人</button>' : "") +
-    '<div class="tiny muted">可多选负责人，至少选择一人。</div>' +
+    '<div class="tiny muted">至少保留一位负责人。</div>' +
     "</div>";
 
   body += '<div class="callout" id="tf-error" hidden></div>';
   if (a.role === "lower" || a.role === "middle"){
-    body += '<div class="callout info">' + (a.role === "lower" ? "下层" : "中层") + "自建任务需经直属上级审核通过后才进入执行状态。</div>";
+    body += '<div class="callout info">提交后需直属上级审核。</div>';
   }
 
   return { title: d.mode === "create" ? "创建任务" : "编辑任务", body: body,
@@ -1839,7 +1796,7 @@ function logFormView(){
         '<button type="button" class="btn tiny-btn" data-action="pick-log-task">选择关联任务</button>' +
         (d.taskId ? '<button type="button" class="btn tiny-btn ghost" data-action="clear-log-task">清空关联</button>' : "") +
       "</div>" +
-      '<span class="tiny muted">日志归属于本人，可被范围内的上级查看，但只有本人可以编辑。</span></div>' +
+      '' +
     '<div class="callout" id="lf-error" hidden></div>';
   return { title: d.id ? "编辑日志" : "写日志", body: body,
     foot: withBack('<button type="button" class="btn primary" data-action="save-log">保存日志</button>', actor()),
@@ -1897,7 +1854,7 @@ function taskPickerView(){
         '<input id="tp-search" type="search" autocomplete="off" placeholder="输入任务名称片段" value="' + esc(taskPicker.query) + '" data-autofocus />' +
         '<button type="button" class="btn tiny-btn" data-action="picker-task-clear-query"' + (taskPicker.query ? "" : " disabled") + ' aria-label="清除搜索词">清除</button>' +
       "</div>" +
-      '<span class="tiny muted">不区分大小写，按名称包含匹配；空查询显示全部可选任务。</span></div>' +
+      '<span class="tiny muted">输入任务名称筛选。</span></div>' +
     '<div class="field"><label>候选任务</label><div id="tpResults">' + taskPickerResultsHTML() + "</div></div>";
   return { title: isParent ? "选择上级任务" : "选择关联任务", body: body,
     foot: '<button type="button" class="btn" data-action="sheet-back">取消</button>' +
@@ -2035,8 +1992,7 @@ function noteFormView(id){
   const a = actor();
   const t = taskById(id);
   if (!t || !canUpdateTaskNote(a, t)) return null;
-  const body = '<div class="callout info">负责人只能维护文字进展备注与提交完成，不能修改名称、排期、紧急程度或负责人。</div>' +
-    '<div class="field"><label for="pf-note">进展备注</label><textarea id="pf-note" data-autofocus>' + esc(t.progressNote) + "</textarea></div>" +
+  const body = '<div class="field"><label for="pf-note">进展备注</label><textarea id="pf-note" data-autofocus>' + esc(t.progressNote) + "</textarea></div>" +
     '<div class="callout" id="pf-error" hidden></div>';
   return { title: "更新进展", body: body,
     foot: withBack('<button type="button" class="btn primary" data-action="save-note" data-id="' + t.id + '">保存进展</button>', a) };
@@ -2047,8 +2003,8 @@ function submitCompleteView(id){
   if (!t || !canUpdateTaskNote(a, t)) return null;
   const reviewer = completionReviewer(t);
   const body = reviewer
-    ? '<div class="callout info">提交后任务进入待完成审核，审核人：' + esc(reviewer.name) + "。批准后任务标记为已完成，退回则恢复进行中。</div>"
-    : '<div class="callout info">该任务没有更高的审核人（上层自建任务），提交后直接标记为已完成。</div>' +
+    ? '<div class="callout info">审核人：' + esc(reviewer.name) + "。通过后标记为已完成，退回则恢复进行中。</div>"
+    : '<div class="callout info">无需上级审核，提交后直接标记为已完成。</div>' +
       '<div class="field"><label for="cf-note">完成说明</label><textarea id="cf-note">' + esc(t.progressNote) + "</textarea></div>";
   return { title: "提交完成", body: body,
     foot: withBack('<button type="button" class="btn ok" data-action="confirm-complete" data-id="' + t.id + '">确认提交</button>', a) };
@@ -2057,7 +2013,7 @@ function consultFormView(){
   const a = actor();
   if (a.role !== "middle") return null;
   const sup = directSuperiorOf(a.id);
-  const body = '<div class="callout info">请示发送给直属上层：' + esc(sup ? sup.name : "无") + "。仅用于上下级沟通，不用于修改任务字段。</div>" +
+  const body = '<div class="callout info">请示发送给直属上级：' + esc(sup ? sup.name : "无") + "。</div>" +
     '<div class="field"><label for="qk-content">请示内容</label><textarea id="qk-content" data-autofocus></textarea></div>' +
     '<div class="callout" id="qk-error" hidden></div>';
   return { title: "发起请示", body: body,
@@ -2094,7 +2050,7 @@ function companyItemFormView(id){
   if (id && !it) return null;
   return { title: it ? "编辑公司信息" : "添加公司信息",
     body: '<div class="field"><label for="ci-text">内容</label><input id="ci-text" type="text" value="' + esc(it ? it.text : "") + '" data-autofocus /></div>' +
-      '<div class="tiny muted">公司统一信息对所有身份可见，最多 10 条。</div>' +
+      '<div class="tiny muted">对所有身份可见，最多 10 条。</div>' +
       '<div class="callout" id="ci-error" hidden></div>',
     foot: withBack('<button type="button" class="btn primary" data-action="save-company"' + (it ? ' data-id="' + it.id + '"' : "") + ">保存</button>", a) };
 }
@@ -2126,7 +2082,7 @@ function personalItemFormView(id){
   if (id && !it) return null;
   return { title: it ? "编辑个人信息" : "添加个人信息",
     body: '<div class="field"><label for="pi-text">内容</label><input id="pi-text" type="text" value="' + esc(it ? it.text : "") + '" data-autofocus /></div>' +
-      '<div class="tiny muted">最多保存10条个人事项。</div>' +
+      '<div class="tiny muted">最多 10 条，独立保存。</div>' +
       '<div class="callout" id="pi-error" hidden></div>',
     foot: withBack('<button type="button" class="btn primary" data-action="save-personal"' + (it ? ' data-id="' + it.id + '"' : "") + ">保存</button>", a) };
 }
@@ -2423,7 +2379,7 @@ function openNotifications(){
 }
 
 /* ============================== 事件与渲染调度 ============================== */
-const PAGE_TITLE = { map: "工作台", view: "日程", log: "日志", ai: "统计", me: "我的" };
+const PAGE_TITLE = { map: "首页", view: "公司", log: "日志", ai: "统计", me: "我的" };
 const RENDER = { map: renderMap, view: renderView, log: renderLog, ai: renderAI, me: renderMe };
 
 function updateToTop(){
@@ -2509,7 +2465,7 @@ function runAction(el){
   const action = el.dataset.action;
   const id = el.dataset.id;
   switch (action){
-    case "sheet-close": dismissSheet(); return;
+    case "sheet-close": closeSheet(); return;
     case "sheet-back": backSheet(); return;
     case "new-log": openLogForm(null); return;
     case "edit-log": openLogForm(id); return;
@@ -2756,11 +2712,11 @@ document.addEventListener("click", function(ev){
   }
   const actionEl = ev.target.closest("[data-action]");
   if (actionEl){ runAction(actionEl); return; }
-  if (ev.target === overlayEl) dismissSheet();
+  if (ev.target === overlayEl) closeSheet();
 });
 
 document.getElementById("bellBtn").addEventListener("click", openNotifications);
-document.getElementById("sheetClose").addEventListener("click", dismissSheet);
+document.getElementById("sheetClose").addEventListener("click", function(){ closeSheet(); });
 document.getElementById("sheetBack").addEventListener("click", function(){
   if (sheetStack.length > 1) backSheet(); else closeSheet();
 });

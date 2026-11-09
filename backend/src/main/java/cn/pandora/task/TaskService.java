@@ -28,6 +28,8 @@ public class TaskService {
     /** Snapshot fields in a stable order so the recorded history and the reviewer diff are deterministic. */
     private static final List<String> FORM_FIELDS = List.of("title", "description", "acceptanceCriteria", "priority",
             "allDay", "startAt", "dueAt", "startDate", "dueDate", "assigneeIds", "parentTaskId", "tagIds");
+    private static final List<String> ORDINARY_FIELDS = List.of("title", "description", "acceptanceCriteria",
+            "priority", "tagIds", "parentTaskId");
     private static final Set<String> FORM = union(Set.copyOf(FORM_FIELDS), "tagId");
     /** Reopening may replace inactive assignees while preserving the task's base information. */
     private static final Set<String> REOPEN_FORM = Set.of("allDay", "startAt", "dueAt", "startDate", "dueDate", "assigneeIds");
@@ -37,6 +39,7 @@ public class TaskService {
     private static final Set<String> STATES = Set.of("todo", "doing", "done");
     private static final Set<String> PRIORITIES = Set.of("urgent", "high", "medium", "low");
     private static final Set<String> SCHEDULE_FIELDS = Set.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
+    private static final List<String> SCHEDULE_FIELD_ORDER = List.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
     /** Documented default for an organization that has not configured a cut-off. */
     private static final LocalTime DEFAULT_ALL_DAY_CUTOFF = LocalTime.of(18, 0);
     private final Db db;
@@ -75,10 +78,15 @@ public class TaskService {
             int begin=Math.min(offset,visible.size());
             int end=(int)Math.min((long)begin+limit,visible.size());
             Set<String> pinned=pinnedIds(actor);
+            Set<String> tablePins=new HashSet<>(db.list("SELECT task_id FROM user_task_table_pins WHERE organization_id=? AND user_id=?",
+                    actor.organizationId(),actor.id()).stream().map(pin->s(pin,"taskId")).toList());
             List<Map<String,Object>> items=new ArrayList<>();
             for(VisibleTask row:visible.subList(begin,end)) {
                 Map<String,Object> view=taskView(actor,row.task(),row.version(),row.owners());
-                view.put("pinned",pinned.contains(s(row.task(),"id")));items.add(view);
+                String taskId=s(row.task(),"id");
+                view.put("pinned",pinned.contains(taskId));
+                view.put("tablePinned",tableEligible(actor,row.task(),row.owners()) && tablePins.contains(taskId));
+                items.add(view);
             }
             Map<String,Object> result=new LinkedHashMap<>();result.put("items",items);
             result.put("total",visible.size());result.put("nextCursor",end<visible.size()?Integer.toString(end):null);
@@ -355,6 +363,9 @@ public class TaskService {
         if (!access.canSeeTask(actor, task, version, owners)) throw ApiException.notFound();
         Map<String, Object> result = taskView(actor, task, version, owners);
         result.put("pinned", isPinned(actor, id));
+        result.put("tablePinned",tableEligible(actor,task,owners) && db.find(
+                "SELECT 1 FROM user_task_table_pins WHERE organization_id=? AND user_id=? AND task_id=?",
+                actor.organizationId(),actor.id(),id)!=null);
         // The effective route and, for whoever may see it, this request's own route (DEV-010).
         Map<String, Object> pendingRequest = pending(actor, id, false);
         result.put("pendingRoute", pendingRequest != null && canSeeRequest(actor, pendingRequest, task)
@@ -370,7 +381,6 @@ public class TaskService {
         result.put("canHandover", !handoverSources.isEmpty());
         result.put("handoverSources", handoverSources);
         result.put("handoverPresets", handoverPresets);
-        result.put("records", db.list("SELECT id,author_id,body,kind,effective_at,created_at FROM task_records WHERE organization_id=? AND task_id=? AND effective_at IS NOT NULL ORDER BY created_at,id", actor.organizationId(), id));
         List<Map<String, Object>> children = new ArrayList<>();
         for (Map<String, Object> child : db.list("SELECT t.* FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id WHERE t.organization_id=? AND v.parent_task_id=? ORDER BY t.created_at,t.id", actor.organizationId(), id)) {
             Map<String, Object> childVersion = version(actor, s(child, "currentVersionId"));
@@ -422,6 +432,7 @@ public class TaskService {
         List<String> currentOwners = current == null ? List.of() : assignees(actor, currentId);
         boolean creator = actor.id().equals(s(task, "originalCreatorId"));
         boolean responsible=actor.id().equals(access.businessOwner(task));
+        boolean effectiveOwner=currentOwners.contains(actor.id());
         if (current == null ? !creator : !access.canSeeTask(actor, task, current, currentOwners)) throw ApiException.notFound();
         Writes.checkVersion(ifMatch, n(task, "rowVersion"));
         if (pending(actor, id, true) != null) throw conflict("TASK_FROZEN", "任务有待审核申请，请先处理或撤销");
@@ -456,11 +467,10 @@ public class TaskService {
             proposed.put("assigneeIds",currentOwners);
             command="change"; // Keep the existing review kind and history; only the schedule differs.
         } else if ("change".equals(command)) {
-            if (!responsible) throw forbidden("仅当前业务责任方可修改任务资料");
             if ("done".equals(s(task, "executionState"))) throw conflict("TASK_COMPLETED", "已完成任务须先重开");
-            allowed(input, union(FORM, "command", "action", "reason"));
+            allowed(input, union(FORM, "command", "action", "reason", "progressNote"));
             body = requiredText(input, "reason", 500);
-            if (FORM.stream().noneMatch(input::containsKey)) throw bad("请提供需要修改的任务字段");
+            if (FORM.stream().noneMatch(input::containsKey) && !input.containsKey("progressNote")) throw bad("请提供需要修改的任务字段");
             Map<String, Object> base = new LinkedHashMap<>(current);
             base.put("assigneeIds", currentOwners);
             proposed = validateForm(actor, input, base);
@@ -472,7 +482,12 @@ public class TaskService {
                 }
             }
             proposed.put("executionState", s(current, "executionState"));
-            proposed.put("progressNote", current.get("progressNote"));
+            proposed.put("progressNote", input.containsKey("progressNote")
+                    ? optionalTextValue(input.get("progressNote"),"progressNote",2000)
+                    : current.get("progressNote"));
+            if (!Objects.equals(current.get("progressNote"),proposed.get("progressNote")) && "todo".equals(s(task,"executionState")))
+                proposed.put("executionState","doing");
+            validateRequestActor(actor,task,current,"change",proposed);
         } else {
             if ("create".equals(command)) throw bad("已发布任务不可再次创建");
             proposed = new LinkedHashMap<>(current);
@@ -507,7 +522,7 @@ public class TaskService {
         }
         proposedOwners = ids(proposed.get("assigneeIds"));
         if (current == null) validateCreationAssignable(actor, proposedOwners);
-        else if ("change".equals(command)) validateAssignable(actor, proposedOwners);
+        else if ("change".equals(command) && !currentOwners.equals(proposedOwners)) validateAssignable(actor, proposedOwners);
         else validateActiveOwners(actor, proposedOwners);
         validateParent(actor, id, s(proposed, "parentTaskId"), current == null || !Objects.equals(s(current, "parentTaskId"), s(proposed, "parentTaskId")));
         // A creation and a creation resubmission route by the creator's own place in the organization,
@@ -596,6 +611,49 @@ public class TaskService {
         }
     }
 
+    public record RequestAccess(Set<String> readable,Set<String> reviewable) {}
+
+    /** Resolve notification links against the original request in one read batch. */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public RequestAccess requestAccess(Actor actor, Collection<String> requestIds) {
+        requireBusiness(actor);access.requireCurrent(actor);
+        var selected=new LinkedHashSet<>(requestIds);
+        selected.remove(null);
+        if (selected.isEmpty()) return new RequestAccess(Set.of(),Set.of());
+        return access.readScope(actor.organizationId(),()-> {
+            var rows=new ArrayList<Map<String,Object>>();
+            var ordered=new ArrayList<>(selected);
+            for (int start=0;start<ordered.size();start+=500) {
+                var chunk=ordered.subList(start,Math.min(start+500,ordered.size()));
+                var args=new ArrayList<Object>();args.add(actor.organizationId());args.addAll(chunk);
+                rows.addAll(db.list("SELECT * FROM approval_requests WHERE organization_id=? AND id IN ("
+                        +String.join(",",Collections.nCopies(chunk.size(),"?"))+")",args.toArray()));
+            }
+            ReadBatch batch=baseReadBatch(actor);
+            var taskIds=new LinkedHashSet<String>();rows.forEach(row->taskIds.add(s(row,"taskId")));
+            loadTasks(batch,taskIds);loadCurrentVersions(batch);access.primeBusinessOwners(actor.organizationId(),taskIds);
+            return withReadBatch(batch,()-> {
+                var readable=new LinkedHashSet<String>();
+                var reviewable=new LinkedHashSet<String>();
+                for (var row:rows) {
+                    var task=batch.tasks.get(s(row,"taskId"));
+                    if (task==null) continue;
+                    try {
+                        if (canSeeRequest(actor,row,task)) {
+                            readable.add(s(row,"id"));
+                            if ("pending".equals(s(row,"status")) && actor.id().equals(requestReviewer(actor,row,task))
+                                    && (row.get("applicableDeadline")==null
+                                    || clock.instant().isBefore(instant(row.get("applicableDeadline"),"applicableDeadline"))))
+                                reviewable.add(s(row,"id"));
+                        }
+                    }
+                    catch (RuntimeException ignored) { /* broken route is not an invitation to read */ }
+                }
+                return new RequestAccess(readable,reviewable);
+            });
+        });
+    }
+
     /**
      * Request projection with the comparison data trimmed per audience (DEV-011).
      *
@@ -645,6 +703,11 @@ public class TaskService {
 
     /** Field-by-field difference between the effective snapshot and the proposal, for the reviewer only. */
     private List<Map<String, Object>> diff(Actor actor, Map<String, Object> base, Map<String, Object> proposed) {
+        return diff(actor, base, proposed, null, null);
+    }
+
+    private List<Map<String, Object>> diff(Actor actor, Map<String, Object> base, Map<String, Object> proposed,
+                                           List<String> beforeOwners, List<String> afterOwners) {
         List<Map<String, Object>> changes = new ArrayList<>();
         if (base == null) return changes;
         for (String field : FORM_FIELDS) {
@@ -655,8 +718,11 @@ public class TaskService {
                 changes.add(Map.of("field", field, "before", Objects.toString(before, ""), "after", Objects.toString(after, "")));
             }
         }
-        List<String> beforeOrder = assignees(actor, s(base, "id"));
-        List<String> afterOrder = assignees(actor, s(proposed, "id"));
+        if (!Objects.equals(base.get("progressNote"),proposed.get("progressNote")))
+            changes.add(Map.of("field","progressNote","before",Objects.toString(base.get("progressNote"),""),
+                    "after",Objects.toString(proposed.get("progressNote"),"")));
+        List<String> beforeOrder = beforeOwners == null ? assignees(actor, s(base, "id")) : beforeOwners;
+        List<String> afterOrder = afterOwners == null ? assignees(actor, s(proposed, "id")) : afterOwners;
         if (!beforeOrder.equals(afterOrder)) {
             changes.add(Map.of("field", "assigneeIds", "before", String.join(",", beforeOrder), "after", String.join(",", afterOrder)));
         }
@@ -725,6 +791,7 @@ public class TaskService {
         db.update("UPDATE task_versions SET status=? WHERE organization_id=? AND id=? AND status='proposed'", "approve".equals(decision) ? "applied" : status, actor.organizationId(), s(proposed, "id"));
         if ("approve".equals(decision)) {
             applyVersion(actor, task, base, proposed, kind, "approval");
+            recordEffectiveProgress(actor,taskId,id,base,proposed,kind);
             db.update("UPDATE task_records SET effective_at=? WHERE organization_id=? AND request_id=?", now, actor.organizationId(), id);
             recordHistory(actor, taskId, id, "version_applied", "versionId", base == null ? null : s(base, "id"), s(proposed, "id"),
                     Map.of("kind", kind, "executionRound", n(task(actor, taskId, false), "executionRound"), "executionState", Objects.toString(s(proposed, "executionState"), "")));
@@ -769,6 +836,7 @@ public class TaskService {
         eventDetails.put("requestId", id);
         eventDetails.put("kind", kind);
         eventDetails.put("status", status);
+        if ("approved".equals(status) && base != null) eventDetails.put("changes",notificationChanges(actor,base,proposed));
         if (!removedOwners.isEmpty()) eventDetails.put("removedUserIds", removedOwners);
         events.record(actor, taskId, "task." + kind + "." + status, recipients, eventDetails,
                 id, s(proposed, "id"), s(proposed, "title"), eventSummary(actor, kind, status, base, proposed));
@@ -793,9 +861,10 @@ public class TaskService {
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> reviewerPreview(Actor actor, Map<String, Object> input) {
         requireBusiness(actor);access.requireCurrent(actor);
-        allowed(input, Set.of("taskId", "assigneeIds", "operation"));
+        allowed(input, Set.of("taskId", "assigneeIds", "operation", "fields"));
         String requestedOperation = command(input, "operation", "kind", null);
         if (requestedOperation != null && !OPERATIONS.contains(requestedOperation)) throw bad("不支持的操作预览类型");
+        Set<String> requestedFields = previewFields(input);
         String requestedTask = optionalId(input.get("taskId"), "taskId");
         boolean creation = requestedOperation != null ? "create".equals(requestedOperation) : requestedTask == null;
         if (!creation && requestedTask == null) throw bad("非创建预览须提供taskId");
@@ -822,16 +891,25 @@ public class TaskService {
                 validateCreationAssignable(actor, ids(input.get("assigneeIds")));
             }
         } else {
-            List<String> owners = input.containsKey("assigneeIds") ? ids(input.get("assigneeIds"))
-                    : effectiveOwnersForPreview(actor, task, requestedOperation);
+            String currentId = s(task, "currentVersionId");
+            List<String> currentOwners = assignees(actor, currentId);
+            List<String> owners = input.containsKey("assigneeIds") ? ids(input.get("assigneeIds")) : currentOwners;
             for (String id : owners) {
                 Map<String, Object> person = access.activeUser(actor, id);
                 if (person == null || "admin".equals(s(person, "role"))) throw bad("负责人须为本公司有效业务账号");
             }
-            if (!"reschedule".equals(requestedOperation))
-                validateRequestActor(actor,task,version(actor,s(task,"currentVersionId")),
-                        requestedOperation==null?"change":requestedOperation);
-            else if (pending(actor,s(task,"id"),false)!=null || "done".equals(s(task,"executionState")))
+            String operation=requestedOperation==null?"change":requestedOperation;
+            if ("change".equals(operation)) {
+                Set<String> allowed=editableFieldsFor(actor,task,currentOwners,pending(actor,s(task,"id"),false)!=null,s(task,"executionState"));
+                if (requestedFields != null && !allowed.containsAll(requestedFields))
+                    throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已不具备本次字段的修改资格");
+                if (requestedFields == null && allowed.stream().allMatch(SCHEDULE_FIELDS::contains))
+                    throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已不具备本次字段的修改资格");
+                if (!owners.equals(currentOwners) && !allowed.contains("assigneeIds"))
+                    throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已不具备本次字段的修改资格");
+            } else if (!"reschedule".equals(operation)) {
+                validateRequestActor(actor,task,version(actor,currentId),operation);
+            } else if (pending(actor,s(task,"id"),false)!=null || "done".equals(s(task,"executionState")))
                 throw conflict("TASK_NOT_RESCHEDULABLE","审核中或已完成任务不能调整排期");
             route = route(actor, owners, actor.id());
         }
@@ -851,16 +929,17 @@ public class TaskService {
         return result;
     }
 
-    /**
-     * Owners a non-creation preview falls back to when the caller does not send them. Modification and
-     * handover change the proposal itself, so their owners must be supplied instead of guessed.
-     */
-    private List<String> effectiveOwnersForPreview(Actor actor, Map<String, Object> task, String operation) {
-        if (task == null) throw bad("非创建预览须提供负责人或taskId");
-
-        String currentId = s(task, "currentVersionId");
-        if (currentId == null) throw conflict("TASK_NOT_PUBLISHED", "未发布任务没有非创建审核路线");
-        return assignees(actor, currentId);
+    private static Set<String> previewFields(Map<String, Object> input) {
+        if (!input.containsKey("fields")) return null;
+        Object raw=input.get("fields");
+        if (!(raw instanceof List<?> list)) throw bad("fields 必须为数组");
+        LinkedHashSet<String> fields=new LinkedHashSet<>();
+        for (Object item:list) {
+            if (!(item instanceof String field) || !(FORM_FIELDS.contains(field) || "progressNote".equals(field)))
+                throw bad("不支持的任务字段");
+            fields.add(field);
+        }
+        return fields;
     }
 
     /**
@@ -1201,12 +1280,14 @@ public class TaskService {
                 : !"create".equals(kind) && "done".equals(s(task,"executionState")))
             throw conflict("INVALID_TASK_STATE","任务状态已不适用该申请");
         List<String> newOwners = assignees(context, s(proposed, "id"));
-        validateActiveOwners(context, newOwners);
+        if (!"change".equals(kind) || base == null || !assignees(context,s(base,"id")).equals(newOwners))
+            validateActiveOwners(context, newOwners);
         Actor applicant = activeActor(context, s(request, "applicantId"));
         // A creation (and its resubmission) is approved against the same company-wide candidate rule the
         // submit used; published assignee edits and reopen use the company-wide employee range too.
         if ("create".equals(kind)) validateCreationAssignable(applicant, newOwners);
-        else if (Set.of("change","reopen").contains(kind)) validateAssignable(applicant, newOwners);
+        else if ("reopen".equals(kind) || "change".equals(kind) && (base == null || !assignees(context,s(base,"id")).equals(newOwners)))
+            validateAssignable(applicant, newOwners);
         // A handover is re-checked at approval: the setter must still hold the dedicated authority and
         // the source must still be the current owner (DEV-004).
         if ("handover".equals(kind)) validateHandoverAtApproval(context, taskId, requestId, base);
@@ -1267,6 +1348,7 @@ public class TaskService {
         db.update("UPDATE task_versions SET status='applied' WHERE organization_id=? AND id=? AND status='proposed'", actor.organizationId(), s(proposed, "id"));
         Actor applicant=activeActor(actor,s(request,"applicantId"));
         applyVersion(applicant, task, base, proposed, kind, "create".equals(kind) ? "created" : "approval");
+        recordEffectiveProgress(applicant,taskId,requestId,base,proposed,kind);
         db.update("UPDATE task_records SET effective_at=? WHERE organization_id=? AND request_id=?", now, actor.organizationId(), requestId);
         db.update("INSERT INTO request_reassignments(id,organization_id,request_id,task_id,previous_reviewer_id,new_reviewer_id,basis_assignee_id,reason,source) VALUES(?,?,?,?,?,NULL,?,?,'route_refresh')",
                 Db.id(), actor.organizationId(), requestId, taskId, reviewerOfRecord(request), route.basisAssigneeId(), route.reasonText());
@@ -1338,7 +1420,8 @@ public class TaskService {
         boolean direct=route.directFor(actor.id());
         if(!Objects.equals(s(task,"currentVersionId"),base==null?null:s(base,"id")))
             throw conflict("STALE_BASE_VERSION","任务有效版本已变化，请重新提交");
-        validateActiveOwners(actor,owners);
+        if (!"change".equals(kind) || base==null || !assignees(actor,s(base,"id")).equals(owners))
+            validateActiveOwners(actor,owners);
         validateRequestActor(actor,task,base,kind,proposed);
         String versionId = insertVersion(actor, taskId, proposed, owners, direct ? "applied" : "proposed");
         proposed.put("id", versionId);
@@ -1363,6 +1446,7 @@ public class TaskService {
             recordHistory(actor, taskId, requestId, "no_reviewer", "exemptionReason", null, route.reasonText(),
                     Map.of("basisAssigneeId", Objects.toString(route.basisAssigneeId(), "")));
             applyVersion(actor, task, base, proposed, kind, "create".equals(kind) ? "created" : "approval");
+            recordEffectiveProgress(actor,taskId,requestId,base,proposed,kind);
         } else if (base != null || n(task, "rowVersion") > 1) {
             db.update("UPDATE tasks SET row_version=row_version+1,updated_at=? WHERE organization_id=? AND id=?", now, actor.organizationId(), taskId);
         }
@@ -1383,6 +1467,7 @@ public class TaskService {
         eventDetails.put("requestId", requestId);
         eventDetails.put("kind", kind);
         eventDetails.put("status", direct ? "direct" : "pending");
+        if (base != null) eventDetails.put("changes",notificationChanges(actor,base,proposed));
         eventDetails.put("reviewerId", Objects.toString(route.reviewerId(), ""));
         if (base != null && direct) {
             // assignees() returns an immutable list; removal events need a mutable working copy.
@@ -1421,6 +1506,9 @@ public class TaskService {
                         ? Map.of("beforeTags", base.getOrDefault("tagSnapshots",List.of()), "afterTags", proposed.getOrDefault("tagSnapshots",List.of())) : Map.of());
             }
         }
+        if (!Objects.equals(base.get("progressNote"),proposed.get("progressNote")))
+            recordHistory(actor,taskId,requestId,"field_change","progressNote",
+                    Objects.toString(base.get("progressNote"),""),Objects.toString(proposed.get("progressNote"),""),Map.of());
         List<String> beforeOrder = assignees(actor, s(base, "id"));
         if (!beforeOrder.equals(owners)) {
             Map<String, Object> detail = new LinkedHashMap<>();
@@ -1514,8 +1602,23 @@ public class TaskService {
             case "assigneeIds" -> "负责人";
             case "parentTaskId" -> "上级任务";
             case "tagIds" -> "标签";
+            case "progressNote" -> "当前进展";
             default -> field;
         };
+    }
+
+    /** Event evidence is deliberately short; the reviewer-only request diff remains a separate API. */
+    private List<Map<String,String>> notificationChanges(Actor actor,Map<String,Object> base,Map<String,Object> proposed) {
+        var result=new ArrayList<Map<String,String>>();
+        for(var change:diff(actor,base,proposed)) {
+            String field=s(change,"field");
+            String before=s(change,"before"),after=s(change,"after");
+            if("assigneeIds".equals(field)) {before=names(actor,before);after=names(actor,after);}
+            if("priority".equals(field)) {before=priorityLabel(before);after=priorityLabel(after);}
+            result.add(Map.of("field",field,"label",fieldLabel(field),
+                    "before",abbreviate(before),"after",abbreviate(after)));
+        }
+        return result;
     }
 
     private static String priorityLabel(String value) {
@@ -1577,6 +1680,29 @@ public class TaskService {
         }
     }
 
+    private boolean tableEligible(Actor actor, Map<String,Object> task, List<String> owners) {
+        return actor.id().equals(s(task,"originalCreatorId")) || owners.contains(actor.id());
+    }
+
+    public Map<String,Object> setTablePinned(Actor actor, String taskId, boolean pinned) {
+        requireBusiness(actor);
+        access.requireCurrent(actor);
+        var task=task(actor,taskId,true);
+        String current=s(task,"currentVersionId");
+        if (current==null) throw ApiException.notFound();
+        var version=version(actor,current);
+        var owners=assignees(actor,current);
+        if (!access.canSeeTask(actor,task,version,owners) || !tableEligible(actor,task,owners)) throw ApiException.notFound();
+        if (pinned) {
+            db.update("INSERT IGNORE INTO user_task_table_pins(organization_id,user_id,task_id) VALUES(?,?,?)",
+                    actor.organizationId(),actor.id(),taskId);
+        } else {
+            db.update("DELETE FROM user_task_table_pins WHERE organization_id=? AND user_id=? AND task_id=?",
+                    actor.organizationId(),actor.id(),taskId);
+        }
+        return Map.of("taskId",taskId,"tablePinned",pinned);
+    }
+
     private Set<String> pinnedIds(Actor actor) {
         return new LinkedHashSet<>(db.list("SELECT task_id FROM user_task_pins WHERE organization_id=? AND user_id=?", actor.organizationId(), actor.id())
                 .stream().map(row -> s(row, "taskId")).toList());
@@ -1587,27 +1713,6 @@ public class TaskService {
                 actor.organizationId(), actor.id(), taskId) != null;
     }
 
-    /** A private colour mark changes neither the shared version nor its approval route. */
-    public Map<String,Object> setPersonalTag(Actor actor,String taskId,Map<String,Object> input) {
-        requireBusiness(actor);
-        if(input==null || !input.keySet().equals(Set.of("tagId")) || input.get("tagId")!=null && !(input.get("tagId") instanceof String))
-            throw bad("请提供私人标签 tagId，或空值以清除");
-        var task=task(actor,taskId,false);
-        String current=s(task,"currentVersionId");
-        if(current==null) throw conflict("TASK_NOT_PUBLISHED","未发布任务不能设置私人标签");
-        var version=version(actor,current);
-        if(!access.canSeeTask(actor,task,version,assignees(actor,current))) throw ApiException.notFound();
-        String tagId=(String)input.get("tagId");
-        Map<String,Object> tag=null;
-        if(tagId==null || tagId.isBlank()) {
-            db.update("DELETE FROM personal_task_tags WHERE organization_id=? AND user_id=? AND task_id=?",actor.organizationId(),actor.id(),taskId);
-        } else {
-            tag=tags.personalForWrite(actor,tagId);
-            db.update("INSERT INTO personal_task_tags(organization_id,user_id,task_id,tag_id) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE tag_id=VALUES(tag_id)",actor.organizationId(),actor.id(),taskId,tagId);
-        }
-        var result=new LinkedHashMap<String,Object>();result.put("taskId",taskId);result.put("personalTag",tag);return result;
-    }
-
     public Map<String, Object> setPinned(Actor actor, String taskId, boolean pinned) {
         requireBusiness(actor);
         Map<String, Object> task = task(actor, taskId, false);
@@ -1616,6 +1721,7 @@ public class TaskService {
         Map<String, Object> version = version(actor, current);
         List<String> owners = assignees(actor, current);
         if (!access.canSeeTask(actor, task, version, owners)) throw ApiException.notFound();
+        if (!owners.contains(actor.id())) throw forbidden("只有本人当前负责的日历任务可置顶");
         if (pinned) {
             db.update("INSERT IGNORE INTO user_task_pins(organization_id,user_id,task_id) VALUES(?,?,?)",
                     actor.organizationId(), actor.id(), taskId);
@@ -1651,10 +1757,28 @@ public class TaskService {
         db.update("INSERT INTO task_records(id,organization_id,task_id,request_id,author_id,body,kind,effective_at,created_at) VALUES(?,?,?,?,?,?,?,?,?)", Db.id(), actor.organizationId(), taskId, requestId, actor.id(), body, kind, effective ? now : null, now);
     }
 
+    private void recordEffectiveProgress(Actor actor,String taskId,String requestId,
+                                         Map<String,Object> base,Map<String,Object> proposed,String kind) {
+        if ("change".equals(kind) && base!=null && !Objects.equals(base.get("progressNote"),proposed.get("progressNote")))
+            insertRecord(actor,taskId,requestId,Objects.toString(proposed.get("progressNote"),""),"progress",true);
+    }
+
+    private Set<String> editableFieldsFor(Actor actor, Map<String, Object> task, List<String> owners,
+                                          boolean frozen, String executionState) {
+        LinkedHashSet<String> fields = new LinkedHashSet<>();
+        if (s(task, "currentVersionId") == null || frozen || "done".equals(executionState)) return fields;
+        boolean manager = actor.id().equals(access.businessOwner(task));
+        boolean owner = owners.contains(actor.id());
+        fields.addAll(SCHEDULE_FIELD_ORDER);
+        if (manager || owner) fields.addAll(ORDINARY_FIELDS);
+        if (owner) fields.add("progressNote");
+        if (manager) fields.add("assigneeIds");
+        return fields;
+    }
+
     private Map<String, Object> taskView(Actor actor, Map<String, Object> task, Map<String, Object> version, List<String> owners) {
         Map<String, Object> result = snapshotView(actor, version);
         ReadBatch batch=currentBatch(actor);
-        result.put("personalTag",(batch==null?tags.personalTaskTags(actor):batch.personalTags).get(s(task,"id")));
         result.put("versionId", s(version, "id"));
         result.put("currentVersionId", s(version, "id"));
         result.put("id", s(task, "id"));
@@ -1674,6 +1798,8 @@ public class TaskService {
         result.put("frozen", request != null);
         result.put("pendingKind", request == null ? null : s(request, "kind"));
         result.put("canReschedule",request==null && !"done".equals(s(task,"executionState")));
+        result.put("canPin",owners.contains(actor.id()));
+        result.put("editableFields",List.copyOf(editableFieldsFor(actor,task,owners,request!=null,s(task,"executionState"))));
         // Calendar-only proposal: never replace effective fields or disclose the full review snapshot.
         if (request != null) {
             Map<String,Object> proposed=version(actor,s(request,"proposedVersionId"));
@@ -1779,6 +1905,13 @@ public class TaskService {
         try {
             return route(actor,assignees(actor,versionId),s(request,"applicantId"));
         } catch (ApiException invalidOwners) {
+            // A reopen replaces the effective owners by design, so the old owners may already be inactive
+            // (e.g. the departed employee). Route the review from the applicant against the owners the
+            // decision would publish instead of making the pending request unreachable.
+            if("reopen".equals(s(request,"kind")) && s(request,"proposedVersionId")!=null) {
+                try { return route(actor,assignees(actor,s(request,"proposedVersionId")),s(request,"applicantId")); }
+                catch (ApiException stillInvalid) { /* fall through to the blocked route */ }
+            }
             return Route.blocked(s(request,"applicantId"),"applicant-unavailable",actor.authzVersion());
         }
     }
@@ -1934,9 +2067,18 @@ public class TaskService {
     }
     private void validateRequestActor(Actor applicant, Map<String,Object> task, Map<String,Object> base,
                                       String kind,Map<String,Object> proposed) {
-        if ("change".equals(kind) && base!=null && proposed!=null && scheduleOnly(applicant,base,proposed)) {
-            if (!access.canSeeTask(applicant,task,base,assignees(applicant,s(base,"id"))))
-                throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已无权查看该任务");
+        if ("change".equals(kind) && base!=null && proposed!=null) {
+            List<String> beforeOwners=assignees(applicant,s(base,"id"));
+            List<String> afterOwners = proposed.containsKey("assigneeIds")
+                    ? ids(proposed.get("assigneeIds"))
+                    : assignees(applicant, s(proposed, "id"));
+            if (!access.canSeeTask(applicant,task,base,beforeOwners))
+                throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已不具备本次字段的修改资格");
+            Set<String> allowed=editableFieldsFor(applicant,task,beforeOwners,false,s(task,"executionState"));
+            for (var change:diff(applicant,base,proposed,beforeOwners,afterOwners)) {
+                if (!allowed.contains(s(change,"field")))
+                    throw conflict("APPLICANT_NO_LONGER_ALLOWED","申请人已不具备本次字段的修改资格");
+            }
             return;
         }
         if ("handover".equals(kind)) {
@@ -1948,15 +2090,6 @@ public class TaskService {
             String responsible="create".equals(kind)?s(task,"originalCreatorId"):access.businessOwner(task);
             if (!applicant.id().equals(responsible)) throw conflict("APPLICANT_NO_LONGER_ALLOWED", "申请人已不具备该操作权限");
         } else if (base == null || !assignees(applicant, s(base, "id")).contains(applicant.id())) throw conflict("APPLICANT_NO_LONGER_ALLOWED", "申请人已不是当前负责人");
-    }
-
-    private boolean scheduleOnly(Actor actor,Map<String,Object> base,Map<String,Object> proposed) {
-        for (String key:List.of("title","description","acceptanceCriteria","priority","parentTaskId","executionState","progressNote"))
-            if (!Objects.equals(base.get(key),proposed.get(key))) return false;
-        List<String> owners=proposed.containsKey("assigneeIds")?ids(proposed.get("assigneeIds")):assignees(actor,s(proposed,"id"));
-        if (!assignees(actor,s(base,"id")).equals(owners)) return false;
-        return versionTags(actor,base).stream().map(t->List.of(s(t,"tagId"),s(t,"tagNameSnapshot"),s(t,"tagColorSnapshot"))).toList()
-                .equals(versionTags(actor,proposed).stream().map(t->List.of(s(t,"tagId"),s(t,"tagNameSnapshot"),s(t,"tagColorSnapshot"))).toList());
     }
 
     private Map<String, Object> validateForm(Actor actor, Map<String, Object> input, Map<String, Object> base) {
@@ -2065,7 +2198,6 @@ public class TaskService {
         final CompanyTree.Tree tree;
         final Map<String,Map<String,Object>> tasks=new LinkedHashMap<>(),versions=new HashMap<>(),people=new HashMap<>(),tags=new HashMap<>();
         final Map<String,List<String>> owners=new HashMap<>();
-        Map<String,Map<String,Object>> personalTags=Map.of();
         Map<String,Map<String,Object>> pending;
         final Map<String,Map<String,Object>> latestRequests=new LinkedHashMap<>();
         boolean completeVisibleTasks;
@@ -2073,7 +2205,6 @@ public class TaskService {
     }
     private ReadBatch baseReadBatch(Actor actor) {
         ReadBatch batch=new ReadBatch(actor.organizationId(),companyTree.of(actor.organizationId()));
-        batch.personalTags=tags.personalTaskTags(actor);
         // Display-only participants may be inactive, but routes always use the active fixed tree.
         for(var row:db.list("SELECT id,display_name FROM users WHERE organization_id=? ORDER BY id",actor.organizationId()))
             batch.people.put(s(row,"id"),row);
