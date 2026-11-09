@@ -3,9 +3,9 @@
 - Change: prepare-employee-client-contracts-and-business-upgrade
 - Schema: spec-driven
 - Verdict: PASS
-- Verified at: 2026-11-09T22:14:00+08:00
+- Verified at: 2026-11-09T22:46:00+08:00
 - Implementation roots: `C:\Users\20943\Desktop\software_test_practice` (backend, repository-root employee Web, docs, scripts)
-- Verified revision: `ab0f355` plus uncommitted working-tree changes (all implementation/planning files are dirty; evidence applies to this working tree, not the base commit)
+- Verified revision: `36d15b6` plus main-spec sync and this verification report/state update
 
 ## Summary
 
@@ -18,13 +18,13 @@ Residual risks, not findings: the public holiday source could not be reached fro
 - Implementation/planning root: `C:\Users\20943\Desktop\software_test_practice`
 - Exclusions: `backend/target/**`, `backend/.runtime/**`, `.tmp-jar/**`, `.tmp-verify/**`, `audit/**`, `output/**` (build outputs, runtime databases/logs and generated evidence are not source inputs).
 - Snapshot command: `python .agents/skills/openspec-e13-verify-change/scripts/verification_snapshot.py capture --root C:\Users\20943\Desktop\software_test_practice ... --output %TEMP%\pandora-verify-baseline.json`
-- Snapshot SHA-256: `89eb1d66f1b004719e6559ddecad000f945b96acf5a4e5cdb4369f042ac7dd8a` (9,247 files)
-- Incremental/full scope: full verification for this session because chapters 1–6 were implemented earlier and chapters 7–11 were added now; all affected suites were rerun. No prior independent state existed.
-- Reused evidence: none for the final verdict; the current round reran Maven, contract, holiday and chapter-8 checks. Demo/extreme/resource results were generated in this same session after the final implementation changes.
+- Snapshot SHA-256: `29bbf60495e4d82e4dad7d41b803cbc20b379375d8b5bd2768085768f3dadd65` (9,248 files)
+- Incremental/full scope: incremental re-verification after the prior full verification. Task 11.3 was checked after the earlier PASS report; all 46 tasks are now checked. The subsequent main-spec sync added `china-holiday-calendar/spec.md` and updated `pandora-requirements-aligned-prototype/spec.md`. No implementation, delta spec, design, test, or configuration input changed.
+- Reused evidence: the prior full verification's Maven, service, migration, holiday, Chrome, demo, extreme-fixture and resource checks remain applicable because their inputs are identical. This round reran strict OpenSpec change validation (1/1 PASS), main-spec validation (2/2 PASS), and compared all 20 synced requirement blocks against the previously verified delta; they match exactly. No new behavior was introduced by the sync.
 
 ## Verification Basis / Compare
 
-- Baseline captured with the exclusions above; a post-report capture is compared and copied to `verification-state.json` only if it is identical.
+- The initial comparison found only task 11.3 changing from unchecked to checked. After syncing main specs, the comparison found exactly one added and one modified main spec; all 20 synced requirement blocks match the verified delta. The final snapshot is saved in `verification-state.json`; the report and state files are excluded from the inventory.
 - OpenSpec strict validation: `openspec validate prepare-employee-client-contracts-and-business-upgrade --type change --strict --json --no-interactive` → valid, 1/1 passed, no issues.
 
 ## Apply Handoff Review
