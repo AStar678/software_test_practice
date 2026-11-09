@@ -72,7 +72,7 @@ public class OrganizationPlans {
         }
         versions(departments,previousDepartments,"id",false);versions(teams,previousTeams,"id",false);
         versions(placements,previousPlacements,"employeeId",false);
-        List<Map<String,Object>> additions=input.containsKey("newEmployees")?rows(input,"newEmployees",Set.of("id","displayName","phone")):List.of();
+        List<Map<String,Object>> additions=input.containsKey("newEmployees")?rows(input,"newEmployees",Set.of("id","displayName","phone","employmentStartDate")):List.of();
         Set<String> employeeIds=new HashSet<>();employees.forEach(person->employeeIds.add(s(person,"id")));
         Set<String> phones=new HashSet<>();
         for(var person:additions) {
@@ -84,6 +84,7 @@ public class OrganizationPlans {
             if(!phones.add(phone) || db.find("SELECT id FROM users WHERE login_phone=?",phone)!=null)
                 throw new ApiException(409,"PHONE_TAKEN","员工手机号已被使用");
             person.put("phone",phone);
+            person.put("employmentStartDate",OrganizationService.employmentStartDate(person.get("employmentStartDate")));
             employees.add(Map.of("id",id,"organizationId",org,"active",true));
         }
         var titles=db.list("SELECT * FROM positions WHERE organization_id=? ORDER BY id",org);
@@ -100,8 +101,8 @@ public class OrganizationPlans {
         for(var person:additions) {
             String employeeId=s(person,"id"),password=Credentials.generate();
             db.update("INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'employee')",employeeId,org);
-            db.update("INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,must_change_password) VALUES(?,?,?,?,?,?,TRUE)",
-                    employeeId,org,AuthService.PASSWORDS.encode(password),s(person,"displayName"),s(person,"phone"),s(person,"phone"));
+            db.update("INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,must_change_password,employment_start_date) VALUES(?,?,?,?,?,?,TRUE,?)",
+                    employeeId,org,AuthService.PASSWORDS.encode(password),s(person,"displayName"),s(person,"phone"),s(person,"phone"),person.get("employmentStartDate"));
             passwords.put(employeeId,password);
         }
         Map<String,Map<String,Object>> oldPlaces=index(previousPlacements,"employeeId");

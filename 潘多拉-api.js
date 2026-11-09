@@ -247,7 +247,8 @@
     const saving = !["GET", "HEAD"].includes(method) && !path.startsWith("/auth/") && path !== "/tasks/reviewer-preview";
     const label = path === "/auth/sessions" && method === "POST" ? "正在登录，请稍候…"
       : path === "/auth/sessions/current" ? "正在退出登录…" : "正在加载，请稍候…";
-    const finish = startLoading(label, saving);
+    const finish = opts.background ? () => {} : startLoading(label, saving);
+    delete opts.background;
     requests.add(controller);
     let timedOut = false;
     const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 20000);
@@ -348,7 +349,7 @@
     /* departmentName is the real department; teamName is an independent team and must never stand in
        for it (a candidate list grouped by team would hide cross-department choices). */
     const safe={};
-    Object.keys(u || {}).forEach(key => { if (!['phone','loginPhone','contactPhone','mobile','email'].includes(key)) safe[key]=u[key]; });
+    Object.keys(u || {}).forEach(key => { if (!['phone','loginPhone','contactPhone','mobile','email','employmentStartDate','employmentDays'].includes(key)) safe[key]=u[key]; });
     return { id: safe.id, name: safe.displayName || "相关人员", role: safe.placementType || safe.role || null,
       dept: safe.departmentName || safe.department || (safe.placementType === "founder" ? "公司层" : "—"),
       team: safe.teamName || null, position: safe.positionName || null,

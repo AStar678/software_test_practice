@@ -124,6 +124,18 @@ public class TaskController {
                 () -> tasks.setPinned(actor, id, false));
     }
 
+    @PutMapping("/tasks/{id}/table-pin")
+    public Map<String,Object> tablePin(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value="Idempotency-Key",required=false) String key) {
+        return writes.run(actor,key,"PUT /tasks/"+id+"/table-pin",Map.of(),null,()->tasks.setTablePinned(actor,id,true));
+    }
+
+    @DeleteMapping("/tasks/{id}/table-pin")
+    public Map<String,Object> removeTablePin(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value="Idempotency-Key",required=false) String key) {
+        return writes.run(actor,key,"DELETE /tasks/"+id+"/table-pin",Map.of(),null,()->tasks.setTablePinned(actor,id,false));
+    }
+
     @GetMapping("/tasks/{id}")
     public ResponseEntity<Map<String, Object>> detail(@RequestAttribute("actor") Actor actor, @PathVariable String id) {
         Map<String, Object> result = tasks.detail(actor, id);

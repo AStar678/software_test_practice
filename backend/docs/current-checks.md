@@ -49,3 +49,11 @@ Old command filenames now delegate to the suites below. Their old external `--ba
 | Full migration and restore | `check_final_migration.py` with `flyway_migrate.py` / `Migrate.java`: packaged Flyway chain on empty and V20 databases, structure comparison, real backup restore, unchanged historical IDs/checksums, conflicted administrator blocking |
 
 `check_final_workflow.py --phase migration|demo|api|browser` selects a group. `--only <filenames...>` selects specific suites in that group. The browser phase uses current suites that launch Chrome; it is separate from the former browser-named API entry points above. Existing historical reports are references only; check the current `final-*-run.json` timestamps and each result.
+
+
+## 工作区体验
+
+构建当前 JAR 后，在已启动的本机测试 MySQL 上运行 `python3 backend/scripts/check_workspace_refinement.py`。
+脚本新建并清理随机命名的独立测试库，验证表单置顶的权限与重放、日志关联的业务日期与隐私、入职日期的校验与读权限。
+设置 `CHROME_BIN` 可同时运行 320×740、390×844 和 1440×900 浏览器检查，设置 `PANDORA_SCREENSHOTS` 可将截图写入指定现有目录。
+演示清单重复准备、重启和实际登录由 `python3 backend/scripts/check_final_demo.py` 检查。

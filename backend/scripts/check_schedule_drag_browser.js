@@ -19,9 +19,11 @@ async function main(){
  }
  async function raw(id){return ev(`Pandora.request('/tasks/'+${q(id)})`);}
  async function point(selector){return ev(`(()=>{const h=document.querySelector(${q(selector)});if(!h)return null;h.scrollIntoView({block:'center',inline:'center'});const r=h.getBoundingClientRect(),bar=h.closest('.p-month-event,.p-horizontal-bar,.p-axis-event');if(!bar||!r.width||!r.height)return null;const mode=h.dataset.resizeMode;return {x:r.x+r.width/2,y:r.y+r.height/2,unit:mode==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7:mode==='vertical'?bar.closest('.p-axis-events').getBoundingClientRect().height/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24,vertical:mode==='vertical'}})()`);}
- async function drag(selector,steps,cancel){
+ async function drag(selector,steps,cancel,targetDate){
   const p=await point(selector);check('drag source exists '+selector,!!p,p);
-  const x=p.x+(p.vertical?0:p.unit*steps),y=p.y+(p.vertical?p.unit*steps:0);
+  const targetSelector='#page-view .p-month-date[data-date="'+targetDate+'"]';
+  const target=targetDate?await ev(`(()=>{const r=document.querySelector(${q(targetSelector)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+40};})()`):null;
+  const x=target?.x??p.x+(p.vertical?0:p.unit*steps),y=target?.y??p.y+(p.vertical?p.unit*steps:0);
   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y});
   await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',clickCount:1});
   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x,y,button:'left',buttons:1});
@@ -53,7 +55,8 @@ async function main(){
  }
  async function monthDrag(taskId,days,anchor){
   await view('month',undefined,anchor);
-  await drag(`[data-schedule-move="${taskId}"][data-resize-mode=month]`,days);
+  const target=await ev(`toDateInput(addDays(parseDateInput(${q(anchor)}),${days}))`);
+  await drag(`[data-schedule-move="${taskId}"][data-resize-mode=month]`,days,undefined,target);
   await confirm();
   await save('月历排期投影');
  }
@@ -132,7 +135,7 @@ async function main(){
   await view('day','timeline',f.crossDay);
   check('midnight end renders once on its start day',await ev(`document.querySelectorAll('.p-axis-event[data-task="${f.midnight}"]').length===1`));
   await view('day','timeline','2031-02-11');
-  check('midnight end creates no next-day duplicate',await ev(`!document.querySelector('[data-task="${f.midnight}"]')`));
+  check('midnight end creates no next-day duplicate',await ev(`!document.querySelector('#page-view [data-task="${f.midnight}"]')`));
   await view('day','horizontal',f.crossDay);
   await drag(`[data-resize-task="${f.midnight}"][data-resize=end][data-resize-mode=day]`,1);await confirm();
   check('midnight endpoint drag proposes the real next instant',await ev("(()=>{const t=document.getElementById('sheetBody').textContent;return t.includes('2031-02-11')&&t.includes('01:00')})()"));

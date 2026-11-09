@@ -542,12 +542,13 @@
     if (!buttons.length) buttons.push('<button type="button" class="btn" data-action="sheet-close">关闭</button>');
     return { title: task.title, body: body, foot: withBack(buttons.join("")), taskId: id };
   };
-  window.openTaskDetail = function (id) {
+  window.openTaskDetail = function (id, homeTrigger) {
+    const fromHome=homeTrigger?.matches?.('.home-task');
     return P.busy(async function () {
       const mark = session();
       const source = P.subordinateMode() ? P.subordinateKey() : null;
       const raw = await P.request("/tasks/" + encodeURIComponent(id));
-      if (!stillHere(mark)) return;
+      if (!stillHere(mark) || (fromHome && (state.page!=="map" || !homeTrigger.isConnected))) return;
       if (source !== (P.subordinateMode() ? P.subordinateKey() : null)) return;
       if (!P.subordinateMode()) taskTag(raw);
       if (!raw.currentVersionId) {
@@ -560,7 +561,16 @@
       if (P.subordinateMode()) P.subordinateTasks.set(id,P.mapTask(raw));
       else P.upsertTask(raw);
       const view = taskDetailView(id);
-      if (view) openSheet(view);
+      if (!view) return;
+      if (fromHome) {
+        const assigned=(P.data.home?.assignedTasks || []).find(item=>item.taskId===id);
+        const dates=(assigned?.assignedAt && raw.assigneeIds?.includes(me()?.id) ? kv("派发给我的时间",when(assigned.assignedAt)) : "") +
+          (raw.updatedAt ? kv("最近更新",when(raw.updatedAt)) : "");
+        view.fullscreen=true;
+        view.body='<section class="home-task-overview" aria-label="看板任务信息"><h3>看板任务</h3>'+
+          (dates ? '<div class="kv">'+dates+'</div>' : '')+'</section>'+view.body;
+      }
+      openSheet(view);
     });
   };
   P.openTask = window.openTaskDetail;

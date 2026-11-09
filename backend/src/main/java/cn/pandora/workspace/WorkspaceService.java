@@ -55,11 +55,12 @@ public class WorkspaceService {
     private Map<String,Object> meRead(Actor a) {
         business(a);
         var result=safeUser(employee(a,a.id()));
-        var contacts=db.one("SELECT phone,email,avatar,profile_version FROM users WHERE id=? AND organization_id=? AND active=1",a.id(),a.organizationId());
+        var contacts=db.one("SELECT phone,email,avatar,profile_version,employment_start_date FROM users WHERE id=? AND organization_id=? AND active=1",a.id(),a.organizationId());
         for(String key:List.of("phone","email","avatar","profileVersion")) result.put(key,contacts.get(key));
         var company=db.one("SELECT name,time_zone FROM organizations WHERE id=?",a.organizationId());
         result.put("organizationName",company.get("name"));
         result.put("organizationTimeZone",company.get("timeZone"));
+        putEmployment(result,s(contacts,"employmentStartDate"),s(contacts,"employmentStartDate")==null?null:today(a));
         result.put("canManageTeam",false);
         return result;
     }
@@ -91,9 +92,19 @@ public class WorkspaceService {
         var result=safeUser(row);
         result.put("canReadLogs",access.canReadLogAuthor(a,userId));
         result.put("canSetHandoverPreset",access.canSetHandoverPreset(a,row));
-        if(access.canReadPhone(a,row)) result.put("phone",db.one(
-                "SELECT phone FROM users WHERE id=? AND organization_id=? AND active=1",userId,a.organizationId()).get("phone"));
+        if(access.canReadPhone(a,row)) {
+            var contact=db.one("SELECT phone,employment_start_date FROM users WHERE id=? AND organization_id=? AND active=1",userId,a.organizationId());
+            result.put("phone",contact.get("phone"));
+            String start=s(contact,"employmentStartDate");
+            putEmployment(result,start,start==null?null:today(a));
+        }
         return result;
+    }
+
+    private void putEmployment(Map<String,Object> result, String start, LocalDate today) {
+        result.put("employmentStartDate",start);
+        Long days=start==null?null:Math.max(0,java.time.temporal.ChronoUnit.DAYS.between(LocalDate.parse(start),today)+1);
+        result.put("employmentDays",days);
     }
 
     /** Every actual descendant, including team heads and their employees below a department head. */
@@ -275,19 +286,82 @@ public class WorkspaceService {
         business(a);
         var row = db.one("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.id=? AND w.deleted_at IS NULL",a.organizationId(),logId);
         if (!access.canReadLogAuthor(a, s(row,"authorId"))) throw ApiException.notFound();
-        return safeLog(a,row);
+        var result=safeLog(a,row);
+        result.put("references",savedLogReferences(a,logId,a.id().equals(s(row,"authorId"))));
+        return result;
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map<String,Object> logReferences(Actor a, String businessDate) {
+        business(a);
+        access.requireCurrent(a);
+        LocalDate date=optionalDate(businessDate);
+        validateLogDate(a,date);
+        var references=collectLogReferences(a,date);
+        return Map.of("dailyItems",references.dailyItems(),"tasks",references.tasks());
+    }
+
+    private void validateLogDate(Actor a, LocalDate date) {
+        LocalDate today=today(a);
+        if (date==null || date.isAfter(today)) throw bad("不能新建未来日期的日志");
+        if (date.isBefore(today.minusDays(LOG_BACKFILL_DAYS))) throw bad("只能补写公司今天、昨天和前天的日志");
+    }
+
+    private record LogReferences(List<Map<String,Object>> dailyItems, List<Map<String,Object>> tasks) {}
+
+    private LogReferences collectLogReferences(Actor a, LocalDate date) {
+        var items=db.list("SELECT id,item_date AS date,body,completed FROM daily_items WHERE organization_id=? AND owner_id=? AND item_date=? ORDER BY created_at,id",
+                a.organizationId(),a.id(),java.sql.Date.valueOf(date));
+        ZoneId zone=zone(a);
+        Instant from=date.atStartOfDay(zone).toInstant(), until=date.plusDays(1).atStartOfDay(zone).toInstant();
+        List<Map<String,Object>> schedule=new ArrayList<>();
+        for (var row:tasks.statisticsTasks(a,Map.of("assigneeId",a.id(),"from",date.toString(),"to",date.toString()))) {
+            Instant start=instant(s(row,"startAt")), end=instant(s(row,"dueAt"));
+            if (start==null || end==null || !end.isAfter(from) || !start.isBefore(until)) continue;
+            if (!end.isAfter(start.atZone(zone).toLocalDate().plusDays(1).atStartOfDay(zone).toInstant())) continue;
+            schedule.add(Map.of("id",s(row,"taskId"),"title",s(row,"title")));
+        }
+        schedule.sort(Comparator.comparing(row->s(row,"id")));
+        return new LogReferences(items,schedule);
+    }
+
+    private void saveLogReferences(Actor a, String logId, LocalDate date, boolean restored) {
+        if (restored) {
+            db.update("DELETE FROM work_log_task_references WHERE organization_id=? AND log_id=?",a.organizationId(),logId);
+            db.update("DELETE FROM work_log_daily_references WHERE organization_id=? AND log_id=?",a.organizationId(),logId);
+        }
+        var references=collectLogReferences(a,date);
+        for (var task:references.tasks()) {
+            db.update("INSERT INTO work_log_task_references(organization_id,log_id,task_id) VALUES(?,?,?)",
+                    a.organizationId(),logId,s(task,"id"));
+        }
+        for (var item:references.dailyItems()) {
+            db.update("INSERT INTO work_log_daily_references(organization_id,log_id,item_id) VALUES(?,?,?)",
+                    a.organizationId(),logId,s(item,"id"));
+        }
+    }
+
+    private Map<String,List<Map<String,Object>>> savedLogReferences(Actor a, String logId, boolean author) {
+        Map<String,List<Map<String,Object>>> result=new LinkedHashMap<>();
+        var linked=db.list("SELECT t.id,v.title FROM work_log_task_references r JOIN tasks t ON t.organization_id=r.organization_id AND t.id=r.task_id "
+                +"JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id WHERE r.organization_id=? AND r.log_id=? ORDER BY t.id",
+                a.organizationId(),logId);
+        Set<String> readable=linked.isEmpty()?Set.of():tasks.readableTaskIds(a,linked.stream().map(row->s(row,"id")).toList());
+        result.put("tasks",linked.stream().filter(row->readable.contains(s(row,"id"))).toList());
+        if (author) result.put("dailyItems",db.list("SELECT d.id,d.item_date AS date,d.body,d.completed FROM work_log_daily_references r "
+                +"JOIN daily_items d ON d.organization_id=r.organization_id AND d.id=r.item_id WHERE r.organization_id=? AND r.log_id=? AND d.owner_id=? ORDER BY d.created_at,d.id",
+                a.organizationId(),logId,a.id()));
+        return result;
     }
 
     public Map<String,Object> createLog(Actor a, Map<String,Object> body) {
         business(a);
         allowed(body,Set.of("body","businessDate","taskId","tagIds"));
         String text = required(body,"body",10000);
-        LocalDate today = today(a);
-        LocalDate date = body.containsKey("businessDate") ? dateFor(a,body,"businessDate") : today;
-        if (date.isAfter(today)) throw bad("不能新建未来日期的日志");
-        if (date.isBefore(today.minusDays(LOG_BACKFILL_DAYS))) throw bad("只能补写公司今天、昨天和前天的日志");
+        LocalDate date = dateFor(a,body,"businessDate");
+        validateLogDate(a,date);
         String taskId = nullable(body,"taskId");
-        if (taskId != null) tasks.detail(a,taskId);
+        if (taskId != null) throw bad("日志关联由所属日期自动生成");
         var wantedTags = requestedLogTags(a,body.getOrDefault("tagIds",List.of()),Set.of());
         var existing = findLog(a, date);
         if (existing != null && s(existing, "id") != null) {
@@ -303,6 +377,7 @@ public class WorkspaceService {
                     text, taskId, a.organizationId(), a.id(), s(existing, "id"));
             if (restored != 1) throw conflict("WORK_LOG_CONFLICT","日志日位置已被并发修改，请刷新后重试");
             replaceLogTags(a,s(existing,"id"),wantedTags);
+            saveLogReferences(a,s(existing,"id"),date,true);
             events.record(a,null,"log.restored",List.of(),Map.of("logId",s(existing,"id")));
             return Map.of("logId",s(existing,"id"),"rowVersion",n(existing,"rowVersion")+1,"businessDate",date.toString(),"restored",true);
         }
@@ -315,6 +390,7 @@ public class WorkspaceService {
             throw duplicate;
         }
         replaceLogTags(a,logId,wantedTags);
+        saveLogReferences(a,logId,date,false);
         events.record(a,null,"log.created",List.of(),Map.of("logId",logId));
         return Map.of("logId",logId,"rowVersion",1,"businessDate",date.toString());
     }
@@ -332,7 +408,7 @@ public class WorkspaceService {
         Writes.checkVersion(ifMatch,n(row,"rowVersion"));
         String text = body.containsKey("body") ? required(body,"body",10000) : s(row,"body");
         String taskId = body.containsKey("taskId") ? nullable(body,"taskId") : s(row,"taskId");
-        if (body.containsKey("taskId") && taskId != null) tasks.detail(a,taskId);
+        if (!Objects.equals(taskId,s(row,"taskId"))) throw bad("已保存的日志关联不能修改");
         List<Map<String,Object>> wantedTags = null;
         if (body.containsKey("tagIds")) {
             var current = logTags(a,List.of(logId)).getOrDefault(logId,List.of());

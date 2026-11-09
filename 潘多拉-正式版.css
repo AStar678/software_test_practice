@@ -307,3 +307,10 @@ button{cursor:pointer}
 .btn.primary.is-network-busy::after{border-color:#ffffff66;border-top-color:#fff}
 @keyframes p-network-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.network-status-spinner,.is-network-busy::after{animation:none;border-right-color:var(--brand)}}
+
+.p-notice-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.p-notice-toolbar button[aria-pressed="true"]{background:var(--brand-soft);color:var(--brand)}
+#p-notice-more[hidden]{display:none}
+.p-log-references h3{margin:8px 0 4px;font-size:14px}
+.p-log-references ul{margin:4px 0;padding-inline-start:20px}
+.p-log-daily-ref{white-space:pre-wrap;overflow-wrap:anywhere}

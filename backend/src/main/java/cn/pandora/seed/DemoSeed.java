@@ -25,7 +25,7 @@ import static cn.pandora.common.Db.*;
 public class DemoSeed implements ApplicationRunner {
     public static final int ORDER=0;
     private static final String ORG="10000000-0000-0000-0000-000000000001";
-    private static final int MANIFEST=2;
+    private static final int MANIFEST=3;
     private final Db db;
     private final TaskService tasks;
     private final WorkspaceService workspace;
@@ -63,12 +63,16 @@ public class DemoSeed implements ApplicationRunner {
                 today=LocalDate.now(clock.withZone(ZoneId.of("Asia/Shanghai")));
                 db.update("INSERT INTO demo_database_identity(singleton,database_name,marker,manifest_version,business_date) VALUES(1,?,?,?,?)",target,marker,MANIFEST,today);
             } else {
-                if(!target.equals(s(identity,"databaseName")) || !marker.equals(s(identity,"marker")) || n(identity,"manifestVersion")!=MANIFEST)
-                    throw new IllegalStateException("Demo database identity or manifest does not match");
-                if(identity.get("preparedAt")!=null) return;
+                if(!target.equals(s(identity,"databaseName")) || !marker.equals(s(identity,"marker")))
+                    throw new IllegalStateException("Demo database identity does not match");
+                long manifestVersion=n(identity,"manifestVersion");
+                boolean prepared=identity.get("preparedAt")!=null;
+                if(manifestVersion==2 && prepared && !initialize) return;
+                if(manifestVersion!=MANIFEST) throw new IllegalStateException("Demo manifest does not match");
+                if(prepared) return;
                 today=LocalDate.parse(s(identity,"businessDate"));
             }
-            db.update("INSERT INTO organizations(id,name,time_zone) VALUES(?,?,'Asia/Shanghai')",ORG,"潘多拉演示公司");
+            db.update("INSERT INTO organizations(id,name,time_zone) VALUES(?,?,'Asia/Shanghai')",ORG,"澄川协作科技");
             db.one("SELECT id FROM organizations WHERE id=? FOR UPDATE",ORG);
             prepareOrganization();
             prepareBusiness();
@@ -89,22 +93,23 @@ public class DemoSeed implements ApplicationRunner {
     }
     private void prepareOrganization() {
         String founderTitle=unit("positions","title-founder","创始人",null);
-        String departmentTitle=unit("positions","title-department","部门负责人",null);
-        String headTitle=unit("positions","title-team","团队负责人",null);
-        String employeeTitle=unit("positions","title-employee","业务专员",null);
+        String departmentTitle=unit("positions","title-department","部门经理",null);
+        String headTitle=unit("positions","title-team","负责人",null);
+        String employeeTitle=unit("positions","title-employee","产品运营",null);
+        String marketTitle=unit("positions","title-marketing","市场运营",null);
         String hash=AuthService.PASSWORDS.encode(password);
         employee("upper","王海","13800000001","founder",null,null,founderTitle,hash);
         for(String dep:List.of("product","market")) {
             String department=unit("departments","department-"+dep,dep.equals("product")?"产品部":"市场部",null);
             employee(dep.equals("product")?"middle":"market",dep.equals("product")?"李敏":"陈冲",dep.equals("product")?"13800000002":"13800000003","department_head",department,null,departmentTitle,hash);
             for(int i=1;i<=2;i++) {
-                String team=unit("teams","team-"+dep+"-"+i,(dep.equals("product")?"产品":"市场")+i+"组",department);
-                employee(dep+"-head-"+i,(dep.equals("product")?"产品":"市场")+"组长"+i,"138000000"+(dep.equals("product")?10+i:20+i),"team_head",department,team,headTitle,hash);
+                String team=unit("teams","team-"+dep+"-"+i,(dep.equals("product")?"产品运营":"市场推广")+i+"组",department);
+                employee(dep+"-head-"+i,(dep.equals("product")?List.of("许晴","蒋博"):List.of("林雅","周辰")).get(i-1),"138000000"+(dep.equals("product")?10+i:20+i),"team_head",department,team,headTitle,hash);
                 if(dep.equals("product") && i==1) {
                     employee("employee","张涛","13800000004","employee",department,team,employeeTitle,hash);
                     employee("colleague","赵蕾","13800000005","employee",department,team,employeeTitle,hash);
                 } else employee(dep.equals("market") && i==1?"marketing":dep+"-employee-"+i,
-                        (dep.equals("product")?"产品":"市场")+"专员"+i,dep.equals("market") && i==1?"13800000006":"138000000"+(dep.equals("product")?30+i:40+i),"employee",department,team,employeeTitle,hash);
+                        (dep.equals("product")?"孙悦":i==1?"罗菲":"沈宁"),dep.equals("market") && i==1?"13800000006":"138000000"+(dep.equals("product")?30+i:40+i),"employee",department,team,dep.equals("product")?employeeTitle:marketTitle,hash);
             }
         }
         db.update("UPDATE organizations SET founder_employee_id=? WHERE id=?",stable("upper"),ORG);
@@ -117,7 +122,7 @@ public class DemoSeed implements ApplicationRunner {
     private void employee(String key,String name,String phone,String kind,String dep,String team,String title,String hash) {
         String employeeId=stable(key);
         db.update("INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'employee')",employeeId,ORG);
-        db.update("INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,email) VALUES(?,?,?,?,?,?,?)",employeeId,ORG,hash,name,phone,phone,key+"@demo.example.test");
+        db.update("INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,email,employment_start_date) VALUES(?,?,?,?,?,?,?,?)",employeeId,ORG,hash,name,phone,phone,key+"@demo.example.test",java.sql.Date.valueOf(today.minusMonths(switch(kind){case "founder"->64;case "department_head"->38;case "team_head"->25;default->8;}).minusDays(Math.floorMod(key.hashCode(),20))));
         db.update("INSERT INTO employee_placements(organization_id,employee_id,placement_type,department_id,team_id,position_id) VALUES(?,?,?,?,?,?)",ORG,employeeId,kind,dep,team,title);
         remember(key,"employee",employeeId);
     }
@@ -128,27 +133,23 @@ public class DemoSeed implements ApplicationRunner {
         actors.put("admin",access.actor(db.one("SELECT a.*,'admin' AS account_type FROM admin_accounts a WHERE a.organization_id=?",ORG)));
     }
     private void prepareBusiness() {
-        for(int i=1;i<=10;i++) {
-            var item=organization.createCompanyItem(actors.get("admin"),Map.of("title","公司事项 "+i,"body","公司重要事项 "+i+"：交付、质量与协作。"));
-            remember("company-item-"+i,"home-item",s(item,"id"));
+        var announcements=List.of(
+            "客户工作台灰度安排|周三先开放给试点客户，产品部当天汇总首轮使用反馈。",
+            "上线验收口径|关键路径须通过验收，未解决的高优先级问题进入发布评审。",
+            "试点客户回访|市场部本周完成首批回访，并将问题分类交给产品运营组。",
+            "发布素材截止|案例稿和发布邮件在周四前完成校对，负责人在任务内确认。",
+            "客服交接演练|产品运营与市场推广一起演练客户反馈的分级和转派。",
+            "版本回滚预案|发布值班人员提前核对回滚步骤、联系人和异常通报范围。",
+            "试点账户开通|首批名单已经确认，新增名单由市场部负责人统一汇总。",
+            "周报提交安排|各组按业务日期补齐试点日志，部门负责人汇总阶段结果。",
+            "会议室预订提醒|发布周评审优先使用二楼会议室，远程同事可通过会议链接参加。",
+            "上线复盘会|试点结束后一周复盘，重点整理需求验证、响应时长和后续责任人。");
+        for(int i=0;i<announcements.size();i++) {
+            String[] announcement=announcements.get(i).split("\\|",2);
+            var item=organization.createCompanyItem(actors.get("admin"),Map.of("title",announcement[0],"body",announcement[1]));
+            remember("company-item-"+(i+1),"home-item",s(item,"id"));
         }
-        for(String key:actors.keySet()) if(!key.equals("admin")) {
-            for(int offset=0;offset<3;offset++) {
-                var log=workspace.createLog(actors.get(key),Map.of("businessDate",today.minusDays(offset).toString(),"body","演示日志："+key+" / 业务日 "+today.minusDays(offset)));
-                remember("log-"+key+"-"+offset,"log",s(log,"logId"));
-            }
-            // Daily items replace the retired personal home list; dates are the demo business days.
-            dailyItems.create(actors.get(key),Map.of("date",today.toString(),"body","明确完成标准，及时同步阻塞。"));
-            dailyItems.create(actors.get(key),Map.of("date",today.minusDays(1).toString(),"body","整理昨日遗留问题并同步进度。"));
-            var finished=dailyItems.create(actors.get(key),Map.of("date",today.toString(),"body","检查今日交付清单。"));
-            dailyItems.change(actors.get(key),s(finished,"id"),"\"1\"",Map.of("completed",true));
-        }
-        // Recreated slot retains its first creation instant. Another log demonstrates a real frozen row.
-        var deleted=db.one("SELECT * FROM work_logs WHERE author_id=? AND business_date=?",stable("colleague"),today.minusDays(1));
-        workspace.deleteLog(actors.get("colleague"),s(deleted,"id"),"\""+n(deleted,"rowVersion")+"\"");
-        workspace.createLog(actors.get("colleague"),Map.of("businessDate",today.minusDays(1).toString(),"body","删除后重建，首次创建时间保持不变。"));
-        db.update("UPDATE work_logs SET created_at=UTC_TIMESTAMP(6)-INTERVAL 25 HOUR WHERE author_id=? AND business_date=?",stable("marketing"),today.minusDays(2));
-        for(int i=1;i<=110;i++) create("page-"+i,"upper","分页事项 "+String.format("%03d",i),List.of("employee"),input(today.plusDays(i%20),9,today.plusDays(30),18),true);
+        for(int i=1;i<=110;i++) create("page-"+i,"upper","试点客户验收记录 "+String.format("%03d",i),List.of("employee"),input(today.plusDays(i%20),9,today.plusDays(30),18),true);
         create("cross-department","middle","跨部门多负责人",List.of("employee","marketing"),schedule(),true);
         create("creator-only","employee","本人仅创建不负责",List.of("marketing"),schedule(),true);
         String doing=create("doing","middle","上线素材校对",List.of("employee","colleague"),schedule(),true);
@@ -191,6 +192,49 @@ public class DemoSeed implements ApplicationRunner {
         create("point","upper","午夜零时长",List.of("employee"),input(dense.plusDays(1),0,dense.plusDays(1),0),true);
         LocalDate yearEnd=LocalDate.of(today.getYear(),12,31);
         create("cross-year","upper","跨年事项",List.of("employee"),input(yearEnd,20,yearEnd.plusDays(1),10),true);
+        var rollout=input(today.minusDays(2),9,today.plusDays(7),18);
+        String objective=create("rollout-objective","upper","客户工作台灰度上线",List.of("upper","middle","market"),rollout,true);
+        var milestone=new LinkedHashMap<>(rollout);milestone.put("parentTaskId",objective);
+        String product=create("rollout-product","middle","完成试点流程验收",List.of("product-head-1"),milestone,true);
+        create("rollout-market","market","准备试点客户沟通材料",List.of("market-head-1"),milestone,true);
+        var execution=new LinkedHashMap<>(rollout);execution.put("parentTaskId",product);
+        String validation=create("rollout-validation","product-head-1","验证客户开通与反馈回收流程",List.of("employee"),execution,true);
+        command("employee",validation,Map.of("command","progress","progressNote","完成 8 家试点客户的开通校验，2 个反馈已提交产品组。"),true);
+        for(String key:actors.keySet()) if(!key.equals("admin")) {
+            Actor actor=actors.get(key);
+            String focus=switch(actor.role()) {
+                case "founder" -> "核对灰度上线目标和发布风险";
+                case "department_head" -> "同步部门里程碑和跨组依赖";
+                case "team_head" -> "复核组内执行结果和待处理反馈";
+                default -> "校对试点客户名单并跟进反馈";
+            };
+            dailyItems.create(actor,Map.of("date",today.toString(),"body",focus+"，在下班前同步结论。"));
+            dailyItems.create(actor,Map.of("date",today.minusDays(1).toString(),"body",focus+"，补齐遗漏记录。"));
+            var finished=dailyItems.create(actor,Map.of("date",today.toString(),"body","确认试点发布清单与联系人。"));
+            dailyItems.change(actor,s(finished,"id"),"\"1\"",Map.of("completed",true));
+            for(int offset=0;offset<3;offset++) {
+                String note=focus+switch(offset) {
+                    case 0 -> "。首轮试点已完成，下一步处理未关闭的反馈并复核放量条件。";
+                    case 1 -> "。已更新工作台试点进度和阻塞问题，明天同步处理结果。";
+                    default -> "。与相关同事对齐本周验收范围，明确负责人和交付时间。";
+                };
+                var log=workspace.createLog(actor,Map.of("businessDate",today.minusDays(offset).toString(),"body",note));
+                remember("log-"+key+"-"+offset,"log",s(log,"logId"));
+            }
+        }
+        for(int months=1;months<=3;months++) {
+            LocalDate date=today.minusMonths(months);
+            String logId=stable("rollout-history-"+months);
+            db.update("INSERT INTO work_logs(id,organization_id,author_id,business_date,body,created_at) VALUES(?,?,?,?,?,?)",
+                    logId,ORG,stable("employee"),java.sql.Date.valueOf(date),"工作台前期调研第 "+(4-months)+" 轮：完成试点客户访谈，记录开通步骤和常见反馈。",
+                    java.sql.Timestamp.from(date.atTime(17,0).atZone(ZoneId.of("Asia/Shanghai")).toInstant()));
+            remember("rollout-history-"+months,"log",logId);
+        }
+        // 重建沿用首次创建时间，另一条日志覆盖真实冻结状态。
+        var deleted=db.one("SELECT * FROM work_logs WHERE author_id=? AND business_date=?",stable("colleague"),today.minusDays(1));
+        workspace.deleteLog(actors.get("colleague"),s(deleted,"id"),"\""+n(deleted,"rowVersion")+"\"");
+        workspace.createLog(actors.get("colleague"),Map.of("businessDate",today.minusDays(1).toString(),"body","根据试点名单修订回访安排，补录已确认的访谈时间。"));
+        db.update("UPDATE work_logs SET created_at=UTC_TIMESTAMP(6)-INTERVAL 25 HOUR WHERE author_id=? AND business_date=?",stable("marketing"),today.minusDays(2));
         String tag=stable("tag-focus");
         db.update("INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,'重点','#F6D5D2')",tag,ORG);
         remember("tag-focus","tag",tag);
@@ -211,7 +255,7 @@ public class DemoSeed implements ApplicationRunner {
         result.put("dueAt",due.atTime(dueHour,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());return result;
     }
     private String create(String key,String creator,String title,List<String> owners,Map<String,Object> schedule,boolean approve) {
-        var body=new LinkedHashMap<>(schedule);body.put("title",title);body.put("description","真实持久演示数据："+title);
+        var body=new LinkedHashMap<>(schedule);body.put("title",title);body.put("description","客户工作台试点交付。请在任务中记录进度、问题和验收结果。当前工作："+title);
         body.put("priority",List.of("urgent","high","medium","low").get(Math.floorMod(key.hashCode(),4)));
         body.put("assigneeIds",owners.stream().map(DemoSeed::stable).toList());
         var result=tasks.create(actors.get(creator),body);if(approve) approve(result);

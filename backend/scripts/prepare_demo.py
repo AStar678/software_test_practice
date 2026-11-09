@@ -19,6 +19,8 @@ import urllib.request
 from migration_precheck import BASE, Mysql, DEFAULT_OPTION_FILE, cell
 from fixed_model_fixture import quote
 
+MANIFEST_VERSION=3
+
 
 def database_env():
     values={}
@@ -43,7 +45,7 @@ def manifest(db):
             'preparedAt':identity[0][3],'identities':people,'objects':keys,
             'counts':{table:db.scalar('SELECT COUNT(*) FROM '+table) for table in
                       ('users','admin_accounts','employee_placements','departments','teams','tasks','task_versions',
-                       'approval_requests','work_logs','home_items','task_business_transfers','handover_requests','task_log_comments','notifications')}}
+                       'approval_requests','work_logs','home_items','task_business_transfers','handover_requests','task_log_comments','notifications','daily_items','work_log_task_references','work_log_daily_references')}}
 
 
 def prepare(database,marker,initialize=False,port=18194,output=None):
@@ -59,8 +61,11 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
             raise ValueError('Target has existing data but no demo identity; refusing preparation')
         identity=db.rows('SELECT database_name,marker,manifest_version FROM demo_database_identity WHERE singleton=1')
         if identity:
-            if identity[0]!=[database,marker,'2']:raise ValueError('Target demo identity does not match')
+            if identity[0][:2]!=[database,marker]:raise ValueError('Target demo identity does not match')
             already_prepared=bool(db.scalar('SELECT COUNT(*) FROM demo_database_identity WHERE prepared_at IS NOT NULL'))
+            legacy_prepared=identity[0][2]=='2' and already_prepared and not initialize
+            if identity[0][2]!=str(MANIFEST_VERSION) and not legacy_prepared:
+                raise ValueError('Target demo manifest does not match')
         elif not initialize or ('organizations' in present and db.scalar('SELECT COUNT(*) FROM organizations')):
             raise ValueError('An empty target and --initialize are required for first preparation')
     elif not initialize:raise ValueError('First preparation requires --initialize')
@@ -101,7 +106,7 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
         result=manifest(db)
         if output:
             output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n');output.chmod(0o600)
-        print(json.dumps({'database':database,'manifestVersion':2,'businessDate':result['businessDate'],'counts':result['counts']},ensure_ascii=False))
+        print(json.dumps({'database':database,'manifestVersion':result['manifestVersion'],'businessDate':result['businessDate'],'counts':result['counts']},ensure_ascii=False))
         return result
     finally:
         if process and process.poll() is None:

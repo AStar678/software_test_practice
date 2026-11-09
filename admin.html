@@ -218,6 +218,7 @@
   <h2 id="employeeDialogTitle">员工身份资料</h2><input type="hidden" id="employeeId">
   <label for="fDisplayName">姓名</label><input id="fDisplayName">
   <label for="fPhone">登录手机号</label><input id="fPhone" inputmode="tel" autocomplete="off">
+  <label for="fEmploymentStartDate">入职日期（选填）</label><input type="date" id="fEmploymentStartDate">
   <p id="employeeNewHint" class="muted">新员工加入组织草稿后，请安排完整位置与职位，再统一保存。</p>
   <div class="row"><button class="primary" id="employeeSave">保存</button><button class="ghost" id="employeeCancel">取消</button></div>
   <div class="error" id="employeeError" role="alert"></div>
@@ -586,17 +587,18 @@ async function openEmployee(id,placementType='employee') {
   const employee=id?(await api('GET','/api/v1/admin/employees/'+id)).body:null;state.editing=employee;
   state.newEmployeePlacement=!id&&placementType==='founder'?'founder':'employee';
   $('employeeId').value=id||'';$('fDisplayName').value=employee?.displayName||'';$('fPhone').value=employee?.loginPhone||'';
-  $('employeeDialogTitle').textContent=employee?'编辑姓名/登录手机号':state.newEmployeePlacement==='founder'?'新增创始人到草稿':'添加新员工到草稿';$('employeeNewHint').hidden=!!employee;
+  $('fEmploymentStartDate').value=employee?.employmentStartDate||'';
+  $('employeeDialogTitle').textContent=employee?'编辑员工资料':state.newEmployeePlacement==='founder'?'新增创始人到草稿':'添加新员工到草稿';$('employeeNewHint').hidden=!!employee;
   $('employeeNewHint').textContent=state.newEmployeePlacement==='founder'?'加入草稿后，请在下方选择展示职位，再保存完整组织结果。保存后成为公司唯一固定创始人。':'新员工加入组织草稿后，请安排完整位置与职位，再统一保存。';
   $('employeeSave').textContent=employee?'保存':'加入草稿';
   $('employeeError').textContent='';$('employeeDialog').showModal();
 }
 async function saveEmployee() {
-  const id=$('employeeId').value,displayName=$('fDisplayName').value.trim(),phone=$('fPhone').value.trim();
+  const id=$('employeeId').value,displayName=$('fDisplayName').value.trim(),phone=$('fPhone').value.trim(),employmentStartDate=$('fEmploymentStartDate').value||null;
   try {
     if(!displayName)throw new Error('请填写姓名');
     if(id){const detail=(await api('GET','/api/v1/admin/employees/'+id)).body;
-      await api('PATCH','/api/v1/admin/employees/'+id,{displayName,...(phone&&phone!==detail.loginPhone?{phone}:{})},{key:newKey(),ifMatch:'"'+detail.rowVersion+'"'});
+      await api('PATCH','/api/v1/admin/employees/'+id,{displayName,employmentStartDate,...(phone&&phone!==detail.loginPhone?{phone}:{})},{key:newKey(),ifMatch:'"'+detail.rowVersion+'"'});
       await reloadAll();
     }else{
       if(!phone)throw new Error('新员工须填写有效手机号');
@@ -604,7 +606,7 @@ async function saveEmployee() {
       const placementType=state.newEmployeePlacement==='founder'?'founder':'employee';
       if(placementType==='founder'&&plannedFounderId())throw new Error('公司已有创始人安排，不能重复新增。');
       const employeeId=crypto.randomUUID();
-      state.planDraft.newEmployees.push({id:employeeId,displayName,phone});
+      state.planDraft.newEmployees.push({id:employeeId,displayName,phone,employmentStartDate});
       state.planDraft.placements.push({employeeId,placementType,departmentId:null,teamId:null,positionId:null});
       if(placementType==='founder')state.planDraft.founderEmployeeId=employeeId;
       renderPlan();selectTab('organization',document.querySelector('[data-tab="organization"]'));

@@ -111,6 +111,10 @@ def main():
         prepare(name,'owned-demo-v2',False,18194)
         check('repeat preparation preserves a real user edit instead of resetting demo data',db.rows('SELECT v.description FROM tasks t JOIN task_versions v ON v.id=t.current_version_id WHERE t.id='+quote(task('takeover')))==[['Persisted real demo edit']])
         check('repeat preparation preserves independent administrator account edits',db.rows('SELECT account_name,display_name FROM admin_accounts')==[['demo-admin-edited','Edited demo admin']])
+        edited=snapshot()
+        db.server_side("UPDATE demo_database_identity SET manifest_version=2 WHERE singleton=1")
+        legacy=prepare(name,'owned-demo-v2',False,18194)
+        check('a prepared v2 demo can be kept without rewriting business data',legacy['manifestVersion']==2 and edited==snapshot())
         report['businessDate']=manifest['businessDate'];report['counts']=manifest['counts'];report['result']='PASS'
     except Exception as error:
         report['result']='FAIL';report['errorType']=type(error).__name__;raise

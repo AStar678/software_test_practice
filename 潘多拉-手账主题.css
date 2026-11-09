@@ -585,3 +585,8 @@ body { font-size: 17px; line-height: 1.65; }
 .p-review-before small,.p-review-after small { font-size:12px; line-height:1.5; }
 .p-review-before span,.p-review-after span { min-width:0; overflow-wrap:anywhere; white-space:pre-wrap; }
 .p-review-snapshot { margin-top:12px; }
+.staff-schedule-stream{height:clamp(280px,55vh,620px);--month-week-height:194px}
+.staff-schedule-stream .staff-month-scroll{max-height:none}
+.staff-schedule-stream .staff-month-weekdays{padding:0;align-items:center}
+.staff-schedule-stream .p-month-layout .staff-month-week{height:var(--month-week-height)}
+#staff-day-popup-host{position:sticky;bottom:0;z-index:5}

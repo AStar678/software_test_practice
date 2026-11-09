@@ -1,20 +1,15 @@
 "use strict";
-/* =====================================================================
-   每日事项：独立的横向连续日历、按日清单、事项详情与创建编辑表单。
-   该模块只使用每日事项接口和自身状态，不复用公司页任务月历的日期、
-   跨度、拖动或密度状态；所有写入使用真实事项 ID 与读取版本。
-   ===================================================================== */
+/* 每日事项使用共享月历外观以及独立的事项数据与会话状态。 */
 (function () {
   const P = window.Pandora;
   if (!P) return;
-  const WEEKDAY = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
   const MAX_MONTHS = 12;
   const PAGE = 50;
   const S = {
     epoch: -1, account: null, organization: null,
     companyToday: null, selected: null, anchor: null,
     blocks: [], summaries: new Map(), lists: new Map(),
-    scrollLeft: 0, scrollToken: 0, scrollTimer: null, layoutTimer: null, layoutRetryTimer: null, layoutVersion: 0, resizeObserver: null, anchorDate: null, anchorOffset: 0, restoring: false, layoutWidth: 0,
+    position: null, density: undefined, scrollTimer: null,
     detail: null, listScroll: null, closeFocus: null, closePosition: null,
     formOrigin: "calendar", sessionSeq: 0, generation: 0
   };
@@ -62,18 +57,15 @@
       from: dateKey(first), to: dateKey(last) };
   }
   function monthKeyOf(date) { return date.getFullYear() + "-" + pad(date.getMonth() + 1); }
-  function blockContaining(key) { return S.blocks.find(block => key >= block.from && key <= block.to) || null; }
-  function blockOf(key) { return S.blocks.find(block => block.key === key) || null; }
 
   function clearSession() {
     cancelSheetQuery();
     S.generation++;
-    cancelLayout();
-    if (S.resizeObserver) { S.resizeObserver.disconnect(); S.resizeObserver = null; }
+    clearTimeout(S.scrollTimer);
+    S.scrollTimer = null;
     S.epoch = -1; S.account = null; S.organization = null;
     S.blocks = []; S.summaries.clear(); S.lists.clear();
-    S.scrollLeft = 0; S.anchorDate = null; S.anchorOffset = 0; S.layoutWidth = 0;
-    S.scrollToken++; S.restoring = false;
+    S.position = null; S.density = undefined;
     S.companyToday = null; S.selected = null; S.anchor = null;
     S.detail = null; S.listScroll = null; S.closeFocus = null; S.closePosition = null;
     S.formOrigin = "calendar";
@@ -119,36 +111,25 @@
     const countText = counts == null
       ? "数量加载中"
       : "未完成" + (counts.open || 0) + "条，已完成" + (counts.completed || 0) + "条";
-    return longDate(dateKey(date)) + "，" + countText;
+    return longDate(dateKey(date)) + "，" + countText + P.calendar.holidayLabel(date);
   }
   function cellHTML(block, date) {
     const key = dateKey(date), summary = S.summaries.get(block.key);
-    const counts = summary && summary.state === "ready" ? (summary.days.get(key) || { open: 0, completed: 0 }) : null;
-    const classes = ["daily-cell"];
-    if (key === S.companyToday) classes.push("is-today");
-    if (key === S.selected) classes.push("is-selected");
-    if (summary && summary.state === "error") classes.push("is-unknown");
-    return '<button type="button" class="' + classes.join(" ") + '" data-daily-date="' + key + '" tabindex="-1" aria-label="' + esc(cellAria(date, counts)) + '">' +
-      '<span class="daily-num">' + date.getDate() + "</span>" + marksHTML(counts) + "</button>";
+    const counts = summary?.state === "ready" ? (summary.days.get(key) || { open: 0, completed: 0 }) : null;
+    return P.calendar.monthDateHTML(date,'data-daily-date="'+key+'" tabindex="-1"',cellAria(date, counts),
+      key === S.selected,key === S.companyToday,P.calendar.holidayHTML(date)+marksHTML(counts));
   }
-  /* Padding for a date that belongs to a neighbouring month: no button, no focus target. */
-  function gapHTML() { return '<span class="daily-gap" aria-hidden="true"></span>'; }
   function blockHTML(block) {
     const weeks = block.weeks.map(start => {
       const monday = parseKey(start);
-      const cells = [];
-      for (let i = 0; i < 7; i++) {
-        const date = shift(monday, i);
-        const own = date.getFullYear() === block.year && date.getMonth() + 1 === block.month;
-        cells.push(own ? cellHTML(block, date) : gapHTML());
-      }
-      return '<div class="daily-week">' + cells.join("") + "</div>";
-    }).join("");
-    return '<div class="daily-month" data-month="' + block.key + '" aria-label="' + block.year + "年" + block.month + "月日历" + '">' +
-      '<div class="daily-month-head"><span class="daily-month-label">' + block.year + "年" + block.month + "月</span>" +
-        '<button type="button" class="btn tiny-btn daily-retry" data-action="daily-retry" data-month="' + block.key + '" hidden aria-label="重试加载' + block.year + "年" + block.month + '月数量">重试</button>' +
-      "</div>" +
-      '<div class="daily-weeks">' + weeks + "</div></div>";
+      const cells = Array.from({length:7}, (_, index) => {
+        const date = shift(monday,index);
+        return date.getMonth() + 1 === block.month ? cellHTML(block,date) : '<span class="p-month-date is-blank" aria-hidden="true"></span>';
+      });
+      return P.calendar.monthWeekHTML({start:monday}, cells.join(""));
+    });
+    const retry = '<button type="button" class="btn tiny-btn daily-retry" data-action="daily-retry" data-month="'+block.key+'" hidden>重试</button>';
+    return P.calendar.monthFrameHTML(parseKey(block.from), weeks, retry);
   }
   function calendarHTML() {
     return '<div class="card-head daily-head"><h2 id="q3">每日事项</h2>' +
@@ -159,12 +140,7 @@
         '<button type="button" class="btn tiny-btn" data-action="daily-locate" aria-label="按年月定位">年月</button>' +
         '<button type="button" class="btn tiny-btn" data-action="daily-today" aria-label="回到公司今天">今天</button>' +
       "</div></div>" +
-      '<div class="daily-body">' +
-        '<div class="daily-weekdays" aria-hidden="true"><span class="daily-corner"></span>' +
-          WEEKDAY.map(name => "<span>" + name + "</span>").join("") + "</div>" +
-        '<div class="daily-scroller" id="dailyScroller" tabindex="0" role="group" aria-label="每日事项日历：左右滚动浏览月份，方向键移动日期，回车打开当天清单">' +
-          '<div class="daily-track" id="dailyTrack">' + S.blocks.map(blockHTML).join("") + "</div></div>" +
-      "</div>" +
+      P.calendar.readMonthViewHTML("每日事项日历，上下滚动浏览月份", S.blocks.map(blockHTML).join(""), S.density, "dailyScroller") +
       '<div class="callout" id="dailyError" role="alert" hidden></div>';
   }
   function render() {
@@ -176,165 +152,45 @@
     const fresh = !S.blocks.length;
     if (fresh) initialBlocks(today);
     if (!S.selected) S.selected = S.companyToday;
-    cancelLayout();
     host.innerHTML = calendarHTML();
-    bindCalendar();
-    S.blocks.forEach(loadBlock);
-    if (fresh || !S.anchorDate) layoutCalendar({ date: S.companyToday });
-    else layoutCalendar({ date: S.anchorDate, offset: S.anchorOffset });
-  }
-  function bindCalendar() {
     const scroller = document.getElementById("dailyScroller");
-    if (!scroller) return;
-    scroller.addEventListener("scroll", onScroll, { passive: true });
-    scroller.addEventListener("keydown", onCalendarKey);
-    scroller.addEventListener("pointerdown", onPointerDown, { passive: true });
-    scroller.addEventListener("pointermove", onPointerMove, { passive: true });
-    observeSize(scroller);
-  }
-
-  /* The saved anchor is a date plus its pixel offset. A viewport change clamps scrollLeft before
-     the window can be padded, and that transient clamp must never overwrite the anchor: only a
-     scroll at the width the anchor was measured at may replace it. */
-  function anchorFromDom(scroller) {
-    if (!scroller || scroller.clientWidth !== S.layoutWidth) return;
-    const left = scroller.getBoundingClientRect().left;
-    let best = null, bestLeft = Infinity;
-    scroller.querySelectorAll("[data-daily-date]").forEach(cell => {
-      const cellLeft = cell.getBoundingClientRect().left;
-      if (cellLeft >= left - 1 && cellLeft < bestLeft) { bestLeft = cellLeft; best = cell; }
+    const view = scroller.closest(".p-month-view");
+    P.calendar.bindReadMonthDensity(view);
+    view.addEventListener("monthdensity", () => {
+      S.density = Number(view.dataset.rowHeight);
+      rememberPosition(scroller);
     });
-    if (best) { S.anchorDate = best.dataset.dailyDate; S.anchorOffset = bestLeft - left; }
+    scroller.addEventListener("scroll", onScroll, {passive:true});
+    scroller.addEventListener("keydown", onCalendarKey);
+    scroller.addEventListener("pointerdown", onPointerDown, {passive:true});
+    scroller.addEventListener("pointermove", onPointerMove, {passive:true});
+    S.blocks.forEach(block => { loadBlock(block); paintMonth(block.key); });
+    if (S.position) P.calendar.placeMonthAnchor(scroller, S.position);
+    else positionMonth(scroller,S.anchor);
+    if (fresh) revealDate(scroller,S.companyToday);
+    rememberPosition(scroller);
   }
-
-  /* ------------------------------------------------------- 布局与范围补足 */
-  function cancelLayout() {
-    S.layoutVersion++;
-    clearTimeout(S.layoutTimer);
-    clearTimeout(S.layoutRetryTimer);
-    clearTimeout(S.scrollTimer);
-    S.layoutTimer = S.layoutRetryTimer = S.scrollTimer = null;
+  function rememberPosition(scroller) {
+    if (!scroller?.clientHeight) return;
+    S.position = P.calendar.monthAnchor(scroller) || S.position;
+    if (S.position) S.anchor = S.position.month;
   }
-  function currentLayout(scroller, generation, version) {
-    return sameSession(generation) && version === S.layoutVersion &&
-      scroller === document.getElementById("dailyScroller");
-  }
-  function monthOffset(scroller, key) {
-    const element = scroller.querySelector('.daily-month[data-month="' + key + '"]');
-    if (!element) return null;
-    return element.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
-  }
-  function blockWidth(scroller, key) {
-    const element = scroller.querySelector('.daily-month[data-month="' + key + '"]');
-    return element ? element.getBoundingClientRect().width : 0;
-  }
-  /* Walk the bounded window towards a month that is not mounted yet. */
-  function ensureMonth(key) {
-    let guard = 0;
-    while (!blockOf(key) && guard++ < MAX_MONTHS) {
-      const first = S.blocks[0], last = S.blocks[S.blocks.length - 1];
-      if (!first || !last) return false;
-      if (key < first.key) extend(-1);
-      else if (key > last.key) extend(1);
-      else return false;
-    }
-    return !!blockOf(key);
-  }
-  /* Keep at least one measurable viewport of months on each side of the anchor month, so the
-     calendar can be slid both ways the moment it is laid out (never "static months" on a wide
-     screen). The 12-month cap still bounds the DOM and the summary requests. */
-  function padWindow(key) {
-    const scroller = document.getElementById("dailyScroller");
-    if (!scroller || !scroller.clientWidth || !blockOf(key)) return;
-    const viewport = scroller.clientWidth;
-    for (let guard = 0; guard < MAX_MONTHS; guard++) {
-      if (S.blocks.length >= MAX_MONTHS) return;
-      const left = monthOffset(scroller, key);
-      if (left == null) return;
-      const right = scroller.scrollWidth - left - blockWidth(scroller, key);
-      if (left >= viewport && right >= viewport) return;
-      extend(left < viewport ? -1 : 1);
+  function positionMonth(scroller,key) {
+    const section=scroller.querySelector('[data-month-key="'+key+'"]');
+    if (section) {
+      const header=scroller.querySelector('.p-weekday-row').getBoundingClientRect().height;
+      scroller.scrollTop+=section.getBoundingClientRect().top-scroller.getBoundingClientRect().top-header;
     }
   }
   function revealDate(scroller, key) {
-    if (!key) return;
-    const cell = scroller.querySelector('[data-daily-date="' + key + '"]');
-    if (!cell) return;
+    const cell = scroller?.querySelector('[data-daily-date="'+key+'"]');
+    if (!cell) return false;
     const box = cell.getBoundingClientRect(), view = scroller.getBoundingClientRect();
-    if (box.left < view.left) scroller.scrollLeft -= view.left - box.left;
-    else if (box.right > view.right) scroller.scrollLeft += box.right - view.right;
+    const header = scroller.querySelector('.p-weekday-row').getBoundingClientRect().height;
+    if (box.top < view.top + header) scroller.scrollTop -= view.top + header - box.top;
+    else if (box.top + 36 > view.bottom) scroller.scrollTop += box.top-view.top-header;
+    return true;
   }
-  function syncScroll(scroller) {
-    S.scrollLeft = scroller.scrollLeft;
-    S.restoring = false;
-    anchorFromDom(scroller);
-    setAnchorFromScroll();
-  }
-  /* One entry point shared by first render, page refresh, month jumps, locate/today and viewport
-     changes: mount the target month, pad both sides by a viewport, then place the target date at
-     its saved pixel offset (or two cells from the left edge). A hidden or zero-width container is
-     retried for a bounded number of frames and abandoned when the session/render generation moves. */
-  function layoutCalendar(target) {
-    cancelLayout();
-    const opts = target || {};
-    const generation = S.generation;
-    const version = S.layoutVersion;
-    const scroller = document.getElementById("dailyScroller");
-    const date = parseKey(opts.date) ? opts.date : S.companyToday;
-    if (!date) return false;
-    const month = date.slice(0, 7);
-    const offset = opts.offset;
-    const place = (tries) => {
-      if (!scroller || !currentLayout(scroller, generation, version) || !S.blocks.length) return false;
-      if (!scroller.clientWidth) {
-        if (tries > 0) S.layoutRetryTimer = setTimeout(() => {
-          S.layoutRetryTimer = null;
-          place(tries - 1);
-        }, 32);
-        return false;
-      }
-      S.restoring = true;
-      scroller.scrollTop = 0;
-      ensureMonth(month);
-      if (!blockOf(month)) { S.restoring = false; return false; }
-      padWindow(month);
-      const cell = scroller.querySelector('[data-daily-date="' + date + '"]');
-      const cellLeft = cell ? cell.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft : null;
-      let value = null;
-      if (cellLeft != null) value = offset != null ? cellLeft - offset : cellLeft - 46 * 2;
-      if (value == null) { const left = monthOffset(scroller, month); value = left == null ? 0 : left; }
-      scroller.scrollLeft = Math.max(0, value);
-      if (offset == null) revealDate(scroller, date);
-      scroller.scrollTop = 0;
-      S.layoutWidth = scroller.clientWidth;
-      syncScroll(scroller);
-      return true;
-    };
-    return place(16);
-  }
-  /* A resize (narrow → wide), a hidden page becoming visible or a late layout all re-run the same
-     layout with the current anchor, which is how the window stays browsable after a viewport change. */
-  function observeSize(scroller) {
-    if (S.resizeObserver) { S.resizeObserver.disconnect(); S.resizeObserver = null; }
-    if (!scroller || typeof ResizeObserver !== "function") return;
-    const generation = S.generation;
-    S.resizeObserver = new ResizeObserver(() => {
-      if (!sameSession(generation) || scroller !== document.getElementById("dailyScroller")) return;
-      scheduleLayout();
-    });
-    S.resizeObserver.observe(scroller);
-  }
-  function scheduleLayout() {
-    if (S.layoutTimer) return;
-    const scroller = document.getElementById("dailyScroller");
-    const generation = S.generation, version = S.layoutVersion;
-    S.layoutTimer = setTimeout(() => {
-      S.layoutTimer = null;
-      if (!currentLayout(scroller, generation, version)) return;
-      layoutCalendar({ date: S.anchorDate || S.companyToday, offset: S.anchorOffset });
-    }, 60);
-  }
-
   /* ------------------------------------------------------------ 数量加载 */
   function loadBlock(block) {
     if (!block) return;
@@ -360,7 +216,7 @@
   }
   function paintMonth(key) {
     const block = S.blocks.find(item => item.key === key);
-    const root = document.querySelector('.daily-month[data-month="' + key + '"]');
+    const root = document.querySelector('#dailyScroller [data-month-key="' + key + '"]');
     const summary = S.summaries.get(key);
     if (!root || !block || !summary) return;
     root.classList.toggle("is-error", summary.state === "error");
@@ -373,7 +229,7 @@
       const marks = cell.querySelector(".daily-marks");
       if (marks) marks.outerHTML = marksHTML(counts);
       cell.classList.toggle("is-unknown", summary.state === "error");
-      cell.setAttribute("aria-label", cellAria(date, counts));
+      cell.setAttribute("aria-label", summary.state === "error" ? longDate(cell.dataset.dailyDate) + "，数量加载失败" + P.calendar.holidayLabel(date) : cellAria(date, counts));
     });
   }
   function invalidateDate(key) {
@@ -393,122 +249,66 @@
   /* ------------------------------------------------------------ 滚动补载 */
   function onScroll() {
     const scroller = document.getElementById("dailyScroller");
-    // Hiding the map page resets its scroll position; that synthetic event must not replace the
-    // saved anchor or position for the same account.
-    if (!scroller || !scroller.clientWidth) return;
-    S.scrollLeft = scroller.scrollLeft;
-    if (scroller.clientWidth !== S.layoutWidth) {
-      // A resize clamped the position before the window could be repadded; keep the saved anchor
-      // and let the size observer/layout restore it at the new width.
-      scheduleLayout();
-      return;
-    }
-    if (!S.restoring) anchorFromDom(scroller);
-    setAnchorFromScroll();
+    if (!scroller?.clientHeight) return;
+    rememberPosition(scroller);
     if (S.scrollTimer) return;
-    const generation = S.generation, version = S.layoutVersion;
     S.scrollTimer = setTimeout(() => {
       S.scrollTimer = null;
-      if (!currentLayout(scroller, generation, version) || !scroller.clientWidth) return;
-      const right = scroller.scrollWidth - scroller.clientWidth - scroller.scrollLeft;
-      if (scroller.scrollLeft < 80) extend(-1);
-      else if (right < 80) extend(1);
-      // Keep the same one-viewport margin around the browsed month, so a gesture never hits a
-      // dead end while more months remain inside the bounded window.
-      if (S.anchor) padWindow(S.anchor);
-    }, 120);
+      if (!scroller.isConnected || !scroller.clientHeight) return;
+      if (scroller.scrollTop < scroller.clientHeight * .75) extend(scroller,-1);
+      else if (scroller.scrollHeight-scroller.clientHeight-scroller.scrollTop < scroller.clientHeight * .75) extend(scroller,1);
+    }, 80);
   }
-  function extend(direction) {
-    const anchor = direction < 0 ? S.blocks[0] : S.blocks[S.blocks.length - 1];
-    if (!anchor) return;
-    const next = blockForMonth(anchor.year, anchor.month - 1 + direction);
-    if (S.blocks.some(block => block.key === next.key)) return;
-    const scroller = document.getElementById("dailyScroller");
-    const track = document.getElementById("dailyTrack");
-    if (!scroller || !track) return;
-    const widthBefore = scroller.scrollWidth, left = scroller.scrollLeft;
-    if (direction < 0) {
-      S.blocks.unshift(next);
-      track.insertAdjacentHTML("afterbegin", blockHTML(next));
-    } else {
-      S.blocks.push(next);
-      track.insertAdjacentHTML("beforeend", blockHTML(next));
-    }
+  function extend(scroller, direction) {
+    const edge = direction < 0 ? S.blocks[0] : S.blocks.at(-1);
+    const next = blockForMonth(edge.year, edge.month - 1 + direction);
+    const stream = scroller.querySelector(".p-month-stream");
+    const holder = document.createElement("div");
+    holder.innerHTML = blockHTML(next);
+    if (direction < 0) S.blocks.unshift(next);
+    else S.blocks.push(next);
+    P.calendar.growMonthStream(scroller,stream,holder.firstElementChild,direction<0);
     loadBlock(next);
-    if (direction < 0) scroller.scrollLeft = left + (scroller.scrollWidth - widthBefore);
-    while (S.blocks.length > MAX_MONTHS) {
+    if (S.blocks.length > MAX_MONTHS) {
       const removed = direction > 0 ? S.blocks.shift() : S.blocks.pop();
-      const element = track.querySelector('.daily-month[data-month="' + removed.key + '"]');
-      if (!element) break;
-      const head = direction > 0;
-      const width = scroller.scrollWidth;
-      element.remove();
+      const height = scroller.scrollHeight;
+      stream.querySelector('[data-month-key="'+removed.key+'"]').remove();
       S.summaries.delete(removed.key);
-      if (head) scroller.scrollLeft = Math.max(0, scroller.scrollLeft - (width - scroller.scrollWidth));
+      if (direction > 0) scroller.scrollTop -= height-scroller.scrollHeight;
     }
-    S.scrollLeft = scroller.scrollLeft;
-    if (!S.restoring) anchorFromDom(scroller);
-    setAnchorFromScroll();
+    rememberPosition(scroller);
   }
-  function scrollToDate(key) {
-    if (!parseKey(key)) return false;
-    if (!blockContaining(key) && !ensureMonth(key.slice(0, 7))) return false;
-    layoutCalendar({ date: key });
-    return !!document.querySelector('[data-daily-date="' + key + '"]');
-  }
-  function setAnchorFromScroll() {
-    const scroller = document.getElementById("dailyScroller");
-    if (!scroller || !scroller.clientWidth) return;
-    const left = scroller.getBoundingClientRect().left;
-    let best = null, bestDelta = Infinity;
-    scroller.querySelectorAll(".daily-month").forEach(element => {
-      const delta = Math.abs(element.getBoundingClientRect().left - left);
-      if (delta < bestDelta) { bestDelta = delta; best = element; }
-    });
-    if (best) S.anchor = best.dataset.month;
-  }
-  function jumpToMonth(year, month) {
-    ++S.scrollToken;
-    const target = new Date(year, month - 1, 1);
-    if (isNaN(target.getTime())) return;
-    S.blocks = [blockForMonth(target.getFullYear(), target.getMonth() - 1),
-      blockForMonth(target.getFullYear(), target.getMonth()),
-      blockForMonth(target.getFullYear(), target.getMonth() + 1)];
+  function jumpToMonth(year, month, day = 1) {
+    const target = new Date(year, month - 1, day);
+    initialBlocks(target);
+    S.position = null;
     S.summaries.clear();
-    S.anchor = monthKeyOf(target);
-    const track = document.getElementById("dailyTrack");
-    if (!track) return;
-    track.innerHTML = S.blocks.map(blockHTML).join("");
-    S.blocks.forEach(loadBlock);
-    layoutCalendar({ date: dateKey(target), offset: 0 });
+    render();
+    const scroller = document.getElementById("dailyScroller");
+    if (day!==1) revealDate(scroller,dateKey(target));
+    rememberPosition(scroller);
   }
   function goToDate(key) {
     const date = parseKey(key);
     if (!date) return;
-    if (!blockContaining(key)) {
-      const month = monthKeyOf(date);
-      const anchorMonth = S.anchor || S.companyToday;
-      const distance = Math.abs((date.getFullYear() - Number(anchorMonth.slice(0, 4))) * 12 + (date.getMonth() + 1 - Number(anchorMonth.slice(5, 7))));
-      if (distance > 3) { jumpToMonth(date.getFullYear(), date.getMonth() + 1); return; }
-    }
-    if (!scrollToDate(key)) jumpToMonth(date.getFullYear(), date.getMonth() + 1);
+    const scroller = document.getElementById("dailyScroller");
+    if (!revealDate(scroller,key)) jumpToMonth(date.getFullYear(),date.getMonth()+1,date.getDate());
+    else rememberPosition(scroller);
   }
-  /* 前后月以当前浏览锚点推进，与已删除的可见年月文案无关。 */
   function stepMonth(delta) {
-    const anchor = /^\d{4}-\d{2}$/.test(String(S.anchor || "")) ? S.anchor : String(S.companyToday || "").slice(0, 7);
-    const date = parseKey(anchor + "-01") || companyToday();
-    const moved = new Date(date.getFullYear(), date.getMonth() + delta, 1);
-    jumpToMonth(moved.getFullYear(), moved.getMonth() + 1);
+    const anchor = parseKey((S.anchor || S.companyToday.slice(0,7))+"-01") || companyToday();
+    const moved = new Date(anchor.getFullYear(),anchor.getMonth()+delta,1);
+    jumpToMonth(moved.getFullYear(),moved.getMonth()+1);
   }
 
-  /* ------------------------------------------------- 横滑与点击隔离、键盘 */
+  /* ------------------------------------------------- 滑动与点击隔离、键盘 */
   let press = null;
-  function onPointerDown(event) { press = { x: event.clientX, y: event.clientY, left: document.getElementById("dailyScroller").scrollLeft }; }
+  function onPointerDown(event) { press = { x: event.clientX, y: event.clientY, top: document.getElementById("dailyScroller").scrollTop }; }
   function onPointerMove(event) {
     if (!press) return;
     const scroller = document.getElementById("dailyScroller");
     if (Math.abs(event.clientX - press.x) > 6 || Math.abs(event.clientY - press.y) > 6 ||
-      Math.abs(scroller.scrollLeft - press.left) > 2) press.moved = true;
+      Math.abs(scroller.scrollTop - press.top) > 2) press.moved = true;
   }
   document.addEventListener("click", event => {
     const cell = event.target.closest && event.target.closest("[data-daily-date]");
@@ -526,13 +326,8 @@
     const cell = document.querySelector('[data-daily-date="' + key + '"]');
     const scroller = document.getElementById("dailyScroller");
     if (cell && scroller && scroller.clientWidth) {
-      S.scrollToken++;
-      const box = cell.getBoundingClientRect(), viewport = scroller.getBoundingClientRect();
-      if (box.left < viewport.left) scroller.scrollLeft -= viewport.left - box.left;
-      else if (box.right > viewport.right) scroller.scrollLeft += box.right - viewport.right;
-      S.scrollLeft = scroller.scrollLeft;
-      anchorFromDom(scroller);
-      setAnchorFromScroll();
+      revealDate(scroller,key);
+      rememberPosition(scroller);
       cell.focus({ preventScroll: true });
       return true;
     }
@@ -558,10 +353,10 @@
     if (!next) return;
     S.selected = next;
     if (!document.querySelector('[data-daily-date="' + next + '"]')) goToDate(next);
-    document.querySelectorAll(".daily-cell.is-selected").forEach(cell => cell.classList.remove("is-selected"));
+    document.querySelectorAll("[data-daily-date].is-selected").forEach(cell => { cell.classList.remove("is-selected"); cell.setAttribute("aria-pressed","false"); });
     focusCell(next);
     const cell = document.querySelector('[data-daily-date="' + next + '"]');
-    if (cell) cell.classList.add("is-selected");
+    if (cell) { cell.classList.add("is-selected"); cell.setAttribute("aria-pressed","true"); }
   }
 
   /* ------------------------------------------------------------ 日清单 */
@@ -664,6 +459,11 @@
   }
   function openList(date, trigger) {
     S.selected = date;
+    document.querySelectorAll("[data-daily-date]").forEach(cell => {
+      const selected = cell.dataset.dailyDate === date;
+      cell.classList.toggle("is-selected", selected);
+      cell.setAttribute("aria-pressed",String(selected));
+    });
     queryForSheet(async () => {
       const entry = S.lists.get(date);
       if (!entry || !entry.items.length) await loadList(date, 0);
@@ -672,9 +472,7 @@
       S.closeFocus = trigger || null;
       const scroller = document.getElementById("dailyScroller");
       if (scroller) {
-        S.scrollToken++;
-        anchorFromDom(scroller);
-        S.closePosition = { date: S.anchorDate, offset: S.anchorOffset, left: scroller.scrollLeft };
+        S.closePosition = P.calendar.monthAnchor(scroller);
       }
       openSheet(listView(date));
     }, "daily-list-error");
@@ -927,7 +725,7 @@
     const anchor = parseKey((S.anchor || S.companyToday) + "-01") || companyToday();
     openSheet({ title: "定位年月", dailyKind: "locate",
       body: '<div class="field"><label for="daily-locate">年月</label><input id="daily-locate" type="month" value="' + anchor.getFullYear() + "-" + pad(anchor.getMonth() + 1) + '" data-autofocus /></div>' +
-        '<div class="tiny muted">连续的左右滑动始终可用；这里用于直接到达较远的年月。</div>' +
+        '<div class="tiny muted">连续的上下滑动始终可用；这里用于直接到达较远的年月。</div>' +
         '<div class="callout" id="daily-locate-error" role="alert" hidden></div>',
       foot: withBack('<button type="button" class="btn primary" data-action="daily-locate-save">定位</button>') });
   }
@@ -977,18 +775,9 @@
     if (focus && document.contains(focus)) focus.focus({ preventScroll: true });
     else if (focus && S.selected && document.querySelector('[data-daily-date="' + S.selected + '"]')) focusCell(S.selected);
     const scroller = document.getElementById("dailyScroller");
-    if (scroller) {
-      // The shared sheet's lastFocused.focus() can scroll the background. Restore
-      // the calendar after it runs, using a date anchor if its window was extended.
-      if (position) {
-        const cell = scroller.querySelector('[data-daily-date="' + position.date + '"]');
-        scroller.scrollLeft = cell ? scroller.scrollLeft + cell.getBoundingClientRect().left -
-          scroller.getBoundingClientRect().left - position.offset : position.left;
-        S.scrollLeft = scroller.scrollLeft;
-        anchorFromDom(scroller);
-        setAnchorFromScroll();
-      }
-      scroller.scrollTop = 0;
+    if (scroller && position) {
+      P.calendar.placeMonthAnchor(scroller,position);
+      rememberPosition(scroller);
     }
   };
   const baseSetPage = setPage;

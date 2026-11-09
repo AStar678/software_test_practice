@@ -1,5 +1,5 @@
 /* =====================================================================
-   每日事项：横向连续日历、按日清单、详情与表单。
+   每日事项：纵向连续日历、按日清单、详情与表单。
    仅本模块使用；公司页任务月历的间距、拖动、密度样式不受影响。
    ===================================================================== */
 
@@ -26,7 +26,8 @@
 .daily-quad .daily-head h2{flex:0 0 auto;min-width:0;white-space:nowrap}
 .daily-tools{margin-left:auto;display:flex;gap:2px;align-items:center;flex-wrap:nowrap}
 .daily-tools .btn{min-width:34px;min-height:34px;padding:2px 6px;font-size:12px;line-height:1}
-.daily-body{flex:1;min-height:0;display:flex;min-width:0}
+.daily-quad .p-read-month{height:clamp(330px,50vh,580px)}
+.p-read-month .p-month-resize-handle span:last-child{font-size:10px}
 
 /* 标题右侧的新增加号：与月份工具同形态（同高、同圆角），半透明薄荷绿玻璃，非白填充。 */
 .daily-head .btn.daily-add{position:relative;min-width:34px;min-height:34px;padding:2px 6px;font-size:17px;
@@ -39,37 +40,10 @@
   rgba(138,203,170,.62)}
 .daily-head .btn.daily-add:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 
-/* 固定星期表头：横向滚动时不动 */
-.daily-weekdays{flex:0 0 34px;width:34px;display:flex;flex-direction:column;align-items:center;color:var(--muted);font-size:10.5px;font-weight:600}
-.daily-weekdays .daily-corner{height:22px;flex:0 0 22px}
-.daily-weekdays span:not(.daily-corner){height:44px;flex:0 0 44px;display:flex;align-items:flex-start;justify-content:center;padding-top:3px;border-bottom:1px dashed var(--line-2)}
-.daily-weekdays span:last-child{border-bottom:0}
-
-/* 横向滚动只发生在每日事项自己的区域 */
-.daily-scroller{flex:1 1 auto;min-width:0;min-height:330px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;touch-action:pan-x;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
-.daily-scroller:focus-visible{outline-offset:-2px}
-.daily-track{display:flex;align-items:flex-start;gap:12px;min-height:330px;padding-bottom:2px}
-.daily-month{flex:0 0 auto;display:flex;flex-direction:column}
-/* 年月头整体属于月块，起点即 1 号所在列；允许超出单列宽度，不截断。 */
-.daily-month-head{height:22px;display:flex;align-items:center;gap:4px;min-width:0}
-.daily-month-label{font-size:10.5px;font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:visible}
-.daily-retry{min-width:34px;min-height:22px;padding:0 4px;font-size:10px;line-height:1}
-.daily-weeks{display:flex;align-items:flex-start}
-.daily-week{display:flex;flex-direction:column}
-
-/* 日期格：日期数字在上，数量标记在下；44px 可操作目标 */
-.daily-cell{position:relative;width:46px;min-width:46px;height:44px;padding:2px 1px;border:0;border-radius:9px;background:transparent;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;cursor:pointer;color:var(--ink)}
-.daily-cell:hover{background:var(--brand-soft)}
-.daily-cell .daily-num{font-size:12.5px;line-height:1.25;font-variant-numeric:tabular-nums}
-/* 相邻月份的位置只是非交互空位：无按钮、无焦点、不显示日期。 */
-.daily-gap{display:block;width:46px;min-width:46px;height:44px;flex:0 0 auto}
-.daily-cell.is-today{background:var(--brand-soft);box-shadow:inset 0 0 0 1px #c7d7fb}
-.daily-cell.is-today .daily-num{color:var(--brand);font-weight:700}
-.daily-cell.is-selected{box-shadow:inset 0 0 0 2px var(--brand)}
-.daily-cell.is-unknown{background:var(--grey-soft)}
-.daily-cell.is-unknown .daily-marks::after{content:"!";font-size:9px;color:var(--warn);line-height:1}
-
+.daily-retry{min-height:24px;padding:0 6px}
+.daily-quad .p-month-date.is-unknown .daily-marks::after{content:"!";font-size:9px;color:var(--warn);line-height:1}
+.company-quad .q-body > button.item-line{width:100%;text-align:left;color:inherit;cursor:pointer}
+.home-event-body{max-width:76ch;white-space:pre-wrap;overflow-wrap:anywhere}
 /* 数量标记：每个日期最多一个，长度只由当天总数决定；有未完成=蓝，全完成=灰 */
 .daily-marks{display:flex;align-items:center;justify-content:center;gap:2px;height:4px;flex:0 0 4px;min-width:4px}
 .daily-mark{display:block;height:4px;border-radius:2px;flex:0 0 auto}
@@ -97,11 +71,17 @@
 
 /* ---------- 窄屏与手账主题 ---------- */
 @media (max-width:360px){
-  .daily-weekdays{flex-basis:30px;width:30px}
-  .daily-cell{width:44px;min-width:44px}
-  .daily-gap{width:44px;min-width:44px}
   .daily-tools .btn{min-width:32px;min-height:32px;padding:2px 4px}
   .daily-head .btn.daily-add{min-width:32px;min-height:32px;padding:2px 4px;font-size:16px}
 }
 .daily-quad{background:var(--card)}
-.daily-quad .daily-month-label{color:var(--ink-2)}
+.workday-tenure{margin:0 0 0 auto;padding:4px 0 4px 8px;color:var(--ink-2);font-size:12px;text-align:right}
+.workday-tenure strong{display:block;color:var(--ink);font-size:15px}
+.home-event-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.home-task-overview{margin-bottom:12px}
+.home-task-overview h3{margin:0 0 6px;font-size:14px}
+.daily-quad .p-month-date .p-holiday{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.home-event-related{max-width:76ch;margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.home-event-related h3{margin:0 0 8px;font-size:14px}
+.home-event-related ul{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.home-event-related .btn{width:100%;justify-content:flex-start;text-align:left;white-space:normal;overflow-wrap:anywhere}

@@ -78,10 +78,15 @@ public class TaskService {
             int begin=Math.min(offset,visible.size());
             int end=(int)Math.min((long)begin+limit,visible.size());
             Set<String> pinned=pinnedIds(actor);
+            Set<String> tablePins=new HashSet<>(db.list("SELECT task_id FROM user_task_table_pins WHERE organization_id=? AND user_id=?",
+                    actor.organizationId(),actor.id()).stream().map(pin->s(pin,"taskId")).toList());
             List<Map<String,Object>> items=new ArrayList<>();
             for(VisibleTask row:visible.subList(begin,end)) {
                 Map<String,Object> view=taskView(actor,row.task(),row.version(),row.owners());
-                view.put("pinned",pinned.contains(s(row.task(),"id")));items.add(view);
+                String taskId=s(row.task(),"id");
+                view.put("pinned",pinned.contains(taskId));
+                view.put("tablePinned",tableEligible(actor,row.task(),row.owners()) && tablePins.contains(taskId));
+                items.add(view);
             }
             Map<String,Object> result=new LinkedHashMap<>();result.put("items",items);
             result.put("total",visible.size());result.put("nextCursor",end<visible.size()?Integer.toString(end):null);
@@ -358,6 +363,9 @@ public class TaskService {
         if (!access.canSeeTask(actor, task, version, owners)) throw ApiException.notFound();
         Map<String, Object> result = taskView(actor, task, version, owners);
         result.put("pinned", isPinned(actor, id));
+        result.put("tablePinned",tableEligible(actor,task,owners) && db.find(
+                "SELECT 1 FROM user_task_table_pins WHERE organization_id=? AND user_id=? AND task_id=?",
+                actor.organizationId(),actor.id(),id)!=null);
         // The effective route and, for whoever may see it, this request's own route (DEV-010).
         Map<String, Object> pendingRequest = pending(actor, id, false);
         result.put("pendingRoute", pendingRequest != null && canSeeRequest(actor, pendingRequest, task)
@@ -1670,6 +1678,29 @@ public class TaskService {
             db.update("INSERT INTO task_assignments(id,organization_id,task_id,version_id,user_id,assigned_at,assigned_source,schedule_version,execution_round,active) VALUES(?,?,?,?,?,?,?,?,?,TRUE)",
                     Db.id(), actor.organizationId(), taskId, versionId, owner, now, source, scheduleVersion, executionRound);
         }
+    }
+
+    private boolean tableEligible(Actor actor, Map<String,Object> task, List<String> owners) {
+        return actor.id().equals(s(task,"originalCreatorId")) || owners.contains(actor.id());
+    }
+
+    public Map<String,Object> setTablePinned(Actor actor, String taskId, boolean pinned) {
+        requireBusiness(actor);
+        access.requireCurrent(actor);
+        var task=task(actor,taskId,true);
+        String current=s(task,"currentVersionId");
+        if (current==null) throw ApiException.notFound();
+        var version=version(actor,current);
+        var owners=assignees(actor,current);
+        if (!access.canSeeTask(actor,task,version,owners) || !tableEligible(actor,task,owners)) throw ApiException.notFound();
+        if (pinned) {
+            db.update("INSERT IGNORE INTO user_task_table_pins(organization_id,user_id,task_id) VALUES(?,?,?)",
+                    actor.organizationId(),actor.id(),taskId);
+        } else {
+            db.update("DELETE FROM user_task_table_pins WHERE organization_id=? AND user_id=? AND task_id=?",
+                    actor.organizationId(),actor.id(),taskId);
+        }
+        return Map.of("taskId",taskId,"tablePinned",pinned);
     }
 
     private Set<String> pinnedIds(Actor actor) {
