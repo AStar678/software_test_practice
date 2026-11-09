@@ -1,0 +1,758 @@
+{
+  "updated": "2026-11-09T14:06:34.550Z",
+  "checks": [
+    {
+      "check": "login form is ready",
+      "pass": true
+    },
+    {
+      "check": "employee login loads the workspace",
+      "pass": true
+    },
+    {
+      "check": "task table queries the real server and loads 50 rows",
+      "pass": true
+    },
+    {
+      "check": "the table uses the server total and exact current-page order",
+      "pass": true,
+      "evidence": {
+        "total": 55,
+        "path": "/tasks/table?relation=all&completion=all&sort=startAt&direction=asc&limit=50&offset=0",
+        "serverItems": [
+          "动画交付任务 026",
+          "动画交付任务 011",
+          "动画交付任务 041",
+          "动画交付任务 054",
+          "动画交付任务 015",
+          "动画交付任务 040",
+          "动画交付任务 036",
+          "动画交付任务 023",
+          "动画交付任务 029",
+          "动画交付任务 032",
+          "动画交付任务 053",
+          "动画交付任务 027",
+          "动画交付任务 018",
+          "动画交付任务 049",
+          "动画交付任务 007",
+          "动画交付任务 014",
+          "动画交付任务 042",
+          "动画交付任务 006",
+          "动画交付任务 020",
+          "动画交付任务 045",
+          "动画交付任务 052",
+          "动画交付任务 039",
+          "波塞冬分镜",
+          "动画交付任务 010",
+          "动画交付任务 046",
+          "动画交付任务 034",
+          "动画交付任务 030",
+          "动画交付任务 043",
+          "分镜2",
+          "动画交付任务 012",
+          "动画交付任务 033",
+          "动画交付任务 035",
+          "动画交付任务 048",
+          "动画交付任务 044",
+          "动画交付任务 009",
+          "动画交付任务 038",
+          "A upper",
+          "动画交付任务 025",
+          "动画交付任务 008",
+          "动画交付任务 022",
+          "动画交付任务 037",
+          "动画交付任务 016",
+          "动画交付任务 024",
+          "动画交付任务 050",
+          "动画交付任务 019",
+          "分镜10",
+          "动画交付任务 017",
+          "动画交付任务 031",
+          "动画交付任务 028",
+          "动画交付任务 051"
+        ],
+        "shown": [
+          "045300c2-d306-4b39-9eef-2b687ea124a0",
+          "06d00c48-7e7a-48b0-834d-a2e090ffe7eb",
+          "08569435-60e9-4813-8159-2e7c04629502",
+          "0a7f4115-6bb2-4417-8fe2-8d6e0867d429",
+          "125a739e-a155-4ca3-9f65-fc36d75858bf",
+          "1504b779-6821-43cd-94c0-01dee3575da9",
+          "1685fd60-9c75-49f1-b570-e43197443c37",
+          "19ce871f-4599-4d13-99aa-e05ae43d62b4",
+          "205b9595-b749-426d-8df9-6705e60c6e85",
+          "246b0e67-f854-4ba7-88e5-762736c08bc2",
+          "28869fe1-4670-471d-963f-9774e0a038ee",
+          "2c1def17-fb39-4b5e-98b2-dedc8d6091ef",
+          "30e6acf6-8e51-42e6-b8f8-de8a701e62b9",
+          "4e82aaaf-addd-409c-ab58-d72e4223eaec",
+          "52db26f1-c390-4001-a074-1b78b9b96312",
+          "52f56806-f2fa-4191-bfa1-db70127ddf35",
+          "5512d75e-f62c-40f4-8cab-6d7c8bb8685d",
+          "5a8084d4-ee05-491c-a44c-f7fa02d6c311",
+          "5cb0524b-efda-4154-98b7-910df4745347",
+          "63df191e-5636-4bc7-bb44-dc8ac6142fe6",
+          "652ae319-3369-4a3b-afee-6495f1cb9c16",
+          "66d8caf7-6615-4755-b32e-254398242819",
+          "67b77a13-ad82-447d-bb37-43ad9696d896",
+          "7c68cb34-b39b-431f-8ca0-2871cf12da6c",
+          "8faa174e-15da-4e1c-a470-91ba243c1ec0",
+          "90664cdf-097d-4741-9306-9f8caa680e33",
+          "9140d46e-5c32-4b63-9392-41d66652cc2d",
+          "91f65829-e02b-4e71-ae18-351b200c8f14",
+          "92062dba-8630-4410-9692-f038f4f03ef8",
+          "9321806a-5f12-4581-af4e-d00be4733542",
+          "958423de-0ddb-4404-94a6-e5b89609dfe5",
+          "9993bd96-326d-45c1-8ba5-48e0a708cccd",
+          "99eede52-55c7-4345-baaa-104c8bf12b9a",
+          "9acc4aa1-ad0d-406a-acff-f6843896d5cb",
+          "9c05ea0a-2556-401e-8247-35c443498a2a",
+          "9ea38e0f-e304-4230-91ff-a195ed7079b5",
+          "a49f3140-ea1d-421c-961d-c48f60c7f2e0",
+          "b516985a-dfe6-428d-a891-7cd5155bed91",
+          "b724a58c-4f16-4b33-9ac9-a46e5baa8ea7",
+          "bba5f6fc-4642-414e-a454-5ca3e3727451",
+          "c0e959fa-56d3-44da-97f5-65c3d891d40e",
+          "c42054d6-acfa-4c2b-b852-7ebd41270b70",
+          "cbbff8ed-a9a7-4277-aa19-79570112ad15",
+          "d75eb366-6c6e-4ed8-b9f7-08e53e8e14aa",
+          "dd3cb7ad-1e99-498e-b7dd-3d582b04a967",
+          "de75fd5a-c228-4fd7-aa67-171ff7e57295",
+          "e133a9ba-c4c0-45c0-9c12-e29b404551d8",
+          "e5591d1e-2e26-42c9-baab-b01923675e1e",
+          "ea9504e1-f299-4ae1-b7ae-944a9de29e80",
+          "ed299913-1d25-439a-90b9-c72d6d62818d"
+        ],
+        "ids": [
+          "045300c2-d306-4b39-9eef-2b687ea124a0",
+          "06d00c48-7e7a-48b0-834d-a2e090ffe7eb",
+          "08569435-60e9-4813-8159-2e7c04629502",
+          "0a7f4115-6bb2-4417-8fe2-8d6e0867d429",
+          "125a739e-a155-4ca3-9f65-fc36d75858bf",
+          "1504b779-6821-43cd-94c0-01dee3575da9",
+          "1685fd60-9c75-49f1-b570-e43197443c37",
+          "19ce871f-4599-4d13-99aa-e05ae43d62b4",
+          "205b9595-b749-426d-8df9-6705e60c6e85",
+          "246b0e67-f854-4ba7-88e5-762736c08bc2",
+          "28869fe1-4670-471d-963f-9774e0a038ee",
+          "2c1def17-fb39-4b5e-98b2-dedc8d6091ef",
+          "30e6acf6-8e51-42e6-b8f8-de8a701e62b9",
+          "4e82aaaf-addd-409c-ab58-d72e4223eaec",
+          "52db26f1-c390-4001-a074-1b78b9b96312",
+          "52f56806-f2fa-4191-bfa1-db70127ddf35",
+          "5512d75e-f62c-40f4-8cab-6d7c8bb8685d",
+          "5a8084d4-ee05-491c-a44c-f7fa02d6c311",
+          "5cb0524b-efda-4154-98b7-910df4745347",
+          "63df191e-5636-4bc7-bb44-dc8ac6142fe6",
+          "652ae319-3369-4a3b-afee-6495f1cb9c16",
+          "66d8caf7-6615-4755-b32e-254398242819",
+          "67b77a13-ad82-447d-bb37-43ad9696d896",
+          "7c68cb34-b39b-431f-8ca0-2871cf12da6c",
+          "8faa174e-15da-4e1c-a470-91ba243c1ec0",
+          "90664cdf-097d-4741-9306-9f8caa680e33",
+          "9140d46e-5c32-4b63-9392-41d66652cc2d",
+          "91f65829-e02b-4e71-ae18-351b200c8f14",
+          "92062dba-8630-4410-9692-f038f4f03ef8",
+          "9321806a-5f12-4581-af4e-d00be4733542",
+          "958423de-0ddb-4404-94a6-e5b89609dfe5",
+          "9993bd96-326d-45c1-8ba5-48e0a708cccd",
+          "99eede52-55c7-4345-baaa-104c8bf12b9a",
+          "9acc4aa1-ad0d-406a-acff-f6843896d5cb",
+          "9c05ea0a-2556-401e-8247-35c443498a2a",
+          "9ea38e0f-e304-4230-91ff-a195ed7079b5",
+          "a49f3140-ea1d-421c-961d-c48f60c7f2e0",
+          "b516985a-dfe6-428d-a891-7cd5155bed91",
+          "b724a58c-4f16-4b33-9ac9-a46e5baa8ea7",
+          "bba5f6fc-4642-414e-a454-5ca3e3727451",
+          "c0e959fa-56d3-44da-97f5-65c3d891d40e",
+          "c42054d6-acfa-4c2b-b852-7ebd41270b70",
+          "cbbff8ed-a9a7-4277-aa19-79570112ad15",
+          "d75eb366-6c6e-4ed8-b9f7-08e53e8e14aa",
+          "dd3cb7ad-1e99-498e-b7dd-3d582b04a967",
+          "de75fd5a-c228-4fd7-aa67-171ff7e57295",
+          "e133a9ba-c4c0-45c0-9c12-e29b404551d8",
+          "e5591d1e-2e26-42c9-baab-b01923675e1e",
+          "ea9504e1-f299-4ae1-b7ae-944a9de29e80",
+          "ed299913-1d25-439a-90b9-c72d6d62818d"
+        ],
+        "offset": 0
+      }
+    },
+    {
+      "check": "relation=own maps to the server assigned relation and keeps the full total",
+      "pass": true
+    },
+    {
+      "check": "relation=created returns no invented rows for an assigned-only employee",
+      "pass": true
+    },
+    {
+      "check": "a title sort asks the server for title/asc and resets the page",
+      "pass": true
+    },
+    {
+      "check": "the visible page follows the server order without a local re-sort",
+      "pass": true,
+      "evidence": {
+        "titles": [
+          "a lower",
+          "A upper",
+          "阿波罗分镜",
+          "波塞冬分镜",
+          "动画交付任务 006",
+          "动画交付任务 007",
+          "动画交付任务 008",
+          "动画交付任务 009",
+          "动画交付任务 010",
+          "动画交付任务 011",
+          "动画交付任务 012",
+          "动画交付任务 013",
+          "动画交付任务 014",
+          "动画交付任务 015",
+          "动画交付任务 016",
+          "动画交付任务 017",
+          "动画交付任务 018",
+          "动画交付任务 019",
+          "动画交付任务 020",
+          "动画交付任务 021",
+          "动画交付任务 022",
+          "动画交付任务 023",
+          "动画交付任务 024",
+          "动画交付任务 025",
+          "动画交付任务 026",
+          "动画交付任务 027",
+          "动画交付任务 028",
+          "动画交付任务 029",
+          "动画交付任务 030",
+          "动画交付任务 031",
+          "动画交付任务 032",
+          "动画交付任务 033",
+          "动画交付任务 034",
+          "动画交付任务 035",
+          "动画交付任务 036",
+          "动画交付任务 037",
+          "动画交付任务 038",
+          "动画交付任务 039",
+          "动画交付任务 040",
+          "动画交付任务 041",
+          "动画交付任务 042",
+          "动画交付任务 043",
+          "动画交付任务 044",
+          "动画交付任务 045",
+          "动画交付任务 046",
+          "动画交付任务 047",
+          "动画交付任务 048",
+          "动画交付任务 049",
+          "动画交付任务 050",
+          "动画交付任务 051"
+        ],
+        "server": [
+          "a lower",
+          "A upper",
+          "阿波罗分镜",
+          "波塞冬分镜",
+          "动画交付任务 006",
+          "动画交付任务 007",
+          "动画交付任务 008",
+          "动画交付任务 009",
+          "动画交付任务 010",
+          "动画交付任务 011",
+          "动画交付任务 012",
+          "动画交付任务 013",
+          "动画交付任务 014",
+          "动画交付任务 015",
+          "动画交付任务 016",
+          "动画交付任务 017",
+          "动画交付任务 018",
+          "动画交付任务 019",
+          "动画交付任务 020",
+          "动画交付任务 021",
+          "动画交付任务 022",
+          "动画交付任务 023",
+          "动画交付任务 024",
+          "动画交付任务 025",
+          "动画交付任务 026",
+          "动画交付任务 027",
+          "动画交付任务 028",
+          "动画交付任务 029",
+          "动画交付任务 030",
+          "动画交付任务 031",
+          "动画交付任务 032",
+          "动画交付任务 033",
+          "动画交付任务 034",
+          "动画交付任务 035",
+          "动画交付任务 036",
+          "动画交付任务 037",
+          "动画交付任务 038",
+          "动画交付任务 039",
+          "动画交付任务 040",
+          "动画交付任务 041",
+          "动画交付任务 042",
+          "动画交付任务 043",
+          "动画交付任务 044",
+          "动画交付任务 045",
+          "动画交付任务 046",
+          "动画交付任务 047",
+          "动画交付任务 048",
+          "动画交付任务 049",
+          "动画交付任务 050",
+          "动画交付任务 051"
+        ]
+      }
+    },
+    {
+      "check": "the second page queries offset=50 and keeps the full total",
+      "pass": true
+    },
+    {
+      "check": "the second page contains the remaining five rows",
+      "pass": true,
+      "evidence": {
+        "rows": 5,
+        "ids": [
+          "652ae319-3369-4a3b-afee-6495f1cb9c16",
+          "28869fe1-4670-471d-963f-9774e0a038ee",
+          "0a7f4115-6bb2-4417-8fe2-8d6e0867d429",
+          "de75fd5a-c228-4fd7-aa67-171ff7e57295",
+          "92062dba-8630-4410-9692-f038f4f03ef8"
+        ]
+      }
+    },
+    {
+      "check": "the selected task detail opens",
+      "pass": true
+    },
+    {
+      "check": "the normal detail exposes the independent table-pin action",
+      "pass": true
+    },
+    {
+      "check": "the later-page task is table-pinned and the table reloads",
+      "pass": true
+    },
+    {
+      "check": "the pinned later-page task appears first after the server re-query",
+      "pass": true,
+      "evidence": {
+        "pinId": "652ae319-3369-4a3b-afee-6495f1cb9c16",
+        "pinState": {
+          "page": 0,
+          "loaded": true,
+          "loading": false,
+          "error": null,
+          "total": 55,
+          "path": "/tasks/table?relation=all&completion=all&sort=title&direction=asc&limit=50&offset=0",
+          "ids": [
+            "652ae319-3369-4a3b-afee-6495f1cb9c16",
+            "f0581b93-381b-4b3c-872a-43b6773057ce",
+            "a49f3140-ea1d-421c-961d-c48f60c7f2e0",
+            "f67b5b27-38c8-42dc-aa6b-2948dfff803d",
+            "67b77a13-ad82-447d-bb37-43ad9696d896",
+            "5a8084d4-ee05-491c-a44c-f7fa02d6c311",
+            "52db26f1-c390-4001-a074-1b78b9b96312",
+            "b724a58c-4f16-4b33-9ac9-a46e5baa8ea7",
+            "9c05ea0a-2556-401e-8247-35c443498a2a",
+            "7c68cb34-b39b-431f-8ca0-2871cf12da6c",
+            "06d00c48-7e7a-48b0-834d-a2e090ffe7eb",
+            "9321806a-5f12-4581-af4e-d00be4733542",
+            "f778d043-6d6d-4c6d-bd91-64ce273f7f10",
+            "52f56806-f2fa-4191-bfa1-db70127ddf35",
+            "125a739e-a155-4ca3-9f65-fc36d75858bf",
+            "c42054d6-acfa-4c2b-b852-7ebd41270b70",
+            "e133a9ba-c4c0-45c0-9c12-e29b404551d8",
+            "30e6acf6-8e51-42e6-b8f8-de8a701e62b9",
+            "dd3cb7ad-1e99-498e-b7dd-3d582b04a967",
+            "5cb0524b-efda-4154-98b7-910df4745347",
+            "f2cba06a-ded7-404d-85dd-e6adda702943",
+            "bba5f6fc-4642-414e-a454-5ca3e3727451",
+            "19ce871f-4599-4d13-99aa-e05ae43d62b4",
+            "cbbff8ed-a9a7-4277-aa19-79570112ad15",
+            "b516985a-dfe6-428d-a891-7cd5155bed91",
+            "045300c2-d306-4b39-9eef-2b687ea124a0",
+            "2c1def17-fb39-4b5e-98b2-dedc8d6091ef",
+            "ea9504e1-f299-4ae1-b7ae-944a9de29e80",
+            "205b9595-b749-426d-8df9-6705e60c6e85",
+            "9140d46e-5c32-4b63-9392-41d66652cc2d",
+            "e5591d1e-2e26-42c9-baab-b01923675e1e",
+            "246b0e67-f854-4ba7-88e5-762736c08bc2",
+            "958423de-0ddb-4404-94a6-e5b89609dfe5",
+            "90664cdf-097d-4741-9306-9f8caa680e33",
+            "9993bd96-326d-45c1-8ba5-48e0a708cccd",
+            "1685fd60-9c75-49f1-b570-e43197443c37",
+            "c0e959fa-56d3-44da-97f5-65c3d891d40e",
+            "9ea38e0f-e304-4230-91ff-a195ed7079b5",
+            "66d8caf7-6615-4755-b32e-254398242819",
+            "1504b779-6821-43cd-94c0-01dee3575da9",
+            "08569435-60e9-4813-8159-2e7c04629502",
+            "5512d75e-f62c-40f4-8cab-6d7c8bb8685d",
+            "91f65829-e02b-4e71-ae18-351b200c8f14",
+            "9acc4aa1-ad0d-406a-acff-f6843896d5cb",
+            "63df191e-5636-4bc7-bb44-dc8ac6142fe6",
+            "8faa174e-15da-4e1c-a470-91ba243c1ec0",
+            "ffc90e41-7444-450c-83e4-2e268a8be866",
+            "99eede52-55c7-4345-baaa-104c8bf12b9a",
+            "4e82aaaf-addd-409c-ab58-d72e4223eaec",
+            "d75eb366-6c6e-4ed8-b9f7-08e53e8e14aa"
+          ],
+          "pinned": [
+            {
+              "id": "652ae319-3369-4a3b-afee-6495f1cb9c16",
+              "pin": true
+            },
+            {
+              "id": "f0581b93-381b-4b3c-872a-43b6773057ce",
+              "pin": false
+            },
+            {
+              "id": "a49f3140-ea1d-421c-961d-c48f60c7f2e0",
+              "pin": false
+            },
+            {
+              "id": "f67b5b27-38c8-42dc-aa6b-2948dfff803d",
+              "pin": false
+            },
+            {
+              "id": "67b77a13-ad82-447d-bb37-43ad9696d896",
+              "pin": false
+            },
+            {
+              "id": "5a8084d4-ee05-491c-a44c-f7fa02d6c311",
+              "pin": false
+            },
+            {
+              "id": "52db26f1-c390-4001-a074-1b78b9b96312",
+              "pin": false
+            },
+            {
+              "id": "b724a58c-4f16-4b33-9ac9-a46e5baa8ea7",
+              "pin": false
+            },
+            {
+              "id": "9c05ea0a-2556-401e-8247-35c443498a2a",
+              "pin": false
+            },
+            {
+              "id": "7c68cb34-b39b-431f-8ca0-2871cf12da6c",
+              "pin": false
+            },
+            {
+              "id": "06d00c48-7e7a-48b0-834d-a2e090ffe7eb",
+              "pin": false
+            },
+            {
+              "id": "9321806a-5f12-4581-af4e-d00be4733542",
+              "pin": false
+            },
+            {
+              "id": "f778d043-6d6d-4c6d-bd91-64ce273f7f10",
+              "pin": false
+            },
+            {
+              "id": "52f56806-f2fa-4191-bfa1-db70127ddf35",
+              "pin": false
+            },
+            {
+              "id": "125a739e-a155-4ca3-9f65-fc36d75858bf",
+              "pin": false
+            },
+            {
+              "id": "c42054d6-acfa-4c2b-b852-7ebd41270b70",
+              "pin": false
+            },
+            {
+              "id": "e133a9ba-c4c0-45c0-9c12-e29b404551d8",
+              "pin": false
+            },
+            {
+              "id": "30e6acf6-8e51-42e6-b8f8-de8a701e62b9",
+              "pin": false
+            },
+            {
+              "id": "dd3cb7ad-1e99-498e-b7dd-3d582b04a967",
+              "pin": false
+            },
+            {
+              "id": "5cb0524b-efda-4154-98b7-910df4745347",
+              "pin": false
+            },
+            {
+              "id": "f2cba06a-ded7-404d-85dd-e6adda702943",
+              "pin": false
+            },
+            {
+              "id": "bba5f6fc-4642-414e-a454-5ca3e3727451",
+              "pin": false
+            },
+            {
+              "id": "19ce871f-4599-4d13-99aa-e05ae43d62b4",
+              "pin": false
+            },
+            {
+              "id": "cbbff8ed-a9a7-4277-aa19-79570112ad15",
+              "pin": false
+            },
+            {
+              "id": "b516985a-dfe6-428d-a891-7cd5155bed91",
+              "pin": false
+            },
+            {
+              "id": "045300c2-d306-4b39-9eef-2b687ea124a0",
+              "pin": false
+            },
+            {
+              "id": "2c1def17-fb39-4b5e-98b2-dedc8d6091ef",
+              "pin": false
+            },
+            {
+              "id": "ea9504e1-f299-4ae1-b7ae-944a9de29e80",
+              "pin": false
+            },
+            {
+              "id": "205b9595-b749-426d-8df9-6705e60c6e85",
+              "pin": false
+            },
+            {
+              "id": "9140d46e-5c32-4b63-9392-41d66652cc2d",
+              "pin": false
+            },
+            {
+              "id": "e5591d1e-2e26-42c9-baab-b01923675e1e",
+              "pin": false
+            },
+            {
+              "id": "246b0e67-f854-4ba7-88e5-762736c08bc2",
+              "pin": false
+            },
+            {
+              "id": "958423de-0ddb-4404-94a6-e5b89609dfe5",
+              "pin": false
+            },
+            {
+              "id": "90664cdf-097d-4741-9306-9f8caa680e33",
+              "pin": false
+            },
+            {
+              "id": "9993bd96-326d-45c1-8ba5-48e0a708cccd",
+              "pin": false
+            },
+            {
+              "id": "1685fd60-9c75-49f1-b570-e43197443c37",
+              "pin": false
+            },
+            {
+              "id": "c0e959fa-56d3-44da-97f5-65c3d891d40e",
+              "pin": false
+            },
+            {
+              "id": "9ea38e0f-e304-4230-91ff-a195ed7079b5",
+              "pin": false
+            },
+            {
+              "id": "66d8caf7-6615-4755-b32e-254398242819",
+              "pin": false
+            },
+            {
+              "id": "1504b779-6821-43cd-94c0-01dee3575da9",
+              "pin": false
+            },
+            {
+              "id": "08569435-60e9-4813-8159-2e7c04629502",
+              "pin": false
+            },
+            {
+              "id": "5512d75e-f62c-40f4-8cab-6d7c8bb8685d",
+              "pin": false
+            },
+            {
+              "id": "91f65829-e02b-4e71-ae18-351b200c8f14",
+              "pin": false
+            },
+            {
+              "id": "9acc4aa1-ad0d-406a-acff-f6843896d5cb",
+              "pin": false
+            },
+            {
+              "id": "63df191e-5636-4bc7-bb44-dc8ac6142fe6",
+              "pin": false
+            },
+            {
+              "id": "8faa174e-15da-4e1c-a470-91ba243c1ec0",
+              "pin": false
+            },
+            {
+              "id": "ffc90e41-7444-450c-83e4-2e268a8be866",
+              "pin": false
+            },
+            {
+              "id": "99eede52-55c7-4345-baaa-104c8bf12b9a",
+              "pin": false
+            },
+            {
+              "id": "4e82aaaf-addd-409c-ab58-d72e4223eaec",
+              "pin": false
+            },
+            {
+              "id": "d75eb366-6c6e-4ed8-b9f7-08e53e8e14aa",
+              "pin": false
+            }
+          ],
+          "dom": [
+            "652ae319-3369-4a3b-afee-6495f1cb9c16",
+            "f0581b93-381b-4b3c-872a-43b6773057ce",
+            "a49f3140-ea1d-421c-961d-c48f60c7f2e0",
+            "f67b5b27-38c8-42dc-aa6b-2948dfff803d",
+            "67b77a13-ad82-447d-bb37-43ad9696d896",
+            "5a8084d4-ee05-491c-a44c-f7fa02d6c311",
+            "52db26f1-c390-4001-a074-1b78b9b96312",
+            "b724a58c-4f16-4b33-9ac9-a46e5baa8ea7",
+            "9c05ea0a-2556-401e-8247-35c443498a2a",
+            "7c68cb34-b39b-431f-8ca0-2871cf12da6c",
+            "06d00c48-7e7a-48b0-834d-a2e090ffe7eb",
+            "9321806a-5f12-4581-af4e-d00be4733542",
+            "f778d043-6d6d-4c6d-bd91-64ce273f7f10",
+            "52f56806-f2fa-4191-bfa1-db70127ddf35",
+            "125a739e-a155-4ca3-9f65-fc36d75858bf",
+            "c42054d6-acfa-4c2b-b852-7ebd41270b70",
+            "e133a9ba-c4c0-45c0-9c12-e29b404551d8",
+            "30e6acf6-8e51-42e6-b8f8-de8a701e62b9",
+            "dd3cb7ad-1e99-498e-b7dd-3d582b04a967",
+            "5cb0524b-efda-4154-98b7-910df4745347",
+            "f2cba06a-ded7-404d-85dd-e6adda702943",
+            "bba5f6fc-4642-414e-a454-5ca3e3727451",
+            "19ce871f-4599-4d13-99aa-e05ae43d62b4",
+            "cbbff8ed-a9a7-4277-aa19-79570112ad15",
+            "b516985a-dfe6-428d-a891-7cd5155bed91",
+            "045300c2-d306-4b39-9eef-2b687ea124a0",
+            "2c1def17-fb39-4b5e-98b2-dedc8d6091ef",
+            "ea9504e1-f299-4ae1-b7ae-944a9de29e80",
+            "205b9595-b749-426d-8df9-6705e60c6e85",
+            "9140d46e-5c32-4b63-9392-41d66652cc2d",
+            "e5591d1e-2e26-42c9-baab-b01923675e1e",
+            "246b0e67-f854-4ba7-88e5-762736c08bc2",
+            "958423de-0ddb-4404-94a6-e5b89609dfe5",
+            "90664cdf-097d-4741-9306-9f8caa680e33",
+            "9993bd96-326d-45c1-8ba5-48e0a708cccd",
+            "1685fd60-9c75-49f1-b570-e43197443c37",
+            "c0e959fa-56d3-44da-97f5-65c3d891d40e",
+            "9ea38e0f-e304-4230-91ff-a195ed7079b5",
+            "66d8caf7-6615-4755-b32e-254398242819",
+            "1504b779-6821-43cd-94c0-01dee3575da9",
+            "08569435-60e9-4813-8159-2e7c04629502",
+            "5512d75e-f62c-40f4-8cab-6d7c8bb8685d",
+            "91f65829-e02b-4e71-ae18-351b200c8f14",
+            "9acc4aa1-ad0d-406a-acff-f6843896d5cb",
+            "63df191e-5636-4bc7-bb44-dc8ac6142fe6",
+            "8faa174e-15da-4e1c-a470-91ba243c1ec0",
+            "ffc90e41-7444-450c-83e4-2e268a8be866",
+            "99eede52-55c7-4345-baaa-104c8bf12b9a",
+            "4e82aaaf-addd-409c-ab58-d72e4223eaec",
+            "d75eb366-6c6e-4ed8-b9f7-08e53e8e14aa"
+          ],
+          "notice": "已置顶到任务表单。",
+          "sheet": "动画交付任务 052"
+        }
+      }
+    },
+    {
+      "check": "the pin did not change the task total or version",
+      "pass": true
+    },
+    {
+      "check": "the daily calendar reaches January 2027",
+      "pass": true
+    },
+    {
+      "check": "the daily item form offers start and end dates",
+      "pass": true
+    },
+    {
+      "check": "the ranged item saves and the sheet closes",
+      "pass": true
+    },
+    {
+      "check": "the covered day opens its list",
+      "pass": true
+    },
+    {
+      "check": "the list shows the complete range and keeps one row for the ranged record",
+      "pass": true,
+      "evidence": {
+        "rows": [
+          "跨日事项：整理三天的动画分镜2027年1月8日 至 2027年1月10日 · 未完成",
+          "浏览器跨日事项：三天动画交付2027年1月8日 至 2027年1月10日 · 未完成"
+        ],
+        "meta": "2027年1月8日 至 2027年1月10日 · 未完成"
+      }
+    },
+    {
+      "check": "the detail shows the complete range and a status",
+      "pass": true
+    },
+    {
+      "check": "completing from the detail keeps the same range and updates the status",
+      "pass": true
+    },
+    {
+      "check": "the edit form is prefilled with the same pair",
+      "pass": true
+    },
+    {
+      "check": "the shortened pair returns to the original date list with updated range",
+      "pass": true
+    },
+    {
+      "check": "the detail after editing keeps the new range and the same record",
+      "pass": true
+    },
+    {
+      "check": "the self profile shows hire date, tenure and the authorized e-mail",
+      "pass": true
+    },
+    {
+      "check": "the missing/real tenure is a real projection, not an account-created date",
+      "pass": true,
+      "evidence": "aMY WORKSPACEalpha-one-employeeDisplay title联系电话13900000004邮箱employee@example.test入职日期2024-02-29已入职时长2年8个月12天（截至 2026-11-09）组织信息由管理员维护⌄组织身份员工部门alpha职位Display title团队alpha one直属上级alpha-one-head入职日期2024-02-29已入职时长2年8个月12天（截至 2026-11-09）下属资料0 人⌄暂无下属"
+    },
+    {
+      "check": "five main navigations and three home modules remain intact",
+      "pass": true,
+      "evidence": {
+        "tabs": 5,
+        "modules": 3,
+        "daily": true
+      }
+    },
+    {
+      "check": "logout clears the task table and returns to the login form",
+      "pass": true
+    },
+    {
+      "check": "a different account loads only its own current authorization",
+      "pass": true
+    },
+    {
+      "check": "the employee page has no horizontal document overflow at 320",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "w": 320
+      }
+    },
+    {
+      "check": "the employee page has no horizontal document overflow at 390",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "w": 390
+      }
+    },
+    {
+      "check": "the employee page has no horizontal document overflow at 1440",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "w": 1440
+      }
+    }
+  ]
+}

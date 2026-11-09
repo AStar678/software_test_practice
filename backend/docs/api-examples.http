@@ -375,3 +375,69 @@ If-Match: "{{profileVersion}}"
 Content-Type: application/json
 
 {"avatar":"rabbit"}
+
+# ---------------------------------------------------------------------------
+# A-contract additions: ranged daily items, personal task table, independent
+# table pin, log fill source and the project-owned holiday cache.
+# ---------------------------------------------------------------------------
+
+### Ranged daily item: start/end are explicit company dates, both inclusive.
+POST {{baseUrl}}/api/v1/daily-items
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+Content-Type: application/json
+
+{"startDate":"2026-11-08","endDate":"2026-11-10","body":"跨日事项示例"}
+
+### Read every personal item covering one day. The response keeps startDate/endDate,
+### status=completed|open|overdue and pagination metadata; date is a legacy start projection.
+GET {{baseUrl}}/api/v1/daily-items?date=2026-11-09&limit=50&offset=0
+Authorization: Bearer {{employeeToken}}
+
+### Range intersection mode: from/to are both required, at most 93 days, mutually
+### exclusive with date. A long record is returned with its original full pair.
+GET {{baseUrl}}/api/v1/daily-items?from=2026-11-01&to=2026-12-31&limit=50&offset=0
+Authorization: Bearer {{employeeToken}}
+
+### PATCH an item with the complete date pair; omit the pair to keep the range.
+### A legacy date-only reschedule of a ranged record returns 409 DAILY_ITEM_RANGE_REQUIRED.
+PATCH {{baseUrl}}/api/v1/daily-items/{{dailyItemId}}
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+If-Match: "{{dailyItemEtag}}"
+Content-Type: application/json
+
+{"startDate":"2026-11-08","endDate":"2026-11-11","body":"跨日事项修订"}
+
+### Server-side personal task table: creator/current-owner union, full filters,
+### table-pinned group first, six stable sorts, count-before-page. This is not
+### the general /tasks cursor API and does not accept arbitrary parameters.
+GET {{baseUrl}}/api/v1/tasks/table?relation=all&completion=unfinished&q=分镜&sort=title&direction=asc&limit=50&offset=0
+Authorization: Bearer {{employeeToken}}
+
+### Independent table pin. No task If-Match; it does not change task version,
+### schedule, approval or notifications, and is separate from calendar /pin.
+PUT {{baseUrl}}/api/v1/tasks/{{taskId}}/table-pin
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+
+DELETE {{baseUrl}}/api/v1/tasks/{{taskId}}/table-pin
+Authorization: Bearer {{employeeToken}}
+Idempotency-Key: {{$guid}}
+
+### Read-only full name source for one log business date; no userId and no pagination.
+GET {{baseUrl}}/api/v1/work-logs/fill-source?businessDate=2026-11-08
+Authorization: Bearer {{employeeToken}}
+
+### Shared annual holiday labels. Employees and the independent administrator may
+### read; status is ready|stale|missing. missing has days=[] and updatedAt=null.
+GET {{baseUrl}}/api/v1/calendar/holidays/2026
+Authorization: Bearer {{employeeToken}}
+
+### Explicit administrator refresh; fixed source URL, Idempotency-Key required,
+### whole-year validation/atomic replacement, failed fetch is a safe 502 and
+### preserves the previous days/source/updatedAt.
+POST {{baseUrl}}/api/v1/admin/calendar/holidays/2026/refresh
+Authorization: Bearer {{adminToken}}
+Idempotency-Key: {{$guid}}
+

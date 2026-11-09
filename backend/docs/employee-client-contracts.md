@@ -12,7 +12,7 @@
 | 1 每日事项跨日 | D01–D05、N02 | `V32`、`GET/POST/PATCH/DELETE /daily-items`、范围清单/汇总、旧单日兼容 | 纵向连续月历、事项条、实际命中日清单 |
 | 2 首页卡片 | H01–H03 | `GET /home` 数据范围与顺序保持不变 | 少量预览、整页滚动、先清单再详情 |
 | 3 表单置顶 | F01–F05、C06 | `GET /tasks/table`、`PUT/DELETE /tasks/{id}/table-pin`、`tablePinned/canTablePin` | 独立按钮与列表呈现 |
-| 4 节假日 | Q01、Q05、C10 | `V34` 缓存结构；合同与维护边界见第 4.6 节（运行实现属于第 7 章任务） | 月/日节假日名称与休/班标识 |
+| 4 节假日 | Q01、Q05、C10 | `V34` 缓存 + `V35` 失败状态；`GET /calendar/holidays/{year}`、管理员 `POST /admin/calendar/holidays/{year}/refresh`、后台当前/次年检查；来源/维护见 `backend/docs/holiday-calendar-source.md` | 月/日节假日名称与休/班标识 |
 | 5 日志填充 | L06、D02、L03 | `GET /work-logs/fill-source` 只读完整名称源 | 主动追加、分组、合并正文与长度处理 |
 | 6 手机拖动 | C08–C10 | 不改任务授权/版本/审核；不把日轴限制施加到通用排期 | 长按震动、二维拖动、自动滚动、日轴边界 |
 | 7 入职时长 | P03、O01 | `V34 hire_date`、管理员维护、`hireDate/tenure` 投影 | 本人/下属资料呈现与空态 |
@@ -245,16 +245,18 @@
 - `GET /me`、`GET /me/profile`、有权 `GET /users/{id}` 增加 `hireDate` 与 `tenure`；`tenure` 为 `null` 或 `{years,months,days,asOfDate}`。算法：先取完整周年（闰日截当月最后一天），再从周年锚点取 0–11 个完整月（月末截断），最后取剩余天数；每步不越过公司今天，不用 365/30，不用账号创建日。
 - 邮箱：本人，以及同时满足当前资料查看权、同组织有效人员和实际管理链上级的详情读取者可在 `GET /users/{id}` 得到 `email`（可空）；同级、下属、其他链、跨公司不读。普通目录、下属树摘要、负责人候选、任务参与人摘要均不带电话/邮箱/入职日/时长。管理员不通过业务详情自动获得邮箱。
 
-### 4.6 节假日缓存结构（第 7 章任务继续实现）
+### 4.6 节假日缓存、读取与维护
 
-- `V34 holiday_calendar_years(region,year,source,source_version,source_hash,official_notice,fetched_at,last_attempt_at,last_failure_at,last_failure_code)`。
-- `V34 holiday_calendar_days(region,year,holiday_date,name,is_off_day)`，主键 `(region,year,holiday_date)`，整年验证通过后原子替换。
-- 本次仅新增结构；读取/刷新/后台任务属于第 7 章，尚未在本文声明已交付。
+- `V34 holiday_calendar_years(region,year,source,source_version,source_hash,official_notice,fetched_at,last_attempt_at,last_failure_at,last_failure_code)`；`V35` 允许失败状态行的 `fetched_at` 为 NULL，使缺失年也能跨重启保留 24 小时重试间隔。
+- `V34 holiday_calendar_days(region,year,holiday_date,name,is_off_day)`，主键 `(region,year,holiday_date)`；整年验证通过才在同一短事务内原子替换。
+- `GET /api/v1/calendar/holidays/{year}`：当前有效员工及独立管理员；只读本地缓存，返回 `year,region,status,days,source,updatedAt`，stale/missing 另带安全 `reason`。`ready` 有有效缓存；`stale` 最近刷新失败但仍返回原完整数据；`missing` 为 `days=[]`、`updatedAt=null`，不预测。
+- `POST /api/v1/admin/calendar/holidays/{year}/refresh`：仅独立管理员，必须 `Idempotency-Key`；固定来源配置，不接受客户端 URL；成功写 `audit_logs` 的 `holiday.calendar.refreshed`，失败 502 `HOLIDAY_REFRESH_FAILED` 并保留旧缓存/成功时间。
+- 后台启动后及每日检查当前年/次年；缺失年按年去重，失败后至少 24 小时再试；普通 GET 不逐次访问外网。真实来源核验、年度样本和当前 Windows 实施机无法访问 GitHub raw 的限制见 `backend/docs/holiday-calendar-source.md`。
 
 ### 4.7 数据迁移与回退边界
 
-- 只新增 `V32`–`V34`，不修改 V1–V31 的历史文件与校验和；空库与从当前基线升级收敛到同一结构。
-- 四类新增结构：事项日期范围、表单偏好、入职日、节假日缓存。存量单日事项 `start=end`，表单偏好空，入职日 NULL，日历置顶保留。
+- 只新增 `V32`–`V35`，不修改 V1–V31 的历史文件与校验和；空库与从当前基线升级收敛到同一结构。
+- 四类新增结构：事项日期范围、表单偏好、入职日、节假日缓存；`V35` 只把节假日年度头的 `fetched_at` 放宽为可空以保存缺失年失败状态。存量单日事项 `start=end`，表单偏好空，入职日 NULL，日历置顶保留。
 - 已存跨日记录后，旧二进制不认识 `start_date/end_date`，不能直接作为安全回退：先停止写入、导出新增数据，按第 11 章记录升级前备份在隔离库演练后恢复；不得静默压缩跨日事项。
 
 ### 4.8 错误、版本与分页边界
@@ -271,6 +273,9 @@
 | 非管理员维护员工 | 403 |
 | 日志填充源缺/非法日期、未知参数 | 400 |
 | 管理员读取员工填充源 | 403 `BUSINESS_ROLE_REQUIRED` |
+| 节假日年份非 1900–9999 四位数字 | 400 `INVALID_YEAR` |
+| 节假日刷新失败/年份未公布 | 502 `HOLIDAY_REFRESH_FAILED` + 安全 `reason`，保留旧缓存 |
+| 员工或非当前管理员刷新节假日 | 403 |
 
 分页形式保留三类区别：通用 `/tasks` 为 `nextCursor` 字符串（offset 的字符串形式）；评论为稳定 ID 游标；每日事项、表单、通知等为 `nextOffset` 数字。新接口不统一改写既有三类。
 
@@ -298,4 +303,5 @@
 - 90 个清单 ID：N01–N04、A01–A05、H01–H03、D01–D05、T01–T10、R01–R08、C01–C10、F01–F05、L01–L06、G01–G03、M01–M03、P01–P04、S01–S04、I01–I07、X01–X03、O01–O04、Q01–Q06，本文各出现一次。
 - 54 条主规格：第 3 节逐条承接，未修改项继续以主规格正文为准。
 - 12 项新指导：第 1 节逐条给出 A 落点与 B 责任。
-- 未决边界：节假日真实来源核验与运行实现（第 7 章）、员工 Web 过渡适配（第 8 章）、动画演示（第 9 章）、完整回归（第 10 章）不在本文声明为已完成。
+- 第 7–10 章已在 A 内实现并按 `implementation-notes.md` 的检查记录验证：节假日、员工 Web 过渡、动画演示、完整回归；仍未交付的是 B 的 Flutter 工程、APK、真机手势和系统推送。
+- 本文件是 A 交接资料，不是独立验证 PASS；最终结论以 e13 验证报告为准。

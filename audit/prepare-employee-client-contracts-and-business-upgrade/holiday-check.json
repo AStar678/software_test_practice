@@ -1,0 +1,767 @@
+{
+  "updated": "2026-11-09T14:07:12.606351+00:00",
+  "checks": [
+    {
+      "check": "an employee reads a missing year as a stable empty state",
+      "pass": true,
+      "evidence": {
+        "year": 2026,
+        "region": "CN",
+        "status": "missing",
+        "days": [],
+        "source": "fixture-holiday-source",
+        "updatedAt": null
+      }
+    },
+    {
+      "check": "a missing GET does not invoke the external source when background is disabled",
+      "pass": true,
+      "evidence": {
+        "2026": 5,
+        "2027": 2
+      }
+    },
+    {
+      "check": "the independent administrator can read the shared holiday labels outside /admin",
+      "pass": true,
+      "evidence": {
+        "year": 2026,
+        "region": "CN",
+        "status": "missing",
+        "days": [],
+        "source": "fixture-holiday-source",
+        "updatedAt": null
+      }
+    },
+    {
+      "check": "an employee cannot refresh a holiday year",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "FORBIDDEN",
+        "message": "需要独立管理员身份"
+      }
+    },
+    {
+      "check": "an administrator refresh requires an idempotency key",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "IDEMPOTENCY_KEY_REQUIRED",
+        "message": "请提供8至80位 Idempotency-Key"
+      }
+    },
+    {
+      "check": "a year below 1900 is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_YEAR",
+        "message": "年份须为 1900–9999 的四位公历年"
+      }
+    },
+    {
+      "check": "a year above 9999 is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_YEAR",
+        "message": "年份须为 1900–9999 的四位公历年"
+      }
+    },
+    {
+      "check": "POST /admin/calendar/holidays/2026/refresh succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "the validated 2026 official notice becomes a ready cache",
+      "pass": true,
+      "evidence": {
+        "year": 2026,
+        "region": "CN",
+        "status": "ready",
+        "days": [
+          {
+            "date": "2026-01-01",
+            "name": "元旦",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-01-02",
+            "name": "元旦",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-01-03",
+            "name": "元旦",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-01-04",
+            "name": "元旦",
+            "isOffDay": false
+          },
+          {
+            "date": "2026-02-14",
+            "name": "春节",
+            "isOffDay": false
+          },
+          {
+            "date": "2026-02-15",
+            "name": "春节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-02-16",
+            "name": "春节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-02-17",
+            "name": "春节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-02-18",
+            "name": "春节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-02-19",
+            "name": "春节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-02-20",
+            "name": "春节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-02-21",
+            "name": "春节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-02-22",
+            "name": "春节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-02-23",
+            "name": "春节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-02-28",
+            "name": "春节",
+            "isOffDay": false
+          },
+          {
+            "date": "2026-04-04",
+            "name": "清明节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-04-05",
+            "name": "清明节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-04-06",
+            "name": "清明节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-05-01",
+            "name": "劳动节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-05-02",
+            "name": "劳动节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-05-03",
+            "name": "劳动节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-05-04",
+            "name": "劳动节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-05-05",
+            "name": "劳动节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-05-09",
+            "name": "劳动节",
+            "isOffDay": false
+          },
+          {
+            "date": "2026-06-19",
+            "name": "端午节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-06-20",
+            "name": "端午节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-06-21",
+            "name": "端午节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-09-20",
+            "name": "国庆节",
+            "isOffDay": false
+          },
+          {
+            "date": "2026-09-25",
+            "name": "中秋节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-09-26",
+            "name": "中秋节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-09-27",
+            "name": "中秋节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-10-01",
+            "name": "国庆节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-10-02",
+            "name": "国庆节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-10-03",
+            "name": "国庆节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-10-04",
+            "name": "国庆节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-10-05",
+            "name": "国庆节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-10-06",
+            "name": "国庆节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-10-07",
+            "name": "国庆节",
+            "isOffDay": true
+          },
+          {
+            "date": "2026-10-10",
+            "name": "国庆节",
+            "isOffDay": false
+          }
+        ],
+        "source": "fixture-holiday-source",
+        "updatedAt": "2026-11-09T14:06:30.722986Z"
+      }
+    },
+    {
+      "check": "the cache keeps the official New Year rest day and Spring Festival make-up workday",
+      "pass": true,
+      "evidence": [
+        {
+          "date": "2026-01-01",
+          "name": "元旦",
+          "isOffDay": true
+        },
+        {
+          "date": "2026-01-02",
+          "name": "元旦",
+          "isOffDay": true
+        },
+        {
+          "date": "2026-01-03",
+          "name": "元旦",
+          "isOffDay": true
+        }
+      ]
+    },
+    {
+      "check": "days are sorted by date and contain only that year",
+      "pass": true,
+      "evidence": 39
+    },
+    {
+      "check": "the successful admin refresh is recorded in the audit trail",
+      "pass": true,
+      "evidence": [
+        [
+          "holiday.calendar.refreshed",
+          "fixture-company-admin"
+        ]
+      ]
+    },
+    {
+      "check": "an idempotent retry replays without another source request",
+      "pass": true,
+      "evidence": {
+        "before": 1,
+        "after": 1
+      }
+    },
+    {
+      "check": "a concurrent reader sees the complete old year before the replace commits",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "the slow refresh completes successfully",
+      "pass": true,
+      "evidence": [
+        [
+          200,
+          {
+            "year": 2026,
+            "region": "CN",
+            "status": "ready",
+            "days": [
+              {
+                "date": "2026-01-01",
+                "name": "元旦修订",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-01-02",
+                "name": "元旦",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-01-03",
+                "name": "元旦",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-01-04",
+                "name": "元旦",
+                "isOffDay": false
+              },
+              {
+                "date": "2026-02-14",
+                "name": "春节",
+                "isOffDay": false
+              },
+              {
+                "date": "2026-02-15",
+                "name": "春节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-02-16",
+                "name": "春节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-02-17",
+                "name": "春节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-02-18",
+                "name": "春节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-02-19",
+                "name": "春节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-02-20",
+                "name": "春节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-02-21",
+                "name": "春节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-02-22",
+                "name": "春节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-02-23",
+                "name": "春节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-02-28",
+                "name": "春节",
+                "isOffDay": false
+              },
+              {
+                "date": "2026-04-04",
+                "name": "清明节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-04-05",
+                "name": "清明节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-04-06",
+                "name": "清明节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-05-01",
+                "name": "劳动节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-05-02",
+                "name": "劳动节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-05-03",
+                "name": "劳动节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-05-04",
+                "name": "劳动节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-05-05",
+                "name": "劳动节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-05-09",
+                "name": "劳动节",
+                "isOffDay": false
+              },
+              {
+                "date": "2026-06-19",
+                "name": "端午节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-06-20",
+                "name": "端午节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-06-21",
+                "name": "端午节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-09-20",
+                "name": "国庆节",
+                "isOffDay": false
+              },
+              {
+                "date": "2026-09-25",
+                "name": "中秋节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-09-26",
+                "name": "中秋节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-09-27",
+                "name": "中秋节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-10-01",
+                "name": "国庆节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-10-02",
+                "name": "国庆节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-10-03",
+                "name": "国庆节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-10-04",
+                "name": "国庆节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-10-05",
+                "name": "国庆节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-10-06",
+                "name": "国庆节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-10-07",
+                "name": "国庆节",
+                "isOffDay": true
+              },
+              {
+                "date": "2026-10-10",
+                "name": "国庆节",
+                "isOffDay": false
+              }
+            ],
+            "source": "fixture-holiday-source",
+            "updatedAt": "2026-11-09T14:06:31.776566Z"
+          }
+        ]
+      ]
+    },
+    {
+      "check": "after commit every reader sees the complete new year",
+      "pass": true,
+      "evidence": {
+        "date": "2026-01-01",
+        "name": "元旦修订",
+        "isOffDay": true
+      }
+    },
+    {
+      "check": "the ready 2026 labels are readable by founder",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "the ready 2026 labels are readable by employee",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "the ready 2026 labels are readable by other-company employee",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "the ready 2026 labels are readable by independent administrator",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "GET /tasks/abc172a3-e302-42fc-8d75-c1185cc50de8 succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /admin/calendar/holidays/2026/refresh succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "GET /tasks/abc172a3-e302-42fc-8d75-c1185cc50de8 succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "a holiday refresh does not change task start/due/version",
+      "pass": true,
+      "evidence": {
+        "startAt": [
+          "2027-01-01T01:00:00Z",
+          "2027-01-01T01:00:00Z"
+        ],
+        "dueAt": [
+          "2027-01-04T10:00:00Z",
+          "2027-01-04T10:00:00Z"
+        ],
+        "rowVersion": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "check": "the ready year survives a backend restart with the same source/updatedAt",
+      "pass": true,
+      "evidence": {
+        "status": "ready",
+        "beforeUpdated": "2026-11-09T14:06:32.159087Z",
+        "afterUpdated": "2026-11-09T14:06:32.159087Z",
+        "beforeDays": 39,
+        "afterDays": 39,
+        "firstBefore": {
+          "date": "2026-01-01",
+          "name": "元旦修订",
+          "isOffDay": true
+        },
+        "firstAfter": {
+          "date": "2026-01-01",
+          "name": "元旦修订",
+          "isOffDay": true
+        }
+      }
+    },
+    {
+      "check": "restart did not fetch the cached year again",
+      "pass": true,
+      "evidence": {
+        "before": 3,
+        "after": 3
+      }
+    },
+    {
+      "check": "a failed source refresh is a safe 502 with a reason code",
+      "pass": true,
+      "evidence": {
+        "code": "HOLIDAY_REFRESH_FAILED",
+        "message": "节假日数据刷新失败，已保留现有缓存",
+        "reason": "HOLIDAY_SOURCE_HTTP"
+      }
+    },
+    {
+      "check": "a failed refresh preserves the old days/source/updatedAt and reports stale",
+      "pass": true,
+      "evidence": {
+        "status": "stale",
+        "updatedAt": "2026-11-09T14:06:32.159087Z",
+        "days": 39
+      }
+    },
+    {
+      "check": "a cross-year payload is rejected without publishing a partial year",
+      "pass": true,
+      "evidence": {
+        "code": "HOLIDAY_REFRESH_FAILED",
+        "message": "节假日数据刷新失败，已保留现有缓存",
+        "reason": "HOLIDAY_DATE_OUT_OF_YEAR"
+      }
+    },
+    {
+      "check": "the rejected year stays missing and has no fabricated days",
+      "pass": true,
+      "evidence": {
+        "year": 2027,
+        "region": "CN",
+        "status": "missing",
+        "days": [],
+        "source": "fixture-holiday-source",
+        "updatedAt": null,
+        "reason": "HOLIDAY_DATE_OUT_OF_YEAR"
+      }
+    },
+    {
+      "check": "POST /admin/calendar/holidays/2027/refresh succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "a repaired 2027 payload replaces only the 2027 year",
+      "pass": true,
+      "evidence": {
+        "year": 2027,
+        "region": "CN",
+        "status": "ready",
+        "days": [
+          {
+            "date": "2027-01-01",
+            "name": "元旦",
+            "isOffDay": true
+          },
+          {
+            "date": "2027-01-02",
+            "name": "元旦",
+            "isOffDay": false
+          }
+        ],
+        "source": "fixture-holiday-source",
+        "updatedAt": "2026-11-09T14:06:40.938425Z"
+      }
+    },
+    {
+      "check": "startup checks the current and next year exactly once each",
+      "pass": true,
+      "evidence": {
+        "2026": 1,
+        "2027": 1,
+        "2028": 1
+      }
+    },
+    {
+      "check": "repeated reads of a missing year coalesce into one bounded intent",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "first": 200
+      }
+    },
+    {
+      "check": "an unavailable year is not retried on every GET",
+      "pass": true,
+      "evidence": 1
+    },
+    {
+      "check": "the background fixture still serves the ready cached years",
+      "pass": true,
+      "evidence": {
+        "2026": 1,
+        "2027": 1,
+        "2028": 1
+      }
+    }
+  ]
+}

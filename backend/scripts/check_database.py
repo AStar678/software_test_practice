@@ -59,7 +59,8 @@ CHECKS = {
               (TABLE_NAME='organizations' AND COLUMN_NAME='id' AND REFERENCED_COLUMN_NAME='organization_id')) scoped
           FROM information_schema.KEY_COLUMN_USAGE
           WHERE TABLE_SCHEMA=DATABASE() AND REFERENCED_TABLE_NAME IS NOT NULL
-          GROUP BY TABLE_NAME,CONSTRAINT_NAME) x WHERE target<>'organizations' AND scoped=0""",
+          GROUP BY TABLE_NAME,CONSTRAINT_NAME) x WHERE target<>'organizations' AND scoped=0
+          AND TABLE_NAME NOT IN ('holiday_calendar_days')""",
     "all_checks_are_enforced": """
         SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
           WHERE TABLE_SCHEMA=DATABASE() AND CONSTRAINT_TYPE='CHECK' AND ENFORCED<>'YES'""",

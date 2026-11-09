@@ -32,6 +32,26 @@ public class Writes {
     }
 
     /**
+     * Return a previously committed response for the same idempotency key without running the
+     * command. Used by commands that must fetch an external resource before entering their short
+     * write transaction: a retry of a successful request must replay the result without another
+     * network call. Returns {@code null} when this key has not committed yet.
+     */
+    public Map<String,Object> replayIfPresent(Actor actor,String key,String scope,Object body,String ifMatch) {
+        if(key==null || !key.matches("[A-Za-z0-9._:-]{8,80}")) throw new ApiException(400,"IDEMPOTENCY_KEY_REQUIRED","请提供8至80位 Idempotency-Key");
+        String digest=AuthService.hash(scope+"\n"+canonical(mapper.valueToTree(body))+"\n"+Objects.toString(ifMatch,""));
+        var previous=db.find("SELECT * FROM idempotency_keys WHERE organization_id=? AND user_id=? AND scope=? AND key_value=?",actor.organizationId(),actor.id(),scope,key);
+        if(previous==null) return null;
+        if(!digest.equals(s(previous,"requestHash"))) throw new ApiException(409,"IDEMPOTENCY_CONFLICT","同一幂等键不能用于不同请求");
+        var cached=db.parse(s(previous,"responseJson"));
+        Object saved=cached.remove("_authzVersion");
+        var org=db.one("SELECT authz_version FROM organizations WHERE id=?",actor.organizationId());
+        if(!(saved instanceof Number value) || value.longValue()!=n(org,"authzVersion"))
+            throw new ApiException(409,"AUTHORIZATION_CHANGED","权限已变化，请使用新请求");
+        return cached;
+    }
+
+    /**
      * Same transaction and idempotency contract, for commands that return a one-time secret. Named
      * separately because Java cannot overload on a generic type argument.
      */

@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import uuid
 from migration_precheck import BASE, Mysql, DEFAULT_OPTION_FILE, fixed_precheck
 from fixed_model_fixture import Fixture, quote
@@ -30,7 +31,7 @@ def main():
         for host in ('localhost','127.0.0.1'):
             admin.server_side(f'GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,ALTER,INDEX,REFERENCES,DROP ON `{name}`.* TO '+quote(values['PANDORA_DB_USER'])+'@'+quote(host))
         for args in ([],['--database',name]):
-            result=subprocess.run(['python3',str(BASE/'scripts/prepare_demo.py'),*args],capture_output=True,text=True)
+            result=subprocess.run([sys.executable,str(BASE/'scripts/prepare_demo.py'),*args],capture_output=True,text=True)
             check('preparation refuses missing explicit database/marker arguments',result.returncode!=0)
         manifest=prepare(name,'owned-demo-v2',True,18194)
         before=snapshot();repeat=prepare(name,'owned-demo-v2',False,18194)
@@ -48,7 +49,7 @@ def main():
                 result=subprocess.run(['java','-jar',str(BASE/'target/pandora-backend-0.1.0.jar'),*extra],env=env,stdout=log,stderr=subprocess.STDOUT,timeout=45)
             check('startup seed refuses missing/mismatched explicit target without touching business data',result.returncode!=0 and before==snapshot())
         check('read-only current precheck accepts the stored fixed organization',fixed_precheck(db)['status']=='ready')
-        result=subprocess.run(['python3',str(BASE/'scripts/check_database.py'),'--database',name,'--output',str(OUTPUT.with_name('demo-integrity.json'))],capture_output=True,text=True)
+        result=subprocess.run([sys.executable,str(BASE/'scripts/check_database.py'),'--database',name,'--output',str(OUTPUT.with_name('demo-integrity.json'))],capture_output=True,text=True)
         check('persistent demo satisfies all read-only database integrity checks',result.returncode==0)
         check('demo has two departments, four teams and complete single-position staff',db.scalar('SELECT COUNT(*) FROM departments')==2 and db.scalar('SELECT COUNT(*) FROM teams')==4 and db.scalar('SELECT COUNT(*) FROM users')==db.scalar('SELECT COUNT(*) FROM employee_placements'))
         check('every department and team has exactly one head',db.scalar("SELECT COUNT(*) FROM employee_placements WHERE placement_type='department_head'")==2 and db.scalar("SELECT COUNT(*) FROM employee_placements WHERE placement_type='team_head'")==4)
@@ -78,26 +79,40 @@ def main():
             check('admin cannot read employee task business APIs',call('GET','/tasks',who='admin')[0]==403)
             check('employee cannot read admin management APIs',call('GET','/admin/employees',who='employee')[0]==403)
             status,rows=call('GET','/tasks?limit=100&offset=0',who='employee')
-            status2,second=call('GET','/tasks?limit=100&offset=100',who='employee')
-            check('employee task table has more than two 50-row pages after restart',status==status2==200 and len(rows['items'])==100 and len(second['items'])>0,{'first':len(rows.get('items',[])),'second':len(second.get('items',[]))})
+            check('the default demo no longer carries the retired 110-row pagination dump',
+                  status==200 and len(rows['items']) < 100, len(rows.get('items',[])))
+            for who in ('upper','middle','product-head-1','employee'):
+                status,table=call('GET','/tasks/table?relation=created&limit=100',who=who)
+                check(who+' has 10-20 meaningful created tasks',status==200 and 10 <= table.get('total',0) <= 20, table.get('total'))
             check('company retains ten ordered managed items',len(call('GET','/admin/company',who='admin')[1]['items'])==10)
             task=lambda key:manifest['objects']['task-'+key]['id']
             created=call('GET','/tasks/'+task('creator-only'),who='employee')[1]
             check('creator-only demo retains original creator and excludes creator from effective assignees',created.get('originalCreatorId')==ids['employee'] and ids['employee'] not in created.get('assigneeIds',[]))
             takeover=call('GET','/tasks/'+task('takeover'),who='colleague')[1]
             check('takeover recipient can read without being rewritten as original creator',takeover.get('originalCreatorId')==ids['middle'] and takeover.get('businessOwnerId')==ids['colleague'])
-            for who,expected in (('middle',6),('product-head-1',3)):
+            for who,expected in (('middle',3),('product-head-1',1)):
                 status,authors=call('GET','/work-log-authors',who=who)
                 check(who+' log directory includes indirect/direct subordinate demo authors',status==200 and len(authors.get('items',[]))>=expected)
+            business=manifest['businessDate']
+            for who in ('upper','middle','product-head-1','employee'):
+                status,items=call('GET','/daily-items?date='+business+'&limit=100',who=who)
+                status2,logs=call('GET','/work-logs?scope=self&limit=100',who=who)
+                status3,notes=call('GET','/notifications?limit=100',who=who)
+                check(who+' has own ranged/daily items, recent logs and notifications',
+                      status==200 and len(items.get('items',[]))>=2 and status2==200 and len(logs.get('items',[]))>=3
+                      and status3==200 and len(notes.get('items',[]))>=1,
+                      {'items':len(items.get('items',[])),'logs':len(logs.get('items',[])),'notes':len(notes.get('items',[]))})
             frozen=manifest['objects']['log-marketing-2']['id']
             status,log=call('GET','/work-logs/'+frozen,who='marketing')
             check('frozen log is read-only from its real first creation instant',status==200 and log.get('frozen') is True and log.get('editable') is False)
             check('deletion/recreation keeps one day slot and first-creation history',db.scalar("SELECT row_version FROM work_logs WHERE id="+quote(manifest['objects']['log-colleague-1']['id']))==3)
             objects=manifest['objects']
-            for key in ('cross-month','cross-year','full-coverage','midnight','point'):
-                detail=call('GET','/tasks/'+task(key),who='employee')[1]
-                check(key+' schedule demo is present and readable as the real employee',detail.get('id')==task(key) or detail.get('taskId')==task(key))
-            check('eight real concurrent timed and eight all-day tasks exist',all('task-overlap-'+str(i) in objects and 'task-all-day-'+str(i) in objects for i in range(1,9)))
+            check('dense/overlap/cross-year/zero-length extremes stay out of the default demo',
+                  not any(key.startswith(('task-page-','task-overlap-','task-all-day-')) or key in
+                          ('task-cross-year','task-midnight','task-point','task-full-coverage') for key in objects),
+                  sorted(key for key in objects if key.startswith('task-')))
+            check('the default demo keeps a small cross-month task for realistic range coverage',
+                  'task-cross-month' in objects, objects.get('task-cross-month'))
             changed=call('GET','/tasks/'+task('takeover'),who='colleague')[1]
             status,result=call('PATCH','/tasks/'+task('takeover'),{'command':'change','description':'Persisted real demo edit','reason':'restart persistence'},'colleague',changed['rowVersion'])
             check('taken-over task edit requires operator manager',status==200 and result.get('outcome')=='pending')

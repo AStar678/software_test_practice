@@ -535,6 +535,7 @@
       if (canReopen(task)) buttons.push('<button type="button" class="btn primary" data-action="p-reopen-task" data-id="' + attr(id) + '">重开任务</button>');
       if (raw.canHandover) buttons.push('<button type="button" class="btn" data-action="p-open-handover" data-id="' + attr(id) + '">专用交接</button>');
       if (raw.canPin) buttons.push('<button type="button" class="btn" data-action="p-toggle-task-pin" data-id="' + attr(id) + '">' + (task.pinned ? '取消置顶' : '置顶到我的月视图') + '</button>');
+      if (raw.canTablePin) buttons.push('<button type="button" class="btn" data-action="p-toggle-table-pin" data-id="' + attr(id) + '">' + (raw.tablePinned ? '取消表单置顶' : '置顶到任务表单') + '</button>');
       if (requestId) buttons.push('<button type="button" class="btn" data-action="p-open-approval" data-id="' + attr(requestId) + '">查看当前申请</button>');
     }
     // Comments are an independent aggregate at the bottom of the detail (chapter 8.4).
@@ -832,6 +833,25 @@
       P.notice(next ? "已置顶到我的月视图。" : "已取消置顶。");
     });
   }
+  function toggleTablePin(id) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
+    const task = taskById(id);
+    if (!task) return;
+    const next = !task.tablePinned;
+    return P.busy(async function () {
+      await P.mutation("table-pin:" + id, next ? "PUT" : "DELETE", "/tasks/" + encodeURIComponent(id) + "/table-pin", null, null);
+      // The pin changes the grouped order. Force the table back to its first page after the shared
+      // reload so a later-page pin cannot leave the newly pinned row off-screen.
+      await P.reload();
+      if (P.taskForm && P.taskForm.state && P.taskForm.state.active) {
+        P.taskForm.state.page = 0;
+        await P.taskForm.refresh();
+      }
+      const view = taskDetailView(id);
+      if (view) replaceTopSheet(view);
+      P.notice(next ? "已置顶到任务表单。" : "已取消表单置顶。");
+    });
+  }
 
   function selectedHandoverTarget(source) {
     const node = document.querySelector('[data-handover-target="' + source + '"]');
@@ -1069,6 +1089,7 @@
     if (action === "submit-complete") return openAction("complete", id);
     if (action === "p-reopen-task") return openAction("reopen", id);
     if (action === "p-toggle-task-pin") return togglePin(id);
+    if (action === "p-toggle-table-pin") return toggleTablePin(id);
     if (action === "p-confirm-reopen") return saveAction("reopen", id);
     if (action === "p-approve-request") return decide(id, "approve");
     if (action === "p-reject-request" || action === "p-withdraw-request") {

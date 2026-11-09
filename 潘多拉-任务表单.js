@@ -28,7 +28,8 @@
     filters: defaultFilters(), sort: { key: "start", dir: "asc" },
     page: 0, queryTimer: 0, loadId: 0, result: null,
     returnContext: null, discarding: false, scrollMemory: null,
-    columns: "overview", filtersOpen: false
+    columns: "overview", filtersOpen: false,
+    server: { total: 0, limit: PAGE_SIZE, offset: 0, nextOffset: null }
   };
 
   /* ---------- 纯结果管线：不依赖会话状态，可由 node 检查脚本直接加载 ---------- */
@@ -160,11 +161,49 @@
     try { new Intl.DateTimeFormat("en-US", { timeZone: value }).format(new Date()); return value; } catch (_) { return null; }
   }
   function rawRows() { return Array.isArray(T.rows) ? T.rows : []; }
-  function filteredResult() {
-    return computeTaskForm(rawRows(), {
-      accountId: accountId(), timeZone: companyZone() || "UTC", filters: T.filters,
-      sort: T.sort, page: T.page, pageSize: PAGE_SIZE, nowMs: Date.now()
+  /* The form uses the server pipeline for the complete filtered/ordered result. The pure functions
+     above remain the shared contract checks, but the page never filters or re-sorts the current page. */
+  function apiRelation(value) { return value === "own" ? "assigned" : value === "created" ? "created" : "all"; }
+  function apiCompletion(value) { return value === "open" ? "unfinished" : value === "done" ? "completed" : "all"; }
+  function apiSortKey(value) {
+    return ({ start: "startAt", due: "dueAt", urgency: "priority", status: "state" })[value] || value;
+  }
+  function tableQueryPath() {
+    const params = new URLSearchParams();
+    params.set("relation", apiRelation(T.filters.relation));
+    params.set("completion", apiCompletion(T.filters.completion));
+    if (T.filters.query.trim()) params.set("q", T.filters.query.trim().slice(0, QUERY_MAX));
+    if (T.filters.from) params.set("from", T.filters.from);
+    if (T.filters.to) params.set("to", T.filters.to);
+    params.set("sort", apiSortKey(T.sort.key));
+    params.set("direction", T.sort.dir);
+    params.set("limit", String(PAGE_SIZE));
+    params.set("offset", String(T.page * PAGE_SIZE));
+    return "/tasks/table?" + params.toString();
+  }
+  function applyServerPage(result) {
+    const items = (result.items || []).map(function (raw) {
+      P.rememberPeople(raw.participants);
+      return P.mapTask(raw);
     });
+    const total = Number(result.total || 0);
+    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    T.page = Math.min(Math.max(0, T.page), pages - 1);
+    T.server = { total: total, limit: PAGE_SIZE, offset: T.page * PAGE_SIZE, nextOffset: result.nextOffset == null ? null : result.nextOffset };
+    T.rows = items;
+    T.result = { paged: { page: T.page, pages: pages, begin: T.page * PAGE_SIZE,
+      end: T.page * PAGE_SIZE + items.length, total: total, items: items } };
+    T.loaded = true;
+  }
+  function emptyServerPage() {
+    return { paged: { page: 0, pages: 1, begin: 0, end: 0, total: 0, items: [] } };
+  }
+  function hasFilters() {
+    return T.filters.relation !== "all" || T.filters.completion !== "all"
+      || !!String(T.filters.query || "").trim() || !!T.filters.from || !!T.filters.to;
+  }
+  function filteredResult() {
+    return T.result || emptyServerPage();
   }
   function resetFormState() {
     clearTimeout(T.queryTimer); T.queryTimer = 0;
@@ -238,7 +277,7 @@
   }
   function titleCell(task) {
     return '<th scope="row" data-field="title"><button type="button" class="p-table-title" data-task="' + esc(task.id) + '" title="' + esc(task.title || "任务") + '"><span class="p-table-title-text">' + esc(task.title || "任务") + '</span></button>' +
-      (T.columns === "overview" ? '<div class="p-table-title-meta">' + relationTags(task) + '<span class="p-table-priority" data-priority="' + esc(task.urgency || "中") + '">' + esc(task.urgency || "中") + '</span></div>' : '') + '</th>';
+      (T.columns === "overview" ? '<div class="p-table-title-meta">' + relationTags(task) + '<span class="p-table-priority" data-priority="' + esc(task.urgency || "中") + '">' + esc(task.urgency || "中") + '</span>' + (task.tablePinned ? '<span class="p-table-tag">表单置顶</span>' : '') + '</div>' : '') + '</th>';
   }
   function summaryCell(task) {
     const raw = taskRaw(task), kind = task.pendingKind || raw.pendingKind;
@@ -403,7 +442,7 @@
   function paintFromStart() {
     const scroller = document.getElementById("p-table-scroll");
     T.scrollMemory = { top: 0, left: scroller ? scroller.scrollLeft : 0 };
-    paintResults();
+    if (tableActive()) refreshTable();
   }
 
   function paintResults() {
@@ -448,7 +487,8 @@
     T.page = result.paged.page;
     head.innerHTML = headHTML();
     if (!rawRows().length) {
-      body.innerHTML = emptyRow("当前没有可查看的任务。", '<button type="button" class="btn tiny-btn" data-action="task-table-refresh">重新加载</button>');
+      body.innerHTML = emptyRow(hasFilters() ? "没有符合筛选条件的任务。" : "当前没有可查看的任务。",
+        '<button type="button" class="btn tiny-btn" data-action="' + (hasFilters() ? "task-table-clear-filters" : "task-table-refresh") + '">' + (hasFilters() ? "清空筛选" : "重新加载") + '</button>');
       if (pager) pager.innerHTML = "";
       return;
     }
@@ -491,11 +531,10 @@
       const zone = await ensureCompanyZone(loadId);
       if (!tableActive() || loadId !== T.loadId) return;
       if (!zone) throw new Error("公司时区缺失或无效，已停止显示任务，以免按设备时区误算日期。");
-      await P.refreshTasks();
+      const result = await P.request(tableQueryPath());
       if (!tableActive() || loadId !== T.loadId) return;
-      // The shared mapped task set is the single source for filters, sorting and the table cells.
-      T.rows = TASKS.slice();
-      T.loaded = true; T.loading = false; T.error = null;
+      applyServerPage(result);
+      T.loading = false; T.error = null;
       paintResults();
     } catch (error) {
       if (error.name === "AbortError" || loadId !== T.loadId) return;
@@ -671,9 +710,8 @@
   P.reload = async function () {
     const data = await previousReload.apply(P, arguments);
     if (T.active) {
-      T.rows = TASKS.slice();
-      T.loaded = true; T.loading = false; T.error = null;
-      if (tableActive()) paintResults();
+      T.loaded = false; T.loading = true; T.error = null;
+      if (tableActive()) refreshTable();
     }
     return data;
   };
@@ -719,6 +757,7 @@
     pageSize: PAGE_SIZE, queryMax: QUERY_MAX,
     state: T,
     open: openTable, close: closeTable, refresh: refreshTable, paint: paintResults,
+    queryPath: tableQueryPath, applyServerPage: applyServerPage,
     compute: computeTaskForm, matches: matchesTaskFilters, sort: sortTaskRows,
     page: pageTaskRows, relation: relationOf, isDone: taskIsDone, isOverdue: taskIsOverdue,
     businessDates: taskBusinessDates, companyDateKey: companyDateKey, companyDateTime: companyDateTime,

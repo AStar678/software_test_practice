@@ -381,6 +381,7 @@
       status: t.executionState || "todo", progressNote: t.progressNote || "", reviewNote: "",
       frozen: !!t.frozen || !!t.pending, pinned: !!t.pinned, assignedAt: t.assignedAt || null,
       pendingKind: t.pendingKind || null, tag: (t.tags || [])[0] || null, tagId: (t.tagIds || [])[0] || null,
+      tablePinned: !!t.tablePinned, canTablePin: !!t.canTablePin,
       rowVersion: t.rowVersion, acceptanceCriteria: t.acceptanceCriteria || "", raw: t };
   };
   // A display copy for calendars only; TASKS, task details and all write preconditions remain effective.
