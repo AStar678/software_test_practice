@@ -77,6 +77,8 @@ class TaskBatchReadTest {
                 var result=new ArrayList<Map<String,Object>>();for(int i=1;i<args.length;i++) if(businessOwners.containsKey(args[i])) result.add(row("taskId",args[i],"employeeId",businessOwners.get(args[i])));return result;
             }
             if(sql.startsWith("SELECT task_id FROM user_task_pins")) return List.of();
+            if(sql.startsWith("SELECT task_id FROM user_task_table_pins")) return List.of();
+            if(sql.startsWith("SELECT 1 FROM user_task_table_pins")) return List.of();
             if(sql.startsWith("SELECT * FROM approval_requests") || sql.startsWith("SELECT id,task_id,proposed_version_id")) {
                 if(sql.contains("status='pending' AND task_id IN")) return requests.values().stream().filter(r->"pending".equals(s(r,"status")) && Arrays.asList(args).contains(s(r,"taskId"))).map(LinkedHashMap::new).map(r->(Map<String,Object>)r).toList();
                 if(sql.contains("task_id=? AND status='pending'")) return requests.values().stream().filter(r->Objects.equals(args[1],s(r,"taskId")) && "pending".equals(s(r,"status"))).map(LinkedHashMap::new).map(r->(Map<String,Object>)r).toList();

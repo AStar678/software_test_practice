@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.sql.Time;
+import java.text.Collator;
 import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -38,6 +39,24 @@ public class TaskService {
     private static final Set<String> OPERATIONS = Set.of("create", "change", "reschedule", "progress", "complete", "reopen", "handover");
     private static final Set<String> STATES = Set.of("todo", "doing", "done");
     private static final Set<String> PRIORITIES = Set.of("urgent", "high", "medium", "low");
+    /** Personal task-table query contract (design D3); every other parameter is rejected. */
+    private static final Set<String> TABLE_PARAMETERS = Set.of("relation", "completion", "q", "from", "to",
+            "sort", "direction", "limit", "offset");
+    private static final Set<String> TABLE_RELATIONS = Set.of("all", "assigned", "created");
+    private static final Set<String> TABLE_COMPLETIONS = Set.of("all", "unfinished", "completed");
+    private static final Set<String> TABLE_SORTS = Set.of("title", "createdAt", "startAt", "dueAt", "priority", "state");
+    private static final Map<String, Integer> PRIORITY_ORDER = Map.of("urgent", 0, "high", 1, "medium", 2, "low", 3);
+    private static final Map<String, Integer> STATE_ORDER = Map.of("todo", 0, "doing", 1, "done", 2);
+    /**
+     * The documented simplified-Chinese collation for the shared name sort. The runtime JDK/provider
+     * is asserted by the contract checks; clients consume this order and never re-sort locally.
+     */
+    private static final ThreadLocal<Collator> TITLE_COLLATOR = ThreadLocal.withInitial(() -> {
+        Collator collator = Collator.getInstance(Locale.SIMPLIFIED_CHINESE);
+        collator.setStrength(Collator.TERTIARY);
+        collator.setDecomposition(Collator.CANONICAL_DECOMPOSITION);
+        return collator;
+    });
     private static final Set<String> SCHEDULE_FIELDS = Set.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
     private static final List<String> SCHEDULE_FIELD_ORDER = List.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
     /** Documented default for an organization that has not configured a cut-off. */
@@ -89,7 +108,128 @@ public class TaskService {
         }));
     }
 
-    /** Analytics needs one effective snapshot, not full route projections repeated once per page. */
+    /**
+     * Global personal task table: only tasks the caller originally created or currently owns, after
+     * every combined filter and de-duplication, then table-pin grouping, the chosen six-column stable
+     * sort and finally counting/paging. The general {@code /tasks} contract is untouched.
+     */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map<String, Object> table(Actor actor, Map<String, String> filters) {
+        requireBusiness(actor);access.requireCurrent(actor);
+        for (String key : filters.keySet()) if (!TABLE_PARAMETERS.contains(key)) throw bad("表单不支持参数：" + key);
+        String relation = filters.getOrDefault("relation", "all");
+        String completion = filters.getOrDefault("completion", "all");
+        String sort = filters.getOrDefault("sort", "startAt");
+        String direction = filters.getOrDefault("direction", "asc");
+        if (!TABLE_RELATIONS.contains(relation)) throw bad("relation 只能为 all、assigned 或 created");
+        if (!TABLE_COMPLETIONS.contains(completion)) throw bad("completion 只能为 all、unfinished 或 completed");
+        if (!TABLE_SORTS.contains(sort)) throw bad("sort 只能为 title、createdAt、startAt、dueAt、priority 或 state");
+        if (!Set.of("asc", "desc").contains(direction)) throw bad("direction 只能为 asc 或 desc");
+        String query = Objects.toString(filters.get("q"), "").trim();
+        if (query.length() > 200) throw bad("搜索内容最多200字");
+        LocalDate from = optionalDate(filters.get("from"), "from");
+        LocalDate to = optionalDate(filters.get("to"), "to");
+        if (from != null && to != null && to.isBefore(from)) throw bad("结束日期不得早于开始日期");
+        int limit = integer(filters.get("limit"), 50, 1, 100, "limit");
+        int offset = integer(filters.get("offset"), 0, 0, Integer.MAX_VALUE, "offset");
+        ZoneId zone = organizationZone(actor);
+        String lowered = query.toLowerCase(Locale.ROOT);
+        return access.readScope(actor.organizationId(), () -> withReadBatch(loadTaskBatch(actor), () -> {
+            ReadBatch batch = currentBatch(actor);
+            List<VisibleTask> selected = new ArrayList<>();
+            for (var task : batch.tasks.values()) {
+                Map<String, Object> version = version(actor, s(task, "currentVersionId"));
+                List<String> owners = assignees(actor, s(version, "id"));
+                if (!access.canSeeTask(actor, task, version, owners)) continue;
+                boolean created = actor.id().equals(s(task, "originalCreatorId"));
+                boolean assigned = owners.contains(actor.id());
+                if (!created && !assigned) continue;
+                if ("created".equals(relation) && !created || "assigned".equals(relation) && !assigned) continue;
+                boolean done = "done".equals(s(task, "executionState"));
+                if ("unfinished".equals(completion) && done || "completed".equals(completion) && !done) continue;
+                if (!lowered.isEmpty() && !s(version, "title").toLowerCase(Locale.ROOT).contains(lowered)) continue;
+                LocalDate start = tableScheduleDate(version, true, zone);
+                LocalDate due = tableScheduleDate(version, false, zone);
+                if (from != null && due.isBefore(from)) continue;
+                if (to != null && start.isAfter(to)) continue;
+                selected.add(new VisibleTask(task, version, owners));
+            }
+            Comparator<VisibleTask> order = tableOrder(sort, direction);
+            selected.sort(order);
+            List<VisibleTask> pinned = selected.stream().filter(row -> batch.tablePins.contains(s(row.task(), "id"))).toList();
+            List<VisibleTask> others = selected.stream().filter(row -> !batch.tablePins.contains(s(row.task(), "id"))).toList();
+            List<VisibleTask> grouped = new ArrayList<>(pinned);
+            grouped.addAll(others);
+            int begin = Math.min(offset, grouped.size());
+            int end = (int) Math.min((long) begin + limit, grouped.size());
+            List<Map<String, Object>> items = new ArrayList<>();
+            for (VisibleTask row : grouped.subList(begin, end)) {
+                Map<String, Object> view = taskView(actor, row.task(), row.version(), row.owners());
+                // A table row exposes the effective version and review flags only, never a proposal
+                // schedule or a dedicated diff.
+                view.remove("pendingSchedule");
+                view.remove("pendingRequestId");
+                items.add(view);
+            }
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("items", items);
+            result.put("total", grouped.size());
+            result.put("limit", limit);
+            result.put("offset", offset);
+            result.put("nextOffset", end < grouped.size() ? (long) end : null);
+            return result;
+        }));
+    }
+
+    private Comparator<VisibleTask> tableOrder(String sort, String direction) {
+        boolean desc = "desc".equals(direction);
+        Comparator<VisibleTask> value = switch (sort) {
+            case "title" -> (left, right) -> {
+                int compared = compareTitle(s(left.version(), "title"), s(right.version(), "title"));
+                return desc ? -compared : compared;
+            };
+            case "createdAt" -> (left, right) -> {
+                int compared = instant(s(left.task(), "createdAt"), "createdAt")
+                        .compareTo(instant(s(right.task(), "createdAt"), "createdAt"));
+                return desc ? -compared : compared;
+            };
+            case "startAt" -> (left, right) -> compareInstants(left.version(), right.version(), "startAt", desc);
+            case "dueAt" -> (left, right) -> compareInstants(left.version(), right.version(), "dueAt", desc);
+            case "priority" -> (left, right) -> {
+                int compared = Integer.compare(PRIORITY_ORDER.get(s(left.version(), "priority")),
+                        PRIORITY_ORDER.get(s(right.version(), "priority")));
+                return desc ? -compared : compared;
+            };
+            case "state" -> (left, right) -> {
+                int compared = Integer.compare(STATE_ORDER.get(s(left.task(), "executionState")),
+                        STATE_ORDER.get(s(right.task(), "executionState")));
+                return desc ? -compared : compared;
+            };
+            default -> throw bad("sort 只能为 title、createdAt、startAt、dueAt、priority 或 state");
+        };
+        // A tie always keeps the task identifier ascending, in both sort directions.
+        return value.thenComparing((left, right) -> s(left.task(), "id").compareTo(s(right.task(), "id")));
+    }
+
+    /** Fixed shared title comparison; clients must consume this order and never re-sort locally. */
+    static int compareTitle(String left, String right) {
+        return TITLE_COLLATOR.get().compare(left, right);
+    }
+
+    private static int compareInstants(Map<String, Object> left, Map<String, Object> right, String key, boolean desc) {
+        int compared = instant(left.get(key), key).compareTo(instant(right.get(key), key));
+        return desc ? -compared : compared;
+    }
+
+    /** Company-local date used by the table's inclusive from/to intersection. */
+    private static LocalDate tableScheduleDate(Map<String, Object> version, boolean start, ZoneId zone) {
+        if (bool(version.get("allDay"), "allDay"))
+            return optionalDate(version.get(start ? "startDate" : "dueDate"), "schedule");
+        Instant time = instant(version.get(start ? "startAt" : "dueAt"), "schedule");
+        return time.atZone(zone).toLocalDate();
+    }
+
+
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public List<Map<String,Object>> statisticsTasks(Actor actor,Map<String,String> filters) {
         requireBusiness(actor);access.requireCurrent(actor);
@@ -1682,6 +1822,43 @@ public class TaskService {
                 actor.organizationId(), actor.id(), taskId) != null;
     }
 
+    /** Reads the independent personal table preference; never reuses or mutates the calendar pin. */
+    private boolean isTablePinned(Actor actor, String taskId) {
+        ReadBatch batch = currentBatch(actor);
+        if (batch != null) return batch.tablePins.contains(taskId);
+        return db.find("SELECT 1 FROM user_task_table_pins WHERE organization_id=? AND user_id=? AND task_id=?",
+                actor.organizationId(), actor.id(), taskId) != null;
+    }
+
+    /** Eligibility is always recomputed from the current effective task and the current relationship. */
+    private boolean canTablePin(Actor actor, Map<String, Object> task, List<String> owners) {
+        if (s(task, "currentVersionId") == null) return false;
+        return actor.id().equals(s(task, "originalCreatorId")) || owners.contains(actor.id());
+    }
+
+    /**
+     * Independent personal table pin. It writes only this user's preference: the task row/version,
+     * schedule, approvals and notifications are untouched. A stored preference never grants access.
+     */
+    public Map<String, Object> setTablePinned(Actor actor, String taskId, boolean pinned) {
+        requireBusiness(actor);
+        Map<String, Object> task = task(actor, taskId, false);
+        String current = s(task, "currentVersionId");
+        if (current == null) throw conflict("TASK_NOT_PUBLISHED", "未发布任务不能置顶");
+        Map<String, Object> version = version(actor, current);
+        List<String> owners = assignees(actor, current);
+        if (!access.canSeeTask(actor, task, version, owners)) throw ApiException.notFound();
+        if (!canTablePin(actor, task, owners)) throw forbidden("只有本人原始创建或当前负责的表单任务可置顶");
+        if (pinned) {
+            db.update("INSERT IGNORE INTO user_task_table_pins(organization_id,user_id,task_id) VALUES(?,?,?)",
+                    actor.organizationId(), actor.id(), taskId);
+        } else {
+            db.update("DELETE FROM user_task_table_pins WHERE organization_id=? AND user_id=? AND task_id=?",
+                    actor.organizationId(), actor.id(), taskId);
+        }
+        return Map.of("taskId", taskId, "tablePinned", pinned);
+    }
+
     public Map<String, Object> setPinned(Actor actor, String taskId, boolean pinned) {
         requireBusiness(actor);
         Map<String, Object> task = task(actor, taskId, false);
@@ -1768,6 +1945,9 @@ public class TaskService {
         result.put("pendingKind", request == null ? null : s(request, "kind"));
         result.put("canReschedule",request==null && !"done".equals(s(task,"executionState")));
         result.put("canPin",owners.contains(actor.id()));
+        boolean canTablePin = canTablePin(actor, task, owners);
+        result.put("canTablePin", canTablePin);
+        result.put("tablePinned", canTablePin && isTablePinned(actor, s(task, "id")));
         result.put("editableFields",List.copyOf(editableFieldsFor(actor,task,owners,request!=null,s(task,"executionState"))));
         // Calendar-only proposal: never replace effective fields or disclose the full review snapshot.
         if (request != null) {
@@ -2167,6 +2347,7 @@ public class TaskService {
         final CompanyTree.Tree tree;
         final Map<String,Map<String,Object>> tasks=new LinkedHashMap<>(),versions=new HashMap<>(),people=new HashMap<>(),tags=new HashMap<>();
         final Map<String,List<String>> owners=new HashMap<>();
+        final Set<String> tablePins=new HashSet<>();
         Map<String,Map<String,Object>> pending;
         final Map<String,Map<String,Object>> latestRequests=new LinkedHashMap<>();
         boolean completeVisibleTasks;
@@ -2177,6 +2358,10 @@ public class TaskService {
         // Display-only participants may be inactive, but routes always use the active fixed tree.
         for(var row:db.list("SELECT id,display_name FROM users WHERE organization_id=? ORDER BY id",actor.organizationId()))
             batch.people.put(s(row,"id"),row);
+        // One preference read per snapshot keeps table projections free of per-row N+1 queries.
+        if (actor.business())
+            for(var row:db.list("SELECT task_id FROM user_task_table_pins WHERE organization_id=? AND user_id=?",
+                    actor.organizationId(),actor.id())) batch.tablePins.add(s(row,"taskId"));
         return batch;
     }
     private ReadBatch loadAdminBatch(Actor actor) {

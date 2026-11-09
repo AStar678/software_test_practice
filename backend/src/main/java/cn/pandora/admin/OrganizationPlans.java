@@ -21,10 +21,11 @@ public class OrganizationPlans {
     private final OrganizationConstraints constraints;
     private final BusinessTakeovers takeovers;
     private final EmployeeDeactivations deactivations;
+    private final java.time.Clock clock;
     public OrganizationPlans(Db db,Access access,AuthService auth,Events events,TaskService tasks,OrganizationConstraints constraints,
-                             BusinessTakeovers takeovers,EmployeeDeactivations deactivations) {
+                             BusinessTakeovers takeovers,EmployeeDeactivations deactivations,java.time.Clock clock) {
         this.db=db;this.access=access;this.auth=auth;this.events=events;this.tasks=tasks;this.constraints=constraints;
-        this.takeovers=takeovers;this.deactivations=deactivations;
+        this.takeovers=takeovers;this.deactivations=deactivations;this.clock=clock;
     }
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
@@ -72,9 +73,11 @@ public class OrganizationPlans {
         }
         versions(departments,previousDepartments,"id",false);versions(teams,previousTeams,"id",false);
         versions(placements,previousPlacements,"employeeId",false);
-        List<Map<String,Object>> additions=input.containsKey("newEmployees")?rows(input,"newEmployees",Set.of("id","displayName","phone")):List.of();
+        List<Map<String,Object>> additions=input.containsKey("newEmployees")?rows(input,"newEmployees",Set.of("id","displayName","phone","hireDate")):List.of();
         Set<String> employeeIds=new HashSet<>();employees.forEach(person->employeeIds.add(s(person,"id")));
         Set<String> phones=new HashSet<>();
+        String zone=s(db.one("SELECT time_zone FROM organizations WHERE id=?",org),"timeZone");
+        java.time.LocalDate today=clock.instant().atZone(java.time.ZoneId.of(zone)).toLocalDate();
         for(var person:additions) {
             String id=identifier(person.get("id"),"id");
             if(!employeeIds.add(id) || db.find("SELECT id FROM principals WHERE id=?",id)!=null) throw bad("新员工ID已被使用");
@@ -84,6 +87,8 @@ public class OrganizationPlans {
             if(!phones.add(phone) || db.find("SELECT id FROM users WHERE login_phone=?",phone)!=null)
                 throw new ApiException(409,"PHONE_TAKEN","员工手机号已被使用");
             person.put("phone",phone);
+            // Same ISO/company-today/null rule as the direct administrative creation path.
+            person.put("hireDate",parseHireDate(person.get("hireDate"),today));
             employees.add(Map.of("id",id,"organizationId",org,"active",true));
         }
         var titles=db.list("SELECT * FROM positions WHERE organization_id=? ORDER BY id",org);
@@ -100,8 +105,9 @@ public class OrganizationPlans {
         for(var person:additions) {
             String employeeId=s(person,"id"),password=Credentials.generate();
             db.update("INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'employee')",employeeId,org);
-            db.update("INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,must_change_password) VALUES(?,?,?,?,?,?,TRUE)",
-                    employeeId,org,AuthService.PASSWORDS.encode(password),s(person,"displayName"),s(person,"phone"),s(person,"phone"));
+            db.update("INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,hire_date,must_change_password) VALUES(?,?,?,?,?,?,?,TRUE)",
+                    employeeId,org,AuthService.PASSWORDS.encode(password),s(person,"displayName"),s(person,"phone"),s(person,"phone"),
+                    person.get("hireDate")==null?null:java.sql.Date.valueOf((java.time.LocalDate)person.get("hireDate")));
             passwords.put(employeeId,password);
         }
         Map<String,Map<String,Object>> oldPlaces=index(previousPlacements,"employeeId");
