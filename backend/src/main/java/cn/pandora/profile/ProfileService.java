@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.io.ByteArrayInputStream;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import javax.imageio.ImageIO;
 
 import static cn.pandora.common.Db.*;
@@ -21,13 +24,17 @@ public class ProfileService {
     private static final Pattern EMAIL = Pattern.compile("^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$");
     private final Db db;
     private final Events events;
+    private final Clock clock;
 
-    public ProfileService(Db db, Events events) { this.db = db; this.events = events; }
+    public ProfileService(Db db, Events events) { this(db, events, Clock.systemUTC()); }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ProfileService(Db db, Events events, Clock clock) { this.db = db; this.events = events; this.clock = clock; }
 
     public Map<String, Object> get(Actor actor) {
         if(actor.administrator()) throw new ApiException(403,"BUSINESS_ROLE_REQUIRED","管理员请使用独立管理端");
-        Map<String, Object> row = db.one("SELECT u.id,u.display_name,u.phone,u.email,u.avatar,u.profile_version,"
-                + "ep.team_id,o.name AS organization_name,d.name AS department_name,"
+        Map<String, Object> row = db.one("SELECT u.id,u.display_name,u.phone,u.email,u.avatar,u.profile_version,u.hire_date,"
+                + "ep.team_id,o.name AS organization_name,o.time_zone AS organization_time_zone,d.name AS department_name,"
                 + "p.name AS position_name,t.name AS team_name,m.display_name AS manager_name "
                 + "FROM users u JOIN organizations o ON o.id=u.organization_id "
                 + "JOIN employee_placements ep ON ep.organization_id=u.organization_id AND ep.employee_id=u.id "
@@ -38,6 +45,12 @@ public class ProfileService {
                 + "WHERE u.organization_id=? AND u.id=? AND u.active=1", actor.managerId(), actor.organizationId(), actor.id());
         row.put("role",actor.role());row.put("placementType",actor.role());row.put("managerId",actor.managerId());
         row.put("rowVersion", n(row, "profileVersion"));
+        // The same company business date drives the duration, never the device time zone.
+        ZoneId zone = ZoneId.of(Objects.toString(row.get("organizationTimeZone"),"UTC"));
+        LocalDate asOfDate = clock.instant().atZone(zone).toLocalDate();
+        LocalDate hireDate = row.get("hireDate")==null?null:LocalDate.parse(Objects.toString(row.get("hireDate")));
+        row.put("hireDate", hireDate==null?null:hireDate.toString());
+        row.put("tenure", Tenure.of(hireDate, asOfDate));
         return row;
     }
 

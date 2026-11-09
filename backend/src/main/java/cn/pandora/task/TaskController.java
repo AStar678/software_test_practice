@@ -109,6 +109,12 @@ public class TaskController {
                 () -> tasks.clearHandoverPreset(actor, id));
     }
 
+    /** Server-side personal task table; a literal path that never falls through to task detail. */
+    @GetMapping("/tasks/table")
+    public Map<String, Object> table(@RequestAttribute("actor") Actor actor, @RequestParam Map<String, String> filters) {
+        return tasks.table(actor, filters);
+    }
+
     /** Personal month-view pin; never changes task data or another user's order. */
     @PutMapping("/tasks/{id}/pin")
     public Map<String, Object> pin(@RequestAttribute("actor") Actor actor, @PathVariable String id,
@@ -122,6 +128,21 @@ public class TaskController {
             @RequestHeader(value = "Idempotency-Key", required = false) String key) {
         return writes.run(actor, key, "DELETE /tasks/" + id + "/pin", Map.of(), null,
                 () -> tasks.setPinned(actor, id, false));
+    }
+
+    /** Independent personal task-table pin; does not change calendar pin, task version or schedule. */
+    @PutMapping("/tasks/{id}/table-pin")
+    public Map<String, Object> tablePin(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key) {
+        return writes.run(actor, key, "PUT /tasks/" + id + "/table-pin", Map.of(), null,
+                () -> tasks.setTablePinned(actor, id, true));
+    }
+
+    @DeleteMapping("/tasks/{id}/table-pin")
+    public Map<String, Object> tableUnpin(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key) {
+        return writes.run(actor, key, "DELETE /tasks/" + id + "/table-pin", Map.of(), null,
+                () -> tasks.setTablePinned(actor, id, false));
     }
 
     @GetMapping("/tasks/{id}")

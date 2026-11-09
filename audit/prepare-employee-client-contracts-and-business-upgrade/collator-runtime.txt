@@ -1,0 +1,10 @@
+openjdk version "21.0.7" 2025-04-15
+OpenJDK Runtime Environment Homebrew (build 21.0.7)
+OpenJDK 64-Bit Server VM Homebrew (build 21.0.7, mixed mode, sharing)
+---
+jshell> jshell> jshell> collator=java.text.RuleBasedCollator strength=2 decomposition=0
+jshell> 阿<波=true
+jshell> 分镜10<分镜2=true
+jshell> jshell> cafeNFC==cafeNFD=true
+jshell> a!=A=true
+jshell> 

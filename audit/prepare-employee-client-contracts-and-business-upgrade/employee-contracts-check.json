@@ -1,0 +1,3726 @@
+{
+  "updated": "2026-11-09T00:18:03.772628+00:00",
+  "checks": [
+    {
+      "check": "the witness runs on a disposable random database, never the normal business database",
+      "pass": true,
+      "evidence": "pandora_precheck_model_77879d230cbf4b2a"
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tags succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /work-logs succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "PUT /tasks/5f8a21de-a4f1-4213-b004-7f9c405a56fa/pin succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "witness fixture starts at V31 with a real task, tag, log, calendar pin and single-day item",
+      "pass": true,
+      "evidence": {
+        "v31": "1877157792",
+        "daily": [
+          [
+            "witness-daily",
+            "fixture-company",
+            "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "2026-11-01",
+            "升级见证事项",
+            "1",
+            "3"
+          ]
+        ],
+        "pins": [
+          [
+            "fixture-company",
+            "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "5f8a21de-a4f1-4213-b004-7f9c405a56fa",
+            "2026-11-09 00:17:22.691719"
+          ]
+        ]
+      }
+    },
+    {
+      "check": "V32-V34 are applied and historical checksums never change",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "1": "437426298",
+          "2": "-355631081",
+          "3": "511408697",
+          "4": "-1925861515",
+          "5": "610984638",
+          "6": "182547161",
+          "7": "-1174338840",
+          "8": "-1569401396",
+          "9": "1944539245",
+          "10": "-12941011",
+          "11": "1647805093",
+          "12": "1573612010",
+          "13": "383843131",
+          "14": "-1791407736",
+          "15": "-108896981",
+          "16": "-1521161377",
+          "17": "-1377516258",
+          "18": "182701529",
+          "19": "2009381626",
+          "20": "-284115794",
+          "21": "1152657484",
+          "22": "1881209670",
+          "23": "-1107600224",
+          "24": "1321570909",
+          "25": "-1655875896",
+          "26": "-802804703",
+          "27": "-243173751",
+          "28": "-259776984",
+          "29": "-1171578799",
+          "30": "448651293",
+          "31": "1877157792"
+        },
+        "after": {
+          "1": "437426298",
+          "2": "-355631081",
+          "3": "511408697",
+          "4": "-1925861515",
+          "5": "610984638",
+          "6": "182547161",
+          "7": "-1174338840",
+          "8": "-1569401396",
+          "9": "1944539245",
+          "10": "-12941011",
+          "11": "1647805093",
+          "12": "1573612010",
+          "13": "383843131",
+          "14": "-1791407736",
+          "15": "-108896981",
+          "16": "-1521161377",
+          "17": "-1377516258",
+          "18": "182701529",
+          "19": "2009381626",
+          "20": "-284115794",
+          "21": "1152657484",
+          "22": "1881209670",
+          "23": "-1107600224",
+          "24": "1321570909",
+          "25": "-1655875896",
+          "26": "-802804703",
+          "27": "-243173751",
+          "28": "-259776984",
+          "29": "-1171578799",
+          "30": "448651293",
+          "31": "1877157792",
+          "32": "-244914070",
+          "33": "-1307578491",
+          "34": "-1626728565"
+        }
+      }
+    },
+    {
+      "check": "the single-day witness maps losslessly to start=end=original date",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "id": "witness-daily",
+          "organization_id": "fixture-company",
+          "owner_id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "item_date": "2026-11-01",
+          "body": "升级见证事项",
+          "completed": "1",
+          "row_version": "3"
+        },
+        "after": {
+          "id": "witness-daily",
+          "organization_id": "fixture-company",
+          "owner_id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "start_date": "2026-11-01",
+          "end_date": "2026-11-01",
+          "body": "升级见证事项",
+          "completed": "1",
+          "row_version": "3"
+        }
+      }
+    },
+    {
+      "check": "task, version, log, shared tag and calendar pin rows stay byte-identical",
+      "pass": true,
+      "evidence": {
+        "tasks": true,
+        "logs": true,
+        "pins": true,
+        "users": true
+      }
+    },
+    {
+      "check": "new structures start empty and hire_date stays null rather than derived from created_at",
+      "pass": true,
+      "evidence": {
+        "tablePins": [],
+        "holiday": [],
+        "hire": [
+          [
+            "0"
+          ]
+        ],
+        "daily": [
+          "id",
+          "organization_id",
+          "owner_id",
+          "start_date",
+          "end_date",
+          "body",
+          "completed",
+          "row_version",
+          "created_at",
+          "updated_at"
+        ]
+      }
+    },
+    {
+      "check": "a real backup restores the upgraded witness database with identical business rows",
+      "pass": true,
+      "evidence": {
+        "size": 92402
+      }
+    },
+    {
+      "check": "the database rejects an inverted item range",
+      "pass": true,
+      "evidence": [
+        [
+          "ck_daily_item_body",
+          "CHECK"
+        ],
+        [
+          "ck_daily_item_range",
+          "CHECK"
+        ],
+        [
+          "ck_daily_item_version",
+          "CHECK"
+        ],
+        [
+          "fk_daily_item_owner",
+          "FOREIGN KEY"
+        ],
+        [
+          "PRIMARY",
+          "PRIMARY KEY"
+        ],
+        [
+          "uq_daily_item_org",
+          "UNIQUE"
+        ]
+      ]
+    },
+    {
+      "check": "the independent table-pin structure has a composite uniqueness key and the holiday header stores source/refresh state",
+      "pass": true,
+      "evidence": {
+        "pins": [
+          [
+            "PRIMARY",
+            "PRIMARY KEY"
+          ],
+          [
+            "user_task_table_pins_ibfk_1",
+            "FOREIGN KEY"
+          ],
+          [
+            "user_task_table_pins_ibfk_2",
+            "FOREIGN KEY"
+          ]
+        ],
+        "holiday": [
+          "region",
+          "year",
+          "source",
+          "source_version",
+          "source_hash",
+          "official_notice",
+          "fetched_at",
+          "last_attempt_at",
+          "last_failure_at",
+          "last_failure_code"
+        ]
+      }
+    },
+    {
+      "check": "the witness artefact is written for independent review",
+      "pass": true,
+      "evidence": "/Users/watuji/MyGitDev/software_test_practice/audit/prepare-employee-client-contracts-and-business-upgrade/upgrade-witness.json"
+    },
+    {
+      "check": "an empty database completes the full chain and converges on the new structures",
+      "pass": true,
+      "evidence": {
+        "version": "34",
+        "columns": {
+          "daily_items": [
+            "body",
+            "completed",
+            "created_at",
+            "end_date",
+            "id",
+            "organization_id",
+            "owner_id",
+            "row_version",
+            "start_date",
+            "updated_at"
+          ],
+          "user_task_table_pins": [
+            "organization_id",
+            "pinned_at",
+            "task_id",
+            "user_id"
+          ],
+          "holiday_calendar_years": [
+            "fetched_at",
+            "last_attempt_at",
+            "last_failure_at",
+            "last_failure_code",
+            "official_notice",
+            "region",
+            "source",
+            "source_hash",
+            "source_version",
+            "year"
+          ],
+          "holiday_calendar_days": [
+            "holiday_date",
+            "is_off_day",
+            "name",
+            "region",
+            "year"
+          ]
+        }
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "creation returns the explicit date pair and a legacy start projection",
+      "pass": true,
+      "evidence": {
+        "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+        "startDate": "2026-10-30",
+        "endDate": "2026-11-03",
+        "date": "2026-10-30",
+        "rowVersion": 1,
+        "businessDate": "2026-11-09"
+      }
+    },
+    {
+      "check": "detail exposes completed/open/overdue and keeps the complete body",
+      "pass": true,
+      "evidence": {
+        "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+        "startDate": "2026-10-30",
+        "endDate": "2026-11-03",
+        "date": "2026-10-30",
+        "body": "跨周事项\n第二行",
+        "completed": false,
+        "status": "overdue",
+        "rowVersion": 1,
+        "createdAt": "2026-11-09T00:17:35.024940Z",
+        "updatedAt": "2026-11-09T00:17:35.024940Z"
+      }
+    },
+    {
+      "check": "mixed legacy and pair dates are rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "an inverted range is rejected without partial save",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "a legacy date still saves a single-day record",
+      "pass": true,
+      "evidence": {
+        "id": "734f2dac-a8fa-4862-9446-8e73a097b144",
+        "startDate": "2026-11-05",
+        "endDate": "2026-11-05",
+        "date": "2026-11-05",
+        "rowVersion": 1,
+        "businessDate": "2026-11-09"
+      }
+    },
+    {
+      "check": "the day list returns a ranged record once and the legacy record only on its own day",
+      "pass": true,
+      "evidence": {
+        "date": "2026-11-01",
+        "items": [
+          {
+            "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+            "startDate": "2026-10-30",
+            "endDate": "2026-11-03",
+            "date": "2026-10-30",
+            "body": "跨周事项\n第二行",
+            "completed": false,
+            "status": "overdue",
+            "rowVersion": 1,
+            "createdAt": "2026-11-09T00:17:35.024940Z",
+            "updatedAt": "2026-11-09T00:17:35.024940Z"
+          }
+        ],
+        "total": 1,
+        "limit": 50,
+        "offset": 0,
+        "nextOffset": null,
+        "businessDate": "2026-11-09",
+        "organizationTimeZone": "Asia/Shanghai"
+      }
+    },
+    {
+      "check": "range mode returns intersecting records with the original full pair",
+      "pass": true,
+      "evidence": {
+        "from": "2026-11-02",
+        "to": "2026-11-04",
+        "items": [
+          {
+            "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+            "startDate": "2026-10-30",
+            "endDate": "2026-11-03",
+            "date": "2026-10-30",
+            "body": "跨周事项\n第二行",
+            "completed": false,
+            "status": "overdue",
+            "rowVersion": 1,
+            "createdAt": "2026-11-09T00:17:35.024940Z",
+            "updatedAt": "2026-11-09T00:17:35.024940Z"
+          }
+        ],
+        "total": 1,
+        "limit": 50,
+        "offset": 0,
+        "nextOffset": null,
+        "businessDate": "2026-11-09",
+        "organizationTimeZone": "Asia/Shanghai"
+      }
+    },
+    {
+      "check": "range mode pagination metadata and company date are explicit",
+      "pass": true,
+      "evidence": [
+        "businessDate",
+        "from",
+        "items",
+        "limit",
+        "nextOffset",
+        "offset",
+        "organizationTimeZone",
+        "to",
+        "total"
+      ]
+    },
+    {
+      "check": "a query window above 93 days is rejected, not an empty success",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "date and from/to cannot be mixed",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "a missing range endpoint is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "a record longer than the window is returned, never dropped for its own span",
+      "pass": true,
+      "evidence": {
+        "from": "2026-06-01",
+        "to": "2026-06-05",
+        "items": [
+          {
+            "id": "18addaaa-4b0a-4b1b-aa6c-e72e64c6740f",
+            "startDate": "2025-12-01",
+            "endDate": "2026-12-31",
+            "date": "2025-12-01",
+            "body": "跨年长事项",
+            "completed": false,
+            "status": "open",
+            "rowVersion": 1,
+            "createdAt": "2026-11-09T00:17:35.069903Z",
+            "updatedAt": "2026-11-09T00:17:35.069903Z"
+          }
+        ],
+        "total": 1,
+        "limit": 50,
+        "offset": 0,
+        "nextOffset": null,
+        "businessDate": "2026-11-09",
+        "organizationTimeZone": "Asia/Shanghai"
+      }
+    },
+    {
+      "check": "a ranged item rejects an old single-date reschedule",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "code": "DAILY_ITEM_RANGE_REQUIRED"
+      }
+    },
+    {
+      "check": "the rejected legacy change writes nothing",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+          "startDate": "2026-10-30",
+          "endDate": "2026-11-03",
+          "date": "2026-10-30",
+          "body": "跨周事项\n第二行",
+          "completed": false,
+          "status": "overdue",
+          "rowVersion": 1,
+          "createdAt": "2026-11-09T00:17:35.024940Z",
+          "updatedAt": "2026-11-09T00:17:35.024940Z"
+        },
+        "after": {
+          "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+          "startDate": "2026-10-30",
+          "endDate": "2026-11-03",
+          "date": "2026-10-30",
+          "body": "跨周事项\n第二行",
+          "completed": false,
+          "status": "overdue",
+          "rowVersion": 1,
+          "createdAt": "2026-11-09T00:17:35.024940Z",
+          "updatedAt": "2026-11-09T00:17:35.024940Z"
+        }
+      }
+    },
+    {
+      "check": "PATCH /daily-items/2fcd6e59-d7a5-41d0-bfc0-38969d11b820 succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "the pair update changes only the selected record and returns the new range",
+      "pass": true,
+      "evidence": {
+        "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+        "startDate": "2026-10-31",
+        "endDate": "2026-11-04",
+        "date": "2026-10-31",
+        "completed": false,
+        "rowVersion": 2,
+        "businessDate": "2026-11-09"
+      }
+    },
+    {
+      "check": "an old row version is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 412,
+        "code": "VERSION_CONFLICT"
+      }
+    },
+    {
+      "check": "PATCH /daily-items/2fcd6e59-d7a5-41d0-bfc0-38969d11b820 succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "completing from one covered day keeps the full range",
+      "pass": true,
+      "evidence": {
+        "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+        "startDate": "2026-10-31",
+        "endDate": "2026-11-04",
+        "date": "2026-10-31",
+        "completed": true,
+        "rowVersion": 3,
+        "businessDate": "2026-11-09"
+      }
+    },
+    {
+      "check": "the same completed record is visible on 2026-10-31",
+      "pass": true,
+      "evidence": {
+        "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+        "startDate": "2026-10-31",
+        "endDate": "2026-11-04",
+        "date": "2026-10-31",
+        "body": "编辑后正文",
+        "completed": true,
+        "status": "completed",
+        "rowVersion": 3,
+        "createdAt": "2026-11-09T00:17:35.024940Z",
+        "updatedAt": "2026-11-09T00:17:35.101713Z"
+      }
+    },
+    {
+      "check": "the same completed record is visible on 2026-11-01",
+      "pass": true,
+      "evidence": {
+        "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+        "startDate": "2026-10-31",
+        "endDate": "2026-11-04",
+        "date": "2026-10-31",
+        "body": "编辑后正文",
+        "completed": true,
+        "status": "completed",
+        "rowVersion": 3,
+        "createdAt": "2026-11-09T00:17:35.024940Z",
+        "updatedAt": "2026-11-09T00:17:35.101713Z"
+      }
+    },
+    {
+      "check": "the same completed record is visible on 2026-11-04",
+      "pass": true,
+      "evidence": {
+        "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+        "startDate": "2026-10-31",
+        "endDate": "2026-11-04",
+        "date": "2026-10-31",
+        "body": "编辑后正文",
+        "completed": true,
+        "status": "completed",
+        "rowVersion": 3,
+        "createdAt": "2026-11-09T00:17:35.024940Z",
+        "updatedAt": "2026-11-09T00:17:35.101713Z"
+      }
+    },
+    {
+      "check": "the summary counts the ranged record once on every covered day",
+      "pass": true,
+      "evidence": [
+        {
+          "date": "2026-10-30",
+          "openCount": 1,
+          "completedCount": 0
+        },
+        {
+          "date": "2026-10-31",
+          "openCount": 1,
+          "completedCount": 1
+        },
+        {
+          "date": "2026-11-01",
+          "openCount": 1,
+          "completedCount": 1
+        },
+        {
+          "date": "2026-11-02",
+          "openCount": 1,
+          "completedCount": 1
+        },
+        {
+          "date": "2026-11-03",
+          "openCount": 1,
+          "completedCount": 1
+        },
+        {
+          "date": "2026-11-04",
+          "openCount": 1,
+          "completedCount": 1
+        },
+        {
+          "date": "2026-11-05",
+          "openCount": 2,
+          "completedCount": 0
+        }
+      ]
+    },
+    {
+      "check": "PATCH /daily-items/2fcd6e59-d7a5-41d0-bfc0-38969d11b820 succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "reopening keeps the range and returns the same record",
+      "pass": true,
+      "evidence": {
+        "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820",
+        "startDate": "2026-10-31",
+        "endDate": "2026-11-04",
+        "date": "2026-10-31",
+        "completed": false,
+        "rowVersion": 4,
+        "businessDate": "2026-11-09"
+      }
+    },
+    {
+      "check": "DELETE /daily-items/2fcd6e59-d7a5-41d0-bfc0-38969d11b820 succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "delete removes only the selected record",
+      "pass": true,
+      "evidence": {
+        "deleted": true,
+        "id": "2fcd6e59-d7a5-41d0-bfc0-38969d11b820"
+      }
+    },
+    {
+      "check": "all old covered days lose the deleted count",
+      "pass": true,
+      "evidence": [
+        {
+          "date": "2026-10-31",
+          "openCount": 1,
+          "completedCount": 0
+        },
+        {
+          "date": "2026-11-01",
+          "openCount": 1,
+          "completedCount": 0
+        },
+        {
+          "date": "2026-11-02",
+          "openCount": 1,
+          "completedCount": 0
+        },
+        {
+          "date": "2026-11-03",
+          "openCount": 1,
+          "completedCount": 0
+        },
+        {
+          "date": "2026-11-04",
+          "openCount": 1,
+          "completedCount": 0
+        }
+      ]
+    },
+    {
+      "check": "peer cannot read another person's items",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "peer cannot write another person's item",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "head cannot read another person's items",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "head cannot write another person's item",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "other company cannot read another person's items",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "other company cannot write another person's item",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "the independent administrator cannot use the item API",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "BUSINESS_ROLE_REQUIRED"
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "the same payload and idempotency key never creates a duplicate record",
+      "pass": true,
+      "evidence": {
+        "first": {
+          "id": "02291a87-e7db-4af1-a3e2-3194db43c163",
+          "startDate": "2026-11-06",
+          "endDate": "2026-11-06",
+          "date": "2026-11-06",
+          "rowVersion": 1,
+          "businessDate": "2026-11-09"
+        },
+        "second": {
+          "id": "02291a87-e7db-4af1-a3e2-3194db43c163",
+          "date": "2026-11-06",
+          "endDate": "2026-11-06",
+          "startDate": "2026-11-06",
+          "rowVersion": 1,
+          "businessDate": "2026-11-09"
+        }
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "the isolated table fixture has more than two backend pages",
+      "pass": true,
+      "evidence": 108
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "an unpublished task cannot be table-pinned",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "code": "TASK_NOT_PUBLISHED"
+      }
+    },
+    {
+      "check": "the unpublished task is absent from the personal table",
+      "pass": true,
+      "evidence": "absent"
+    },
+    {
+      "check": "the table reports the full de-duplicated total before paging",
+      "pass": true,
+      "evidence": 108
+    },
+    {
+      "check": "all pages concatenate to one complete global sequence",
+      "pass": true,
+      "evidence": {
+        "pages": 108,
+        "total": 108
+      }
+    },
+    {
+      "check": "the simplified-Chinese collator puts 阿 before 波 and 分镜10 before 分镜2",
+      "pass": true,
+      "evidence": [
+        "阿分镜",
+        "波分镜",
+        "分镜10",
+        "分镜2"
+      ]
+    },
+    {
+      "check": "descending reverses the title comparison without changing the total",
+      "pass": true,
+      "evidence": [
+        "批量条目099",
+        "批量条目098",
+        "批量条目097",
+        "批量条目096"
+      ]
+    },
+    {
+      "check": "the multi-page table query is batched rather than N+1 and returns only the current page",
+      "pass": true,
+      "evidence": {
+        "SELECT * FROM task_versions": 1,
+        "SELECT * FROM task_version_tags": 1,
+        "SELECT version_id,user_id FROM task_version_assignees": 1,
+        "SELECT task_id FROM user_task_table_pins": 1
+      }
+    },
+    {
+      "check": "the same request is deterministic",
+      "pass": true,
+      "evidence": "stable"
+    },
+    {
+      "check": "PUT /tasks/2ed8808f-fc43-407c-86cf-a5c3716ec173/table-pin succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "a task pinned from a later page moves to the first page and total is unchanged",
+      "pass": true,
+      "evidence": {
+        "id": "2ed8808f-fc43-407c-86cf-a5c3716ec173",
+        "first": "2ed8808f-fc43-407c-86cf-a5c3716ec173",
+        "total": 108
+      }
+    },
+    {
+      "check": "a pin does not change the task version or schedule",
+      "pass": true,
+      "evidence": "2ed8808f-fc43-407c-86cf-a5c3716ec173"
+    },
+    {
+      "check": "DELETE /tasks/2ed8808f-fc43-407c-86cf-a5c3716ec173/table-pin succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "search trims whitespace and matches all four scripted titles",
+      "pass": true,
+      "evidence": 4
+    },
+    {
+      "check": "search reaches a matching task on a later page",
+      "pass": true,
+      "evidence": 1
+    },
+    {
+      "check": "relation and completion filters compose",
+      "pass": true,
+      "evidence": "empty"
+    },
+    {
+      "check": "a single-ended date filter uses the company date intersection",
+      "pass": true,
+      "evidence": 108
+    },
+    {
+      "check": "invalid table parameter bogus=1 is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "invalid table parameter relation=visible is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "invalid table parameter sort=title&direction=sideways is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "invalid table parameter limit=101 is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "invalid table parameter from=2026-11-13&to=2026-11-12 is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "a query longer than 200 characters is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "the general /tasks list keeps its nextCursor shape and visibility",
+      "pass": true,
+      "evidence": {
+        "items": [
+          {
+            "id": "43724131-bc24-4fda-87a0-3a144c2954e3",
+            "taskId": "43724131-bc24-4fda-87a0-3a144c2954e3",
+            "versionNo": 1,
+            "title": "批量条目099",
+            "description": "表单排序夹具",
+            "acceptanceCriteria": "",
+            "priority": "medium",
+            "allDay": false,
+            "startAt": "2026-11-12T01:47:00Z",
+            "dueAt": "2026-11-12T02:47:00Z",
+            "startDate": null,
+            "dueDate": null,
+            "executionState": "todo",
+            "progressNote": "",
+            "status": "applied",
+            "createdBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "createdAt": "2026-11-09T00:17:36.708507Z",
+            "allDayCutoffTime": null,
+            "assigneeIds": [
+              "4ce9a359-10d8-524d-8232-c73416f398d0"
+            ],
+            "tags": [],
+            "tagIds": [],
+            "tagId": null,
+            "tag": null,
+            "parentTaskId": null,
+            "parentUnavailable": false,
+            "versionId": "e0b2db7d-3b03-4da7-8901-657a78089954",
+            "currentVersionId": "e0b2db7d-3b03-4da7-8901-657a78089954",
+            "originalCreatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "businessOwnerId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "rowVersion": 2,
+            "executionRound": 1,
+            "scheduleVersion": 1,
+            "dueVersion": 1,
+            "published": true,
+            "updatedAt": "2026-11-09T00:17:36.709943Z",
+            "pending": false,
+            "frozen": false,
+            "pendingKind": null,
+            "canReschedule": true,
+            "canPin": true,
+            "canTablePin": true,
+            "tablePinned": false,
+            "editableFields": [
+              "allDay",
+              "startAt",
+              "dueAt",
+              "startDate",
+              "dueDate",
+              "title",
+              "description",
+              "acceptanceCriteria",
+              "priority",
+              "tagIds",
+              "parentTaskId",
+              "progressNote"
+            ],
+            "route": {
+              "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+              "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+              "path": [
+                "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+              ],
+              "reason": "direct-manager",
+              "reasonText": "按本次操作者的直属上级审核",
+              "authzVersion": 1,
+              "reviewerAvailable": true,
+              "blocked": false,
+              "creation": false,
+              "participants": [
+                {
+                  "displayName": "alpha-one-head",
+                  "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+                },
+                {
+                  "displayName": "alpha-one-employee",
+                  "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+                }
+              ]
+            },
+            "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "participants": [
+              {
+                "displayName": "alpha-one-head",
+                "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+              },
+              {
+                "displayName": "alpha-one-employee",
+                "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+              },
+              {
+                "displayName": "founder",
+                "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+              }
+            ],
+            "pinned": false
+          },
+          {
+            "id": "8a0108a2-b907-49f9-85b0-0d4a55fff4cf",
+            "taskId": "8a0108a2-b907-49f9-85b0-0d4a55fff4cf",
+            "versionNo": 1,
+            "title": "批量条目098",
+            "description": "表单排序夹具",
+            "acceptanceCriteria": "",
+            "priority": "medium",
+            "allDay": false,
+            "startAt": "2026-11-12T01:46:00Z",
+            "dueAt": "2026-11-12T02:46:00Z",
+            "startDate": null,
+            "dueDate": null,
+            "executionState": "todo",
+            "progressNote": "",
+            "status": "applied",
+            "createdBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "createdAt": "2026-11-09T00:17:36.701118Z",
+            "allDayCutoffTime": null,
+            "assigneeIds": [
+              "4ce9a359-10d8-524d-8232-c73416f398d0"
+            ],
+            "tags": [],
+            "tagIds": [],
+            "tagId": null,
+            "tag": null,
+            "parentTaskId": null,
+            "parentUnavailable": false,
+            "versionId": "db083813-edec-45c9-858f-cd849901050b",
+            "currentVersionId": "db083813-edec-45c9-858f-cd849901050b",
+            "originalCreatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "businessOwnerId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "rowVersion": 2,
+            "executionRound": 1,
+            "scheduleVersion": 1,
+            "dueVersion": 1,
+            "published": true,
+            "updatedAt": "2026-11-09T00:17:36.703054Z",
+            "pending": false,
+            "frozen": false,
+            "pendingKind": null,
+            "canReschedule": true,
+            "canPin": true,
+            "canTablePin": true,
+            "tablePinned": false,
+            "editableFields": [
+              "allDay",
+              "startAt",
+              "dueAt",
+              "startDate",
+              "dueDate",
+              "title",
+              "description",
+              "acceptanceCriteria",
+              "priority",
+              "tagIds",
+              "parentTaskId",
+              "progressNote"
+            ],
+            "route": {
+              "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+              "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+              "path": [
+                "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+              ],
+              "reason": "direct-manager",
+              "reasonText": "按本次操作者的直属上级审核",
+              "authzVersion": 1,
+              "reviewerAvailable": true,
+              "blocked": false,
+              "creation": false,
+              "participants": [
+                {
+                  "displayName": "alpha-one-head",
+                  "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+                },
+                {
+                  "displayName": "alpha-one-employee",
+                  "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+                }
+              ]
+            },
+            "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "participants": [
+              {
+                "displayName": "alpha-one-head",
+                "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+              },
+              {
+                "displayName": "alpha-one-employee",
+                "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+              },
+              {
+                "displayName": "founder",
+                "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+              }
+            ],
+            "pinned": false
+          }
+        ],
+        "total": 108,
+        "nextCursor": "2"
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "GET /approval-requests/ccb7f5f3-df67-4eee-a850-42e30a777a9e succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "PATCH /approval-requests/ccb7f5f3-df67-4eee-a850-42e30a777a9e succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "the published created-but-not-owned task is in the creator relation",
+      "pass": true,
+      "evidence": [
+        "8f955023-e44b-42ee-b321-ae4c0856e80b"
+      ]
+    },
+    {
+      "check": "a created-but-unassigned task accepts the independent table pin",
+      "pass": true,
+      "evidence": {
+        "taskId": "8f955023-e44b-42ee-b321-ae4c0856e80b",
+        "tablePinned": true
+      }
+    },
+    {
+      "check": "the same task cannot be calendar-pinned without being a current owner",
+      "pass": true,
+      "evidence": 403
+    },
+    {
+      "check": "normal detail carries both independent pin capabilities",
+      "pass": true,
+      "evidence": {
+        "id": "8f955023-e44b-42ee-b321-ae4c0856e80b",
+        "taskId": "8f955023-e44b-42ee-b321-ae4c0856e80b",
+        "versionNo": 1,
+        "title": "仅创建待审核",
+        "description": "接管来源",
+        "acceptanceCriteria": "",
+        "priority": "low",
+        "allDay": false,
+        "startAt": "2026-11-20T01:00:00Z",
+        "dueAt": "2026-11-20T02:00:00Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "todo",
+        "progressNote": "",
+        "status": "applied",
+        "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "createdAt": "2026-11-09T00:17:36.981200Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a"
+        ],
+        "tags": [],
+        "tagIds": [],
+        "tagId": null,
+        "tag": null,
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "dd583a3f-6a2a-4bb5-99cf-b627f0446364",
+        "currentVersionId": "dd583a3f-6a2a-4bb5-99cf-b627f0446364",
+        "originalCreatorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "businessOwnerId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "rowVersion": 2,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-11-09T00:17:36.996517Z",
+        "pending": false,
+        "frozen": false,
+        "pendingKind": null,
+        "canReschedule": true,
+        "canPin": false,
+        "canTablePin": true,
+        "tablePinned": true,
+        "editableFields": [
+          "allDay",
+          "startAt",
+          "dueAt",
+          "startDate",
+          "dueDate",
+          "title",
+          "description",
+          "acceptanceCriteria",
+          "priority",
+          "tagIds",
+          "parentTaskId",
+          "assigneeIds"
+        ],
+        "route": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "displayName": "alpha-one-head",
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+            },
+            {
+              "displayName": "alpha-one-employee",
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          ]
+        },
+        "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "participants": [
+          {
+            "displayName": "alpha-one-head",
+            "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          },
+          {
+            "displayName": "alpha-one-employee",
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          },
+          {
+            "displayName": "alpha-two-employee",
+            "id": "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a"
+          }
+        ],
+        "pinned": false,
+        "pendingRoute": {},
+        "canHandover": false,
+        "handoverSources": [],
+        "handoverPresets": {},
+        "children": []
+      }
+    },
+    {
+      "check": "PATCH /tasks/8f955023-e44b-42ee-b321-ae4c0856e80b succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "a completion pending review still counts as unfinished",
+      "pass": true,
+      "evidence": {
+        "taskId": "8f955023-e44b-42ee-b321-ae4c0856e80b",
+        "requestId": "5054fefe-c3ff-4e47-9bf3-ecbb7d3764b0",
+        "outcome": "pending",
+        "rowVersion": 3
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "PUT /tasks/dd431142-7ac9-4458-b1dc-24280964e8d9/pin succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "PUT /tasks/dd431142-7ac9-4458-b1dc-24280964e8d9/table-pin succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "both pin preferences survive a new session independently",
+      "pass": true,
+      "evidence": {
+        "id": "dd431142-7ac9-4458-b1dc-24280964e8d9",
+        "taskId": "dd431142-7ac9-4458-b1dc-24280964e8d9",
+        "versionNo": 1,
+        "title": "双置顶独立",
+        "description": "双偏好",
+        "acceptanceCriteria": "",
+        "priority": "medium",
+        "allDay": false,
+        "startAt": "2026-11-21T01:00:00Z",
+        "dueAt": "2026-11-21T02:00:00Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "todo",
+        "progressNote": "",
+        "status": "applied",
+        "createdBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "createdAt": "2026-11-09T00:17:37.267908Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "tags": [],
+        "tagIds": [],
+        "tagId": null,
+        "tag": null,
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "47472e2b-af48-45d9-ab93-2cc85b5eb7ed",
+        "currentVersionId": "47472e2b-af48-45d9-ab93-2cc85b5eb7ed",
+        "originalCreatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "businessOwnerId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "rowVersion": 2,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-11-09T00:17:37.270087Z",
+        "pending": false,
+        "frozen": false,
+        "pendingKind": null,
+        "canReschedule": true,
+        "canPin": true,
+        "canTablePin": true,
+        "tablePinned": true,
+        "editableFields": [
+          "allDay",
+          "startAt",
+          "dueAt",
+          "startDate",
+          "dueDate",
+          "title",
+          "description",
+          "acceptanceCriteria",
+          "priority",
+          "tagIds",
+          "parentTaskId",
+          "progressNote"
+        ],
+        "route": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "displayName": "alpha-one-head",
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+            },
+            {
+              "displayName": "alpha-one-employee",
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          ]
+        },
+        "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "participants": [
+          {
+            "displayName": "alpha-one-head",
+            "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          },
+          {
+            "displayName": "alpha-one-employee",
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          },
+          {
+            "displayName": "founder",
+            "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+          }
+        ],
+        "pinned": true,
+        "pendingRoute": {},
+        "canHandover": true,
+        "handoverSources": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "handoverPresets": {},
+        "children": []
+      }
+    },
+    {
+      "check": "DELETE /tasks/dd431142-7ac9-4458-b1dc-24280964e8d9/table-pin succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "clearing the table pin leaves the calendar pin untouched",
+      "pass": true,
+      "evidence": {
+        "id": "dd431142-7ac9-4458-b1dc-24280964e8d9",
+        "taskId": "dd431142-7ac9-4458-b1dc-24280964e8d9",
+        "versionNo": 1,
+        "title": "双置顶独立",
+        "description": "双偏好",
+        "acceptanceCriteria": "",
+        "priority": "medium",
+        "allDay": false,
+        "startAt": "2026-11-21T01:00:00Z",
+        "dueAt": "2026-11-21T02:00:00Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "todo",
+        "progressNote": "",
+        "status": "applied",
+        "createdBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "createdAt": "2026-11-09T00:17:37.267908Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "tags": [],
+        "tagIds": [],
+        "tagId": null,
+        "tag": null,
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "47472e2b-af48-45d9-ab93-2cc85b5eb7ed",
+        "currentVersionId": "47472e2b-af48-45d9-ab93-2cc85b5eb7ed",
+        "originalCreatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "businessOwnerId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "rowVersion": 2,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-11-09T00:17:37.270087Z",
+        "pending": false,
+        "frozen": false,
+        "pendingKind": null,
+        "canReschedule": true,
+        "canPin": true,
+        "canTablePin": true,
+        "tablePinned": false,
+        "editableFields": [
+          "allDay",
+          "startAt",
+          "dueAt",
+          "startDate",
+          "dueDate",
+          "title",
+          "description",
+          "acceptanceCriteria",
+          "priority",
+          "tagIds",
+          "parentTaskId",
+          "progressNote"
+        ],
+        "route": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "displayName": "alpha-one-head",
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+            },
+            {
+              "displayName": "alpha-one-employee",
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          ]
+        },
+        "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "participants": [
+          {
+            "displayName": "alpha-one-head",
+            "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          },
+          {
+            "displayName": "alpha-one-employee",
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          },
+          {
+            "displayName": "founder",
+            "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+          }
+        ],
+        "pinned": true,
+        "pendingRoute": {},
+        "canHandover": true,
+        "handoverSources": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "handoverPresets": {},
+        "children": []
+      }
+    },
+    {
+      "check": "PUT /tasks/2ed8808f-fc43-407c-86cf-a5c3716ec173/table-pin succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "a task removed from the current relationship cannot be restored by a stale pin",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "the fill-source fixture has more personal items than one list page",
+      "pass": true,
+      "evidence": 55
+    },
+    {
+      "check": "POST /daily-items succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "POST /tasks succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "the fill source returns both complete groups without pagination truncation",
+      "pass": true,
+      "evidence": {
+        "items": 57,
+        "tasks": 3
+      }
+    },
+    {
+      "check": "one item spanning the day is included once and long multi-line text is complete",
+      "pass": true,
+      "evidence": {
+        "longest": 1998
+      }
+    },
+    {
+      "check": "the complete name source can exceed the log body's 10000 UTF-16 code-unit ceiling",
+      "pass": true,
+      "evidence": 12291
+    },
+    {
+      "check": "task coverage includes the timed, midnight and all-day tasks but excludes the zero-length next-day task",
+      "pass": true,
+      "evidence": [
+        "9c6b962b-a4b4-467a-887e-1a75bc35fd6a",
+        "6d33f97f-b788-4c7d-b987-bf0014b0f730",
+        "bf0cb243-2cfa-4f8d-b969-e690f1f4cef3"
+      ]
+    },
+    {
+      "check": "a midnight due task does not spill into the next day and the all-day task covers it",
+      "pass": true,
+      "evidence": [
+        "9c6b962b-a4b4-467a-887e-1a75bc35fd6a",
+        "d272252f-9ce6-4a6c-a7bd-d387feddf83d",
+        "00477cbe-4f5d-4a73-8216-704f1f83e1c6",
+        "692d3afd-ef98-4b44-aaad-d9288ca65ec8",
+        "98f0f8b5-bc55-4270-84d5-31d518306106",
+        "e21ef44c-a7db-4875-b798-f002446c3116",
+        "4cc061af-de73-4984-9996-e883cef3d058",
+        "98c357ba-675e-4051-8d0e-172da9975a86",
+        "645a5168-6666-4468-aa52-fbc9355132ff",
+        "acb21bb7-e140-453e-8211-a310b19d1180",
+        "5b986249-efee-4bdb-b769-48f7a271af34",
+        "da465f51-19bb-4c76-87be-7f1289ba6656",
+        "5436a09c-b7b4-4f28-a3b7-53bb42a34353",
+        "dc5352c5-d0cb-497e-908b-459e34d8dbac",
+        "95ba085c-1a33-4460-96d6-c36aabcf0410",
+        "dd5f2617-b9d0-4211-a2fc-6cb9451f7153",
+        "6ab5dea8-1b61-4ca6-918a-d539a55eb2bf",
+        "a25ed5e2-ef23-44cc-85d3-8ba5cade09f3",
+        "1ee13951-5bb4-4cfe-9e0b-267f5ee9980e",
+        "ef9edb0c-e3ad-40cb-92c9-4ade696ad577",
+        "06735a07-bbd0-4aa3-81aa-991c0cf9d16e",
+        "4e7ebba6-9c4b-4c0c-ae46-a59f42314752",
+        "c9144dca-7068-4fd1-a3c7-85a7f72e0acc",
+        "e5032cb7-3a55-4df8-a79c-d7a1803c0e9a",
+        "05c81d16-173a-4d0a-8d81-54dde1550c4e",
+        "dc6aebdb-4fbc-4975-b3a2-906f898a7129",
+        "2729501d-534f-4896-a6a8-0686c4d244c1",
+        "c621bb58-3889-4439-aea1-60b717d35965",
+        "2392b407-22ae-4f66-adbc-b009de15feed",
+        "b9af9aff-8086-4254-bfee-77a4db570203",
+        "30cfdf78-8e86-4e53-993a-bcc15e26a453",
+        "fb95c09c-1fa1-4841-afb6-219b55e655e5",
+        "69e2becd-b616-45b1-a0e8-4be26ee722b6",
+        "bdceb640-9b33-4341-b1be-a4886eebaa5b",
+        "353652dd-beb9-4365-8ee2-873e6785b1b0",
+        "e9c0ca41-2a2f-4be3-a2ec-0e15476f658b",
+        "d06243cf-558b-4b0e-bced-7d1f0364af2f",
+        "db1c4a65-80e7-4c54-b927-e455cdb0126d",
+        "113a2df8-1462-4a78-8710-4067d0999b66",
+        "5ca7413c-982c-4fee-b93f-cf3197ff9e30",
+        "5272bf56-280f-4648-933f-a22c853dfe4a",
+        "799d0f98-97c6-45a6-a099-efac111bf7ca",
+        "66301f79-af7e-47f4-9279-69e12092865a",
+        "6e7cf412-bd31-48b6-8a8a-8328a5a8e5a0",
+        "4aa157d9-a433-4dff-95fa-e169c6846f3e",
+        "65284a16-f805-4b57-b745-c8ff21da8ac0",
+        "4d15f793-2aa5-4ee3-a7bf-483b413724b7",
+        "6c091f75-93a7-4e17-8825-5e2bb7d442ae",
+        "75dee50b-f92f-42c6-942b-029d6b957be6",
+        "f92902a3-2b26-4584-a9cc-159250f5df82",
+        "a9028ed7-cd5b-4e5b-ae36-69a7cf1beef0",
+        "d3cb499e-3f73-4eac-a9ea-c0292a4a5705",
+        "12258df5-d2d3-4faa-99d2-5142d819569d",
+        "c7f25cd5-e939-4b9d-861e-e7119e6be1e0",
+        "07af3ce6-6406-4b43-8fb1-abd39e25470d",
+        "7664f18b-7d57-4cbf-bb7b-7bb29899e400",
+        "a142fc92-45b7-4cad-b6a4-ac81811528fc",
+        "d91c266a-515a-40d1-b6ed-fe1156c12886",
+        "a7097ad8-001d-4b30-ab3b-0ac4874c77ed",
+        "e323e101-9134-47cb-83da-ce7a76b8d44b",
+        "2143b0b9-3439-455a-8a68-10176aa90a5b",
+        "b9fe125b-f505-4bfc-a03a-fa03624207f1",
+        "8b14ba08-62a9-4f73-8fad-f91155ee69ec",
+        "9c692c89-9132-489b-9bad-4e4212c51d88",
+        "cc3b89fb-a5b9-4305-ac8f-3ffc8561557a",
+        "d01cef23-1da0-4c72-a47f-29038d86eccd",
+        "91343fd2-67bb-442d-8f35-021bc223d004",
+        "f0406d3c-9c66-476f-a6a2-234d9f111a74",
+        "3f60b464-7988-42f8-b335-7f594cba2a14",
+        "680dac8f-2c97-490a-bf7e-db2ea1c361e2",
+        "49600585-8210-4bb2-bb6b-93223c33450f",
+        "641a5861-e493-4804-8dcf-a55198719cb6",
+        "79460a2c-9f07-4013-b45a-003f08f2da51",
+        "97a9e66a-24d9-47c6-a10e-09b74ac8082a",
+        "37aa576a-36c6-4c6e-baef-b86e1350fb31",
+        "3d613baa-1c8f-4094-9cbe-52a15fd347b2",
+        "3b307404-f494-4fda-8b8b-09e4f98f2c41",
+        "d83537d0-6060-47d1-9416-5e9ed6957413",
+        "ae966326-e989-42eb-bc71-408d1b7b2748",
+        "f6b9500c-432d-4617-a1c4-cc1168fdd98b",
+        "e97d4edf-326e-43fa-b33b-f5108a7c06ba",
+        "0d55217d-3d5a-49bf-9ce8-14faf09c86fe",
+        "e3ab2094-4563-4c60-a909-7e49f904674b",
+        "157437cd-f36b-4ee2-b055-4152571afb0d",
+        "259f6b21-d4ea-4adf-a3e8-a69559a0adef",
+        "c316ef81-9e0e-401a-8df3-bf342f00781e",
+        "f09448a3-dcce-4509-8476-9a9374c388dd",
+        "92a6f9bd-0979-457d-9dae-730d126196b3",
+        "fb8e4f00-334c-4544-a516-8eff94570e98",
+        "d293eca9-65a9-46f6-b930-fa5478a88af4",
+        "d32c9b62-e73b-4401-b34e-047dc05e2d9d",
+        "8465e298-490e-4105-a3e7-5e8cd7994bbc",
+        "de47153c-357f-42ca-9339-e3a24f685dfb",
+        "8a0108a2-b907-49f9-85b0-0d4a55fff4cf",
+        "d6948667-f987-44b9-9d75-f725c28b5dce",
+        "43724131-bc24-4fda-87a0-3a144c2954e3",
+        "c3d15506-7cce-4525-9ce3-17ad00fbf51c",
+        "08639fed-510d-4e1e-9279-90c0784ca86a",
+        "324ac2ce-a9a3-4263-8937-a949ea24be2d",
+        "65d90893-c995-4926-ad99-05f1fab48a52",
+        "3f7a91b6-8bda-43f3-99f9-d662bd6e1a0f",
+        "39172082-e940-4d76-8154-6a0bf7792f79",
+        "b56232f2-60c6-4795-9e16-63eb83828169",
+        "869d0a58-e3ac-47aa-a054-5fbfd69039c7",
+        "55dc2213-5843-4aea-8168-aaf0008e0c56",
+        "97d8f70b-d5a7-44e3-aa65-edc45aac6aa6",
+        "7669b91f-f641-4851-956a-5fe5540da610",
+        "f727a0df-1552-4d9f-8d35-d9cd91ae3670",
+        "e6707f51-45f6-4bdf-ad9d-6ad7439ce96b"
+      ]
+    },
+    {
+      "check": "items keep creation order with stable identifiers and the spanning item appears once",
+      "pass": true,
+      "evidence": "stable"
+    },
+    {
+      "check": "an invalid business date is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "the fill source never accepts another person's userId",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "the administrator cannot read employee fill sources",
+      "pass": true,
+      "evidence": {
+        "status": 403,
+        "code": "BUSINESS_ROLE_REQUIRED"
+      }
+    },
+    {
+      "check": "the fill source is a pure read",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "items": 59,
+          "tasks": 115,
+          "logs": 0,
+          "events": 181
+        },
+        "after": {
+          "items": 59,
+          "tasks": 115,
+          "logs": 0,
+          "events": 181
+        }
+      }
+    },
+    {
+      "check": "POST /work-logs succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "the existing 10000 code-unit log limit still rejects 10001",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "a backfilled still-editable log day can still read its source",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "existing employees start with an unset real hire date and no fabricated tenure",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "PATCH /admin/employees/4ce9a359-10d8-524d-8232-c73416f398d0 succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "the administrator can set a leap-day hire date",
+      "pass": true,
+      "evidence": {
+        "userId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "rowVersion": 2,
+        "phoneUpdated": false,
+        "hireDate": "2024-02-29",
+        "sessionsRevoked": 0
+      }
+    },
+    {
+      "check": "a future hire date is rejected",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "omitting hireDate preserves the stored value and still saves the name",
+      "pass": true,
+      "evidence": {
+        "userId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "rowVersion": 3,
+        "phoneUpdated": false,
+        "hireDate": "2024-02-29",
+        "sessionsRevoked": 0
+      }
+    },
+    {
+      "check": "self /me and /me/profile share the same company-date tenure",
+      "pass": true,
+      "evidence": {
+        "me": {
+          "years": 2,
+          "months": 8,
+          "days": 12,
+          "asOfDate": "2026-11-09"
+        },
+        "profile": {
+          "years": 2,
+          "months": 8,
+          "days": 12,
+          "asOfDate": "2026-11-09"
+        }
+      }
+    },
+    {
+      "check": "an actual chain manager receives the same hire date and tenure in the authorized detail",
+      "pass": true,
+      "evidence": {
+        "years": 2,
+        "months": 8,
+        "days": 12,
+        "asOfDate": "2026-11-09"
+      }
+    },
+    {
+      "check": "a same-level peer receives neither hire projection nor e-mail",
+      "pass": true,
+      "evidence": {
+        "code": "NOT_FOUND",
+        "message": "内容不存在或无权查看"
+      }
+    },
+    {
+      "check": "ordinary directory summaries never carry phone, e-mail, hire date or tenure",
+      "pass": true,
+      "evidence": "clean"
+    },
+    {
+      "check": "PATCH /me/profile succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "the authorized management-chain ancestor can read the e-mail in the detail",
+      "pass": true,
+      "evidence": "employee@example.test"
+    },
+    {
+      "check": "a peer still cannot read that e-mail",
+      "pass": true,
+      "evidence": {
+        "code": "NOT_FOUND",
+        "message": "内容不存在或无权查看"
+      }
+    },
+    {
+      "check": "a direct employee cannot maintain hireDate through the administrator route",
+      "pass": true,
+      "evidence": "forbidden"
+    },
+    {
+      "check": "PATCH /admin/employees/4ce9a359-10d8-524d-8232-c73416f398d0 succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "an explicit null clears the date without fabricating a duration",
+      "pass": true,
+      "evidence": {
+        "userId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "rowVersion": 4,
+        "phoneUpdated": false,
+        "hireDate": null,
+        "sessionsRevoked": 0
+      }
+    },
+    {
+      "check": "POST /admin/employees succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "direct creation persists the submitted hire date and returns the one-time password",
+      "pass": true,
+      "evidence": "2025-01-31"
+    },
+    {
+      "check": "POST /admin/employees succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "an idempotent replay never returns the initial password twice",
+      "pass": true,
+      "evidence": {
+        "userId": "258f5898-299d-4ffb-adad-c57c9b23522b",
+        "rowVersion": 2,
+        "mustChangePassword": true
+      }
+    },
+    {
+      "check": "a future hire date on direct creation rejects the whole account",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "the rejected direct creation wrote no account",
+      "pass": true,
+      "evidence": "no half-created account"
+    },
+    {
+      "check": "POST /admin/organization-plans succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "an invalid planned hire date rejects the whole plan",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "the rejected plan creates no partial account",
+      "pass": true,
+      "evidence": "no half-write"
+    },
+    {
+      "check": "the organization plan creates the employee with the submitted hire date in one transaction",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 6,
+        "createdEmployeeIds": [
+          "5c3afc3e-4249-4fb1-9805-4df28d4b8795"
+        ],
+        "refreshedRequests": 0,
+        "constraints": {
+          "formalWritesReady": true,
+          "blockers": [],
+          "runtimeDdlEnabled": false,
+          "organizationId": "fixture-company"
+        },
+        "deactivatedEmployeeIds": [],
+        "sessionsRevoked": 0,
+        "initialPasswords": {
+          "5c3afc3e-4249-4fb1-9805-4df28d4b8795": "g8JRc$GK!9&WErae"
+        }
+      }
+    },
+    {
+      "check": "POST /admin/organization-plans succeeds",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null,
+        "message": null
+      }
+    },
+    {
+      "check": "subordinate summaries and the reports tree carry no private fields",
+      "pass": true,
+      "evidence": "clean"
+    },
+    {
+      "check": "after reassignment the old chain manager loses the detail",
+      "pass": true,
+      "evidence": "404"
+    },
+    {
+      "check": "the new actual chain manager reads the current e-mail and hire projection",
+      "pass": true,
+      "evidence": "employee@example.test"
+    },
+    {
+      "check": "admin.html: administrator console opens with a real session",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: the employees table renders the hire-date column",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: the edit dialog opens and shows the clearable date input",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: saving closes the dialog and refreshes the employee row",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: the saved date is read back from the real service",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: cancel keeps the stored date unchanged",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: a future date keeps the dialog open with the invalid input and an error",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: the rejected future date does not change the stored value",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: an empty date clears the value through the real service",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: clearing restores the absent-date row state",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: the organization draft carries the entered hire date",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: the draft form did not create an account before the plan is saved",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin.html: no uncaught browser errors occurred",
+      "pass": true,
+      "evidence": "real Chrome"
+    }
+  ]
+}

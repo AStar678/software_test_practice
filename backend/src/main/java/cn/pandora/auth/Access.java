@@ -196,6 +196,13 @@ public class Access {
         return a.id().equals(s(person,"id")) || isManagerOf(a,s(person,"id"));
     }
     public boolean canReadPhone(Actor a,Map<String,Object> person) {return canSeePerson(a,person);}
+    /**
+     * E-mail in an authorized person detail follows the same current relationship test as the phone
+     * number: self, or a real current management-chain ancestor that still passes the profile scope.
+     * It is never part of a directory, candidate or summary projection and administrators do not gain
+     * it through a business route.
+     */
+    public boolean canReadEmail(Actor a,Map<String,Object> person) {return canSeePerson(a,person);}
     public boolean isManagerOf(Actor a,String id) {
         if(!placed(a) || !manager(a) || id==null || a.id().equals(id)) return false;
         var snapshot=tree(a.organizationId());if(!snapshot.valid()) return false;

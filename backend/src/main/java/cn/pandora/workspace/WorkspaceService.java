@@ -3,6 +3,7 @@ package cn.pandora.workspace;
 import cn.pandora.auth.Access;
 import cn.pandora.auth.Actor;
 import cn.pandora.common.*;
+import cn.pandora.profile.Tenure;
 import cn.pandora.task.Tags;
 import cn.pandora.task.TaskService;
 import org.springframework.dao.DuplicateKeyException;
@@ -54,9 +55,15 @@ public class WorkspaceService {
 
     private Map<String,Object> meRead(Actor a) {
         business(a);
-        var result=safeUser(employee(a,a.id()));
-        var contacts=db.one("SELECT phone,email,avatar,profile_version FROM users WHERE id=? AND organization_id=? AND active=1",a.id(),a.organizationId());
+        var source=employee(a,a.id());
+        var result=safeUser(source);
+        var contacts=db.find("SELECT phone,email,avatar,profile_version,hire_date FROM users WHERE id=? AND organization_id=? AND active=1",a.id(),a.organizationId());
+        // The directory row is only a defensive fallback for tests; it never selects contact columns.
+        if(contacts==null || contacts.isEmpty()) contacts=source;
         for(String key:List.of("phone","email","avatar","profileVersion")) result.put(key,contacts.get(key));
+        LocalDate hireDate=contacts.get("hireDate")==null?null:LocalDate.parse(Objects.toString(contacts.get("hireDate")));
+        result.put("hireDate",hireDate==null?null:hireDate.toString());
+        result.put("tenure",Tenure.of(hireDate,today(a)));
         var company=db.one("SELECT name,time_zone FROM organizations WHERE id=?",a.organizationId());
         result.put("organizationName",company.get("name"));
         result.put("organizationTimeZone",company.get("timeZone"));
@@ -91,9 +98,82 @@ public class WorkspaceService {
         var result=safeUser(row);
         result.put("canReadLogs",access.canReadLogAuthor(a,userId));
         result.put("canSetHandoverPreset",access.canSetHandoverPreset(a,row));
-        if(access.canReadPhone(a,row)) result.put("phone",db.one(
-                "SELECT phone FROM users WHERE id=? AND organization_id=? AND active=1",userId,a.organizationId()).get("phone"));
+        var privateRow=db.find("SELECT phone,email,hire_date FROM users WHERE id=? AND organization_id=? AND active=1",userId,a.organizationId());
+        if(privateRow==null || privateRow.isEmpty()) privateRow=row;
+        LocalDate hireDate=privateRow.get("hireDate")==null?null:LocalDate.parse(Objects.toString(privateRow.get("hireDate")));
+        result.put("hireDate",hireDate==null?null:hireDate.toString());
+        result.put("tenure",Tenure.of(hireDate,today(a)));
+        if(access.canReadPhone(a,row)) result.put("phone",privateRow.get("phone"));
+        // E-mail is only added to an authorized person detail for the person or an actual current
+        // management-chain ancestor; directories, trees and candidate summaries never carry it.
+        if(access.canReadEmail(a,row)) result.put("email",privateRow.get("email"));
         return result;
+    }
+
+    /**
+     * Read-only complete name source for one log business date. It accepts no {@code userId}, is not
+     * limited by the three-day creation window, returns every covered personal item and currently
+     * owned published task, and mutates nothing. Any source failure fails the whole read rather than
+     * pretending a partial set is complete.
+     */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map<String,Object> fillSource(Actor a, Map<String,String> filters) {
+        return access.readScope(a.organizationId(), () -> fillSourceRead(a,filters));
+    }
+
+    private Map<String,Object> fillSourceRead(Actor a, Map<String,String> filters) {
+        business(a);
+        if (!Set.of("businessDate").containsAll(filters.keySet())) throw bad("填充源仅支持 businessDate");
+        LocalDate date = optionalDate(filters.get("businessDate"));
+        if (date == null) throw bad("businessDate 必须为 YYYY-MM-DD 有效日期");
+        ZoneId zone = zone(a);
+        var items = db.list("SELECT id,body,created_at FROM daily_items WHERE organization_id=? AND owner_id=? "
+                        + "AND start_date<=? AND end_date>=? ORDER BY created_at,id",
+                a.organizationId(), a.id(), java.sql.Date.valueOf(date), java.sql.Date.valueOf(date)).stream()
+                .map(row -> {var item=new LinkedHashMap<String,Object>();item.put("id",s(row,"id"));item.put("name",s(row,"body"));return (Map<String,Object>)item;})
+                .toList();
+        var taskRows = db.list("SELECT t.id,v.title,v.all_day,v.start_at,v.due_at,v.start_date,v.due_date "
+                + "FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
+                + "JOIN task_version_assignees a ON a.organization_id=v.organization_id AND a.version_id=v.id "
+                + "WHERE t.organization_id=? AND a.user_id=? AND t.current_version_id IS NOT NULL "
+                + "ORDER BY v.start_at,t.id", a.organizationId(), a.id());
+        Map<String,Map<String,Object>> byTask=new LinkedHashMap<>();
+        for (var row : taskRows) {
+            if (!coversBusinessDay(row, date, zone)) continue;
+            byTask.putIfAbsent(s(row,"id"), row);
+        }
+        var tasks = byTask.values().stream()
+                .map(row -> {var task=new LinkedHashMap<String,Object>();task.put("id",s(row,"id"));task.put("name",s(row,"title"));return (Map<String,Object>)task;})
+                .toList();
+        var result = new LinkedHashMap<String,Object>();
+        result.put("businessDate",date.toString());
+        result.put("organizationTimeZone",zone.getId());
+        result.put("dailyItems",items);
+        result.put("tasks",tasks);
+        result.put("complete",true);
+        return result;
+    }
+
+    /**
+     * Actual business-day coverage: legacy all-day tasks include both first and last date; timed tasks
+     * use the half-open instant interval [start,due) intersected with [dayStart,nextDayStart), so a
+     * midnight due time never spills into the next day and a zero-length task belongs to its start day.
+     */
+    static boolean coversBusinessDay(Map<String,Object> version, LocalDate day, ZoneId zone) {
+        boolean allDay = version.get("allDay") instanceof Boolean value ? value
+                : version.get("allDay") instanceof Number number && number.intValue() == 1;
+        if (allDay) {
+            LocalDate start = LocalDate.parse(Objects.toString(version.get("startDate")));
+            LocalDate due = LocalDate.parse(Objects.toString(version.get("dueDate")));
+            return !day.isBefore(start) && !day.isAfter(due);
+        }
+        Instant start = instant(Objects.toString(version.get("startAt")));
+        Instant due = instant(Objects.toString(version.get("dueAt")));
+        if (start == null || due == null) return false;
+        Instant dayStart = day.atStartOfDay(zone).toInstant();
+        Instant nextDayStart = day.plusDays(1).atStartOfDay(zone).toInstant();
+        if (start.equals(due)) return !start.isBefore(dayStart) && start.isBefore(nextDayStart);
+        return start.isBefore(nextDayStart) && due.isAfter(dayStart);
     }
 
     /** Every actual descendant, including team heads and their employees below a department head. */
@@ -1396,7 +1476,11 @@ public class WorkspaceService {
         for(String key:List.of("id","displayName","accountType","role","placementType","departmentId","departmentName","positionId","positionName","teamId","teamName","managerId","managerName","rankLevel","active","avatar")) safe.put(key,row.get(key));
         return safe;
     }
-    private ZoneId zone(Actor a) {return ZoneId.of(s(db.one("SELECT time_zone FROM organizations WHERE id=?",a.organizationId()),"timeZone"));}
+    private ZoneId zone(Actor a) {
+        String value=s(db.one("SELECT time_zone FROM organizations WHERE id=?",a.organizationId()),"timeZone");
+        try{return value==null||value.isBlank()?ZoneOffset.UTC:ZoneId.of(value);}
+        catch(RuntimeException error){return ZoneOffset.UTC;}
+    }
     private LocalDate dateFor(Actor a,Map<String,Object> body,String key) {
         String value=nullable(body,key); return value==null?clock.instant().atZone(zone(a)).toLocalDate():optionalDate(value);
     }
