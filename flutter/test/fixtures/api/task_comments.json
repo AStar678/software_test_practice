@@ -1,0 +1,23 @@
+{
+ "items": [
+  {
+   "id": "3844e921-3389-41a8-b413-afef214e594f",
+   "objectType": "task",
+   "objectId": "60ab8789-0eca-4425-bf1a-c6fe949af4d5",
+   "authorId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "authorName": "苏格拉底",
+   "body": "合成检查请保留逐镜头记录，审核时对照原画。",
+   "createdAt": "2026-11-10T11:46:56.159464Z",
+   "editedAt": null,
+   "edited": false,
+   "deleted": false,
+   "rowVersion": 1,
+   "canManage": false
+  }
+ ],
+ "total": 1,
+ "nextOffset": null,
+ "nextCursor": null,
+ "objectType": "task",
+ "objectId": "60ab8789-0eca-4425-bf1a-c6fe949af4d5"
+}

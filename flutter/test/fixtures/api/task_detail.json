@@ -1,0 +1,106 @@
+{
+ "id": "5e1389fa-56b7-4862-8cb0-fff68c95f575",
+ "taskId": "5e1389fa-56b7-4862-8cb0-fff68c95f575",
+ "versionNo": 1,
+ "title": "跨月镜头排期",
+ "description": "光屿动画业务数据：跨月镜头排期",
+ "acceptanceCriteria": "",
+ "priority": "low",
+ "allDay": false,
+ "startAt": "2026-11-29T12:00:00Z",
+ "dueAt": "2026-12-01T02:00:00Z",
+ "startDate": null,
+ "dueDate": null,
+ "executionState": "todo",
+ "progressNote": "",
+ "status": "applied",
+ "createdBy": "274137c8-058b-31fb-9eb8-579e51c35faf",
+ "createdAt": "2026-11-10T11:46:56.129157Z",
+ "allDayCutoffTime": null,
+ "assigneeIds": [
+  "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+ ],
+ "tags": [],
+ "tagIds": [],
+ "tagId": null,
+ "tag": null,
+ "parentTaskId": null,
+ "parentUnavailable": false,
+ "versionId": "ce70dfb4-f68d-47b6-8d35-63b1a2cfa22c",
+ "currentVersionId": "ce70dfb4-f68d-47b6-8d35-63b1a2cfa22c",
+ "originalCreatorId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+ "businessOwnerId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+ "rowVersion": 2,
+ "executionRound": 1,
+ "scheduleVersion": 1,
+ "dueVersion": 1,
+ "published": true,
+ "updatedAt": "2026-11-10T11:46:56.130638Z",
+ "pending": false,
+ "frozen": false,
+ "pendingKind": null,
+ "canReschedule": true,
+ "canPin": true,
+ "canTablePin": true,
+ "tablePinned": false,
+ "editableFields": [
+  "allDay",
+  "startAt",
+  "dueAt",
+  "startDate",
+  "dueDate",
+  "title",
+  "description",
+  "acceptanceCriteria",
+  "priority",
+  "tagIds",
+  "parentTaskId",
+  "progressNote"
+ ],
+ "route": {
+  "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+  "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+  "path": [
+   "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+  ],
+  "reason": "direct-manager",
+  "reasonText": "按本次操作者的直属上级审核",
+  "authzVersion": 2,
+  "reviewerAvailable": true,
+  "blocked": false,
+  "creation": false,
+  "participants": [
+   {
+    "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "displayName": "柏拉图"
+   },
+   {
+    "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "displayName": "亚里士多德"
+   }
+  ]
+ },
+ "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+ "participants": [
+  {
+   "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "displayName": "柏拉图"
+  },
+  {
+   "id": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "displayName": "苏景昕"
+  },
+  {
+   "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "displayName": "亚里士多德"
+  }
+ ],
+ "pinned": false,
+ "pendingRoute": {},
+ "canHandover": true,
+ "handoverSources": [
+  "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+ ],
+ "handoverPresets": {},
+ "children": []
+}

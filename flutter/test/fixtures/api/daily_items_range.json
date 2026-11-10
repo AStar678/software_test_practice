@@ -1,0 +1,60 @@
+{
+ "from": "2026-11-01",
+ "to": "2026-11-30",
+ "items": [
+  {
+   "id": "c7ebd624-66c3-4ce8-babf-0e6fabedb6a0",
+   "startDate": "2026-11-09",
+   "endDate": "2026-11-11",
+   "date": "2026-11-09",
+   "body": "跨日事项：跟完《星尘》第一幕的分镜与合成交接。",
+   "completed": false,
+   "status": "open",
+   "rowVersion": 1,
+   "createdAt": "2026-11-10T11:46:55.521312Z",
+   "updatedAt": "2026-11-10T11:46:55.521312Z"
+  },
+  {
+   "id": "2a9fd68c-bac8-4c10-98db-4addd9f4bee7",
+   "startDate": "2026-11-10",
+   "endDate": "2026-11-10",
+   "date": "2026-11-10",
+   "body": "今日事项：确认交付清单与明日排期。",
+   "completed": false,
+   "status": "open",
+   "rowVersion": 1,
+   "createdAt": "2026-11-10T11:46:55.522027Z",
+   "updatedAt": "2026-11-10T11:46:55.522027Z"
+  },
+  {
+   "id": "9a346fb1-6968-47c0-bba0-465c4e9b8653",
+   "startDate": "2026-11-10",
+   "endDate": "2026-11-10",
+   "date": "2026-11-10",
+   "body": "已完成：整理昨日评审意见。",
+   "completed": true,
+   "status": "completed",
+   "rowVersion": 2,
+   "createdAt": "2026-11-10T11:46:55.522761Z",
+   "updatedAt": "2026-11-10T11:46:55.523627Z"
+  },
+  {
+   "id": "88811917-a7e6-40e5-8495-50242e179ec8",
+   "startDate": "2026-11-07",
+   "endDate": "2026-11-07",
+   "date": "2026-11-07",
+   "body": "逾期事项：补齐上周的镜头备注。",
+   "completed": false,
+   "status": "overdue",
+   "rowVersion": 1,
+   "createdAt": "2026-11-10T11:46:55.524377Z",
+   "updatedAt": "2026-11-10T11:46:55.524377Z"
+  }
+ ],
+ "total": 4,
+ "limit": 50,
+ "offset": 0,
+ "nextOffset": null,
+ "businessDate": "2026-11-10",
+ "organizationTimeZone": "Asia/Shanghai"
+}

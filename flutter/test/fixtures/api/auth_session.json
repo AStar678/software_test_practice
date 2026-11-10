@@ -1,0 +1,27 @@
+{
+ "user": {
+  "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+  "organizationId": "10000000-0000-0000-0000-000000000001",
+  "displayName": "亚里士多德",
+  "active": true,
+  "accountType": "employee",
+  "departmentId": "7041c095-3225-3fa0-9dee-08d6f0ae7982",
+  "positionId": "844748c1-01f8-37ed-afe0-fc44aeca6ab4",
+  "teamId": "a67ba15c-3f03-3fea-b96d-fe101261c6e8",
+  "managerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+  "role": "employee",
+  "capabilities": [
+   "handover_own",
+   "create_task"
+  ],
+  "scopes": {
+   "task_dispatch": "company",
+   "profile_read": "self",
+   "task_view": "self",
+   "log_read": "self"
+  },
+  "authzVersion": 2,
+  "mustChangePassword": false
+ },
+ "passwordChangeRequired": false
+}

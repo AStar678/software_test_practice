@@ -1,0 +1,29 @@
+{
+ "from": "2026-11-01",
+ "to": "2026-11-30",
+ "maxDays": 93,
+ "businessDate": "2026-11-10",
+ "organizationTimeZone": "Asia/Shanghai",
+ "days": [
+  {
+   "date": "2026-11-07",
+   "openCount": 1,
+   "completedCount": 0
+  },
+  {
+   "date": "2026-11-09",
+   "openCount": 1,
+   "completedCount": 0
+  },
+  {
+   "date": "2026-11-10",
+   "openCount": 2,
+   "completedCount": 1
+  },
+  {
+   "date": "2026-11-11",
+   "openCount": 1,
+   "completedCount": 0
+  }
+ ]
+}

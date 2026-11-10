@@ -1,0 +1,82 @@
+{
+ "items": [
+  {
+   "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "displayName": "柏拉图",
+   "placementType": "team_head",
+   "positionId": "ec2e1e15-5a84-37d8-a5db-0ca8e846f5bd",
+   "positionName": "组长",
+   "managerId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "departmentId": "7041c095-3225-3fa0-9dee-08d6f0ae7982",
+   "departmentName": "故事部",
+   "teamId": "a67ba15c-3f03-3fea-b96d-fe101261c6e8",
+   "teamName": "分镜组",
+   "self": true
+  },
+  {
+   "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "displayName": "亚里士多德",
+   "placementType": "employee",
+   "positionId": "844748c1-01f8-37ed-afe0-fc44aeca6ab4",
+   "positionName": "动画师",
+   "managerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "departmentId": "7041c095-3225-3fa0-9dee-08d6f0ae7982",
+   "departmentName": "故事部",
+   "teamId": "a67ba15c-3f03-3fea-b96d-fe101261c6e8",
+   "teamName": "分镜组",
+   "self": false
+  },
+  {
+   "id": "b8b4bb93-2f5d-33c9-83cd-2c856728bd37",
+   "displayName": "欧几里得",
+   "placementType": "employee",
+   "positionId": "844748c1-01f8-37ed-afe0-fc44aeca6ab4",
+   "positionName": "动画师",
+   "managerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "departmentId": "7041c095-3225-3fa0-9dee-08d6f0ae7982",
+   "departmentName": "故事部",
+   "teamId": "a67ba15c-3f03-3fea-b96d-fe101261c6e8",
+   "teamName": "分镜组",
+   "self": false
+  }
+ ],
+ "tree": [
+  {
+   "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "displayName": "柏拉图",
+   "departmentName": "故事部",
+   "children": [
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德",
+     "departmentName": "故事部",
+     "children": []
+    },
+    {
+     "id": "b8b4bb93-2f5d-33c9-83cd-2c856728bd37",
+     "displayName": "欧几里得",
+     "departmentName": "故事部",
+     "children": []
+    }
+   ]
+  }
+ ],
+ "departments": [
+  {
+   "id": "7041c095-3225-3fa0-9dee-08d6f0ae7982",
+   "name": "故事部",
+   "count": 3
+  }
+ ],
+ "teams": [
+  {
+   "id": "a67ba15c-3f03-3fea-b96d-fe101261c6e8",
+   "name": "分镜组",
+   "departmentId": "7041c095-3225-3fa0-9dee-08d6f0ae7982",
+   "count": 3
+  }
+ ],
+ "total": 3,
+ "matched": 3,
+ "empty": false
+}
