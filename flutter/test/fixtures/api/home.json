@@ -1,0 +1,157 @@
+{
+ "companyItems": [
+  {
+   "id": "bd4ee748-a719-480e-b157-247e1cd572a2",
+   "kind": "company",
+   "title": "《星尘》短片立项",
+   "body": "故事部与制作部共同确认十二分钟动画短片《星尘》的创作目标与交付节点。",
+   "sortOrder": 1,
+   "rowVersion": 1
+  },
+  {
+   "id": "7c89eea4-978f-4c7e-b242-a753ee7c7083",
+   "kind": "company",
+   "title": "第一幕分镜评审",
+   "body": "分镜组提交第一幕完整分镜，汇总镜头节奏与转场意见。",
+   "sortOrder": 2,
+   "rowVersion": 1
+  },
+  {
+   "id": "596f3855-1f8e-491c-87b3-0ce1d74b2f14",
+   "kind": "company",
+   "title": "角色设定定稿",
+   "body": "确定星尘、旅人和守灯人的比例、服装与表情设定。",
+   "sortOrder": 3,
+   "rowVersion": 1
+  },
+  {
+   "id": "408bb506-3cef-488e-812a-955abbc28ce5",
+   "kind": "company",
+   "title": "原画关键帧交付",
+   "body": "原画组交付第一幕关键帧，进入动画中间画制作。",
+   "sortOrder": 4,
+   "rowVersion": 1
+  },
+  {
+   "id": "f79f9bb0-5b4a-43e8-ba8e-605b3302dff3",
+   "kind": "company",
+   "title": "配音演员试音",
+   "body": "完成三位主要角色的试音并确认声音方向。",
+   "sortOrder": 5,
+   "rowVersion": 1
+  },
+  {
+   "id": "9a17c0e9-169f-4e30-af71-4474e0400349",
+   "kind": "company",
+   "title": "配乐小样确认",
+   "body": "作曲提交主题旋律小样，确认情绪曲线与片尾留白。",
+   "sortOrder": 6,
+   "rowVersion": 1
+  },
+  {
+   "id": "93c72083-8d9e-4644-a37e-06fe8fc44e87",
+   "kind": "company",
+   "title": "合成镜头验收",
+   "body": "检查第一幕合成层、光效与景深一致性。",
+   "sortOrder": 7,
+   "rowVersion": 1
+  },
+  {
+   "id": "e6feda61-5e6f-48b9-aa4e-a7eaa4576f2d",
+   "kind": "company",
+   "title": "片头字幕校对",
+   "body": "校对片名、主创名单和多语言字幕。",
+   "sortOrder": 8,
+   "rowVersion": 1
+  },
+  {
+   "id": "9ae83e7d-53bd-4541-8530-e5fa52ab9f5b",
+   "kind": "company",
+   "title": "预告片剪辑",
+   "body": "从成片素材剪出四十五秒预告并完成调色。",
+   "sortOrder": 9,
+   "rowVersion": 1
+  },
+  {
+   "id": "67bb3a58-e8b6-42ce-a21c-60bdfa3cb7f8",
+   "kind": "company",
+   "title": "成片交付与归档",
+   "body": "输出母版、字幕和工程归档，完成交付清单。",
+   "sortOrder": 10,
+   "rowVersion": 1
+  }
+ ],
+ "businessDate": "2026-11-10",
+ "assignedTasks": [
+  {
+   "taskId": "5e1389fa-56b7-4862-8cb0-fff68c95f575",
+   "title": "跨月镜头排期",
+   "priority": "low",
+   "assignedAt": "2026-11-10T11:46:56.130855Z",
+   "assignedSource": "created"
+  },
+  {
+   "taskId": "56b1e8eb-0994-496b-b0ad-4be33b751fee",
+   "title": "故事部与制作部联合评审",
+   "priority": "low",
+   "assignedAt": "2026-11-10T11:46:56.117054Z",
+   "assignedSource": "approval"
+  },
+  {
+   "taskId": "9620a7bd-373b-49db-9ea6-9233278975b4",
+   "title": "接管后由新责任方维护第二幕",
+   "priority": "low",
+   "assignedAt": "2026-11-10T11:46:56.076310Z",
+   "assignedSource": "approval"
+  },
+  {
+   "taskId": "6f297719-6a6c-47dd-82cf-f199a605bfe6",
+   "title": "预告片剪辑返工",
+   "priority": "urgent",
+   "assignedAt": "2026-11-10T11:46:55.994464Z",
+   "assignedSource": "approval"
+  },
+  {
+   "taskId": "3641de83-9cdf-46d0-bf3a-7603361a79c1",
+   "title": "第二幕原画验收",
+   "priority": "low",
+   "assignedAt": "2026-11-10T11:46:55.959118Z",
+   "assignedSource": "approval"
+  },
+  {
+   "taskId": "60ab8789-0eca-4425-bf1a-c6fe949af4d5",
+   "title": "第一幕合成镜头校对",
+   "priority": "low",
+   "assignedAt": "2026-11-10T11:46:55.931872Z",
+   "assignedSource": "approval"
+  },
+  {
+   "taskId": "a7f4c327-bc7c-4181-b385-2db9ed1d0aee",
+   "title": "第二幕合成",
+   "priority": "high",
+   "assignedAt": "2026-11-10T11:46:55.919894Z",
+   "assignedSource": "approval"
+  },
+  {
+   "taskId": "6ae0acaf-50c4-4518-b81a-4e98613be1d1",
+   "title": "第一幕合成",
+   "priority": "urgent",
+   "assignedAt": "2026-11-10T11:46:55.911521Z",
+   "assignedSource": "approval"
+  },
+  {
+   "taskId": "1f7ce266-dce1-4295-9517-470792eacf03",
+   "title": "素材命名规范",
+   "priority": "low",
+   "assignedAt": "2026-11-10T11:46:55.901733Z",
+   "assignedSource": "approval"
+  },
+  {
+   "taskId": "41c41969-1ad5-480e-9a1e-f035e7d2b675",
+   "title": "渲染队列确认",
+   "priority": "medium",
+   "assignedAt": "2026-11-10T11:46:55.892716Z",
+   "assignedSource": "approval"
+  }
+ ]
+}

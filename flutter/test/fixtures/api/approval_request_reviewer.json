@@ -1,0 +1,86 @@
+{
+ "requestId": "fd7e2e87-59e3-493a-bea9-20c0531a82c7",
+ "taskId": "89830702-8530-426c-9843-a9bfde54dce9",
+ "kind": "create",
+ "status": "approved",
+ "comment": "演示业务决定：approve",
+ "applicantId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+ "currentReviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+ "rowVersion": 2,
+ "previousState": "todo",
+ "exemptionReason": null,
+ "createdAt": "2026-11-10T11:46:56.119499Z",
+ "decidedAt": "2026-11-10T11:46:56.123149Z",
+ "applicableDeadline": "2026-11-17T10:00:00Z",
+ "expiredAt": null,
+ "title": "仅创建不负责的片尾镜头",
+ "versionNo": 1,
+ "route": {
+  "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+  "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+  "path": [],
+  "reason": "direct-manager",
+  "reasonText": "按本次操作者的直属上级审核",
+  "authzVersion": 2,
+  "reviewerAvailable": true,
+  "blocked": false,
+  "creation": true,
+  "participants": [
+   {
+    "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "displayName": "柏拉图"
+   },
+   {
+    "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "displayName": "亚里士多德"
+   }
+  ]
+ },
+ "proposedVersion": {
+  "id": "b497340f-c22f-4450-9ca5-abe63080ea95",
+  "taskId": "89830702-8530-426c-9843-a9bfde54dce9",
+  "versionNo": 1,
+  "title": "仅创建不负责的片尾镜头",
+  "description": "光屿动画业务数据：仅创建不负责的片尾镜头",
+  "acceptanceCriteria": "",
+  "priority": "high",
+  "allDay": false,
+  "startAt": "2026-11-10T01:00:00Z",
+  "dueAt": "2026-11-17T10:00:00Z",
+  "startDate": null,
+  "dueDate": null,
+  "executionState": "todo",
+  "progressNote": "",
+  "status": "applied",
+  "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+  "createdAt": "2026-11-10T11:46:56.120226Z",
+  "allDayCutoffTime": null,
+  "assigneeIds": [
+   "0823b201-6a24-3234-8e60-b77e82bb30b9"
+  ],
+  "tags": [],
+  "tagIds": [],
+  "tagId": null,
+  "tag": null,
+  "parentTaskId": null,
+  "parentUnavailable": false
+ },
+ "baseVersionId": null,
+ "baseVersion": null,
+ "diff": [],
+ "participants": [
+  {
+   "id": "0823b201-6a24-3234-8e60-b77e82bb30b9",
+   "displayName": "阿基米德"
+  },
+  {
+   "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "displayName": "柏拉图"
+  },
+  {
+   "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "displayName": "亚里士多德"
+  }
+ ],
+ "records": []
+}
