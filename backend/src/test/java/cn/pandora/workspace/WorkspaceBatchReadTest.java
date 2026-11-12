@@ -106,6 +106,20 @@ class WorkspaceBatchReadTest {
     }
 
     @Test
+    void accountNotificationWithoutTaskOrRequestSupportsCategoryFilters() {
+        var f=new Fixture();
+        var row=f.add("account","account.created",false,false,false);
+        for(String key:List.of("taskId","requestId","objectType","objectId")) row.remove(key);
+        // The real RequestAccess uses immutable empty sets, which reject contains(null).
+        when(f.tasks.requestAccess(eq(VIEWER),anyCollection())).thenReturn(new TaskService.RequestAccess(Set.of(),Set.of()));
+        var other=f.service.notifications(VIEWER,Map.of("category","other","readStatus","unread"));
+        assertEquals(1,other.get("total"));
+        assertEquals("other",items(other).getFirst().get("category"));
+        assertEquals(0,f.service.notifications(VIEWER,Map.of("category","review")).get("total"));
+        assertEquals(1L,other.get("unreadCount"));
+    }
+
+    @Test
     void reviewCategoryTracksReassignmentDeadlineWithdrawalAndTerminalState() {
         var f=new Fixture();
         for(String id:List.of("live","reassigned","expired","withdrawn","finished")) {
@@ -214,7 +228,7 @@ class WorkspaceBatchReadTest {
                     .filter(r->!sql.contains("n.read_at IS NULL") || r.get("readAt")==null).map(r->{
                         var value=new LinkedHashMap<>(r);var event=row("domain_events",Db.s(r,"eventId"));
                         value.put("eventRevokedAt",event.get("revokedAt"));value.put("eventExpiresAt",event.get("expiresAt"));
-                        var request=row("approval_requests",Db.s(r,"requestId"));
+                        var request=r.get("requestId")==null?Map.<String,Object>of():row("approval_requests",Db.s(r,"requestId"));
                         value.put("requestStatus",request.get("status"));value.put("requestTaskId",request.get("taskId"));
                         value.put("reviewerId",request.get("currentReviewerId"));value.put("applicableDeadline",request.get("applicableDeadline"));
                         return (Map<String,Object>)value;}).toList();

@@ -56,6 +56,15 @@ def main():
         check('administrator is independent and absent from staff/placements',db.scalar('SELECT COUNT(*) FROM admin_accounts')==1 and db.scalar('SELECT COUNT(*) FROM admin_accounts a JOIN users u ON a.id=u.id')==0)
         statuses={row[0] for row in db.rows('SELECT DISTINCT status FROM approval_requests')}
         check('seed contains approved, direct, pending, rejected, withdrawn and expired applications',statuses=={'approved','direct','pending','rejected','withdrawn','expired'},sorted(statuses))
+        check('non-protagonists have no separately populated personal logs',
+              db.scalar("SELECT COUNT(*) FROM work_logs l JOIN demo_seed_keys k ON k.object_id=l.author_id AND k.object_type='employee' WHERE k.seed_key NOT IN ('upper','middle','product-head-1','employee')")==0)
+        for who in ('upper','middle','product-head-1','employee'):
+            owner=quote(manifest['identities'][who]['id'])
+            own=" FROM tasks t JOIN task_versions v ON v.id=t.current_version_id JOIN task_version_assignees a ON a.version_id=v.id AND a.user_id="+owner
+            check(who+' has a same-day short ordinary actionable task',db.scalar("SELECT COUNT(*)"+own+" WHERE v.all_day=FALSE AND t.execution_state<>'done' AND v.due_at>UTC_TIMESTAMP(6) AND TIMESTAMPDIFF(MINUTE,v.start_at,v.due_at) BETWEEN 1 AND 120 AND DATE(v.start_at+INTERVAL 8 HOUR)=DATE(v.due_at+INTERVAL 8 HOUR)")>0)
+            check(who+' has ordinary unfinished overdue work',db.scalar("SELECT COUNT(*)"+own+" WHERE t.execution_state<>'done' AND v.due_at<"+quote(manifest['businessDate'])+"-INTERVAL 8 HOUR")>0)
+        check('historical overdue work keeps approval version and chronology consistent',
+              db.scalar("SELECT COUNT(*) FROM demo_seed_keys k JOIN task_versions v ON v.task_id=k.object_id JOIN approval_requests a ON a.proposed_version_id=v.id WHERE k.seed_key IN ('task-upper-2','task-middle-2','task-product-head-1-2','task-employee-2') AND (a.applicable_deadline<>v.due_at OR a.created_at>=v.due_at OR a.decided_at>=v.due_at)")==0)
         check('seed has both completed work and a real reopened execution round',db.scalar("SELECT COUNT(*) FROM tasks WHERE execution_state='done'")>0 and db.scalar('SELECT COUNT(*) FROM tasks WHERE execution_round>1')>0)
         check('dedicated handover and formal takeover retain real separate histories',db.scalar('SELECT COUNT(*) FROM handover_requests')>0 and db.scalar('SELECT COUNT(*) FROM task_business_transfers')==1)
         f=Fixture(port=18195);f.database=name;f.db=db;f.base='http://127.0.0.1:18195/api/v1';f.identities=manifest['identities']
@@ -65,7 +74,7 @@ def main():
                 status,session=f.login(key,'Demo@123456');tokens[key]=session.get('token')
                 check(key+' authenticates through its real declared account namespace after restart',status==200 and session['user']['id']==identity['id'] and 'username' not in session['user'])
             browser=subprocess.run(['node',str(BASE/'scripts/check_demo_roles_browser.js')],
-                env={**os.environ,'PANDORA_DEMO_FIXTURE':json.dumps({'base':'http://127.0.0.1:18195','identities':manifest['identities']})},
+                env={**os.environ,'PANDORA_DEMO_FIXTURE':json.dumps({'base':'http://127.0.0.1:18195','identities':manifest['identities'],'objects':manifest['objects']})},
                 capture_output=True,text=True)
             check('four demo roles open home, company/form, logs, notifications and legitimate subordinate pages',
                   browser.returncode==0,browser.stdout[-2000:]+browser.stderr[-2000:])

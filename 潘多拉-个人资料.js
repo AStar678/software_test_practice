@@ -302,7 +302,7 @@
   }
   /* 逐月完整分页读取该人员当前负责且查看者有权的正常已发布任务；失败保留已加载月份。 */
   async function staffLoadMonth(s, block, force) {
-    if (!s || s !== staff) return;
+    if (!s || s !== staff || s.accessLost || s.epoch !== P.epoch) return;
     const cached = s.records.get(block.key);
     if (cached && !force && (cached.state === 'ready' || cached.state === 'loading')) return;
     const token = ++s.monthSeq;
@@ -562,18 +562,21 @@
   P.subordinateKey = function () { return staff && staff.epoch === P.epoch ? staff.person.id + ':' + P.epoch : null; };
 
   async function loadStaffLogs(s, more) {
+    if (s.accessLost || s.epoch !== P.epoch) return;
     const seq = ++s.logSeq;
+    const current = () => staff === s && s.epoch === P.epoch && s.logSeq === seq && !s.accessLost;
+    s.logRetryMore = !!more;
     s.logLoading = true; s.logError = null;
     paintStaff(false);
     try {
       const directory = await P.request('/me/reports');
-      if (staff !== s) return;
-      if (!(directory.items || []).some(p => p.id === s.person.id)) throw Error('已无权查看该人员，请关闭后刷新下属资料。');
+      if (!current()) return;
+      if (!(directory.items || []).some(p => p.id === s.person.id)) { loseStaffAccess(s); return; }
       const person = await P.request('/users/' + encodeURIComponent(s.person.id));
-      if (staff !== s || s.logSeq !== seq) return;
-      if (!person.canReadLogs) throw Error('当前无权查看此人的日志。');
+      if (!current()) return;
+      if (!person.canReadLogs) { loseStaffAccess(s); return; }
       const result = await P.request('/work-logs?scope=visible&authorId=' + encodeURIComponent(person.id) + '&limit=10&offset=' + (more ? (s.logNext || 0) : 0));
-      if (staff !== s || s.logSeq !== seq) return;
+      if (!current()) return;
       s.person = person;
       const rows = (result.items || []).slice().sort((a, b) => String(b.businessDate || '').localeCompare(String(a.businessDate || '')) ||
         new Date(b.createdAt) - new Date(a.createdAt) || String(a.id).localeCompare(String(b.id)));
@@ -582,14 +585,18 @@
       s.logLoading = false;
       paintStaff(false);
     } catch (error) {
-      if (staff !== s || s.logSeq !== seq || error.name === 'AbortError') return;
-      s.logLoading = false; s.logError = error.message;
-      loseStaffAccess(s);
+      if (!current() || error.name === 'AbortError') return;
+      s.logLoading = false;
+      if (error.status === 403 || error.status === 404) { loseStaffAccess(s); return; }
+      s.logError = '日志读取失败：' + (error.message || '请检查网络后重试。');
+      if (s.tab === 'logs') paintStaff(false);
     }
   }
   function loseStaffAccess(s) {
     if (!s) return;
     s.accessLost = true;
+    s.logSeq++; s.daySeq++; s.listSeq++;
+    s.logLoading = false; s.dayLoading = false;
     s.records.clear(); s.dayRows = []; s.logRows = []; s.logNext = null; s.list = null;
     P.subordinateTasks.clear(); P.subordinateLogs.clear();
     removeStaffPopup();
@@ -598,6 +605,7 @@
     paintStaff(false);
   }
   async function loadStaffDay(s, date) {
+    if (s.accessLost || s.epoch !== P.epoch) return;
     const token = ++s.daySeq;
     s.dayLoading = true; s.dayError = null;
     if (s.mode === 'day' && s.tab === 'schedule') paintStaff(false);
@@ -811,7 +819,7 @@
       }
       if(action==='p-staff-format'){staff.dayFormat=element.dataset.format==='list'?'list':'axis';paintStaff(true);return;}
       if(action==='p-staff-more'){loadStaffLogs(staff,true);return;}
-      if(action==='p-staff-retry'){loadStaffLogs(staff,false);return;}
+      if(action==='p-staff-retry'){loadStaffLogs(staff,staff.logRetryMore);return;}
       if(action==='p-staff-today')staff.date=P.data.home.businessDate;
       if(action==='p-staff-mode')staff.mode=element.dataset.mode==='day'?'day':'month';
       if(action==='p-staff-nav'){

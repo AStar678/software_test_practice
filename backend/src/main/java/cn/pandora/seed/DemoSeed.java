@@ -153,7 +153,7 @@ public class DemoSeed implements ApplicationRunner {
                     Map.of("title", companyItems[i][0], "body", companyItems[i][1]));
             remember("company-item-" + (i + 1), "home-item", s(item, "id"));
         }
-        for (String key : List.of("upper", "middle", "product-head-1", "employee", "colleague", "marketing")) {
+        for (String key : List.of("upper", "middle", "product-head-1", "employee")) {
             for (int offset = 0; offset < 3; offset++) {
                 var log = workspace.createLog(actors.get(key), Map.of("businessDate", today.minusDays(offset).toString(),
                         "body", "《星尘》制作日志：" + displayName(key) + " 同步第 " + (3 - offset) + " 天的分镜与合成进展。"));
@@ -194,8 +194,10 @@ public class DemoSeed implements ApplicationRunner {
                     case "product-head-1" -> i % 4 == 0 ? List.of("product-head-1", "employee") : List.of("product-head-1");
                     default -> i % 4 == 0 ? List.of("employee", "colleague") : List.of("employee");
                 };
-                create(lead + "-" + i, lead, leadTitles[leadIndex][i - 1], owners,
-                        input(today.plusDays((i % 7) - 2), 9 + (i % 3), today.plusDays(2 + (i % 9)), 17 + (i % 2)), true);
+                var timing = i == 1 ? shortSchedule() :
+                        input(today.plusDays(1 + i % 5), 9 + i % 3, today.plusDays(1 + i % 5 + (i % 5 == 0 ? 1 : 0)), 17);
+                String task = create(lead + "-" + i, lead, leadTitles[leadIndex][i - 1], owners, timing, true);
+                if (i == 2) seedHistoricalSchedule(task, input(today.minusDays(2), 10, today.minusDays(1), 16));
             }
         }
         /* 两种相互独立的个人置顶：日历置顶与表单置顶分别落在不同任务上，互不覆盖。 */
@@ -277,6 +279,34 @@ public class DemoSeed implements ApplicationRunner {
             case "colleague" -> "欧几里得"; case "marketing" -> "阿基米德";
             default -> "光屿动画成员";
         };
+    }
+    /** A short, still actionable same-business-day interval, including preparation late at night. */
+    private Map<String,Object> shortSchedule() {
+        ZoneId zone = ZoneId.of("Asia/Shanghai");
+        ZonedDateTime end = ZonedDateTime.now(clock.withZone(zone)).plusMinutes(90);
+        ZonedDateTime last = today.atTime(23,59,59).atZone(zone);
+        if (end.isAfter(last)) end = last;
+        return new LinkedHashMap<>(Map.of("allDay", false, "startAt", end.minusMinutes(90).toOffsetDateTime().toString(),
+                "dueAt", end.toOffsetDateTime().toString()));
+    }
+    /** Initial historical seed only: normal submissions correctly reject already elapsed deadlines.
+        Keep the approved business record and its version/approval deadline consistent; never runs
+        for an already prepared target, so repeat preparation cannot reschedule edited work. */
+    private void seedHistoricalSchedule(String task, Map<String,Object> timing) {
+        Instant start = OffsetDateTime.parse((String)timing.get("startAt")).toInstant();
+        Instant due = OffsetDateTime.parse((String)timing.get("dueAt")).toInstant();
+        db.update("UPDATE task_versions SET start_at=?,due_at=? WHERE organization_id=? AND task_id=?",
+                java.sql.Timestamp.from(start),java.sql.Timestamp.from(due),ORG,task);
+        db.update("UPDATE approval_requests SET applicable_deadline=? WHERE organization_id=? AND task_id=?",java.sql.Timestamp.from(due),ORG,task);
+        // This is pre-existing unfinished work, with submission/decision before its historical due.
+        db.update("UPDATE tasks SET created_at=created_at-INTERVAL 3 DAY,updated_at=updated_at-INTERVAL 3 DAY WHERE organization_id=? AND id=?",ORG,task);
+        db.update("UPDATE task_versions SET created_at=created_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
+        db.update("UPDATE approval_requests SET created_at=created_at-INTERVAL 3 DAY,decided_at=decided_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
+        db.update("UPDATE task_history_entries SET occurred_at=occurred_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
+        db.update("UPDATE task_assignments SET assigned_at=assigned_at-INTERVAL 3 DAY,created_at=created_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
+        db.update("UPDATE task_business_owners SET updated_at=updated_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
+        db.update("UPDATE audit_logs SET created_at=created_at-INTERVAL 3 DAY WHERE organization_id=? AND object_id=?",ORG,task);
+        db.update("UPDATE domain_events SET created_at=created_at-INTERVAL 3 DAY,expires_at=DATE_ADD(occurred_at-INTERVAL 3 DAY,INTERVAL 3 MONTH),occurred_at=occurred_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
     }
     private Map<String,Object> schedule() {return input(today,9,today.plusDays(7),18);}
     private Map<String,Object> input(LocalDate start,int hour,LocalDate due,int dueHour) {

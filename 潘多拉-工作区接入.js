@@ -243,7 +243,7 @@ function logDraft(raw, businessDate) {
     fillSeq: 0, fillPending: false,
     etag: raw ? version(raw) : null, epoch: P.epoch,
     businessDate: raw ? raw.businessDate : businessDate,
-    frozen: !!(raw && raw.frozen), frozenAt: raw ? raw.frozenAt : null };
+    editable: !raw || raw.editable === true, frozen: !!(raw && raw.frozen), frozenAt: raw ? raw.frozenAt : null };
 }
 function logDateOptions() {
   const today = parseDateInput(companyBusinessDate()) || new Date();
@@ -324,10 +324,15 @@ function logDateEditHTML(d) {
 }
 function logFieldsHTML(d, dateHTML) {
   const linked = d.taskId ? taskById(d.taskId) : null;
+  if (d.frozenAt && logFillAllowed(d)) {
+    clearTimeout(d.freezeTimer);
+    d.freezeTimer = setTimeout(() => { if (drafts.log === d && d.epoch === P.epoch) freezeLogDraft(d); },
+      Math.max(0, new Date(d.frozenAt).getTime() - Date.now()));
+  }
   return '<div class="p-log-meta">' + dateHTML + (P.tagCollectionHTML ? P.tagCollectionHTML('lf', d.tagIds, d.tagSnapshots) : '') + '</div>' +
     '<div class="field log-content-field"><div class="log-content-head"><label for="lf-content">日志内容</label>' +
-      '<button type="button" class="btn tiny-btn" id="lf-fill-button" data-action="fill-log-source" aria-label="填入当日事项与任务名称">填入当日事项与任务</button></div>' +
-      '<textarea id="lf-content" maxlength="10000" data-autofocus>' + esc(d.content) + '</textarea>' +
+      '<button type="button" class="btn tiny-btn" id="lf-fill-button" data-action="fill-log-source" aria-label="填入当日事项与任务名称"' + (logFillAllowed(d) ? '' : ' disabled aria-disabled="true"') + '>填入当日事项与任务</button></div>' +
+      '<textarea id="lf-content" maxlength="10000" data-autofocus' + (logFillAllowed(d) ? '' : ' readonly') + '>' + esc(d.content) + '</textarea>' +
       '<p class="tiny muted" id="lf-fill-status" role="status" aria-live="polite"></p></div>' +
     '<div class="field"><label>关联任务（可选）</label>' +
       '<div class="summary-line" id="lf-task-summary">' +
@@ -402,7 +407,7 @@ saveLog = function () {
       }
       if (error.code === "WORK_LOG_FROZEN") {
         // 冻结只拒绝这次写入：保留当前模式的日期/标签/正文/关联草稿与可复制文字，不关闭界面。
-        d.frozen = true;
+        freezeLogDraft(d);
         try { await P.reload(); } catch (reloadError) { if (reloadError.name === "AbortError") return; /* 列表刷新失败也不能吞掉用户尚未保存的内容 */ }
         // 身份切换或表单已被关闭时草稿已作废，不能再重建界面。
         if (drafts.log !== d || d.epoch !== P.epoch) return;
@@ -446,11 +451,37 @@ saveLog = function () {
     status.textContent = message || "";
     status.classList.toggle("is-error", !!isError);
   }
+  function logFillAllowed(d) {
+    return !!d && !d.frozen && d.editable !== false &&
+      (!d.frozenAt || Date.now() < new Date(d.frozenAt).getTime());
+  }
+  function freezeLogDraft(d) {
+    d.frozen = true; d.editable = false; d.fillSeq++; d.fillPending = false;
+    if (drafts.log !== d || d.epoch !== P.epoch) return;
+    syncLogDraft();
+    const button = document.getElementById('lf-fill-button');
+    if (button) { button.disabled = true; button.setAttribute('aria-disabled', 'true'); button.removeAttribute('aria-busy'); }
+    const textarea = document.getElementById('lf-content');
+    if (textarea) textarea.readOnly = true;
+    setFillStatus('该日志已只读，未保存的内容保留供复制；未追加任何内容。', true);
+  }
+  async function checkLogFillAccess(d) {
+    if (!logFillAllowed(d)) { freezeLogDraft(d); return false; }
+    if (d.mode !== 'edit') return true;
+    // 服务裁决真实冻结点；开始及落地前均回读，以覆盖旧页和请求途中到期。
+    const raw = await P.request('/work-logs/' + endpoint(d.id));
+    if (drafts.log !== d || d.epoch !== P.epoch) return false;
+    if (!raw.editable || raw.frozen) { freezeLogDraft(d); return false; }
+    d.frozenAt = raw.frozenAt;
+    if (!logFillAllowed(d)) { freezeLogDraft(d); return false; }
+    return true;
+  }
   function fillLogSource(button) {
     const d = drafts.log;
     if (!d || d.epoch !== P.epoch) { P.notice("请重新打开日志后再填充。"); return; }
     if (d.mode === "edit" && !d.id) { P.notice("请重新打开日志后再填充。"); return; }
     syncLogDraft();
+    if (!logFillAllowed(d)) { freezeLogDraft(d); return; }
     if (d.fillPending) return;
     const sequence = (d.fillSeq || 0) + 1;
     d.fillSeq = sequence;
@@ -458,9 +489,14 @@ saveLog = function () {
     const businessDate = d.businessDate;
     if (button) { button.setAttribute("aria-busy", "true"); button.setAttribute("aria-disabled", "true"); }
     setFillStatus("正在读取 " + businessDate + " 的每日事项与任务…");
-    P.request("/work-logs/fill-source?businessDate=" + encodeURIComponent(businessDate)).then(result => {
+    Promise.resolve().then(async () => {
+      if (!await checkLogFillAccess(d) || drafts.log !== d || d.fillSeq !== sequence || d.businessDate !== businessDate) return null;
+      return P.request("/work-logs/fill-source?businessDate=" + encodeURIComponent(businessDate));
+    }).then(async result => {
+      if (!result) return;
       if (drafts.log !== d || d.epoch !== P.epoch || d.fillSeq !== sequence) return;
       if (d.businessDate !== businessDate) { setFillStatus("日志日期已变化，未写入。"); return; }
+      if (!await checkLogFillAccess(d) || drafts.log !== d || d.fillSeq !== sequence || d.businessDate !== businessDate) return;
       const textarea = document.getElementById("lf-content");
       if (!textarea) return;
       const items = fillNames(result.dailyItems), tasks = fillNames(result.tasks);
@@ -487,7 +523,7 @@ saveLog = function () {
       const current = document.getElementById("lf-fill-button");
       if (current === button || (current && current.dataset.action === "fill-log-source")) {
         const target = current || button;
-        if (target) { target.removeAttribute("aria-busy"); target.removeAttribute("aria-disabled"); }
+        if (target) { target.removeAttribute("aria-busy"); if (logFillAllowed(d)) target.removeAttribute("aria-disabled"); }
       }
     });
   }
@@ -644,21 +680,30 @@ saveLog = function () {
     q.error = null;
     q.lastMode = mode;
     const offset = mode === 'more' && q.nextOffset != null ? q.nextOffset : 0;
-    const limit = mode === 'refresh' ? Math.max(NOTICE_PAGE, q.items.length) : NOTICE_PAGE;
-    if (mode !== 'more') { q.items = []; q.total = 0; q.nextOffset = 0; }
+    const wanted = mode === 'refresh' ? Math.max(NOTICE_PAGE, q.items.length) : NOTICE_PAGE;
+    // 刷新分批读回原加载范围，所有页成功后再替换；失败保留仍有效列表。
     q.loading = true;
     if (noticeListIsTop()) { if (mode === 'more') { const foot = document.getElementById('p-notice-foot'); if (foot) foot.innerHTML = noticeFootHTML(q); } else noticePaint(); }
     try {
-      const result = await P.request(noticeParams(q, offset, limit));
-      if (epoch !== P.epoch || seq !== q.seq || q !== noticeQuery || account !== noticeAccount()) return false;
-      const items = Array.isArray(result.items) ? result.items : [];
+      const current = () => epoch === P.epoch && seq === q.seq && q === noticeQuery && account === noticeAccount();
+      const rows = new Map();
+      let cursor = offset, result;
+      do {
+        result = await P.request(noticeParams(q, cursor, Math.min(100, wanted - rows.size)));
+        if (!current()) return false;
+        (Array.isArray(result.items) ? result.items : []).forEach(item => rows.set(item.id, item));
+        const next = result.nextOffset == null ? null : Number(result.nextOffset);
+        if (next != null && next <= cursor) throw new Error('通知分页异常，请重试。');
+        cursor = next;
+      } while (mode === 'refresh' && rows.size < wanted && cursor != null);
+      const items = Array.from(rows.values());
       q.total = Number(result.total || 0);
       q.unreadCount = Number(result.unreadCount || 0);
       P.data.notificationUnreadCount = q.unreadCount;
       renderBell();
       if (mode === 'more') q.items = q.items.concat(items.filter(item => !q.items.some(existing => existing.id === item.id)));
       else q.items = items;
-      q.nextOffset = result.nextOffset == null ? null : Number(result.nextOffset);
+      q.nextOffset = cursor;
       q.loading = false;
       if (noticeListIsTop()) { if (mode === 'more') noticeAppendPaint(items); else noticePaint(); }
       return true;
@@ -954,7 +999,7 @@ saveLog = function () {
       case "p-notice-reset": noticeResetFilters(); return;
       case "p-notice-mode": noticeToggleMode(); return;
       case "p-notice-more": { const q = noticeEnsure(); if (!q.loading && q.nextOffset != null) noticeFetch('more'); return; }
-      case "p-notice-retry": { const q = noticeEnsure(); noticeFetch(q.lastMode === 'more' ? 'more' : 'first'); return; }
+      case "p-notice-retry": { const q = noticeEnsure(); noticeFetch(q.lastMode || 'first'); return; }
       case "p-hide-notification": deleteNotification(el.dataset.id); return;
       case "p-withdraw-notification": withdrawNotification(el.dataset.id); return;
       case "p-withdraw-notification-request": withdrawRequestFromNotification(el.dataset.id); return;

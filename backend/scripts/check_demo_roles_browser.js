@@ -23,6 +23,13 @@ async function main(){
  async function company(who){
   await ev("state.viewPage='calendar';setPage('view');renderAll()");
   check(who+' company page renders the real month calendar',await waitFor(b,"!!document.querySelector('.p-schedule-card')&&document.querySelectorAll('.p-month-event').length>=0",20000));
+  const shortId=f.objects['task-'+who+'-1'].id,overdueId=f.objects['task-'+who+'-2'].id;
+  await ev("state.viewMode='day';state.viewAnchor=parseDateInput(Pandora.data.home.businessDate);renderAll()");
+  check(who+' own day axis has a usable short-task drag target',await waitFor(b,`!!document.querySelector('.p-day-layout [data-schedule-move="${shortId}"]')&&Pandora.idle()`,15000));
+  await ev(`Pandora.openTask(${js(overdueId)})`);
+  check(who+' can open normal overdue work in its real detail',await waitFor(b,`sheetStack[sheetStack.length-1]?.taskId===${js(overdueId)}&&Pandora.idle()`,15000)
+        &&await ev(`Pandora.request('/tasks/'+${js(overdueId)}).then(t=>t.executionState!=='done'&&new Date(t.dueAt)<Pandora.companyDayStart(Pandora.data.home.businessDate))`));
+  await ev('closeSheet()');
   await ev("document.querySelector('[data-action=task-table-open]').click()");
   check(who+' task form opens its server-paged table',await waitFor(b,"state.viewPage==='table'&&!!document.querySelector('[data-task-row]')&&Pandora.idle()",25000));
   const rows=await ev("document.querySelectorAll('[data-task-row]').length");
