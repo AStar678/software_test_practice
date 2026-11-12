@@ -166,6 +166,7 @@ ProviderContainer buildTestContainer({
           ),
         ),
       ),
+      currentUserProvider.overrideWithValue(user),
     ],
   );
   return container;

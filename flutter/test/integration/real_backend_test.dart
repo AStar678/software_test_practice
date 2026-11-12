@@ -414,6 +414,41 @@ void main() {
     }
   }, skip: skipReason);
 
+  test('J14 任务表单组合过滤、稳定分页与单端日期真实链路', () async {
+    final userId = session.state.user!.id;
+    final today = clock.businessDate;
+    final first = await tasks.table(
+      relation: 'assigned',
+      completion: 'unfinished',
+      sort: 'title',
+      direction: 'asc',
+      limit: 5,
+      offset: 0,
+    );
+    expect(first.total, greaterThanOrEqualTo(first.items.length));
+    for (final task in first.items) {
+      expect(task.assigneeIds, contains(userId));
+      expect(task.done, isFalse);
+    }
+    if (first.items.length == 5 && first.total > 5) {
+      final second = await tasks.table(
+        relation: 'assigned',
+        completion: 'unfinished',
+        sort: 'title',
+        direction: 'asc',
+        limit: 5,
+        offset: 5,
+      );
+      expect(second.items.map((task) => task.id).toSet().intersection(first.items.map((task) => task.id).toSet()), isEmpty);
+    }
+    final futureOnly = await tasks.table(from: today.addDays(365).iso, limit: 5);
+    expect(futureOnly.items, isEmpty);
+    final created = await tasks.table(relation: 'created', limit: 5);
+    for (final task in created.items) {
+      expect(task.originalCreatorId, userId);
+    }
+  }, skip: skipReason);
+
   test('J20/J21/J23 日志、填充源与评论真实链路', () async {
     final date = clock.businessDate;
     final body = 'Flutter 日志联调 ${DateTime.now().microsecondsSinceEpoch}';
