@@ -524,7 +524,8 @@
     const s=staff;if(!s)return null;
     const p=s.person;
     const dateBar=s.tab==='schedule'?staffCalendarNav():'';
-    const content=s.tab==='schedule'?staffScheduleHTML(s):(s.logLoading?'<div class="staff-state" role="status">正在读取日志…</div>':s.logError?'<div class="staff-state" role="alert">'+esc(s.logError)+'<button type="button" class="btn" data-action="p-staff-retry">重新读取</button></div>':(s.logRows.length?s.logRows.map(staffLogHTML).join(''):'<div class="staff-state">暂无可查看的日志</div>'));
+    let content=s.tab==='schedule'?staffScheduleHTML(s):(s.logLoading?'<div class="staff-state" role="status">正在读取日志…</div>':s.logError?'<div class="staff-state" role="alert">'+esc(s.logError)+'<button type="button" class="btn" data-action="p-staff-retry">重新读取</button></div>':(s.logRows.length?s.logRows.map(staffLogHTML).join(''):'<div class="staff-state">暂无可查看的日志</div>'));
+    if(s.accessLost)content='<div class="staff-state" role="alert">你已无权查看该人员的日程或日志，请关闭后重新打开。<button type="button" class="btn" data-action="sheet-close">关闭</button></div>';
     return {title:p.displayName+'的工作',fullscreen:true,subordinate:true,staffWork:true,body:'<section class="staff-panel" data-staff-panel="'+esc(p.id)+'"><header class="staff-person"><span class="staff-avatar">'+esc(Array.from(p.displayName||'')[0]||'人')+'</span><div><h2>'+esc(p.displayName)+'</h2><p class="staff-org-path">'+esc(P.staffOrgLine(p)||'职务未设置')+'</p></div></header><div class="staff-tabs" role="group" aria-label="下属工作类型">'+[['schedule','日程'],['logs','日志']].map(([tab,label])=>'<button type="button" data-action="p-staff-tab" data-tab="'+tab+'" aria-pressed="'+(s.tab===tab)+'">'+label+'</button>').join('')+'</div>'+dateBar+'<div class="staff-content">'+content+'</div>'+(!s.logLoading&&!s.logError&&s.tab==='logs'&&s.logNext!=null?'<button type="button" class="btn staff-more" data-action="p-staff-more">加载更早日志</button>':'')+'</section>',foot:'',rebuild:function(){setTimeout(()=>{if(staff===s)staffAfterRender(s);},0);return staffView();}};
   }
   /* 渲染后的定位：月视图恢复日期锚点，日视图恢复时间轴起点。 */
@@ -588,6 +589,7 @@
   }
   function loseStaffAccess(s) {
     if (!s) return;
+    s.accessLost = true;
     s.records.clear(); s.dayRows = []; s.logRows = []; s.logNext = null; s.list = null;
     P.subordinateTasks.clear(); P.subordinateLogs.clear();
     removeStaffPopup();
@@ -629,7 +631,7 @@
       months: [], records: new Map(), anchorDate: null, anchorOffset: 8, monthSeq: 0,
       dayRows: [], dayLoading: false, dayError: null, daySeq: 0,
       logRows: [], logNext: null, logLoading: false, logError: null, logSeq: 0,
-      list: null, listSeq: 0, restoreScroll: null };
+      list: null, listSeq: 0, restoreScroll: null, accessLost: false };
     staff = s;
     staffInitMonths(s, s.date);
     P.subordinateTasks.clear(); P.subordinateLogs.clear();
@@ -849,7 +851,19 @@
       } else openTaskDetail(event.target.dataset.task);
     }
   });
-  document.addEventListener('change',function(event){if(event.target.id==='staff-calendar-date'&&staff){const value=event.target.value,d=parseDateInput(value);if(d&&toDateInput(d)===value){staff.date=value;if(staff.mode==='day'){loadStaffDay(staff,value);}else{paintStaff(false);}}}});
+  document.addEventListener('change',function(event){if(event.target.id==='staff-calendar-date'&&staff){const value=event.target.value,d=parseDateInput(value);if(d&&toDateInput(d)===value){
+    staff.date=value;
+    if(staff.mode==='day'){loadStaffDay(staff,value);return;}
+    /* 月份流按所选日期定位：目标月未挂载时重设连续窗口，否则保留已加载月份并清除旧锚点。 */
+    const month=value.slice(0,7);
+    if(!staffBlockOf(staff,month)){
+      staff.months=[staffMonthBlock(d.getFullYear(),d.getMonth()+1),staffMonthBlock(d.getFullYear(),d.getMonth()+2),staffMonthBlock(d.getFullYear(),d.getMonth()+3)];
+      staff.months.forEach(block=>staffLoadMonth(staff,block));
+    }
+    staff.anchorDate=value;staff.anchorOffset=8;
+    paintStaff(false);
+    staff.months.forEach(block=>staffLoadMonth(staff,block));
+  }}});
   /* 当天清单是固定浮层：被任务/日志详情覆盖时先隐藏，返回人员工作页后恢复；
      若已离开人员工作中则直接移除。 */
   function hideStaffPopupForCover() {

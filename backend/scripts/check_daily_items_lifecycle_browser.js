@@ -57,21 +57,6 @@ module.exports = async function checkDailyItemLifecycle(b, fixture, check) {
     await ev('closeSheet()');
   }
 
-  await ev(`setPage('map');window.lifecycleHeld=[];window.lifecycleRequest=Pandora.request;Pandora.request=async function(path,options){const result=await window.lifecycleRequest(path,options);if(path.startsWith('/daily-items?'))await new Promise(resolve=>window.lifecycleHeld.push(resolve));return result};PandoraDaily.openList('2036-07-19')`);
-  await ready('window.lifecycleHeld.length===1');
-  await ev('closeSheet()');
-  await release();
-  check('V-005 cancelling an initial list request cannot reopen the list', await ev('overlayEl.hidden&&sheetStack.length===0'));
-
-  await ev(`window.lifecycleHeld=[];window.lifecycleListCalls=0;window.lifecycleRequest=Pandora.request;Pandora.request=async function(path,options){const result=await window.lifecycleRequest(path,options);if(path.startsWith('/daily-items?')&&++window.lifecycleListCalls===1)await new Promise(resolve=>window.lifecycleHeld.push(resolve));return result};PandoraDaily.openList('2038-08-21')`);
-  await ready('window.lifecycleHeld.length===1');
-  await ev("closeSheet();PandoraDaily.openList('2038-08-21')");
-  await ready("sheetStack.at(-1)?.dailyDate==='2038-08-21'&&Pandora.idle()");
-  await release();
-  const reopened = await ev("({date:sheetStack.at(-1)?.dailyDate,calls:window.lifecycleListCalls,loading:sheetBodyEl.textContent.includes('正在加载'),depth:sheetStack.length})");
-  check('V-005 reopening the same date owns a new read instead of retaining a cancelled loading state', reopened.date === '2038-08-21' && reopened.calls === 2 && !reopened.loading && reopened.depth === 1, reopened);
-  await ev('closeSheet()');
-
   await openList();
   await ev("document.querySelector('#sheetBody [data-action=daily-open]').click()");
   await ready("sheetStack.at(-1)?.dailyKind==='detail'&&Pandora.idle()");

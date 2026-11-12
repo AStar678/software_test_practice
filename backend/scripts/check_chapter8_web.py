@@ -73,8 +73,7 @@ def main():
                 "ranged": {"start": "2027-01-08", "end": "2027-01-10", "body": "跨日事项：整理三天的动画分镜"},
                 "single": {"date": "2027-01-11", "body": "单日事项：检查合成输出"},
             }
-            env = {**os.environ, "PANDORA_BROWSER_FIXTURE": json.dumps(manifest, ensure_ascii=False),
-                   "CHROME_BIN": os.environ.get("CHROME_BIN", r"C:\Program Files\Google\Chrome\Application\chrome.exe")}
+            env = {**os.environ, "PANDORA_BROWSER_FIXTURE": json.dumps(manifest, ensure_ascii=False)}
             subprocess.run(["node", str(pathlib.Path(__file__).resolve().parent / "check_chapter8_browser.js")],
                            env=env, check=True)
     finally:

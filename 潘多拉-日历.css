@@ -467,3 +467,10 @@
 .p-holiday-retry{padding:0 2px;font-size:10px;color:#2563a8}
 .p-day-holiday{margin-left:6px;font-size:12px;font-weight:600;color:#b4430f}
 .p-day-sheet-head .p-day-holiday{font-size:11px}
+
+/* ---------- 长按拖动反馈：来源浮起、目标日期高亮、激活后屏蔽文本选择 ---------- */
+body.is-schedule-dragging{user-select:none;-webkit-user-select:none}
+.p-month-event.is-dragging,.staff-month-event.is-dragging,.p-horizontal-bar.is-dragging,
+.p-axis-event.is-dragging,.p-all-day-event.is-dragging{opacity:.55}
+.p-month-date.is-drop-target{outline:2px solid #ab3257;outline-offset:-2px;border-radius:8px;background:#fff0f5}
+.p-month-date.is-drop-target strong{color:#ab3257}

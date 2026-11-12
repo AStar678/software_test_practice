@@ -312,7 +312,13 @@
       const cellTop = cell.getBoundingClientRect().top;
       if (cellTop >= top - 1 && cellTop < bestTop) { bestTop = cellTop; best = cell; }
     });
-    if (best) { S.anchorDate = best.dataset.dailyDate; S.anchorOffset = Math.max(0, Math.round(bestTop - top)); }
+    if (best) {
+      S.anchorDate = best.dataset.dailyDate;
+      S.anchorOffset = Math.max(0, Math.round(bestTop - top));
+      /* 清单打开期间的补载/布局若改变了日历锚点，关闭时应回到当前可见位置，而不是旧快照。 */
+      if (S.closePosition && typeof openListDate === 'function' && openListDate())
+        S.closePosition = { date: S.anchorDate, offset: S.anchorOffset };
+    }
   }
 
   /* ------------------------------------------------------- 定位与月份补足 */
@@ -646,9 +652,13 @@
     const cell = document.querySelector('[data-daily-date="' + key + '"]');
     const scroller = document.getElementById("dailyScroller");
     if (cell && scroller && scroller.clientHeight) {
+      /* 取消上一次滚动排队的锚点恢复，避免它在键盘定位之后把滚动位置拉回去。 */
+      cancelLayout();
       const box = cell.getBoundingClientRect(), viewport = scroller.getBoundingClientRect();
       if (box.top < viewport.top) scroller.scrollTop -= viewport.top - box.top;
       else if (box.bottom > viewport.bottom) scroller.scrollTop += box.bottom - viewport.bottom;
+      /* 键盘定位产生的滚动不能被 onScroll 误判为视口尺寸变化并回退到旧锚点。 */
+      S.viewportHeight = scroller.clientHeight;
       if (!S.restoring) anchorFromDom(scroller);
       cell.focus({ preventScroll: true });
       return true;
@@ -673,10 +683,21 @@
     if (!next) return;
     S.selected = next;
     if (!document.querySelector('[data-daily-date="' + next + '"]')) goToDate(next);
-    document.querySelectorAll(".daily-cell.is-selected").forEach(cell => cell.classList.remove("is-selected"));
-    focusCell(next);
-    const cell = document.querySelector('[data-daily-date="' + next + '"]');
-    if (cell) cell.classList.add("is-selected");
+    const place = () => {
+      document.querySelectorAll(".daily-cell.is-selected").forEach(cell => cell.classList.remove("is-selected"));
+      focusCell(next);
+      const target = document.querySelector('[data-daily-date="' + next + '"]');
+      if (target) {
+        target.classList.add("is-selected");
+        /* 补载/重绘后的月份高度可能晚一帧才稳定；nearest 只滚动最近的日历容器，
+           不把整页带走，也不会在无法再滚动时把焦点留在视口外。 */
+        target.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
+    };
+    /* 跨月补载的月份节点在同一任务内插入，布局测量可能尚未反映新高度；
+       下一帧再定位一次，保证方向键焦点日期始终留在可视区。 */
+    place();
+    requestAnimationFrame(place);
   }
 
   /* ------------------------------------------------------------ 日清单 */
@@ -1110,9 +1131,15 @@
     if (focus && document.contains(focus)) focus.focus({ preventScroll: true });
     else if (focus && S.selected && document.querySelector('[data-daily-date="' + S.selected + '"]')) focusCell(S.selected);
     if (position) {
+      cancelLayout();
       S.anchorDate = position.date || S.anchorDate;
       S.anchorOffset = position.offset == null ? S.anchorOffset : position.offset;
       layoutPosition({ date: S.anchorDate, offset: S.anchorOffset });
+      /* 恢复的是关闭清单前的浏览锚点；焦点回到触发日期不应改写这个日期+偏移。 */
+      S.anchorDate = position.date || S.anchorDate;
+      S.anchorOffset = position.offset == null ? S.anchorOffset : position.offset;
+      const scroller = document.getElementById("dailyScroller");
+      if (scroller) S.viewportHeight = scroller.clientHeight;
     }
   };
   const baseSetPage = setPage;

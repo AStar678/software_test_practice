@@ -134,8 +134,13 @@ async function main(){
   await view('day','timeline','2031-02-11');
   check('midnight end creates no next-day duplicate',await ev(`!document.querySelector('[data-task="${f.midnight}"]')`));
   await view('day','horizontal',f.crossDay);
-  await drag(`[data-resize-task="${f.midnight}"][data-resize=end][data-resize-mode=day]`,1);await confirm();
-  check('midnight endpoint drag proposes the real next instant',await ev("(()=>{const t=document.getElementById('sheetBody').textContent;return t.includes('2031-02-11')&&t.includes('01:00')})()"));
+  const midnightBefore=await raw(f.midnight);
+  await drag(`[data-resize-task="${f.midnight}"][data-resize=end][data-resize-mode=day]`,1);
+  check('a day-axis midnight endpoint cannot cross into the next day',await ev("document.getElementById('overlay').hidden&&!document.querySelector('#sc-reason')")&&(await raw(f.midnight)).rowVersion===midnightBefore.rowVersion);
+  check('the rejected midnight endpoint reports the day boundary',(await ev("document.getElementById('appNotice').textContent")).includes('00:00–24:00'));
+  await view('day','horizontal',f.crossDay);
+  await drag(`[data-schedule-move="${f.midnight}"][data-resize-mode=day]`,-1);await confirm();
+  check('a legal whole-task move keeps the 24:00 deadline inside one day',await ev("(()=>{const t=document.getElementById('sheetBody').textContent;return t.includes('13:00')&&t.includes('23:00')})()"));
   await ev('closeSheet()');
   /* 6.3 端点手柄上的无位移按下—松开只取消手势，不打开确认或详情。 */
   await view('day','horizontal',f.quiet);
@@ -209,17 +214,18 @@ async function main(){
   await reloadMonth(f.proposalDay);
   const afterReject=await barState(f.proposal);
   check('rejection returns the calendar to the effective date',afterReject.date==='2031-02-20'&&!afterReject.dashed,afterReject);
-  await monthDrag(f.proposal,4,f.proposalDay);
+  await monthDrag(f.proposal,2,f.proposalDay);
+  const approveCandidate=await raw(f.proposal);
+  const candidateStart=await ev(`Pandora.companyDateKey(${q(approveCandidate.pendingSchedule.startAt)})`);
   const approvedBar=await barState(f.proposal);
-  check('approved candidate projects as pending before the decision',approvedBar.date==='2031-02-24'&&approvedBar.dashed,approvedBar);
-  const approveRaw=await raw(f.proposal);
-  const approved=await decide(approveRaw.pendingRequestId,'approve',f.tokens.head);
+  check('approved candidate projects as pending before the decision',approvedBar.date===candidateStart&&approvedBar.dashed,{approvedBar,candidateStart});
+  const approved=await decide(approveCandidate.pendingRequestId,'approve',f.tokens.head);
   check('reviewer approves the schedule proposal',approved.status===200,approved);
   await reloadMonth(f.proposalDay);
   const afterApprove=await barState(f.proposal);
-  check('approval publishes the proposed date without a dashed frame',afterApprove.date==='2031-02-24'&&!afterApprove.dashed,afterApprove);
+  check('approval publishes the proposed date without a dashed frame',afterApprove.date===candidateStart&&!afterApprove.dashed,{afterApprove,candidateStart});
   const approvedRaw=await raw(f.proposal);
-  check('approval publishes the exact effective times',approvedRaw.dueAt==='2031-02-24T03:00:00Z'&&!approvedRaw.frozen,approvedRaw);
+  check('approval publishes the exact effective times',approvedRaw.dueAt===approveCandidate.pendingSchedule.dueAt&&!approvedRaw.frozen,{approvedRaw,candidate:approveCandidate.pendingSchedule});
   /* Leave one proposal pending so the parent check can expire it and verify the calendar recovery. */
   await monthDrag(f.expire,2,f.expireDay);
   const expireBar=await barState(f.expire);

@@ -509,8 +509,9 @@ saveLog = function () {
 
   const REQUEST_KIND = { create: "创建任务", change: "修改资料", progress: "更新进展", complete: "提交完成", reopen: "重开任务", handover: "交接" };
   const REQUEST_RESULT = { pending: "待审核", approved: "已通过", rejected: "已退回", withdrawn: "已撤销", direct: "已生效", expired: "已失效" };
-  notificationsFor = () => NOTIFICATIONS.slice().sort((a, b) => b.time - a.time);
-  unreadCount = () => NOTIFICATIONS.filter(n => !n.raw.readAt).length;
+  let noticeQuery = null;
+  notificationsFor = () => (noticeQuery ? noticeQuery.items.slice() : []);
+  unreadCount = () => Number((P.data && P.data.notificationUnreadCount) || 0);
   const PURPOSE_FALLBACK = { comment: "新评论", task: "任务通知", log: "日志" };
   function notificationPurpose(raw) {
     if (raw.purpose) return raw.purpose;
@@ -529,38 +530,192 @@ saveLog = function () {
     }
     return text.trim();
   }
-  let noticeFilters = { read: "all", category: "all", mode: "compact", epoch: -1 };
-  const NOTICE_CATEGORIES = { all: "全部类型", review: "需我审核", result: "结果告知", reminder: "提醒", comment: "评论", other: "其他" };
-  function noticeSelect(id, label, value, options) {
-    return '<label class="field" for="' + id + '"><span>' + label + '</span><select id="' + id + '">' + Object.entries(options).map(([key,text]) => '<option value="' + key + '"' + (value === key ? ' selected' : '') + '>' + text + '</option>').join('') + '</select></div>';
+  /* 通知列表委托服务端组合筛选与分页：六类型标签、已读三段、单图标精简/完整切换。
+     过滤后的 total 与独立全局 unreadCount 都取自服务端，切换条件/模式不标读。 */
+  const NOTICE_CATEGORIES = { all: '全部', review: '需我审核', result: '结果告知', reminder: '提醒', comment: '评论', other: '其他' };
+  const NOTICE_READ = { all: '全部', unread: '未读', read: '已读' };
+  const NOTICE_PAGE = 20;
+  const NOTICE_ICON = {
+    compact: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5 4 19h16z"/></svg>',
+    full: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M8 5v5M8 15h5"/></svg>'
+  };
+  function noticeAccount() { return ((P.data && P.data.me) || {}).id || null; }
+  function noticeEnsure() {
+    if (!noticeQuery || noticeQuery.epoch !== P.epoch || noticeQuery.account !== noticeAccount()) {
+      noticeQuery = { category: 'all', read: 'all', mode: 'compact', items: [], total: 0,
+        unreadCount: Number((P.data && P.data.notificationUnreadCount) || 0),
+        nextOffset: 0, loading: false, error: null, lastMode: 'first', epoch: P.epoch, account: noticeAccount(), seq: 0 };
+    }
+    return noticeQuery;
+  }
+  P.sessionReset.push(function () { noticeQuery = null; });
+  function renderBell() {
+    const dot = document.getElementById('bellDot'), bell = document.getElementById('bellBtn');
+    if (!dot || !bell) return;
+    const n = Number((P.data && P.data.notificationUnreadCount) || 0);
+    dot.hidden = n === 0;
+    dot.textContent = n > 9 ? '9+' : String(n);
+    bell.setAttribute('aria-label', n ? '通知，' + n + ' 条未读' : '通知，无未读');
+  }
+  P.renderBell = renderBell;
+  function noticeParams(q, offset, limit) {
+    const params = new URLSearchParams();
+    params.set('limit', String(limit));
+    params.set('offset', String(offset));
+    if (q.category !== 'all') params.set('category', q.category);
+    if (q.read !== 'all') params.set('readStatus', q.read);
+    return '/notifications?' + params.toString();
+  }
+  function noticeFiltersActive(q) { return q.category !== 'all' || q.read !== 'all'; }
+  function noticeFiltersHTML(q) {
+    return '<div class="p-notice-filters" role="group" aria-label="通知筛选">' +
+      '<div class="p-notice-tabs" role="tablist" aria-label="通知类型">' +
+        Object.entries(NOTICE_CATEGORIES).map(([key, label]) =>
+          '<button type="button" role="tab" class="p-notice-tab" data-action="p-notice-category" data-value="' + key +
+          '" aria-selected="' + (q.category === key) + '" tabindex="' + (q.category === key ? 0 : -1) + '">' + label + '</button>').join('') +
+      '</div>' +
+      '<div class="p-notice-controls">' +
+        '<div class="p-notice-read" role="group" aria-label="已读状态">' +
+          Object.entries(NOTICE_READ).map(([key, label]) =>
+            '<button type="button" class="p-notice-read-btn" data-action="p-notice-read" data-value="' + key +
+            '" aria-pressed="' + (q.read === key) + '">' + label + '</button>').join('') +
+        '</div>' +
+        '<button type="button" class="p-notice-mode" data-action="p-notice-mode" aria-pressed="' + (q.mode === 'full') +
+          '" aria-label="' + (q.mode === 'full' ? '切换到精简显示' : '切换到完整显示') + '" title="' +
+          (q.mode === 'full' ? '当前完整模式，切换到精简显示' : '当前精简模式，切换到完整显示') + '">' +
+          NOTICE_ICON[q.mode] + '</button>' +
+        (noticeFiltersActive(q) ? '<button type="button" class="p-text-button p-notice-reset" data-action="p-notice-reset">重置</button>' : '') +
+      '</div></div>';
+  }
+  function noticeSummaryHTML(q) {
+    return '<p id="p-notice-summary" class="p-notice-summary" role="status">已显示 <strong>' + q.items.length + '</strong> / ' +
+      q.total + ' 条' + (noticeFiltersActive(q) ? '（当前条件）' : '') + ' · 全部未读 <strong>' + q.unreadCount + '</strong> 条</p>';
+  }
+  function noticeRowHTML(raw, mode) {
+    const read = !!raw.readAt, category = NOTICE_CATEGORIES[raw.category] || '其他';
+    const name = raw.objectName || raw.title || (raw.taskId ? '关联任务不可查看' : '无关联任务');
+    const purpose = notificationPurpose(raw), summary = notificationSummary(raw, []);
+    return '<button type="button" class="notif p-notice-row' + (read ? ' is-read' : '') + (mode === 'full' ? ' is-full' : '') +
+      '" data-action="open-notif" data-id="' + esc(raw.id) + '"><span class="ndot" aria-hidden="true"></span>' +
+      '<span class="nbody"><span class="ntop"><span class="ntitle">' + esc(name) + '</span><span class="npurpose">' + esc(category) + '</span></span>' +
+      (mode === 'full' ? '<span class="nsummary">' + esc(purpose) + ' · ' + esc(summary) + '</span>' : '') +
+      '<span class="nmeta"><time datetime="' + esc(raw.createdAt || '') + '">' + esc(timeText(raw.createdAt)) + '</time>' +
+      '<span>' + (read ? '已读' : '未读') + '</span></span></span></button>';
+  }
+  function noticeRowsHTML(q) {
+    if (q.error && !q.items.length) return '<div class="empty">通知加载失败：' + esc(q.error) + '</div>';
+    if (q.loading && !q.items.length) return '<div class="empty">正在加载通知…</div>';
+    if (!q.items.length) return '<div class="empty">' + (noticeFiltersActive(q) ? '没有符合筛选条件的通知' : '暂无通知') + '</div>';
+    return q.items.map(raw => noticeRowHTML(raw, q.mode)).join('');
+  }
+  function noticeFootHTML(q) {
+    if (q.loading) return '<span class="tiny muted">正在加载…</span>';
+    if (q.error) return '<span class="callout reject" role="alert">' + esc(q.error) + '</span>' +
+      '<button type="button" class="btn tiny-btn" data-action="p-notice-retry">重试</button>';
+    if (q.nextOffset != null) return '<button type="button" class="btn tiny-btn" data-action="p-notice-more">加载更多（已显示 ' + q.items.length + ' / ' + q.total + '）</button>';
+    return q.items.length ? '<span class="tiny muted">已显示全部 ' + q.items.length + ' 条</span>' : '';
+  }
+  function noticeContentHTML(q) {
+    return noticeFiltersHTML(q) + noticeSummaryHTML(q) +
+      '<div id="p-notice-rows" class="p-notice-list" aria-live="polite">' + noticeRowsHTML(q) + '</div>' +
+      '<div id="p-notice-foot" class="p-notice-foot">' + noticeFootHTML(q) + '</div>';
+  }
+  function noticeListIsTop() {
+    const top = sheetStack[sheetStack.length - 1];
+    return !!(top && top.noticeList);
+  }
+  function noticePaint() {
+    const content = document.getElementById('p-notice-content');
+    if (!content) return;
+    content.innerHTML = noticeContentHTML(noticeEnsure());
+  }
+  function noticeAppendPaint(added) {
+    const rows = document.getElementById('p-notice-rows');
+    if (!rows) return noticePaint();
+    const q = noticeEnsure();
+    rows.insertAdjacentHTML('beforeend', added.map(raw => noticeRowHTML(raw, q.mode)).join(''));
+    const summary = document.getElementById('p-notice-summary'), foot = document.getElementById('p-notice-foot');
+    if (summary) summary.outerHTML = noticeSummaryHTML(q);
+    if (foot) foot.innerHTML = noticeFootHTML(q);
+  }
+  /* 先请求后绘制：序号、账号与查询对象三者任一变化都丢弃迟到结果，旧页不会并入当前筛选。 */
+  async function noticeFetch(mode) {
+    const q = noticeEnsure(), seq = ++q.seq, epoch = P.epoch, account = q.account;
+    q.error = null;
+    q.lastMode = mode;
+    const offset = mode === 'more' && q.nextOffset != null ? q.nextOffset : 0;
+    const limit = mode === 'refresh' ? Math.max(NOTICE_PAGE, q.items.length) : NOTICE_PAGE;
+    if (mode !== 'more') { q.items = []; q.total = 0; q.nextOffset = 0; }
+    q.loading = true;
+    if (noticeListIsTop()) { if (mode === 'more') { const foot = document.getElementById('p-notice-foot'); if (foot) foot.innerHTML = noticeFootHTML(q); } else noticePaint(); }
+    try {
+      const result = await P.request(noticeParams(q, offset, limit));
+      if (epoch !== P.epoch || seq !== q.seq || q !== noticeQuery || account !== noticeAccount()) return false;
+      const items = Array.isArray(result.items) ? result.items : [];
+      q.total = Number(result.total || 0);
+      q.unreadCount = Number(result.unreadCount || 0);
+      P.data.notificationUnreadCount = q.unreadCount;
+      renderBell();
+      if (mode === 'more') q.items = q.items.concat(items.filter(item => !q.items.some(existing => existing.id === item.id)));
+      else q.items = items;
+      q.nextOffset = result.nextOffset == null ? null : Number(result.nextOffset);
+      q.loading = false;
+      if (noticeListIsTop()) { if (mode === 'more') noticeAppendPaint(items); else noticePaint(); }
+      return true;
+    } catch (error) {
+      if (epoch !== P.epoch || seq !== q.seq || q !== noticeQuery || account !== noticeAccount()) return false;
+      q.loading = false;
+      q.error = error.message || '通知加载失败';
+      if (noticeListIsTop()) noticePaint();
+      return false;
+    }
+  }
+  function noticeLoadFirst() {
+    const q = noticeEnsure();
+    q.items = []; q.total = 0; q.nextOffset = 0; q.error = null;
+    return noticeFetch('first');
+  }
+  function noticeApplyFilter(field, value) {
+    const q = noticeEnsure();
+    if (q[field] === value && !q.error) return;
+    q[field] = value;
+    q.items = []; q.total = 0; q.nextOffset = 0; q.error = null; q.loading = true;
+    replaceTopSheet(notificationsView());
+    const selector = (field === 'category' ? '[data-action="p-notice-category"]' : '[data-action="p-notice-read"]') +
+      '[data-value="' + value + '"]';
+    const target = document.querySelector(selector);
+    if (target) target.focus({ preventScroll: true });
+    noticeFetch('first');
+  }
+  function noticeResetFilters() {
+    const q = noticeEnsure();
+    q.category = 'all'; q.read = 'all';
+    q.items = []; q.total = 0; q.nextOffset = 0; q.error = null; q.loading = true;
+    replaceTopSheet(notificationsView());
+    const target = document.querySelector('[data-action="p-notice-category"][data-value="all"]');
+    if (target) target.focus({ preventScroll: true });
+    noticeFetch('first');
+  }
+  function noticeToggleMode() {
+    const q = noticeEnsure();
+    q.mode = q.mode === 'full' ? 'compact' : 'full';
+    replaceTopSheet(notificationsView());
+    const target = document.querySelector('[data-action="p-notice-mode"]');
+    if (target) target.focus({ preventScroll: true });
   }
   notificationsView = function () {
-    if (noticeFilters.epoch !== P.epoch) noticeFilters = { read: "all", category: "all", mode: "compact", epoch: P.epoch };
-    const all = notificationsFor();
-    const list = all.filter(n => (noticeFilters.read === "all" || (noticeFilters.read === "unread") === !n.raw.readAt) && (noticeFilters.category === "all" || n.raw.category === noticeFilters.category));
-    const controls = '<div class="p-notice-filters">' + noticeSelect('pn-read','已读状态',noticeFilters.read,{all:'全部',unread:'未读',read:'已读'}) + noticeSelect('pn-category','通知类型',noticeFilters.category,NOTICE_CATEGORIES) + noticeSelect('pn-mode','显示方式',noticeFilters.mode,{compact:'精简',full:'完整'}) + '</div><div class="row"><span class="tiny muted">' + list.length + ' 条通知</span><button type="button" class="btn tiny-btn ghost" data-action="p-notice-clear">清空筛选</button></div>';
-    const rows = list.map(n => {
-      const raw = n.raw, category = NOTICE_CATEGORIES[raw.category] || '其他';
-      const name = raw.objectName || raw.title || (raw.taskId ? '关联任务不可查看' : '无关联任务');
-      const summary = notificationSummary(raw, []);
-      return '<button type="button" class="notif p-notice-row' + (raw.readAt ? ' is-read' : '') + '" data-action="open-notif" data-id="' + esc(n.id) + '"><span class="nbody"><span class="ntop"><span class="ntitle">' + esc(name) + '</span><span class="npurpose">' + esc(category) + '</span></span>' +
-        (noticeFilters.mode === 'full' ? '<span class="nsummary">' + esc(notificationPurpose(raw)) + ' · ' + esc(summary) + '</span>' : '') +
-        '<span class="nmeta"><span>' + (raw.readAt ? '已读' : '未读') + '</span><time>' + esc(timeText(raw.createdAt)) + '</time></span></span></button>';
-    }).join('');
-    return { title: '通知', notification: true, body: controls + (rows || '<div class="empty">' + (all.length ? '没有符合筛选条件的通知' : '暂无通知') + '</div>'), rebuild: notificationsView };
+    const q = noticeEnsure();
+    return { title: '通知', notification: true, noticeList: true,
+      body: '<div id="p-notice-content" class="p-notice-content">' + noticeContentHTML(q) + '</div>', rebuild: notificationsView };
   };
-  document.addEventListener('change', function (event) {
-    const field = { 'pn-read':'read', 'pn-category':'category', 'pn-mode':'mode' }[event.target.id];
-    if (!field) return;
-    noticeFilters[field] = event.target.value;
-    replaceTopSheet(notificationsView());
-    document.getElementById(event.target.id)?.focus();
-  });
   openNotifications = function () {
-    /* 异步重载前先落焦点，关闭头部后才会回到铃铛入口而不是页面正文。 */
+    /* 异步加载前先落焦点，关闭头部后才会回到铃铛入口而不是页面正文。 */
     const bell = document.getElementById("bellBtn");
     if (bell) bell.focus();
-    P.busy(async () => { await P.reload(); openSheet(notificationsView()); });
+    const q = noticeEnsure();
+    q.items = []; q.total = 0; q.nextOffset = 0; q.error = null; q.loading = true;
+    openSheet(notificationsView());
+    noticeLoadFirst();
   };
   function requestResultText(raw) {
     if (!raw.requestStatus) return "";
@@ -623,14 +778,29 @@ saveLog = function () {
   }
   openNotif = function (id) {
     P.busy(async () => {
-      await P.mutation("notification-open:" + id, "POST", "/notifications/" + endpoint(id) + "/open");
-      await P.reload();
-      const raw = NOTIFICATIONS.find(n => n.id === id);
-      if (!raw) throw new Error("该通知已不可用。");
-      notificationSnapshot = { raw: raw.raw, etag: version(raw.raw), epoch: P.epoch };
-      openSheet(notificationView(raw.raw));
+      const open = await P.mutation("notification-open:" + id, "POST", "/notifications/" + endpoint(id) + "/open");
+      const raw = await P.request("/notifications/" + endpoint(id));
+      const q = noticeEnsure();
+      /* 打开才标读：先更新当前查询中的这一条与独立全局未读，再进入详情。
+         详情返回时重建列表会按当前类型/已读条件反映已读变化。 */
+      const index = q.items.findIndex(item => item.id === id);
+      if (index >= 0) q.items.splice(index, 1, raw);
+      if (index >= 0 && q.read === 'unread') { q.items.splice(index, 1); q.total = Math.max(0, q.total - 1); }
+      if (open && open.unreadCount != null) { q.unreadCount = Number(open.unreadCount); P.data.notificationUnreadCount = q.unreadCount; }
+      renderBell();
+      notificationSnapshot = { raw: raw, etag: version(raw), epoch: P.epoch, account: noticeAccount() };
+      openSheet(notificationView(raw));
+      /* 后台按当前条件刷新首屏，结果受序号/账号保护；详情返回时直接使用已更新的查询结果。 */
+      noticeFetch('refresh');
     }, "notification-error");
   };
+  async function reopenNoticeList(message) {
+    await P.reload();
+    const q = noticeEnsure();
+    q.items = []; q.total = 0; q.nextOffset = 0; q.error = null; q.loading = true;
+    closeSheet(); openSheet(notificationsView()); noticeFetch('first');
+    if (message) P.notice(message);
+  }
   function deleteNotification(id) {
     if (!confirm('仅从自己的通知列表删除此消息？')) return;
     P.busy(async () => {
@@ -638,7 +808,7 @@ saveLog = function () {
       if (!snapshot || snapshot.epoch !== P.epoch || snapshot.raw.id !== id) throw new Error("请重新打开通知后再操作。");
       await P.mutation("notification-delete:" + id, "PATCH", "/notifications/" + endpoint(id),
         { action: "delete" }, snapshot.etag);
-      await P.reload(); closeSheet(); openSheet(notificationsView()); P.notice("通知已删除。");
+      await reopenNoticeList("通知已删除。");
     }, "notification-error");
   }
   function withdrawNotification(id) {
@@ -648,7 +818,7 @@ saveLog = function () {
       if (!snapshot || snapshot.epoch !== P.epoch || snapshot.raw.id !== id) throw new Error("请重新打开通知后再操作。");
       await P.mutation("notification-withdraw:" + id, "POST", "/notifications/" + endpoint(id) + "/withdraw",
         { reason: "发起人撤回" });
-      await P.reload(); closeSheet(); openSheet(notificationsView()); P.notice("通知已撤回，业务结果不变。");
+      await reopenNoticeList("通知已撤回，业务结果不变。");
     }, "notification-error");
   }
   function withdrawRequestFromNotification(requestId) {
@@ -659,7 +829,7 @@ saveLog = function () {
       const request = await P.request("/approval-requests/" + encodeURIComponent(requestId));
       await P.mutation("notification-withdraw-request:" + requestId, "PATCH",
         "/approval-requests/" + encodeURIComponent(requestId), { decision: "withdraw" }, '"' + request.rowVersion + '"');
-      await P.reload(); closeSheet(); openSheet(notificationsView()); P.notice("本人申请已撤销，任务保持申请前内容。");
+      await reopenNoticeList("本人申请已撤销，任务保持申请前内容。");
     }, "notification-error");
   }
   function openNotificationTask(id) {
@@ -779,7 +949,12 @@ saveLog = function () {
         if (taskPicker.kind === "log" && drafts.log) drafts.log.relationshipChanged = true;
         oldActions(el); return;
       case "p-open-log": openLogDetail(el.dataset.id); return;
-      case "p-notice-clear": noticeFilters.read = "all"; noticeFilters.category = "all"; replaceTopSheet(notificationsView()); return;
+      case "p-notice-category": noticeApplyFilter('category', el.dataset.value); return;
+      case "p-notice-read": noticeApplyFilter('read', el.dataset.value); return;
+      case "p-notice-reset": noticeResetFilters(); return;
+      case "p-notice-mode": noticeToggleMode(); return;
+      case "p-notice-more": { const q = noticeEnsure(); if (!q.loading && q.nextOffset != null) noticeFetch('more'); return; }
+      case "p-notice-retry": { const q = noticeEnsure(); noticeFetch(q.lastMode === 'more' ? 'more' : 'first'); return; }
       case "p-hide-notification": deleteNotification(el.dataset.id); return;
       case "p-withdraw-notification": withdrawNotification(el.dataset.id); return;
       case "p-withdraw-notification-request": withdrawRequestFromNotification(el.dataset.id); return;
