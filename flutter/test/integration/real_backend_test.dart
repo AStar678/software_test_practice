@@ -305,6 +305,115 @@ void main() {
     expect(empty.items, isEmpty);
   }, skip: skipReason);
 
+  test('J15/J19 本人日历端点只返回当前负责并携带有效/提议排期', () async {
+    final userId = session.state.user!.id;
+    final today = clock.businessDate;
+    final rows = await tasks.listCalendarTasks(
+      assigneeId: userId,
+      from: today.addDays(-30).iso,
+      to: today.addDays(30).iso,
+    );
+    for (final task in rows) {
+      expect(task.assigneeIds, contains(userId));
+      expect(task.published, isTrue);
+    }
+  }, skip: skipReason);
+
+  test('J14 本人日历置顶持久化且不改任务版本', () async {
+    final userId = session.state.user!.id;
+    final today = clock.businessDate;
+    final rows = await tasks.listCalendarTasks(
+      assigneeId: userId,
+      from: today.addDays(-30).iso,
+      to: today.addDays(30).iso,
+    );
+    final target = rows.where((task) => task.canPin).firstOrNull;
+    expect(target, isNotNull, reason: '演示数据应有当前员工可置顶任务');
+    final beforeVersion = target!.rowVersion;
+    final scope = 'real:calendar-pin:${target.id}';
+    try {
+      await tasks.setCalendarPin(
+        taskId: target.id,
+        pinned: true,
+        idempotencyKey: keys.keyFor(scope: '$scope:set', method: 'PUT', path: '/tasks/${target.id}/pin'),
+      );
+      final pinned = await tasks.listCalendarTasks(
+        assigneeId: userId,
+        from: today.addDays(-30).iso,
+        to: today.addDays(30).iso,
+      );
+      final after = pinned.firstWhere((task) => task.id == target.id);
+      expect(after.pinned, isTrue);
+      expect(after.rowVersion, beforeVersion);
+    } finally {
+      await tasks.setCalendarPin(
+        taskId: target.id,
+        pinned: false,
+        idempotencyKey: keys.keyFor(scope: '$scope:clear', method: 'DELETE', path: '/tasks/${target.id}/pin'),
+      );
+    }
+    final restored = await tasks.listCalendarTasks(
+      assigneeId: userId,
+      from: today.addDays(-30).iso,
+      to: today.addDays(30).iso,
+    );
+    expect(restored.firstWhere((task) => task.id == target.id).pinned, isFalse);
+  }, skip: skipReason);
+
+  test('J19 待审排期只以提议时刻投影并可撤回', () async {
+    final userId = session.state.user!.id;
+    final today = clock.businessDate;
+    final rows = await tasks.listCalendarTasks(
+      assigneeId: userId,
+      from: today.addDays(-30).iso,
+      to: today.addDays(30).iso,
+    );
+    final target = rows.where((task) => task.canReschedule && !task.pending && !task.done && task.startAt != null && task.dueAt != null).firstOrNull;
+    expect(target, isNotNull, reason: '演示数据应有当前员工可申请排期变更任务');
+    final detail = await tasks.detail(target!.id);
+    final proposedStart = detail.startAt!.add(const Duration(days: 2));
+    final proposedDue = detail.dueAt!.add(const Duration(days: 2));
+    final result = await tasks.change(
+      id: detail.id,
+      command: 'reschedule',
+      payload: {
+        'allDay': false,
+        'startAt': proposedStart.toUtc().toIso8601String(),
+        'dueAt': proposedDue.toUtc().toIso8601String(),
+        'reason': '日历待审投影联调',
+      },
+      idempotencyKey: keys.keyFor(
+        scope: 'real:pending-schedule:${detail.id}',
+        method: 'PATCH',
+        path: '/tasks/${detail.id}',
+        body: {'startAt': proposedStart.toUtc().toIso8601String()},
+      ),
+    );
+    expect(result.requestId, isNotNull);
+    try {
+      final projected = await tasks.listCalendarTasks(
+        assigneeId: userId,
+        from: proposedStart.subtract(const Duration(days: 3)).toIso8601String().substring(0, 10),
+        to: proposedDue.add(const Duration(days: 3)).toIso8601String().substring(0, 10),
+      );
+      final pending = projected.firstWhere((task) => task.id == detail.id);
+      expect(pending.pending, isTrue);
+      expect(pending.pendingSchedule, isNotNull);
+      expect(DateTime.parse(pending.pendingSchedule!['startAt']!.toString()), proposedStart.toUtc());
+    } finally {
+      final request = await approvals.detail(result.requestId!);
+      await approvals.decide(
+        requestId: request.requestId,
+        decision: 'withdraw',
+        idempotencyKey: keys.keyFor(
+          scope: 'real:pending-schedule-withdraw:${request.requestId}',
+          method: 'PATCH',
+          path: '/approval-requests/${request.requestId}',
+        ),
+      );
+    }
+  }, skip: skipReason);
+
   test('J20/J21/J23 日志、填充源与评论真实链路', () async {
     final date = clock.businessDate;
     final body = 'Flutter 日志联调 ${DateTime.now().microsecondsSinceEpoch}';
@@ -344,6 +453,157 @@ void main() {
         idempotencyKey: keys.keyFor(scope: 'real:log:delete', method: 'DELETE', path: '/work-logs/${created.id}'),
       );
     }
+  }, skip: skipReason);
+
+  test('J08 被拒绝的创建申请可由原申请人修改重提', () async {
+    final mine = await approvals.list(mine: 'applicant', limit: 50);
+    final rejected = mine.items.where((row) => row.kind == 'create' && row.status == 'rejected').firstOrNull;
+    expect(rejected, isNotNull, reason: '演示数据应包含原员工被拒绝的创建申请');
+    final request = await approvals.detail(rejected!.requestId);
+    final proposed = request.proposedVersion;
+    expect(proposed, isNotNull);
+    final task = await tasks.detail(request.taskId);
+    final payload = <String, Object?>{
+      'title': '${proposed!.title}（重提）',
+      'description': proposed.description,
+      'acceptanceCriteria': proposed.acceptanceCriteria,
+      'priority': proposed.priority,
+      'allDay': proposed.allDay,
+      'assigneeIds': proposed.assigneeIds,
+      'tagIds': proposed.tagIds,
+      'parentTaskId': proposed.parentTaskId,
+      'reason': '联调修改重提',
+    };
+    if (proposed.allDay) {
+      payload['startDate'] = proposed.startDate;
+      payload['dueDate'] = proposed.dueDate;
+    } else {
+      payload['startAt'] = proposed.startAt?.toUtc().toIso8601String();
+      payload['dueAt'] = proposed.dueAt?.toUtc().toIso8601String();
+    }
+    final changed = await tasks.change(
+      id: task.id,
+      command: 'change',
+      payload: payload,
+      idempotencyKey: keys.keyFor(
+        scope: 'real:resubmit:${task.id}',
+        method: 'PATCH',
+        path: '/tasks/${task.id}',
+        body: payload,
+      ),
+    );
+    expect(changed.requestId, isNotNull);
+    expect(changed.requestId, isNot(request.requestId));
+    final old = await approvals.detail(request.requestId);
+    expect(old.status, 'rejected');
+    final fresh = await approvals.detail(changed.requestId!);
+    expect(fresh.isPending, isTrue);
+    await approvals.decide(
+      requestId: fresh.requestId,
+      decision: 'withdraw',
+      idempotencyKey: keys.keyFor(
+        scope: 'real:resubmit-withdraw:${fresh.requestId}',
+        method: 'PATCH',
+        path: '/approval-requests/${fresh.requestId}',
+      ),
+    );
+  }, skip: skipReason);
+
+  test('J09/J12 并发裁决只生效一次，待审任务评论独立可用', () async {
+    final userId = session.state.user!.id;
+    final now = DateTime.now().toUtc();
+    final created = await tasks.create(
+      payload: {
+        'title': '并发审核与评论联调 ${DateTime.now().microsecondsSinceEpoch}',
+        'description': '验证并发裁决、作者评论权限',
+        'priority': 'medium',
+        'allDay': false,
+        'startAt': now.add(const Duration(days: 1)).toIso8601String(),
+        'dueAt': now.add(const Duration(days: 2)).toIso8601String(),
+        'assigneeIds': [userId],
+        'tagIds': const <String>[],
+      },
+      idempotencyKey: keys.keyFor(
+        scope: 'real:concurrent-create',
+        method: 'POST',
+        path: '/tasks',
+        body: {'title': '并发审核与评论联调'},
+      ),
+    );
+    expect(created.requestId, isNotNull);
+
+    final reviewerSession = SessionManager(
+      api: AuthApi(
+        dio: Dio(BaseOptions(validateStatus: (status) => status != null && status < 400)),
+        baseUrl: _baseUrl,
+      ),
+      store: MemoryCredentialStore(),
+      clock: WorkspaceClock(),
+    );
+    await reviewerSession.login(phone: '13800000011', password: _demoPassword);
+    final reviewerClient = ApiClient(
+      config: const AppConfig(apiBaseUrl: _baseUrl, isDebug: true),
+      session: reviewerSession,
+      versions: VersionRegistry(),
+    );
+    final reviewerApprovals = ApprovalsApi(client: reviewerClient);
+    final reviewerComments = CommentsApi(client: reviewerClient);
+    final request = await reviewerApprovals.detail(created.requestId!);
+
+    final outcomes = await Future.wait([
+      reviewerApprovals
+          .decide(
+            requestId: request.requestId,
+            decision: 'reject',
+            comment: '并发拒绝 A',
+            idempotencyKey: keys.newKey(),
+          )
+          .then((_) => 'ok')
+          .catchError((Object _) => 'failed'),
+      reviewerApprovals
+          .decide(
+            requestId: request.requestId,
+            decision: 'reject',
+            comment: '并发拒绝 B',
+            idempotencyKey: keys.newKey(),
+          )
+          .then((_) => 'ok')
+          .catchError((Object _) => 'failed'),
+    ]);
+    expect(outcomes.where((value) => value == 'ok'), hasLength(1));
+    final latest = await reviewerApprovals.detail(request.requestId);
+    expect(latest.status, 'rejected');
+
+    final comment = await comments.create(
+      objectType: 'task',
+      objectId: request.taskId,
+      body: '待审任务独立评论',
+      idempotencyKey: keys.keyFor(
+        scope: 'real:pending-task-comment',
+        method: 'POST',
+        path: '/tasks/${request.taskId}/comments',
+        body: {'body': '待审任务独立评论'},
+      ),
+    );
+    expect(comment.id, isNotEmpty);
+    await expectLater(
+      reviewerComments.change(
+        commentId: comment.id,
+        rowVersion: comment.rowVersion,
+        body: '越权修改',
+        idempotencyKey: keys.newKey(),
+      ),
+      throwsA(isA<ApiException>()),
+    );
+    await comments.delete(
+      commentId: comment.id,
+      rowVersion: comment.rowVersion,
+      idempotencyKey: keys.keyFor(
+        scope: 'real:pending-task-comment-delete',
+        method: 'DELETE',
+        path: '/comments/${comment.id}',
+      ),
+    );
   }, skip: skipReason);
 
   test('真实认证错误映射为可读 API 错误', () async {
