@@ -103,7 +103,12 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage> with Widget
   }
 
   Future<void> _restorePreferences() async {
-    final prefs = await AppPreferences.load(ref.read(currentUserProvider)?.id);
+    String? accountId;
+    for (var attempt = 0; attempt < 5 && accountId == null; attempt++) {
+      accountId = ref.read(currentUserProvider)?.id;
+      if (accountId == null) await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    final prefs = await AppPreferences.load(accountId);
     if (!mounted) return;
     setState(() {
       _preferences = prefs;
