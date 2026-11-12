@@ -4,11 +4,11 @@
 
 - Change: build-flutter-employee-android-client
 - Schema: spec-driven
-- Store: local repo (`/home/rmy/桌面/panDuola`)
+- Store: local repo (`C:\Users\20943\Desktop\software_test_practice`)
 - Implementation roots: `flutter/` (new Flutter Android client), with read-only consumption of `backend/docs/employee-client-contracts.md` and the archived A change
-- Updated: 2026-11-12T17:45:00+08:00
-- Implementation revision: repo `56313ba` plus module commits `e2781c8..eab94eb` (chapters 1–7 working tree; docs commit follows)
-- Progress: 23/62 tasks checked. `1.4` is now closed on Linux/API36 emulator. Chapters 5–7 have implemented code but remain unchecked pending full acceptance. `2.7`, `4.1`, `4.9` remain open.
+- Updated: 2026-11-13T00:39:23+08:00
+- Implementation revision: branch `hwj`, base `92cca7e`, dirty working tree with the chapter 8–10 independent slice described below.
+- Progress: 26/62 tasks checked. This slice closes `8.1`, `9.1`, and `10.1`; `8.2`, `8.3`, and `10.2` have partial foundations but remain unchecked for the dependencies and device evidence listed below.
 - The 2026-11-10 macOS sections below are historical; the 2026-11-12 Linux supplement at the end supersedes their environment/build status.
 
 ## Chapter 1–4 findings and decisions
@@ -172,6 +172,32 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 - 4.1 resubmit is untested against a real rejected/expired creation; 4.9 lacks concurrent-decision and independent-comment freeze tests.
 - No physical device; 11.2/11.3 release signing/API26 work is untouched.
 - `implementation-notes.md` is not a verification PASS.
+
+## 2026-11-13 Windows 章节 8–10 可独立部分实施
+
+### 本次已闭环
+
+- **8.1**：新增 `features/profile/**`，本人与授权下属均读真实资料；本人编辑仅提交邮箱/头像并使用 profile ETag；页面隐藏身份标签，只按实际层级组合职务路径，直接渲染服务端 `hireDate/tenure/asOfDate`并对缺失值显示空态。真实服务测试覆盖创始人/部门负责人/团队负责人/普通员工的本人资料、下属范围和授权详情。
+- **9.1**：新增 `features/notifications/**`，实现六类型、三读态、精简/完整单图标语义切换、服务端组合过滤、分页、总数和独立全局未读。真实服务测试遍历 18 组合的所有分页，校验总数、去重、类型/读态及全局未读不随筛选改变；320 宽度组件测试通过。GET/切模式/换筛选均不调用标读。
+- **10.1**：新增 `features/analytics/**`，显示真实总数、状态、冻结/完成待审/逾期、紧急程度、关键词、生成时间和方法；建议通过服务端本地规则 job 生成，明示 `modelUsed=false`，任务可按授权跳转。真实服务测试确认四角色依次是 company/department/team/self 范围。
+
+### 已落基础但未勾选
+
+- **8.2**：四预设、系统选图、PNG/JPG 与 10MB 限制、中心裁剪 256px JPEG、300000 字节/400000 字符限制及缓存临时文件清理已实现；未有 Android 真机的取消/权限拒绝 J30 证据，故不勾选。
+- **8.3**：真实直属/间接下属树、展开与选人分离、人员资料路由已实现；日程/日志目前显式指向 8.4 未完成页，因此 8.3 不勾选。
+- **10.2**：新增 `features/holidays/**`的账号范围按年缓存、ready/stale/missing 投影，本人任务月历显示节名及休/班，节假日失败不阻断任务读取；下属月历仍依赖 8.4，故 10.2 不勾选。
+- **9.2–9.4、10.3–10.4** 未实施；通知详情路由仍为明确占位页，不会伪装已标读或历史安全已完成。
+
+### 本次检查
+
+| Command | Result |
+| --- | --- |
+| `dart analyze` | No issues found |
+| `flutter test --no-pub test/features/chapter_8_10_test.dart` | 8 tests passed，含 320 宽度通知可达性 |
+| `flutter test --no-pub test/integration/real_backend_test.dart` | 18 tests passed，真实 `pandora_demo` 后端，含四角色资料/统计、通知 18 组合跨页、节假日 |
+| `flutter test --no-pub` | 88 tests passed，未跳过真实服务组 |
+
+注：此节是 apply 实施交接，不是独立验证 PASS；本次未修改 `verification.md`。
 
 ## Verification Reminders
 
