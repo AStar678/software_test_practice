@@ -41,19 +41,66 @@
   function companyBusinessDate() { return (P.data.home || {}).businessDate || toDateInput(new Date()); }
 
   const HOME_PRIORITY = { urgent: "紧急", high: "高", medium: "中", low: "低" };
-  function homeAssignedBody() {
-    const items = (P.data.home || {}).assignedTasks || [];
-    if (!items.length) return '<div class="empty">暂无本人负责的未完成任务</div>';
-    return items.map(item =>
-      '<button type="button" class="home-task" data-task="' + esc(item.taskId) + '"><span class="home-task-title">' +
-        esc(item.title) + '</span><span class="home-task-priority">' + esc(HOME_PRIORITY[item.priority] || "中") + '</span></button>'
-    ).join("");
+  /* 上方两卡只保留约三条普通预览；完整内容进入独立二级清单，卡片不再内部滚动，
+     因此手指在卡片上纵向滑动滚动的是整个首页。 */
+  const HOME_PREVIEW = 3;
+  function homeCompanyItems() { return (P.data.home || {}).companyItems || []; }
+  function homeAssignedItems() { return (P.data.home || {}).assignedTasks || []; }
+  function homeCompanyPreview() {
+    const items = homeCompanyItems();
+    if (!items.length) return '<div class="empty">暂无公司信息</div>';
+    return items.slice(0, HOME_PREVIEW).map((item, index) =>
+      '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt">' +
+        esc(item.body || item.title) + '</span></div></div>').join("");
   }
+  function homeTaskPreview() {
+    const items = homeAssignedItems();
+    if (!items.length) return '<div class="empty">暂无本人负责的未完成任务</div>';
+    return items.slice(0, HOME_PREVIEW).map(item =>
+      '<div class="home-task"><span class="home-task-title">' + esc(item.title) +
+        '</span><span class="home-task-priority">' + esc(HOME_PRIORITY[item.priority] || "中") + '</span></div>').join("");
+  }
+  function homeListHTML(kind) {
+    if (kind === "company") {
+      const items = homeCompanyItems();
+      return items.length ? '<div class="home-list" aria-label="事件纪完整清单">' + items.map((item, index) =>
+        '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt">' +
+          esc(item.body || item.title) + '</span></div></div>').join("") + "</div>"
+        : '<div class="empty">暂无公司信息</div>';
+    }
+    const items = homeAssignedItems();
+    return items.length ? '<div class="home-list" aria-label="任务看板完整清单">' + items.map(item =>
+      '<button type="button" class="home-task" data-task="' + esc(item.taskId) + '"><span class="home-task-title">' +
+        esc(item.title) + '</span><span class="home-task-priority">' + esc(HOME_PRIORITY[item.priority] || "中") + '</span></button>').join("") + "</div>"
+      : '<div class="empty">暂无本人负责的未完成任务</div>';
+  }
+  function homeListView(kind) {
+    const title = kind === "company" ? "事件纪" : "任务看板";
+    return { title: title, body: homeListHTML(kind), foot: withBack(button("sheet-close", "关闭")),
+      rebuild: () => homeListView(kind) };
+  }
+  function openHomeList(kind, trigger) {
+    if (trigger) trigger.focus({ preventScroll: true });
+    openSheet(homeListView(kind));
+  }
+  /* 点击卡片（含预览内容）先打开完整清单；清单里的任务再进入原鉴权详情，返回恢复清单位置。 */
+  document.addEventListener("click", function (event) {
+    const card = event.target.closest && event.target.closest("[data-home-list]");
+    if (!card || !P.ready) return;
+    if (event.target.closest("button,a,input,select,textarea,[data-action],[data-task]")) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    openHomeList(card.dataset.homeList, card);
+  }, true);
+  document.addEventListener("keydown", function (event) {
+    const card = event.target.closest && event.target.closest("[data-home-list]");
+    if (!card || (event.key !== "Enter" && event.key !== " ")) return;
+    event.preventDefault(); event.stopPropagation();
+    openHomeList(card.dataset.homeList, card);
+  });
   /* 首页固定三个模块：事件纪、任务看板保持上方左右位置，每日事项通栏位于下方。
      日志卡片、旧个人事项列表与第四块空占位已移除；日志仍在日志页按原权限维护。 */
   renderMap = function () {
     const home = P.data.home || {};
-    const company = home.companyItems || [];
     const assigned = home.assignedTasks || [];
     const today = parseDateInput(companyBusinessDate()) || new Date();
     const weekday = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][today.getDay()];
@@ -61,12 +108,12 @@
       '<section class="workday"><div class="workday-copy"><h2>' + esc(fmtDate(today)) + '</h2><p>' + esc(weekday) + '</p></div>' +
       '</section>' +
       '<div class="map-grid">' +
-        '<section class="quad company-quad" aria-labelledby="q1"><div class="card-head"><h2 id="q1">事件纪</h2><span class="hint">统一发布</span></div>' +
-          '<div class="q-body" tabindex="0" role="region" aria-labelledby="q1">' + (company.length ? company.map((item, index) =>
-            '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt">' + esc(item.body || item.title) + '</span></div></div>'
-          ).join("") : '<div class="empty">暂无公司信息</div>') + '</div></section>' +
-        '<section class="quad tasks-quad" aria-labelledby="q2"><div class="card-head"><h2 id="q2">任务看板</h2><span class="hint">' +
-          assigned.length + '/10</span></div><div class="q-body" tabindex="0" role="region" aria-labelledby="q2">' + homeAssignedBody() + '</div></section>' +
+        '<section class="quad company-quad" aria-labelledby="q1" data-home-list="company" role="button" tabindex="0" aria-label="事件纪，查看完整清单">' +
+          '<div class="card-head"><h2 id="q1">事件纪</h2><span class="hint">统一发布</span></div>' +
+          '<div class="q-body">' + homeCompanyPreview() + '</div></section>' +
+        '<section class="quad tasks-quad" aria-labelledby="q2" data-home-list="tasks" role="button" tabindex="0" aria-label="任务看板，查看完整清单">' +
+          '<div class="card-head"><h2 id="q2">任务看板</h2><span class="hint">' + assigned.length + '/10</span></div>' +
+          '<div class="q-body">' + homeTaskPreview() + '</div></section>' +
         '<section class="quad daily-quad" id="dailyItemsSection" aria-labelledby="q3"><div class="card-head"><h2 id="q3">每日事项</h2><span class="hint">本人维护</span></div></section>' +
       '</div>';
     if (window.PandoraDaily) window.PandoraDaily.render();
@@ -76,9 +123,20 @@
 /* ---------- 日志页固定展示本人；人员资料中的授权阅读独立打开。 ---------- */
 function logAuthorId() { return (P.data.me || {}).id || null; }
 function logScopeLabel() { return '本人日志 · ' + filteredLogs(actor()).length + ' 条'; }
+/* 日志按所属业务日期从新到旧，同日按真实创建时间倒序、ID 稳定排序；
+   补写旧日志不会因为创建较晚而排到今天日志前面。 */
+function logBusinessDate(log) {
+  return String((log && log.raw && log.raw.businessDate) || "");
+}
 filteredLogs = function () {
   return LOGS.filter(log => log.authorId === logAuthorId())
-    .slice().sort((x,y) => y.time.getTime()-x.time.getTime());
+    .slice().sort((x, y) => {
+      const bx = logBusinessDate(x), by = logBusinessDate(y);
+      if (bx !== by) return by < bx ? -1 : 1;
+      const tx = x.time.getTime(), ty = y.time.getTime();
+      if (tx !== ty) return ty - tx;
+      return String(x.id) < String(y.id) ? -1 : String(x.id) > String(y.id) ? 1 : 0;
+    });
 };
 logsListHTML = function (account) {
   const logs=filteredLogs(account);
@@ -109,15 +167,29 @@ document.addEventListener('keydown',event=>{
 function logTagHTML(raw) {
   return ((raw && raw.tags) || []).map(tag => P.tagPillHTML ? P.tagPillHTML(tag) : '').join('');
 }
+/* 卡片日期取日志所属日（businessDate），相对日同样按公司今天比较；
+   详情仍展示真实创建时间，首次 24 小时冻结规则不变。 */
+function businessDateText(raw) {
+  const d = parseDateInput(raw && raw.businessDate);
+  return d ? d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日" : "—";
+}
+function businessRelativeDay(raw) {
+  const d = parseDateInput(raw && raw.businessDate);
+  const today = parseDateInput(companyBusinessDate());
+  if (!d || !today) return "";
+  const diff = Math.round((+addDays(d, 0) - +addDays(today, 0)) / 86400000);
+  return diff === 0 ? "今天" : diff === -1 ? "昨天" : diff === -2 ? "前天" : "";
+}
 logCardHTML = function (l, a) {
   const t = l.taskId ? taskById(l.taskId) : null;
   const mine = l.authorId === a.id;
   const raw = l.raw || {};
   const frozen = raw.frozen === true || (raw.editable === false && mine);
+  const relative = businessRelativeDay(raw);
   return '<article class="log-card" role="link" tabindex="0" aria-label="查看日志详情与评论" data-log-card="' + esc(l.id) + '">' +
     "<header><span class=\"who\">" + esc(personById(l.authorId) ? personById(l.authorId).name : (raw.authorName || '相关成员')) + "</span>" +
-      "<span>" + esc(fmtDateTime(l.time)) + "</span>" +
-      "<span>" + esc(relativeDayLabel(l.time)) + "</span>" +
+      "<span class=\"log-business-date\">" + esc(businessDateText(raw)) + "</span>" +
+      (relative ? "<span>" + esc(relative) + "</span>" : "") +
       '<span class="spacer"></span>' +
       (mine && raw.editable !== false
         ? '<button type="button" class="btn tiny-btn" data-action="edit-log" data-id="' + esc(l.id) + '">编辑</button>'
@@ -168,6 +240,7 @@ function logDraft(raw, businessDate) {
     tagIds: raw ? (raw.tagIds || []).slice() : [], tagSnapshots: raw ? (raw.tags || []).slice() : [],
     tagTouched: false,
     hiddenTask: !!raw && !Object.prototype.hasOwnProperty.call(raw, "taskId"),
+    fillSeq: 0, fillPending: false,
     etag: raw ? version(raw) : null, epoch: P.epoch,
     businessDate: raw ? raw.businessDate : businessDate,
     frozen: !!(raw && raw.frozen), frozenAt: raw ? raw.frozenAt : null };
@@ -252,7 +325,10 @@ function logDateEditHTML(d) {
 function logFieldsHTML(d, dateHTML) {
   const linked = d.taskId ? taskById(d.taskId) : null;
   return '<div class="p-log-meta">' + dateHTML + (P.tagCollectionHTML ? P.tagCollectionHTML('lf', d.tagIds, d.tagSnapshots) : '') + '</div>' +
-    '<div class="field log-content-field"><label for="lf-content">日志内容</label><textarea id="lf-content" maxlength="10000" data-autofocus>' + esc(d.content) + '</textarea></div>' +
+    '<div class="field log-content-field"><div class="log-content-head"><label for="lf-content">日志内容</label>' +
+      '<button type="button" class="btn tiny-btn" id="lf-fill-button" data-action="fill-log-source" aria-label="填入当日事项与任务名称">填入当日事项与任务</button></div>' +
+      '<textarea id="lf-content" maxlength="10000" data-autofocus>' + esc(d.content) + '</textarea>' +
+      '<p class="tiny muted" id="lf-fill-status" role="status" aria-live="polite"></p></div>' +
     '<div class="field"><label>关联任务（可选）</label>' +
       '<div class="summary-line" id="lf-task-summary">' +
         (linked ? esc(linked.title) : (d.hiddenTask && !d.relationshipChanged ? '关联任务当前不可见，保留原关系' : '<span class="muted">未关联任务</span>')) + "</div>" +
@@ -344,6 +420,77 @@ saveLog = function () {
   }, "lf-error");
 };
 
+  /* ---------- 按日志所属日主动追加当日事项与任务名称 ----------
+     只读取当前 draft 的 businessDate；追加到请求返回时的最新正文，绝不覆盖
+     等待期间的输入。请求进行中再次点击被忽略，之后主动点击视为新的追加。
+     空结果、失败或完整追加超过 10000 UTF-16 单位时保持原文不变。 */
+  function fillNames(rows) {
+    const seen = new Set(), names = [];
+    (rows || []).forEach(row => {
+      if (!row || !row.id || seen.has(row.id)) return;
+      seen.add(row.id);
+      const name = String(row.name == null ? "" : row.name);
+      if (name.trim()) names.push(name);
+    });
+    return names;
+  }
+  function fillBlockHTML(items, tasks) {
+    const lines = [];
+    if (items.length) { lines.push("每日事项："); items.forEach(name => lines.push("· " + name)); }
+    if (tasks.length) { lines.push("任务："); tasks.forEach(name => lines.push("· " + name)); }
+    return lines.join("\n");
+  }
+  function setFillStatus(message, isError) {
+    const status = document.getElementById("lf-fill-status");
+    if (!status) return;
+    status.textContent = message || "";
+    status.classList.toggle("is-error", !!isError);
+  }
+  function fillLogSource(button) {
+    const d = drafts.log;
+    if (!d || d.epoch !== P.epoch) { P.notice("请重新打开日志后再填充。"); return; }
+    if (d.mode === "edit" && !d.id) { P.notice("请重新打开日志后再填充。"); return; }
+    syncLogDraft();
+    if (d.fillPending) return;
+    const sequence = (d.fillSeq || 0) + 1;
+    d.fillSeq = sequence;
+    d.fillPending = true;
+    const businessDate = d.businessDate;
+    if (button) { button.setAttribute("aria-busy", "true"); button.setAttribute("aria-disabled", "true"); }
+    setFillStatus("正在读取 " + businessDate + " 的每日事项与任务…");
+    P.request("/work-logs/fill-source?businessDate=" + encodeURIComponent(businessDate)).then(result => {
+      if (drafts.log !== d || d.epoch !== P.epoch || d.fillSeq !== sequence) return;
+      if (d.businessDate !== businessDate) { setFillStatus("日志日期已变化，未写入。"); return; }
+      const textarea = document.getElementById("lf-content");
+      if (!textarea) return;
+      const items = fillNames(result.dailyItems), tasks = fillNames(result.tasks);
+      if (!items.length && !tasks.length) { setFillStatus("当日没有可填入的每日事项或任务。"); return; }
+      const block = fillBlockHTML(items, tasks);
+      const current = textarea.value;
+      const next = current.trim() ? current.replace(/\s+$/, "") + "\n\n" + block : block;
+      if (next.length > 10000) {
+        setFillStatus("追加后超过 10000 字上限，未写入任何内容；请手动精简后重试。", true);
+        return;
+      }
+      d.content = next;
+      textarea.value = next;
+      textarea.focus({ preventScroll: true });
+      textarea.setSelectionRange(next.length, next.length);
+      setFillStatus("已追加 " + items.length + " 项每日事项、" + tasks.length + " 项任务；可继续编辑。");
+    }).catch(error => {
+      if (drafts.log !== d || d.epoch !== P.epoch || d.fillSeq !== sequence) return;
+      if (error.name === "AbortError") return;
+      setFillStatus(error.message || "读取失败，正文保持原样。", true);
+    }).finally(() => {
+      if (drafts.log !== d) return;
+      d.fillPending = false;
+      const current = document.getElementById("lf-fill-button");
+      if (current === button || (current && current.dataset.action === "fill-log-source")) {
+        const target = current || button;
+        if (target) { target.removeAttribute("aria-busy"); target.removeAttribute("aria-disabled"); }
+      }
+    });
+  }
   companyItemFormView = () => null;
   /* 个人事项已迁移为每日事项；旧入口只提示，不再读写 home_items personal。 */
   function companyNotice() { P.notice("公司统一信息由管理端统一发布。"); }
@@ -627,6 +774,7 @@ saveLog = function () {
       case "clear-log-task":
         if (drafts.log) drafts.log.relationshipChanged = true;
         oldActions(el); return;
+      case "fill-log-source": fillLogSource(el); return;
       case "picker-task-confirm":
         if (taskPicker.kind === "log" && drafts.log) drafts.log.relationshipChanged = true;
         oldActions(el); return;

@@ -455,3 +455,15 @@
 .p-axis-event.is-point .p-resize-end,.staff-axis-event.is-point .p-resize-end{top:auto;bottom:0;height:50%}
 
 .p-drag-ghost{overflow:hidden;color:#493b46}.p-drag-ghost .p-month-caption strong,.p-drag-ghost .p-month-caption small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:14px}
+
+/* ---------- 年度节假日标识：月格与日标题共用同一名称/休班映射 ---------- */
+.p-month-date{position:relative}
+.p-month-date .p-month-holiday{position:absolute;top:26px;left:1px;right:1px;z-index:3;overflow:hidden;
+  font-size:8.5px;line-height:10px;font-weight:600;color:#b4430f;text-overflow:ellipsis;white-space:nowrap;
+  background:rgba(255,255,255,.92);border-radius:3px;pointer-events:none}
+.p-month-date .p-month-holiday.is-work{color:#2563a8}
+.p-holiday-status{font-size:10px;color:#8e8e93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-holiday-status.is-error{color:#b23b32}
+.p-holiday-retry{padding:0 2px;font-size:10px;color:#2563a8}
+.p-day-holiday{margin-left:6px;font-size:12px;font-weight:600;color:#b4430f}
+.p-day-sheet-head .p-day-holiday{font-size:11px}

@@ -1,0 +1,77 @@
+PASS login form ready
+PASS employee login
+PASS three modules and clickable cards {"count":3,"company":true,"tasks":true,"daily":true,"previews":3,"companyPreviews":3,"qbodyOverflow":"visible","cards":["company","tasks",null]}
+PASS preview limited to three and no inner scroll {"count":3,"company":true,"tasks":true,"daily":true,"previews":3,"companyPreviews":3,"qbodyOverflow":"visible","cards":["company","tasks",null]}
+PASS company card opens list
+PASS complete company list 4
+PASS closing list returns focus to card "company"
+PASS task card opens list
+PASS complete task list 7
+PASS list row opens task detail
+detail foot actions ["sheet-back","edit-task","submit-complete","p-open-handover","p-toggle-task-pin","p-toggle-table-pin"]
+title after back 任务看板
+PASS back to task list keeps scroll view
+PASS daily calendar is vertical with weekdays row and mounted months {"months":3,"bars":125,"scroller":{"overflowY":"auto","top":891,"height":439},"todayVisible":true,"weekdays":["周一","周二","周三","周四","周五","周六","周日"],"barsStatus":["daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-overdue","daily-bar is-overdue","daily-bar is-open","daily-bar is-open","daily-bar is-completed","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before"]}
+PASS today is visible initially {"months":3,"bars":125,"scroller":{"overflowY":"auto","top":891,"height":439},"todayVisible":true,"weekdays":["周一","周二","周三","周四","周五","周六","周日"],"barsStatus":["daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-overdue","daily-bar is-overdue","daily-bar is-open","daily-bar is-open","daily-bar is-completed","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before"]}
+PASS range items render as labelled bars ["daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after","daily-bar is-open continues-before continues-after"]
+PASS continued bar opens the actual hit-date list {"opened":true,"list":{"title":"10月2日 · 每日事项","rows":1,"meta":"2026年10月2日1 条"},"hit":"2026-10-02"}
+PASS daily calendar scrolls vertically and loads adjacent months {"scrollMoved":{"before":891,"after":1171},"afterScroll":{"top":1171,"months":3}}
+PASS a range longer than a month draws bars in every intersecting mounted month 15
+PASS overflow entries expose the complete hidden set 1
+PASS a day with more than one page lists all items page by page {"bulkClicked":true,"bulkOpened":true,"bulk":{"rows":50,"total":"2026年12月2日106 条","more":true}}
+PASS load more appends the next page without duplicates
+PASS completing from the list keeps rows and updates covered bars {"rowsBefore":3,"rowsAfter":3,"completedBefore":1,"completedAfter":2}
+pre-resize state {"d":"2026-12-14","o":79,"top":1551}
+PASS home and header add remain usable at 320x740 {"overflowX":false,"add":{"l":82,"t":380,"r":114,"b":412},"head":{"l":17,"t":376,"r":303,"b":416},"mainScroll":true}
+anchor at 320x740 {"d":"2026-12-14","o":79,"top":1551,"vh":439}
+PASS home and header add remain usable at 390x844 {"overflowX":false,"add":{"l":96,"t":393,"r":130,"b":427},"head":{"l":23,"t":390,"r":367,"b":430},"mainScroll":true}
+anchor at 390x844 {"d":"2026-12-14","o":79,"top":1551,"vh":439}
+PASS home and header add remain usable at 1440x900 {"overflowX":false,"add":{"l":250,"t":411,"r":284,"b":445},"head":{"l":177,"t":408,"r":1263,"b":448},"mainScroll":true}
+anchor at 1440x900 {"d":"2026-12-14","o":79,"top":1551,"vh":468}
+PASS home and header add remain usable at 390x600 {"overflowX":false,"add":{"l":96,"t":393,"r":130,"b":427},"head":{"l":23,"t":390,"r":367,"b":430},"mainScroll":true}
+anchor at 390x600 {"d":"2026-12-14","o":79,"top":1551,"vh":320}
+PASS wide viewport keeps the daily calendar browsable {"scrollable":true,"months":4}
+PASS resize restores the same date anchor and pixel offset {"anchorBefore":{"date":"2026-12-14","off":79},"anchorAfter":{"date":"2026-12-14","off":79}}
+PASS log card shows the full business date {"text":"alpha-one-employee2026年11月12日今天编辑","business":"2026年11月12日"}
+PASS write log form opens with fill entry
+PASS fill appends daily item and task names
+PASS fill keeps groups and names "每日事项：\n· 逾期镜头清单\n· 昨日镜头备注\n· 长期镜头计划\n任务：\n· 跨日镜头交接"
+PASS overflowing append fails atomically and keeps the draft {"len":9990,"status":"追加后超过 10000 字上限，未写入任何内容；请手动精简后重试。"}
+PASS own profile hides organization identity {"identity":false,"hasDept":true}
+PASS logout employee
+PASS founder login
+PASS subordinate tree uses true department ▸ team ▸ position path "alpha ▸ Display title"
+PASS subordinate card opens with contacts and tenure rows
+PASS subordinate card has phone email hire and tenure "组织职务alpha ▸ Display title直属上级founder联系电话13900000002邮箱未填写入职日期入职日期未设置已入职入职日期未设置查看日程查看日志"
+PASS subordinate card has no organization identity "组织职务alpha ▸ Display title直属上级founder联系电话13900000002邮箱未填写入职日期入职日期未设置已入职入职日期未设置查看日程查看日志"
+PASS person schedule shows continuous months
+PASS person month stream has bars and vertical scroll {"months":3,"bars":1,"height":422,"overflow":"auto"}
+PASS person date list opens as a fixed dialog
+popup body 09:00 — 24:00部门镜头评审待开始11月13日 09:00 至 11月15日 18:00
+PASS date list keeps title and actions visible while content scrolls {"pos":"fixed","headVisible":true,"footVisible":true,"bodyScroll":"auto","items":1}
+PASS person task detail covers the date list {"detailOpen":true,"popupHidden":true}
+PASS returning restores the person date list {"display":"flex","items":1,"title":"alpha-head的工作"}
+PASS closing date list removes dialog
+PASS a failed person month is explicit and retryable {"failed":true,"failureText":"读取失败"}
+PASS retry loads the failed month without clearing others
+PASS holiday labels appear for the cached year
+PASS month grid shows festival name and rest/work markers {"labels":["测试节 休","测试调班 班"],"work":["测试调班 班"]}
+PASS a year without cache is explicitly missing instead of fabricated ["节假日：使用上次缓存","节假日：使用上次缓存","节假日：使用上次缓存","节假日：使用上次缓存","该年暂无节假日数据"]
+PASS no runtime console errors []
+ALL SMOKE CHECKS PASSED
+task emp 0 201 None
+task emp 1 201 None
+task emp 2 201 None
+task emp 3 201 None
+task emp 4 201 None
+task emp 5 201 None
+task cross 201
+task head 201
+task founder 201
+item smoke-daily-range 200
+item smoke-daily-single 200
+item smoke-daily-overdue 200
+item smoke-daily-yesterday 200
+item smoke-daily-done 200
+log 200
+item smoke-daily-long 200

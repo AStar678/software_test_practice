@@ -55,6 +55,84 @@
   }
   function monthTitle(d) { return d.getFullYear() + '年' + (d.getMonth() + 1) + '月'; }
   function shiftMonth(d, amount) { return new Date(d.getFullYear(), d.getMonth() + amount, 1); }
+
+  /* ---- 年度节假日：只读取项目自己的年度缓存接口，按年份去重/缓存 ----
+     月格的名称与“休／班”以及日视图日期标题使用同一映射；读取失败保留已有
+     有效年份并允许重试，缺失年份不伪造安排。前端不请求任何外源地址。 */
+  const holidayYears = new Map();
+  let holidaySeq = 0;
+  function holidayEntry(year) { return holidayYears.get(String(year)) || null; }
+  function holidayDay(key) {
+    const entry = holidayEntry(String(key).slice(0, 4));
+    if (!entry || !entry.days) return null;
+    return entry.days.get(key) || null;
+  }
+  function holidayText(key) {
+    const day = holidayDay(key);
+    if (!day) return '';
+    return (day.name ? day.name + ' ' : '') + (day.off ? '休' : '班');
+  }
+  function holidayTag(d) {
+    const text = holidayText(dateKey(d));
+    return text ? ' <span class="p-day-holiday">' + esc(text) + '</span>' : '';
+  }
+  function loadHolidayYear(year) {
+    year = Number(year);
+    if (!Number.isInteger(year) || year < 1900 || year > 9999) return;
+    const key = String(year), cached = holidayEntry(key);
+    if (cached && cached.state !== 'error') return;
+    const token = ++holidaySeq, epoch = P.epoch;
+    const account = (P.data && P.data.me && P.data.me.id) || null;
+    const previous = cached && cached.days ? cached.days : new Map();
+    holidayYears.set(key, { state: 'loading', days: previous, source: cached ? cached.source : null, updatedAt: cached ? cached.updatedAt : null });
+    P.request('/calendar/holidays/' + year).then(result => {
+      if (epoch !== P.epoch || account !== ((P.data && P.data.me && P.data.me.id) || null)) return;
+      if ((holidayEntry(key) || {}).state !== 'loading') return;
+      const days = new Map();
+      (result.days || []).forEach(day => {
+        if (!day || !/^\d{4}-\d{2}-\d{2}$/.test(String(day.date))) return;
+        if (String(day.date).slice(0, 4) !== key) return;
+        days.set(day.date, { name: String(day.name || ''), off: day.isOffDay === true || day.isOffDay === 1 });
+      });
+      const state = result.status === 'ready' ? 'ready' : result.status === 'stale' ? 'stale' : 'missing';
+      holidayYears.set(key, { state: state, days: days, source: result.source || '', updatedAt: result.updatedAt || null, reason: result.reason || '' });
+      repaintHolidayYear(key);
+    }).catch(error => {
+      if (epoch !== P.epoch || account !== ((P.data && P.data.me && P.data.me.id) || null)) return;
+      if ((holidayEntry(key) || {}).state !== 'loading') return;
+      holidayYears.set(key, { state: 'error', days: previous, source: cached ? cached.source : '', updatedAt: cached ? cached.updatedAt : null, reason: error.message || '' });
+      repaintHolidayYear(key);
+    });
+  }
+  /* 可见年份：月视图挂载的每个月，或日视图当前日期所在年。 */
+  function ensureHolidayYears() {
+    const years = new Set();
+    if (state.viewMode === 'day') years.add(state.viewAnchor.getFullYear());
+    else monthStream.forEach(key => years.add(Number(String(key).slice(0, 4))));
+    years.forEach(year => loadHolidayYear(year));
+  }
+  function holidayStatusHTML(year) {
+    const entry = holidayEntry(year);
+    if (!entry || entry.state === 'ready' || entry.state === 'loading') return '';
+    if (entry.state === 'stale') return '<span class="p-holiday-status">节假日：使用上次缓存</span>';
+    if (entry.state === 'missing') return '<span class="p-holiday-status">该年暂无节假日数据</span>';
+    return '<span class="p-holiday-status is-error">节假日读取失败</span>' +
+      '<button type="button" class="p-text-button p-holiday-retry" data-action="schedule-holiday-retry" data-year="' + year + '">重试</button>';
+  }
+  /* 只重画受影响年份的月份节点，保留其它月份、滚动与焦点状态。 */
+  function repaintHolidayYear(yearKey) {
+    const scroller = document.querySelector('.p-month-scroll');
+    if (scroller) scroller.querySelectorAll('.p-month-section').forEach(section => {
+      const key = section.dataset.monthKey;
+      if (!key || String(key).slice(0, 4) !== yearKey) return;
+      const holder = document.createElement('div');
+      holder.innerHTML = monthSectionHTML(key);
+      const node = holder.firstElementChild;
+      if (node) section.replaceWith(node);
+    });
+    if (state.page === 'view' && state.viewMode === 'day' && state.viewAnchor.getFullYear() === Number(yearKey)) updateView();
+  }
+  P.sessionReset.push(function () { holidayYears.clear(); holidaySeq++; });
   function businessBounds(d) {
     return {start:P.companyDayStart(dateKey(d)),end:P.companyDayStart(dateKey(addDays(d,1)))};
   }
@@ -149,7 +227,7 @@
     return '<div class="p-schedule-layer" data-layer="day"><div class="p-schedule-scrim" data-action="schedule-day-close" aria-hidden="true"></div>' +
       '<section id="p-day-sheet" class="p-day-sheet" role="dialog" aria-modal="true" aria-labelledby="p-day-sheet-title" tabindex="-1" data-date="' + dateKey(d) + '">' +
       '<div class="p-sheet-handle" data-sheet-handle aria-hidden="true"><span></span></div>' +
-      '<header class="p-day-sheet-head"><h2 id="p-day-sheet-title">' + dayLabel(d) + ' <span>' + weekday(d) + '</span></h2>' +
+      '<header class="p-day-sheet-head"><h2 id="p-day-sheet-title">' + dayLabel(d) + ' <span>' + weekday(d) + '</span>' + holidayTag(d) + '</h2>' +
       '<div class="p-day-sheet-tools"><button type="button" class="p-text-button" data-action="schedule-day-view">查看日视图' + icons.right + '</button>' +
       '<button type="button" class="p-icon-button" data-action="schedule-day-close" aria-label="关闭当天任务清单" title="关闭">✕</button></div></header>' +
       '<div class="p-day-sheet-body" id="p-day-sheet-body" tabindex="0" aria-label="' + dayLabel(d) + '完整任务清单">' + dayListBodyHTML(d) + '</div>' +
@@ -231,8 +309,11 @@
           return '<span class="p-month-date is-blank" aria-hidden="true"></span>';
         const selected = sameDay(d,state.viewAnchor), current = sameDay(d,today), other = false;
         const count = data.segments.filter(s=>s.start<=col&&s.end>col).length;
+        const holiday = holidayDay(dateKey(d));
+        const holidayValue = holiday ? (holiday.name ? holiday.name + ' ' : '') + (holiday.off ? '休' : '班') : '';
+        const holidayHTML = holiday ? '<small class="p-month-holiday' + (holiday.off ? '' : ' is-work') + '">' + esc(holidayValue) + '</small>' : '';
         return '<button type="button" class="p-month-date' + (selected?' is-selected':'') + (current?' is-today':'') + (other?' is-other-month':'') +
-          '" data-action="schedule-month-date" data-date="'+dateKey(d)+'" aria-pressed="'+selected+'" aria-label="'+dayLabel(d)+' '+weekday(d)+'，'+(count ? count+'项任务' : '暂无任务')+'，查看日程"><span class="p-month-date-label"><strong>'+d.getDate()+'</strong>'+'</span></button>';
+          '" data-action="schedule-month-date" data-date="'+dateKey(d)+'" aria-pressed="'+selected+'" aria-label="'+esc(dayLabel(d)+' '+weekday(d)+(holiday?'，'+holidayValue:'')+'，'+(count ? count+'项任务' : '暂无任务')+'，查看日程')+'"><span class="p-month-date-label"><strong>'+d.getDate()+'</strong>'+holidayHTML+'</span></button>';
       }).join('');
       const indicators = data.days.map((d,col)=>{
         if (d.getFullYear() !== anchor.getFullYear() || d.getMonth() !== anchor.getMonth()) return '';
@@ -244,7 +325,7 @@
       return '<div class="p-month-week" data-week-start="'+dateKey(week.start)+'"><div class="p-month-days">'+dates+'</div><div class="p-month-tracks">'+data.segments.map(s=>connectedTaskHTML(s,s.lane>=metrics.capacity,key)).join('')+'</div><div class="p-month-indicators" aria-hidden="true">'+indicators+'</div><div class="p-month-overflow">'+data.hidden.map((tasks,col)=>monthOverflowButton(tasks,data.days[col],col)).join('')+'</div></div>';
     }).join('');
     return '<section class="p-month-section" data-month-key="'+esc(key)+'" data-month-start="'+dateKey(anchor)+'" aria-label="'+monthTitle(anchor)+'">' +
-      '<header class="p-month-section-head"><h2>'+monthTitle(anchor)+'</h2><span class="p-month-section-range">'+esc(dateKey(bounds.start))+' — '+esc(dateKey(addDays(bounds.end,-1)))+'</span></header>' +
+      '<header class="p-month-section-head"><h2>'+monthTitle(anchor)+'</h2>'+holidayStatusHTML(anchor.getFullYear())+'<span class="p-month-section-range">'+esc(dateKey(bounds.start))+' — '+esc(dateKey(addDays(bounds.end,-1)))+'</span></header>' +
       '<div class="p-month-grid" style="--calendar-weeks:'+grid.weeks.length+'" aria-label="'+monthTitle(anchor)+'日历">'+weeks+'</div></section>';
   }
   function streamMonths() {
@@ -320,6 +401,7 @@
       scroller.scrollTop += scroller.scrollHeight - height;
     }
     trimStream(scroller);
+    loadHolidayYear(Number(String(key).slice(0, 4)));
     bindScheduleResize();
     return true;
   }
@@ -818,7 +900,7 @@
 
   function dayHTML() {
     const d = state.viewAnchor;
-    const heading = '<header class="p-day-view-heading"><div class="p-day-heading-main"><button type="button" class="p-day-month-return" data-action="schedule-return-month">' + icons.left + '<span>返回月视图</span></button><h2 tabindex="-1">' + dayLabel(d) + ' <span>' + weekday(d) + '</span></h2></div><div class="p-day-display-modes" role="group" aria-label="当日日程显示方式">' +
+    const heading = '<header class="p-day-view-heading"><div class="p-day-heading-main"><button type="button" class="p-day-month-return" data-action="schedule-return-month">' + icons.left + '<span>返回月视图</span></button><h2 tabindex="-1">' + dayLabel(d) + ' <span>' + weekday(d) + '</span>' + holidayTag(d) + '</h2></div><div class="p-day-display-modes" role="group" aria-label="当日日程显示方式">' +
       [['horizontal','横向排期'],['timeline','纵向时间轴'],['list','任务清单']].map(([mode,label]) => '<button type="button" data-action="schedule-day-mode" data-day-mode="' + mode + '" aria-pressed="' + (dayDisplay===mode) + '" aria-controls="p-day-panel">' + label + '</button>').join('') + '</div></header>';
     const panel = dayDisplay==='horizontal' ? horizontalDayHTML(d) : dayDisplay==='list' ? dayListHTML(d) : '<section id="p-day-panel" class="p-time-panel" aria-label="'+dayLabel(d)+'日程时间轴">' +
       '<div class="p-day-allday"><span class="p-allday-label">全天</span><div class="p-allday-scroll">' + allDayHTML(d) + '</div></div>' +
@@ -1058,6 +1140,7 @@
     requestAnimationFrame(() => {
       if (state.page === 'view' && state.viewPage !== 'table') restoreScheduleScroll();
     });
+    ensureHolidayYears();
     if (state.viewMode==='month') { bindMonthGestures(); paintStreamBoundary(); }
     bindScheduleResize();
     syncLayerLock();
@@ -1162,6 +1245,11 @@
       const date = daySheet ? daySheet.date : el.dataset.date;
       daySheet = null;
       openDay(date,'timeline');
+      return;
+    }
+    if (action==='schedule-holiday-retry') {
+      const year = Number(el.dataset.year);
+      if (Number.isInteger(year)) { holidayYears.delete(String(year)); loadHolidayYear(year); }
       return;
     }
     if (action==='schedule-stream-retry') {

@@ -1425,6 +1425,11 @@ function openSheet(view){
     view = { ...view, notification: true };
   }
   if (sheetStack.some(item => item.subordinate)) view = { ...view, subordinate: true };
+  /* 任何已有一层的二级界面都必须能逐层返回：视图在构造时只看到当前栈，
+     因此这里在压栈前补一个返回入口，而不是要求每个调用方自行判断。 */
+  if (sheetStack.length && view.foot && view.foot.indexOf('data-action="sheet-back"') === -1) {
+    view = { ...view, foot: '<button type="button" class="btn" data-action="sheet-back">返回</button>' + view.foot };
+  }
   const current = sheetStack[sheetStack.length - 1];
   if (current) {
     current.savedScroll = sheetBodyEl.scrollTop;
