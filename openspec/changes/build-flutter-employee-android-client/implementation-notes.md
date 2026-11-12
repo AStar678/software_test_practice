@@ -6,9 +6,9 @@
 - Schema: spec-driven
 - Store: local repo (`/home/rmy/桌面/panDuola`)
 - Implementation roots: `flutter/` (new Flutter Android client), with read-only consumption of `backend/docs/employee-client-contracts.md` and the archived A change
-- Updated: 2026-11-12T18:55:00+08:00
-- Implementation revision: repo `56313ba` plus module commits `e2781c8..2a5b829` (this docs commit records the dragging batch)
-- Progress: **33/62** tasks checked. `1.4`, `4.1`, `4.9`, `5.1`–`5.6`, `5.8`, `5.9` are closed. `5.7` remains open only for the missing physical-device perception acceptance; chapter 6/7 and `2.7` remain open.
+- Updated: 2026-11-12T19:25:00+08:00
+- Implementation revision: repo `56313ba` plus module commits `e2781c8..ecb6b8c` (this docs commit records the task-table batch)
+- Progress: **36/62** tasks checked. `1.4`, `4.1`, `4.9`, `5.1`–`5.6`, `5.8`, `5.9`, `6.1`–`6.3` are closed. `5.7` remains open only for the missing physical-device perception acceptance; chapter 7 and `2.7` remain open.
 - The 2026-11-10 macOS sections below are historical; the 2026-11-12 Linux supplement at the end supersedes their environment/build status.
 
 ## Chapter 1–4 findings and decisions
@@ -166,7 +166,7 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 ### Still open / not overclaimed
 
 - 5.7: implementation and component evidence exist, but physical-device haptic/gesture perception remains for 11.2. `5.8`/`5.9` are closed on component/build evidence.
-- 6.1/6.2/6.3: Chinese collation across pages, fixed title/header + full columns, independent filter/column-group/page restoration, and >100-row acceptance are not fully verified.
+- 6.1–6.3: closed with a 120-row fake backend pagination test, fixed title/header layout, column groups, independent filter/page/scroll persistence, pin reset to the first filtered group, and calendar-cache isolation assertions.
 - 7.1–7.6: pagination/refresh/return restore, exact freeze boundaries, all fill edge cases, task-tag approval interplay, and comment cursor/non-author real tests remain.
 - 2.7 notification/people/subordinate routes still use stubs.
 - 4.1/4.9 have real backend evidence, but expired-creation resubmit, organization changes, and all old-button variants remain for the broader J08/J09/J12 journey.
@@ -197,6 +197,36 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 - `5.7` stays unchecked because its task text explicitly requires 11.2 physical-device perception; component tests prove the 500ms/haptic/no-write state machine, but no physical device is attached.
 - Haptic feedback and edge auto-scroll on real hardware, plus system-level pointer cancellation, remain for 11.2.
 - `5.8`/`5.9` have model, widget and build evidence; no real-device recording is claimed.
+
+## 2026-11-12 任务表单批次（6.1–6.3）
+
+### Implemented
+
+- `/tasks/table` remains the only data source; client never locally re-sorts server rows.
+- 50-item page model with previous/next controls, request generation guard for stale filter responses, and total/page count.
+- Independent relation/completion/name/single-end-date filters backed by account preferences.
+- Fixed title column and fixed header; right-side columns scroll horizontally, title/body vertical lists are synchronized.
+- Column groups: 概览/排期/资料/全部列; pin column remains visible.
+- Full fields: relation, state, schedule, priority, ordered owners, original creator, parent link, tags, progress, historical acceptance criteria, freeze/pending, overdue, execution round, createdAt, dueAt, pin.
+- Pin from any page resets to the first filtered page so the pinned task enters the first group; no calendar request is made.
+- `canTablePin=false` leaves the action disabled and writes nothing.
+- Added preference keys for filters, column group, page index and scroll offset.
+
+### Checks
+
+| Command | Result |
+| --- | --- |
+| `cd flutter && dart analyze` | No issues found |
+| `cd flutter && flutter test` | **115 tests passed** |
+| `flutter build apk --debug` | succeeded; installed on API 36 AVD |
+| Android smoke | task table opened from company; fixed title/header, pin column and overview columns rendered |
+| `openspec validate build-flutter-employee-android-client --strict` | valid |
+
+### Remaining / not overclaimed
+
+- The 120-row pagination, stale filter, column-group, fixed header/title and state-restoration evidence uses the fixed-response test backend; real demo has only 15 table rows.
+- Chinese collator parity is consumed from the backend contract, not independently re-derived in Flutter.
+- No physical device.
 
 ## Verification Reminders
 
