@@ -60,9 +60,11 @@ class CommentsApi {
 
   Future<CommentRecord> change({
     required String commentId,
+    required int rowVersion,
     required String body,
     required String idempotencyKey,
   }) async {
+    _client.versions.put(VersionRegistry.comment(commentId), '"$rowVersion"');
     final result = await _client.write<CommentRecord>(
       method: 'PATCH',
       path: '/comments/$commentId',
@@ -75,7 +77,8 @@ class CommentsApi {
     return result.data;
   }
 
-  Future<void> delete({required String commentId, required String idempotencyKey}) async {
+  Future<void> delete({required String commentId, required int rowVersion, required String idempotencyKey}) async {
+    _client.versions.put(VersionRegistry.comment(commentId), '"$rowVersion"');
     await _client.write<void>(
       method: 'DELETE',
       path: '/comments/$commentId',
