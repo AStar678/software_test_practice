@@ -6,9 +6,9 @@
 - Schema: spec-driven
 - Store: local repo (`/home/rmy/桌面/panDuola`)
 - Implementation roots: `flutter/` (new Flutter Android client), with read-only consumption of `backend/docs/employee-client-contracts.md` and the archived A change
-- Updated: 2026-11-12T17:45:00+08:00
-- Implementation revision: repo `56313ba` plus module commits `e2781c8..eab94eb` (chapters 1–7 working tree; docs commit follows)
-- Progress: 23/62 tasks checked. `1.4` is now closed on Linux/API36 emulator. Chapters 5–7 have implemented code but remain unchecked pending full acceptance. `2.7`, `4.1`, `4.9` remain open.
+- Updated: 2026-11-12T18:20:00+08:00
+- Implementation revision: repo `56313ba` plus module commits `e2781c8..478d954` (this docs commit records the chapter 4/5 batch)
+- Progress: **31/62** tasks checked. `1.4`, `4.1`, `4.9`, `5.1`–`5.6` are closed; `5.7`–`5.9`, chapter 6/7 acceptance and `2.7` remain open.
 - The 2026-11-10 macOS sections below are historical; the 2026-11-12 Linux supplement at the end supersedes their environment/build status.
 
 ## Chapter 1–4 findings and decisions
@@ -80,7 +80,7 @@
 | 4.7 reviewer preview/applications | `tasks_api.preview`, `task_form_page.dart` outcome dialog, `approvals_pages.dart` | Preview is non-binding; after submit the real reviewer is read back from the request; founder direct outcome shown |
 | 4.8 diff/audience | `approvals_pages.dart` (`_DiffRow`, `_ProposalSummary`) and widget test | Reviewer sees field diff and order-only marker; applicant sees own proposal; bystander sees summary only |
 | 4.10 handover | `task_action_pages.dart` (`TaskHandoverPage`) | Source/target lists, preset read/save/clear, reason, task-version If-Match; no handover action in read-only contexts |
-| 2.7/4.1/4.9 (partial) | Route skeleton + task/approval pages exist; gaps listed below | Not checked |
+| 2.7 / 4.1 / 4.9 | 2.7 route skeleton still partial; 4.1/4.9 real closed paths are in `real_backend_test.dart` (resubmit, concurrent decision, pending comments) | 4.1/4.9 checked 2026-11-12; 2.7 still open |
 | App-level navigation smoke | `test/features/app_navigation_test.dart` | Real providers/router with fixed responses: five-branch shell loads home, three modules, board list (all ≤10), task detail, then back through both layers |
 | Header width fix | `home_page.dart` `_DailyItemsHeader` | Found by the 390-width navigation test: compact/`FittedBox` month controls so `每日事项` title, add and month tools stay on one row without overflow |
 
@@ -127,7 +127,7 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 
 ### Environment / build evidence
 
-- Host: Linux, repo `/home/rmy/桌面/panDuola`, branch `feature-rmy`, module commits `e2781c8..eab94eb` on top of `56313ba`.
+- Host: Linux, repo `/home/rmy/桌面/panDuola`, branch `feature-rmy`; current batch is committed on top of `44e811c` through `478d954`.
 - Flutter 3.47.9 / Dart 3.13.7 at `/home/rmy/development/flutter`.
 - Android SDK `/home/rmy/Android/Sdk`: API 36, build-tools 36.0.0, platform-tools, emulator. AVD `pandora_api36` booted as `emulator-5554`.
 - Demo backend/MySQL running; `/health` returns 200. Debug app uses emulator host `10.0.2.2:8080`; host unit/integration tests use `127.0.0.1:8080`.
@@ -142,7 +142,8 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 - Chapter 5 baseline: `features/schedule/**` with continuous month blocks, month/day list, pending projection, calendar pin, month drag, permission guards, real grab-day detection, all-day move, and initial/current-month positioning plus “今天”.
 - Chapter 6 baseline: `TaskTablePage`, `/tasks/table`, relation/completion/name/single-end date filters, six sort keys/two directions, 50-item paging, independent table pin, and additional columns (priority, parent, tags, freeze, createdAt).
 - Chapter 7 baseline: `features/work_logs/**`, `features/comments/**`, `features/tags/**`; list/detail/create/edit/delete, fill-source, optional linked task, ordered multi-tag editing, author comment edit/delete, and founder tag management.
-- 4.1 resubmit UI exists in approval detail; 4.9 independent comments are implemented but not fully concurrency-tested.
+- 4.1/4.9 closure: existing rejected creation is resubmitted to a new request and the old request stays rejected; concurrent approval decisions produce one success and one 412; pending-task comments remain independent, non-author edit returns 403, and author delete succeeds.
+- Chapter 5 browsing closure: pure `CalendarTask`/`DayAxisLayout` projections, preferences-backed mode/density/last date, 42%-width end drawer, actual hit-day mapping for continued bars, horizontal/vertical 24-hour axes with all-day separation and collision lanes, dashed pending proposal borders, forced visible-month refresh, and pinned-first month/day ordering.
 - Bug fixes verified this session:
   - comment create response uses `commentId`; parser now accepts it, and edit/delete send the record’s own `rowVersion` as If-Match;
   - work-log fill refuses incomplete sources, uses Java-compatible trim and UTF-16 10,000 limit, preserves original text, and shows an editable over-limit preview instead of truncating;
@@ -156,20 +157,19 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 | Command | Result |
 | --- | --- |
 | `cd flutter && dart analyze` | No issues found |
-| `cd flutter && flutter test` | **76 tests passed** (unit/widget/real backend, including new session-restore, table date-filter, log/comment real-chain, and fill-merge tests) |
+| `cd flutter && flutter test` | **94 tests passed** (unit/widget/real backend, including calendar projection/UI/axis, preferences, 4.1 resubmit, 4.9 concurrency/comment, pending schedule, and calendar pin tests) |
 | `flutter build apk --debug` | succeeded; APK path above |
 | `adb install -r …/app-debug.apk` + launch + login + force-stop/restore | succeeded on API 36 AVD; session restore reached home |
-| Android UI smoke | home/company calendar/task table/logs/log detail/comments opened against demo backend |
-| `openspec validate` | not rerun after this session’s tasks.md edit; rerun before verify |
+| Android UI smoke | home/company current-month calendar, 42% end drawer, list/day-axis toggles, task table, logs, log detail/comments opened against demo backend |
+| `openspec validate build-flutter-employee-android-client --strict` | valid |
 
 ### Still open / not overclaimed
 
-- 5.3/5.4: drawer proportions and full horizontal/vertical day-axis semantics are still basic; the day sheet is still list-first.
-- 5.7–5.9: no edge auto-scroll, endpoint resize, final day-axis bounds editor, or physical-device haptic/gesture acceptance.
+- 5.7–5.9: no edge auto-scroll, endpoint resize, final day-axis bounds editor, keyboard/accessibility drag path, or physical-device haptic/gesture acceptance.
 - 6.1/6.2/6.3: Chinese collation across pages, fixed title/header + full columns, independent filter/column-group/page restoration, and >100-row acceptance are not fully verified.
 - 7.1–7.6: pagination/refresh/return restore, exact freeze boundaries, all fill edge cases, task-tag approval interplay, and comment cursor/non-author real tests remain.
 - 2.7 notification/people/subordinate routes still use stubs.
-- 4.1 resubmit is untested against a real rejected/expired creation; 4.9 lacks concurrent-decision and independent-comment freeze tests.
+- 4.1/4.9 have real backend evidence, but expired-creation resubmit, organization changes, and all old-button variants remain for the broader J08/J09/J12 journey.
 - No physical device; 11.2/11.3 release signing/API26 work is untouched.
 - `implementation-notes.md` is not a verification PASS.
 
@@ -177,8 +177,8 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 
 - **1.4 is closed (2026-11-12)**: debug APK built, installed and run on API 36 AVD, login/navigation and session restore verified.
 - **2.7 remains open**: all secondary routes are registered and the implemented task/daily-item flows return correctly, but notifications, people/subordinate workspace, logs and comments still show `StubPage`; their nested-return and read-only propagation cannot be verified until chapters 7–9.
-- **4.1 remains open**: the approval detail now has the applicant “修改并重提” UI, but no real rejected/expired creation was exercised end-to-end.
-- **4.9 remains open**: independent task/log comments are implemented and real create/list/delete passed; concurrent decisions, old-button invalidation and comments while frozen/pending-lock have not been fully tested.
+- **4.1 is closed for the rejected real path (2026-11-12)**: original applicant resubmits to a new request; old request remains rejected. Expired-creation variant still belongs to the broader journey.
+- **4.9 is closed for concurrency + pending comments (2026-11-12)**: one of two concurrent decisions succeeded, the other got 412; pending-task comments stayed independent and non-author edit got 403. Frozen-log/org-change variants remain in later journeys.
 - Calendar upward browsing: the page opens with the home cards and today's month; earlier months are reached with the month selector/prev arrow, then scrolling is continuous downward across years. There is no infinite upward prepend. Layout/cross-year data handling is correct; this interaction difference should be judged explicitly in verification.
 - The daily-items month grid always renders six weeks to keep block heights and anchors stable; out-of-month cells are inert blanks (no duplicated dates).
 - Month data is loaded lazily per calendar month and all its pages are fetched; no >93-day request is ever issued. A real ">100 items in one month" fixture was not exercised (the code loops `nextOffset`); use the extreme fixture in chapter 11.
