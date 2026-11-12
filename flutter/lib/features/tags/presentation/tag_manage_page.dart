@@ -10,6 +10,17 @@ import '../../../core/widgets/state_views.dart';
 import '../../tasks/domain/task_record.dart';
 import 'tags_providers.dart';
 
+const List<({String color, String label})> _tagPalette = [
+  (color: '#F6D5D2', label: '珊瑚红'),
+  (color: '#FBE3CB', label: '蜜杏'),
+  (color: '#F8EFC8', label: '麦黄'),
+  (color: '#DCEEE0', label: '青瓷'),
+  (color: '#D8EAF4', label: '湖蓝'),
+  (color: '#E4DEF3', label: '雾紫'),
+  (color: '#F2DFE9', label: '藕粉'),
+  (color: '#E4E7EC', label: '石灰'),
+];
+
 class TagManagePage extends ConsumerStatefulWidget {
   const TagManagePage({super.key});
   @override
@@ -40,36 +51,76 @@ class _TagManagePageState extends ConsumerState<TagManagePage> {
 
   Future<void> _edit([TaskTag? tag]) async {
     final name = TextEditingController(text: tag?.name ?? '');
-    final color = TextEditingController(text: tag?.color ?? '#FFE1EA');
+    var selectedColor = _tagPalette.any((entry) => entry.color == tag?.color)
+        ? tag!.color!
+        : _tagPalette.first.color;
+    var validation = '';
     final accepted = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(tag == null ? '新建标签' : '编辑标签'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: name, maxLength: 40, decoration: const InputDecoration(labelText: '名称')),
-          TextField(controller: color, maxLength: 7, decoration: const InputDecoration(labelText: '颜色，如 #FFE1EA')),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('保存')),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(tag == null ? '新建标签' : '编辑标签'),
+          content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            TextField(controller: name, maxLength: 40, decoration: const InputDecoration(labelText: '名称')),
+            const SizedBox(height: 10),
+            const Text('颜色（固定色板）'),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final entry in _tagPalette)
+                  ChoiceChip(
+                    label: Text(entry.label),
+                    avatar: CircleAvatar(backgroundColor: _color(entry.color), radius: 7),
+                    selected: selectedColor == entry.color,
+                    onSelected: (_) => setDialogState(() => selectedColor = entry.color),
+                  ),
+              ],
+            ),
+            if (validation.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(validation, style: const TextStyle(color: PandoraColors.overdue)),
+              ),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
+            FilledButton(
+              onPressed: () {
+                if (name.text.trim().isEmpty) {
+                  setDialogState(() => validation = '名称不能为空');
+                  return;
+                }
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('保存'),
+            ),
+          ],
+        ),
       ),
     );
+    final nextName = name.text.trim();
+    final nextColor = selectedColor;
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    name.dispose();
     if (accepted != true || !mounted) return;
     final keys = ref.read(operationKeysProvider);
     final scope = 'tag:${tag?.id ?? 'new'}';
-    final key = keys.keyFor(scope: scope, method: tag == null ? 'POST' : 'PATCH', path: tag == null ? '/tags' : '/tags/${tag.id}', body: {'name': name.text.trim(), 'color': color.text.trim()});
+    final key = keys.keyFor(scope: scope, method: tag == null ? 'POST' : 'PATCH', path: tag == null ? '/tags' : '/tags/${tag.id}', body: {'name': nextName, 'color': nextColor});
     try {
       if (tag == null) {
-        await ref.read(tagsApiProvider).create(name: name.text.trim(), color: color.text.trim(), idempotencyKey: key);
+        await ref.read(tagsApiProvider).create(name: nextName, color: nextColor, idempotencyKey: key);
       } else {
-        await ref.read(tagsApiProvider).change(id: tag.id, name: name.text.trim(), color: color.text.trim(), rowVersion: tag.rowVersion, idempotencyKey: key);
+        await ref.read(tagsApiProvider).change(id: tag.id, name: nextName, color: nextColor, rowVersion: tag.rowVersion, idempotencyKey: key);
       }
       keys.complete(scope);
       await _load();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${error.toString()}；目录已刷新，请重新编辑')));
     }
   }
 
@@ -100,6 +151,14 @@ class _TagManagePageState extends ConsumerState<TagManagePage> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.read(currentUserProvider);
+    if (user?.isFounder != true) {
+      return PandoraPage(
+        title: '公司标签',
+        showBack: true,
+        child: const EmptyView(message: '仅固定创始人可以维护公司共用标签目录。'),
+      );
+    }
     return PandoraPage(
       title: '公司标签',
       showBack: true,
