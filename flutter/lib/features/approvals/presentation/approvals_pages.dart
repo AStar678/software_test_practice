@@ -447,6 +447,23 @@ class _ApprovalDetailPageState extends ConsumerState<ApprovalDetailPage> {
                             onPressed: _deciding ? null : () => _decide('withdraw'),
                             child: const Text('撤销申请'),
                           ),
+                        if (!request.isPending &&
+                            request.kind == 'create' &&
+                            request.applicantId == me?.id &&
+                            const {'rejected', 'withdrawn', 'expired'}.contains(request.status) &&
+                            request.proposedVersion != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: FilledButton.icon(
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => _CreationResubmitPage(request: request),
+                                ),
+                              ),
+                              icon: const Icon(Icons.edit_outlined),
+                              label: const Text('修改并重提'),
+                            ),
+                          ),
                         if (!request.isPending)
                           const Text(
                             '该申请已处理完毕，旧操作不可重复执行。',
@@ -583,6 +600,109 @@ class _ProposalSummary extends StatelessWidget {
           _MetaRow(label: '标签', value: proposal.tags.map((tag) => tag.name).join('、')),
         if (proposal.progressNote.isNotEmpty) _MetaRow(label: '进展', value: proposal.progressNote),
       ],
+    );
+  }
+}
+
+
+class _CreationResubmitPage extends ConsumerStatefulWidget {
+  const _CreationResubmitPage({required this.request});
+  final ApprovalRequest request;
+  @override
+  ConsumerState<_CreationResubmitPage> createState() => _CreationResubmitPageState();
+}
+
+class _CreationResubmitPageState extends ConsumerState<_CreationResubmitPage> {
+  late final TextEditingController _title;
+  late final TextEditingController _description;
+  late final TextEditingController _reason;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final proposed = widget.request.proposedVersion!;
+    _title = TextEditingController(text: proposed.title);
+    _description = TextEditingController(text: proposed.description);
+    _reason = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _description.dispose();
+    _reason.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final reason = _reason.text.trim();
+    if (_title.text.trim().isEmpty || _description.text.trim().isEmpty || reason.isEmpty) {
+      setState(() => _error = '请填写名称、说明和重提原因。');
+      return;
+    }
+    setState(() { _saving = true; _error = null; });
+    try {
+      final proposed = widget.request.proposedVersion!;
+      final task = await ref.read(tasksApiProvider).detail(widget.request.taskId);
+      if (task.rowVersion <= 0) throw StateError('无法读取任务当前版本');
+      final keys = ref.read(operationKeysProvider);
+      final path = '/tasks/${widget.request.taskId}';
+      final payload = <String, Object?>{
+        'command': 'change',
+        'title': _title.text.trim(),
+        'description': _description.text.trim(),
+        'acceptanceCriteria': proposed.acceptanceCriteria,
+        'priority': proposed.priority,
+        'allDay': proposed.allDay,
+        'assigneeIds': proposed.assigneeIds,
+        'tagIds': proposed.tagIds,
+        'parentTaskId': proposed.parentTaskId,
+        'reason': '创建申请修改重提：$reason',
+      };
+      if (proposed.allDay) {
+        payload['startDate'] = proposed.startDate;
+        payload['dueDate'] = proposed.dueDate;
+      } else {
+        payload['startAt'] = proposed.startAt?.toUtc().toIso8601String();
+        payload['dueAt'] = proposed.dueAt?.toUtc().toIso8601String();
+      }
+      final key = keys.keyFor(scope: 'resubmit:${widget.request.taskId}', method: 'PATCH', path: path, body: payload);
+      await ref.read(tasksApiProvider).change(
+            id: widget.request.taskId,
+            command: 'change',
+            payload: payload,
+            idempotencyKey: key,
+          );
+      keys.complete('resubmit:${widget.request.taskId}');
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已重新提交创建申请')));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() { _saving = false; _error = error.toString(); });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PandoraPage(
+      title: '修改并重提',
+      showBack: true,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text('重提会创建新的申请记录，旧申请保持原结果。'),
+          const SizedBox(height: 12),
+          TextField(controller: _title, maxLength: 80, decoration: const InputDecoration(labelText: '任务名称')),
+          TextField(controller: _description, minLines: 3, maxLines: 8, maxLength: 5000, decoration: const InputDecoration(labelText: '任务说明', alignLabelWithHint: true)),
+          TextField(controller: _reason, minLines: 2, maxLines: 4, maxLength: 500, decoration: const InputDecoration(labelText: '重提原因', alignLabelWithHint: true)),
+          if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: const TextStyle(color: PandoraColors.overdue))),
+          const SizedBox(height: 16),
+          FilledButton(onPressed: _saving ? null : _submit, child: Text(_saving ? '提交中…' : '重新提交')),
+        ],
+      ),
     );
   }
 }
