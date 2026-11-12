@@ -13,6 +13,9 @@ import '../../features/tasks/presentation/task_action_pages.dart';
 import '../../features/tasks/presentation/task_detail_page.dart';
 import '../../features/tasks/presentation/task_form_page.dart';
 import '../../features/tasks/presentation/task_route_args.dart';
+import '../../features/tasks/presentation/task_table_page.dart';
+import '../../features/work_logs/presentation/work_logs_page.dart';
+import '../../features/tags/presentation/tag_manage_page.dart';
 import '../company/company_date.dart';
 import '../../features/shell/destination_pages.dart';
 import '../../features/shell/pandora_shell.dart';
@@ -47,6 +50,7 @@ class AppRoutes {
   static String dailyItem(String id) => '/daily-items/$id';
 
   static const taskNew = '/tasks/new';
+  static const taskTable = '/tasks/table';
   static const taskPattern = '/tasks/:id';
   static String task(String id) => '/tasks/$id';
   static const taskEditPattern = '/tasks/:id/edit';
@@ -68,7 +72,9 @@ class AppRoutes {
   static const people = '/people';
   static const logsNew = '/logs/new';
   static const logPattern = '/logs/:id';
+  static const logEditPattern = '/logs/:id/edit';
   static String log(String id) => '/logs/$id';
+  static String logEdit(String id) => '/logs/$id/edit';
   static const tags = '/tags';
 }
 
@@ -177,6 +183,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => TaskCreatePage(parentId: state.uri.queryParameters['parent']),
       ),
       GoRoute(
+        path: AppRoutes.taskTable,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TaskTablePage(),
+      ),
+      GoRoute(
         path: AppRoutes.taskPattern,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
@@ -254,17 +265,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.logsNew,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const StubPage(title: '写日志'),
+        builder: (context, state) => WorkLogEditorPage(
+          initialDate: CompanyDate.tryParse(state.uri.queryParameters['date']),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.logEditPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => WorkLogEditorPage(logId: state.pathParameters['id']),
       ),
       GoRoute(
         path: AppRoutes.logPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => StubPage(title: '日志详情', subtitle: state.pathParameters['id']),
+        builder: (context, state) => WorkLogDetailPage(logId: state.pathParameters['id'] ?? ''),
       ),
       GoRoute(
         path: AppRoutes.tags,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const StubPage(title: '标签目录'),
+        builder: (context, state) => const TagManagePage(),
       ),
     ],
   );

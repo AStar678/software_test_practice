@@ -6,77 +6,23 @@ import '../../core/providers.dart';
 import '../../core/theme/pandora_theme.dart';
 import '../../core/widgets/state_views.dart';
 import '../auth/presentation/password_change_page.dart';
+import '../schedule/presentation/task_calendar_page.dart';
+import '../work_logs/presentation/work_logs_page.dart';
 
-/// 公司页：任务创建/派发、任务日历与本人申请都属于这里（日历在报告章实现）。
+/// 公司页：本人任务日历、任务表单、申请和创建入口。
 class CompanyPage extends StatelessWidget {
   const CompanyPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('公司')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('任务', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 6),
-                    Text(
-                      '创建和派发任务，查看本人任务与申请进度。',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: PandoraColors.muted),
-                    ),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        FilledButton.icon(
-                          onPressed: () => _open(context, '/tasks/new'),
-                          icon: const Icon(Icons.add),
-                          label: const Text('新建任务'),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () => _open(context, '/approvals'),
-                          icon: const Icon(Icons.assignment_outlined),
-                          label: const Text('我的申请与审核'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _open(BuildContext context, String location) {
-    // 次级路由由顶部路由表注册，这里不改变主导航。
-    GoRouterHelper.of(context).push(location);
-  }
+  Widget build(BuildContext context) => const TaskCalendarPage();
 }
 
-/// 日志页（完整实现在后续章）。
+/// 日志页：本人日志列表与写日志入口。
 class LogsPage extends StatelessWidget {
   const LogsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('日志')),
-      body: const SafeArea(
-        child: EmptyView(message: '日志功能将在后续章节接入'),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const WorkLogsPage();
 }
 
 /// 统计页（完整实现在后续章）。
@@ -157,6 +103,15 @@ class MePage extends ConsumerWidget {
             Card(
               child: Column(
                 children: [
+                  if (user.isFounder) ...[
+                    ListTile(
+                      leading: const Icon(Icons.sell_outlined),
+                      title: const Text('公司标签'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => GoRouterHelper.of(context).push('/tags'),
+                    ),
+                    const Divider(height: 1),
+                  ],
                   ListTile(
                     leading: const Icon(Icons.lock_outline),
                     title: const Text('修改密码'),
