@@ -21,7 +21,8 @@ class AppConfig {
       return AppConfig(apiBaseUrl: _normalize(configured), isDebug: isDebug);
     }
     if (isDebug) {
-      return const AppConfig(apiBaseUrl: 'http://127.0.0.1:8080/api/v1', isDebug: true);
+      final host = !kIsWeb && defaultTargetPlatform == TargetPlatform.android ? '10.0.2.2' : '127.0.0.1';
+      return AppConfig(apiBaseUrl: 'http://$host:8080/api/v1', isDebug: true);
     }
     return const AppConfig(apiBaseUrl: '', isDebug: false);
   }
