@@ -6,9 +6,9 @@
 - Schema: spec-driven
 - Store: local repo (`/home/rmy/桌面/panDuola`)
 - Implementation roots: `flutter/` (new Flutter Android client), with read-only consumption of `backend/docs/employee-client-contracts.md` and the archived A change
-- Updated: 2026-11-12T19:25:00+08:00
-- Implementation revision: repo `56313ba` plus module commits `e2781c8..ecb6b8c` (this docs commit records the task-table batch)
-- Progress: **36/62** tasks checked. `1.4`, `4.1`, `4.9`, `5.1`–`5.6`, `5.8`, `5.9`, `6.1`–`6.3` are closed. `5.7` remains open only for the missing physical-device perception acceptance; chapter 7 and `2.7` remain open.
+- Updated: 2026-11-12T20:05:00+08:00
+- Implementation revision: repo `56313ba` plus module commits `e2781c8..055f325` (this docs commit records the chapter-7 batch)
+- Progress: **42/62** tasks checked. `1.4`, `4.1`, `4.9`, `5.1`–`5.6`, `5.8`, `5.9`, `6.1`–`6.3`, `7.1`–`7.6` are closed. `5.7` remains open only for physical-device perception acceptance; `2.7` and chapters 8–11 remain.
 - The 2026-11-10 macOS sections below are historical; the 2026-11-12 Linux supplement at the end supersedes their environment/build status.
 
 ## Chapter 1–4 findings and decisions
@@ -167,7 +167,7 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 
 - 5.7: implementation and component evidence exist, but physical-device haptic/gesture perception remains for 11.2. `5.8`/`5.9` are closed on component/build evidence.
 - 6.1–6.3: closed with a 120-row fake backend pagination test, fixed title/header layout, column groups, independent filter/page/scroll persistence, pin reset to the first filtered group, and calendar-cache isolation assertions.
-- 7.1–7.6: pagination/refresh/return restore, exact freeze boundaries, all fill edge cases, task-tag approval interplay, and comment cursor/non-author real tests remain.
+- 7.1–7.6: closed with account-scoped log filters/missing dates, delete and task picker, fill revalidation, shared tag selector, founder palette guard, cursor comments and real notification-recipient evidence.
 - 2.7 notification/people/subordinate routes still use stubs.
 - 4.1/4.9 have real backend evidence, but expired-creation resubmit, organization changes, and all old-button variants remain for the broader J08/J09/J12 journey.
 - No physical device; 11.2/11.3 release signing/API26 work is untouched.
@@ -226,6 +226,38 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 
 - The 120-row pagination, stale filter, column-group, fixed header/title and state-restoration evidence uses the fixed-response test backend; real demo has only 15 table rows.
 - Chinese collator parity is consumed from the backend contract, not independently re-derived in Flutter.
+- No physical device.
+
+## 2026-11-12 日志、标签、评论批次（7.1–7.6）
+
+### Implemented
+
+- Logs list: self-only date filters, pull-to-refresh back to top, detail reload preserving scroll, businessDate relative labels.
+- New log: only missing company today/yesterday/day-before; no missing dates shows a clear empty state.
+- Log editor: searchable/clearable linked task dialog preserving body/tags; immutable date on edit; true `pop(true)` result refreshes the list.
+- Log detail: confirmed delete with original ETag/idempotency; edit/delete only when editable and not frozen.
+- Fill: rechecks current detail before and after source/preview, keeps latest body, retains 10,000 UTF-16 preview flow, and does not mutate association/status.
+- Shared `TagSelector` for tasks and logs; deleted snapshots stay readable/removable and cannot be re-added; no-tag default remains pink.
+- Founder tag management: client role guard, fixed backend palette (removed invalid free-form color), post-conflict refresh.
+- Comments: stable `nextCursor` continuation, retry state, author-only management, delete confirmation, safe edit-dialog lifecycle.
+- Real integration: founder tag CRUD and employee 403; comment notification reaches the current task owner.
+- Backend `NotificationCommentAccessTest` already covers deleted/withdrawn comment notification sanitization; cited rather than duplicated in Flutter.
+
+### Checks
+
+| Command | Result |
+| --- | --- |
+| `cd flutter && dart analyze` | No issues found |
+| `cd flutter && flutter test` | **126 tests passed** |
+| `flutter build apk --debug` | succeeded; installed on API 36 AVD |
+| Android smoke | logs list filters and all-filled create state rendered against demo backend |
+| `openspec validate build-flutter-employee-android-client --strict` | valid |
+
+### Remaining / not overclaimed
+
+- Freeze boundary timing is server-owned; Flutter UI is verified with fixed `frozen/editable` responses, not by changing host time.
+- Notification deletion/revocation summary safety is backend-tested; no notification UI exists yet (chapter 9).
+- `5.7` remains unchecked pending physical-device haptic/gesture perception.
 - No physical device.
 
 ## Verification Reminders
