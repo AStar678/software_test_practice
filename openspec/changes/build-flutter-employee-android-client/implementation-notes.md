@@ -6,9 +6,9 @@
 - Schema: spec-driven
 - Store: local repo (`/home/rmy/桌面/panDuola`)
 - Implementation roots: `flutter/` (new Flutter Android client), with read-only consumption of `backend/docs/employee-client-contracts.md` and the archived A change
-- Updated: 2026-11-12T18:20:00+08:00
-- Implementation revision: repo `56313ba` plus module commits `e2781c8..478d954` (this docs commit records the chapter 4/5 batch)
-- Progress: **31/62** tasks checked. `1.4`, `4.1`, `4.9`, `5.1`–`5.6` are closed; `5.7`–`5.9`, chapter 6/7 acceptance and `2.7` remain open.
+- Updated: 2026-11-12T18:55:00+08:00
+- Implementation revision: repo `56313ba` plus module commits `e2781c8..2a5b829` (this docs commit records the dragging batch)
+- Progress: **33/62** tasks checked. `1.4`, `4.1`, `4.9`, `5.1`–`5.6`, `5.8`, `5.9` are closed. `5.7` remains open only for the missing physical-device perception acceptance; chapter 6/7 and `2.7` remain open.
 - The 2026-11-10 macOS sections below are historical; the 2026-11-12 Linux supplement at the end supersedes their environment/build status.
 
 ## Chapter 1–4 findings and decisions
@@ -127,7 +127,7 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 
 ### Environment / build evidence
 
-- Host: Linux, repo `/home/rmy/桌面/panDuola`, branch `feature-rmy`; current batch is committed on top of `44e811c` through `478d954`.
+- Host: Linux, repo `/home/rmy/桌面/panDuola`, branch `feature-rmy`; dragging commits `c8734ea..2a5b829` continue on top of `478d954`.
 - Flutter 3.47.9 / Dart 3.13.7 at `/home/rmy/development/flutter`.
 - Android SDK `/home/rmy/Android/Sdk`: API 36, build-tools 36.0.0, platform-tools, emulator. AVD `pandora_api36` booted as `emulator-5554`.
 - Demo backend/MySQL running; `/health` returns 200. Debug app uses emulator host `10.0.2.2:8080`; host unit/integration tests use `127.0.0.1:8080`.
@@ -165,13 +165,38 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 
 ### Still open / not overclaimed
 
-- 5.7–5.9: no edge auto-scroll, endpoint resize, final day-axis bounds editor, keyboard/accessibility drag path, or physical-device haptic/gesture acceptance.
+- 5.7: implementation and component evidence exist, but physical-device haptic/gesture perception remains for 11.2. `5.8`/`5.9` are closed on component/build evidence.
 - 6.1/6.2/6.3: Chinese collation across pages, fixed title/header + full columns, independent filter/column-group/page restoration, and >100-row acceptance are not fully verified.
 - 7.1–7.6: pagination/refresh/return restore, exact freeze boundaries, all fill edge cases, task-tag approval interplay, and comment cursor/non-author real tests remain.
 - 2.7 notification/people/subordinate routes still use stubs.
 - 4.1/4.9 have real backend evidence, but expired-creation resubmit, organization changes, and all old-button variants remain for the broader J08/J09/J12 journey.
 - No physical device; 11.2/11.3 release signing/API26 work is untouched.
 - `implementation-notes.md` is not a verification PASS.
+
+## 2026-11-12 拖动批次（5.7–5.9）
+
+### Implemented
+
+- `CalendarDragCalculator` pure rules for month whole-bar moves, real start/end resize, all-day moves, day-axis move/resize, zero duration, midnight/time-zone boundaries and reverse/out-of-range rejection.
+- Month bars: 500ms long press, one haptic, actual grab-day mapping for continuation segments, real endpoint handles only on true start/end, live old/new schedule overlay, lightweight reason confirmation, forced current-task ETag read before write, edge auto-scroll, background cancellation.
+- Day axis: long press whole/endpoint drag, hour snapping with preserved minutes, final `[dayStart, nextDayStart]` bounds, whole-day/cross-day/clipped exclusion, no write before confirmation.
+- Accessibility: Semantics custom actions for month day moves and day-axis hour moves, reusing the same confirmation/write path.
+- Tests: pure drag model, no-activation before 500ms, single haptic, confirm-before-write, month move, month endpoint resize, axis move, axis endpoint resize, edge auto-scroll, lifecycle cancellation, actual hit-day drawer behavior.
+
+### Checks
+
+| Command | Result |
+| --- | --- |
+| `cd flutter && dart analyze` | No issues found |
+| `cd flutter && flutter test` | **109 tests passed** |
+| `flutter build apk --debug` | succeeded; APK installed on API 36 AVD |
+| Android smoke | current-month calendar after session restore; founder demo has no assigned tasks, so gesture drag was not exercised on the emulator |
+
+### Remaining in this area
+
+- `5.7` stays unchecked because its task text explicitly requires 11.2 physical-device perception; component tests prove the 500ms/haptic/no-write state machine, but no physical device is attached.
+- Haptic feedback and edge auto-scroll on real hardware, plus system-level pointer cancellation, remain for 11.2.
+- `5.8`/`5.9` have model, widget and build evidence; no real-device recording is claimed.
 
 ## Verification Reminders
 
