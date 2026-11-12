@@ -17,6 +17,7 @@ import 'package:pandora_employee/features/auth/data/auth_api.dart';
 import 'package:pandora_employee/features/auth/domain/password_policy.dart';
 import 'package:pandora_employee/features/daily_items/data/daily_items_api.dart';
 import 'package:pandora_employee/features/home/data/home_api.dart';
+import 'package:pandora_employee/features/tags/data/tags_api.dart';
 import 'package:pandora_employee/features/tasks/data/tasks_api.dart';
 import 'package:pandora_employee/features/work_logs/data/work_logs_api.dart';
 import 'package:pandora_employee/features/comments/data/comments_api.dart';
@@ -638,6 +639,106 @@ void main() {
         method: 'DELETE',
         path: '/comments/${comment.id}',
       ),
+    );
+  }, skip: skipReason);
+
+  test('J23 评论通知送达目标负责人', () async {
+    final userId = session.state.user!.id;
+    final today = clock.businessDate;
+    final rows = await tasks.listCalendarTasks(
+      assigneeId: userId,
+      from: today.addDays(-30).iso,
+      to: today.addDays(30).iso,
+    );
+    final targetTask = rows.where((task) => task.published && !task.pending && task.assigneeIds.contains(userId)).firstOrNull;
+    expect(targetTask, isNotNull, reason: '需要一条已发布的本人负责任务验证评论通知');
+    final reviewerSession = SessionManager(
+      api: AuthApi(
+        dio: Dio(BaseOptions(validateStatus: (status) => status != null && status < 400)),
+        baseUrl: _baseUrl,
+      ),
+      store: MemoryCredentialStore(),
+      clock: WorkspaceClock(),
+    );
+    await reviewerSession.login(phone: '13800000011', password: _demoPassword);
+    final reviewerClient = ApiClient(
+      config: const AppConfig(apiBaseUrl: _baseUrl, isDebug: true),
+      session: reviewerSession,
+      versions: VersionRegistry(),
+    );
+    final reviewerComments = CommentsApi(client: reviewerClient);
+    const body = '评审联调评论正文';
+    final comment = await reviewerComments.create(
+      objectType: 'task',
+      objectId: targetTask!.id,
+      body: body,
+      idempotencyKey: keys.keyFor(scope: 'real:comment-notify', method: 'POST', path: '/tasks/${targetTask.id}/comments'),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final employeeNotifications = await client.get<Map<String, Object?>>(
+      '/notifications',
+      query: {'limit': 100},
+      decode: (json) => asJsonMap(json),
+    );
+    final allNotifications = asJsonList(employeeNotifications.data['items'])
+        .whereType<Map>()
+        .map((row) => Map<String, Object?>.from(row))
+        .toList();
+    final target = allNotifications
+        .where((row) => row['eventType'] == 'comment.created' && row['objectId'] == targetTask.id)
+        .toList();
+    expect(target, isNotEmpty, reason: '当前负责人应收到评论通知');
+    await reviewerComments.delete(
+      commentId: comment.id,
+      rowVersion: comment.rowVersion,
+      idempotencyKey: keys.keyFor(scope: 'real:comment-notify-delete', method: 'DELETE', path: '/comments/${comment.id}'),
+    );
+  }, skip: skipReason);
+
+  test('J22 仅创始人可维护共用标签目录', () async {
+    final founderSession = SessionManager(
+      api: AuthApi(
+        dio: Dio(BaseOptions(validateStatus: (status) => status != null && status < 400)),
+        baseUrl: _baseUrl,
+      ),
+      store: MemoryCredentialStore(),
+      clock: WorkspaceClock(),
+    );
+    await founderSession.login(phone: '13800000001', password: _demoPassword);
+    final founderVersions = VersionRegistry();
+    final founderClient = ApiClient(
+      config: const AppConfig(apiBaseUrl: _baseUrl, isDebug: true),
+      session: founderSession,
+      versions: founderVersions,
+    );
+    final founderTags = TagsApi(client: founderClient, versions: founderVersions);
+    final name = '联调标签 ${DateTime.now().microsecondsSinceEpoch}';
+    final created = await founderTags.create(
+      name: name,
+      color: '#F6D5D2',
+      idempotencyKey: keys.keyFor(scope: 'real:tag:create', method: 'POST', path: '/tags'),
+    );
+    expect(created.name, name);
+    final changed = await founderTags.change(
+      id: created.id,
+      name: '$name改',
+      color: '#FBE3CB',
+      rowVersion: created.rowVersion,
+      idempotencyKey: keys.keyFor(scope: 'real:tag:change', method: 'PATCH', path: '/tags/${created.id}'),
+    );
+    expect(changed.name, endsWith('改'));
+    await founderTags.delete(
+      id: created.id,
+      rowVersion: changed.rowVersion,
+      idempotencyKey: keys.keyFor(scope: 'real:tag:delete', method: 'DELETE', path: '/tags/${created.id}'),
+    );
+    await expectLater(
+      TagsApi(client: client, versions: VersionRegistry()).create(
+        name: '员工越权标签',
+        color: '#F6D5D2',
+        idempotencyKey: keys.keyFor(scope: 'real:tag:forbidden', method: 'POST', path: '/tags'),
+      ),
+      throwsA(isA<ApiException>()),
     );
   }, skip: skipReason);
 
