@@ -130,7 +130,7 @@ void main() {
 
     final bar = find.byKey(const ValueKey('task-bar-span')).hitTestable().first;
     final rect = tester.getRect(bar);
-    await tester.tapAt(Offset(rect.right - 6, rect.center.dy));
+    await tester.tapAt(Offset(rect.right - 30, rect.center.dy));
     await tester.pumpAndSettle();
 
     expect(find.text('2026-11-12 完整清单'), findsOneWidget);
