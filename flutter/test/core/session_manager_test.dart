@@ -156,6 +156,26 @@ void main() {
     expect(await store.read(), isNull);
   });
 
+  test('启动核验成功后通知监听者进入正常会话', () async {
+    now = DateTime.utc(2026, 11, 10, 12);
+    store = MemoryCredentialStore(
+      SessionCredentials(token: 'stored', expiresAt: now.add(const Duration(hours: 1)), generation: 1),
+    );
+    gateway = FakeAuthGateway(now: () => now);
+    manager = SessionManager(
+      api: gateway,
+      store: store,
+      clock: WorkspaceClock(now: () => now),
+      now: () => now,
+    );
+    final phases = <SessionPhase>[];
+    manager.events.listen((state) => phases.add(state.phase));
+    await manager.initialize();
+    await Future<void>.delayed(Duration.zero);
+    expect(manager.state.phase, SessionPhase.authenticated);
+    expect(phases, contains(SessionPhase.authenticated));
+  });
+
   test('旧凭证代次的迟到 401 不清除已轮换的新凭证', () async {
     build();
     gateway.expiresIn = const Duration(seconds: 30);

@@ -29,7 +29,7 @@ class CommentRecord {
   final bool canManage;
 
   factory CommentRecord.fromJson(Map<String, Object?> json) => CommentRecord(
-        id: json['id']?.toString() ?? '',
+        id: (json['id'] ?? json['commentId'])?.toString() ?? '',
         objectType: json['objectType']?.toString() ?? '',
         objectId: json['objectId']?.toString() ?? '',
         authorId: json['authorId']?.toString() ?? '',

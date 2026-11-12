@@ -9,6 +9,7 @@ import '../../../core/router/read_context.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/state_views.dart';
+import '../../comments/presentation/comments_section.dart';
 import '../../home/presentation/home_providers.dart';
 import '../domain/task_record.dart';
 import 'task_providers.dart';
@@ -213,6 +214,14 @@ class _TaskDetailBody extends ConsumerWidget {
               label: const Text('交接任务'),
             ),
           ],
+          if (task.canTablePin) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () => _toggleTablePin(context, ref, task),
+              icon: Icon(task.tablePinned ? Icons.push_pin : Icons.push_pin_outlined),
+              label: Text(task.tablePinned ? '取消表单置顶' : '置顶到表单'),
+            ),
+          ],
           if (task.pending)
             TextButton(
               onPressed: () => context.push(AppRoutes.approvals),
@@ -223,6 +232,10 @@ class _TaskDetailBody extends ConsumerWidget {
             '当前为只读浏览，业务操作请回到本人正常入口办理。',
             style: TextStyle(color: PandoraColors.muted),
           ),
+        if (readContext.commentsAllowed) ...[
+          const Divider(height: 32),
+          CommentsSection(objectType: 'task', objectId: task.id),
+        ],
       ],
     );
   }
@@ -239,6 +252,29 @@ class _TaskDetailBody extends ConsumerWidget {
         'reschedule' => '排期申请',
         _ => '申请',
       };
+
+  Future<void> _toggleTablePin(BuildContext context, WidgetRef ref, TaskRecord task) async {
+    final keys = ref.read(operationKeysProvider);
+    final scope = 'table-pin:${task.id}';
+    final key = keys.keyFor(
+      scope: scope,
+      method: task.tablePinned ? 'DELETE' : 'PUT',
+      path: '/tasks/${task.id}/table-pin',
+      body: const {},
+    );
+    try {
+      await ref.read(tasksApiProvider).setTablePin(
+            taskId: task.id,
+            pinned: !task.tablePinned,
+            idempotencyKey: key,
+          );
+      keys.complete(scope);
+      ref.invalidate(taskDetailProvider(task.id));
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
 
   Future<void> _submitProgress(BuildContext context, WidgetRef ref) async {
     final controller = TextEditingController();

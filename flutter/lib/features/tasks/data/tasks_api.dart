@@ -19,6 +19,23 @@ class TaskCursorPage {
       );
 }
 
+class TaskTablePageResult {
+  const TaskTablePageResult({required this.items, required this.total, this.nextOffset});
+
+  final List<TaskRecord> items;
+  final int total;
+  final int? nextOffset;
+
+  factory TaskTablePageResult.fromJson(Map<String, Object?> json) => TaskTablePageResult(
+        items: [
+          for (final raw in asJsonList(json['items']))
+            if (raw is Map) TaskRecord.fromJson(Map<String, Object?>.from(raw)),
+        ],
+        total: (json['total'] as num?)?.toInt() ?? 0,
+        nextOffset: (json['nextOffset'] as num?)?.toInt(),
+      );
+}
+
 class TaskTagCatalog {
   const TaskTagCatalog({required this.items});
 
@@ -274,6 +291,68 @@ class TasksApi {
       idempotencyKey: idempotencyKey,
       decode: (_) {},
     );
+  }
+
+
+  /// 本人日历范围查询：服务端按 assigneeId/from/to 返回有效版和待审提议。
+  Future<List<TaskRecord>> listCalendarTasks({
+    required String assigneeId,
+    required String from,
+    required String to,
+  }) async {
+    final rows = <String, TaskRecord>{};
+    var offset = 0;
+    while (true) {
+      final result = await _client.get<TaskCursorPage>(
+        '/tasks',
+        query: {
+          'assigneeId': assigneeId,
+          'calendarPreview': 'true',
+          'from': from,
+          'to': to,
+          'limit': 100,
+          'offset': offset,
+        },
+        decode: (json) => TaskCursorPage.fromJson(asJsonMap(json)),
+      );
+      for (final task in result.data.items) {
+        rows[task.id] = task;
+      }
+      final nextOffset = int.tryParse(result.data.nextCursor ?? '');
+      if (nextOffset == null || nextOffset <= offset) break;
+      offset = nextOffset;
+    }
+    return rows.values.toList();
+  }
+
+
+  Future<TaskTablePageResult> table({
+    String relation = 'all',
+    String completion = 'all',
+    String query = '',
+    String sort = 'startAt',
+    String direction = 'asc',
+    String? from,
+    String? to,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final result = await _client.get<TaskTablePageResult>(
+      '/tasks/table',
+      query: {
+        'relation': relation,
+        'completion': completion,
+        'q': query.trim().isEmpty ? null : query.trim(),
+        'sort': sort,
+        'direction': direction,
+        'from': from,
+        'to': to,
+        'limit': limit,
+        'offset': offset,
+      },
+      decode: (json) => TaskTablePageResult.fromJson(asJsonMap(json)),
+    );
+    return result.data;
   }
 
   Future<List<TaskTag>> tags() async {

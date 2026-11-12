@@ -124,6 +124,19 @@ class SessionManager extends ChangeNotifier implements SessionGateway {
 
   DateTime get _nowUtc => _now().toUtc();
 
+  /// 会话核验必须有上限；底层网络异常/插件挂起时 UI 不能无限停在 checking。
+  Future<EmployeeUser> _verifySession(String token) async {
+    try {
+      return await _api.session(token).timeout(const Duration(seconds: 15));
+    } on TimeoutException {
+      throw ApiException(
+        kind: ApiErrorKind.network,
+        message: '无法连接服务验证登录状态，请检查网络后重试',
+        retryable: true,
+      );
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // 启动与登录
   // ---------------------------------------------------------------------------
@@ -157,9 +170,10 @@ class SessionManager extends ChangeNotifier implements SessionGateway {
       return;
     }
     try {
-      final user = await _api.session(stored.token);
+      final user = await _verifySession(stored.token);
       _applyUser(user);
       _clock.updateZone(user.organizationTimeZone);
+      _emit(_state);
       if (_state.isAuthenticated && stored.isNearExpiry(_nowUtc, lead: refreshLead)) {
         await _refresh();
       }
@@ -326,9 +340,10 @@ class SessionManager extends ChangeNotifier implements SessionGateway {
         ),
       ));
       try {
-        final user = await _api.session(held.token);
+        final user = await _verifySession(held.token);
         _applyUser(user);
         _clock.updateZone(user.organizationTimeZone);
+        _emit(_state);
         if (_state.isAuthenticated) {
           final retried = await _performRefreshOnce();
           if (!retried) {
@@ -389,9 +404,10 @@ class SessionManager extends ChangeNotifier implements SessionGateway {
       return;
     }
     try {
-      final user = await _api.session(held.token);
+      final user = await _verifySession(held.token);
       _applyUser(user);
       _clock.updateZone(user.organizationTimeZone);
+      _emit(_state);
     } on ApiException catch (error) {
       await _handleVerificationError(error);
     }
@@ -499,9 +515,10 @@ class SessionManager extends ChangeNotifier implements SessionGateway {
       return;
     }
     try {
-      final user = await _api.session(credentials.token);
+      final user = await _verifySession(credentials.token);
       _applyUser(user);
       _clock.updateZone(user.organizationTimeZone);
+      _emit(_state);
     } on ApiException catch (error) {
       if (error.isUnauthorized || error.isNotFound) {
         await _expire();

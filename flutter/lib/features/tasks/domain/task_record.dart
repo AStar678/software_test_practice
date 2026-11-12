@@ -33,6 +33,7 @@ class TaskRecord {
     this.pending = false,
     this.frozen = false,
     this.pendingKind,
+    this.pendingSchedule,
     this.canReschedule = false,
     this.canPin = false,
     this.canTablePin = false,
@@ -73,6 +74,7 @@ class TaskRecord {
   final bool pending;
   final bool frozen;
   final String? pendingKind;
+  final Map<String, Object?>? pendingSchedule;
   final bool canReschedule;
   final bool canPin;
   final bool canTablePin;
@@ -151,6 +153,7 @@ class TaskRecord {
       }
     }
     final rawRoute = json['route'];
+    final rawPendingSchedule = json['pendingSchedule'];
     return TaskRecord(
       id: _string(json['id']) ?? _string(json['taskId']) ?? '',
       title: _string(json['title']) ?? '',
@@ -181,6 +184,9 @@ class TaskRecord {
       pending: json['pending'] == true,
       frozen: json['frozen'] == true,
       pendingKind: _string(json['pendingKind']),
+      pendingSchedule: rawPendingSchedule is Map
+          ? Map<String, Object?>.from(rawPendingSchedule)
+          : null,
       canReschedule: json['canReschedule'] == true,
       canPin: json['canPin'] == true,
       canTablePin: json['canTablePin'] == true,
