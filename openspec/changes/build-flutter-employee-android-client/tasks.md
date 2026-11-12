@@ -3,7 +3,7 @@
 - [x] 1.1 确认 A 已取得当前独立 e13 PASS 并归档，读取归档后主规格、`backend/docs/employee-client-contracts.md`、真实样例/错误和迁移证据；逐项核对 B 的四个重叠 MODIFIED block、A账号生命周期邮箱修订、中文排序/日志长度口径、全部增量 API 及 coverage；有漂移先修订 B 规划再实现。验证：实施记录包含 A 归档路径/提交/验证证据及每处差异结论，无未兑现依赖或提前同步覆盖 A。
 - [x] 1.2 固定最终 Web 参考入口与业务基线、隔离后端环境、四角色及极限夹具使用方式，建立 B 验收记录索引。验证：记录脚本最终加载顺序、真实 API 地址类型和可复现安全启动命令，coverage 全部 90/54/12/32 项仍有落点，普通启动不改常用库。
 - [x] 1.3 定位实际 Flutter/Dart/JDK/Android SDK/adb/可用设备，选择并锁定兼容 Android API 26 的 stable SDK/依赖，记录目标 SDK≥36、许可与工具版本。验证：doctor 和最小工具链检查有真实输出，缺项明确阻塞，未凭 PATH 缺失断言已安装或已通过。
-- [ ] 1.4 创建 `flutter/` 分层工程、Android 独立包 `cn.pandora.employee.flutter`/debug 后缀、`1.0.0+1`、资产与锁文件，接入 design 选定状态/路由/HTTP/存储/时区/图片适配。验证：工程可 analyze/运行基础导航，与旧 shell/Java 的包名不冲突，代码无业务 WebView、运行时假后端及仓库内密钥。
+- [x] 1.4 创建 `flutter/` 分层工程、Android 独立包 `cn.pandora.employee.flutter`/debug 后缀、`1.0.0+1`、资产与锁文件，接入 design 选定状态/路由/HTTP/存储/时区/图片适配。验证：工程可 analyze/运行基础导航，与旧 shell/Java 的包名不冲突，代码无业务 WebView、运行时假后端及仓库内密钥。
 
 ## 2. 日期、请求、认证、隔离与基础界面
 

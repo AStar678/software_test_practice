@@ -4,11 +4,12 @@
 
 - Change: build-flutter-employee-android-client
 - Schema: spec-driven
-- Store: local repo (`/Users/watuji/MyGitDev/software_test_practice`)
+- Store: local repo (`/home/rmy/桌面/panDuola`)
 - Implementation roots: `flutter/` (new Flutter Android client), with read-only consumption of `backend/docs/employee-client-contracts.md` and the archived A change
-- Updated: 2026-11-10T21:16:00+08:00
-- Implementation revision: repo commit `5d68e89` plus uncommitted `flutter/` (all new files are untracked, none committed)
-- Progress: 22/62 tasks complete (chapters 1–4 requested by the user). Paused at the chapter boundary: 1.4 still needs a successful APK build/run (the Gradle bootstrap was solved and two config bugs were fixed, then the build was stopped at the user's request), 2.7/4.1/4.9 have real remaining gaps described below. Chapters 5–11 are untouched.
+- Updated: 2026-11-12T17:45:00+08:00
+- Implementation revision: repo `56313ba` plus module commits `e2781c8..eab94eb` (chapters 1–7 working tree; docs commit follows)
+- Progress: 23/62 tasks checked. `1.4` is now closed on Linux/API36 emulator. Chapters 5–7 have implemented code but remain unchecked pending full acceptance. `2.7`, `4.1`, `4.9` remain open.
+- The 2026-11-10 macOS sections below are historical; the 2026-11-12 Linux supplement at the end supersedes their environment/build status.
 
 ## Chapter 1–4 findings and decisions
 
@@ -98,7 +99,7 @@
 | `adb devices` / `emulator -list-avds` | Android SDK | AVD `employee_api36` booted headlessly and was reachable as `emulator-5554`; no physical device; no API-26 image. Emulator was stopped during cleanup. | 2026-11-10 20:47–21:13 |
 | Cross-check of coverage counts | repo root | 90 / 54 / 12 / 32 rows present in `coverage.md` | 2026-11-10 20:30 |
 
-Failed/skipped honestly: Android build and device run are **not** done; API-26 boundary untested; no screenshots/recording.
+Failed/skipped honestly (historical macOS note): Android build/device run were not done then. They were completed on 2026-11-12; see the Linux supplement. API-26 boundary and physical-device work remain untested.
 
 ## 接手前环境重检（给下一位实施者 / 验证者）
 
@@ -122,17 +123,67 @@ Failed/skipped honestly: Android build and device run are **not** done; API-26 b
 - 没有真机/模拟器时，1.4 的“运行基础导航”和后续 11.2/11.3 不能以组件测试替代。
 - A 的 PASS 是 Windows 上的共享服务/Web 证据，不覆盖 Flutter、APK 或安卓设备；B 的验证必须在当前机器重新取证。
 
+## 2026-11-12 Linux 实施续接（当前状态）
+
+### Environment / build evidence
+
+- Host: Linux, repo `/home/rmy/桌面/panDuola`, branch `feature-rmy`, module commits `e2781c8..eab94eb` on top of `56313ba`.
+- Flutter 3.47.9 / Dart 3.13.7 at `/home/rmy/development/flutter`.
+- Android SDK `/home/rmy/Android/Sdk`: API 36, build-tools 36.0.0, platform-tools, emulator. AVD `pandora_api36` booted as `emulator-5554`.
+- Demo backend/MySQL running; `/health` returns 200. Debug app uses emulator host `10.0.2.2:8080`; host unit/integration tests use `127.0.0.1:8080`.
+- `flutter build apk --debug` succeeded: `flutter/build/app/outputs/flutter-apk/app-debug.apk`.
+- Installed `cn.pandora.employee.flutter.debug`, launched on `pandora_api36`, logged in as founder `13800000001`, and traversed home → company calendar → task table → logs → log detail/comments.
+- Session restore after force-stop was re-tested and now returns to authenticated home.
+- Android build currently needs the local Tencent Gradle mirror while bootstrapping; the wrapper file was restored to the repository URL after building. Build env used `GRADLE_USER_HOME=/home/rmy/development/gradle-home` and Flutter China mirrors.
+- `flutter analyze` still crashes its analysis server on this host; `dart analyze` is the working equivalent and reports no issues. `flutter doctor`/self-update still hangs on GitHub access.
+
+### Implementation landed in this session
+
+- Chapter 5 baseline: `features/schedule/**` with continuous month blocks, month/day list, pending projection, calendar pin, month drag, permission guards, real grab-day detection, all-day move, and initial/current-month positioning plus “今天”.
+- Chapter 6 baseline: `TaskTablePage`, `/tasks/table`, relation/completion/name/single-end date filters, six sort keys/two directions, 50-item paging, independent table pin, and additional columns (priority, parent, tags, freeze, createdAt).
+- Chapter 7 baseline: `features/work_logs/**`, `features/comments/**`, `features/tags/**`; list/detail/create/edit/delete, fill-source, optional linked task, ordered multi-tag editing, author comment edit/delete, and founder tag management.
+- 4.1 resubmit UI exists in approval detail; 4.9 independent comments are implemented but not fully concurrency-tested.
+- Bug fixes verified this session:
+  - comment create response uses `commentId`; parser now accepts it, and edit/delete send the record’s own `rowVersion` as If-Match;
+  - work-log fill refuses incomplete sources, uses Java-compatible trim and UTF-16 10,000 limit, preserves original text, and shows an editable over-limit preview instead of truncating;
+  - `SessionManager.initialize()`/retry/revalidate now notify listeners after a successful session read (previously state became authenticated while router stayed on “核验登录状态” forever);
+  - session verification has a 15-second outer timeout;
+  - debug Android default API host is `10.0.2.2` (matching the code comment) while host tests stay explicit `127.0.0.1`;
+  - calendar opens at the current business month instead of 12 months earlier.
+
+### Checks run (2026-11-12)
+
+| Command | Result |
+| --- | --- |
+| `cd flutter && dart analyze` | No issues found |
+| `cd flutter && flutter test` | **76 tests passed** (unit/widget/real backend, including new session-restore, table date-filter, log/comment real-chain, and fill-merge tests) |
+| `flutter build apk --debug` | succeeded; APK path above |
+| `adb install -r …/app-debug.apk` + launch + login + force-stop/restore | succeeded on API 36 AVD; session restore reached home |
+| Android UI smoke | home/company calendar/task table/logs/log detail/comments opened against demo backend |
+| `openspec validate` | not rerun after this session’s tasks.md edit; rerun before verify |
+
+### Still open / not overclaimed
+
+- 5.3/5.4: drawer proportions and full horizontal/vertical day-axis semantics are still basic; the day sheet is still list-first.
+- 5.7–5.9: no edge auto-scroll, endpoint resize, final day-axis bounds editor, or physical-device haptic/gesture acceptance.
+- 6.1/6.2/6.3: Chinese collation across pages, fixed title/header + full columns, independent filter/column-group/page restoration, and >100-row acceptance are not fully verified.
+- 7.1–7.6: pagination/refresh/return restore, exact freeze boundaries, all fill edge cases, task-tag approval interplay, and comment cursor/non-author real tests remain.
+- 2.7 notification/people/subordinate routes still use stubs.
+- 4.1 resubmit is untested against a real rejected/expired creation; 4.9 lacks concurrent-decision and independent-comment freeze tests.
+- No physical device; 11.2/11.3 release signing/API26 work is untouched.
+- `implementation-notes.md` is not a verification PASS.
+
 ## Verification Reminders
 
-- **1.4 remains open** because only `flutter analyze` and widget/unit tests ran; there is no built APK or running application on an emulator/device. Retry after the Gradle distribution is available (or install Gradle locally / pre-seed `~/.gradle/wrapper/dists`), then run the AVD `employee_api36` and verify basic navigation, package coexistence and no stale shell credentials.
+- **1.4 is closed (2026-11-12)**: debug APK built, installed and run on API 36 AVD, login/navigation and session restore verified.
 - **2.7 remains open**: all secondary routes are registered and the implemented task/daily-item flows return correctly, but notifications, people/subordinate workspace, logs and comments still show `StubPage`; their nested-return and read-only propagation cannot be verified until chapters 7–9.
-- **4.1 remains open**: creating normal tasks and founder direct effect work, but there is no UI to reopen a rejected/expired creation as its original applicant and resubmit with a new request; the approvals page only displays the result.
-- **4.9 remains open**: pending freeze/withdraw/old-button behavior is implemented, but independent comments (the stated J09/J12 boundary) arrive in chapter 7; no concurrent-decision real test is run.
+- **4.1 remains open**: the approval detail now has the applicant “修改并重提” UI, but no real rejected/expired creation was exercised end-to-end.
+- **4.9 remains open**: independent task/log comments are implemented and real create/list/delete passed; concurrent decisions, old-button invalidation and comments while frozen/pending-lock have not been fully tested.
 - Calendar upward browsing: the page opens with the home cards and today's month; earlier months are reached with the month selector/prev arrow, then scrolling is continuous downward across years. There is no infinite upward prepend. Layout/cross-year data handling is correct; this interaction difference should be judged explicitly in verification.
 - The daily-items month grid always renders six weeks to keep block heights and anchors stable; out-of-month cells are inert blanks (no duplicated dates).
 - Month data is loaded lazily per calendar month and all its pages are fetched; no >93-day request is ever issued. A real ">100 items in one month" fixture was not exercised (the code loops `nextOffset`); use the extreme fixture in chapter 11.
 - Home card/preview → full list navigation has no dedicated widget test (real `/home` shape is tested). Board → task detail is wired but only the task detail read path is real-service tested.
 - Token refresh, restricted-session request traces and refresh-response-loss/secure-storage failure are covered by unit tests with a fake auth gateway, not against the live service. No real admin password reset was performed.
 - Native Android evidence (haptics, back/keyboard/safe-area, lifecycle, image picker, process death) is entirely absent; chapters 5–11 own it.
-- The working tree only has an untracked `flutter/` directory; nothing was committed. Demo backend tests create and delete their own daily items but do not reset the demo DB; use `start-demo.sh` if a clean demo is needed.
+- The chapter 1–7 Flutter changes were committed by module on 2026-11-12 (`e2781c8..eab94eb`); this docs commit records status. Demo backend tests create/delete their own rows but do not reset the demo DB; use `start-demo.sh` if a clean demo is needed.
 - Do not treat this file as a verification verdict; `openspec-e13-verify-change` must independently check the above gaps.
