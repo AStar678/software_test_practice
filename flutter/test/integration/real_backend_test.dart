@@ -18,6 +18,8 @@ import 'package:pandora_employee/features/auth/domain/password_policy.dart';
 import 'package:pandora_employee/features/daily_items/data/daily_items_api.dart';
 import 'package:pandora_employee/features/home/data/home_api.dart';
 import 'package:pandora_employee/features/tasks/data/tasks_api.dart';
+import 'package:pandora_employee/features/work_logs/data/work_logs_api.dart';
+import 'package:pandora_employee/features/comments/data/comments_api.dart';
 
 /// 真实隔离演示后端（`backend/scripts/start-demo.sh`）联调检查。
 /// 未启动时整组跳过，不把缺失环境伪装成通过。
@@ -45,6 +47,8 @@ void main() {
   late HomeApi home;
   late ApprovalsApi approvals;
   late OperationKeys keys;
+  late WorkLogsApi workLogs;
+  late CommentsApi comments;
 
   session = SessionManager(
     api: AuthApi(
@@ -72,6 +76,8 @@ void main() {
   home = HomeApi(client: client, clock: clock);
   approvals = ApprovalsApi(client: client);
   keys = OperationKeys();
+  workLogs = WorkLogsApi(client: client);
+  comments = CommentsApi(client: client);
 
   setUpAll(() async {
     if (!_backendUp) return;
@@ -280,6 +286,63 @@ void main() {
       final detail = await approvals.detail(mine.items.first.requestId);
       expect(detail.requestId, mine.items.first.requestId);
       expect(detail.proposedVersion, isNotNull);
+    }
+  }, skip: skipReason);
+
+  test('J14 任务表单独立端点返回全局过滤与置顶字段', () async {
+    final today = clock.businessDate;
+    final page = await tasks.table(
+      from: today.addDays(-365).iso,
+      to: today.addDays(365).iso,
+      limit: 5,
+    );
+    expect(page.total, greaterThanOrEqualTo(0));
+    for (final task in page.items) {
+      expect(task.id, isNotEmpty);
+      expect(task.canTablePin || !task.canTablePin, isTrue);
+    }
+    final empty = await tasks.table(from: today.addDays(365).iso, to: today.addDays(365).iso, limit: 5);
+    expect(empty.items, isEmpty);
+  }, skip: skipReason);
+
+  test('J20/J21/J23 日志、填充源与评论真实链路', () async {
+    final date = clock.businessDate;
+    final body = 'Flutter 日志联调 ${DateTime.now().microsecondsSinceEpoch}';
+    var created = await workLogs.list(limit: 20).then((page) => page.items.where((row) => row.businessDate == date).firstOrNull);
+    var ownsCreated = false;
+    if (created == null) {
+      created = await workLogs.create(
+        businessDate: date.iso,
+        body: body,
+        idempotencyKey: keys.keyFor(scope: 'real:log:create', method: 'POST', path: '/work-logs', body: {'businessDate': date.iso, 'body': body}),
+      );
+      ownsCreated = true;
+    }
+    expect(created.businessDate, date);
+    final page = await workLogs.list(limit: 20);
+    expect(page.items.any((row) => row.id == created!.id), isTrue);
+    final fill = await workLogs.fillSource(date.iso);
+    expect(fill.complete, isTrue);
+    final comment = await comments.create(
+      objectType: 'log',
+      objectId: created.id,
+      body: '真实日志评论',
+      idempotencyKey: keys.keyFor(scope: 'real:log:comment', method: 'POST', path: '/work-logs/${created.id}/comments', body: {'body': '真实日志评论'}),
+    );
+    expect(comment.id, isNotEmpty);
+    final commentsPage = await comments.list(objectType: 'log', objectId: created.id);
+    expect(commentsPage.items.any((row) => row.id == comment.id && row.body == '真实日志评论'), isTrue);
+    await comments.delete(
+      commentId: comment.id,
+      rowVersion: comment.rowVersion,
+      idempotencyKey: keys.keyFor(scope: 'real:log:comment-delete', method: 'DELETE', path: '/comments/${comment.id}'),
+    );
+    await workLogs.detail(created.id);
+    if (ownsCreated) {
+      await workLogs.delete(
+        id: created.id,
+        idempotencyKey: keys.keyFor(scope: 'real:log:delete', method: 'DELETE', path: '/work-logs/${created.id}'),
+      );
     }
   }, skip: skipReason);
 
