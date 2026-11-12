@@ -12,6 +12,7 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../auth/domain/employee_user.dart';
 import '../../people/domain/person_summary.dart';
+import '../../tags/presentation/tag_selector.dart';
 import '../domain/task_record.dart';
 import 'assignee_picker.dart';
 import 'task_providers.dart';
@@ -849,28 +850,13 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                       const SizedBox(height: 16),
                       Text('标签（按顺序）', style: Theme.of(context).textTheme.labelLarge),
                       const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          for (final tag in _selectedTags)
-                            Chip(
-                              label: Text(tag.deleted ? '${tag.name}（已删除）' : tag.name),
-                              onDeleted: () => setState(() {
-                                _selectedTags = [..._selectedTags]..remove(tag);
-                                _dirty = true;
-                              }),
-                            ),
-                          for (final tag in _tagCatalog)
-                            if (!_selectedTags.any((selected) => selected.id == tag.id))
-                              ActionChip(
-                                label: Text(tag.name),
-                                onPressed: () => setState(() {
-                                  _selectedTags = [..._selectedTags, tag];
-                                  _dirty = true;
-                                }),
-                              ),
-                        ],
+                      TagSelector(
+                        selected: _selectedTags,
+                        catalog: _tagCatalog,
+                        onChanged: (next) => setState(() {
+                          _selectedTags = next;
+                          _dirty = true;
+                        }),
                       ),
                       if (_selectedTags.isEmpty)
                         Text(

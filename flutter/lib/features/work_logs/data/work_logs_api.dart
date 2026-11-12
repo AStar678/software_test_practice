@@ -9,12 +9,21 @@ class WorkLogsApi {
   Future<WorkLogPageResult> list({
     String scope = 'self',
     String? authorId,
+    String? from,
+    String? to,
     int limit = 20,
     int offset = 0,
   }) async {
     final result = await _client.get<WorkLogPageResult>(
       '/work-logs',
-      query: {'scope': scope, 'authorId': ?authorId, 'limit': limit, 'offset': offset},
+      query: {
+        'scope': scope,
+        'authorId': ?authorId,
+        'from': ?from,
+        'to': ?to,
+        'limit': limit,
+        'offset': offset,
+      },
       decode: (json) => WorkLogPageResult.fromJson(asJsonMap(json)),
     );
     return result.data;

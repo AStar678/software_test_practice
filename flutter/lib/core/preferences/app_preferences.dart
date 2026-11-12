@@ -17,6 +17,10 @@ class AppPreferences {
     'calendar.density',
     'calendar.lastDate',
     'board.scroll',
+    'tasksTable.filters',
+    'tasksTable.columnGroup',
+    'tasksTable.pageIndex',
+    'tasksTable.scrollOffset',
   };
 
   static Future<AppPreferences> load(String? accountId) async {

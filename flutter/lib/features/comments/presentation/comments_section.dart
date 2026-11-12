@@ -57,7 +57,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
         }
         _items = merged.values.toList();
         _total = page.total;
-        _cursor = page.nextCursor ?? page.nextOffset?.toString();
+        _cursor = page.nextCursor;
         _loading = false;
       });
     } catch (error) {
@@ -89,19 +89,10 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
   }
 
   Future<void> _edit(CommentRecord comment) async {
-    final controller = TextEditingController(text: comment.body);
     final value = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('编辑评论'),
-        content: TextField(controller: controller, minLines: 3, maxLines: 8, maxLength: 10000, autofocus: true),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(controller.text.trim()), child: const Text('保存')),
-        ],
-      ),
+      builder: (context) => _CommentEditDialog(initial: comment.body),
     );
-    controller.dispose();
     if (value == null || value.isEmpty || !mounted) return;
     final keys = ref.read(operationKeysProvider);
     final scope = 'comment:${comment.id}';
@@ -117,6 +108,18 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
   }
 
   Future<void> _delete(CommentRecord comment, bool delete) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除评论？'),
+        content: const Text('删除后正文和通知摘要不再显示，审计记录保留。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('删除')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
     final keys = ref.read(operationKeysProvider);
     final scope = 'comment:${comment.id}';
     final key = keys.keyFor(scope: scope, method: delete ? 'DELETE' : 'PATCH', path: '/comments/${comment.id}', body: delete ? const {} : {'body': comment.body});
@@ -140,7 +143,11 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('评论（$_total）', style: Theme.of(context).textTheme.titleSmall),
-        if (_error != null) Text('$_error', style: const TextStyle(color: PandoraColors.overdue)),
+        if (_error != null)
+          Row(children: [
+            Expanded(child: Text('$_error', style: const TextStyle(color: PandoraColors.overdue))),
+            TextButton(onPressed: _loading ? null : () => _load(reset: true), child: const Text('重试')),
+          ]),
         if (_items.isEmpty && !_loading) const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('还没有评论')),
         for (final comment in _items)
           ListTile(
@@ -163,6 +170,43 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
           Expanded(child: TextField(controller: _input, minLines: 1, maxLines: 4, maxLength: 10000, decoration: const InputDecoration(hintText: '发表评论', counterText: ''))),
           IconButton(tooltip: '发送评论', onPressed: _submit, icon: const Icon(Icons.send)),
         ]),
+      ],
+    );
+  }
+}
+
+
+class _CommentEditDialog extends StatefulWidget {
+  const _CommentEditDialog({required this.initial});
+  final String initial;
+
+  @override
+  State<_CommentEditDialog> createState() => _CommentEditDialogState();
+}
+
+class _CommentEditDialogState extends State<_CommentEditDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initial);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('编辑评论'),
+      content: TextField(controller: _controller, minLines: 3, maxLines: 8, maxLength: 10000, autofocus: true),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消')),
+        FilledButton(onPressed: () => Navigator.of(context).pop(_controller.text.trim()), child: const Text('保存')),
       ],
     );
   }
