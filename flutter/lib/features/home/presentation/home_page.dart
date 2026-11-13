@@ -131,6 +131,11 @@ class _HomePageState extends ConsumerState<HomePage> {
         title: const Text('首页'),
         actions: [
           IconButton(
+            tooltip: '通知',
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () => context.push(AppRoutes.notifications),
+          ),
+          IconButton(
             tooltip: '每日事项月份定位',
             icon: const Icon(Icons.calendar_month_outlined),
             onPressed: () => _openMonthPicker(anchor),

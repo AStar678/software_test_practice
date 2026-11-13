@@ -103,6 +103,15 @@ class MePage extends ConsumerWidget {
             Card(
               child: Column(
                 children: [
+                  if (user.isManagerRole) ...[
+                    ListTile(
+                      leading: const Icon(Icons.groups_outlined),
+                      title: const Text('我的下属'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => GoRouterHelper.of(context).push('/people'),
+                    ),
+                    const Divider(height: 1),
+                  ],
                   if (user.isFounder) ...[
                     ListTile(
                       leading: const Icon(Icons.sell_outlined),
