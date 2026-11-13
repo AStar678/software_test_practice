@@ -87,22 +87,3 @@ class _PeoplePageState extends ConsumerState<PeoplePage> {
     );
   }
 }
-
-class SubordinateWorkspacePendingPage extends StatelessWidget {
-  const SubordinateWorkspacePendingPage({
-    super.key,
-    required this.personId,
-    required this.title,
-  });
-
-  final String personId;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(title)),
-    body: const SafeArea(
-      child: EmptyView(message: '人员选择与资料权限已接入；连续日程和人员日志将在任务 8.4 复用完整浏览组件'),
-    ),
-  );
-}

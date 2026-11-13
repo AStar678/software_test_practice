@@ -211,7 +211,10 @@ class _NotificationsListState extends ConsumerState<_NotificationsList> {
               isThreeLine: !_compact,
               onTap: () async {
                 // 列表读取与模式/筛选切换不标读；只有详情页在任务 9.2 调用 open。
-                await context.push('/notifications/${item.id}');
+                final changed = await context.push<bool>(
+                  '/notifications/${item.id}',
+                );
+                if (changed == true || item.unread) await _load(reset: true);
               },
             ),
           );

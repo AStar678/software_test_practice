@@ -7,8 +7,8 @@
 - Store: local repository
 - Implementation roots: `flutter/` (new Flutter Android client), with read-only consumption of `backend/docs/employee-client-contracts.md` and the archived A change
 - Updated: 2026-11-13
-- Implementation revision: chapters 1–7 through `5de5292`, with the independent chapters 8–10 work from PR #45.
-- Progress: **44/62** tasks checked. The chapters 8–10 batch adds `8.1` and `9.1`. See `tasks.md` for the remaining work.
+- Implementation revision: working tree based on `2b9cd39f023b123d3d86f18dd15d4ae0c5661707`; the chapter 8–10 completion batch is intentionally uncommitted for independent review.
+- Progress: **54/62** tasks checked. This batch closes `2.7`, `8.3–8.5`, `9.2–9.4`, and `10.2–10.4`; `8.2` and `10.1` remain open for the concrete blockers recorded below.
 - The 2026-11-10 macOS sections below are historical; the 2026-11-12 Linux supplement at the end supersedes their environment/build status.
 
 ## Chapter 1–4 findings and decisions
@@ -296,10 +296,40 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 - 使用新建的隔离演示库运行 `test/integration/real_backend_test.dart`，26 项通过，无跳过。通知联调显式触发事件投递，覆盖实际送达和 18 种筛选组合的分页。
 - 未执行 Android 安装或真机验收。
 
+## 2026-11-13 章节 8–10 完成批次
+
+### 已闭环
+
+- **2.7 / 8.3–8.5**：人员资料已进入真实下属连续月历和分页日志，不再使用占位路由；`SubordinateReadContext` 沿任务、父任务、关联日志和评论链传递，统一关闭创建、编辑、排期拖动、置顶、审核等业务写入，只保留正常权限允许的评论。日程和日志查询均按所选人员发起，并用查询代次与人员 ID 双重校验丢弃换人后的迟到响应；下属月历复用本人跨年补载、命中日清单、日轴和节假日投影。
+- **9.2–9.4**：通知详情读取和 `POST /notifications/{id}/open` 分离，只有真正打开才标读；原 `requestId` 原样传入申请页。个人隐藏、事件撤回和申请撤销使用独立端点/能力。普通当前任务走正常任务路由；只读/关系丢失消息只走 `/notifications/{id}/task` 的独立历史摘要页，不写入正常任务缓存且不提供评论或业务动作。
+- **10.2**：本人和下属月/日历均消费 A 的按年官方节假日缓存，并表达 `ready/stale/missing`；失败保留任务读取且 missing 不预测。
+- **10.3**：在 A 的稳定 `pandora_demo` 上继续使用四角色真实主线；`prepare_demo.py` 以 `--database pandora_demo --demo-marker local-web-v2` 复用现有库，未重置用户修改。独立极限夹具仍由 `backend/scripts/check_demo_extremes.py` 和 A 归档证据承担，未把极限数据混入稳定演示主线。
+- **10.4**：真实联动新增管理端公司事件纪 PATCH→Flutter `/home` 读回→员工管理接口 403→恢复原值的闭环。入职、组织原子调整、停用/接管、密码重置、迁移/空库升级/备份恢复继续引用已归档 A 的独立 PASS 证据；B 未重置数据库、未实现管理员界面。
+
+### 集中检查与真实联调
+
+| Command | Result |
+| --- | --- |
+| `cd flutter && dart analyze` | No issues found |
+| `cd flutter && flutter test --no-pub --reporter compact test/core test/features` | **119 tests passed** |
+| `cd flutter && flutter test --no-pub --reporter compact test/features/chapter_8_10_test.dart` | **12 tests passed** after aligning subordinate logs to the real `visible` scope |
+| `cd flutter && flutter test --no-pub --reporter compact test/integration/real_backend_test.dart` | **27 tests passed** against real `pandora_demo`; includes four roles, subordinate calendar/logs, notification open/history, analytics/holidays and PC→Flutter readback |
+| `openspec validate build-flutter-employee-android-client --strict --json` | valid |
+| `git diff --check` | no whitespace errors (Git emitted only existing LF/CRLF conversion warnings) |
+
+The first integration attempt correctly exposed three contract mismatches (`reports` versus `visible`, historical entries whose task is still unpublished, and quoted `If-Match`). The client/test mapping was corrected and the full real-service suite was rerun to green. The cross-end test restores the modified company item in `finally`.
+
+### 保留未完成且不降级验收
+
+- **8.2 remains open**：预设、选图、裁剪压缩、data URI/尺寸限制和临时文件清理代码及自动化测试已完成，但 `adb devices` 无真机；J30 的系统选图取消与权限拒绝不能以组件测试冒充真机通过。
+- **10.1 remains open**：真实统计、四角色范围、本地规则建议、来源/生成时间和授权跳转已实现，但当前后端 `WorkspaceService.statisticsRead` 仅接受 `scope`，没有任务要求的时间/状态/紧急程度筛选契约。未在客户端对已聚合结果做伪筛选。
+- **5.7 / 11.2 remain open**：约 500ms 长按、取消/后台中断和自动化手势证据存在，但单次轻震的真机体感及完整现代 Android 设备旅程仍缺外部设备。
+- 此节仅是 apply 实施记录，不是独立验证 PASS；未修改 `verification.md`，未归档 change。
+
 ## Verification Reminders
 
 - **1.4 is closed (2026-11-12)**: debug APK built, installed and run on API 36 AVD, login/navigation and session restore verified.
-- **2.7 remains open**: all secondary routes are registered and the implemented task/daily-item flows return correctly, but notifications, people/subordinate workspace, logs and comments still show `StubPage`; their nested-return and read-only propagation cannot be verified until chapters 7–9.
+- **2.7 is closed (2026-11-13)**: notification detail/history and people/subordinate schedule/log routes are real pages; subordinate read context is preserved through nested task/log/comment navigation and cannot be upgraded by DTO edit capabilities.
 - **4.1 is closed for the rejected real path (2026-11-12)**: original applicant resubmits to a new request; old request remains rejected. Expired-creation variant still belongs to the broader journey.
 - **4.9 is closed for concurrency + pending comments (2026-11-12)**: one of two concurrent decisions succeeded, the other got 412; pending-task comments stayed independent and non-author edit got 403. Frozen-log/org-change variants remain in later journeys.
 - Calendar upward browsing: the page opens with the home cards and today's month; earlier months are reached with the month selector/prev arrow, then scrolling is continuous downward across years. There is no infinite upward prepend. Layout/cross-year data handling is correct; this interaction difference should be judged explicitly in verification.

@@ -7,12 +7,14 @@ import 'package:go_router/go_router.dart';
 import '../../../core/company/company_date.dart';
 import '../../../core/company/company_time.dart';
 import '../../../core/providers.dart';
+import '../../../core/router/read_context.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../comments/presentation/comments_section.dart';
 import '../../tasks/domain/task_record.dart';
 import '../../tasks/presentation/task_providers.dart';
+import '../../tasks/presentation/task_route_args.dart';
 import '../../tags/presentation/tag_selector.dart';
 import '../../tags/presentation/tags_providers.dart';
 import '../domain/work_log.dart';
@@ -20,7 +22,15 @@ import '../domain/work_log_fill.dart';
 import 'work_logs_providers.dart';
 
 class WorkLogsPage extends ConsumerStatefulWidget {
-  const WorkLogsPage({super.key});
+  const WorkLogsPage({
+    super.key,
+    this.authorId,
+    this.personName,
+    this.readContext = const NormalReadContext(),
+  });
+  final String? authorId;
+  final String? personName;
+  final ReadContext readContext;
   @override
   ConsumerState<WorkLogsPage> createState() => _WorkLogsPageState();
 }
@@ -34,10 +44,20 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
   DateTime? _to;
   bool _loading = false;
   Object? _error;
+  int _queryGeneration = 0;
 
   @override
   void initState() {
     super.initState();
+    unawaited(_load(reset: true));
+  }
+
+  @override
+  void didUpdateWidget(covariant WorkLogsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.authorId == widget.authorId) return;
+    _queryGeneration += 1;
+    _loading = false;
     unawaited(_load(reset: true));
   }
 
@@ -48,7 +68,9 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
   }
 
   Future<void> _load({required bool reset}) async {
-    if (_loading) return;
+    if (_loading && !reset) return;
+    final generation = reset ? ++_queryGeneration : _queryGeneration;
+    final authorId = widget.authorId;
     setState(() {
       _loading = true;
       _error = null;
@@ -58,12 +80,20 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
       }
     });
     try {
-      final page = await ref.read(workLogsApiProvider).list(
+      final page = await ref
+          .read(workLogsApiProvider)
+          .list(
+            scope: widget.authorId == null ? 'self' : 'visible',
+            authorId: authorId,
             from: _dateIso(_from),
             to: _dateIso(_to),
             offset: reset ? 0 : (_next ?? 0),
           );
-      if (!mounted) return;
+      if (!mounted ||
+          generation != _queryGeneration ||
+          authorId != widget.authorId) {
+        return;
+      }
       setState(() {
         final merged = <String, WorkLog>{};
         for (final log in [..._items, ...page.items]) {
@@ -75,7 +105,7 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
         _loading = false;
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || generation != _queryGeneration) return;
       setState(() {
         _error = error;
         _loading = false;
@@ -110,7 +140,7 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
 
   Future<void> _returnFromDetail(String id) async {
     final offset = _scroll.hasClients ? _scroll.offset : 0.0;
-    await context.push<void>('/logs/$id');
+    await context.push<void>('/logs/$id', extra: widget.readContext);
     if (!mounted) return;
     await _load(reset: true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -128,17 +158,18 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
   @override
   Widget build(BuildContext context) {
     return PandoraPage(
-      title: '日志 · $_total 条',
+      title: '${widget.personName ?? '日志'} · $_total 条',
       actions: [
-        IconButton(
-          tooltip: '写日志',
-          onPressed: () async {
-            final saved = await context.push<bool>('/logs/new');
-            if (!mounted) return;
-            if (saved == true) await _load(reset: true);
-          },
-          icon: const Icon(Icons.add),
-        ),
+        if (widget.readContext.businessWritesAllowed)
+          IconButton(
+            tooltip: '写日志',
+            onPressed: () async {
+              final saved = await context.push<bool>('/logs/new');
+              if (!mounted) return;
+              if (saved == true) await _load(reset: true);
+            },
+            icon: const Icon(Icons.add),
+          ),
       ],
       child: Column(
         children: [
@@ -153,90 +184,130 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
   Widget _filters() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-      child: Row(children: [
-        const Text('本人日志', style: TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(width: 12),
-        Expanded(
-          child: OutlinedButton(
-            onPressed: () => _pickDate(from: true),
-            child: Text(_from == null ? '开始：全部' : '开始：${_dateIso(_from)}'),
+      child: Row(
+        children: [
+          Text(
+            widget.authorId == null ? '本人日志' : '下属日志（只读）',
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: OutlinedButton(
-            onPressed: () => _pickDate(from: false),
-            child: Text(_to == null ? '结束：全部' : '结束：${_dateIso(_to)}'),
-          ),
-        ),
-        if (_from != null || _to != null)
-          IconButton(
-            tooltip: '清除日期筛选',
-            onPressed: () {
-              setState(() {
-                _from = null;
-                _to = null;
-              });
-              unawaited(_load(reset: true));
-            },
-            icon: const Icon(Icons.event_busy),
-          ),
-      ]),
-    );
-  }
-
-  Widget _body() {
-    if (_error != null && _items.isEmpty) return ErrorView(error: _error!, onRetry: () => _load(reset: true));
-    if (_items.isEmpty) return _loading ? const LoadingView() : const EmptyView(message: '还没有日志');
-    return RefreshIndicator(
-      onRefresh: _refreshToTop,
-      child: ListView.separated(
-      controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      itemCount: _items.length + 1,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        if (index == _items.length) {
-          if (_next == null) return const SizedBox.shrink();
-          return OutlinedButton(
-            onPressed: _loading ? null : () => _load(reset: false),
-            child: Text(_loading ? '加载中…' : '加载更多'),
-          );
-        }
-        final log = _items[index];
-        return Card(
-          child: InkWell(
-            onTap: () => _returnFromDetail(log.id),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Text(log.businessDate.iso, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: PandoraColors.brand)),
-                    const Spacer(),
-                    if (log.frozen) const StatusBadge(label: '已冻结', color: PandoraColors.muted),
-                    if (log.createdAt != null)
-                      Text(_relative(log, ref.read(businessDateProvider)), style: const TextStyle(fontSize: 12, color: PandoraColors.muted)),
-                  ]),
-                  const SizedBox(height: 6),
-                  Text(log.body, maxLines: 4, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, height: 1.55)),
-                  if (log.tags.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Wrap(spacing: 6, children: [for (final tag in log.tags) StatusBadge(label: tag.name, color: _tagColor(tag))]),
-                    ),
-                ],
-              ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => _pickDate(from: true),
+              child: Text(_from == null ? '开始：全部' : '开始：${_dateIso(_from)}'),
             ),
           ),
-        );
-      },
+          const SizedBox(width: 6),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => _pickDate(from: false),
+              child: Text(_to == null ? '结束：全部' : '结束：${_dateIso(_to)}'),
+            ),
+          ),
+          if (_from != null || _to != null)
+            IconButton(
+              tooltip: '清除日期筛选',
+              onPressed: () {
+                setState(() {
+                  _from = null;
+                  _to = null;
+                });
+                unawaited(_load(reset: true));
+              },
+              icon: const Icon(Icons.event_busy),
+            ),
+        ],
       ),
     );
   }
 
-  String _relative(WorkLog log, CompanyDate today) => CompanyTimeZone.fallback.relativeDateLabel(log.businessDate, today);
+  Widget _body() {
+    if (_error != null && _items.isEmpty) {
+      return ErrorView(error: _error!, onRetry: () => _load(reset: true));
+    }
+    if (_items.isEmpty) {
+      return _loading ? const LoadingView() : const EmptyView(message: '还没有日志');
+    }
+    return RefreshIndicator(
+      onRefresh: _refreshToTop,
+      child: ListView.separated(
+        controller: _scroll,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        itemCount: _items.length + 1,
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          if (index == _items.length) {
+            if (_next == null) return const SizedBox.shrink();
+            return OutlinedButton(
+              onPressed: _loading ? null : () => _load(reset: false),
+              child: Text(_loading ? '加载中…' : '加载更多'),
+            );
+          }
+          final log = _items[index];
+          return Card(
+            child: InkWell(
+              onTap: () => _returnFromDetail(log.id),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          log.businessDate.iso,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(color: PandoraColors.brand),
+                        ),
+                        const Spacer(),
+                        if (log.frozen)
+                          const StatusBadge(
+                            label: '已冻结',
+                            color: PandoraColors.muted,
+                          ),
+                        if (log.createdAt != null)
+                          Text(
+                            _relative(log, ref.read(businessDateProvider)),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: PandoraColors.muted,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      log.body,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 15, height: 1.55),
+                    ),
+                    if (log.tags.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Wrap(
+                          spacing: 6,
+                          children: [
+                            for (final tag in log.tags)
+                              StatusBadge(
+                                label: tag.name,
+                                color: _tagColor(tag),
+                              ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _relative(WorkLog log, CompanyDate today) =>
+      CompanyTimeZone.fallback.relativeDateLabel(log.businessDate, today);
 }
 
 class WorkLogEditorPage extends ConsumerStatefulWidget {
@@ -285,15 +356,16 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
         existing = await ref.read(workLogsApiProvider).detail(widget.logId!);
       } else {
         final today = ref.read(businessDateProvider);
-        final existingLogs = await ref.read(workLogsApiProvider).list(
-              from: today.addDays(-2).iso,
-              to: today.iso,
-              limit: 100,
-            );
-        final occupied = {for (final log in existingLogs.items) log.businessDate};
+        final existingLogs = await ref
+            .read(workLogsApiProvider)
+            .list(from: today.addDays(-2).iso, to: today.iso, limit: 100);
+        final occupied = {
+          for (final log in existingLogs.items) log.businessDate,
+        };
         missing = [
           for (var offset = 0; offset < 3; offset++)
-            if (!occupied.contains(today.addDays(-offset))) today.addDays(-offset),
+            if (!occupied.contains(today.addDays(-offset)))
+              today.addDays(-offset),
         ];
       }
       if (!mounted) return;
@@ -313,24 +385,41 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
           _taskId = existing.taskId;
         } else if (missing.isNotEmpty) {
           final requested = widget.initialDate;
-          _date = requested != null && missing.contains(requested) ? requested : missing.first;
+          _date = requested != null && missing.contains(requested)
+              ? requested
+              : missing.first;
         }
         _loading = false;
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() { _error = error; _loading = false; });
+      setState(() {
+        _error = error;
+        _loading = false;
+      });
     }
   }
 
   Future<void> _save() async {
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
       final keys = ref.read(operationKeysProvider);
       final scope = 'log:${widget.logId ?? 'new'}:$_date';
-      final key = keys.keyFor(scope: scope, method: widget.logId == null ? 'POST' : 'PATCH', path: widget.logId == null ? '/work-logs' : '/work-logs/${widget.logId}', body: {'body': _body.text});
+      final key = keys.keyFor(
+        scope: scope,
+        method: widget.logId == null ? 'POST' : 'PATCH',
+        path: widget.logId == null
+            ? '/work-logs'
+            : '/work-logs/${widget.logId}',
+        body: {'body': _body.text},
+      );
       if (_existing == null) {
-        await ref.read(workLogsApiProvider).create(
+        await ref
+            .read(workLogsApiProvider)
+            .create(
               businessDate: _date.iso,
               body: _body.text,
               taskId: _taskId,
@@ -338,7 +427,9 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
               idempotencyKey: key,
             );
       } else {
-        await ref.read(workLogsApiProvider).change(
+        await ref
+            .read(workLogsApiProvider)
+            .change(
               id: _existing!.id,
               body: _body.text,
               taskId: _taskId,
@@ -351,7 +442,10 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
       context.pop(true);
     } catch (error) {
       if (!mounted) return;
-      setState(() { _saving = false; _error = error; });
+      setState(() {
+        _saving = false;
+        _error = error;
+      });
     }
   }
 
@@ -367,7 +461,8 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
   Future<void> _pickTask() async {
     final result = await showDialog<_TaskPickResult>(
       context: context,
-      builder: (context) => _TaskPickerDialog(initial: _tasks, selectedId: _taskId),
+      builder: (context) =>
+          _TaskPickerDialog(initial: _tasks, selectedId: _taskId),
     );
     if (result == null || !mounted) return;
     setState(() => _taskId = result.id);
@@ -393,11 +488,14 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
       final source = await ref.read(workLogsApiProvider).fillSource(_date.iso);
       if (!mounted) return;
       if (!source.complete) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('事项或任务源加载不完整，未追加任何内容，请重试')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('事项或任务源加载不完整，未追加任何内容，请重试')),
+        );
         return;
       }
       if (source.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('当天没有可填入的事项或任务')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('当天没有可填入的事项或任务')));
         return;
       }
       if (!await _targetStillEditable()) {
@@ -435,7 +533,9 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     if (_existing == null && _missingDates.isEmpty) {
       return PandoraPage(
         title: '写日志',
@@ -443,7 +543,8 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
         child: const EmptyView(message: '公司今天、昨天和前天的日志都已填写，请从列表打开已有日志。'),
       );
     }
-    final editable = _existing == null || (_existing!.editable && !_existing!.frozen);
+    final editable =
+        _existing == null || (_existing!.editable && !_existing!.frozen);
     return PandoraPage(
       title: _existing == null ? '写日志' : '编辑日志',
       showBack: true,
@@ -453,16 +554,23 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
           if (_existing == null) ...[
             Text('日志日期', style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 6),
-            Wrap(spacing: 8, children: [
-              for (final date in _missingDates)
-                ChoiceChip(
-                  label: Text(date.iso),
-                  selected: _date == date,
-                  onSelected: (_) => setState(() => _date = date),
-                ),
-            ]),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final date in _missingDates)
+                  ChoiceChip(
+                    label: Text(date.iso),
+                    selected: _date == date,
+                    onSelected: (_) => setState(() => _date = date),
+                  ),
+              ],
+            ),
           ] else
-            ListTile(contentPadding: EdgeInsets.zero, title: const Text('日志日期'), subtitle: Text(_existing!.businessDate.iso)),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('日志日期'),
+              subtitle: Text(_existing!.businessDate.iso),
+            ),
           const SizedBox(height: 12),
           Text('标签', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
@@ -474,18 +582,20 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
             ],
             catalog: _catalog,
             enabled: editable,
-            onChanged: (next) => setState(() => _tagIds = [for (final tag in next) tag.id]),
+            onChanged: (next) =>
+                setState(() => _tagIds = [for (final tag in next) tag.id]),
           ),
           const SizedBox(height: 12),
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('关联任务（可选）'),
-            subtitle: Text(_selectedTaskTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+            subtitle: Text(
+              _selectedTaskTitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
             trailing: editable
-                ? TextButton(
-                    onPressed: _pickTask,
-                    child: const Text('选择'),
-                  )
+                ? TextButton(onPressed: _pickTask, child: const Text('选择'))
                 : null,
           ),
           const SizedBox(height: 12),
@@ -495,7 +605,10 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
             maxLines: null,
             maxLength: 10000,
             enabled: editable,
-            decoration: const InputDecoration(labelText: '日志正文', alignLabelWithHint: true),
+            decoration: const InputDecoration(
+              labelText: '日志正文',
+              alignLabelWithHint: true,
+            ),
           ),
           const SizedBox(height: 8),
           if (editable)
@@ -506,7 +619,10 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
             ),
           if (_error != null) ...[
             const SizedBox(height: 8),
-            Text('$_error', style: const TextStyle(color: PandoraColors.overdue)),
+            Text(
+              '$_error',
+              style: const TextStyle(color: PandoraColors.overdue),
+            ),
           ],
           const SizedBox(height: 16),
           if (editable)
@@ -550,15 +666,25 @@ class _FillPreviewDialogState extends State<_FillPreviewDialog> {
       title: const Text('追加后超过 10000 字符'),
       content: SizedBox(
         width: 560,
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('可在此独立删减待追加文本；取消将不改动原正文。'),
-          const SizedBox(height: 8),
-          TextField(controller: _controller, minLines: 8, maxLines: 16),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('可在此独立删减待追加文本；取消将不改动原正文。'),
+            const SizedBox(height: 8),
+            TextField(controller: _controller, minLines: 8, maxLines: 16),
+          ],
+        ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消')),
-        FilledButton(onPressed: () => Navigator.of(context).pop(_controller.text), child: const Text('确认追加')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('确认追加'),
+        ),
       ],
     );
   }
@@ -603,7 +729,9 @@ class _TaskPickerDialogState extends ConsumerState<_TaskPickerDialog> {
       _error = null;
     });
     try {
-      final rows = await ref.read(tasksApiProvider).listTasks(query: _search.text.trim(), limit: 100);
+      final rows = await ref
+          .read(tasksApiProvider)
+          .listTasks(query: _search.text.trim(), limit: 100);
       if (!mounted) return;
       setState(() {
         _results = rows;
@@ -625,49 +753,80 @@ class _TaskPickerDialogState extends ConsumerState<_TaskPickerDialog> {
       content: SizedBox(
         width: 520,
         height: 430,
-        child: Column(children: [
-          TextField(
-            controller: _search,
-            textInputAction: TextInputAction.search,
-            onSubmitted: (_) => _runSearch(),
-            decoration: InputDecoration(
-              hintText: '搜索任务名称',
-              suffixIcon: IconButton(tooltip: '搜索', onPressed: _runSearch, icon: const Icon(Icons.search)),
+        child: Column(
+          children: [
+            TextField(
+              controller: _search,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => _runSearch(),
+              decoration: InputDecoration(
+                hintText: '搜索任务名称',
+                suffixIcon: IconButton(
+                  tooltip: '搜索',
+                  onPressed: _runSearch,
+                  icon: const Icon(Icons.search),
+                ),
+              ),
             ),
-          ),
-          if (_error != null) Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text('$_error', style: const TextStyle(color: PandoraColors.overdue)),
-          ),
-          if (_loading) const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()),
-          Expanded(
-            child: ListView.separated(
-              itemCount: _results.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final task = _results[index];
-                return ListTile(
-                  selected: task.id == widget.selectedId,
-                  title: Text(task.title, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(task.scheduleText(CompanyTimeZone.fallback)),
-                  onTap: () => Navigator.of(context).pop(_TaskPickResult(task.id)),
-                );
-              },
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  '$_error',
+                  style: const TextStyle(color: PandoraColors.overdue),
+                ),
+              ),
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.all(12),
+                child: CircularProgressIndicator(),
+              ),
+            Expanded(
+              child: ListView.separated(
+                itemCount: _results.length,
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final task = _results[index];
+                  return ListTile(
+                    selected: task.id == widget.selectedId,
+                    title: Text(
+                      task.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(task.scheduleText(CompanyTimeZone.fallback)),
+                    onTap: () =>
+                        Navigator.of(context).pop(_TaskPickResult(task.id)),
+                  );
+                },
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(const _TaskPickResult(null)), child: const Text('清空关联')),
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消')),
+        TextButton(
+          onPressed: () =>
+              Navigator.of(context).pop(const _TaskPickResult(null)),
+          child: const Text('清空关联'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('取消'),
+        ),
       ],
     );
   }
 }
 
 class WorkLogDetailPage extends ConsumerStatefulWidget {
-  const WorkLogDetailPage({super.key, required this.logId});
+  const WorkLogDetailPage({
+    super.key,
+    required this.logId,
+    this.readContext = const NormalReadContext(),
+  });
   final String logId;
+  final ReadContext readContext;
   @override
   ConsumerState<WorkLogDetailPage> createState() => _WorkLogDetailPageState();
 }
@@ -701,23 +860,37 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
         title: const Text('删除日志？'),
         content: const Text('删除后同一业务日不能重置首次创建时间，重新填写仍受原冻结窗口约束。'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('删除')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('删除'),
+          ),
         ],
       ),
     );
     if (ok != true || !mounted) return;
     setState(() => _deleting = true);
     final keys = ref.read(operationKeysProvider);
-    final key = keys.keyFor(scope: 'log-delete:${log.id}', method: 'DELETE', path: '/work-logs/${log.id}', body: const {});
+    final key = keys.keyFor(
+      scope: 'log-delete:${log.id}',
+      method: 'DELETE',
+      path: '/work-logs/${log.id}',
+      body: const {},
+    );
     try {
-      await ref.read(workLogsApiProvider).delete(id: log.id, idempotencyKey: key);
+      await ref
+          .read(workLogsApiProvider)
+          .delete(id: log.id, idempotencyKey: key);
       keys.complete('log-delete:${log.id}');
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
       setState(() => _deleting = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
@@ -728,7 +901,10 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
       title: '日志详情',
       showBack: true,
       actions: [
-        if (log != null && log.editable && !log.frozen) ...[
+        if (widget.readContext.businessWritesAllowed &&
+            log != null &&
+            log.editable &&
+            !log.frozen) ...[
           IconButton(
             tooltip: '编辑日志',
             onPressed: () async {
@@ -747,32 +923,67 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
       child: _error != null
           ? ErrorView(error: _error!, onRetry: _load)
           : log == null
-              ? const LoadingView()
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    Text(log.businessDate.iso, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: PandoraColors.brand)),
-                    const SizedBox(height: 8),
-                    Text(log.body, style: const TextStyle(fontSize: 15, height: 1.55)),
-                    if (log.tags.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Wrap(spacing: 6, children: [for (final tag in log.tags) StatusBadge(label: tag.name, color: _tagColor(tag))]),
-                      ),
-                    if (log.createdAt != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text('创建时间 ${CompanyTimeZone.fallback.formatDateTime(log.createdAt!)}', style: const TextStyle(fontSize: 12, color: PandoraColors.muted)),
-                      ),
-                    const Divider(height: 28),
-                    CommentsSection(objectType: 'log', objectId: log.id),
-                  ],
+          ? const LoadingView()
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text(
+                  log.businessDate.iso,
+                  style: Theme.of(context).textTheme.labelLarge
+                      ?.copyWith(color: PandoraColors.brand),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  log.body,
+                  style: const TextStyle(fontSize: 15, height: 1.55),
+                ),
+                if (log.tags.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Wrap(
+                      spacing: 6,
+                      children: [
+                        for (final tag in log.tags)
+                          StatusBadge(label: tag.name, color: _tagColor(tag)),
+                      ],
+                    ),
+                  ),
+                if (log.createdAt != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      '创建时间 ${CompanyTimeZone.fallback.formatDateTime(log.createdAt!)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: PandoraColors.muted,
+                      ),
+                    ),
+                  ),
+                if (log.taskId != null)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.link),
+                    title: const Text('关联任务'),
+                    subtitle: const Text('按当前来源上下文读取'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(
+                      '/tasks/${log.taskId}',
+                      extra: TaskRouteArgs(context: widget.readContext),
+                    ),
+                  ),
+                const Divider(height: 28),
+                if (widget.readContext.commentsAllowed)
+                  CommentsSection(objectType: 'log', objectId: log.id),
+              ],
+            ),
     );
   }
 }
 
 Color _tagColor(TaskTag tag) {
-  final parsed = int.tryParse((tag.color ?? '').replaceFirst('#', ''), radix: 16);
+  final parsed = int.tryParse(
+    (tag.color ?? '').replaceFirst('#', ''),
+    radix: 16,
+  );
   return parsed == null ? PandoraColors.petal : Color(0xFF000000 | parsed);
 }
