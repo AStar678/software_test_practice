@@ -202,6 +202,13 @@
       <div class="row"><input id="companyTitle" placeholder="标题（可空）"><input id="companyBody" placeholder="内容"><button class="primary" id="companyCreate">新增公司信息</button></div>
       <p class="muted" id="companyLimit"></p>
       <table><thead><tr><th>顺序</th><th>标题</th><th>内容</th><th></th></tr></thead><tbody id="companyRows"></tbody></table>
+      <h3>节假日</h3>
+      <form id="holidayRefreshForm" class="row">
+        <label for="holidayYear">年份</label>
+        <input id="holidayYear" type="number" min="1900" max="9999" step="1" required>
+        <button class="primary" id="holidayRefresh" type="submit">刷新节假日</button>
+      </form>
+      <div id="holidayResult" role="status" aria-live="polite"></div>
     </section>
 
     <section id="tab-health">
@@ -777,6 +784,30 @@ $('offWorkSave').onclick = async () => {
   try { await api('PUT', '/api/v1/admin/company/off-work-time', { offWorkTime: $('offWorkTime').value.trim() }, { key: newKey() }); ok('下班时刻已保存，仅适用于之后的排期'); renderCompany(); }
   catch (error) { fail(error.message); }
 };
+$('holidayYear').value = new Intl.DateTimeFormat('en', { year: 'numeric', timeZone: 'Asia/Shanghai' }).format(new Date());
+$('holidayRefreshForm').onsubmit = async (event) => {
+  event.preventDefault();
+  const button = $('holidayRefresh'), result = $('holidayResult');
+  if (button.disabled || !$('holidayRefreshForm').reportValidity()) return;
+  const year = $('holidayYear').value, epoch = state.epoch || 0;
+  button.disabled = true;
+  button.textContent = '正在刷新…';
+  result.className = 'muted';
+  result.textContent = '正在获取 ' + year + ' 年节假日…';
+  try {
+    const { body } = await api('POST', '/api/v1/admin/calendar/holidays/' + year + '/refresh', undefined, { key: newKey() });
+    result.className = 'ok';
+    result.textContent = year + ' 年节假日已刷新，共 ' + body.days.length + ' 条。';
+  } catch (error) {
+    if (epoch === (state.epoch || 0)) {
+      result.className = 'error';
+      result.textContent = error.message;
+    }
+  } finally {
+    button.disabled = false;
+    button.textContent = '刷新节假日';
+  }
+};
 
 function logout() {
   if(state.token)fetch('/api/v1/auth/sessions/current',{method:'DELETE',headers:{Authorization:'Bearer '+state.token}}).catch(()=>{});
@@ -785,6 +816,7 @@ function logout() {
   localStorage.removeItem('pandora.admin.token');
   $('console').hidden = true; $('login').hidden = false;
   $('password').value = '';
+  $('holidayResult').textContent = '';
 }
 
 (async function boot() {
