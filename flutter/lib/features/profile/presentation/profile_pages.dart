@@ -35,12 +35,18 @@ class ProfileDetailPage extends ConsumerWidget {
             person: person,
             actions: [
               OutlinedButton.icon(
-                onPressed: () => context.push('/people/${person.id}/schedule'),
+                onPressed: () => context.push(
+                  '/people/${person.id}/schedule',
+                  extra: person.displayName,
+                ),
                 icon: const Icon(Icons.calendar_month_outlined),
                 label: const Text('日程'),
               ),
               OutlinedButton.icon(
-                onPressed: () => context.push('/people/${person.id}/logs'),
+                onPressed: () => context.push(
+                  '/people/${person.id}/logs',
+                  extra: person.displayName,
+                ),
                 icon: const Icon(Icons.menu_book_outlined),
                 label: const Text('日志'),
               ),

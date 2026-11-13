@@ -17,12 +17,13 @@ import '../../features/tasks/presentation/task_table_page.dart';
 import '../../features/work_logs/presentation/work_logs_page.dart';
 import '../../features/tags/presentation/tag_manage_page.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
+import '../../features/notifications/presentation/notification_detail_page.dart';
 import '../../features/people/presentation/people_page.dart';
 import '../../features/profile/presentation/profile_pages.dart';
+import '../../features/schedule/presentation/task_calendar_page.dart';
 import '../company/company_date.dart';
 import '../../features/shell/destination_pages.dart';
 import '../../features/shell/pandora_shell.dart';
-import '../../features/stub/stub_page.dart';
 import '../router/read_context.dart';
 import '../providers.dart';
 import '../session/session_manager.dart';
@@ -70,6 +71,7 @@ class AppRoutes {
 
   static const notifications = '/notifications';
   static const notificationPattern = '/notifications/:id';
+  static const notificationTaskPattern = '/notifications/:id/task';
   static String notification(String id) => '/notifications/$id';
 
   static const people = '/people';
@@ -277,8 +279,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.notificationPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) =>
-            StubPage(title: '通知详情', subtitle: state.pathParameters['id']),
+        builder: (context, state) => NotificationDetailPage(
+          notificationId: state.pathParameters['id'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.notificationTaskPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => HistoricalNotificationTaskPage(
+          notificationId: state.pathParameters['id'] ?? '',
+        ),
       ),
       GoRoute(
         path: AppRoutes.people,
@@ -294,18 +304,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.personSchedulePattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => SubordinateWorkspacePendingPage(
-          personId: state.pathParameters['id'] ?? '',
-          title: '下属日程',
-        ),
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          final name = state.extra is String ? state.extra! as String : '所选人员';
+          return TaskCalendarPage(
+            assigneeId: id,
+            personName: name,
+            readContext: SubordinateReadContext(
+              personId: id,
+              personName: name,
+              chainOrigin: AppRoutes.people,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.personLogsPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => SubordinateWorkspacePendingPage(
-          personId: state.pathParameters['id'] ?? '',
-          title: '下属日志',
-        ),
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          final name = state.extra is String ? state.extra! as String : '所选人员';
+          final readContext = SubordinateReadContext(
+            personId: id,
+            personName: name,
+            chainOrigin: AppRoutes.people,
+          );
+          return WorkLogsPage(
+            authorId: id,
+            personName: '$name的日志',
+            readContext: readContext,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.logsNew,
@@ -323,8 +352,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.logPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) =>
-            WorkLogDetailPage(logId: state.pathParameters['id'] ?? ''),
+        builder: (context, state) => WorkLogDetailPage(
+          logId: state.pathParameters['id'] ?? '',
+          readContext: state.extra is ReadContext
+              ? state.extra! as ReadContext
+              : const NormalReadContext(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.tags,
