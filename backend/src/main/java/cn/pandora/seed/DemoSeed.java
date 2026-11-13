@@ -162,14 +162,14 @@ public class DemoSeed implements ApplicationRunner {
         }
         for (String key : List.of("upper", "middle", "product-head-1", "employee")) {
             dailyItems.create(actors.get(key), Map.of("startDate", today.minusDays(1).toString(),
-                    "endDate", today.plusDays(1).toString(), "body", "跨日事项：跟完《星尘》第一幕的分镜与合成交接。"));
+                    "endDate", today.plusDays(1).toString(), "body", "跟完《星尘》第一幕的分镜与合成交接。"));
             dailyItems.create(actors.get(key), Map.of("startDate", today.toString(), "endDate", today.toString(),
-                    "body", "今日事项：确认交付清单与明日排期。"));
+                    "body", "确认交付清单与明日排期。"));
             var finished = dailyItems.create(actors.get(key), Map.of("startDate", today.toString(), "endDate", today.toString(),
-                    "body", "已完成：整理昨日评审意见。"));
+                    "body", "整理昨日评审意见。"));
             dailyItems.change(actors.get(key), s(finished, "id"), "\"1\"", Map.of("completed", true));
             dailyItems.create(actors.get(key), Map.of("startDate", today.minusDays(3).toString(),
-                    "endDate", today.minusDays(3).toString(), "body", "逾期事项：补齐上周的镜头备注。"));
+                    "endDate", today.minusDays(3).toString(), "body", "补齐上周的镜头备注。"));
         }
         String[][] leadTitles = {
                 {"第一幕分镜节奏", "第二幕转场设计", "第三幕高潮分镜", "角色表情走查", "镜头运动复盘", "分镜交接清单",
