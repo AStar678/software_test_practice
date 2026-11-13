@@ -40,11 +40,11 @@
     if (!user) return "";
     return [user.departmentName, user.teamName, user.positionName].map(orgPart).filter(Boolean).join(" ▸ ");
   };
+  /* 本人组织信息只用组织字段：入职日期与已入职时长只在本人信息卡出现一次，
+     下属资料卡仍沿用原字段与空态，后端 hireDate/tenure 投影不变。 */
   function readonlyRows(user) {
     return row("部门", user.departmentName || "公司层") + row("职位", user.positionName) +
-      (user.teamName ? row("团队", user.teamName) : "") + row("直属上级", superior(user)) +
-      row("入职日期", user.hireDate || "入职日期未设置") +
-      row("已入职时长", tenureText(user.tenure));
+      (user.teamName ? row("团队", user.teamName) : "") + row("直属上级", superior(user));
   }
   function tenureText(tenure) {
     if (!tenure || tenure.years == null) return "入职日期未设置";
@@ -168,7 +168,8 @@
     return data.days.map((key, col) => {
       if (!data.own[col]) return "";
       const hidden = data.segments.filter(segment => segment.lane >= STAFF_LANES && segment.startCol <= col && segment.endCol > col).length;
-      return hidden ? '<button type="button" data-action="p-staff-date" data-date="' + key + '" class="staff-month-more" aria-label="' + esc(staffLongDate(key) + '还有' + hidden + '项任务，查看完整清单') + '">+' + hidden + '</button>' : "";
+      /* 显式指定所在日期列：跳过无溢出的列时自动排布会把 +N 向左错列。 */
+      return hidden ? '<button type="button" data-action="p-staff-date" data-date="' + key + '" class="staff-month-more" style="grid-column:' + (col + 1) + '" aria-label="' + esc(staffLongDate(key) + '还有' + hidden + '项任务，查看完整清单') + '">+' + hidden + '</button>' : "";
     }).join("");
   }
   function staffWeekHTML(block, weekStart) {

@@ -18,12 +18,18 @@ async function main(){
   await sleep(200);
  }
  async function raw(id){return ev(`Pandora.request('/tasks/'+${q(id)})`);}
- async function point(selector){return ev(`(()=>{const h=document.querySelector(${q(selector)});if(!h)return null;h.scrollIntoView({block:'center',inline:'center'});const r=h.getBoundingClientRect(),bar=h.closest('.p-month-event,.p-horizontal-bar,.p-axis-event');if(!bar||!r.width||!r.height)return null;const mode=h.dataset.resizeMode;return {x:r.x+r.width/2,y:r.y+r.height/2,unit:mode==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7:mode==='vertical'?bar.closest('.p-axis-events').getBoundingClientRect().height/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24,vertical:mode==='vertical'}})()`);}
+ async function point(selector){return ev(`(()=>{const h=document.querySelector(${q(selector)});if(!h)return null;h.scrollIntoView({block:'center',inline:'center'});const r=h.getBoundingClientRect(),bar=h.closest('.p-month-event,.p-horizontal-bar,.p-axis-event');if(!bar||!r.width||!r.height)return null;const mode=h.dataset.resizeMode;return {x:r.x+r.width/2,y:r.y+r.height/2,mode,unit:mode==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7:mode==='vertical'?bar.closest('.p-axis-events').getBoundingClientRect().height/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24,vertical:mode==='vertical'}})()`);}
  async function drag(selector,steps,cancel){
   const p=await point(selector);check('drag source exists '+selector,!!p,p);
   const x=p.x+(p.vertical?0:p.unit*steps),y=p.y+(p.vertical?p.unit*steps:0);
   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y});
   await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',clickCount:1});
+  /* 月视图鼠标与触摸同口径：按住约 500ms 才激活拖动，门槛前不得出现拖影。 */
+  if(p.mode==='month'){
+   await sleep(320);
+   check('month long press creates no drag preview before the threshold',await ev("!document.querySelector('.p-drag-preview')"));
+   await sleep(420);
+  }
   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x,y,button:'left',buttons:1});
   check('drag preview',await ev("!!document.querySelector('.p-drag-preview')"));
   if(cancel==='escape')await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
@@ -31,6 +37,34 @@ async function main(){
   if(cancel==='lostpointercapture')await ev(`document.querySelector(${q(selector)}).dispatchEvent(new PointerEvent('lostpointercapture',{pointerId:1,bubbles:true}))`);
   await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',clickCount:1});
   await sleep(180);
+ }
+ /* 真实鼠标短按：按下与松开之间不移动，用于验证命中日清单没有被拖动/点击抑制吞掉。 */
+ async function shortPress(selector,ratio,nth){
+  const p=await ev(`(()=>{const node=document.querySelectorAll(${q(selector)})[${nth||0}];if(!node)return null;node.scrollIntoView({block:'center',inline:'center'});
+    const r=node.getBoundingClientRect(),week=node.closest('.p-month-week'),days=week?week.querySelector('.p-month-days').getBoundingClientRect():null;
+    const x=r.x+r.width*${ratio||0.5},y=r.y+r.height/2;
+    if(!days)return {x,y,date:null};
+    const column=Math.max(0,Math.min(6,Math.floor((x-days.left)/(days.width/7))));
+    const bar=node.closest('.p-month-event'),start=bar?Number(bar.dataset.startColumn):0,end=bar?Number(bar.dataset.endColumn):7;
+    const date=toDateInput(addDays(parseDateInput(week.dataset.weekStart),Math.max(start,Math.min(end-1,column))));
+    return {x,y,date,column}})()`);
+  check('short press target exists '+selector,!!p,p);
+  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y});
+  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',clickCount:1});
+  await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:p.x,y:p.y,button:'left',clickCount:1});
+  await sleep(400);
+  return p;
+ }
+ async function shortPressOpensDay(name,selector,expected,ratio,nth){
+  const calls=await ev('(window.__scheduleCalls||[]).length');
+  const p=await shortPress(selector,ratio,nth);
+  const state=await ev("({hidden:document.getElementById('overlay').hidden,date:Pandora.calendar.currentDaySheet()?.date||null,preview:!!document.querySelector('.p-drag-preview'),confirmation:!document.getElementById('overlay').hidden&&!!document.getElementById('sc-reason'),rows:(document.getElementById('p-day-sheet-body')||{}).textContent||'',calls:(window.__scheduleCalls||[]).length})");
+  check('real mouse short press on '+name+' opens the hit day list without drag or schedule write',
+    state.date===(expected||p.date) && !state.preview && !state.confirmation && state.hidden && state.calls===calls && state.rows.length>0,
+    {state,p,expected});
+  await ev("Pandora.calendar.closeDaySheet()");
+  await sleep(150);
+  return state;
  }
  async function tap(selector){
   const p=await point(selector);check('handle exists '+selector,!!p,p);
@@ -149,8 +183,71 @@ async function main(){
   const tapState=await ev("({overlay:document.getElementById('overlay').hidden,preview:!!document.querySelector('.p-drag-preview'),calls:(window.__scheduleCalls||[]).length})");
   check('endpoint press without movement opens no confirmation or detail',tapState.overlay&&!tapState.preview&&tapState.calls===callsBefore,tapState);
   await view('month',undefined,f.quiet);
-  await tap(`[data-resize-task="${f.short}"][data-resize=end][data-resize-mode=month]`);
-  check('month endpoint press without movement opens no day list or detail',await ev("document.getElementById('overlay').hidden&&!Pandora.calendar.currentDaySheet()"));
+  /* 月视图鼠标短按已改为点击优先：真实端点短按打开命中日清单，且不产生拖影/确认/写入。 */
+  await shortPressOpensDay('month tail endpoint',`[data-resize-task="${f.short}"][data-resize=end][data-resize-mode=month]`);
+  await shortPressOpensDay('month task bar body',`[data-schedule-move="${f.short}"][data-resize-mode=month]`);
+  await shortPressOpensDay('month date digit',`[data-action="schedule-month-date"][data-date="${f.quiet}"]`);
+  const emptyDate=await ev(`(()=>{const cell=Array.from(document.querySelectorAll('[data-action="schedule-month-date"]')).find(node=>(node.getAttribute('aria-label')||'').includes('暂无任务'));return cell?cell.dataset.date:null})()`);
+  check('an empty date cell is available for the blank-area short press',!!emptyDate,emptyDate);
+  if(emptyDate) await shortPressOpensDay('month empty date cell',`[data-action="schedule-month-date"][data-date="${emptyDate}"]`);
+  await view('month',undefined,f.crossDay);
+  const widest=await ev(`(()=>{const bars=Array.from(document.querySelectorAll('.p-month-event[data-task="${f.cross}"]'));let index=-1,span=0;bars.forEach((bar,i)=>{const current=Number(bar.dataset.endColumn)-Number(bar.dataset.startColumn);if(current>span){span=current;index=i}});return {index,span}})()`);
+  check('the cross-day task renders a multi-column segment to press',widest.index>=0&&widest.span>=2,widest);
+  const crossPress=await shortPressOpensDay('month cross-day middle date',`[data-task="${f.cross}"]`,undefined,0.75,widest.index);
+  check('the cross-day bar opens the hit day instead of always using its start date',crossPress.date!=='2031-02-09',crossPress);
+  await view('month',undefined,f.quiet);
+  /* 把月历高度收到最小，令同一天的任务进入 +N 溢出入口，再用真实鼠标短按验证不向左错列。 */
+  await ev("(()=>{const handle=document.querySelector('.p-month-resize-handle');handle.focus();handle.dispatchEvent(new KeyboardEvent('keydown',{key:'Home',bubbles:true}))})()");
+  await sleep(300);
+  const overflow=await ev("(()=>{const button=document.querySelector('.p-month-overflow .p-month-more:not([hidden])');return button?{date:button.dataset.date,count:button.textContent,column:getComputedStyle(button).gridColumnStart}:null})()");
+  check('a real overflow entry appears once the month tracks are collapsed',!!overflow,overflow);
+  if(overflow){
+   const calls=await ev('(window.__scheduleCalls||[]).length');
+   const pressed=await ev(`(()=>{const button=document.querySelector('.p-month-overflow .p-month-more:not([hidden])');button.scrollIntoView({block:'center'});const r=button.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:pressed.x,y:pressed.y});
+   await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:pressed.x,y:pressed.y,button:'left',clickCount:1});
+   await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:pressed.x,y:pressed.y,button:'left',clickCount:1});
+   await sleep(400);
+   const overflowState=await ev("({hidden:document.getElementById('overlay').hidden,date:Pandora.calendar.currentDaySheet()?.date||null,preview:!!document.querySelector('.p-drag-preview'),confirmation:!document.getElementById('overlay').hidden&&!!document.getElementById('sc-reason'),calls:(window.__scheduleCalls||[]).length})");
+   check('the overflow entry opens its own date through a real short press and never starts a drag',
+     overflowState.date===overflow.date&&!overflowState.preview&&!overflowState.confirmation&&overflowState.hidden&&overflowState.calls===calls,{overflowState,overflow});
+   await ev("Pandora.calendar.closeDaySheet()");
+   await sleep(150);
+  }
+  await ev("(()=>{const handle=document.querySelector('.p-month-resize-handle');handle.focus();handle.dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true}))})()");
+  await sleep(250);
+  /* 合成触摸：与鼠标同口径的短按/长按门槛（真实设备结果不在本机验证范围）。 */
+  await view('month',undefined,f.quiet);
+  await b.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
+  await sleep(200);
+  const touchPoint=await point(`[data-schedule-move="${f.short}"][data-resize-mode=month]`);
+  const touchDate=await ev(`(()=>{const h=document.querySelector('[data-schedule-move="${f.short}"][data-resize-mode=month]'),bar=h.closest('.p-month-event'),week=bar.closest('.p-month-week'),r=h.getBoundingClientRect(),days=week.querySelector('.p-month-days').getBoundingClientRect();const column=Math.max(0,Math.min(6,Math.floor((r.x+r.width/2-days.left)/(days.width/7))));const start=Number(bar.dataset.startColumn),end=Number(bar.dataset.endColumn);return toDateInput(addDays(parseDateInput(week.dataset.weekStart),Math.max(start,Math.min(end-1,column))))})()`);
+  const touchAt=(type,x,y)=>b.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y,id:0}]});
+  const touchCalls=await ev('(window.__scheduleCalls||[]).length');
+  await touchAt('touchStart',touchPoint.x,touchPoint.y);
+  await sleep(150);
+  await touchAt('touchEnd',touchPoint.x,touchPoint.y);
+  await sleep(450);
+  const touchTap=await ev("({date:Pandora.calendar.currentDaySheet()?.date||null,preview:!!document.querySelector('.p-drag-preview'),confirmation:!document.getElementById('overlay').hidden&&!!document.getElementById('sc-reason'),calls:(window.__scheduleCalls||[]).length})");
+  check('a synthetic short touch opens the hit day list without a drag or schedule write',
+   touchTap.date===touchDate&&!touchTap.preview&&!touchTap.confirmation&&touchTap.calls===touchCalls,{touchTap,touchPoint,touchDate});
+  await ev("Pandora.calendar.closeDaySheet()");
+  await sleep(150);
+  const beforeTouch=await raw(f.short);
+  await touchAt('touchStart',touchPoint.x,touchPoint.y);
+  await sleep(700);
+  await touchAt('touchMove',touchPoint.x+touchPoint.unit,touchPoint.y);
+  const touchDrag=await ev("({gesture:Pandora.scheduleGesture(),preview:!!document.querySelector('.p-drag-preview')})");
+  check('holding a month bar for about half a second activates the touch drag',
+   touchDrag.gesture.dragging&&touchDrag.preview&&touchDrag.gesture.steps===1,touchDrag);
+  await touchAt('touchEnd',touchPoint.x+touchPoint.unit,touchPoint.y);
+  await sleep(350);
+  check('an activated touch drag asks for the lightweight confirmation instead of the day list',
+   await ev("!document.getElementById('overlay').hidden&&!!document.getElementById('sc-reason')&&Pandora.idle()"));
+  await ev("closeSheet()");
+  check('the touch draft wrote nothing before confirmation',(await raw(f.short)).rowVersion===beforeTouch.rowVersion,{before:beforeTouch.rowVersion});
+  await b.send('Emulation.setTouchEmulationEnabled',{enabled:false});
+  await sleep(200);
   await view('day','horizontal',f.quiet);
   const beforeCapture=await raw(f.short);
   await drag(`[data-resize-task="${f.short}"][data-resize=end][data-resize-mode=day]`,1,'lostpointercapture');
@@ -165,6 +262,9 @@ async function main(){
    check('day axis fits viewport '+width,await ev("document.documentElement.scrollWidth<=innerWidth+1"));
    await b.screenshot(path.join(out,'apply-day-'+width+'.png'));
   }
+  await b.viewport({width:390,height:600,mobile:true});await view('month',undefined,f.quiet);
+  check('month view fits 390x600',await ev("document.documentElement.scrollWidth<=innerWidth+1"));
+  await b.screenshot(path.join(out,'shortpress-month-390x600.png'));
   await b.viewport({width:1440,height:900,mobile:false});await view('day','timeline');
   check('vertical ordinary handles present',await ev(`!!document.querySelector('[data-resize-task="${f.point}"][data-resize-mode=vertical]')`));
   check('vertical full day handles absent',await ev(`!document.querySelector('[data-resize-task="${f.full}"],[data-schedule-move="${f.full}"]')`));

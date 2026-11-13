@@ -48,6 +48,98 @@ async function main(){
   }
   await ev("document.querySelector('[data-action=p-notice-reset]').click()");
   check('reset restores the full list after the unread check',await waitFor(b,"document.querySelector('[data-action=p-notice-category][data-value=all]').getAttribute('aria-selected')==='true'"));
+  /* 1.1/1.2 通知列表固定高度：筛选、模式、加载、单条、空、失败/重试、分页与详情返回都不改变外框。 */
+  const noticeFrame = () => ev("(()=>{const sheet=document.getElementById('sheet'),r=sheet.getBoundingClientRect(),body=document.getElementById('sheetBody'),filters=document.querySelector('.p-notice-filters'),list=document.getElementById('p-notice-content');return {top:Math.round(r.top),height:Math.round(r.height),notice:sheet.classList.contains('is-notice-list'),filters:!!filters,filterVisible:!!filters&&filters.getBoundingClientRect().top>=r.top-1&&filters.getBoundingClientRect().bottom<=r.bottom+1,list:!!list,scrolls:body.scrollHeight>body.clientHeight+1,rows:document.querySelectorAll('.p-notice-row').length}})()");
+  function stableFrame(before,after){return before.notice&&after.notice&&before.top===after.top&&before.height===after.height&&after.filters&&after.filterVisible&&after.list;}
+  async function frameHolds(label,before,evidence){
+    const frame=await noticeFrame();
+    check('the notification frame stays identical '+label,stableFrame(before,frame),{before,frame,evidence:evidence===undefined?null:evidence});
+    return frame;
+  }
+  const installNoticeMock = kind => ev(`(()=>{if(!window.__noticeReal)window.__noticeReal=Pandora.request;window.__noticeKind=${q(kind)};Pandora.request=function(path,opts){const real=window.__noticeReal,kind=window.__noticeKind;
+    if(!String(path).startsWith('/notifications?'))return real.call(Pandora,path,opts);
+    const row=(id,name,read)=>({id:id,createdAt:new Date().toISOString(),objectName:name,category:'reminder',eventType:'task.reminder_20',readAt:read?new Date().toISOString():null});
+    if(kind==='fail')return Promise.reject(new Error('模拟通知读取失败'));
+    if(kind==='loading')return new Promise(()=>{});
+    if(kind==='empty')return Promise.resolve({items:[],total:0,unreadCount:9,nextOffset:null});
+    if(kind==='single')return Promise.resolve({items:[row('mock-single','模拟单条通知',false)],total:1,unreadCount:9,nextOffset:null});
+    if(kind==='page')return Promise.resolve({items:Array.from({length:20},(_,i)=>row('mock-a'+i,'模拟分页通知 '+i,i%2===0)),total:40,unreadCount:9,nextOffset:20});
+    if(kind==='page2')return Promise.resolve({items:Array.from({length:20},(_,i)=>row('mock-b'+i,'模拟第二页 '+i,true)),total:40,unreadCount:9,nextOffset:null});
+    return real.call(Pandora,path,opts)}})()`);
+  const restoreNoticeMock = () => ev("Pandora.request=window.__noticeReal;window.__noticeReal=null;");
+  async function reopenMocked(kind,ready){
+    await ev("closeSheet()");
+    await installNoticeMock(kind);
+    await ev("openNotifications()");
+    check('the mocked '+kind+' state renders',await waitFor(b,ready,15000),await ev("document.getElementById('sheetBody').innerText.slice(0,200)"));
+  }
+  await ev("closeSheet()");
+  await ev("openNotifications()");
+  check('the notification list reopens with the dedicated fixed-height state',await waitFor(b,"document.querySelectorAll('.p-notice-row').length>0&&document.getElementById('sheet').classList.contains('is-notice-list')",20000));
+  const baseFrame=await noticeFrame();
+  check('the fixed frame fills the responsive maximum and keeps the filters reachable',baseFrame.notice&&baseFrame.filters&&baseFrame.filterVisible&&baseFrame.height>=700,baseFrame);
+  await ev("document.querySelector('[data-action=p-notice-mode]').click()");
+  await waitFor(b,"document.querySelectorAll('.p-notice-row .nsummary').length>0");
+  await frameHolds('after switching to the full display mode',baseFrame);
+  await ev("document.querySelector('[data-action=p-notice-mode]').click()");
+  await waitFor(b,"document.querySelectorAll('.p-notice-row .nsummary').length===0");
+  await ev("document.querySelector('[data-action=p-notice-category][data-value=reminder]').click()");
+  await waitFor(b,"document.querySelector('[data-action=p-notice-category][data-value=reminder]').getAttribute('aria-selected')==='true'&&document.querySelectorAll('.p-notice-row').length>0",20000);
+  await frameHolds('after filtering the type',baseFrame);
+  await ev("document.querySelector('[data-action=p-notice-reset]').click()");
+  await waitFor(b,"document.querySelector('[data-action=p-notice-category][data-value=all]').getAttribute('aria-selected')==='true'",20000);
+  await reopenMocked('loading',"document.getElementById('sheetBody').innerText.includes('正在加载通知')");
+  await frameHolds('while the first page is loading',baseFrame);
+  await reopenMocked('empty',"document.getElementById('sheetBody').innerText.includes('暂无通知')");
+  await frameHolds('for an empty result',baseFrame);
+  await ev("document.querySelector('[data-action=p-notice-category][data-value=other]').click()");
+  await waitFor(b,"document.getElementById('sheetBody').innerText.includes('没有符合筛选条件的通知')",20000);
+  await frameHolds('for an empty filtered result',baseFrame);
+  await reopenMocked('single',"document.querySelectorAll('.p-notice-row').length===1");
+  await frameHolds('for a single result',baseFrame);
+  await reopenMocked('fail',"!!document.querySelector('[data-action=p-notice-retry]')");
+  await frameHolds('while the query has failed',baseFrame);
+  await ev("window.__noticeKind='page'");
+  await ev("document.querySelector('[data-action=p-notice-retry]').click()");
+  await waitFor(b,"document.querySelectorAll('.p-notice-row').length===20",20000);
+  await frameHolds('while a page is paged in',baseFrame);
+  await ev("window.__noticeKind='page2'");
+  await ev("document.querySelector('[data-action=p-notice-more]').click()");
+  await waitFor(b,"document.querySelectorAll('.p-notice-row').length===40",20000);
+  await frameHolds('after appending the next page',baseFrame);
+  check('the fixed-height frame scrolls its content instead of growing',await ev("document.getElementById('sheetBody').scrollHeight>document.getElementById('sheetBody').clientHeight"),await ev("({scroll:document.getElementById('sheetBody').scrollHeight,client:document.getElementById('sheetBody').clientHeight})"));
+  await restoreNoticeMock();
+  await ev("closeSheet()");
+  check('closing the notification list removes the fixed-height state',await ev("!document.getElementById('sheet').classList.contains('is-notice-list')&&document.getElementById('overlay').hidden"));
+  await ev("openNotifications()");
+  check('the real list loads again once the mock is removed',await waitFor(b,"document.querySelectorAll('.p-notice-row').length>0&&!document.querySelector('[data-id=\"mock-a0\"]')",20000));
+  await frameHolds('after reopening the real list',baseFrame);
+  check('the notification detail opens from the fixed frame',await detail(f.resultNoticeId));
+  check('the notification detail does not inherit the fixed list height',await ev("!document.getElementById('sheet').classList.contains('is-notice-list')"),await ev("(()=>{const r=document.getElementById('sheet').getBoundingClientRect();return {top:Math.round(r.top),height:Math.round(r.height),title:document.getElementById('sheetTitle').textContent}})()"));
+  await ev("document.getElementById('sheetBack').click()");
+  check('returning from the detail restores the same fixed frame and conditions',await waitFor(b,"document.getElementById('sheetTitle').textContent==='通知'&&document.getElementById('sheet').classList.contains('is-notice-list')",20000)&&await ev("document.querySelector('[data-action=p-notice-read][data-value=all]').getAttribute('aria-pressed')==='true'"));
+  await frameHolds('after returning from a notification detail',baseFrame);
+  await ev("closeSheet()");
+  await ev("runAction({dataset:{action:'p-open-settings'}})");
+  check('another sheet opened after closing the list keeps its own height',await waitFor(b,"document.getElementById('sheetTitle').textContent==='个人设置'",15000)&&await ev("!document.getElementById('sheet').classList.contains('is-notice-list')"));
+  await ev("closeSheet()");
+  for(const [width,height] of [[320,740],[390,844],[1440,900],[390,600]]){
+    await b.viewport({width,height,mobile:width<1000});
+    await sleep(250);
+    await ev("openNotifications()");
+    check('the notification list adapts its fixed height at '+width+'x'+height,await waitFor(b,"document.querySelectorAll('.p-notice-row').length>0&&document.getElementById('sheet').classList.contains('is-notice-list')",20000));
+    const adapted=await ev("(()=>{const r=document.getElementById('sheet').getBoundingClientRect(),filters=document.querySelector('.p-notice-filters'),head=document.querySelector('.sheet-head');return {top:Math.round(r.top),height:Math.round(r.height),bottom:Math.round(r.bottom),viewport:innerHeight,notice:document.getElementById('sheet').classList.contains('is-notice-list'),headVisible:!!head&&head.getBoundingClientRect().top>=r.top-1,filterVisible:!!filters&&filters.getBoundingClientRect().top>=r.top-1&&filters.getBoundingClientRect().bottom<=r.bottom+1}})()");
+    check('the '+width+'x'+height+' frame stays inside the viewport with header and filters reachable',adapted.notice&&adapted.headVisible&&adapted.filterVisible&&adapted.bottom<=adapted.viewport+1&&adapted.height>=adapted.viewport*0.7,adapted);
+    await ev("document.querySelector('[data-action=p-notice-mode]').click()");
+    await waitFor(b,"document.querySelectorAll('.p-notice-row .nsummary').length>0",15000);
+    const adaptedAfter=await ev("(()=>{const r=document.getElementById('sheet').getBoundingClientRect();return {top:Math.round(r.top),height:Math.round(r.height)}})()");
+    check('the '+width+'x'+height+' frame does not change with the display mode',adaptedAfter.top===adapted.top&&adaptedAfter.height===adapted.height,{adapted,adaptedAfter});
+    await b.screenshot(path.join(out,'frame-'+width+'x'+height+'.png'));
+    await ev("closeSheet()");
+  }
+  await b.viewport({width:390,height:844,mobile:true});
+  await sleep(200);
+
   /* 7.4 快速切换条件时，迟到的旧页不得并入当前结果。 */
   await ev("closeSheet()");
   await ev("window.__noticeDelay=true;window.__noticeReal=Pandora.request;Pandora.request=function(path,opts){const real=window.__noticeReal;if(window.__noticeDelay&&String(path).startsWith('/notifications?')){window.__noticeDelay=false;return new Promise((resolve,reject)=>setTimeout(()=>real.call(Pandora,path,opts).then(resolve,reject),900));}return real.call(Pandora,path,opts);}");

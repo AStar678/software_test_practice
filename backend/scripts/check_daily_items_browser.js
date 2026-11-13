@@ -123,6 +123,145 @@ async function main() {
     await ev("document.getElementById('sheetClose').click()");
     await waitFor(b, "document.getElementById('overlay').hidden");
 
+    /* -------- 三态同一映射：待做蓝/完成灰/逾期红，且不再重复可见状态文字 -------- */
+    const channels = value => String(value || '').replace(/[^0-9.,]/g, '').split(',').slice(0, 3).map(Number);
+    const classifyEdge = value => {
+      const [r, g, b] = channels(value);
+      if (![r, g, b].every(Number.isFinite)) return 'unreadable';
+      if (Math.abs(r - g) < 14 && Math.abs(g - b) < 14) return 'grey';
+      if (r > g + 40 && r > b + 40) return 'red';
+      if (b > r + 40 && b > g + 20) return 'blue';
+      return 'other';
+    };
+    const palette = await ev(`(()=>{const read=selector=>{const node=document.querySelector(selector);if(!node)return null;
+        const style=getComputedStyle(node);return {border:style.borderLeftColor,background:style.backgroundColor}};
+      return {open:read('.daily-bar.is-open'),completed:read('.daily-bar.is-completed'),overdue:read('.daily-bar.is-overdue'),
+        stale:document.querySelectorAll('.daily-bar.is-done,.daily-row.is-done').length,
+        legend:document.querySelectorAll('.daily-status-legend').length}})()`);
+    check('待做/完成/逾期三种事项条共用一套类名并分别呈现蓝、灰、红边线',
+      !!palette.open && !!palette.completed && !!palette.overdue && palette.stale === 0 &&
+      classifyEdge(palette.open.border) === 'blue' && classifyEdge(palette.completed.border) === 'grey' &&
+      classifyEdge(palette.overdue.border) === 'red', palette);
+    check('月份标题不再显示重复的状态颜色图例', palette.legend === 0, palette);
+
+    async function openDay(key) {
+      await ev(`PandoraDaily.openList(${js(key)}, document.querySelector('[data-daily-date="' + ${js(key)} + '"]'))`);
+      await waitFor(b, "sheetStack.at(-1)?.dailyKind==='list'&&Pandora.idle()", 12000);
+    }
+    await openDay(fixture.today);
+    const rows = await ev(`(()=>{const list=Array.from(document.querySelectorAll('[data-daily-row]'));
+      return {states:list.map(row=>(row.className.match(/is-(open|completed|overdue)/)||[])[1]||null),
+        metaStatusWords:list.map(row=>/未完成|已完成|已逾期/.test(row.querySelector('.daily-row-meta')?.textContent||'')),
+        toggleLabels:list.map(row=>row.querySelector('[data-action=daily-toggle]')?.getAttribute('aria-label')||''),
+        openLabels:list.map(row=>row.querySelector('[data-action=daily-open]')?.getAttribute('aria-label')||''),
+        bodies:list.map(row=>row.querySelector('.daily-text span')?.textContent||'')}})()`);
+    check('日期清单按同一映射标记三态且不重复可见状态文字',
+      rows.states.length >= 2 && rows.states.every(state => ['open', 'completed', 'overdue'].includes(state)) &&
+      rows.metaStatusWords.every(flag => flag === false), rows);
+    check('清单正文不被改写且仍以辅助技术可读名称暴露真实状态',
+      rows.bodies.some(body => body === '跨日已完成：正文里的同词不应被改写') &&
+      rows.toggleLabels.every(label => /当前状态：(未完成|已完成|已逾期)/.test(label)) &&
+      rows.openLabels.every(label => /(未完成|已完成|已逾期)/.test(label)), rows);
+
+    await ev("closeSheet()");
+    await waitFor(b, "document.getElementById('overlay').hidden", 12000);
+    await openDay(fixture.mixed);
+    const mixed = await ev(`(()=>{const list=Array.from(document.querySelectorAll('[data-daily-row]'));
+      const completed=list.find(row=>row.classList.contains('is-completed'));
+      return {total:list.length,completed:!!completed,
+        text:completed?completed.querySelector('.daily-text span').textContent:null,
+        strike:completed?getComputedStyle(completed.querySelector('.daily-text span')).textDecorationLine:null,
+        meta:list.map(row=>row.querySelector('.daily-row-meta')?.textContent||'')}})()`);
+    check('完成项在清单中呈现完成灰与删除线，日期仍完整可读',
+      mixed.total >= 2 && mixed.completed && mixed.strike.includes('line-through') &&
+      mixed.meta.every(text => /\d{4}年\d{1,2}月\d{1,2}日/.test(text) && !/未完成|已完成|已逾期/.test(text)), mixed);
+    await ev("document.querySelector('#sheetBody [data-action=daily-open]').click()");
+    await waitFor(b, "sheetStack.at(-1)?.dailyKind==='detail'&&Pandora.idle()", 12000);
+    const detail = await ev(`(()=>{const head=document.querySelector('.daily-detail-head');
+      return {classes:head?head.className:null,badges:document.querySelectorAll('.daily-detail-head .badge').length,
+        hidden:document.querySelector('.daily-detail-head .sr-only')?.textContent||'',
+        date:document.querySelector('.daily-detail-date')?.textContent||'',
+        toggle:document.querySelector('#sheetFoot [data-action=daily-toggle]')?.textContent||''}})()`);
+    check('详情不重复状态徽标，改用三态配色和隐藏文字表达状态',
+      !!detail.classes && /\bis-(open|completed|overdue)\b/.test(detail.classes) && detail.badges === 0 &&
+      /当前状态：(未完成|已完成|已逾期)/.test(detail.hidden) &&
+      /\d{4}年\d{1,2}月\d{1,2}日/.test(detail.date) && detail.toggle.length > 0, detail);
+    await ev("document.querySelector('[data-action=daily-edit]').click()");
+    await waitFor(b, "sheetStack.at(-1)?.dailyKind==='form'&&Pandora.idle()", 12000);
+    const form = await ev(`(()=>{const body=document.getElementById('sheetBody');
+      return {text:body.innerText,start:!!document.getElementById('daily-start-date'),
+        end:!!document.getElementById('daily-end-date'),field:!!document.getElementById('daily-body')}})()`);
+    check('表单保留实际起止日期和正文，不再显示跨日解释',
+      form.start && form.end && form.field && !form.text.includes('起止日均包含') && !form.text.includes('跨日仍是同一条事项'), form);
+    await ev("document.getElementById('sheetClose').click()");
+    await waitFor(b, "document.getElementById('overlay').hidden", 12000);
+
+    /* 2.1 跨日事项：条跨越全部覆盖日，任一覆盖日完成/取消后清单与刷新保持一致。 */
+    const rangedBars = () => ev(`(()=>{const bars=Array.from(document.querySelectorAll('.daily-bar[data-id="${fixture.ranged}"]'));return {count:bars.length,bars:bars.map(bar=>{const week=bar.closest('.daily-week'),start=Number(bar.dataset.startCol),end=Number(bar.dataset.endCol),weekStart=week.dataset.weekStart;return {state:(bar.className.match(/is-(open|completed|overdue)/)||[])[1]||null,edge:getComputedStyle(bar).borderLeftColor,name:bar.querySelector('.daily-bar-name')?.textContent||'',first:toDateInput(addDays(parseDateInput(weekStart),start)),last:toDateInput(addDays(parseDateInput(weekStart),end-1))}})}})()`);
+    const rangedRow = async date => {
+      await openDay(date);
+      const row = await ev(`(()=>{const node=Array.from(document.querySelectorAll('[data-daily-row]')).find(item=>item.dataset.dailyRow==='${fixture.ranged}');if(!node)return null;const toggle=node.querySelector('[data-action=daily-toggle]');return {completed:node.classList.contains('is-completed'),checked:toggle.getAttribute('aria-checked'),label:toggle.getAttribute('aria-label'),meta:node.querySelector('.daily-row-meta')?.textContent||'',text:node.querySelector('.daily-text span')?.textContent||''}})()`);
+      return row;
+    };
+    const toggleAt = async date => {
+      await ev(`(()=>{const node=Array.from(document.querySelectorAll('[data-daily-row]')).find(item=>item.dataset.dailyRow==='${fixture.ranged}');node.querySelector('[data-action=daily-toggle]').click()})()`);
+      await waitFor(b, "Pandora.idle()", 15000);
+      await sleep(200);
+      return rangedRow(date);
+    };
+    const closeAll = async () => { await ev("closeSheet()"); await waitFor(b, "document.getElementById('overlay').hidden", 12000); };
+    const covered = [fixture.rangedStart, fixture.today, fixture.rangedEnd];
+    await openDay(fixture.today);
+    const completedAt = await toggleAt(fixture.today);
+    check('从覆盖日清单完成跨日事项后该行立即变为完成灰', !!completedAt && completedAt.completed &&
+      completedAt.checked === 'true' && completedAt.label.includes('取消完成') &&
+      completedAt.meta.includes('至') && completedAt.text === '跨日三色同步事项', completedAt);
+    await closeAll();
+    const completedBars = await rangedBars();
+    check('完成的跨日事项条覆盖全部已加载覆盖日并统一变灰',
+      completedBars.count === 1 && completedBars.bars[0].state === 'completed' &&
+      classifyEdge(completedBars.bars[0].edge) === 'grey' &&
+      completedBars.bars[0].first === fixture.rangedStart && completedBars.bars[0].last === fixture.rangedEnd,
+      completedBars);
+    for (const date of covered) {
+      const row = await rangedRow(date);
+      check('完成状态同步到覆盖日 ' + date + ' 的清单', !!row && row.completed && row.checked === 'true' && row.meta.includes('至'), row);
+      await closeAll();
+    }
+    await openDay(fixture.rangedStart);
+    const reopenedAt = await toggleAt(fixture.rangedStart);
+    check('从另一覆盖日取消完成后该行恢复未完成', !!reopenedAt && !reopenedAt.completed && reopenedAt.checked === 'false' && reopenedAt.label.includes('标记完成'), reopenedAt);
+    await closeAll();
+    const reopenedBars = await rangedBars();
+    check('取消完成后跨日事项条恢复待做蓝且仍覆盖同一范围',
+      reopenedBars.count === 1 && reopenedBars.bars[0].state === 'open' &&
+      classifyEdge(reopenedBars.bars[0].edge) === 'blue' &&
+      reopenedBars.bars[0].first === fixture.rangedStart && reopenedBars.bars[0].last === fixture.rangedEnd,
+      reopenedBars);
+    for (const date of covered) {
+      const row = await rangedRow(date);
+      check('取消完成同步到覆盖日 ' + date + ' 的清单', !!row && !row.completed && row.checked === 'false', row);
+      await closeAll();
+    }
+    await openDay(fixture.rangedEnd);
+    await toggleAt(fixture.rangedEnd);
+    await closeAll();
+    await ev("Pandora.reload()");
+    await waitFor(b, "Pandora.ready&&Pandora.idle()", 20000);
+    await ev(`PandoraDaily.goToDate('${fixture.today}')`);
+    await sleep(500);
+    const reloadedBars = await rangedBars();
+    check('刷新后跨日事项的完成色与覆盖范围保持一致',
+      reloadedBars.count === 1 && reloadedBars.bars[0].state === 'completed' &&
+      classifyEdge(reloadedBars.bars[0].edge) === 'grey' &&
+      reloadedBars.bars[0].first === fixture.rangedStart && reloadedBars.bars[0].last === fixture.rangedEnd,
+      reloadedBars);
+    const reloadedRow = await rangedRow(fixture.today);
+    check('刷新后覆盖日清单仍读取同一条完成记录', !!reloadedRow && reloadedRow.completed && reloadedRow.text === '跨日三色同步事项', reloadedRow);
+    await closeAll();
+    await ev("document.querySelector('[data-action=daily-today]').click()");
+    await sleep(220);
+
     /* -------- viewport fit at the four declared sizes -------- */
     for (const size of [{ width: 320, height: 740 }, { width: 390, height: 844 }, { width: 1440, height: 900 }, { width: 390, height: 600 }]) {
       await b.viewport({ ...size, mobile: size.width < 1000 });

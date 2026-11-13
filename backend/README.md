@@ -21,12 +21,18 @@ cd backend
 
 ```sh
 cd backend
-./scripts/start-demo.sh          # 重建为初始状态后启动
-./scripts/start-demo.sh --keep   # 沿用上次演示数据（保留界面编辑）
+./scripts/start-demo.sh          # 构建 JAR → 重建 pandora_demo → 首次准备 → 启动
+./scripts/start-demo.sh --keep   # 沿用上次演示数据（保留界面编辑），不重建、不补数据
+python3 scripts/prepare_demo.py --database pandora_demo --demo-marker local-web-v2   # 已准备库上的单独重复准备，同样保留编辑
+PANDORA_SKIP_BUILD=1 ./scripts/start-demo.sh   # 跳过重新构建，必须先已有含当前种子的 JAR
 ./scripts/stop.sh                # 同时停止演示实例
 ```
 
+`--keep` 和单独重复准备都不会写入本次新增的种子样本；只有不带保留参数的默认启动（或显式指向新的空演示库后首次准备）才会得到当前种子。`PANDORA_SKIP_BUILD=1` 复用 `target/pandora-backend-0.1.0.jar`，若该 JAR 早于本次种子/资源改动，页面会继续加载旧内容，需先正常构建一次。没有为旧演示库补数据的升级器，也没有清空业务表的路径：重建只发生在脚本 drop/create 指定演示库时。
+
 种子 UUID 由 seed key 确定性派生（`UUID.nameUUIDFromBytes("pandora.demo.v2/"+key)`），因此每次重建得到**逐位一致**的员工/任务/日志 ID，只有业务日期随启动当天取值。这也是本脚本选择「整库重建」而不是「清表」的原因：`DemoSeed` 的契约是幂等且**绝不删除或重置**已有数据，并拒绝在无标识的非空库上初始化；要拿到干净初始态只能重建库，不能在活动 schema 里清行。`PANDORA_DEMO_DB`、`PANDORA_DEMO_MARKER`、`PANDORA_PORT`、`PANDORA_SKIP_BUILD=1` 可覆盖默认值。
+
+默认演示的公司共用标签目录至少包含两种颜色可辨的标签（`tag-focus` 珊瑚红“重点镜头”与 `tag-animation` 湖蓝“动画联动”，均由稳定 seed key 派生）。至少两条正常任务和两篇近期日志各带两个有序标签：任务首标签决定其月/日/清单取色，详情与日志展示完整有序集合；其余任务和日志保留单标签或无标签对照，主线任务数量不变。
 
 当前默认演示主线为“光屿动画”：创始人为苏景昕，部门总监苏格拉底（故事部），组长柏拉图（分镜组），动画师亚里士多德；公司项目、十个公司事项、四人各自 10–20 条任务、事项、近期日志和通知均来自真实种子。默认演示不再包含 110 条分页、八项重叠/全天、跨年/午夜/零时长等极限数据；这些数据只存在于 `backend/scripts/check_demo_extremes.py` 的独立一次性夹具。
 

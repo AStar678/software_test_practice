@@ -230,6 +230,15 @@ button{cursor:pointer}
 .sheet.is-fullscreen .sheet-head{padding-top:calc(12px + env(safe-area-inset-top))}
 .sheet.is-fullscreen .log-content-field{flex:1 0 180px;min-height:180px}
 .sheet.is-fullscreen #lf-content{flex:1;min-height:140px;resize:none}
+/* 通知列表：同一视口下固定为响应式最大可用高度，筛选/模式/加载/空/失败/分页不改变外框，
+   内容超出时在弹层内部滚动，头部与筛选区保持可达。该状态不作用于详情或其他弹层。 */
+.sheet.is-notice-list{
+  height:calc(var(--app-height,100dvh) - env(safe-area-inset-top) - 14px);
+  max-height:calc(var(--app-height,100dvh) - env(safe-area-inset-top) - 14px);
+}
+@media(min-width:760px){
+  .sheet.is-notice-list{height:calc(var(--app-height,100dvh) - 48px);max-height:calc(var(--app-height,100dvh) - 48px)}
+}
 .field #tf-desc,.field #tf-acceptance{min-height:234px}
 .map-grid .home-task{font-size:12px;min-height:44px;padding:10px 0;flex-shrink:0}
 .map-grid .home-task-title{white-space:normal;overflow-wrap:anywhere}

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-12T14:21:58.105Z",
+  "updated": "2026-11-13T03:16:16.093Z",
   "checks": [
     {
       "check": "login form is ready",
@@ -20,160 +20,160 @@
         "total": 55,
         "path": "/tasks/table?relation=all&completion=all&sort=startAt&direction=asc&limit=50&offset=0",
         "serverItems": [
-          "动画交付任务 021",
-          "动画交付任务 035",
-          "动画交付任务 012",
-          "动画交付任务 050",
-          "动画交付任务 024",
-          "动画交付任务 040",
-          "动画交付任务 053",
-          "动画交付任务 023",
-          "动画交付任务 046",
-          "A upper",
-          "分镜2",
-          "动画交付任务 032",
-          "动画交付任务 052",
-          "动画交付任务 014",
-          "分镜10",
-          "动画交付任务 015",
-          "动画交付任务 037",
-          "动画交付任务 041",
-          "动画交付任务 017",
-          "动画交付任务 026",
-          "动画交付任务 020",
-          "动画交付任务 051",
-          "动画交付任务 011",
-          "动画交付任务 007",
-          "动画交付任务 025",
           "动画交付任务 029",
-          "动画交付任务 027",
-          "动画交付任务 039",
-          "动画交付任务 028",
-          "动画交付任务 044",
-          "阿波罗分镜",
-          "动画交付任务 049",
-          "动画交付任务 031",
           "波塞冬分镜",
-          "动画交付任务 045",
-          "动画交付任务 030",
-          "动画交付任务 033",
-          "动画交付任务 043",
-          "动画交付任务 019",
-          "动画交付任务 042",
-          "动画交付任务 038",
-          "动画交付任务 010",
-          "动画交付任务 016",
-          "动画交付任务 048",
+          "动画交付任务 028",
           "a lower",
+          "动画交付任务 016",
+          "动画交付任务 025",
+          "动画交付任务 034",
           "动画交付任务 009",
+          "动画交付任务 023",
+          "动画交付任务 040",
+          "动画交付任务 050",
+          "动画交付任务 053",
+          "动画交付任务 031",
           "动画交付任务 036",
+          "动画交付任务 012",
+          "A upper",
+          "动画交付任务 048",
+          "动画交付任务 024",
+          "动画交付任务 046",
+          "动画交付任务 044",
+          "动画交付任务 032",
+          "动画交付任务 027",
+          "动画交付任务 030",
+          "动画交付任务 052",
+          "分镜2",
+          "动画交付任务 019",
+          "动画交付任务 021",
+          "动画交付任务 037",
+          "动画交付任务 035",
+          "动画交付任务 020",
+          "动画交付任务 042",
+          "动画交付任务 047",
+          "分镜10",
+          "动画交付任务 049",
           "动画交付任务 018",
-          "动画交付任务 022",
-          "动画交付任务 054"
+          "动画交付任务 006",
+          "动画交付任务 033",
+          "动画交付任务 041",
+          "动画交付任务 026",
+          "动画交付任务 011",
+          "动画交付任务 013",
+          "动画交付任务 039",
+          "动画交付任务 038",
+          "动画交付任务 043",
+          "动画交付任务 017",
+          "动画交付任务 008",
+          "动画交付任务 054",
+          "阿波罗分镜",
+          "动画交付任务 051",
+          "动画交付任务 010"
         ],
         "shown": [
-          "0918d44b-f77b-4fb5-9fe4-2013f6831d3b",
-          "0afb9e8c-e283-4787-919e-df6db5d35b70",
-          "11f67de7-b71e-422f-875f-9437697a3f5b",
-          "13cd7fb8-47df-400d-b63c-54a644db6fd8",
-          "182d305d-c38c-45c3-96ce-c30018905046",
-          "19b24016-3bd4-4252-bac7-3418ab68f5af",
-          "22d9fda8-098f-426a-8904-f5ea99f9b2ab",
-          "22fa6dfa-b65e-4efd-b7db-85fe7fea2a32",
-          "3142f82d-dc19-4c45-afb5-872e5fe5d078",
-          "3b7f4f67-88fe-4cd1-a40e-7b646741b974",
-          "3c99a58c-6add-4754-881b-e872e33a068e",
-          "40cf3be1-8b25-463c-8012-ccbfdc9239f3",
-          "44717c15-f875-4d7e-9aef-dc8de00c62c2",
-          "4f36791e-93bf-4794-87bc-b31757b79d75",
-          "50f5c673-fbab-43a2-b074-27092af71a2f",
-          "549447ff-43ab-4642-a5e4-23e39a604082",
-          "5d34233f-055e-454c-9ad6-315b350057c3",
-          "6cae73ba-7443-4930-8c2c-db040816ac19",
-          "7041dfeb-26d0-42bf-b062-527b63eb9412",
-          "70ed991c-b0fa-49fa-a95f-3bb099424c27",
-          "801f7ea0-725c-41f3-a2df-a63242cbe8bb",
-          "83cfd067-8c8c-4c67-b0c5-05433adadb70",
-          "8846492e-1ada-471f-ad1d-1d7ec51258e9",
-          "891d79ff-a068-4a7a-89b8-2143bad0cf86",
-          "917011b8-4dfa-4e71-8efd-eda9b51d3637",
-          "91dc3c7c-1457-4bda-9dbb-00491b441289",
-          "95e78f31-a98d-4f32-9585-5c05bd10ff91",
-          "a25a3611-405b-4726-bd75-5b1f23685237",
-          "a28c1292-9b50-45e2-b984-9815302ad69e",
-          "a423540a-5e41-4eef-96a3-9fa3433b5c78",
-          "ad3bb56f-d9a3-4955-b876-df40a9ca67c6",
-          "b09ee703-afc8-4f61-8201-bc9619821c31",
-          "b5714605-485c-42e7-9c51-f62cc04a19f0",
-          "be47d2c2-38ce-41dd-a50c-694ca7054cc5",
-          "c26e73fd-eed8-4be5-8e53-1eb61d3c8464",
-          "c5c9d14b-da86-4c22-ae13-5e5a0f83480a",
-          "c739afa8-a8bf-4f64-8919-198816ce348b",
-          "ceb1ab4a-4967-4e09-ada8-3984cb0a0cff",
-          "d12a5463-9339-422b-8fa1-463daf7a3174",
-          "d17e8b59-cfa9-4d2f-a5d2-926b7d60994a",
-          "d517b8e5-f611-43ad-8a14-afc3a5cb60ff",
-          "d7430882-0c35-494b-8dd1-cb451889b844",
-          "dadea076-5650-4a77-b59a-bc62ad5b1cc0",
-          "df647f6c-ceeb-438a-9fd9-3c2446b0215b",
-          "df77e98c-bd4d-4f2c-ba5b-4cd0b56da459",
-          "e50f5afc-f803-475f-9b27-8188dbe006bb",
-          "e56acbb2-ac3a-4d13-a7f2-68d0077f165b",
-          "ec9d49e5-9dac-496d-8f8e-c58ab814a809",
-          "ef0eadee-d4df-40c4-ae5f-0d0dc6361d9a",
-          "f9b0b643-c6a2-45ba-8806-d231fbe56079"
+          "03ee33e4-236a-480d-baec-a36eb60735b4",
+          "0860726c-cd5a-4489-8dde-45036bae6be7",
+          "0ab145ce-e57c-4e10-98c6-aa60fefa6cb9",
+          "0fd0e5ba-91de-4af2-881a-55b7e464ccb1",
+          "14f9580d-133a-4411-8dfc-eaba55843da9",
+          "155b3a90-89c7-4ebe-8731-e2c8a1cbeae7",
+          "16845af6-2a94-4716-aba2-7f2d9ae7110f",
+          "18c917e1-60d6-4bac-9ad8-c3686bf6de71",
+          "1a0fb33c-d837-4f5f-a289-4e9d83cb123e",
+          "1ce61b0d-8f2e-4f01-9db8-c2acf56655b6",
+          "1d9db1cc-5792-473e-b726-c4d06849436a",
+          "1e19e994-8e81-4cfd-a7a9-0670b2b15c74",
+          "1efff697-c0f2-411e-9ddb-14af28751d09",
+          "2096719d-5e0e-43fd-a3c5-7fd370e46e5e",
+          "2acb8bbb-2046-4ca1-9497-713ce7b219e8",
+          "2c270eb3-48a0-4239-939a-ed844d19796d",
+          "2f06e38f-5ca9-419c-a069-991f11126d32",
+          "32749ad8-4bd6-409d-b2b0-089825e3e255",
+          "334505be-0a9c-48fb-9355-66a95c566fb3",
+          "3d24eace-abdd-430b-98fe-fd913a16360d",
+          "4043e28b-03f9-470d-88e4-1bf955704b21",
+          "410fea2f-5b03-4f62-89c7-582b32024faf",
+          "42459d82-937f-47dd-9dff-8b6801251694",
+          "45878297-07ca-4b69-9a59-076a4b8a4517",
+          "46dec08a-c7b8-4b4e-9a48-7846a3e5f035",
+          "4d83a0c6-faa8-408d-8bd7-b7301d8a464d",
+          "5106c85c-77b3-4502-a427-0c485ce8b7d5",
+          "564400aa-711f-45d3-abd4-d1c587f8fd1c",
+          "5684d5b7-e669-4231-8fc6-ebfcfd9323d1",
+          "62c77a92-d896-4a16-9bce-ba3d7b0f75af",
+          "6c6dc52e-6a8f-4dca-9ad2-6f4919b68472",
+          "6ff62f35-4efa-4e90-83ad-e5f47db418b9",
+          "7215b765-b627-46af-a3f8-7cb835dccb88",
+          "81ca71e4-85a4-49b6-aab5-fa1845b51bfd",
+          "85e0e9da-1c8f-4f21-861a-c225958d8ec6",
+          "8aa2ce7a-182c-4c78-a78c-0de98f71bfa1",
+          "8f12c7c9-c839-4c1f-bc11-bb735c7827f4",
+          "927affa0-391d-4870-9e6b-66e90dd17667",
+          "94ba5e34-e10b-45e4-b39b-ac5816977416",
+          "96774325-c2f1-4e65-bb6b-fbff2659e606",
+          "97272c33-c107-4bb6-9931-a410c168b8d0",
+          "a1aa4bf0-7019-4046-b3a8-508f35ee1de1",
+          "abea91a3-1eb9-4690-a323-82fd4e3e6a4d",
+          "bdf0b5f4-1b4f-4d94-80e4-9ea2d58bf67e",
+          "c09ca6cb-85ff-46d5-9194-d8609227513d",
+          "c8754a96-05bb-48f6-998b-741b9e29a856",
+          "cdad66d6-e802-4d0a-9142-8ecc079e4a99",
+          "cf00160a-b34b-4a96-80be-b95044f1b893",
+          "d78575bc-a28e-45e6-8f4c-10631c0fc66f",
+          "dd984229-f06b-418c-9630-2b41096131f3"
         ],
         "ids": [
-          "0918d44b-f77b-4fb5-9fe4-2013f6831d3b",
-          "0afb9e8c-e283-4787-919e-df6db5d35b70",
-          "11f67de7-b71e-422f-875f-9437697a3f5b",
-          "13cd7fb8-47df-400d-b63c-54a644db6fd8",
-          "182d305d-c38c-45c3-96ce-c30018905046",
-          "19b24016-3bd4-4252-bac7-3418ab68f5af",
-          "22d9fda8-098f-426a-8904-f5ea99f9b2ab",
-          "22fa6dfa-b65e-4efd-b7db-85fe7fea2a32",
-          "3142f82d-dc19-4c45-afb5-872e5fe5d078",
-          "3b7f4f67-88fe-4cd1-a40e-7b646741b974",
-          "3c99a58c-6add-4754-881b-e872e33a068e",
-          "40cf3be1-8b25-463c-8012-ccbfdc9239f3",
-          "44717c15-f875-4d7e-9aef-dc8de00c62c2",
-          "4f36791e-93bf-4794-87bc-b31757b79d75",
-          "50f5c673-fbab-43a2-b074-27092af71a2f",
-          "549447ff-43ab-4642-a5e4-23e39a604082",
-          "5d34233f-055e-454c-9ad6-315b350057c3",
-          "6cae73ba-7443-4930-8c2c-db040816ac19",
-          "7041dfeb-26d0-42bf-b062-527b63eb9412",
-          "70ed991c-b0fa-49fa-a95f-3bb099424c27",
-          "801f7ea0-725c-41f3-a2df-a63242cbe8bb",
-          "83cfd067-8c8c-4c67-b0c5-05433adadb70",
-          "8846492e-1ada-471f-ad1d-1d7ec51258e9",
-          "891d79ff-a068-4a7a-89b8-2143bad0cf86",
-          "917011b8-4dfa-4e71-8efd-eda9b51d3637",
-          "91dc3c7c-1457-4bda-9dbb-00491b441289",
-          "95e78f31-a98d-4f32-9585-5c05bd10ff91",
-          "a25a3611-405b-4726-bd75-5b1f23685237",
-          "a28c1292-9b50-45e2-b984-9815302ad69e",
-          "a423540a-5e41-4eef-96a3-9fa3433b5c78",
-          "ad3bb56f-d9a3-4955-b876-df40a9ca67c6",
-          "b09ee703-afc8-4f61-8201-bc9619821c31",
-          "b5714605-485c-42e7-9c51-f62cc04a19f0",
-          "be47d2c2-38ce-41dd-a50c-694ca7054cc5",
-          "c26e73fd-eed8-4be5-8e53-1eb61d3c8464",
-          "c5c9d14b-da86-4c22-ae13-5e5a0f83480a",
-          "c739afa8-a8bf-4f64-8919-198816ce348b",
-          "ceb1ab4a-4967-4e09-ada8-3984cb0a0cff",
-          "d12a5463-9339-422b-8fa1-463daf7a3174",
-          "d17e8b59-cfa9-4d2f-a5d2-926b7d60994a",
-          "d517b8e5-f611-43ad-8a14-afc3a5cb60ff",
-          "d7430882-0c35-494b-8dd1-cb451889b844",
-          "dadea076-5650-4a77-b59a-bc62ad5b1cc0",
-          "df647f6c-ceeb-438a-9fd9-3c2446b0215b",
-          "df77e98c-bd4d-4f2c-ba5b-4cd0b56da459",
-          "e50f5afc-f803-475f-9b27-8188dbe006bb",
-          "e56acbb2-ac3a-4d13-a7f2-68d0077f165b",
-          "ec9d49e5-9dac-496d-8f8e-c58ab814a809",
-          "ef0eadee-d4df-40c4-ae5f-0d0dc6361d9a",
-          "f9b0b643-c6a2-45ba-8806-d231fbe56079"
+          "03ee33e4-236a-480d-baec-a36eb60735b4",
+          "0860726c-cd5a-4489-8dde-45036bae6be7",
+          "0ab145ce-e57c-4e10-98c6-aa60fefa6cb9",
+          "0fd0e5ba-91de-4af2-881a-55b7e464ccb1",
+          "14f9580d-133a-4411-8dfc-eaba55843da9",
+          "155b3a90-89c7-4ebe-8731-e2c8a1cbeae7",
+          "16845af6-2a94-4716-aba2-7f2d9ae7110f",
+          "18c917e1-60d6-4bac-9ad8-c3686bf6de71",
+          "1a0fb33c-d837-4f5f-a289-4e9d83cb123e",
+          "1ce61b0d-8f2e-4f01-9db8-c2acf56655b6",
+          "1d9db1cc-5792-473e-b726-c4d06849436a",
+          "1e19e994-8e81-4cfd-a7a9-0670b2b15c74",
+          "1efff697-c0f2-411e-9ddb-14af28751d09",
+          "2096719d-5e0e-43fd-a3c5-7fd370e46e5e",
+          "2acb8bbb-2046-4ca1-9497-713ce7b219e8",
+          "2c270eb3-48a0-4239-939a-ed844d19796d",
+          "2f06e38f-5ca9-419c-a069-991f11126d32",
+          "32749ad8-4bd6-409d-b2b0-089825e3e255",
+          "334505be-0a9c-48fb-9355-66a95c566fb3",
+          "3d24eace-abdd-430b-98fe-fd913a16360d",
+          "4043e28b-03f9-470d-88e4-1bf955704b21",
+          "410fea2f-5b03-4f62-89c7-582b32024faf",
+          "42459d82-937f-47dd-9dff-8b6801251694",
+          "45878297-07ca-4b69-9a59-076a4b8a4517",
+          "46dec08a-c7b8-4b4e-9a48-7846a3e5f035",
+          "4d83a0c6-faa8-408d-8bd7-b7301d8a464d",
+          "5106c85c-77b3-4502-a427-0c485ce8b7d5",
+          "564400aa-711f-45d3-abd4-d1c587f8fd1c",
+          "5684d5b7-e669-4231-8fc6-ebfcfd9323d1",
+          "62c77a92-d896-4a16-9bce-ba3d7b0f75af",
+          "6c6dc52e-6a8f-4dca-9ad2-6f4919b68472",
+          "6ff62f35-4efa-4e90-83ad-e5f47db418b9",
+          "7215b765-b627-46af-a3f8-7cb835dccb88",
+          "81ca71e4-85a4-49b6-aab5-fa1845b51bfd",
+          "85e0e9da-1c8f-4f21-861a-c225958d8ec6",
+          "8aa2ce7a-182c-4c78-a78c-0de98f71bfa1",
+          "8f12c7c9-c839-4c1f-bc11-bb735c7827f4",
+          "927affa0-391d-4870-9e6b-66e90dd17667",
+          "94ba5e34-e10b-45e4-b39b-ac5816977416",
+          "96774325-c2f1-4e65-bb6b-fbff2659e606",
+          "97272c33-c107-4bb6-9931-a410c168b8d0",
+          "a1aa4bf0-7019-4046-b3a8-508f35ee1de1",
+          "abea91a3-1eb9-4690-a323-82fd4e3e6a4d",
+          "bdf0b5f4-1b4f-4d94-80e4-9ea2d58bf67e",
+          "c09ca6cb-85ff-46d5-9194-d8609227513d",
+          "c8754a96-05bb-48f6-998b-741b9e29a856",
+          "cdad66d6-e802-4d0a-9142-8ecc079e4a99",
+          "cf00160a-b34b-4a96-80be-b95044f1b893",
+          "d78575bc-a28e-45e6-8f4c-10631c0fc66f",
+          "dd984229-f06b-418c-9630-2b41096131f3"
         ],
         "offset": 0
       }
@@ -310,11 +310,11 @@
       "evidence": {
         "rows": 5,
         "ids": [
-          "44717c15-f875-4d7e-9aef-dc8de00c62c2",
-          "22d9fda8-098f-426a-8904-f5ea99f9b2ab",
-          "f9b0b643-c6a2-45ba-8806-d231fbe56079",
-          "50f5c673-fbab-43a2-b074-27092af71a2f",
-          "3c99a58c-6add-4754-881b-e872e33a068e"
+          "45878297-07ca-4b69-9a59-076a4b8a4517",
+          "1e19e994-8e81-4cfd-a7a9-0670b2b15c74",
+          "cdad66d6-e802-4d0a-9142-8ecc079e4a99",
+          "7215b765-b627-46af-a3f8-7cb835dccb88",
+          "46dec08a-c7b8-4b4e-9a48-7846a3e5f035"
         ]
       }
     },
@@ -334,7 +334,7 @@
       "check": "the pinned later-page task appears first after the server re-query",
       "pass": true,
       "evidence": {
-        "pinId": "44717c15-f875-4d7e-9aef-dc8de00c62c2",
+        "pinId": "45878297-07ca-4b69-9a59-076a4b8a4517",
         "pinState": {
           "page": 0,
           "loaded": true,
@@ -343,310 +343,310 @@
           "total": 55,
           "path": "/tasks/table?relation=all&completion=all&sort=title&direction=asc&limit=50&offset=0",
           "ids": [
-            "44717c15-f875-4d7e-9aef-dc8de00c62c2",
-            "df77e98c-bd4d-4f2c-ba5b-4cd0b56da459",
-            "3b7f4f67-88fe-4cd1-a40e-7b646741b974",
-            "ad3bb56f-d9a3-4955-b876-df40a9ca67c6",
-            "be47d2c2-38ce-41dd-a50c-694ca7054cc5",
-            "fde66002-ba94-41cf-84b8-04d2dff4b82f",
-            "891d79ff-a068-4a7a-89b8-2143bad0cf86",
-            "ffbb9155-4309-4226-8151-57b8df07140d",
-            "e50f5afc-f803-475f-9b27-8188dbe006bb",
-            "d7430882-0c35-494b-8dd1-cb451889b844",
-            "8846492e-1ada-471f-ad1d-1d7ec51258e9",
-            "11f67de7-b71e-422f-875f-9437697a3f5b",
-            "fd4521ea-8a4f-45ef-b84a-291e57f7fc5a",
-            "4f36791e-93bf-4794-87bc-b31757b79d75",
-            "549447ff-43ab-4642-a5e4-23e39a604082",
-            "dadea076-5650-4a77-b59a-bc62ad5b1cc0",
-            "7041dfeb-26d0-42bf-b062-527b63eb9412",
-            "ec9d49e5-9dac-496d-8f8e-c58ab814a809",
-            "d12a5463-9339-422b-8fa1-463daf7a3174",
-            "801f7ea0-725c-41f3-a2df-a63242cbe8bb",
-            "0918d44b-f77b-4fb5-9fe4-2013f6831d3b",
-            "ef0eadee-d4df-40c4-ae5f-0d0dc6361d9a",
-            "22fa6dfa-b65e-4efd-b7db-85fe7fea2a32",
-            "182d305d-c38c-45c3-96ce-c30018905046",
-            "917011b8-4dfa-4e71-8efd-eda9b51d3637",
-            "70ed991c-b0fa-49fa-a95f-3bb099424c27",
-            "95e78f31-a98d-4f32-9585-5c05bd10ff91",
-            "a28c1292-9b50-45e2-b984-9815302ad69e",
-            "91dc3c7c-1457-4bda-9dbb-00491b441289",
-            "c5c9d14b-da86-4c22-ae13-5e5a0f83480a",
-            "b5714605-485c-42e7-9c51-f62cc04a19f0",
-            "40cf3be1-8b25-463c-8012-ccbfdc9239f3",
-            "c739afa8-a8bf-4f64-8919-198816ce348b",
-            "fb42fcd7-3898-4768-bec0-dcd88846e63b",
-            "0afb9e8c-e283-4787-919e-df6db5d35b70",
-            "e56acbb2-ac3a-4d13-a7f2-68d0077f165b",
-            "5d34233f-055e-454c-9ad6-315b350057c3",
-            "d517b8e5-f611-43ad-8a14-afc3a5cb60ff",
-            "a25a3611-405b-4726-bd75-5b1f23685237",
-            "19b24016-3bd4-4252-bac7-3418ab68f5af",
-            "6cae73ba-7443-4930-8c2c-db040816ac19",
-            "d17e8b59-cfa9-4d2f-a5d2-926b7d60994a",
-            "ceb1ab4a-4967-4e09-ada8-3984cb0a0cff",
-            "a423540a-5e41-4eef-96a3-9fa3433b5c78",
-            "c26e73fd-eed8-4be5-8e53-1eb61d3c8464",
-            "3142f82d-dc19-4c45-afb5-872e5fe5d078",
-            "fe9e1272-1c5d-4750-a314-0800edf5b1a8",
-            "df647f6c-ceeb-438a-9fd9-3c2446b0215b",
-            "b09ee703-afc8-4f61-8201-bc9619821c31",
-            "13cd7fb8-47df-400d-b63c-54a644db6fd8"
+            "45878297-07ca-4b69-9a59-076a4b8a4517",
+            "0fd0e5ba-91de-4af2-881a-55b7e464ccb1",
+            "2c270eb3-48a0-4239-939a-ed844d19796d",
+            "cf00160a-b34b-4a96-80be-b95044f1b893",
+            "0860726c-cd5a-4489-8dde-45036bae6be7",
+            "8aa2ce7a-182c-4c78-a78c-0de98f71bfa1",
+            "f909a169-87c3-4f65-bd70-e72c6c170f6c",
+            "c8754a96-05bb-48f6-998b-741b9e29a856",
+            "18c917e1-60d6-4bac-9ad8-c3686bf6de71",
+            "dd984229-f06b-418c-9630-2b41096131f3",
+            "96774325-c2f1-4e65-bb6b-fbff2659e606",
+            "2acb8bbb-2046-4ca1-9497-713ce7b219e8",
+            "97272c33-c107-4bb6-9931-a410c168b8d0",
+            "ebd55eda-776c-489a-a616-49208959dfbb",
+            "f7eb38d0-4a49-4d5d-9da4-ad5e2ec9aeef",
+            "14f9580d-133a-4411-8dfc-eaba55843da9",
+            "c09ca6cb-85ff-46d5-9194-d8609227513d",
+            "85e0e9da-1c8f-4f21-861a-c225958d8ec6",
+            "4d83a0c6-faa8-408d-8bd7-b7301d8a464d",
+            "62c77a92-d896-4a16-9bce-ba3d7b0f75af",
+            "5106c85c-77b3-4502-a427-0c485ce8b7d5",
+            "f2e5cfd6-5ea1-4e13-90c2-24a64bcc5214",
+            "1a0fb33c-d837-4f5f-a289-4e9d83cb123e",
+            "32749ad8-4bd6-409d-b2b0-089825e3e255",
+            "155b3a90-89c7-4ebe-8731-e2c8a1cbeae7",
+            "94ba5e34-e10b-45e4-b39b-ac5816977416",
+            "410fea2f-5b03-4f62-89c7-582b32024faf",
+            "0ab145ce-e57c-4e10-98c6-aa60fefa6cb9",
+            "03ee33e4-236a-480d-baec-a36eb60735b4",
+            "42459d82-937f-47dd-9dff-8b6801251694",
+            "1efff697-c0f2-411e-9ddb-14af28751d09",
+            "4043e28b-03f9-470d-88e4-1bf955704b21",
+            "8f12c7c9-c839-4c1f-bc11-bb735c7827f4",
+            "16845af6-2a94-4716-aba2-7f2d9ae7110f",
+            "5684d5b7-e669-4231-8fc6-ebfcfd9323d1",
+            "2096719d-5e0e-43fd-a3c5-7fd370e46e5e",
+            "564400aa-711f-45d3-abd4-d1c587f8fd1c",
+            "abea91a3-1eb9-4690-a323-82fd4e3e6a4d",
+            "a1aa4bf0-7019-4046-b3a8-508f35ee1de1",
+            "1ce61b0d-8f2e-4f01-9db8-c2acf56655b6",
+            "927affa0-391d-4870-9e6b-66e90dd17667",
+            "6c6dc52e-6a8f-4dca-9ad2-6f4919b68472",
+            "bdf0b5f4-1b4f-4d94-80e4-9ea2d58bf67e",
+            "3d24eace-abdd-430b-98fe-fd913a16360d",
+            "f640206e-4f07-41ed-98b2-6ec82f160607",
+            "334505be-0a9c-48fb-9355-66a95c566fb3",
+            "6ff62f35-4efa-4e90-83ad-e5f47db418b9",
+            "2f06e38f-5ca9-419c-a069-991f11126d32",
+            "81ca71e4-85a4-49b6-aab5-fa1845b51bfd",
+            "1d9db1cc-5792-473e-b726-c4d06849436a"
           ],
           "pinned": [
             {
-              "id": "44717c15-f875-4d7e-9aef-dc8de00c62c2",
+              "id": "45878297-07ca-4b69-9a59-076a4b8a4517",
               "pin": true
             },
             {
-              "id": "df77e98c-bd4d-4f2c-ba5b-4cd0b56da459",
+              "id": "0fd0e5ba-91de-4af2-881a-55b7e464ccb1",
               "pin": false
             },
             {
-              "id": "3b7f4f67-88fe-4cd1-a40e-7b646741b974",
+              "id": "2c270eb3-48a0-4239-939a-ed844d19796d",
               "pin": false
             },
             {
-              "id": "ad3bb56f-d9a3-4955-b876-df40a9ca67c6",
+              "id": "cf00160a-b34b-4a96-80be-b95044f1b893",
               "pin": false
             },
             {
-              "id": "be47d2c2-38ce-41dd-a50c-694ca7054cc5",
+              "id": "0860726c-cd5a-4489-8dde-45036bae6be7",
               "pin": false
             },
             {
-              "id": "fde66002-ba94-41cf-84b8-04d2dff4b82f",
+              "id": "8aa2ce7a-182c-4c78-a78c-0de98f71bfa1",
               "pin": false
             },
             {
-              "id": "891d79ff-a068-4a7a-89b8-2143bad0cf86",
+              "id": "f909a169-87c3-4f65-bd70-e72c6c170f6c",
               "pin": false
             },
             {
-              "id": "ffbb9155-4309-4226-8151-57b8df07140d",
+              "id": "c8754a96-05bb-48f6-998b-741b9e29a856",
               "pin": false
             },
             {
-              "id": "e50f5afc-f803-475f-9b27-8188dbe006bb",
+              "id": "18c917e1-60d6-4bac-9ad8-c3686bf6de71",
               "pin": false
             },
             {
-              "id": "d7430882-0c35-494b-8dd1-cb451889b844",
+              "id": "dd984229-f06b-418c-9630-2b41096131f3",
               "pin": false
             },
             {
-              "id": "8846492e-1ada-471f-ad1d-1d7ec51258e9",
+              "id": "96774325-c2f1-4e65-bb6b-fbff2659e606",
               "pin": false
             },
             {
-              "id": "11f67de7-b71e-422f-875f-9437697a3f5b",
+              "id": "2acb8bbb-2046-4ca1-9497-713ce7b219e8",
               "pin": false
             },
             {
-              "id": "fd4521ea-8a4f-45ef-b84a-291e57f7fc5a",
+              "id": "97272c33-c107-4bb6-9931-a410c168b8d0",
               "pin": false
             },
             {
-              "id": "4f36791e-93bf-4794-87bc-b31757b79d75",
+              "id": "ebd55eda-776c-489a-a616-49208959dfbb",
               "pin": false
             },
             {
-              "id": "549447ff-43ab-4642-a5e4-23e39a604082",
+              "id": "f7eb38d0-4a49-4d5d-9da4-ad5e2ec9aeef",
               "pin": false
             },
             {
-              "id": "dadea076-5650-4a77-b59a-bc62ad5b1cc0",
+              "id": "14f9580d-133a-4411-8dfc-eaba55843da9",
               "pin": false
             },
             {
-              "id": "7041dfeb-26d0-42bf-b062-527b63eb9412",
+              "id": "c09ca6cb-85ff-46d5-9194-d8609227513d",
               "pin": false
             },
             {
-              "id": "ec9d49e5-9dac-496d-8f8e-c58ab814a809",
+              "id": "85e0e9da-1c8f-4f21-861a-c225958d8ec6",
               "pin": false
             },
             {
-              "id": "d12a5463-9339-422b-8fa1-463daf7a3174",
+              "id": "4d83a0c6-faa8-408d-8bd7-b7301d8a464d",
               "pin": false
             },
             {
-              "id": "801f7ea0-725c-41f3-a2df-a63242cbe8bb",
+              "id": "62c77a92-d896-4a16-9bce-ba3d7b0f75af",
               "pin": false
             },
             {
-              "id": "0918d44b-f77b-4fb5-9fe4-2013f6831d3b",
+              "id": "5106c85c-77b3-4502-a427-0c485ce8b7d5",
               "pin": false
             },
             {
-              "id": "ef0eadee-d4df-40c4-ae5f-0d0dc6361d9a",
+              "id": "f2e5cfd6-5ea1-4e13-90c2-24a64bcc5214",
               "pin": false
             },
             {
-              "id": "22fa6dfa-b65e-4efd-b7db-85fe7fea2a32",
+              "id": "1a0fb33c-d837-4f5f-a289-4e9d83cb123e",
               "pin": false
             },
             {
-              "id": "182d305d-c38c-45c3-96ce-c30018905046",
+              "id": "32749ad8-4bd6-409d-b2b0-089825e3e255",
               "pin": false
             },
             {
-              "id": "917011b8-4dfa-4e71-8efd-eda9b51d3637",
+              "id": "155b3a90-89c7-4ebe-8731-e2c8a1cbeae7",
               "pin": false
             },
             {
-              "id": "70ed991c-b0fa-49fa-a95f-3bb099424c27",
+              "id": "94ba5e34-e10b-45e4-b39b-ac5816977416",
               "pin": false
             },
             {
-              "id": "95e78f31-a98d-4f32-9585-5c05bd10ff91",
+              "id": "410fea2f-5b03-4f62-89c7-582b32024faf",
               "pin": false
             },
             {
-              "id": "a28c1292-9b50-45e2-b984-9815302ad69e",
+              "id": "0ab145ce-e57c-4e10-98c6-aa60fefa6cb9",
               "pin": false
             },
             {
-              "id": "91dc3c7c-1457-4bda-9dbb-00491b441289",
+              "id": "03ee33e4-236a-480d-baec-a36eb60735b4",
               "pin": false
             },
             {
-              "id": "c5c9d14b-da86-4c22-ae13-5e5a0f83480a",
+              "id": "42459d82-937f-47dd-9dff-8b6801251694",
               "pin": false
             },
             {
-              "id": "b5714605-485c-42e7-9c51-f62cc04a19f0",
+              "id": "1efff697-c0f2-411e-9ddb-14af28751d09",
               "pin": false
             },
             {
-              "id": "40cf3be1-8b25-463c-8012-ccbfdc9239f3",
+              "id": "4043e28b-03f9-470d-88e4-1bf955704b21",
               "pin": false
             },
             {
-              "id": "c739afa8-a8bf-4f64-8919-198816ce348b",
+              "id": "8f12c7c9-c839-4c1f-bc11-bb735c7827f4",
               "pin": false
             },
             {
-              "id": "fb42fcd7-3898-4768-bec0-dcd88846e63b",
+              "id": "16845af6-2a94-4716-aba2-7f2d9ae7110f",
               "pin": false
             },
             {
-              "id": "0afb9e8c-e283-4787-919e-df6db5d35b70",
+              "id": "5684d5b7-e669-4231-8fc6-ebfcfd9323d1",
               "pin": false
             },
             {
-              "id": "e56acbb2-ac3a-4d13-a7f2-68d0077f165b",
+              "id": "2096719d-5e0e-43fd-a3c5-7fd370e46e5e",
               "pin": false
             },
             {
-              "id": "5d34233f-055e-454c-9ad6-315b350057c3",
+              "id": "564400aa-711f-45d3-abd4-d1c587f8fd1c",
               "pin": false
             },
             {
-              "id": "d517b8e5-f611-43ad-8a14-afc3a5cb60ff",
+              "id": "abea91a3-1eb9-4690-a323-82fd4e3e6a4d",
               "pin": false
             },
             {
-              "id": "a25a3611-405b-4726-bd75-5b1f23685237",
+              "id": "a1aa4bf0-7019-4046-b3a8-508f35ee1de1",
               "pin": false
             },
             {
-              "id": "19b24016-3bd4-4252-bac7-3418ab68f5af",
+              "id": "1ce61b0d-8f2e-4f01-9db8-c2acf56655b6",
               "pin": false
             },
             {
-              "id": "6cae73ba-7443-4930-8c2c-db040816ac19",
+              "id": "927affa0-391d-4870-9e6b-66e90dd17667",
               "pin": false
             },
             {
-              "id": "d17e8b59-cfa9-4d2f-a5d2-926b7d60994a",
+              "id": "6c6dc52e-6a8f-4dca-9ad2-6f4919b68472",
               "pin": false
             },
             {
-              "id": "ceb1ab4a-4967-4e09-ada8-3984cb0a0cff",
+              "id": "bdf0b5f4-1b4f-4d94-80e4-9ea2d58bf67e",
               "pin": false
             },
             {
-              "id": "a423540a-5e41-4eef-96a3-9fa3433b5c78",
+              "id": "3d24eace-abdd-430b-98fe-fd913a16360d",
               "pin": false
             },
             {
-              "id": "c26e73fd-eed8-4be5-8e53-1eb61d3c8464",
+              "id": "f640206e-4f07-41ed-98b2-6ec82f160607",
               "pin": false
             },
             {
-              "id": "3142f82d-dc19-4c45-afb5-872e5fe5d078",
+              "id": "334505be-0a9c-48fb-9355-66a95c566fb3",
               "pin": false
             },
             {
-              "id": "fe9e1272-1c5d-4750-a314-0800edf5b1a8",
+              "id": "6ff62f35-4efa-4e90-83ad-e5f47db418b9",
               "pin": false
             },
             {
-              "id": "df647f6c-ceeb-438a-9fd9-3c2446b0215b",
+              "id": "2f06e38f-5ca9-419c-a069-991f11126d32",
               "pin": false
             },
             {
-              "id": "b09ee703-afc8-4f61-8201-bc9619821c31",
+              "id": "81ca71e4-85a4-49b6-aab5-fa1845b51bfd",
               "pin": false
             },
             {
-              "id": "13cd7fb8-47df-400d-b63c-54a644db6fd8",
+              "id": "1d9db1cc-5792-473e-b726-c4d06849436a",
               "pin": false
             }
           ],
           "dom": [
-            "44717c15-f875-4d7e-9aef-dc8de00c62c2",
-            "df77e98c-bd4d-4f2c-ba5b-4cd0b56da459",
-            "3b7f4f67-88fe-4cd1-a40e-7b646741b974",
-            "ad3bb56f-d9a3-4955-b876-df40a9ca67c6",
-            "be47d2c2-38ce-41dd-a50c-694ca7054cc5",
-            "fde66002-ba94-41cf-84b8-04d2dff4b82f",
-            "891d79ff-a068-4a7a-89b8-2143bad0cf86",
-            "ffbb9155-4309-4226-8151-57b8df07140d",
-            "e50f5afc-f803-475f-9b27-8188dbe006bb",
-            "d7430882-0c35-494b-8dd1-cb451889b844",
-            "8846492e-1ada-471f-ad1d-1d7ec51258e9",
-            "11f67de7-b71e-422f-875f-9437697a3f5b",
-            "fd4521ea-8a4f-45ef-b84a-291e57f7fc5a",
-            "4f36791e-93bf-4794-87bc-b31757b79d75",
-            "549447ff-43ab-4642-a5e4-23e39a604082",
-            "dadea076-5650-4a77-b59a-bc62ad5b1cc0",
-            "7041dfeb-26d0-42bf-b062-527b63eb9412",
-            "ec9d49e5-9dac-496d-8f8e-c58ab814a809",
-            "d12a5463-9339-422b-8fa1-463daf7a3174",
-            "801f7ea0-725c-41f3-a2df-a63242cbe8bb",
-            "0918d44b-f77b-4fb5-9fe4-2013f6831d3b",
-            "ef0eadee-d4df-40c4-ae5f-0d0dc6361d9a",
-            "22fa6dfa-b65e-4efd-b7db-85fe7fea2a32",
-            "182d305d-c38c-45c3-96ce-c30018905046",
-            "917011b8-4dfa-4e71-8efd-eda9b51d3637",
-            "70ed991c-b0fa-49fa-a95f-3bb099424c27",
-            "95e78f31-a98d-4f32-9585-5c05bd10ff91",
-            "a28c1292-9b50-45e2-b984-9815302ad69e",
-            "91dc3c7c-1457-4bda-9dbb-00491b441289",
-            "c5c9d14b-da86-4c22-ae13-5e5a0f83480a",
-            "b5714605-485c-42e7-9c51-f62cc04a19f0",
-            "40cf3be1-8b25-463c-8012-ccbfdc9239f3",
-            "c739afa8-a8bf-4f64-8919-198816ce348b",
-            "fb42fcd7-3898-4768-bec0-dcd88846e63b",
-            "0afb9e8c-e283-4787-919e-df6db5d35b70",
-            "e56acbb2-ac3a-4d13-a7f2-68d0077f165b",
-            "5d34233f-055e-454c-9ad6-315b350057c3",
-            "d517b8e5-f611-43ad-8a14-afc3a5cb60ff",
-            "a25a3611-405b-4726-bd75-5b1f23685237",
-            "19b24016-3bd4-4252-bac7-3418ab68f5af",
-            "6cae73ba-7443-4930-8c2c-db040816ac19",
-            "d17e8b59-cfa9-4d2f-a5d2-926b7d60994a",
-            "ceb1ab4a-4967-4e09-ada8-3984cb0a0cff",
-            "a423540a-5e41-4eef-96a3-9fa3433b5c78",
-            "c26e73fd-eed8-4be5-8e53-1eb61d3c8464",
-            "3142f82d-dc19-4c45-afb5-872e5fe5d078",
-            "fe9e1272-1c5d-4750-a314-0800edf5b1a8",
-            "df647f6c-ceeb-438a-9fd9-3c2446b0215b",
-            "b09ee703-afc8-4f61-8201-bc9619821c31",
-            "13cd7fb8-47df-400d-b63c-54a644db6fd8"
+            "45878297-07ca-4b69-9a59-076a4b8a4517",
+            "0fd0e5ba-91de-4af2-881a-55b7e464ccb1",
+            "2c270eb3-48a0-4239-939a-ed844d19796d",
+            "cf00160a-b34b-4a96-80be-b95044f1b893",
+            "0860726c-cd5a-4489-8dde-45036bae6be7",
+            "8aa2ce7a-182c-4c78-a78c-0de98f71bfa1",
+            "f909a169-87c3-4f65-bd70-e72c6c170f6c",
+            "c8754a96-05bb-48f6-998b-741b9e29a856",
+            "18c917e1-60d6-4bac-9ad8-c3686bf6de71",
+            "dd984229-f06b-418c-9630-2b41096131f3",
+            "96774325-c2f1-4e65-bb6b-fbff2659e606",
+            "2acb8bbb-2046-4ca1-9497-713ce7b219e8",
+            "97272c33-c107-4bb6-9931-a410c168b8d0",
+            "ebd55eda-776c-489a-a616-49208959dfbb",
+            "f7eb38d0-4a49-4d5d-9da4-ad5e2ec9aeef",
+            "14f9580d-133a-4411-8dfc-eaba55843da9",
+            "c09ca6cb-85ff-46d5-9194-d8609227513d",
+            "85e0e9da-1c8f-4f21-861a-c225958d8ec6",
+            "4d83a0c6-faa8-408d-8bd7-b7301d8a464d",
+            "62c77a92-d896-4a16-9bce-ba3d7b0f75af",
+            "5106c85c-77b3-4502-a427-0c485ce8b7d5",
+            "f2e5cfd6-5ea1-4e13-90c2-24a64bcc5214",
+            "1a0fb33c-d837-4f5f-a289-4e9d83cb123e",
+            "32749ad8-4bd6-409d-b2b0-089825e3e255",
+            "155b3a90-89c7-4ebe-8731-e2c8a1cbeae7",
+            "94ba5e34-e10b-45e4-b39b-ac5816977416",
+            "410fea2f-5b03-4f62-89c7-582b32024faf",
+            "0ab145ce-e57c-4e10-98c6-aa60fefa6cb9",
+            "03ee33e4-236a-480d-baec-a36eb60735b4",
+            "42459d82-937f-47dd-9dff-8b6801251694",
+            "1efff697-c0f2-411e-9ddb-14af28751d09",
+            "4043e28b-03f9-470d-88e4-1bf955704b21",
+            "8f12c7c9-c839-4c1f-bc11-bb735c7827f4",
+            "16845af6-2a94-4716-aba2-7f2d9ae7110f",
+            "5684d5b7-e669-4231-8fc6-ebfcfd9323d1",
+            "2096719d-5e0e-43fd-a3c5-7fd370e46e5e",
+            "564400aa-711f-45d3-abd4-d1c587f8fd1c",
+            "abea91a3-1eb9-4690-a323-82fd4e3e6a4d",
+            "a1aa4bf0-7019-4046-b3a8-508f35ee1de1",
+            "1ce61b0d-8f2e-4f01-9db8-c2acf56655b6",
+            "927affa0-391d-4870-9e6b-66e90dd17667",
+            "6c6dc52e-6a8f-4dca-9ad2-6f4919b68472",
+            "bdf0b5f4-1b4f-4d94-80e4-9ea2d58bf67e",
+            "3d24eace-abdd-430b-98fe-fd913a16360d",
+            "f640206e-4f07-41ed-98b2-6ec82f160607",
+            "334505be-0a9c-48fb-9355-66a95c566fb3",
+            "6ff62f35-4efa-4e90-83ad-e5f47db418b9",
+            "2f06e38f-5ca9-419c-a069-991f11126d32",
+            "81ca71e4-85a4-49b6-aab5-fa1845b51bfd",
+            "1d9db1cc-5792-473e-b726-c4d06849436a"
           ],
           "notice": "已置顶到任务表单。",
           "sheet": "动画交付任务 052"
@@ -678,14 +678,14 @@
       "pass": true,
       "evidence": {
         "rows": [
-          "跨日事项：整理三天的动画分镜2027年1月8日 至 2027年1月10日 · 未完成",
-          "浏览器跨日事项：三天动画交付2027年1月8日 至 2027年1月10日 · 未完成"
+          "跨日事项：整理三天的动画分镜2027年1月8日 至 2027年1月10日",
+          "浏览器跨日事项：三天动画交付2027年1月8日 至 2027年1月10日"
         ],
-        "meta": "2027年1月8日 至 2027年1月10日 · 未完成"
+        "meta": "2027年1月8日 至 2027年1月10日"
       }
     },
     {
-      "check": "the detail shows the complete range and a status",
+      "check": "the detail shows the complete range with a non-repeated accessible status",
       "pass": true
     },
     {
@@ -711,7 +711,119 @@
     {
       "check": "the missing/real tenure is a real projection, not an account-created date",
       "pass": true,
-      "evidence": "aMY WORKSPACEalpha-one-employeeDisplay title联系电话13900000004邮箱employee@example.test入职日期2024-02-29已入职时长2年8个月15天（截至 2026-11-12）组织信息由管理员维护⌄部门alpha职位Display title团队alpha one直属上级alpha-one-head入职日期2024-02-29已入职时长2年8个月15天（截至 2026-11-12）下属资料0 人⌄暂无下属"
+      "evidence": "aMY WORKSPACEalpha-one-employeeDisplay title联系电话13900000004邮箱employee@example.test入职日期2024-02-29已入职时长2年8个月16天（截至 2026-11-13）组织信息由管理员维护⌄部门alpha职位Display title团队alpha one直属上级alpha-one-head下属资料0 人⌄暂无下属"
+    },
+    {
+      "check": "own hire date and tenure appear once in the personal card and never in the organization fold",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "aMY WORKSPACEalpha-one-employeeDisplay title联系电话13900000004邮箱employee@example.test入职日期2024-02-29已入职时长2年8个月16天（截至 2026-11-13）",
+        "orgText": "部门alpha职位Display title团队alpha one直属上级alpha-one-head"
+      }
+    },
+    {
+      "check": "administrator can locate the signed-in employee record",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "organizationId": "fixture-company",
+          "displayName": "alpha-one-employee",
+          "active": 1,
+          "avatar": null,
+          "rowVersion": 2,
+          "placementType": "employee",
+          "departmentId": "fixture-company-alpha",
+          "teamId": "fixture-company-alpha-one",
+          "positionId": "fixture-company-title",
+          "departmentName": "alpha",
+          "teamName": "alpha one",
+          "positionName": "Display title",
+          "organizationName": "fixture-company",
+          "organizationTimeZone": "Asia/Shanghai",
+          "role": "employee",
+          "rankLevel": 4,
+          "managerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "managerName": "alpha-one-head",
+          "accountType": "employee",
+          "loginPhone": "13900000004",
+          "hireDate": "2024-02-29"
+        }
+      }
+    },
+    {
+      "check": "administrator can clear the hire date for the empty-state check",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "rowVersion": 3,
+          "phoneUpdated": false,
+          "hireDate": null,
+          "sessionsRevoked": 0
+        }
+      }
+    },
+    {
+      "check": "reload after clearing the hire date keeps the same account",
+      "pass": true
+    },
+    {
+      "check": "an unset hire date shows the original empty state once in the card and not in the organization fold",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "aMY WORKSPACEalpha-one-employeeDisplay title联系电话13900000004邮箱employee@example.test入职日期入职日期未设置已入职时长入职日期未设置",
+        "orgText": "部门alpha职位Display title团队alpha one直属上级alpha-one-head"
+      }
+    },
+    {
+      "check": "administrator restores the hire date after the empty-state check",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "rowVersion": 4,
+          "phoneUpdated": false,
+          "hireDate": "2024-02-29",
+          "sessionsRevoked": 0
+        }
+      }
+    },
+    {
+      "check": "the restored hire date comes back to the personal card",
+      "pass": true
+    },
+    {
+      "check": "the restored hire date shows once in the card and the organization fold stays clean",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "aMY WORKSPACEalpha-one-employeeDisplay title联系电话13900000004邮箱employee@example.test入职日期2024-02-29已入职时长2年8个月16天（截至 2026-11-13）",
+        "orgText": "部门alpha职位Display title团队alpha one直属上级alpha-one-head"
+      }
     },
     {
       "check": "five main navigations and three home modules remain intact",
@@ -731,27 +843,99 @@
       "pass": true
     },
     {
-      "check": "the employee page has no horizontal document overflow at 320",
+      "check": "the employee page has no horizontal document overflow at 320x740",
       "pass": true,
       "evidence": {
         "overflow": false,
-        "w": 320
+        "w": 320,
+        "h": 740
       }
     },
     {
-      "check": "the employee page has no horizontal document overflow at 390",
+      "check": "the own employment rows stay de-duplicated at 320x740",
       "pass": true,
       "evidence": {
-        "overflow": false,
-        "w": 390
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "fMY WORKSPACEfounderDisplay title联系电话13900000001邮箱未填写入职日期入职日期未设置已入职时长入职日期未设置",
+        "orgText": "部门公司层职位Display title直属上级无"
       }
     },
     {
-      "check": "the employee page has no horizontal document overflow at 1440",
+      "check": "the employee page has no horizontal document overflow at 390x844",
       "pass": true,
       "evidence": {
         "overflow": false,
-        "w": 1440
+        "w": 390,
+        "h": 844
+      }
+    },
+    {
+      "check": "the own employment rows stay de-duplicated at 390x844",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "fMY WORKSPACEfounderDisplay title联系电话13900000001邮箱未填写入职日期入职日期未设置已入职时长入职日期未设置",
+        "orgText": "部门公司层职位Display title直属上级无"
+      }
+    },
+    {
+      "check": "the employee page has no horizontal document overflow at 1440x900",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "w": 1440,
+        "h": 900
+      }
+    },
+    {
+      "check": "the own employment rows stay de-duplicated at 1440x900",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "fMY WORKSPACEfounderDisplay title联系电话13900000001邮箱未填写入职日期入职日期未设置已入职时长入职日期未设置",
+        "orgText": "部门公司层职位Display title直属上级无"
+      }
+    },
+    {
+      "check": "the employee page has no horizontal document overflow at 390x600",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "w": 390,
+        "h": 600
+      }
+    },
+    {
+      "check": "the own employment rows stay de-duplicated at 390x600",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "fMY WORKSPACEfounderDisplay title联系电话13900000001邮箱未填写入职日期入职日期未设置已入职时长入职日期未设置",
+        "orgText": "部门公司层职位Display title直属上级无"
       }
     }
   ]
