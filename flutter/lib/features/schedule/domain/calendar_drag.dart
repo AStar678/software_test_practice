@@ -20,16 +20,16 @@ class CalendarDragPreview {
   final CompanyDate? endDate;
 
   Map<String, Object?> payload(String reason) => {
-        'allDay': allDay,
-        if (allDay) ...{
-          'startDate': startDate?.iso,
-          'dueDate': endDate?.iso,
-        } else ...{
-          'startAt': startAt?.toUtc().toIso8601String(),
-          'dueAt': dueAt?.toUtc().toIso8601String(),
-        },
-        'reason': reason,
-      };
+    'allDay': allDay,
+    if (allDay) ...{
+      'startDate': startDate?.iso,
+      'dueDate': endDate?.iso,
+    } else ...{
+      'startAt': startAt?.toUtc().toIso8601String(),
+      'dueAt': dueAt?.toUtc().toIso8601String(),
+    },
+    'reason': reason,
+  };
 
   String label(CompanyTimeZone zone) {
     if (allDay) {
@@ -54,7 +54,11 @@ class CalendarDragCalculator {
       task.canReschedule &&
       task.canEditField('startAt');
 
-  static CalendarDragPreview? monthMove(TaskRecord task, CompanyDate grabDay, CompanyDate targetDay) {
+  static CalendarDragPreview? monthMove(
+    TaskRecord task,
+    CompanyDate grabDay,
+    CompanyDate targetDay,
+  ) {
     if (!canReschedule(task)) return null;
     final delta = targetDay.differenceInDays(grabDay);
     if (delta == 0) return null;
@@ -78,7 +82,11 @@ class CalendarDragCalculator {
     );
   }
 
-  static CalendarDragPreview? monthResizeStart(TaskRecord task, CompanyDate grabDay, CompanyDate targetDay) {
+  static CalendarDragPreview? monthResizeStart(
+    TaskRecord task,
+    CompanyDate grabDay,
+    CompanyDate targetDay,
+  ) {
     if (!canReschedule(task)) return null;
     final delta = targetDay.differenceInDays(grabDay);
     if (delta == 0) return null;
@@ -98,7 +106,11 @@ class CalendarDragCalculator {
     return CalendarDragPreview(allDay: false, startAt: next, dueAt: due);
   }
 
-  static CalendarDragPreview? monthResizeEnd(TaskRecord task, CompanyDate grabDay, CompanyDate targetDay) {
+  static CalendarDragPreview? monthResizeEnd(
+    TaskRecord task,
+    CompanyDate grabDay,
+    CompanyDate targetDay,
+  ) {
     if (!canReschedule(task)) return null;
     final delta = targetDay.differenceInDays(grabDay);
     if (delta == 0) return null;
@@ -118,7 +130,11 @@ class CalendarDragCalculator {
     return CalendarDragPreview(allDay: false, startAt: start, dueAt: next);
   }
 
-  static bool dayAxisEligible(TaskRecord task, CompanyDate day, {CompanyTimeZone? zone}) {
+  static bool dayAxisEligible(
+    TaskRecord task,
+    CompanyDate day, {
+    CompanyTimeZone? zone,
+  }) {
     if (!canReschedule(task) || task.allDay) return false;
     final start = task.startAt;
     final due = task.dueAt;
@@ -130,14 +146,26 @@ class CalendarDragCalculator {
     return true;
   }
 
-  static CalendarDragPreview? dayMove(TaskRecord task, CompanyDate day, int hourDelta, {CompanyTimeZone? zone}) =>
-      _dayAdjust(task, day, hourDelta, CalendarDragMode.move, zone: zone);
+  static CalendarDragPreview? dayMove(
+    TaskRecord task,
+    CompanyDate day,
+    int hourDelta, {
+    CompanyTimeZone? zone,
+  }) => _dayAdjust(task, day, hourDelta, CalendarDragMode.move, zone: zone);
 
-  static CalendarDragPreview? dayResizeStart(TaskRecord task, CompanyDate day, int hourDelta, {CompanyTimeZone? zone}) =>
-      _dayAdjust(task, day, hourDelta, CalendarDragMode.start, zone: zone);
+  static CalendarDragPreview? dayResizeStart(
+    TaskRecord task,
+    CompanyDate day,
+    int hourDelta, {
+    CompanyTimeZone? zone,
+  }) => _dayAdjust(task, day, hourDelta, CalendarDragMode.start, zone: zone);
 
-  static CalendarDragPreview? dayResizeEnd(TaskRecord task, CompanyDate day, int hourDelta, {CompanyTimeZone? zone}) =>
-      _dayAdjust(task, day, hourDelta, CalendarDragMode.end, zone: zone);
+  static CalendarDragPreview? dayResizeEnd(
+    TaskRecord task,
+    CompanyDate day,
+    int hourDelta, {
+    CompanyTimeZone? zone,
+  }) => _dayAdjust(task, day, hourDelta, CalendarDragMode.end, zone: zone);
 
   static CalendarDragPreview? _dayAdjust(
     TaskRecord task,
@@ -155,7 +183,15 @@ class CalendarDragCalculator {
     final tz = zone ?? CompanyTimeZone.fallback;
     final dayStart = tz.dayStart(day);
     final dayEnd = tz.nextDayStart(day);
-    if (nextStart.isBefore(dayStart) || nextDue.isAfter(dayEnd) || nextStart.isAfter(nextDue)) return null;
-    return CalendarDragPreview(allDay: false, startAt: nextStart, dueAt: nextDue);
+    if (nextStart.isBefore(dayStart) ||
+        nextDue.isAfter(dayEnd) ||
+        nextStart.isAfter(nextDue)) {
+      return null;
+    }
+    return CalendarDragPreview(
+      allDay: false,
+      startAt: nextStart,
+      dueAt: nextDue,
+    );
   }
 }

@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pandora_employee/core/router/navigation_targets.dart';
 import 'package:pandora_employee/core/router/read_context.dart';
 import 'package:pandora_employee/features/approvals/presentation/approvals_pages.dart';
-import 'package:pandora_employee/features/notifications/presentation/notification_task_page.dart';
+import 'package:pandora_employee/features/notifications/presentation/notification_detail_page.dart';
 import 'package:pandora_employee/features/shell/destination_pages.dart';
 import 'package:pandora_employee/features/tasks/presentation/task_detail_page.dart';
 import 'package:pandora_employee/features/work_logs/presentation/work_logs_page.dart';
@@ -135,8 +135,18 @@ void main() {
     expect(find.byTooltip('删除日志'), findsNothing);
     expect(find.text('评论（0）'), findsOneWidget);
 
-    await pump(tester, FakeBackend(), const NotificationTaskPage(notificationId: 'n1'));
-    expect(find.textContaining('不提供评论'), findsOneWidget);
+    final historyBackend = FakeBackend();
+    historyBackend.on('GET', '/notifications/n1/task', (request) async => FakeResponse({
+          'taskId': 't-history',
+          'title': '历史任务',
+          'description': '安全摘要',
+          'readonly': true,
+          'historical': true,
+          'accessRevoked': false,
+          'executionState': 'done',
+        }));
+    await pump(tester, historyBackend, const HistoricalNotificationTaskPage(notificationId: 'n1'));
+    expect(find.textContaining('此页无评论'), findsOneWidget);
     expect(find.text('评论（0）'), findsNothing);
   });
 

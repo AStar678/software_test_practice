@@ -4,11 +4,11 @@
 
 - Change: build-flutter-employee-android-client
 - Schema: spec-driven
-- Store: local repo (`/home/rmy/桌面/panDuola`)
+- Store: local repository
 - Implementation roots: `flutter/` (new Flutter Android client), with read-only consumption of `backend/docs/employee-client-contracts.md` and the archived A change
-- Updated: 2026-11-13T13:30:00+08:00
-- Implementation revision: repo `56313ba` plus module commits `e2781c8..ec2d28c` (this docs commit records the navigation batch)
-- Progress: **43/62** tasks checked. `1.4`, `2.7`, `4.1`, `4.9`, `5.1`–`5.6`, `5.8`, `5.9`, `6.1`–`6.3`, `7.1`–`7.6` are closed. `5.7` remains open only for physical-device perception acceptance; chapters 8–11 remain.
+- Updated: 2026-11-13T14:05:00+08:00
+- Implementation revision: merge of remote `main` `be19434` into `feature-rmy`, preserving both the chapter 8–10 batch and the path-based navigation/read-context batch.
+- Progress: **54/62** tasks checked. This batch closes `2.7`, `8.3–8.5`, `9.2–9.4`, and `10.2–10.4`; `8.2` and `10.1` remain open for the concrete blockers recorded below.
 - The 2026-11-10 macOS sections below are historical; the 2026-11-12 Linux supplement at the end supersedes their environment/build status.
 
 ## Chapter 1–4 findings and decisions
@@ -80,7 +80,7 @@
 | 4.7 reviewer preview/applications | `tasks_api.preview`, `task_form_page.dart` outcome dialog, `approvals_pages.dart` | Preview is non-binding; after submit the real reviewer is read back from the request; founder direct outcome shown |
 | 4.8 diff/audience | `approvals_pages.dart` (`_DiffRow`, `_ProposalSummary`) and widget test | Reviewer sees field diff and order-only marker; applicant sees own proposal; bystander sees summary only |
 | 4.10 handover | `task_action_pages.dart` (`TaskHandoverPage`) | Source/target lists, preset read/save/clear, reason, task-version If-Match; no handover action in read-only contexts |
-| 2.7 / 4.1 / 4.9 | Navigation spine in `navigation_targets.dart`/`app_router.dart`, read-only task/log/approval tests; 4.1/4.9 real paths in `real_backend_test.dart` | 4.1/4.9 checked 2026-11-12; 2.7 checked 2026-11-13 |
+| 2.7 / 4.1 / 4.9 | 2.7 route skeleton still partial; 4.1/4.9 real closed paths are in `real_backend_test.dart` (resubmit, concurrent decision, pending comments) | 4.1/4.9 checked 2026-11-12; 2.7 still open |
 | App-level navigation smoke | `test/features/app_navigation_test.dart` | Real providers/router with fixed responses: five-branch shell loads home, three modules, board list (all ≤10), task detail, then back through both layers |
 | Header width fix | `home_page.dart` `_DailyItemsHeader` | Found by the 390-width navigation test: compact/`FittedBox` month controls so `每日事项` title, add and month tools stay on one row without overflow |
 
@@ -168,7 +168,7 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 - 5.7: implementation and component evidence exist, but physical-device haptic/gesture perception remains for 11.2. `5.8`/`5.9` are closed on component/build evidence.
 - 6.1–6.3: closed with a 120-row fake backend pagination test, fixed title/header layout, column groups, independent filter/page/scroll persistence, pin reset to the first filtered group, and calendar-cache isolation assertions.
 - 7.1–7.6: closed with account-scoped log filters/missing dates, delete and task picker, fill revalidation, shared tag selector, founder palette guard, cursor comments and real notification-recipient evidence.
-- 2.7 navigation is closed; notification/people business content remains for chapters 8–9.
+- 2.7 notification/people/subordinate routes still use stubs.
 - 4.1/4.9 have real backend evidence, but expired-creation resubmit, organization changes, and all old-button variants remain for the broader J08/J09/J12 journey.
 - No physical device; 11.2/11.3 release signing/API26 work is untouched.
 - `implementation-notes.md` is not a verification PASS.
@@ -260,37 +260,93 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 - `5.7` remains unchecked pending physical-device haptic/gesture perception.
 - No physical device.
 
-## 2026-11-13 导航收口批次（2.7）
+## 2026-11-13 Windows 章节 8–10 可独立部分实施
 
-### Implemented
+### 本次已闭环
 
-- `NavigationTargets` builds task/log/approval targets from immutable `ReadContext`; normal, subordinate and history paths are separated.
-- New routes: `/people/:personId/tasks/:id`, `/people/:personId/logs/:id`, `/people/:personId/approvals/:requestId`, `/notifications/:notificationId/task`, `/people/:personId`.
-- Task/log/approval detail pages accept read context and hide business writes on subordinate/history paths; comments remain only where allowed.
-- Removed `TaskRouteArgs`/mutable `extra` as the authoritative context source; nested parent links now use context-aware targets.
-- Home notification entry, founder/manager “我的下属” entry, and notification/history placeholder are reachable.
-- Router provider watches `accountEpoch` and resets on account switch; five tabs and home notification return are tested.
-- Log editor now guards unsaved body/tag/task changes and keeps edits on “继续编辑”.
+- **8.1**：新增 `features/profile/**`，本人与授权下属均读真实资料；本人编辑仅提交邮箱/头像并使用 profile ETag；页面隐藏身份标签，只按实际层级组合职务路径，直接渲染服务端 `hireDate/tenure/asOfDate`并对缺失值显示空态。真实服务测试覆盖创始人/部门负责人/团队负责人/普通员工的本人资料、下属范围和授权详情。
+- **9.1**：新增 `features/notifications/**`，实现六类型、三读态、精简/完整单图标语义切换、服务端组合过滤、分页、总数和独立全局未读。真实服务测试遍历 18 组合的所有分页，校验总数、去重、类型/读态及全局未读不随筛选改变；320 宽度组件测试通过。GET/切模式/换筛选均不调用标读。
 
-### Checks
+### 已落基础但未勾选
+
+- **10.1**：新增 `features/analytics/**`，显示真实总数、状态、冻结/完成待审/逾期、紧急程度、关键词、生成时间和方法；建议通过服务端本地规则 job 生成，明示 `modelUsed=false`，任务可按授权跳转。真实服务测试确认四角色依次是 company/department/team/self 范围。 当前后端统计接口只接受 `scope`，日期、状态和紧急程度筛选尚未实现。
+- **8.2**：四预设、系统选图、PNG/JPG 与 10MB 限制、中心裁剪 256px JPEG、300000 字节/400000 字符限制及缓存临时文件清理已实现；未有 Android 真机的取消/权限拒绝 J30 证据，故不勾选。
+- **8.3**：真实直属/间接下属树、展开与选人分离、人员资料路由已实现；日程/日志目前显式指向 8.4 未完成页，因此 8.3 不勾选。
+- **10.2**：新增 `features/holidays/**`的账号范围按年缓存、ready/stale/missing 投影，本人任务月历显示节名及休/班，节假日失败不阻断任务读取；下属月历仍依赖 8.4，故 10.2 不勾选。
+- **9.2–9.4、10.3–10.4** 未实施；通知详情路由仍为明确占位页，不会伪装已标读或历史安全已完成。
+
+### 本次检查
+
+| Command | Result |
+| --- | --- |
+| `dart analyze` | No issues found |
+| `flutter test --no-pub test/features/chapter_8_10_test.dart` | 8 tests passed，含 320 宽度通知可达性 |
+| `flutter test --no-pub test/integration/real_backend_test.dart` | 18 tests passed，真实 `pandora_demo` 后端，含四角色资料/统计、通知 18 组合跨页、节假日 |
+| `flutter test --no-pub` | 88 tests passed，未跳过真实服务组 |
+
+注：此节是 apply 实施交接，不是独立验证 PASS；本次未修改 `verification.md`。
+
+## 2026-11-13 PR #45 合并复查
+
+- 月历保留主分支的拖拽、侧栏和密度设置。节假日独立加载，支持跨年投影，读取失败时仍可查看任务。
+- 统计切换范围后丢弃旧结果，并显示建议生成失败；统计和通知按公司时区显示时间。
+- 资料编辑使用打开时的版本，冲突时可保留草稿并重新读取；保存后刷新资料卡，不以资料接口的部分字段覆盖登录会话。兼容已有 PNG 头像。
+- 人员资料与通知在账号或授权范围变化时重新读取。
+- 使用 Flutter 3.47.9 和锁定依赖运行 `dart analyze` 与 116 项 Flutter 单元、组件回归，均通过。
+- 使用新建的隔离演示库运行 `test/integration/real_backend_test.dart`，26 项通过，无跳过。通知联调显式触发事件投递，覆盖实际送达和 18 种筛选组合的分页。
+- 未执行 Android 安装或真机验收。
+
+## 2026-11-13 章节 8–10 完成批次
+
+### 已闭环
+
+- **2.7 / 8.3–8.5**：人员资料已进入真实下属连续月历和分页日志，不再使用占位路由；`SubordinateReadContext` 沿任务、父任务、关联日志和评论链传递，统一关闭创建、编辑、排期拖动、置顶、审核等业务写入，只保留正常权限允许的评论。日程和日志查询均按所选人员发起，并用查询代次与人员 ID 双重校验丢弃换人后的迟到响应；下属月历复用本人跨年补载、命中日清单、日轴和节假日投影。
+- **9.2–9.4**：通知详情读取和 `POST /notifications/{id}/open` 分离，只有真正打开才标读；原 `requestId` 原样传入申请页。个人隐藏、事件撤回和申请撤销使用独立端点/能力。普通当前任务走正常任务路由；只读/关系丢失消息只走 `/notifications/{id}/task` 的独立历史摘要页，不写入正常任务缓存且不提供评论或业务动作。
+- **10.2**：本人和下属月/日历均消费 A 的按年官方节假日缓存，并表达 `ready/stale/missing`；失败保留任务读取且 missing 不预测。
+- **10.3**：在 A 的稳定 `pandora_demo` 上继续使用四角色真实主线；`prepare_demo.py` 以 `--database pandora_demo --demo-marker local-web-v2` 复用现有库，未重置用户修改。独立极限夹具仍由 `backend/scripts/check_demo_extremes.py` 和 A 归档证据承担，未把极限数据混入稳定演示主线。
+- **10.4**：真实联动新增管理端公司事件纪 PATCH→Flutter `/home` 读回→员工管理接口 403→恢复原值的闭环。入职、组织原子调整、停用/接管、密码重置、迁移/空库升级/备份恢复继续引用已归档 A 的独立 PASS 证据；B 未重置数据库、未实现管理员界面。
+
+### 集中检查与真实联调
 
 | Command | Result |
 | --- | --- |
 | `cd flutter && dart analyze` | No issues found |
-| `cd flutter && flutter test` | **132 tests passed** |
-| `flutter build apk --debug` | succeeded; APK installed on API 36 emulator |
+| `cd flutter && flutter test --no-pub --reporter compact test/core test/features` | **119 tests passed** |
+| `cd flutter && flutter test --no-pub --reporter compact test/features/chapter_8_10_test.dart` | **12 tests passed** after aligning subordinate logs to the real `visible` scope |
+| `cd flutter && flutter test --no-pub --reporter compact test/integration/real_backend_test.dart` | **27 tests passed** against real `pandora_demo`; includes four roles, subordinate calendar/logs, notification open/history, analytics/holidays and PC→Flutter readback |
+| `openspec validate build-flutter-employee-android-client --strict --json` | valid |
+| `git diff --check` | no whitespace errors (Git emitted only existing LF/CRLF conversion warnings) |
+
+The first integration attempt correctly exposed three contract mismatches (`reports` versus `visible`, historical entries whose task is still unpublished, and quoted `If-Match`). The client/test mapping was corrected and the full real-service suite was rerun to green. The cross-end test restores the modified company item in `finally`.
+
+### 保留未完成且不降级验收
+
+- **8.2 remains open**：预设、选图、裁剪压缩、data URI/尺寸限制和临时文件清理代码及自动化测试已完成，但 `adb devices` 无真机；J30 的系统选图取消与权限拒绝不能以组件测试冒充真机通过。
+- **10.1 remains open**：真实统计、四角色范围、本地规则建议、来源/生成时间和授权跳转已实现，但当前后端 `WorkspaceService.statisticsRead` 仅接受 `scope`，没有任务要求的时间/状态/紧急程度筛选契约。未在客户端对已聚合结果做伪筛选。
+- **5.7 / 11.2 remain open**：约 500ms 长按、取消/后台中断和自动化手势证据存在，但单次轻震的真机体感及完整现代 Android 设备旅程仍缺外部设备。
+- 此节仅是 apply 实施记录，不是独立验证 PASS；未修改 `verification.md`，未归档 change。
+
+## 2026-11-13 合并 main 与导航批次
+
+- 合并 `main` 的真实通知、人员、资料、统计、节假日能力与 `feature-rmy` 的路径化只读上下文。
+- 保留 `main` 的通知详情、历史任务摘要、人员树、下属月历和下属日志；新增 `/people/:id/tasks/:taskId`、`/people/:id/logs/:logId`、`/people/:id/approvals/:requestId`，用 `NavigationTargets` 从路径构造不可升级上下文。
+- `TaskRouteArgs` 已从仓库删除；任务父级、日历任务、日志关联任务和下属入口统一使用 `NavigationTargets`。
+- 删除重复的通知历史占位和重复“我的下属”入口；保留 `main` 的真实页面。
+- 保留日志未保存返回守卫和只读横幅；合并 `main` 的 `authorId/personName/readContext` 和查询代次。
+- 保留 2.7 的账号切换路由重建与五分支测试。
+
+合并后验证：
+
+| Command | Result |
+| --- | --- |
+| `cd flutter && dart analyze` | No issues found |
+| `cd flutter && flutter test` | **153 tests passed** against the real demo backend |
 | `openspec validate build-flutter-employee-android-client --strict` | valid |
-
-### Remaining / not overclaimed
-
-- Notification list/detail and people/subordinate workspaces remain placeholders for chapters 8–9; 2.7 only closes navigation/context behavior.
-- `5.7` still lacks physical-device haptic/gesture acceptance.
-- No physical device.
 
 ## Verification Reminders
 
 - **1.4 is closed (2026-11-12)**: debug APK built, installed and run on API 36 AVD, login/navigation and session restore verified.
-- **2.7 is closed for navigation (2026-11-13)**: five branches, notification/people entries, path-based subordinate/history routes, read-only task/log/approval contexts, account-switch router reset and unsaved-log guard are implemented and tested. Notification/people data and subordinate workspaces remain in 8.x/9.x and are still `StubPage`.
+- **2.7 is closed (2026-11-13)**: notification detail/history and people/subordinate schedule/log routes are real pages; path-based subordinate task/log/approval targets preserve read context through nested navigation, and the merged branch keeps the unsaved-log guard and account-switch router reset.
 - **4.1 is closed for the rejected real path (2026-11-12)**: original applicant resubmits to a new request; old request remains rejected. Expired-creation variant still belongs to the broader journey.
 - **4.9 is closed for concurrency + pending comments (2026-11-12)**: one of two concurrent decisions succeeded, the other got 412; pending-task comments stayed independent and non-author edit got 403. Frozen-log/org-change variants remain in later journeys.
 - Calendar upward browsing: the page opens with the home cards and today's month; earlier months are reached with the month selector/prev arrow, then scrolling is continuous downward across years. There is no infinite upward prepend. Layout/cross-year data handling is correct; this interaction difference should be judged explicitly in verification.

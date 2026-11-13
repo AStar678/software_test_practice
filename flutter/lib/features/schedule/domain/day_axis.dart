@@ -27,7 +27,8 @@ class DayAxisEntry {
   final int lane;
 
   bool get zeroDuration => startMinutes == endMinutes;
-  String get color => task.tags.isEmpty ? '#ffe1ea' : (task.tags.first.color ?? '#ffe1ea');
+  String get color =>
+      task.tags.isEmpty ? '#ffe1ea' : (task.tags.first.color ?? '#ffe1ea');
 }
 
 /// 日轴纯布局：真实 00:00—24:00、全天/整日覆盖分类和碰撞分栏。
@@ -51,22 +52,35 @@ class DayAxisLayout {
     required Iterable<TaskRecord> tasks,
     required DayAxisMode mode,
     CompanyTimeZone? zone,
+    bool allowDrag = true,
   }) {
     final tz = zone ?? CompanyTimeZone.fallback;
     final entries = <DayAxisEntry>[];
     for (final task in tasks) {
-      final item = CalendarTask(task: task, pendingProjection: task.pending && task.pendingSchedule != null);
+      final item = CalendarTask(
+        task: task,
+        pendingProjection: task.pending && task.pendingSchedule != null,
+      );
       if (!item.covers(day)) continue;
       final pendingProjection = item.pendingProjection;
-      final proposalAllDay = pendingProjection && task.pendingSchedule?['allDay'] == true;
+      final proposalAllDay =
+          pendingProjection && task.pendingSchedule?['allDay'] == true;
       final start = _start(item);
       final due = _due(item);
-      final allDay = proposalAllDay || task.allDay || _isWholeDay(start, due, day, tz);
-      final clipped = !allDay && (start == null || due == null || start.isBefore(tz.dayStart(day)) || due.isAfter(tz.nextDayStart(day)));
+      final allDay =
+          proposalAllDay || task.allDay || _isWholeDay(start, due, day, tz);
+      final clipped =
+          !allDay &&
+          (start == null ||
+              due == null ||
+              start.isBefore(tz.dayStart(day)) ||
+              due.isAfter(tz.nextDayStart(day)));
       final minutes = allDay || start == null || due == null
           ? (startMinutes: 0, endMinutes: 24 * 60)
           : ScheduleCoverage.visibleMinutes(start, due, day, tz);
-      final drag = !pendingProjection &&
+      final drag =
+          allowDrag &&
+          !pendingProjection &&
           task.published &&
           !task.pending &&
           !task.frozen &&
@@ -96,7 +110,13 @@ class DayAxisLayout {
       return start != 0 ? start : a.task.id.compareTo(b.task.id);
     });
     if (mode == DayAxisMode.horizontal) {
-      return DayAxisLayout(day: day, mode: mode, entries: entries, allDay: const [], timedLanes: const []);
+      return DayAxisLayout(
+        day: day,
+        mode: mode,
+        entries: entries,
+        allDay: const [],
+        timedLanes: const [],
+      );
     }
     final allDayEntries = entries.where((entry) => entry.allDay).toList();
     final timed = entries.where((entry) => !entry.allDay).toList();
@@ -127,7 +147,13 @@ class DayAxisLayout {
             lane: index,
           ),
     ];
-    return DayAxisLayout(day: day, mode: mode, entries: [...allDayEntries, ...placed], allDay: allDayEntries, timedLanes: lanes);
+    return DayAxisLayout(
+      day: day,
+      mode: mode,
+      entries: [...allDayEntries, ...placed],
+      allDay: allDayEntries,
+      timedLanes: lanes,
+    );
   }
 
   static DateTime? _start(CalendarTask item) {
@@ -144,8 +170,14 @@ class DayAxisLayout {
     return item.task.dueAt;
   }
 
-  static bool _isWholeDay(DateTime? start, DateTime? due, CompanyDate day, CompanyTimeZone zone) {
+  static bool _isWholeDay(
+    DateTime? start,
+    DateTime? due,
+    CompanyDate day,
+    CompanyTimeZone zone,
+  ) {
     if (start == null || due == null) return false;
-    return !start.isAfter(zone.dayStart(day)) && !due.isBefore(zone.nextDayStart(day));
+    return !start.isAfter(zone.dayStart(day)) &&
+        !due.isBefore(zone.nextDayStart(day));
   }
 }

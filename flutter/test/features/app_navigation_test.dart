@@ -46,6 +46,28 @@ void main() {
         }));
     backend.on('GET', '/tasks', (request) async => FakeResponse({'items': [], 'total': 0, 'nextCursor': null}));
     backend.on('GET', '/work-logs', (request) async => FakeResponse({'items': [], 'total': 0, 'nextOffset': null}));
+    backend.on('GET', '/notifications', (request) async => FakeResponse({'items': [], 'total': 0, 'nextOffset': null, 'unreadCount': 0}));
+    backend.on('GET', '/me/profile', (request) async => FakeResponse({
+          'id': 'u1',
+          'displayName': '亚里士多德',
+          'role': 'employee',
+          'accountType': 'employee',
+          'organizationTimeZone': 'Asia/Shanghai',
+        }));
+    backend.on('GET', '/analytics/task-summary', (request) async => FakeResponse({
+          'total': 0,
+          'todo': 0,
+          'doing': 0,
+          'done': 0,
+          'frozen': 0,
+          'pendingComplete': 0,
+          'overdue': 0,
+          'priority': {'urgent': 0, 'high': 0, 'medium': 0, 'low': 0},
+          'scope': 'self',
+          'scopeLabel': '本人',
+          'method': 'current_effective_tasks',
+          'keywords': [],
+        }));
     backend.on('GET', '/daily-items', (request) async => FakeResponse({
           'items': [],
           'total': 0,
@@ -124,7 +146,7 @@ void main() {
 
     await tester.tap(find.byTooltip('通知'));
     await tester.pumpAndSettle();
-    expect(find.text('通知'), findsWidgets);
+    expect(find.textContaining('通知'), findsWidgets);
     await tester.tap(find.byTooltip('返回'));
     await tester.pumpAndSettle();
     expect(find.text('事件纪'), findsOneWidget);
@@ -148,7 +170,7 @@ void main() {
 
     await tester.tap(find.byTooltip('通知'));
     await tester.pumpAndSettle();
-    expect(find.text('通知'), findsWidgets);
+    expect(find.textContaining('通知'), findsWidgets);
     await session.logout();
     await tester.pumpAndSettle();
     expect(find.text('潘多拉'), findsWidgets, reason: '退出后进入登录页');
@@ -165,7 +187,7 @@ void main() {
     expect(find.textContaining('日志 ·'), findsOneWidget);
     await tester.tap(find.text('统计'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('统计功能'), findsOneWidget);
+    expect(find.textContaining('统计'), findsWidgets);
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
     expect(find.text('亚里士多德'), findsWidgets);

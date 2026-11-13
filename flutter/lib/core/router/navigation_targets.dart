@@ -30,9 +30,10 @@ class NavigationTargets {
 
   static SubordinateReadContext subordinateFromRoute(
     Map<String, String> pathParameters,
-    Map<String, String> queryParameters,
-  ) {
-    final personId = pathParameters['personId'] ?? '';
+    Map<String, String> queryParameters, {
+    String personParameter = 'personId',
+  }) {
+    final personId = pathParameters[personParameter] ?? '';
     final personName = queryParameters['name'];
     return SubordinateReadContext(
       personId: personId,
