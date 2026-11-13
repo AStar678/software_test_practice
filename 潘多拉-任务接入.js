@@ -453,16 +453,20 @@
     if (!d) return null;
     const before=scheduleDraftText(d.oldStart,d.oldDue);
     const after=scheduleDraftText(d.newStart,d.newDue);
+    const outside=!!d.boundaryDay && !!P.scheduleWithinDay && !P.scheduleWithinDay(d.newStart,d.newDue,d.boundaryDay);
     return {title:'确认排期调整',draftKind:'schedule',rebuild:scheduleConfirmationView,
       body:'<div class="kv">'+kv('原排期',before)+kv('新排期',after)+'</div>'+
         (d.stale?'<div class="callout reject">任务版本已变化，请取消后重新调整。</div>':'')+
+        (outside?'<div class="callout reject">调整后的排期超出当天 00:00–24:00，请取消后重新调整。</div>':'')+
         textField('sc-reason','调整原因（必填，最多500字）',d.reason,500,false)+errorBox('sc-error'),
-      foot:withBack('<button type="button" class="btn primary" data-action="p-save-schedule"'+(d.stale?' disabled':'')+'>提交排期</button>')};
+      foot:withBack('<button type="button" class="btn primary" data-action="p-save-schedule"'+(d.stale||outside?' disabled':'')+'>提交排期</button>')};
   }
   function saveScheduleDraft() {
     return P.busy(async function () {
       const d=scheduleDraft,field=document.getElementById('sc-reason');
       if (!d || !field || d.epoch!==P.epoch || d.stale) throw new Error('排期草稿已失效，请重新调整。');
+      if (d.boundaryDay && P.scheduleWithinDay && !P.scheduleWithinDay(d.newStart,d.newDue,d.boundaryDay))
+        throw new Error('调整后的排期超出当天 00:00–24:00，不能提交。');
       d.reason=field.value;
       const body={command:'reschedule',allDay:!!d.allDay,reason:required(d.reason,'调整原因',500)};
       if (d.allDay) { body.startDate=P.companyDateKey(d.newStart);body.dueDate=P.companyDateKey(d.newDue); }
@@ -490,9 +494,12 @@
     },'sc-error');
   }
   // A calendar drop has a separate schedule-only draft and confirmation sheet.
-  P.openScheduleChange = async function (id, start, due, rowVersion) {
+  P.openScheduleChange = async function (id, start, due, rowVersion, boundary) {
     if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     if (!Number.isFinite(+start) || !Number.isFinite(+due) || due<start) { P.notice('截止不得早于开始。');return; }
+    if (boundary && boundary.dayKey && P.scheduleWithinDay && !P.scheduleWithinDay(start,due,boundary.dayKey)) {
+      P.notice('调整后的排期超出当天 00:00–24:00，本次调整未保存。');return;
+    }
     return P.busy(async function () {
       const mark=session(),raw=await P.request('/tasks/'+encodeURIComponent(id));
       if (!stillHere(mark)) return;
@@ -500,6 +507,7 @@
       scheduleDraft={id,epoch:P.epoch,mark,slot:newSlot('schedule'),rowVersion,
         oldStart:new Date(raw.startAt),oldDue:new Date(raw.dueAt),
         newStart:new Date(start),newDue:new Date(due),allDay,reason:'',attempted:false,
+        boundaryDay:boundary && boundary.dayKey || null,
         stale:raw.rowVersion!==rowVersion || !raw.canReschedule || raw.frozen || raw.executionState==='done'};
       openSheet(scheduleConfirmationView());
     });

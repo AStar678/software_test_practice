@@ -25,7 +25,7 @@ import static cn.pandora.common.Db.*;
 public class DemoSeed implements ApplicationRunner {
     public static final int ORDER=0;
     private static final String ORG="10000000-0000-0000-0000-000000000001";
-    private static final int MANIFEST=2;
+    private static final int MANIFEST=3;
     private final Db db;
     private final TaskService tasks;
     private final WorkspaceService workspace;
@@ -95,26 +95,26 @@ public class DemoSeed implements ApplicationRunner {
         String producerTitle=unit("positions","title-producer","制片",null);
         String writerTitle=unit("positions","title-writer","编剧",null);
         String hash=AuthService.PASSWORDS.encode(password);
-        employee("upper","苏景昕","13800000001","founder",null,null,founderTitle,hash);
+        employee("upper","苏景昕","13800000001","founder",null,null,founderTitle,hash,"2019-03-04");
         String story=unit("departments","department-story","故事部",null);
         String production=unit("departments","department-production","制作部",null);
-        employee("middle","苏格拉底","13800000002","department_head",story,null,departmentTitle,hash);
-        employee("market","毕达哥拉斯","13800000003","department_head",production,null,departmentTitle,hash);
+        employee("middle","苏格拉底","13800000002","department_head",story,null,departmentTitle,hash,"2020-07-16");
+        employee("market","毕达哥拉斯","13800000003","department_head",production,null,departmentTitle,hash,"2020-09-21");
         String storyBoard=unit("teams","team-story-board","分镜组",story);
         String script=unit("teams","team-script","剧本组",story);
         String keyArt=unit("teams","team-key-art","原画组",production);
         String compositing=unit("teams","team-compositing","合成组",production);
-        employee("product-head-1","柏拉图","13800000011","team_head",story,storyBoard,headTitle,hash);
-        employee("product-head-2","芝诺","13800000012","team_head",story,script,headTitle,hash);
-        employee("market-head-1","泰勒斯","13800000021","team_head",production,keyArt,headTitle,hash);
-        employee("market-head-2","赫拉克利特","13800000022","team_head",production,compositing,headTitle,hash);
-        employee("employee","亚里士多德","13800000004","employee",story,storyBoard,employeeTitle,hash);
-        employee("colleague","欧几里得","13800000005","employee",story,storyBoard,employeeTitle,hash);
-        employee("marketing","阿基米德","13800000006","employee",production,keyArt,employeeTitle,hash);
-        employee("product-employee-1","巴门尼德","13800000031","employee",story,script,writerTitle,hash);
-        employee("product-employee-2","德谟克利特","13800000032","employee",story,script,writerTitle,hash);
-        employee("market-employee-1","普罗泰戈拉","13800000041","employee",production,compositing,producerTitle,hash);
-        employee("market-employee-2","高尔吉亚","13800000042","employee",production,compositing,producerTitle,hash);
+        employee("product-head-1","柏拉图","13800000011","team_head",story,storyBoard,headTitle,hash,"2021-11-02");
+        employee("product-head-2","芝诺","13800000012","team_head",story,script,headTitle,hash,"2022-01-10");
+        employee("market-head-1","泰勒斯","13800000021","team_head",production,keyArt,headTitle,hash,"2021-06-14");
+        employee("market-head-2","赫拉克利特","13800000022","team_head",production,compositing,headTitle,hash,"2022-04-25");
+        employee("employee","亚里士多德","13800000004","employee",story,storyBoard,employeeTitle,hash,"2023-05-18");
+        employee("colleague","欧几里得","13800000005","employee",story,storyBoard,employeeTitle,hash,"2023-08-07");
+        employee("marketing","阿基米德","13800000006","employee",production,keyArt,employeeTitle,hash,"2022-12-12");
+        employee("product-employee-1","巴门尼德","13800000031","employee",story,script,writerTitle,hash,"2023-02-20");
+        employee("product-employee-2","德谟克利特","13800000032","employee",story,script,writerTitle,hash,"2024-03-11");
+        employee("market-employee-1","普罗泰戈拉","13800000041","employee",production,compositing,producerTitle,hash,"2023-10-09");
+        employee("market-employee-2","高尔吉亚","13800000042","employee",production,compositing,producerTitle,hash,"2024-06-03");
         db.update("UPDATE organizations SET founder_employee_id=? WHERE id=?",stable("upper"),ORG);
         String adminId=stable("admin");
         db.update("INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'admin')",adminId,ORG);
@@ -122,10 +122,10 @@ public class DemoSeed implements ApplicationRunner {
         remember("admin","admin",adminId);
         refreshActors();
     }
-    private void employee(String key,String name,String phone,String kind,String dep,String team,String title,String hash) {
+    private void employee(String key,String name,String phone,String kind,String dep,String team,String title,String hash,String hireDate) {
         String employeeId=stable(key);
         db.update("INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'employee')",employeeId,ORG);
-        db.update("INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,email) VALUES(?,?,?,?,?,?,?)",employeeId,ORG,hash,name,phone,phone,key+"@demo.example.test");
+        db.update("INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,email,hire_date) VALUES(?,?,?,?,?,?,?,?)",employeeId,ORG,hash,name,phone,phone,key+"@demo.example.test",hireDate);
         db.update("INSERT INTO employee_placements(organization_id,employee_id,placement_type,department_id,team_id,position_id) VALUES(?,?,?,?,?,?)",ORG,employeeId,kind,dep,team,title);
         remember(key,"employee",employeeId);
     }
@@ -153,7 +153,7 @@ public class DemoSeed implements ApplicationRunner {
                     Map.of("title", companyItems[i][0], "body", companyItems[i][1]));
             remember("company-item-" + (i + 1), "home-item", s(item, "id"));
         }
-        for (String key : List.of("upper", "middle", "product-head-1", "employee", "colleague", "marketing")) {
+        for (String key : List.of("upper", "middle", "product-head-1", "employee")) {
             for (int offset = 0; offset < 3; offset++) {
                 var log = workspace.createLog(actors.get(key), Map.of("businessDate", today.minusDays(offset).toString(),
                         "body", "《星尘》制作日志：" + displayName(key) + " 同步第 " + (3 - offset) + " 天的分镜与合成进展。"));
@@ -171,12 +171,6 @@ public class DemoSeed implements ApplicationRunner {
             dailyItems.create(actors.get(key), Map.of("startDate", today.minusDays(3).toString(),
                     "endDate", today.minusDays(3).toString(), "body", "逾期事项：补齐上周的镜头备注。"));
         }
-        // Recreated slot retains its first creation instant. Another log demonstrates a real frozen row.
-        var deleted = db.one("SELECT * FROM work_logs WHERE author_id=? AND business_date=?", stable("colleague"), today.minusDays(1));
-        workspace.deleteLog(actors.get("colleague"), s(deleted, "id"), "\"" + n(deleted, "rowVersion") + "\"");
-        workspace.createLog(actors.get("colleague"), Map.of("businessDate", today.minusDays(1).toString(), "body", "删除后重建，首次创建时间保持不变。"));
-        db.update("UPDATE work_logs SET created_at=UTC_TIMESTAMP(6)-INTERVAL 25 HOUR WHERE author_id=? AND business_date=?", stable("marketing"), today.minusDays(2));
-
         String[][] leadTitles = {
                 {"第一幕分镜节奏", "第二幕转场设计", "第三幕高潮分镜", "角色表情走查", "镜头运动复盘", "分镜交接清单",
                         "第一幕粗剪反馈", "第二幕光影方向", "第三幕情绪曲线", "片头分镜", "片尾留白", "全片分镜归档"},
@@ -192,29 +186,48 @@ public class DemoSeed implements ApplicationRunner {
             String lead = leads[leadIndex];
             int count = "employee".equals(lead) ? 8 : 12;
             for (int i = 1; i <= count; i++) {
+                /* 每个主角既是创建者也是当前负责人，不能只用创建量证明本人工作；
+                   少量跨部门/带同组协作的任务保留真实共享关系。 */
                 List<String> owners = switch (lead) {
-                    case "upper" -> i % 3 == 0 ? List.of("middle", "product-head-1") : i % 2 == 0 ? List.of("product-head-1") : List.of("employee");
-                    case "middle" -> i % 2 == 0 ? List.of("product-head-1") : List.of("employee");
-                    case "product-head-1" -> List.of("employee");
-                    default -> List.of("employee");
+                    case "upper" -> i % 4 == 0 ? List.of("upper", "middle") : List.of("upper");
+                    case "middle" -> i % 4 == 0 ? List.of("middle", "product-head-1") : List.of("middle");
+                    case "product-head-1" -> i % 4 == 0 ? List.of("product-head-1", "employee") : List.of("product-head-1");
+                    default -> i % 4 == 0 ? List.of("employee", "colleague") : List.of("employee");
                 };
-                create(lead + "-" + i, lead, leadTitles[leadIndex][i - 1], owners,
-                        input(today.plusDays((i % 7) - 2), 9 + (i % 3), today.plusDays(2 + (i % 9)), 17 + (i % 2)), true);
+                var timing = i == 1 ? shortSchedule() :
+                        input(today.plusDays(1 + i % 5), 9 + i % 3, today.plusDays(1 + i % 5 + (i % 5 == 0 ? 1 : 0)), 17);
+                String task = create(lead + "-" + i, lead, leadTitles[leadIndex][i - 1], owners, timing, true);
+                if (i == 2) seedHistoricalSchedule(task, input(today.minusDays(2), 10, today.minusDays(1), 16));
             }
         }
+        /* 两种相互独立的个人置顶：日历置顶与表单置顶分别落在不同任务上，互不覆盖。 */
+        for (String lead : leads) {
+            String calendarPin = s(db.one("SELECT object_id FROM demo_seed_keys WHERE seed_key=?", "task-" + lead + "-1"), "objectId");
+            String tablePin = s(db.one("SELECT object_id FROM demo_seed_keys WHERE seed_key=?", "task-" + lead + "-2"), "objectId");
+            if (calendarPin != null) tasks.setPinned(actors.get(lead), calendarPin, true);
+            if (tablePin != null) tasks.setTablePinned(actors.get(lead), tablePin, true);
+        }
+        /* 真实父子拆解链：创始人 → 部门负责人 → 团队负责人 → 员工，逐级创建并由直属上级审核。 */
+        String chainParent = create("chain-parent", "upper", "《星尘》第一幕总交付", List.of("middle"), schedule(), true);
+        String chainMiddle = create("chain-middle", "middle", "第一幕分镜与配音拆解", List.of("product-head-1"), schedule(), true, chainParent);
+        String chainTeam = create("chain-team", "product-head-1", "分镜组镜头交付清单", List.of("employee"), schedule(), true, chainMiddle);
+        create("chain-leaf", "employee", "第一幕镜头台词标注", List.of("employee"), schedule(), true, chainTeam);
         String doing = create("doing", "middle", "第一幕合成镜头校对", List.of("employee", "colleague"), schedule(), true);
         command("employee", doing, Map.of("command", "progress", "progressNote", "第一轮校对完成，等待组长确认。"), true);
         String pending = create("pending-complete", "middle", "第二幕原画验收", List.of("employee"), schedule(), true);
         command("employee", pending, Map.of("command", "complete", "completionNote", "原画清单已核对，请审核。"), false);
-        String complete = create("completed", "employee", "片头字幕校对完成", List.of("employee"), schedule(), true);
+        String complete = create("completed", "employee", "片头字幕校对", List.of("employee"), schedule(), true);
         command("employee", complete, Map.of("command", "complete", "completionNote", "字幕已按终稿完成。"), true);
         String reopen = create("reopened", "employee", "预告片剪辑返工", List.of("employee"), schedule(), true);
         command("employee", reopen, Map.of("command", "complete", "completionNote", "首轮剪辑完成。"), true);
         var reopenBody = schedule(); reopenBody.put("command", "reopen"); reopenBody.put("reason", "补充片尾镜头，重新执行。");
         command("employee", reopen, reopenBody, true);
         for (String outcome : List.of("pending", "rejected", "withdrawn", "expired")) {
-            String task = create("creation-" + outcome, "employee", "新增镜头申请·" + switch (outcome) {
-                case "pending" -> "待审"; case "rejected" -> "已拒绝"; case "withdrawn" -> "已撤销"; default -> "已失效";
+            String task = create("creation-" + outcome, "employee", switch (outcome) {
+                case "pending" -> "第一幕新增航拍镜头申请";
+                case "rejected" -> "第二幕补拍镜头申请";
+                case "withdrawn" -> "片尾彩蛋镜头申请";
+                default -> "第三幕特效镜头申请";
             }, List.of("employee"), schedule(), false);
             var request = db.one("SELECT * FROM approval_requests WHERE task_id=?", task);
             if (outcome.equals("rejected")) decide(request, "reject", "product-head-1");
@@ -234,11 +247,11 @@ public class DemoSeed implements ApplicationRunner {
         refreshActors();
         command("colleague", takeover, Map.of("command", "change", "title", "接管后由新责任方维护第二幕", "reason", "接管后直接生效"), true);
         create("cross-department", "middle", "故事部与制作部联合评审", List.of("employee", "marketing"), schedule(), true);
-        create("creator-only", "employee", "仅创建不负责的片尾镜头", List.of("marketing"), schedule(), true);
+        create("creator-only", "employee", "片尾镜头由制作部负责", List.of("marketing"), schedule(), true);
         LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
         if (!monthEnd.isAfter(today)) monthEnd = today.plusMonths(1).withDayOfMonth(today.plusMonths(1).lengthOfMonth());
         create("cross-month", "upper", "跨月镜头排期", List.of("employee"), input(monthEnd.minusDays(1), 20, monthEnd.plusDays(1), 10), true);
-        String revoked = create("comment-revoked", "upper", "评论撤权边界镜头", List.of("employee"), schedule(), true);
+        String revoked = create("comment-revoked", "upper", "第一幕评论协作镜头", List.of("employee"), schedule(), true);
 
         String tag = stable("tag-focus");
         db.update("INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,'重点镜头','#F6D5D2')", tag, ORG);
@@ -248,10 +261,16 @@ public class DemoSeed implements ApplicationRunner {
         workspace.changeLog(actors.get("employee"), s(taggedLog, "id"), "\"" + n(taggedLog, "rowVersion") + "\"", Map.of("tagIds", List.of(tag)));
         command("middle", doing, Map.of("command", "change", "tagIds", List.of(tag), "reason", "重点镜头跟进"), true);
         comments.create(actors.get("middle"), "task", doing, Map.of("body", "合成检查请保留逐镜头记录，审核时对照原画。"));
-        comments.create(actors.get("upper"), "task", revoked, Map.of("body", "撤权后旧评论通知不得恢复此正文。"));
+        comments.create(actors.get("upper"), "task", revoked, Map.of("body", "请按最新分镜意见继续协作，旧评论通知不应再提供正文。"));
         var delivery = worker.getIfAvailable();
         if (delivery != null) for (int i = 0; i < 10 && n(db.one("SELECT COUNT(*) AS c FROM domain_events WHERE status='pending'"), "c") > 0; i++) delivery.runOnce();
         command("upper", revoked, Map.of("command", "change", "assigneeIds", List.of(stable("marketing")), "reason", "转交制作部，保留普通历史消息例外"), true);
+        /* 四人各有已读/未读的多类型通知，打开详情才标读的规则仍由真实接口决定。 */
+        for (String key : List.of("upper", "middle", "product-head-1", "employee")) {
+            var messages = db.list("SELECT id FROM notifications WHERE organization_id=? AND recipient_id=? ORDER BY created_at DESC,id", ORG, stable(key));
+            for (int i = 0; i < messages.size(); i++) if (i % 4 == 1)
+                db.update("UPDATE notifications SET read_at=UTC_TIMESTAMP(6) WHERE id=?", s(messages.get(i), "id"));
+        }
     }
     private String displayName(String key) {
         return switch (key) {
@@ -261,6 +280,34 @@ public class DemoSeed implements ApplicationRunner {
             default -> "光屿动画成员";
         };
     }
+    /** A short, still actionable same-business-day interval, including preparation late at night. */
+    private Map<String,Object> shortSchedule() {
+        ZoneId zone = ZoneId.of("Asia/Shanghai");
+        ZonedDateTime end = ZonedDateTime.now(clock.withZone(zone)).plusMinutes(90);
+        ZonedDateTime last = today.atTime(23,59,59).atZone(zone);
+        if (end.isAfter(last)) end = last;
+        return new LinkedHashMap<>(Map.of("allDay", false, "startAt", end.minusMinutes(90).toOffsetDateTime().toString(),
+                "dueAt", end.toOffsetDateTime().toString()));
+    }
+    /** Initial historical seed only: normal submissions correctly reject already elapsed deadlines.
+        Keep the approved business record and its version/approval deadline consistent; never runs
+        for an already prepared target, so repeat preparation cannot reschedule edited work. */
+    private void seedHistoricalSchedule(String task, Map<String,Object> timing) {
+        Instant start = OffsetDateTime.parse((String)timing.get("startAt")).toInstant();
+        Instant due = OffsetDateTime.parse((String)timing.get("dueAt")).toInstant();
+        db.update("UPDATE task_versions SET start_at=?,due_at=? WHERE organization_id=? AND task_id=?",
+                java.sql.Timestamp.from(start),java.sql.Timestamp.from(due),ORG,task);
+        db.update("UPDATE approval_requests SET applicable_deadline=? WHERE organization_id=? AND task_id=?",java.sql.Timestamp.from(due),ORG,task);
+        // This is pre-existing unfinished work, with submission/decision before its historical due.
+        db.update("UPDATE tasks SET created_at=created_at-INTERVAL 3 DAY,updated_at=updated_at-INTERVAL 3 DAY WHERE organization_id=? AND id=?",ORG,task);
+        db.update("UPDATE task_versions SET created_at=created_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
+        db.update("UPDATE approval_requests SET created_at=created_at-INTERVAL 3 DAY,decided_at=decided_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
+        db.update("UPDATE task_history_entries SET occurred_at=occurred_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
+        db.update("UPDATE task_assignments SET assigned_at=assigned_at-INTERVAL 3 DAY,created_at=created_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
+        db.update("UPDATE task_business_owners SET updated_at=updated_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
+        db.update("UPDATE audit_logs SET created_at=created_at-INTERVAL 3 DAY WHERE organization_id=? AND object_id=?",ORG,task);
+        db.update("UPDATE domain_events SET created_at=created_at-INTERVAL 3 DAY,expires_at=DATE_ADD(occurred_at-INTERVAL 3 DAY,INTERVAL 3 MONTH),occurred_at=occurred_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?",ORG,task);
+    }
     private Map<String,Object> schedule() {return input(today,9,today.plusDays(7),18);}
     private Map<String,Object> input(LocalDate start,int hour,LocalDate due,int dueHour) {
         var result=new LinkedHashMap<String,Object>();result.put("allDay",false);
@@ -268,7 +315,11 @@ public class DemoSeed implements ApplicationRunner {
         result.put("dueAt",due.atTime(dueHour,0).atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toString());return result;
     }
     private String create(String key,String creator,String title,List<String> owners,Map<String,Object> schedule,boolean approve) {
+        return create(key,creator,title,owners,schedule,approve,null);
+    }
+    private String create(String key,String creator,String title,List<String> owners,Map<String,Object> schedule,boolean approve,String parentTaskId) {
         var body=new LinkedHashMap<>(schedule);body.put("title",title);body.put("description","光屿动画业务数据："+title);
+        if (parentTaskId != null) body.put("parentTaskId", parentTaskId);
         body.put("priority",List.of("urgent","high","medium","low").get(Math.floorMod(key.hashCode(),4)));
         body.put("assigneeIds",owners.stream().map(DemoSeed::stable).toList());
         var result=tasks.create(actors.get(creator),body);if(approve) approve(result);

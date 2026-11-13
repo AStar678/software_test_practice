@@ -41,19 +41,66 @@
   function companyBusinessDate() { return (P.data.home || {}).businessDate || toDateInput(new Date()); }
 
   const HOME_PRIORITY = { urgent: "紧急", high: "高", medium: "中", low: "低" };
-  function homeAssignedBody() {
-    const items = (P.data.home || {}).assignedTasks || [];
-    if (!items.length) return '<div class="empty">暂无本人负责的未完成任务</div>';
-    return items.map(item =>
-      '<button type="button" class="home-task" data-task="' + esc(item.taskId) + '"><span class="home-task-title">' +
-        esc(item.title) + '</span><span class="home-task-priority">' + esc(HOME_PRIORITY[item.priority] || "中") + '</span></button>'
-    ).join("");
+  /* 上方两卡只保留约三条普通预览；完整内容进入独立二级清单，卡片不再内部滚动，
+     因此手指在卡片上纵向滑动滚动的是整个首页。 */
+  const HOME_PREVIEW = 3;
+  function homeCompanyItems() { return (P.data.home || {}).companyItems || []; }
+  function homeAssignedItems() { return (P.data.home || {}).assignedTasks || []; }
+  function homeCompanyPreview() {
+    const items = homeCompanyItems();
+    if (!items.length) return '<div class="empty">暂无公司信息</div>';
+    return items.slice(0, HOME_PREVIEW).map((item, index) =>
+      '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt">' +
+        esc(item.body || item.title) + '</span></div></div>').join("");
   }
+  function homeTaskPreview() {
+    const items = homeAssignedItems();
+    if (!items.length) return '<div class="empty">暂无本人负责的未完成任务</div>';
+    return items.slice(0, HOME_PREVIEW).map(item =>
+      '<div class="home-task"><span class="home-task-title">' + esc(item.title) +
+        '</span><span class="home-task-priority">' + esc(HOME_PRIORITY[item.priority] || "中") + '</span></div>').join("");
+  }
+  function homeListHTML(kind) {
+    if (kind === "company") {
+      const items = homeCompanyItems();
+      return items.length ? '<div class="home-list" aria-label="事件纪完整清单">' + items.map((item, index) =>
+        '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt">' +
+          esc(item.body || item.title) + '</span></div></div>').join("") + "</div>"
+        : '<div class="empty">暂无公司信息</div>';
+    }
+    const items = homeAssignedItems();
+    return items.length ? '<div class="home-list" aria-label="任务看板完整清单">' + items.map(item =>
+      '<button type="button" class="home-task" data-task="' + esc(item.taskId) + '"><span class="home-task-title">' +
+        esc(item.title) + '</span><span class="home-task-priority">' + esc(HOME_PRIORITY[item.priority] || "中") + '</span></button>').join("") + "</div>"
+      : '<div class="empty">暂无本人负责的未完成任务</div>';
+  }
+  function homeListView(kind) {
+    const title = kind === "company" ? "事件纪" : "任务看板";
+    return { title: title, body: homeListHTML(kind), foot: withBack(button("sheet-close", "关闭")),
+      rebuild: () => homeListView(kind) };
+  }
+  function openHomeList(kind, trigger) {
+    if (trigger) trigger.focus({ preventScroll: true });
+    openSheet(homeListView(kind));
+  }
+  /* 点击卡片（含预览内容）先打开完整清单；清单里的任务再进入原鉴权详情，返回恢复清单位置。 */
+  document.addEventListener("click", function (event) {
+    const card = event.target.closest && event.target.closest("[data-home-list]");
+    if (!card || !P.ready) return;
+    if (event.target.closest("button,a,input,select,textarea,[data-action],[data-task]")) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    openHomeList(card.dataset.homeList, card);
+  }, true);
+  document.addEventListener("keydown", function (event) {
+    const card = event.target.closest && event.target.closest("[data-home-list]");
+    if (!card || (event.key !== "Enter" && event.key !== " ")) return;
+    event.preventDefault(); event.stopPropagation();
+    openHomeList(card.dataset.homeList, card);
+  });
   /* 首页固定三个模块：事件纪、任务看板保持上方左右位置，每日事项通栏位于下方。
      日志卡片、旧个人事项列表与第四块空占位已移除；日志仍在日志页按原权限维护。 */
   renderMap = function () {
     const home = P.data.home || {};
-    const company = home.companyItems || [];
     const assigned = home.assignedTasks || [];
     const today = parseDateInput(companyBusinessDate()) || new Date();
     const weekday = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][today.getDay()];
@@ -61,12 +108,12 @@
       '<section class="workday"><div class="workday-copy"><h2>' + esc(fmtDate(today)) + '</h2><p>' + esc(weekday) + '</p></div>' +
       '</section>' +
       '<div class="map-grid">' +
-        '<section class="quad company-quad" aria-labelledby="q1"><div class="card-head"><h2 id="q1">事件纪</h2><span class="hint">统一发布</span></div>' +
-          '<div class="q-body" tabindex="0" role="region" aria-labelledby="q1">' + (company.length ? company.map((item, index) =>
-            '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt">' + esc(item.body || item.title) + '</span></div></div>'
-          ).join("") : '<div class="empty">暂无公司信息</div>') + '</div></section>' +
-        '<section class="quad tasks-quad" aria-labelledby="q2"><div class="card-head"><h2 id="q2">任务看板</h2><span class="hint">' +
-          assigned.length + '/10</span></div><div class="q-body" tabindex="0" role="region" aria-labelledby="q2">' + homeAssignedBody() + '</div></section>' +
+        '<section class="quad company-quad" aria-labelledby="q1" data-home-list="company" role="button" tabindex="0" aria-label="事件纪，查看完整清单">' +
+          '<div class="card-head"><h2 id="q1">事件纪</h2><span class="hint">统一发布</span></div>' +
+          '<div class="q-body">' + homeCompanyPreview() + '</div></section>' +
+        '<section class="quad tasks-quad" aria-labelledby="q2" data-home-list="tasks" role="button" tabindex="0" aria-label="任务看板，查看完整清单">' +
+          '<div class="card-head"><h2 id="q2">任务看板</h2><span class="hint">' + assigned.length + '/10</span></div>' +
+          '<div class="q-body">' + homeTaskPreview() + '</div></section>' +
         '<section class="quad daily-quad" id="dailyItemsSection" aria-labelledby="q3"><div class="card-head"><h2 id="q3">每日事项</h2><span class="hint">本人维护</span></div></section>' +
       '</div>';
     if (window.PandoraDaily) window.PandoraDaily.render();
@@ -76,9 +123,20 @@
 /* ---------- 日志页固定展示本人；人员资料中的授权阅读独立打开。 ---------- */
 function logAuthorId() { return (P.data.me || {}).id || null; }
 function logScopeLabel() { return '本人日志 · ' + filteredLogs(actor()).length + ' 条'; }
+/* 日志按所属业务日期从新到旧，同日按真实创建时间倒序、ID 稳定排序；
+   补写旧日志不会因为创建较晚而排到今天日志前面。 */
+function logBusinessDate(log) {
+  return String((log && log.raw && log.raw.businessDate) || "");
+}
 filteredLogs = function () {
   return LOGS.filter(log => log.authorId === logAuthorId())
-    .slice().sort((x,y) => y.time.getTime()-x.time.getTime());
+    .slice().sort((x, y) => {
+      const bx = logBusinessDate(x), by = logBusinessDate(y);
+      if (bx !== by) return by < bx ? -1 : 1;
+      const tx = x.time.getTime(), ty = y.time.getTime();
+      if (tx !== ty) return ty - tx;
+      return String(x.id) < String(y.id) ? -1 : String(x.id) > String(y.id) ? 1 : 0;
+    });
 };
 logsListHTML = function (account) {
   const logs=filteredLogs(account);
@@ -109,15 +167,29 @@ document.addEventListener('keydown',event=>{
 function logTagHTML(raw) {
   return ((raw && raw.tags) || []).map(tag => P.tagPillHTML ? P.tagPillHTML(tag) : '').join('');
 }
+/* 卡片日期取日志所属日（businessDate），相对日同样按公司今天比较；
+   详情仍展示真实创建时间，首次 24 小时冻结规则不变。 */
+function businessDateText(raw) {
+  const d = parseDateInput(raw && raw.businessDate);
+  return d ? d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日" : "—";
+}
+function businessRelativeDay(raw) {
+  const d = parseDateInput(raw && raw.businessDate);
+  const today = parseDateInput(companyBusinessDate());
+  if (!d || !today) return "";
+  const diff = Math.round((+addDays(d, 0) - +addDays(today, 0)) / 86400000);
+  return diff === 0 ? "今天" : diff === -1 ? "昨天" : diff === -2 ? "前天" : "";
+}
 logCardHTML = function (l, a) {
   const t = l.taskId ? taskById(l.taskId) : null;
   const mine = l.authorId === a.id;
   const raw = l.raw || {};
   const frozen = raw.frozen === true || (raw.editable === false && mine);
+  const relative = businessRelativeDay(raw);
   return '<article class="log-card" role="link" tabindex="0" aria-label="查看日志详情与评论" data-log-card="' + esc(l.id) + '">' +
     "<header><span class=\"who\">" + esc(personById(l.authorId) ? personById(l.authorId).name : (raw.authorName || '相关成员')) + "</span>" +
-      "<span>" + esc(fmtDateTime(l.time)) + "</span>" +
-      "<span>" + esc(relativeDayLabel(l.time)) + "</span>" +
+      "<span class=\"log-business-date\">" + esc(businessDateText(raw)) + "</span>" +
+      (relative ? "<span>" + esc(relative) + "</span>" : "") +
       '<span class="spacer"></span>' +
       (mine && raw.editable !== false
         ? '<button type="button" class="btn tiny-btn" data-action="edit-log" data-id="' + esc(l.id) + '">编辑</button>'
@@ -168,9 +240,10 @@ function logDraft(raw, businessDate) {
     tagIds: raw ? (raw.tagIds || []).slice() : [], tagSnapshots: raw ? (raw.tags || []).slice() : [],
     tagTouched: false,
     hiddenTask: !!raw && !Object.prototype.hasOwnProperty.call(raw, "taskId"),
+    fillSeq: 0, fillPending: false,
     etag: raw ? version(raw) : null, epoch: P.epoch,
     businessDate: raw ? raw.businessDate : businessDate,
-    frozen: !!(raw && raw.frozen), frozenAt: raw ? raw.frozenAt : null };
+    editable: !raw || raw.editable === true, frozen: !!(raw && raw.frozen), frozenAt: raw ? raw.frozenAt : null };
 }
 function logDateOptions() {
   const today = parseDateInput(companyBusinessDate()) || new Date();
@@ -251,8 +324,16 @@ function logDateEditHTML(d) {
 }
 function logFieldsHTML(d, dateHTML) {
   const linked = d.taskId ? taskById(d.taskId) : null;
+  if (d.frozenAt && logFillAllowed(d)) {
+    clearTimeout(d.freezeTimer);
+    d.freezeTimer = setTimeout(() => { if (drafts.log === d && d.epoch === P.epoch) freezeLogDraft(d); },
+      Math.max(0, new Date(d.frozenAt).getTime() - Date.now()));
+  }
   return '<div class="p-log-meta">' + dateHTML + (P.tagCollectionHTML ? P.tagCollectionHTML('lf', d.tagIds, d.tagSnapshots) : '') + '</div>' +
-    '<div class="field log-content-field"><label for="lf-content">日志内容</label><textarea id="lf-content" maxlength="10000" data-autofocus>' + esc(d.content) + '</textarea></div>' +
+    '<div class="field log-content-field"><div class="log-content-head"><label for="lf-content">日志内容</label>' +
+      '<button type="button" class="btn tiny-btn" id="lf-fill-button" data-action="fill-log-source" aria-label="填入当日事项与任务名称"' + (logFillAllowed(d) ? '' : ' disabled aria-disabled="true"') + '>填入当日事项与任务</button></div>' +
+      '<textarea id="lf-content" maxlength="10000" data-autofocus' + (logFillAllowed(d) ? '' : ' readonly') + '>' + esc(d.content) + '</textarea>' +
+      '<p class="tiny muted" id="lf-fill-status" role="status" aria-live="polite"></p></div>' +
     '<div class="field"><label>关联任务（可选）</label>' +
       '<div class="summary-line" id="lf-task-summary">' +
         (linked ? esc(linked.title) : (d.hiddenTask && !d.relationshipChanged ? '关联任务当前不可见，保留原关系' : '<span class="muted">未关联任务</span>')) + "</div>" +
@@ -326,7 +407,7 @@ saveLog = function () {
       }
       if (error.code === "WORK_LOG_FROZEN") {
         // 冻结只拒绝这次写入：保留当前模式的日期/标签/正文/关联草稿与可复制文字，不关闭界面。
-        d.frozen = true;
+        freezeLogDraft(d);
         try { await P.reload(); } catch (reloadError) { if (reloadError.name === "AbortError") return; /* 列表刷新失败也不能吞掉用户尚未保存的内容 */ }
         // 身份切换或表单已被关闭时草稿已作废，不能再重建界面。
         if (drafts.log !== d || d.epoch !== P.epoch) return;
@@ -344,6 +425,108 @@ saveLog = function () {
   }, "lf-error");
 };
 
+  /* ---------- 按日志所属日主动追加当日事项与任务名称 ----------
+     只读取当前 draft 的 businessDate；追加到请求返回时的最新正文，绝不覆盖
+     等待期间的输入。请求进行中再次点击被忽略，之后主动点击视为新的追加。
+     空结果、失败或完整追加超过 10000 UTF-16 单位时保持原文不变。 */
+  function fillNames(rows) {
+    const seen = new Set(), names = [];
+    (rows || []).forEach(row => {
+      if (!row || !row.id || seen.has(row.id)) return;
+      seen.add(row.id);
+      const name = String(row.name == null ? "" : row.name);
+      if (name.trim()) names.push(name);
+    });
+    return names;
+  }
+  function fillBlockHTML(items, tasks) {
+    const lines = [];
+    if (items.length) { lines.push("每日事项："); items.forEach(name => lines.push("· " + name)); }
+    if (tasks.length) { lines.push("任务："); tasks.forEach(name => lines.push("· " + name)); }
+    return lines.join("\n");
+  }
+  function setFillStatus(message, isError) {
+    const status = document.getElementById("lf-fill-status");
+    if (!status) return;
+    status.textContent = message || "";
+    status.classList.toggle("is-error", !!isError);
+  }
+  function logFillAllowed(d) {
+    return !!d && !d.frozen && d.editable !== false &&
+      (!d.frozenAt || Date.now() < new Date(d.frozenAt).getTime());
+  }
+  function freezeLogDraft(d) {
+    d.frozen = true; d.editable = false; d.fillSeq++; d.fillPending = false;
+    if (drafts.log !== d || d.epoch !== P.epoch) return;
+    syncLogDraft();
+    const button = document.getElementById('lf-fill-button');
+    if (button) { button.disabled = true; button.setAttribute('aria-disabled', 'true'); button.removeAttribute('aria-busy'); }
+    const textarea = document.getElementById('lf-content');
+    if (textarea) textarea.readOnly = true;
+    setFillStatus('该日志已只读，未保存的内容保留供复制；未追加任何内容。', true);
+  }
+  async function checkLogFillAccess(d) {
+    if (!logFillAllowed(d)) { freezeLogDraft(d); return false; }
+    if (d.mode !== 'edit') return true;
+    // 服务裁决真实冻结点；开始及落地前均回读，以覆盖旧页和请求途中到期。
+    const raw = await P.request('/work-logs/' + endpoint(d.id));
+    if (drafts.log !== d || d.epoch !== P.epoch) return false;
+    if (!raw.editable || raw.frozen) { freezeLogDraft(d); return false; }
+    d.frozenAt = raw.frozenAt;
+    if (!logFillAllowed(d)) { freezeLogDraft(d); return false; }
+    return true;
+  }
+  function fillLogSource(button) {
+    const d = drafts.log;
+    if (!d || d.epoch !== P.epoch) { P.notice("请重新打开日志后再填充。"); return; }
+    if (d.mode === "edit" && !d.id) { P.notice("请重新打开日志后再填充。"); return; }
+    syncLogDraft();
+    if (!logFillAllowed(d)) { freezeLogDraft(d); return; }
+    if (d.fillPending) return;
+    const sequence = (d.fillSeq || 0) + 1;
+    d.fillSeq = sequence;
+    d.fillPending = true;
+    const businessDate = d.businessDate;
+    if (button) { button.setAttribute("aria-busy", "true"); button.setAttribute("aria-disabled", "true"); }
+    setFillStatus("正在读取 " + businessDate + " 的每日事项与任务…");
+    Promise.resolve().then(async () => {
+      if (!await checkLogFillAccess(d) || drafts.log !== d || d.fillSeq !== sequence || d.businessDate !== businessDate) return null;
+      return P.request("/work-logs/fill-source?businessDate=" + encodeURIComponent(businessDate));
+    }).then(async result => {
+      if (!result) return;
+      if (drafts.log !== d || d.epoch !== P.epoch || d.fillSeq !== sequence) return;
+      if (d.businessDate !== businessDate) { setFillStatus("日志日期已变化，未写入。"); return; }
+      if (!await checkLogFillAccess(d) || drafts.log !== d || d.fillSeq !== sequence || d.businessDate !== businessDate) return;
+      const textarea = document.getElementById("lf-content");
+      if (!textarea) return;
+      const items = fillNames(result.dailyItems), tasks = fillNames(result.tasks);
+      if (!items.length && !tasks.length) { setFillStatus("当日没有可填入的每日事项或任务。"); return; }
+      const block = fillBlockHTML(items, tasks);
+      const current = textarea.value;
+      const next = current.trim() ? current.replace(/\s+$/, "") + "\n\n" + block : block;
+      if (next.length > 10000) {
+        setFillStatus("追加后超过 10000 字上限，未写入任何内容；请手动精简后重试。", true);
+        return;
+      }
+      d.content = next;
+      textarea.value = next;
+      textarea.focus({ preventScroll: true });
+      textarea.setSelectionRange(next.length, next.length);
+      setFillStatus("已追加 " + items.length + " 项每日事项、" + tasks.length + " 项任务；可继续编辑。");
+    }).catch(error => {
+      if (drafts.log !== d || d.epoch !== P.epoch || d.fillSeq !== sequence) return;
+      if (error.name === "AbortError") return;
+      setFillStatus(error.message || "读取失败，正文保持原样。", true);
+    }).finally(() => {
+      if (drafts.log !== d) return;
+      d.fillPending = false;
+      const current = document.getElementById("lf-fill-button");
+      if (current === button || (current && current.dataset.action === "fill-log-source")) {
+        const target = current || button;
+        if (target) { target.removeAttribute("aria-busy"); if (logFillAllowed(d)) target.removeAttribute("aria-disabled"); }
+      }
+    });
+  }
   companyItemFormView = () => null;
   /* 个人事项已迁移为每日事项；旧入口只提示，不再读写 home_items personal。 */
   function companyNotice() { P.notice("公司统一信息由管理端统一发布。"); }
@@ -362,8 +545,9 @@ saveLog = function () {
 
   const REQUEST_KIND = { create: "创建任务", change: "修改资料", progress: "更新进展", complete: "提交完成", reopen: "重开任务", handover: "交接" };
   const REQUEST_RESULT = { pending: "待审核", approved: "已通过", rejected: "已退回", withdrawn: "已撤销", direct: "已生效", expired: "已失效" };
-  notificationsFor = () => NOTIFICATIONS.slice().sort((a, b) => b.time - a.time);
-  unreadCount = () => NOTIFICATIONS.filter(n => !n.raw.readAt).length;
+  let noticeQuery = null;
+  notificationsFor = () => (noticeQuery ? noticeQuery.items.slice() : []);
+  unreadCount = () => Number((P.data && P.data.notificationUnreadCount) || 0);
   const PURPOSE_FALLBACK = { comment: "新评论", task: "任务通知", log: "日志" };
   function notificationPurpose(raw) {
     if (raw.purpose) return raw.purpose;
@@ -382,38 +566,201 @@ saveLog = function () {
     }
     return text.trim();
   }
-  let noticeFilters = { read: "all", category: "all", mode: "compact", epoch: -1 };
-  const NOTICE_CATEGORIES = { all: "全部类型", review: "需我审核", result: "结果告知", reminder: "提醒", comment: "评论", other: "其他" };
-  function noticeSelect(id, label, value, options) {
-    return '<label class="field" for="' + id + '"><span>' + label + '</span><select id="' + id + '">' + Object.entries(options).map(([key,text]) => '<option value="' + key + '"' + (value === key ? ' selected' : '') + '>' + text + '</option>').join('') + '</select></div>';
+  /* 通知列表委托服务端组合筛选与分页：六类型标签、已读三段、单图标精简/完整切换。
+     过滤后的 total 与独立全局 unreadCount 都取自服务端，切换条件/模式不标读。 */
+  const NOTICE_CATEGORIES = { all: '全部', review: '需我审核', result: '结果告知', reminder: '提醒', comment: '评论', other: '其他' };
+  const NOTICE_READ = { all: '全部', unread: '未读', read: '已读' };
+  const NOTICE_PAGE = 20;
+  const NOTICE_ICON = {
+    compact: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5 4 19h16z"/></svg>',
+    full: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M8 5v5M8 15h5"/></svg>'
+  };
+  function noticeAccount() { return ((P.data && P.data.me) || {}).id || null; }
+  function noticeEnsure() {
+    if (!noticeQuery || noticeQuery.epoch !== P.epoch || noticeQuery.account !== noticeAccount()) {
+      noticeQuery = { category: 'all', read: 'all', mode: 'compact', items: [], total: 0,
+        unreadCount: Number((P.data && P.data.notificationUnreadCount) || 0),
+        nextOffset: 0, loading: false, error: null, lastMode: 'first', epoch: P.epoch, account: noticeAccount(), seq: 0 };
+    }
+    return noticeQuery;
+  }
+  P.sessionReset.push(function () { noticeQuery = null; });
+  function renderBell() {
+    const dot = document.getElementById('bellDot'), bell = document.getElementById('bellBtn');
+    if (!dot || !bell) return;
+    const n = Number((P.data && P.data.notificationUnreadCount) || 0);
+    dot.hidden = n === 0;
+    dot.textContent = n > 9 ? '9+' : String(n);
+    bell.setAttribute('aria-label', n ? '通知，' + n + ' 条未读' : '通知，无未读');
+  }
+  P.renderBell = renderBell;
+  function noticeParams(q, offset, limit) {
+    const params = new URLSearchParams();
+    params.set('limit', String(limit));
+    params.set('offset', String(offset));
+    if (q.category !== 'all') params.set('category', q.category);
+    if (q.read !== 'all') params.set('readStatus', q.read);
+    return '/notifications?' + params.toString();
+  }
+  function noticeFiltersActive(q) { return q.category !== 'all' || q.read !== 'all'; }
+  function noticeFiltersHTML(q) {
+    return '<div class="p-notice-filters" role="group" aria-label="通知筛选">' +
+      '<div class="p-notice-tabs" role="tablist" aria-label="通知类型">' +
+        Object.entries(NOTICE_CATEGORIES).map(([key, label]) =>
+          '<button type="button" role="tab" class="p-notice-tab" data-action="p-notice-category" data-value="' + key +
+          '" aria-selected="' + (q.category === key) + '" tabindex="' + (q.category === key ? 0 : -1) + '">' + label + '</button>').join('') +
+      '</div>' +
+      '<div class="p-notice-controls">' +
+        '<div class="p-notice-read" role="group" aria-label="已读状态">' +
+          Object.entries(NOTICE_READ).map(([key, label]) =>
+            '<button type="button" class="p-notice-read-btn" data-action="p-notice-read" data-value="' + key +
+            '" aria-pressed="' + (q.read === key) + '">' + label + '</button>').join('') +
+        '</div>' +
+        '<button type="button" class="p-notice-mode" data-action="p-notice-mode" aria-pressed="' + (q.mode === 'full') +
+          '" aria-label="' + (q.mode === 'full' ? '切换到精简显示' : '切换到完整显示') + '" title="' +
+          (q.mode === 'full' ? '当前完整模式，切换到精简显示' : '当前精简模式，切换到完整显示') + '">' +
+          NOTICE_ICON[q.mode] + '</button>' +
+        (noticeFiltersActive(q) ? '<button type="button" class="p-text-button p-notice-reset" data-action="p-notice-reset">重置</button>' : '') +
+      '</div></div>';
+  }
+  function noticeSummaryHTML(q) {
+    return '<p id="p-notice-summary" class="p-notice-summary" role="status">已显示 <strong>' + q.items.length + '</strong> / ' +
+      q.total + ' 条' + (noticeFiltersActive(q) ? '（当前条件）' : '') + ' · 全部未读 <strong>' + q.unreadCount + '</strong> 条</p>';
+  }
+  function noticeRowHTML(raw, mode) {
+    const read = !!raw.readAt, category = NOTICE_CATEGORIES[raw.category] || '其他';
+    const name = raw.objectName || raw.title || (raw.taskId ? '关联任务不可查看' : '无关联任务');
+    const purpose = notificationPurpose(raw), summary = notificationSummary(raw, []);
+    return '<button type="button" class="notif p-notice-row' + (read ? ' is-read' : '') + (mode === 'full' ? ' is-full' : '') +
+      '" data-action="open-notif" data-id="' + esc(raw.id) + '"><span class="ndot" aria-hidden="true"></span>' +
+      '<span class="nbody"><span class="ntop"><span class="ntitle">' + esc(name) + '</span><span class="npurpose">' + esc(category) + '</span></span>' +
+      (mode === 'full' ? '<span class="nsummary">' + esc(purpose) + ' · ' + esc(summary) + '</span>' : '') +
+      '<span class="nmeta"><time datetime="' + esc(raw.createdAt || '') + '">' + esc(timeText(raw.createdAt)) + '</time>' +
+      '<span>' + (read ? '已读' : '未读') + '</span></span></span></button>';
+  }
+  function noticeRowsHTML(q) {
+    if (q.error && !q.items.length) return '<div class="empty">通知加载失败：' + esc(q.error) + '</div>';
+    if (q.loading && !q.items.length) return '<div class="empty">正在加载通知…</div>';
+    if (!q.items.length) return '<div class="empty">' + (noticeFiltersActive(q) ? '没有符合筛选条件的通知' : '暂无通知') + '</div>';
+    return q.items.map(raw => noticeRowHTML(raw, q.mode)).join('');
+  }
+  function noticeFootHTML(q) {
+    if (q.loading) return '<span class="tiny muted">正在加载…</span>';
+    if (q.error) return '<span class="callout reject" role="alert">' + esc(q.error) + '</span>' +
+      '<button type="button" class="btn tiny-btn" data-action="p-notice-retry">重试</button>';
+    if (q.nextOffset != null) return '<button type="button" class="btn tiny-btn" data-action="p-notice-more">加载更多（已显示 ' + q.items.length + ' / ' + q.total + '）</button>';
+    return q.items.length ? '<span class="tiny muted">已显示全部 ' + q.items.length + ' 条</span>' : '';
+  }
+  function noticeContentHTML(q) {
+    return noticeFiltersHTML(q) + noticeSummaryHTML(q) +
+      '<div id="p-notice-rows" class="p-notice-list" aria-live="polite">' + noticeRowsHTML(q) + '</div>' +
+      '<div id="p-notice-foot" class="p-notice-foot">' + noticeFootHTML(q) + '</div>';
+  }
+  function noticeListIsTop() {
+    const top = sheetStack[sheetStack.length - 1];
+    return !!(top && top.noticeList);
+  }
+  function noticePaint() {
+    const content = document.getElementById('p-notice-content');
+    if (!content) return;
+    content.innerHTML = noticeContentHTML(noticeEnsure());
+  }
+  function noticeAppendPaint(added) {
+    const rows = document.getElementById('p-notice-rows');
+    if (!rows) return noticePaint();
+    const q = noticeEnsure();
+    rows.insertAdjacentHTML('beforeend', added.map(raw => noticeRowHTML(raw, q.mode)).join(''));
+    const summary = document.getElementById('p-notice-summary'), foot = document.getElementById('p-notice-foot');
+    if (summary) summary.outerHTML = noticeSummaryHTML(q);
+    if (foot) foot.innerHTML = noticeFootHTML(q);
+  }
+  /* 先请求后绘制：序号、账号与查询对象三者任一变化都丢弃迟到结果，旧页不会并入当前筛选。 */
+  async function noticeFetch(mode) {
+    const q = noticeEnsure(), seq = ++q.seq, epoch = P.epoch, account = q.account;
+    q.error = null;
+    q.lastMode = mode;
+    const offset = mode === 'more' && q.nextOffset != null ? q.nextOffset : 0;
+    const wanted = mode === 'refresh' ? Math.max(NOTICE_PAGE, q.items.length) : NOTICE_PAGE;
+    // 刷新分批读回原加载范围，所有页成功后再替换；失败保留仍有效列表。
+    q.loading = true;
+    if (noticeListIsTop()) { if (mode === 'more') { const foot = document.getElementById('p-notice-foot'); if (foot) foot.innerHTML = noticeFootHTML(q); } else noticePaint(); }
+    try {
+      const current = () => epoch === P.epoch && seq === q.seq && q === noticeQuery && account === noticeAccount();
+      const rows = new Map();
+      let cursor = offset, result;
+      do {
+        result = await P.request(noticeParams(q, cursor, Math.min(100, wanted - rows.size)));
+        if (!current()) return false;
+        (Array.isArray(result.items) ? result.items : []).forEach(item => rows.set(item.id, item));
+        const next = result.nextOffset == null ? null : Number(result.nextOffset);
+        if (next != null && next <= cursor) throw new Error('通知分页异常，请重试。');
+        cursor = next;
+      } while (mode === 'refresh' && rows.size < wanted && cursor != null);
+      const items = Array.from(rows.values());
+      q.total = Number(result.total || 0);
+      q.unreadCount = Number(result.unreadCount || 0);
+      P.data.notificationUnreadCount = q.unreadCount;
+      renderBell();
+      if (mode === 'more') q.items = q.items.concat(items.filter(item => !q.items.some(existing => existing.id === item.id)));
+      else q.items = items;
+      q.nextOffset = cursor;
+      q.loading = false;
+      if (noticeListIsTop()) { if (mode === 'more') noticeAppendPaint(items); else noticePaint(); }
+      return true;
+    } catch (error) {
+      if (epoch !== P.epoch || seq !== q.seq || q !== noticeQuery || account !== noticeAccount()) return false;
+      q.loading = false;
+      q.error = error.message || '通知加载失败';
+      if (noticeListIsTop()) noticePaint();
+      return false;
+    }
+  }
+  function noticeLoadFirst() {
+    const q = noticeEnsure();
+    q.items = []; q.total = 0; q.nextOffset = 0; q.error = null;
+    return noticeFetch('first');
+  }
+  function noticeApplyFilter(field, value) {
+    const q = noticeEnsure();
+    if (q[field] === value && !q.error) return;
+    q[field] = value;
+    q.items = []; q.total = 0; q.nextOffset = 0; q.error = null; q.loading = true;
+    replaceTopSheet(notificationsView());
+    const selector = (field === 'category' ? '[data-action="p-notice-category"]' : '[data-action="p-notice-read"]') +
+      '[data-value="' + value + '"]';
+    const target = document.querySelector(selector);
+    if (target) target.focus({ preventScroll: true });
+    noticeFetch('first');
+  }
+  function noticeResetFilters() {
+    const q = noticeEnsure();
+    q.category = 'all'; q.read = 'all';
+    q.items = []; q.total = 0; q.nextOffset = 0; q.error = null; q.loading = true;
+    replaceTopSheet(notificationsView());
+    const target = document.querySelector('[data-action="p-notice-category"][data-value="all"]');
+    if (target) target.focus({ preventScroll: true });
+    noticeFetch('first');
+  }
+  function noticeToggleMode() {
+    const q = noticeEnsure();
+    q.mode = q.mode === 'full' ? 'compact' : 'full';
+    replaceTopSheet(notificationsView());
+    const target = document.querySelector('[data-action="p-notice-mode"]');
+    if (target) target.focus({ preventScroll: true });
   }
   notificationsView = function () {
-    if (noticeFilters.epoch !== P.epoch) noticeFilters = { read: "all", category: "all", mode: "compact", epoch: P.epoch };
-    const all = notificationsFor();
-    const list = all.filter(n => (noticeFilters.read === "all" || (noticeFilters.read === "unread") === !n.raw.readAt) && (noticeFilters.category === "all" || n.raw.category === noticeFilters.category));
-    const controls = '<div class="p-notice-filters">' + noticeSelect('pn-read','已读状态',noticeFilters.read,{all:'全部',unread:'未读',read:'已读'}) + noticeSelect('pn-category','通知类型',noticeFilters.category,NOTICE_CATEGORIES) + noticeSelect('pn-mode','显示方式',noticeFilters.mode,{compact:'精简',full:'完整'}) + '</div><div class="row"><span class="tiny muted">' + list.length + ' 条通知</span><button type="button" class="btn tiny-btn ghost" data-action="p-notice-clear">清空筛选</button></div>';
-    const rows = list.map(n => {
-      const raw = n.raw, category = NOTICE_CATEGORIES[raw.category] || '其他';
-      const name = raw.objectName || raw.title || (raw.taskId ? '关联任务不可查看' : '无关联任务');
-      const summary = notificationSummary(raw, []);
-      return '<button type="button" class="notif p-notice-row' + (raw.readAt ? ' is-read' : '') + '" data-action="open-notif" data-id="' + esc(n.id) + '"><span class="nbody"><span class="ntop"><span class="ntitle">' + esc(name) + '</span><span class="npurpose">' + esc(category) + '</span></span>' +
-        (noticeFilters.mode === 'full' ? '<span class="nsummary">' + esc(notificationPurpose(raw)) + ' · ' + esc(summary) + '</span>' : '') +
-        '<span class="nmeta"><span>' + (raw.readAt ? '已读' : '未读') + '</span><time>' + esc(timeText(raw.createdAt)) + '</time></span></span></button>';
-    }).join('');
-    return { title: '通知', notification: true, body: controls + (rows || '<div class="empty">' + (all.length ? '没有符合筛选条件的通知' : '暂无通知') + '</div>'), rebuild: notificationsView };
+    const q = noticeEnsure();
+    return { title: '通知', notification: true, noticeList: true,
+      body: '<div id="p-notice-content" class="p-notice-content">' + noticeContentHTML(q) + '</div>', rebuild: notificationsView };
   };
-  document.addEventListener('change', function (event) {
-    const field = { 'pn-read':'read', 'pn-category':'category', 'pn-mode':'mode' }[event.target.id];
-    if (!field) return;
-    noticeFilters[field] = event.target.value;
-    replaceTopSheet(notificationsView());
-    document.getElementById(event.target.id)?.focus();
-  });
   openNotifications = function () {
-    /* 异步重载前先落焦点，关闭头部后才会回到铃铛入口而不是页面正文。 */
+    /* 异步加载前先落焦点，关闭头部后才会回到铃铛入口而不是页面正文。 */
     const bell = document.getElementById("bellBtn");
     if (bell) bell.focus();
-    P.busy(async () => { await P.reload(); openSheet(notificationsView()); });
+    const q = noticeEnsure();
+    q.items = []; q.total = 0; q.nextOffset = 0; q.error = null; q.loading = true;
+    openSheet(notificationsView());
+    noticeLoadFirst();
   };
   function requestResultText(raw) {
     if (!raw.requestStatus) return "";
@@ -476,14 +823,29 @@ saveLog = function () {
   }
   openNotif = function (id) {
     P.busy(async () => {
-      await P.mutation("notification-open:" + id, "POST", "/notifications/" + endpoint(id) + "/open");
-      await P.reload();
-      const raw = NOTIFICATIONS.find(n => n.id === id);
-      if (!raw) throw new Error("该通知已不可用。");
-      notificationSnapshot = { raw: raw.raw, etag: version(raw.raw), epoch: P.epoch };
-      openSheet(notificationView(raw.raw));
+      const open = await P.mutation("notification-open:" + id, "POST", "/notifications/" + endpoint(id) + "/open");
+      const raw = await P.request("/notifications/" + endpoint(id));
+      const q = noticeEnsure();
+      /* 打开才标读：先更新当前查询中的这一条与独立全局未读，再进入详情。
+         详情返回时重建列表会按当前类型/已读条件反映已读变化。 */
+      const index = q.items.findIndex(item => item.id === id);
+      if (index >= 0) q.items.splice(index, 1, raw);
+      if (index >= 0 && q.read === 'unread') { q.items.splice(index, 1); q.total = Math.max(0, q.total - 1); }
+      if (open && open.unreadCount != null) { q.unreadCount = Number(open.unreadCount); P.data.notificationUnreadCount = q.unreadCount; }
+      renderBell();
+      notificationSnapshot = { raw: raw, etag: version(raw), epoch: P.epoch, account: noticeAccount() };
+      openSheet(notificationView(raw));
+      /* 后台按当前条件刷新首屏，结果受序号/账号保护；详情返回时直接使用已更新的查询结果。 */
+      noticeFetch('refresh');
     }, "notification-error");
   };
+  async function reopenNoticeList(message) {
+    await P.reload();
+    const q = noticeEnsure();
+    q.items = []; q.total = 0; q.nextOffset = 0; q.error = null; q.loading = true;
+    closeSheet(); openSheet(notificationsView()); noticeFetch('first');
+    if (message) P.notice(message);
+  }
   function deleteNotification(id) {
     if (!confirm('仅从自己的通知列表删除此消息？')) return;
     P.busy(async () => {
@@ -491,7 +853,7 @@ saveLog = function () {
       if (!snapshot || snapshot.epoch !== P.epoch || snapshot.raw.id !== id) throw new Error("请重新打开通知后再操作。");
       await P.mutation("notification-delete:" + id, "PATCH", "/notifications/" + endpoint(id),
         { action: "delete" }, snapshot.etag);
-      await P.reload(); closeSheet(); openSheet(notificationsView()); P.notice("通知已删除。");
+      await reopenNoticeList("通知已删除。");
     }, "notification-error");
   }
   function withdrawNotification(id) {
@@ -501,7 +863,7 @@ saveLog = function () {
       if (!snapshot || snapshot.epoch !== P.epoch || snapshot.raw.id !== id) throw new Error("请重新打开通知后再操作。");
       await P.mutation("notification-withdraw:" + id, "POST", "/notifications/" + endpoint(id) + "/withdraw",
         { reason: "发起人撤回" });
-      await P.reload(); closeSheet(); openSheet(notificationsView()); P.notice("通知已撤回，业务结果不变。");
+      await reopenNoticeList("通知已撤回，业务结果不变。");
     }, "notification-error");
   }
   function withdrawRequestFromNotification(requestId) {
@@ -512,7 +874,7 @@ saveLog = function () {
       const request = await P.request("/approval-requests/" + encodeURIComponent(requestId));
       await P.mutation("notification-withdraw-request:" + requestId, "PATCH",
         "/approval-requests/" + encodeURIComponent(requestId), { decision: "withdraw" }, '"' + request.rowVersion + '"');
-      await P.reload(); closeSheet(); openSheet(notificationsView()); P.notice("本人申请已撤销，任务保持申请前内容。");
+      await reopenNoticeList("本人申请已撤销，任务保持申请前内容。");
     }, "notification-error");
   }
   function openNotificationTask(id) {
@@ -627,11 +989,17 @@ saveLog = function () {
       case "clear-log-task":
         if (drafts.log) drafts.log.relationshipChanged = true;
         oldActions(el); return;
+      case "fill-log-source": fillLogSource(el); return;
       case "picker-task-confirm":
         if (taskPicker.kind === "log" && drafts.log) drafts.log.relationshipChanged = true;
         oldActions(el); return;
       case "p-open-log": openLogDetail(el.dataset.id); return;
-      case "p-notice-clear": noticeFilters.read = "all"; noticeFilters.category = "all"; replaceTopSheet(notificationsView()); return;
+      case "p-notice-category": noticeApplyFilter('category', el.dataset.value); return;
+      case "p-notice-read": noticeApplyFilter('read', el.dataset.value); return;
+      case "p-notice-reset": noticeResetFilters(); return;
+      case "p-notice-mode": noticeToggleMode(); return;
+      case "p-notice-more": { const q = noticeEnsure(); if (!q.loading && q.nextOffset != null) noticeFetch('more'); return; }
+      case "p-notice-retry": { const q = noticeEnsure(); noticeFetch(q.lastMode || 'first'); return; }
       case "p-hide-notification": deleteNotification(el.dataset.id); return;
       case "p-withdraw-notification": withdrawNotification(el.dataset.id); return;
       case "p-withdraw-notification-request": withdrawRequestFromNotification(el.dataset.id); return;

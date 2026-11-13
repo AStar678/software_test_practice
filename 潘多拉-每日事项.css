@@ -1,19 +1,20 @@
 /* =====================================================================
-   每日事项：横向连续日历、按日清单、详情与表单。
+   每日事项：独立纵向连续月历、跨日事项条、命中日清单、详情与表单。
    仅本模块使用；公司页任务月历的间距、拖动、密度样式不受影响。
    ===================================================================== */
 
 /* ---------- 首页三模块：上下两层，短屏允许整页纵向滚动 ---------- */
 .app-main.is-map{overflow-y:auto;overflow-x:hidden}
 .app-main.is-map #page-map.is-active{flex:none;min-height:100%;height:auto}
-/* 上方两卡按真实条目行高分配：单行条目 44px + 6px 间距，加卡片内边距和标题后可完整容纳
-   三条，常规窗口接近四条；不再叠加会抵消高度的 34vh 上限。 */
+/* 上方两卡只做少量预览：条目行高固定为三条，不再出现卡片内部纵向滚动。 */
 .app-main.is-map .map-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
   grid-template-rows:minmax(188px,236px) auto;flex:none;height:auto;min-height:0;align-content:start}
 .map-grid>.quad{grid-column:auto;grid-row:auto}
 .map-grid>.daily-quad{grid-column:1/-1;grid-row:2;min-height:0;max-height:none}
 .map-grid>.company-quad,.map-grid>.tasks-quad{max-height:none}
-.map-grid .q-body{overflow-y:auto;overflow-x:hidden}
+/* 预览卡没有内部滚动：整页滚动负责上方卡片。 */
+.map-grid .q-body{overflow:visible}
+.map-grid .q-body .item-line,.map-grid .q-body .home-task{flex:0 0 auto}
 
 /* 空占位与旧日志卡片已移除；只保留三张纸片 */
 .map-grid>.daily-quad{--note-color:var(--journal-mint, #cfe8d9)}
@@ -39,42 +40,66 @@
   rgba(138,203,170,.62)}
 .daily-head .btn.daily-add:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 
-/* 固定星期表头：横向滚动时不动 */
-.daily-weekdays{flex:0 0 34px;width:34px;display:flex;flex-direction:column;align-items:center;color:var(--muted);font-size:10.5px;font-weight:600}
-.daily-weekdays .daily-corner{height:22px;flex:0 0 22px}
-.daily-weekdays span:not(.daily-corner){height:44px;flex:0 0 44px;display:flex;align-items:flex-start;justify-content:center;padding-top:3px;border-bottom:1px dashed var(--line-2)}
-.daily-weekdays span:last-child{border-bottom:0}
-
-/* 横向滚动只发生在每日事项自己的区域 */
-.daily-scroller{flex:1 1 auto;min-width:0;min-height:330px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;touch-action:pan-x;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+/* 纵向滚动只发生在每日事项自己的区域；到达边界继续滚动交给首页整页。 */
+.daily-scroller{flex:1 1 auto;min-width:0;height:clamp(320px,52vh,560px);overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior-y:auto;touch-action:pan-y;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
 .daily-scroller:focus-visible{outline-offset:-2px}
-.daily-track{display:flex;align-items:flex-start;gap:12px;min-height:330px;padding-bottom:2px}
-.daily-month{flex:0 0 auto;display:flex;flex-direction:column}
-/* 年月头整体属于月块，起点即 1 号所在列；允许超出单列宽度，不截断。 */
-.daily-month-head{height:22px;display:flex;align-items:center;gap:4px;min-width:0}
-.daily-month-label{font-size:10.5px;font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:visible}
-.daily-retry{min-width:34px;min-height:22px;padding:0 4px;font-size:10px;line-height:1}
-.daily-weeks{display:flex;align-items:flex-start}
-.daily-week{display:flex;flex-direction:column}
+.daily-track{display:flex;flex-direction:column;min-height:100%;padding-bottom:4px}
 
-/* 日期格：日期数字在上，数量标记在下；44px 可操作目标 */
-.daily-cell{position:relative;width:46px;min-width:46px;height:44px;padding:2px 1px;border:0;border-radius:9px;background:transparent;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;cursor:pointer;color:var(--ink)}
+/* 固定星期表头：横向七列，与事项条轨道共用同一列宽。 */
+.daily-weekdays{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));
+  height:26px;align-items:center;background:var(--card,#fff);color:var(--muted);font-size:10.5px;font-weight:600;
+  border-bottom:1px solid var(--line-2)}
+.daily-weekdays span{text-align:center;line-height:26px}
+
+.daily-month{display:block;padding:2px 0 8px;border-bottom:1px dashed var(--line-2)}
+.daily-month:last-child{border-bottom:0}
+.daily-month-head{height:24px;display:flex;align-items:center;gap:6px;min-width:0}
+.daily-month-label{font-size:11px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.daily-status-legend{display:flex;align-items:center;gap:3px;font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden}
+.daily-status-legend i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-left:3px}
+.daily-status-legend i:first-child{margin-left:0}
+.daily-status-legend i.is-open{background:var(--daily-open,#3b82f6)}
+.daily-status-legend i.is-done{background:var(--daily-done,#2f8f68)}
+.daily-status-legend i.is-overdue{background:var(--daily-overdue,#c0463a)}
+.daily-month-state{margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.daily-retry{min-width:34px;min-height:22px;padding:0 4px;font-size:10px;line-height:1}
+.daily-month.is-error .daily-month-state{color:#b23b32}
+
+.daily-week{display:block;margin-bottom:4px}
+/* 日期行与轨道行共用七列，因此日期数字、空白、事项条和溢出入口对齐同一天。 */
+.daily-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:36px;align-items:stretch}
+.daily-cell{position:relative;min-width:0;height:36px;padding:2px 1px;border:0;border-radius:8px;background:transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;cursor:pointer;color:var(--ink)}
 .daily-cell:hover{background:var(--brand-soft)}
 .daily-cell .daily-num{font-size:12.5px;line-height:1.25;font-variant-numeric:tabular-nums}
 /* 相邻月份的位置只是非交互空位：无按钮、无焦点、不显示日期。 */
-.daily-gap{display:block;width:46px;min-width:46px;height:44px;flex:0 0 auto}
+.daily-gap{display:block;height:36px;min-width:0}
 .daily-cell.is-today{background:var(--brand-soft);box-shadow:inset 0 0 0 1px #c7d7fb}
 .daily-cell.is-today .daily-num{color:var(--brand);font-weight:700}
 .daily-cell.is-selected{box-shadow:inset 0 0 0 2px var(--brand)}
-.daily-cell.is-unknown{background:var(--grey-soft)}
-.daily-cell.is-unknown .daily-marks::after{content:"!";font-size:9px;color:var(--warn);line-height:1}
+.daily-month.is-loading .daily-cell{color:var(--muted)}
 
-/* 数量标记：每个日期最多一个，长度只由当天总数决定；有未完成=蓝，全完成=灰 */
-.daily-marks{display:flex;align-items:center;justify-content:center;gap:2px;height:4px;flex:0 0 4px;min-width:4px}
-.daily-mark{display:block;height:4px;border-radius:2px;flex:0 0 auto}
-.daily-mark.is-open{background:#3b82f6}
-.daily-mark.is-done{background:#9ca3af}
+/* 事项条轨道：高度固定（--daily-lanes 行），加载完成不会改变月份高度。 */
+.daily-tracks{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:var(--daily-row,18px);
+  row-gap:2px;column-gap:2px;height:calc(var(--daily-lanes,3) * (var(--daily-row,18px) + 2px));padding:1px 0;min-width:0}
+.daily-bar{display:flex;align-items:center;gap:2px;min-width:0;height:100%;padding:0 3px;border:0;border-left:3px solid var(--daily-open,#3b82f6);
+  border-radius:4px;background:#eef4ff;color:#1e3a8a;font-size:10px;line-height:1.2;text-align:left;cursor:pointer;overflow:hidden}
+.daily-bar.is-done{border-left-color:var(--daily-done,#2f8f68);background:#eaf6f0;color:#1d5b40}
+.daily-bar.is-overdue{border-left-color:var(--daily-overdue,#c0463a);background:#fdeeec;color:#8f2f27}
+.daily-bar.is-overdue .daily-bar-name{font-weight:600}
+.daily-bar:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.daily-bar-mark{flex:0 0 auto;font-size:9px;line-height:1;font-weight:700}
+.daily-bar-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.daily-bar.continues-before{border-top-left-radius:0;border-bottom-left-radius:0;border-left-width:0}
+.daily-bar.continues-after{border-top-right-radius:0;border-bottom-right-radius:0}
+
+/* 溢出入口反映当日完整集合；与日期数字、空白、事项条一样先开命中日清单。 */
+.daily-overflow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:2px;height:16px;align-items:center}
+.daily-more{min-width:0;height:15px;padding:0 2px;border:0;border-radius:4px;background:transparent;color:var(--muted);
+  font-size:9.5px;line-height:1;cursor:pointer;text-align:left;overflow:hidden;white-space:nowrap}
+.daily-more:hover{background:var(--brand-soft);color:var(--ink)}
+.daily-more:focus-visible{outline:2px solid var(--brand);outline-offset:0}
 
 /* ---------- 日清单 ---------- */
 .daily-list-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--ink-2)}
@@ -100,11 +125,14 @@
 
 /* ---------- 窄屏与手账主题 ---------- */
 @media (max-width:360px){
-  .daily-weekdays{flex-basis:30px;width:30px}
-  .daily-cell{width:44px;min-width:44px}
-  .daily-gap{width:44px;min-width:44px}
+  /* 日期行高度不随宽度改变：宽度变化只影响列宽，日期锚点与像素偏移才能精确恢复。 */
   .daily-tools .btn{min-width:32px;min-height:32px;padding:2px 4px}
   .daily-head .btn.daily-add{min-width:32px;min-height:32px;padding:2px 4px;font-size:16px}
+  .daily-status-legend{display:none}
+  .daily-scroller{height:clamp(300px,48vh,520px)}
 }
 .daily-quad{background:var(--card)}
 .daily-quad .daily-month-label{color:var(--ink-2)}
+
+/* 超出固定轨道的事项条不参与布局与命中；完整集合由溢出入口进入清单。 */
+.daily-bar[hidden]{display:none}

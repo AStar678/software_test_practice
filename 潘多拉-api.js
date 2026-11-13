@@ -463,13 +463,13 @@
     const tasks = loadTaskRows();
     const [users, logs, logAuthors, reports, approvals, notifications, home, analytics, tags, snapshot] = await Promise.all([
       all("/users"), all("/work-logs?scope=self"), P.request("/work-log-authors"), P.request("/me/reports"),
-      all("/approval-requests?mine=all"), all("/notifications"), P.request("/home"), P.request("/analytics/task-summary?scope=visible"),
+      all("/approval-requests?mine=all"), P.request("/notifications?limit=1&offset=0"), P.request("/home"), P.request("/analytics/task-summary?scope=visible"),
       P.request("/tags"), tasks
     ]);
     if (epoch !== P.epoch || sequence !== reloadSequence) throw cancelled();
     if (!taskSnapshotIsCurrent(snapshot)) throw cancelled();
     P.data = { me, users, rawTasks: snapshot.rows, approvals, home, analytics, logAuthors, reports, tags,
-      calendarLogs: logs.slice() };
+      calendarLogs: logs.slice(), notificationUnreadCount: Number(notifications.unreadCount || 0) };
     // A data reload starts the log page on the default self scope; the page itself preserves
     // the user's search text and author selection until the next explicit reload.
     state.logDepartmentId = "__all__";
@@ -484,9 +484,9 @@
     state.actorId = me.id; ROLE_ACCOUNT[me.role] = me.id;
     commitTaskRows(snapshot.rows);
     LOGS.splice(0, LOGS.length, ...logs.map(l => ({ id: l.id, authorId: l.authorId, time: new Date(l.createdAt), content: l.body, taskId: l.taskId || null, rowVersion: l.rowVersion, editable: l.editable, raw: l })));
-    NOTIFICATIONS.splice(0, NOTIFICATIONS.length, ...notifications.map(n => ({ id: n.id, time: new Date(n.createdAt), summary: n.summary, type: n.eventType, recipients: [me.id], read: n.readAt ? [me.id] : [], targetType: "task", targetId: n.taskId, raw: n })));
+    NOTIFICATIONS.splice(0, NOTIFICATIONS.length);
     COMPANY_ITEMS.splice(0, COMPANY_ITEMS.length, ...home.companyItems.map(i => ({ id: i.id, text: i.body || i.title, raw: i })));
-    [[approvals, P.approvalEtags], [logs, P.logEtags], [notifications, P.notificationEtags]].forEach(([rows, map]) => { map.clear(); rows.forEach(row => map.set(row.id || row.taskId, version(row))); });
+    [[approvals, P.approvalEtags], [logs, P.logEtags], [notifications.items || [], P.notificationEtags]].forEach(([rows, map]) => { map.clear(); rows.forEach(row => map.set(row.id || row.taskId, version(row))); });
     retries.clear(); P.ready = true; gate(); renderAll();
     return P.data;
   }); };

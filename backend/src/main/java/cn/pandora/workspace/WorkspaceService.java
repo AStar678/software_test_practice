@@ -902,7 +902,7 @@ public class WorkspaceService {
 
     private String notificationMetadataCategory(Map<String,Object> row,TaskService.RequestAccess requestAccess) {
         Map<String,Object> classification=new HashMap<>(row);
-        classification.put("canReview",row.get("eventRevokedAt")==null
+        classification.put("canReview",s(row,"requestId")!=null && row.get("eventRevokedAt")==null
                 && Objects.equals(s(row,"taskId"),s(row,"requestTaskId"))
                 && requestAccess.reviewable().contains(s(row,"requestId")));
         return notificationCategory(classification);

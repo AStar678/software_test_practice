@@ -1,8 +1,9 @@
 "use strict";
 /* =====================================================================
-   每日事项：独立的横向连续日历、按日清单、事项详情与创建编辑表单。
+   每日事项：独立纵向连续月历、跨日事项条、按命中日清单、详情与表单。
    该模块只使用每日事项接口和自身状态，不复用公司页任务月历的日期、
-   跨度、拖动或密度状态；所有写入使用真实事项 ID 与读取版本。
+   拖动或密度状态；月份按完整相交范围读取并全部翻页，所有写入使用真实
+   事项 ID 与读取版本。浏览锚点是“日期 + 像素偏移”，与公司日历互不影响。
    ===================================================================== */
 (function () {
   const P = window.Pandora;
@@ -10,15 +11,21 @@
   const WEEKDAY = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
   const MAX_MONTHS = 12;
   const PAGE = 50;
+  /* 每周固定三条事项条位置；超出部分进入该日完整清单。轨道高度固定，
+     因此月份从加载中变为就绪时不会改变滚动高度。 */
+  const LANES = 3;
+  const ROW = 18;
   const S = {
     epoch: -1, account: null, organization: null,
-    companyToday: null, selected: null, anchor: null,
-    blocks: [], summaries: new Map(), lists: new Map(),
-    scrollLeft: 0, scrollToken: 0, scrollTimer: null, layoutTimer: null, layoutRetryTimer: null, layoutVersion: 0, resizeObserver: null, anchorDate: null, anchorOffset: 0, restoring: false, layoutWidth: 0,
+    companyToday: null, selected: null,
+    months: [], records: new Map(), lists: new Map(),
+    anchorDate: null, anchorOffset: 8, restoring: false, viewportHeight: 0,
+    layoutTimer: null, layoutRetryTimer: null, layoutVersion: 0, resizeObserver: null,
     detail: null, listScroll: null, closeFocus: null, closePosition: null,
     formOrigin: "calendar", sessionSeq: 0, generation: 0
   };
   let pendingSheetQuery = null;
+  let press = null;
 
   /* ------------------------------------------------------------ 日期工具 */
   function pad(n) { return n < 10 ? "0" + n : "" + n; }
@@ -63,16 +70,28 @@
     const end = item && (item.endDate || start);
     return { start: start, end: end };
   }
-  function itemStatus(item) {
-    return String(item && item.status || (item && item.completed ? "completed" : "open"));
-  }
+  function firstLine(text) { return String(text || "").split("\n")[0].slice(0, 40); }
   const STATUS_TEXT = { completed: "已完成", open: "未完成", overdue: "已逾期" };
+  /* 完成优先；未完成且公司今天超过含首尾的结束日才逾期。 */
+  function statusOf(item) {
+    if (!item) return "open";
+    if (item.completed || String(item.status) === "completed") return "completed";
+    const range = itemRange(item);
+    if (S.companyToday && range.end && S.companyToday > range.end) return "overdue";
+    return "open";
+  }
+  function covers(item, key) {
+    const range = itemRange(item);
+    return !!range.start && !!range.end && key >= range.start && key <= range.end;
+  }
+  function statusMark(status) {
+    return status === "completed" ? "✓" : status === "overdue" ? "!" : "○";
+  }
 
   /* ------------------------------------------------------------ 月份窗口 */
-  /* Every month owns the whole weeks from the week of its 1st to the week of its last day.
-     Positions in those weeks that belong to another month are non-interactive blanks, so a real
-     date exists in exactly one month block, month headings never share a week column and each
-     heading starts above its own 1st. */
+  /* 每个月拥有从 1 号所在周到月末所在周的全部星期行；属于相邻月份的位置只是
+     非交互空位，所以同一真实日期只存在一个可交互日期格，月份标题不会与别的
+     月份共享星期行。 */
   function blockForMonth(year, monthIndex) {
     const normalized = new Date(year, monthIndex, 1);
     return monthBlock(normalized.getFullYear(), normalized.getMonth() + 1);
@@ -85,8 +104,8 @@
       from: dateKey(first), to: dateKey(last) };
   }
   function monthKeyOf(date) { return date.getFullYear() + "-" + pad(date.getMonth() + 1); }
-  function blockContaining(key) { return S.blocks.find(block => key >= block.from && key <= block.to) || null; }
-  function blockOf(key) { return S.blocks.find(block => block.key === key) || null; }
+  function blockOf(key) { return S.months.find(block => block.key === key) || null; }
+  function blockForDate(key) { return blockOf(String(key || "").slice(0, 7)); }
 
   function clearSession() {
     cancelSheetQuery();
@@ -94,10 +113,9 @@
     cancelLayout();
     if (S.resizeObserver) { S.resizeObserver.disconnect(); S.resizeObserver = null; }
     S.epoch = -1; S.account = null; S.organization = null;
-    S.blocks = []; S.summaries.clear(); S.lists.clear();
-    S.scrollLeft = 0; S.anchorDate = null; S.anchorOffset = 0; S.layoutWidth = 0;
-    S.scrollToken++; S.restoring = false;
-    S.companyToday = null; S.selected = null; S.anchor = null;
+    S.months = []; S.records.clear(); S.lists.clear();
+    S.anchorDate = null; S.anchorOffset = 8; S.viewportHeight = 0;
+    S.companyToday = null; S.selected = null;
     S.detail = null; S.listScroll = null; S.closeFocus = null; S.closePosition = null;
     S.formOrigin = "calendar";
     drafts.daily = null;
@@ -120,58 +138,121 @@
     return (generation == null || generation === S.generation) && S.account != null &&
       S.epoch === P.epoch && S.account === (me.id || null) && S.organization === (me.organizationId || null);
   }
+  function recordOf(key) { return S.records.get(key) || null; }
+  /* 刷新失败时保留上次成功加载的记录：状态标记为可重试，但不把已显示的月份清空。 */
+  function recordItems(key) {
+    const record = recordOf(key);
+    return record && record.items ? Array.from(record.items.values()) : [];
+  }
+  function recordLoaded(record) {
+    return !!record && (record.state !== "loading" || (record.items && record.items.size > 0));
+  }
 
   /* ------------------------------------------------------------ 日历渲染 */
-  function initialBlocks(today) {
-    S.blocks = [blockForMonth(today.getFullYear(), today.getMonth() - 1),
+  function initialMonths(today) {
+    S.months = [blockForMonth(today.getFullYear(), today.getMonth() - 1),
       blockForMonth(today.getFullYear(), today.getMonth()),
       blockForMonth(today.getFullYear(), today.getMonth() + 1)];
-    S.anchor = monthKeyOf(today);
   }
-  function markWidth(total) { return 4 + (Math.min(total, 5) - 1) * 3; }
-  /* One marker per day, sized by open + completed. Colour only reports whether anything is left
-     open, so completing or reopening an item never changes a day's marker length. */
-  function marksHTML(counts) {
-    if (!counts) return '<span class="daily-marks"></span>';
-    const total = (Number(counts.open) || 0) + (Number(counts.completed) || 0);
-    if (total <= 0) return '<span class="daily-marks"></span>';
-    const state = Number(counts.open) > 0 ? "is-open" : "is-done";
-    return '<span class="daily-marks"><i class="daily-mark ' + state + '" style="width:' + markWidth(total) + 'px"></i></span>';
+  function dayCounts(items, key) {
+    const counts = { open: 0, completed: 0, overdue: 0 };
+    items.forEach(item => { if (covers(item, key)) counts[statusOf(item)]++; });
+    return counts;
   }
-  function cellAria(date, counts) {
-    const countText = counts == null
-      ? "数量加载中"
-      : "未完成" + (counts.open || 0) + "条，已完成" + (counts.completed || 0) + "条";
-    return longDate(dateKey(date)) + "，" + countText;
+  function cellAria(key, items, loaded) {
+    if (!loaded) return longDate(key) + "，事项加载中";
+    const counts = dayCounts(items, key);
+    const total = counts.open + counts.completed + counts.overdue;
+    if (!total) return longDate(key) + "，无事项";
+    return longDate(key) + "，未完成" + counts.open + "条，已完成" + counts.completed + "条，逾期" + counts.overdue + "条";
   }
-  function cellHTML(block, date) {
-    const key = dateKey(date), summary = S.summaries.get(block.key);
-    const counts = summary && summary.state === "ready" ? (summary.days.get(key) || { open: 0, completed: 0 }) : null;
+  function cellHTML(block, date, items) {
+    const key = dateKey(date);
     const classes = ["daily-cell"];
     if (key === S.companyToday) classes.push("is-today");
     if (key === S.selected) classes.push("is-selected");
-    if (summary && summary.state === "error") classes.push("is-unknown");
-    return '<button type="button" class="' + classes.join(" ") + '" data-daily-date="' + key + '" tabindex="-1" aria-label="' + esc(cellAria(date, counts)) + '">' +
-      '<span class="daily-num">' + date.getDate() + "</span>" + marksHTML(counts) + "</button>";
+    return '<button type="button" class="' + classes.join(" ") + '" data-daily-date="' + key + '" tabindex="-1" aria-label="' + esc(cellAria(key, items || [], !!items)) + '">' +
+      '<span class="daily-num">' + date.getDate() + "</span></button>";
   }
   /* Padding for a date that belongs to a neighbouring month: no button, no focus target. */
   function gapHTML() { return '<span class="daily-gap" aria-hidden="true"></span>'; }
-  function blockHTML(block) {
-    const weeks = block.weeks.map(start => {
-      const monday = parseKey(start);
-      const cells = [];
-      for (let i = 0; i < 7; i++) {
-        const date = shift(monday, i);
-        const own = date.getFullYear() === block.year && date.getMonth() + 1 === block.month;
-        cells.push(own ? cellHTML(block, date) : gapHTML());
-      }
-      return '<div class="daily-week">' + cells.join("") + "</div>";
+  function weekSegments(block, weekStart, items) {
+    const monday = parseKey(weekStart);
+    const days = Array.from({ length: 7 }, (_, i) => dateKey(shift(monday, i)));
+    const own = days.map(key => String(key).slice(0, 7) === block.key);
+    const segments = [], lanes = [];
+    const sorted = items.slice().sort((a, b) => {
+      const ra = itemRange(a), rb = itemRange(b);
+      return String(ra.start).localeCompare(String(rb.start)) || String(a.id).localeCompare(String(b.id));
+    });
+    for (const item of sorted) {
+      const range = itemRange(item);
+      if (!range.start || !range.end) continue;
+      const cols = days.map((key, i) => own[i] && key >= range.start && key <= range.end ? i : -1).filter(i => i >= 0);
+      if (!cols.length) continue;
+      const startCol = cols[0], endCol = cols[cols.length - 1] + 1;
+      const mask = ((1 << (endCol - startCol)) - 1) << startCol;
+      let lane = lanes.findIndex(bits => (bits & mask) === 0);
+      if (lane < 0) { lane = lanes.length; lanes.push(0); }
+      lanes[lane] |= mask;
+      segments.push({ item: item, startCol: startCol, endCol: endCol, lane: lane, status: statusOf(item),
+        before: range.start < days[startCol], after: range.end > days[endCol - 1] });
+    }
+    return { days: days, own: own, segments: segments };
+  }
+  function barHTML(segment, block) {
+    const range = itemRange(segment.item);
+    const name = firstLine(segment.item.body);
+    const visible = segment.lane < LANES;
+    const classes = ["daily-bar", "is-" + segment.status];
+    if (segment.before) classes.push("continues-before");
+    if (segment.after) classes.push("continues-after");
+    const label = name + "，" + rangeLabel(range.start, range.end) + "，" + STATUS_TEXT[segment.status] +
+      "，点击查看对应日期清单";
+    return '<button type="button" class="' + classes.join(" ") + '" data-daily-bar data-id="' + esc(segment.item.id) + '"' +
+      ' data-start-col="' + segment.startCol + '" data-end-col="' + segment.endCol + '"' +
+      (visible ? "" : " hidden") +
+      ' style="grid-column:' + (segment.startCol + 1) + " / " + (segment.endCol + 1) + ";grid-row:" + (segment.lane + 1) + '"' +
+      ' aria-label="' + esc(label) + '" title="' + esc(label) + '">' +
+      '<span class="daily-bar-mark" aria-hidden="true">' + statusMark(segment.status) + "</span>" +
+      '<span class="daily-bar-name">' + esc(name) + "</span></button>";
+  }
+  function overflowHTML(data, block) {
+    return data.days.map((key, col) => {
+      if (!data.own[col]) return "";
+      const hidden = data.segments.filter(segment => segment.lane >= LANES && segment.startCol <= col && segment.endCol > col).length;
+      return hidden ? '<button type="button" class="daily-more" data-daily-more data-date="' + key + '" aria-label="' + esc(longDate(key) + "还有" + hidden + "项事项，查看完整清单") + '">+' + hidden + "</button>" : "";
     }).join("");
-    return '<div class="daily-month" data-month="' + block.key + '" aria-label="' + block.year + "年" + block.month + "月日历" + '">' +
+  }
+  function weekHTML(block, weekStart) {
+    const monday = parseKey(weekStart);
+    const record = recordOf(block.key);
+    const items = recordItems(block.key);
+    const data = weekSegments(block, weekStart, items);
+    const cells = [];
+    for (let i = 0; i < 7; i++) {
+      const date = shift(monday, i);
+      const own = date.getFullYear() === block.year && date.getMonth() + 1 === block.month;
+      if (!own) { cells.push(gapHTML()); continue; }
+      cells.push(cellHTML(block, date, recordLoaded(record) ? items : null));
+    }
+    return '<div class="daily-week" data-week-start="' + weekStart + '">' +
+      '<div class="daily-days">' + cells.join("") + "</div>" +
+      '<div class="daily-tracks" style="--daily-lanes:' + LANES + ";--daily-row:" + ROW + 'px" aria-hidden="false">' +
+        data.segments.map(segment => barHTML(segment, block)).join("") + "</div>" +
+      '<div class="daily-overflow">' + overflowHTML(data, block) + "</div></div>";
+  }
+  function monthHTML(block) {
+    const record = recordOf(block.key);
+    const state = !record ? "loading" : record.state;
+    const stateText = state === "loading" ? "正在加载…" : state === "error" ? "加载失败" : "";
+    return '<section class="daily-month is-' + state + '" data-month="' + block.key + '" aria-label="' + block.year + "年" + block.month + "月日历" + '">' +
       '<div class="daily-month-head"><span class="daily-month-label">' + block.year + "年" + block.month + "月</span>" +
-        '<button type="button" class="btn tiny-btn daily-retry" data-action="daily-retry" data-month="' + block.key + '" hidden aria-label="重试加载' + block.year + "年" + block.month + '月数量">重试</button>' +
+        '<span class="daily-status-legend" aria-hidden="true"><i class="is-open"></i>○未完成 <i class="is-done"></i>✓已完成 <i class="is-overdue"></i>!逾期</span>' +
+        '<span class="daily-month-state" role="status">' + stateText + "</span>" +
+        '<button type="button" class="btn tiny-btn daily-retry" data-action="daily-retry" data-month="' + block.key + '" hidden aria-label="重试加载' + block.year + "年" + block.month + '月事项">重试</button>' +
       "</div>" +
-      '<div class="daily-weeks">' + weeks + "</div></div>";
+      '<div class="daily-weeks">' + block.weeks.map(week => weekHTML(block, week)).join("") + "</div></section>";
   }
   function calendarHTML() {
     return '<div class="card-head daily-head"><h2 id="q3">每日事项</h2>' +
@@ -183,10 +264,9 @@
         '<button type="button" class="btn tiny-btn" data-action="daily-today" aria-label="回到公司今天">今天</button>' +
       "</div></div>" +
       '<div class="daily-body">' +
-        '<div class="daily-weekdays" aria-hidden="true"><span class="daily-corner"></span>' +
-          WEEKDAY.map(name => "<span>" + name + "</span>").join("") + "</div>" +
-        '<div class="daily-scroller" id="dailyScroller" tabindex="0" role="group" aria-label="每日事项日历：左右滚动浏览月份，方向键移动日期，回车打开当天清单">' +
-          '<div class="daily-track" id="dailyTrack">' + S.blocks.map(blockHTML).join("") + "</div></div>" +
+        '<div class="daily-scroller" id="dailyScroller" tabindex="0" role="group" aria-label="每日事项月历：上下滚动浏览连续月份，方向键移动日期，回车打开当天清单">' +
+          '<div class="daily-weekdays" aria-hidden="true">' + WEEKDAY.map(name => "<span>" + name + "</span>").join("") + "</div>" +
+          '<div class="daily-track" id="dailyTrack">' + S.months.map(monthHTML).join("") + "</div></div>" +
       "</div>" +
       '<div class="callout" id="dailyError" role="alert" hidden></div>';
   }
@@ -196,15 +276,20 @@
     resetForSession();
     const today = companyToday();
     S.companyToday = dateKey(today);
-    const fresh = !S.blocks.length;
-    if (fresh) initialBlocks(today);
+    if (!S.months.length) {
+      initialMonths(today);
+      S.anchorDate = S.companyToday;
+      S.anchorOffset = 8;
+    }
     if (!S.selected) S.selected = S.companyToday;
+    // Keep the current date anchor before the card is replaced; a hidden page keeps its last one.
+    const scroller = document.getElementById("dailyScroller");
+    if (scroller && scroller.clientHeight) anchorFromDom(scroller);
     cancelLayout();
     host.innerHTML = calendarHTML();
     bindCalendar();
-    S.blocks.forEach(loadBlock);
-    if (fresh || !S.anchorDate) layoutCalendar({ date: S.companyToday });
-    else layoutCalendar({ date: S.anchorDate, offset: S.anchorOffset });
+    S.months.forEach(loadMonth);
+    layoutPosition({ date: S.anchorDate || S.companyToday, offset: S.anchorOffset });
   }
   function bindCalendar() {
     const scroller = document.getElementById("dailyScroller");
@@ -213,130 +298,108 @@
     scroller.addEventListener("keydown", onCalendarKey);
     scroller.addEventListener("pointerdown", onPointerDown, { passive: true });
     scroller.addEventListener("pointermove", onPointerMove, { passive: true });
+    scroller.addEventListener("click", onScrollerClick);
     observeSize(scroller);
   }
 
-  /* The saved anchor is a date plus its pixel offset. A viewport change clamps scrollLeft before
-     the window can be padded, and that transient clamp must never overwrite the anchor: only a
-     scroll at the width the anchor was measured at may replace it. */
+  /* 浏览锚点是一个日期加上它相对滚动视口顶端的像素偏移。尺寸变化会先夹紧
+     scrollTop，那一瞬间不能被当成新的锚点；只有同一尺寸下的滚动才替换锚点。 */
   function anchorFromDom(scroller) {
-    if (!scroller || scroller.clientWidth !== S.layoutWidth) return;
-    const left = scroller.getBoundingClientRect().left;
-    let best = null, bestLeft = Infinity;
+    if (!scroller || !scroller.clientHeight) return;
+    const top = scroller.getBoundingClientRect().top;
+    let best = null, bestTop = Infinity;
     scroller.querySelectorAll("[data-daily-date]").forEach(cell => {
-      const cellLeft = cell.getBoundingClientRect().left;
-      if (cellLeft >= left - 1 && cellLeft < bestLeft) { bestLeft = cellLeft; best = cell; }
+      const cellTop = cell.getBoundingClientRect().top;
+      if (cellTop >= top - 1 && cellTop < bestTop) { bestTop = cellTop; best = cell; }
     });
-    if (best) { S.anchorDate = best.dataset.dailyDate; S.anchorOffset = bestLeft - left; }
+    if (best) {
+      S.anchorDate = best.dataset.dailyDate;
+      S.anchorOffset = Math.max(0, Math.round(bestTop - top));
+      /* 清单打开期间的补载/布局若改变了日历锚点，关闭时应回到当前可见位置，而不是旧快照。 */
+      if (S.closePosition && typeof openListDate === 'function' && openListDate())
+        S.closePosition = { date: S.anchorDate, offset: S.anchorOffset };
+    }
   }
 
-  /* ------------------------------------------------------- 布局与范围补足 */
+  /* ------------------------------------------------------- 定位与月份补足 */
   function cancelLayout() {
     S.layoutVersion++;
     clearTimeout(S.layoutTimer);
     clearTimeout(S.layoutRetryTimer);
-    clearTimeout(S.scrollTimer);
-    S.layoutTimer = S.layoutRetryTimer = S.scrollTimer = null;
+    S.layoutTimer = S.layoutRetryTimer = null;
   }
   function currentLayout(scroller, generation, version) {
     return sameSession(generation) && version === S.layoutVersion &&
       scroller === document.getElementById("dailyScroller");
   }
-  function monthOffset(scroller, key) {
-    const element = scroller.querySelector('.daily-month[data-month="' + key + '"]');
-    if (!element) return null;
-    return element.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
+  function cellTopInTrack(scroller, key) {
+    const cell = scroller.querySelector('[data-daily-date="' + key + '"]');
+    if (!cell) return null;
+    return cell.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
   }
-  function blockWidth(scroller, key) {
-    const element = scroller.querySelector('.daily-month[data-month="' + key + '"]');
-    return element ? element.getBoundingClientRect().width : 0;
-  }
-  /* Walk the bounded window towards a month that is not mounted yet. */
   function ensureMonth(key) {
     let guard = 0;
     while (!blockOf(key) && guard++ < MAX_MONTHS) {
-      const first = S.blocks[0], last = S.blocks[S.blocks.length - 1];
+      const first = S.months[0], last = S.months[S.months.length - 1];
       if (!first || !last) return false;
-      if (key < first.key) extend(-1);
-      else if (key > last.key) extend(1);
+      if (key < first.key) prependMonth();
+      else if (key > last.key) appendMonth();
       else return false;
     }
     return !!blockOf(key);
   }
-  /* Keep at least one measurable viewport of months on each side of the anchor month, so the
-     calendar can be slid both ways the moment it is laid out (never "static months" on a wide
-     screen). The 12-month cap still bounds the DOM and the summary requests. */
-  function padWindow(key) {
+  /* 宽屏初始内容可能不足一屏：持续补足下方月份，使月历总可继续浏览，
+     同时保留 12 个月的有界 DOM。 */
+  function padMonths() {
     const scroller = document.getElementById("dailyScroller");
-    if (!scroller || !scroller.clientWidth || !blockOf(key)) return;
-    const viewport = scroller.clientWidth;
+    if (!scroller || !scroller.clientHeight) return;
     for (let guard = 0; guard < MAX_MONTHS; guard++) {
-      if (S.blocks.length >= MAX_MONTHS) return;
-      const left = monthOffset(scroller, key);
-      if (left == null) return;
-      const right = scroller.scrollWidth - left - blockWidth(scroller, key);
-      if (left >= viewport && right >= viewport) return;
-      extend(left < viewport ? -1 : 1);
+      if (S.months.length >= MAX_MONTHS) return;
+      if (scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight >= scroller.clientHeight * 0.5) return;
+      appendMonth();
     }
   }
-  function revealDate(scroller, key) {
-    if (!key) return;
-    const cell = scroller.querySelector('[data-daily-date="' + key + '"]');
-    if (!cell) return;
-    const box = cell.getBoundingClientRect(), view = scroller.getBoundingClientRect();
-    if (box.left < view.left) scroller.scrollLeft -= view.left - box.left;
-    else if (box.right > view.right) scroller.scrollLeft += box.right - view.right;
+  function place(scroller, key, offset) {
+    const top = cellTopInTrack(scroller, key);
+    if (top == null) return false;
+    scroller.scrollTop = Math.max(0, top - (offset == null ? 8 : offset));
+    return true;
   }
-  function syncScroll(scroller) {
-    S.scrollLeft = scroller.scrollLeft;
-    S.restoring = false;
-    anchorFromDom(scroller);
-    setAnchorFromScroll();
-  }
-  /* One entry point shared by first render, page refresh, month jumps, locate/today and viewport
-     changes: mount the target month, pad both sides by a viewport, then place the target date at
-     its saved pixel offset (or two cells from the left edge). A hidden or zero-width container is
-     retried for a bounded number of frames and abandoned when the session/render generation moves. */
-  function layoutCalendar(target) {
+  /* 首次渲染、页面刷新、月份跳转、定位/今天、尺寸变化共用这一个入口：
+     先挂载目标月份并补足可浏览月份，再把目标日期放到保存的像素偏移处。 */
+  function layoutPosition(target) {
     cancelLayout();
     const opts = target || {};
     const generation = S.generation;
     const version = S.layoutVersion;
     const scroller = document.getElementById("dailyScroller");
-    const date = parseKey(opts.date) ? opts.date : S.companyToday;
-    if (!date) return false;
-    const month = date.slice(0, 7);
-    const offset = opts.offset;
-    const place = (tries) => {
-      if (!scroller || !currentLayout(scroller, generation, version) || !S.blocks.length) return false;
-      if (!scroller.clientWidth) {
+    const key = parseKey(opts.date) ? opts.date : S.companyToday;
+    if (!key) return false;
+    const placeAt = (tries) => {
+      if (!scroller || !currentLayout(scroller, generation, version) || !S.months.length) return false;
+      if (!scroller.clientHeight) {
         if (tries > 0) S.layoutRetryTimer = setTimeout(() => {
           S.layoutRetryTimer = null;
-          place(tries - 1);
+          placeAt(tries - 1);
         }, 32);
         return false;
       }
       S.restoring = true;
-      scroller.scrollTop = 0;
-      ensureMonth(month);
-      if (!blockOf(month)) { S.restoring = false; return false; }
-      padWindow(month);
-      const cell = scroller.querySelector('[data-daily-date="' + date + '"]');
-      const cellLeft = cell ? cell.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft : null;
-      let value = null;
-      if (cellLeft != null) value = offset != null ? cellLeft - offset : cellLeft - 46 * 2;
-      if (value == null) { const left = monthOffset(scroller, month); value = left == null ? 0 : left; }
-      scroller.scrollLeft = Math.max(0, value);
-      if (offset == null) revealDate(scroller, date);
-      scroller.scrollTop = 0;
-      S.layoutWidth = scroller.clientWidth;
-      syncScroll(scroller);
+      ensureMonth(key.slice(0, 7));
+      if (!blockOf(key.slice(0, 7))) { S.restoring = false; return false; }
+      place(scroller, key, opts.offset);
+      // 补足可浏览月份后再放一次，避免底部夹紧丢掉刚保存的像素偏移。
+      padMonths();
+      place(scroller, key, opts.offset);
+      S.restoring = false;
+      S.viewportHeight = scroller.clientHeight;
+      anchorFromDom(scroller);
+      S.anchorDate = key;
+      S.anchorOffset = opts.offset == null ? 8 : opts.offset;
       return true;
     };
-    return place(16);
+    return placeAt(16);
   }
-  /* A resize (narrow → wide), a hidden page becoming visible or a late layout all re-run the same
-     layout with the current anchor, which is how the window stays browsable after a viewport change. */
   function observeSize(scroller) {
     if (S.resizeObserver) { S.resizeObserver.disconnect(); S.resizeObserver = null; }
     if (!scroller || typeof ResizeObserver !== "function") return;
@@ -354,216 +417,255 @@
     S.layoutTimer = setTimeout(() => {
       S.layoutTimer = null;
       if (!currentLayout(scroller, generation, version)) return;
-      layoutCalendar({ date: S.anchorDate || S.companyToday, offset: S.anchorOffset });
+      layoutPosition({ date: S.anchorDate || S.companyToday, offset: S.anchorOffset });
     }, 60);
   }
 
-  /* ------------------------------------------------------------ 数量加载 */
-  function loadBlock(block) {
+  /* ------------------------------------------------------------ 范围读取 */
+  /* 每个月只读取与该月完整日范围相交的记录，窗口不超过 31 天；之后逐页读完，
+     按真实 ID 合并。失败保留该月已加载的记录，只标记可重试，不把首屏当全量。 */
+  async function loadMonth(block, force) {
     if (!block) return;
-    const cached = S.summaries.get(block.key);
-    if (cached && (cached.state === "ready" || cached.state === "loading")) return;
+    const cached = recordOf(block.key);
+    if (cached && !force && (cached.state === "ready" || cached.state === "loading")) return;
     const token = ++S.sessionSeq;
-    const entry = { state: "loading", days: new Map(), token: token, epoch: S.epoch, account: S.account };
-    S.summaries.set(block.key, entry);
-    P.request("/daily-items/summary?from=" + block.from + "&to=" + block.to).then(result => {
-      const current = S.summaries.get(block.key);
-      if (!current || current.token !== token || !sameSession()) return;
-      const days = new Map();
-      (result.days || []).forEach(day => days.set(day.date, { open: Number(day.openCount || 0), completed: Number(day.completedCount || 0) }));
-      S.summaries.set(block.key, { state: "ready", days: days, token: token, epoch: S.epoch, account: S.account });
-      paintMonth(block.key);
-    }).catch(() => {
-      const current = S.summaries.get(block.key);
-      if (!current || current.token !== token || !sameSession()) return;
-      // A failed or aborted range stays explicitly retryable and never claims a confirmed zero.
-      S.summaries.set(block.key, { state: "error", days: new Map(), token: token, epoch: S.epoch, account: S.account });
-      paintMonth(block.key);
-    });
+    const previous = cached && cached.items ? cached.items : new Map();
+    const entry = { state: "loading", items: previous, token: token, epoch: S.epoch, account: S.account };
+    S.records.set(block.key, entry);
+    if (S.months.some(item => item.key === block.key)) paintMonth(block.key);
+    const readAll = async () => {
+      const items = new Map();
+      let total = null, offset = 0;
+      for (let guard = 0; guard < 60; guard++) {
+        const page = await P.request("/daily-items?from=" + block.from + "&to=" + block.to + "&limit=100&offset=" + offset);
+        if (!sameSession() || (recordOf(block.key) || {}).token !== token) return null;
+        const rows = page.items || [];
+        const pageTotal = Number(page.total);
+        if (total != null && pageTotal !== total) throw new Error("事项数量正在变化，请重试。");
+        total = pageTotal;
+        rows.forEach(item => { if (item && item.id) items.set(item.id, item); });
+        const next = page.nextOffset == null ? null : Number(page.nextOffset);
+        if (next == null) break;
+        if (next <= offset) throw new Error("事项分页异常，请重试。");
+        offset = next;
+      }
+      if (total != null && items.size !== total) throw new Error("事项正在其他会话中变化，请重试加载。");
+      return items;
+    };
+    try {
+      let items = null, failure = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try { items = await readAll(); break; }
+        catch (error) { failure = error; if (error.name === "AbortError") return; }
+      }
+      if (!sameSession() || (recordOf(block.key) || {}).token !== token) return;
+      if (!items) throw failure || new Error("事项加载失败，请重试。");
+      S.records.set(block.key, { state: "ready", items: items, token: token, epoch: S.epoch, account: S.account });
+    } catch (error) {
+      if (error.name === "AbortError") return;
+      if (!sameSession() || (recordOf(block.key) || {}).token !== token) return;
+      S.records.set(block.key, { state: "error", items: previous, token: token, epoch: S.epoch, account: S.account, error: error });
+    }
+    paintMonth(block.key);
   }
   function paintMonth(key) {
-    const block = S.blocks.find(item => item.key === key);
+    const block = blockOf(key);
     const root = document.querySelector('.daily-month[data-month="' + key + '"]');
-    const summary = S.summaries.get(key);
-    if (!root || !block || !summary) return;
-    root.classList.toggle("is-error", summary.state === "error");
-    root.classList.toggle("is-loading", summary.state === "loading");
+    if (!root || !block) return;
+    const record = recordOf(key);
+    const state = !record ? "loading" : record.state;
+    root.classList.toggle("is-ready", state === "ready");
+    root.classList.toggle("is-loading", state === "loading");
+    root.classList.toggle("is-error", state === "error");
+    root.classList.toggle("is-stale", state === "error" && record.items.size > 0);
     const retry = root.querySelector("[data-action='daily-retry']");
-    if (retry) retry.hidden = summary.state !== "error";
-    root.querySelectorAll("[data-daily-date]").forEach(cell => {
-      const date = parseKey(cell.dataset.dailyDate);
-      const counts = summary.state === "ready" ? (summary.days.get(cell.dataset.dailyDate) || { open: 0, completed: 0 }) : null;
-      const marks = cell.querySelector(".daily-marks");
-      if (marks) marks.outerHTML = marksHTML(counts);
-      cell.classList.toggle("is-unknown", summary.state === "error");
-      cell.setAttribute("aria-label", cellAria(date, counts));
+    if (retry) retry.hidden = state !== "error";
+    const stateEl = root.querySelector(".daily-month-state");
+    if (stateEl) stateEl.textContent = state === "loading" ? "正在加载…" : state === "error" ? (record.items.size ? "使用上次加载的事项" : "加载失败") : "";
+    block.weeks.forEach(weekStart => {
+      const week = root.querySelector('.daily-week[data-week-start="' + weekStart + '"]');
+      if (!week) return;
+      const items = recordItems(key);
+      const data = weekSegments(block, weekStart, items);
+      const tracks = week.querySelector(".daily-tracks");
+      const overflow = week.querySelector(".daily-overflow");
+      if (tracks) tracks.innerHTML = data.segments.map(segment => barHTML(segment, block)).join("");
+      if (overflow) overflow.innerHTML = overflowHTML(data, block);
+      week.querySelectorAll("[data-daily-date]").forEach(cell => {
+        cell.setAttribute("aria-label", cellAria(cell.dataset.dailyDate, items, recordLoaded(record)));
+      });
     });
   }
-  function invalidateDate(key) {
-    S.blocks.forEach(block => {
-      if (key >= block.from && key <= block.to) {
-        const summary = S.summaries.get(block.key);
-        if (summary && summary.state === "ready") {
-          summary.days.delete(key);
-        }
-        S.summaries.delete(block.key);
-        paintMonth(block.key);
-        loadBlock(block);
-      }
-    });
-  }
-
   /* ------------------------------------------------------------ 滚动补载 */
   function onScroll() {
     const scroller = document.getElementById("dailyScroller");
-    // Hiding the map page resets its scroll position; that synthetic event must not replace the
-    // saved anchor or position for the same account.
-    if (!scroller || !scroller.clientWidth) return;
-    S.scrollLeft = scroller.scrollLeft;
-    if (scroller.clientWidth !== S.layoutWidth) {
-      // A resize clamped the position before the window could be repadded; keep the saved anchor
-      // and let the size observer/layout restore it at the new width.
-      scheduleLayout();
-      return;
-    }
+    if (!scroller || !scroller.clientHeight) return;
+    // 尺寸变化会先夹紧 scrollTop：这一瞬间不能被当成新的日期锚点。
+    if (scroller.clientHeight !== S.viewportHeight) { scheduleLayout(); return; }
     if (!S.restoring) anchorFromDom(scroller);
-    setAnchorFromScroll();
-    if (S.scrollTimer) return;
+    if (S.layoutTimer) return;
     const generation = S.generation, version = S.layoutVersion;
-    S.scrollTimer = setTimeout(() => {
-      S.scrollTimer = null;
-      if (!currentLayout(scroller, generation, version) || !scroller.clientWidth) return;
-      const right = scroller.scrollWidth - scroller.clientWidth - scroller.scrollLeft;
-      if (scroller.scrollLeft < 80) extend(-1);
-      else if (right < 80) extend(1);
-      // Keep the same one-viewport margin around the browsed month, so a gesture never hits a
-      // dead end while more months remain inside the bounded window.
-      if (S.anchor) padWindow(S.anchor);
+    S.layoutTimer = setTimeout(() => {
+      S.layoutTimer = null;
+      if (!currentLayout(scroller, generation, version) || !scroller.clientHeight) return;
+      const top = scroller.scrollTop;
+      const bottom = scroller.scrollHeight - scroller.clientHeight - top;
+      if (top < 80) prependMonth();
+      else if (bottom < 80) appendMonth();
+      padMonths();
+      if (!S.restoring) anchorFromDom(scroller);
     }, 120);
   }
-  function extend(direction) {
-    const anchor = direction < 0 ? S.blocks[0] : S.blocks[S.blocks.length - 1];
-    if (!anchor) return;
-    const next = blockForMonth(anchor.year, anchor.month - 1 + direction);
-    if (S.blocks.some(block => block.key === next.key)) return;
-    const scroller = document.getElementById("dailyScroller");
+  function appendMonth() {
+    const last = S.months[S.months.length - 1];
     const track = document.getElementById("dailyTrack");
-    if (!scroller || !track) return;
-    const widthBefore = scroller.scrollWidth, left = scroller.scrollLeft;
-    if (direction < 0) {
-      S.blocks.unshift(next);
-      track.insertAdjacentHTML("afterbegin", blockHTML(next));
-    } else {
-      S.blocks.push(next);
-      track.insertAdjacentHTML("beforeend", blockHTML(next));
-    }
-    loadBlock(next);
-    if (direction < 0) scroller.scrollLeft = left + (scroller.scrollWidth - widthBefore);
-    while (S.blocks.length > MAX_MONTHS) {
-      const removed = direction > 0 ? S.blocks.shift() : S.blocks.pop();
-      const element = track.querySelector('.daily-month[data-month="' + removed.key + '"]');
-      if (!element) break;
-      const head = direction > 0;
-      const width = scroller.scrollWidth;
-      element.remove();
-      S.summaries.delete(removed.key);
-      if (head) scroller.scrollLeft = Math.max(0, scroller.scrollLeft - (width - scroller.scrollWidth));
-    }
-    S.scrollLeft = scroller.scrollLeft;
-    if (!S.restoring) anchorFromDom(scroller);
-    setAnchorFromScroll();
+    if (!last || !track) return false;
+    const next = blockForMonth(last.year, last.month);
+    if (S.months.some(block => block.key === next.key)) return false;
+    S.months.push(next);
+    track.insertAdjacentHTML("beforeend", monthHTML(next));
+    loadMonth(next);
+    trimMonths();
+    return true;
   }
-  function scrollToDate(key) {
-    if (!parseKey(key)) return false;
-    if (!blockContaining(key) && !ensureMonth(key.slice(0, 7))) return false;
-    layoutCalendar({ date: key });
-    return !!document.querySelector('[data-daily-date="' + key + '"]');
-  }
-  function setAnchorFromScroll() {
+  function prependMonth() {
+    const first = S.months[0];
+    const track = document.getElementById("dailyTrack");
     const scroller = document.getElementById("dailyScroller");
-    if (!scroller || !scroller.clientWidth) return;
-    const left = scroller.getBoundingClientRect().left;
-    let best = null, bestDelta = Infinity;
-    scroller.querySelectorAll(".daily-month").forEach(element => {
-      const delta = Math.abs(element.getBoundingClientRect().left - left);
-      if (delta < bestDelta) { bestDelta = delta; best = element; }
-    });
-    if (best) S.anchor = best.dataset.month;
+    if (!first || !track || !scroller) return false;
+    const next = blockForMonth(first.year, first.month - 2);
+    if (S.months.some(block => block.key === next.key)) return false;
+    const heightBefore = scroller.scrollHeight;
+    S.months.unshift(next);
+    track.insertAdjacentHTML("afterbegin", monthHTML(next));
+    loadMonth(next);
+    scroller.scrollTop += scroller.scrollHeight - heightBefore;
+    trimMonths();
+    return true;
+  }
+  function removeMonth(block) {
+    const track = document.getElementById("dailyTrack");
+    const scroller = document.getElementById("dailyScroller");
+    const element = track && track.querySelector('.daily-month[data-month="' + block.key + '"]');
+    if (!scroller) return;
+    const index = S.months.indexOf(block);
+    if (index < 0) return;
+    const above = element ? element.getBoundingClientRect().top < scroller.getBoundingClientRect().top : false;
+    const heightBefore = scroller.scrollHeight;
+    if (element) element.remove();
+    S.months.splice(index, 1);
+    S.records.delete(block.key);
+    if (above) scroller.scrollTop = Math.max(0, scroller.scrollTop - (heightBefore - scroller.scrollHeight));
+  }
+  /* 超出上限时从离锚点较远的一侧卸载，保留当前浏览位置。 */
+  function trimMonths() {
+    while (S.months.length > MAX_MONTHS) {
+      const anchorKey = String(S.anchorDate || S.companyToday || "").slice(0, 7);
+      const anchorIndex = S.months.findIndex(block => block.key === anchorKey);
+      const removeFirst = anchorIndex > S.months.length / 2 || anchorIndex < 0;
+      removeMonth(removeFirst ? S.months[0] : S.months[S.months.length - 1]);
+    }
   }
   function jumpToMonth(year, month) {
-    ++S.scrollToken;
     const target = new Date(year, month - 1, 1);
     if (isNaN(target.getTime())) return;
-    S.blocks = [blockForMonth(target.getFullYear(), target.getMonth() - 1),
+    S.months = [blockForMonth(target.getFullYear(), target.getMonth() - 1),
       blockForMonth(target.getFullYear(), target.getMonth()),
       blockForMonth(target.getFullYear(), target.getMonth() + 1)];
-    S.summaries.clear();
-    S.anchor = monthKeyOf(target);
     const track = document.getElementById("dailyTrack");
     if (!track) return;
-    track.innerHTML = S.blocks.map(blockHTML).join("");
-    S.blocks.forEach(loadBlock);
-    layoutCalendar({ date: dateKey(target), offset: 0 });
+    track.innerHTML = S.months.map(monthHTML).join("");
+    S.months.forEach(loadMonth);
+    S.anchorDate = dateKey(target);
+    S.anchorOffset = 8;
+    layoutPosition({ date: S.anchorDate, offset: 8 });
   }
   function goToDate(key) {
     const date = parseKey(key);
     if (!date) return;
-    if (!blockContaining(key)) {
-      const month = monthKeyOf(date);
-      const anchorMonth = S.anchor || S.companyToday;
+    const month = monthKeyOf(date);
+    if (!blockOf(month)) {
+      const anchorMonth = String((S.anchorDate || S.companyToday || "").slice(0, 7));
       const distance = Math.abs((date.getFullYear() - Number(anchorMonth.slice(0, 4))) * 12 + (date.getMonth() + 1 - Number(anchorMonth.slice(5, 7))));
       if (distance > 3) { jumpToMonth(date.getFullYear(), date.getMonth() + 1); return; }
+      ensureMonth(month);
     }
-    if (!scrollToDate(key)) jumpToMonth(date.getFullYear(), date.getMonth() + 1);
+    S.anchorDate = key;
+    S.anchorOffset = 8;
+    layoutPosition({ date: key, offset: 8 });
   }
-  /* 前后月以当前浏览锚点推进，与已删除的可见年月文案无关。 */
   function stepMonth(delta) {
-    const anchor = /^\d{4}-\d{2}$/.test(String(S.anchor || "")) ? S.anchor : String(S.companyToday || "").slice(0, 7);
-    const date = parseKey(anchor + "-01") || companyToday();
-    const moved = new Date(date.getFullYear(), date.getMonth() + delta, 1);
+    const anchor = parseKey((S.anchorDate || S.companyToday) + "") || companyToday();
+    const moved = new Date(anchor.getFullYear(), anchor.getMonth() + delta, 1);
     jumpToMonth(moved.getFullYear(), moved.getMonth() + 1);
   }
 
-  /* ------------------------------------------------- 横滑与点击隔离、键盘 */
-  let press = null;
-  function onPointerDown(event) { press = { x: event.clientX, y: event.clientY, left: document.getElementById("dailyScroller").scrollLeft }; }
+  /* ------------------------------------------------- 滚动与点击隔离、键盘 */
+  function onPointerDown(event) {
+    press = { x: event.clientX, y: event.clientY, top: (document.getElementById("dailyScroller") || {}).scrollTop || 0 };
+  }
   function onPointerMove(event) {
     if (!press) return;
     const scroller = document.getElementById("dailyScroller");
     if (Math.abs(event.clientX - press.x) > 6 || Math.abs(event.clientY - press.y) > 6 ||
-      Math.abs(scroller.scrollLeft - press.left) > 2) press.moved = true;
+      (scroller && Math.abs(scroller.scrollTop - press.top) > 2)) press.moved = true;
   }
-  document.addEventListener("click", event => {
-    const cell = event.target.closest && event.target.closest("[data-daily-date]");
-    if (!cell) return;
+  function hitDateForBar(bar, clientX) {
+    const week = bar.closest(".daily-week"), days = week && week.querySelector(".daily-days");
+    if (!week || !days) return null;
+    const start = parseKey(week.dataset.weekStart);
+    if (!start) return null;
+    const rect = days.getBoundingClientRect();
+    let col = Math.floor((clientX - rect.left) / (rect.width / 7));
+    col = Math.max(Number(bar.dataset.startCol), Math.min(Number(bar.dataset.endCol) - 1, col));
+    if (!Number.isFinite(col) || col < 0) return null;
+    return dateKey(shift(start, col));
+  }
+  /* 日期数字、空白、事项条与溢出统一先打开实际命中日期的完整清单；
+     续接条按点击所在的列取日期，不固定使用开始日。 */
+  function onScrollerClick(event) {
     const moved = press && press.moved;
     press = null;
-    if (moved) { event.preventDefault(); event.stopPropagation(); return; }
-    event.preventDefault();
-    event.stopPropagation();
-    openList(cell.dataset.dailyDate, cell);
-  }, true);
+    if (moved) return;
+    const bar = event.target.closest("[data-daily-bar]");
+    if (bar) {
+      event.preventDefault(); event.stopPropagation();
+      const key = hitDateForBar(bar, event.clientX);
+      if (key) openList(key, bar);
+      return;
+    }
+    const more = event.target.closest("[data-daily-more]");
+    if (more) {
+      event.preventDefault(); event.stopPropagation();
+      openList(more.dataset.date, more);
+      return;
+    }
+    const cell = event.target.closest("[data-daily-date]");
+    if (cell) {
+      event.preventDefault(); event.stopPropagation();
+      openList(cell.dataset.dailyDate, cell);
+    }
+  }
   document.addEventListener("pointerup", () => { setTimeout(() => { press = null; }, 0); }, true);
 
   function focusCell(key) {
     const cell = document.querySelector('[data-daily-date="' + key + '"]');
     const scroller = document.getElementById("dailyScroller");
-    if (cell && scroller && scroller.clientWidth) {
-      S.scrollToken++;
+    if (cell && scroller && scroller.clientHeight) {
+      /* 取消上一次滚动排队的锚点恢复，避免它在键盘定位之后把滚动位置拉回去。 */
+      cancelLayout();
       const box = cell.getBoundingClientRect(), viewport = scroller.getBoundingClientRect();
-      if (box.left < viewport.left) scroller.scrollLeft -= viewport.left - box.left;
-      else if (box.right > viewport.right) scroller.scrollLeft += box.right - viewport.right;
-      S.scrollLeft = scroller.scrollLeft;
-      anchorFromDom(scroller);
-      setAnchorFromScroll();
+      if (box.top < viewport.top) scroller.scrollTop -= viewport.top - box.top;
+      else if (box.bottom > viewport.bottom) scroller.scrollTop += box.bottom - viewport.bottom;
+      /* 键盘定位产生的滚动不能被 onScroll 误判为视口尺寸变化并回退到旧锚点。 */
+      S.viewportHeight = scroller.clientHeight;
+      if (!S.restoring) anchorFromDom(scroller);
       cell.focus({ preventScroll: true });
       return true;
     }
     return false;
   }
   function onCalendarKey(event) {
-    const cells = Array.from(document.querySelectorAll("[data-daily-date]"));
-    if (!cells.length) return;
     const active = document.activeElement && document.activeElement.closest && document.activeElement.closest("[data-daily-date]");
     const current = active ? active.dataset.dailyDate : (S.selected || S.companyToday);
     let next = null;
@@ -581,10 +683,21 @@
     if (!next) return;
     S.selected = next;
     if (!document.querySelector('[data-daily-date="' + next + '"]')) goToDate(next);
-    document.querySelectorAll(".daily-cell.is-selected").forEach(cell => cell.classList.remove("is-selected"));
-    focusCell(next);
-    const cell = document.querySelector('[data-daily-date="' + next + '"]');
-    if (cell) cell.classList.add("is-selected");
+    const place = () => {
+      document.querySelectorAll(".daily-cell.is-selected").forEach(cell => cell.classList.remove("is-selected"));
+      focusCell(next);
+      const target = document.querySelector('[data-daily-date="' + next + '"]');
+      if (target) {
+        target.classList.add("is-selected");
+        /* 补载/重绘后的月份高度可能晚一帧才稳定；nearest 只滚动最近的日历容器，
+           不把整页带走，也不会在无法再滚动时把焦点留在视口外。 */
+        target.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
+    };
+    /* 跨月补载的月份节点在同一任务内插入，布局测量可能尚未反映新高度；
+       下一帧再定位一次，保证方向键焦点日期始终留在可视区。 */
+    place();
+    requestAnimationFrame(place);
   }
 
   /* ------------------------------------------------------------ 日清单 */
@@ -597,8 +710,6 @@
     const current = () => pendingSheetQuery === query && sameSession(query.generation) &&
       state.page === query.page && sheetStack[sheetStack.length - 1] === query.source;
     pendingSheetQuery = query;
-    // Read requests already expose loading through P.request. Keep close/back and
-    // a replacement date usable while waiting; writes retain the command lock.
     (async () => {
       try {
         const result = await read();
@@ -664,9 +775,8 @@
       throw error;
     }
   }
-  function firstLine(text) { return String(text || "").split("\n")[0].slice(0, 40); }
   function rowHTML(item, hitDate) {
-    const range = itemRange(item), status = itemStatus(item);
+    const range = itemRange(item), status = statusOf(item);
     const date = hitDate || range.start || item.date;
     return '<div class="daily-row' + (item.completed ? " is-done" : "") + (status === "overdue" ? " is-overdue" : "") + '" data-daily-row="' + esc(item.id) + '">' +
       '<button type="button" class="daily-check" role="checkbox" aria-checked="' + (item.completed ? "true" : "false") + '"' +
@@ -697,12 +807,7 @@
     }, () => {
       S.listScroll = { date: date, top: 0 };
       S.closeFocus = trigger || null;
-      const scroller = document.getElementById("dailyScroller");
-      if (scroller) {
-        S.scrollToken++;
-        anchorFromDom(scroller);
-        S.closePosition = { date: S.anchorDate, offset: S.anchorOffset, left: scroller.scrollLeft };
-      }
+      S.closePosition = { date: S.anchorDate, offset: S.anchorOffset };
       openSheet(listView(date));
     }, "daily-list-error");
   }
@@ -746,7 +851,7 @@
 
   /* ------------------------------------------------------------ 详情 */
   function detailView(raw) {
-    const range = itemRange(raw), status = itemStatus(raw);
+    const range = itemRange(raw), status = statusOf(raw);
     const hit = (S.detail && S.detail.hitDate) || range.start;
     return { title: "每日事项详情", dailyKind: "detail", rebuild: () => detailView(S.detail ? S.detail.raw : raw),
       body: '<div class="daily-detail-head"><span class="daily-detail-date">' + esc(rangeLabel(range.start, range.end)) + "</span>" +
@@ -784,7 +889,6 @@
     const opts = options || {};
     if (mode === "edit") {
       S.formOrigin = "detail";
-      S.listScroll = S.listScroll || null;
       const start = opts.startDate || opts.date, end = opts.endDate || start;
       drafts.daily = { mode: "edit", id: opts.id, originalStart: start, originalEnd: end, startDate: start, endDate: end,
         originalDate: start, date: start, body: opts.body, etag: opts.etag, epoch: P.epoch, slot: newSlot() };
@@ -893,13 +997,20 @@
     const element = document.getElementById("dailyError");
     if (element) { element.hidden = true; element.textContent = ""; }
   }
+  /* 完成/编辑/删除或改期后，按旧范围与新范围的并集失效所有受影响月份，
+     既刷新开始日也刷新中间与结束日的事项条和清单。 */
   async function refreshDates(dates, skipList) {
     const unique = Array.from(new Set(dates.filter(Boolean)));
-    unique.forEach(date => invalidateDate(date));
+    const months = Array.from(new Set(unique.map(date => String(date).slice(0, 7))));
+    months.forEach(key => {
+      const block = blockOf(key);
+      if (block) loadMonth(block, true);
+    });
+    // 已打开的清单保留条目缓存并按原长度重读，完成/编辑后不因重新挂载变空。
     if (skipList) { clearCalendarError(); return; }
     const jobs = unique.filter(date => S.lists.has(date)).map(date => reloadList(date));
     const results = await Promise.allSettled(jobs);
-    if (results.some(result => result.status === "rejected")) calendarError("已保存，但刷新数量失败，请重试。");
+    if (results.some(result => result.status === "rejected")) calendarError("已保存，但刷新事项失败，请重试。");
     else clearCalendarError();
   }
   async function reloadList(date) {
@@ -917,10 +1028,14 @@
     switch (actionName) {
       case "daily-prev": stepMonth(-1); return true;
       case "daily-next": stepMonth(1); return true;
-      case "daily-today": goToDate(S.companyToday); S.selected = S.companyToday; return true;
+      case "daily-today": S.selected = S.companyToday; goToDate(S.companyToday); return true;
       case "daily-locate": openLocate(); return true;
       case "daily-locate-save": locateFromForm(); return true;
-      case "daily-retry": { const block = S.blocks.find(item => item.key === element.dataset.month); if (block) { S.summaries.delete(block.key); loadBlock(block); } return true; }
+      case "daily-retry": {
+        const key = element.dataset.month;
+        if (key) { const block = blockOf(key); if (block) loadMonth(block, true); }
+        return true;
+      }
       case "daily-new": openForm("create", { origin: element.closest("#sheetBody") ? "list" : "calendar", date: date }); return true;
       case "daily-more": loadMore(date); return true;
       case "daily-reload": reloadOpenList(date); return true;
@@ -934,7 +1049,7 @@
       case "daily-delete": openDelete(element.dataset.id); return true;
       case "daily-confirm-delete": confirmDelete(element.dataset.id); return true;
       case "daily-save": saveDraft(); return true;
-      case "daily-refresh": S.blocks.forEach(block => S.summaries.delete(block.key)); S.blocks.forEach(loadBlock); clearCalendarError(); return true;
+      case "daily-refresh": S.months.forEach(block => loadMonth(block, true)); clearCalendarError(); return true;
       default: return false;
     }
   }
@@ -954,7 +1069,6 @@
       const fallbackId = previousIds.reverse().find(id => entry.items.some(item => item.id === id));
       const fallback = sheetBodyEl.querySelector('[data-action="daily-open"]' + (fallbackId ? '[data-id="' + fallbackId + '"]' : ""));
       if (target || fallback) (target || fallback).focus({ preventScroll: true });
-      invalidateDate(date);
     }, "daily-list-error");
   }
   function reloadOpenList(date) {
@@ -966,10 +1080,10 @@
     }, "daily-list-error");
   }
   function openLocate() {
-    const anchor = parseKey((S.anchor || S.companyToday) + "-01") || companyToday();
+    const anchor = parseKey((String(S.anchorDate || S.companyToday).slice(0, 7)) + "-01") || companyToday();
     openSheet({ title: "定位年月", dailyKind: "locate",
       body: '<div class="field"><label for="daily-locate">年月</label><input id="daily-locate" type="month" value="' + anchor.getFullYear() + "-" + pad(anchor.getMonth() + 1) + '" data-autofocus /></div>' +
-        '<div class="tiny muted">连续的左右滑动始终可用；这里用于直接到达较远的年月。</div>' +
+        '<div class="tiny muted">连续的上下滚动始终可用；这里用于直接到达较远的年月。</div>' +
         '<div class="callout" id="daily-locate-error" role="alert" hidden></div>',
       foot: withBack('<button type="button" class="btn primary" data-action="daily-locate-save">定位</button>') });
   }
@@ -988,7 +1102,7 @@
     if (element) { element.hidden = false; element.textContent = message; }
   }
 
-  /* 把重新渲染后的清单滚动位置和焦点恢复到离开前的位置。 */
+  /* 重新渲染后恢复清单滚动位置和触发元素焦点。 */
   const baseOpenSheet = openSheet;
   openSheet = function (view) {
     cancelSheetQuery();
@@ -1014,23 +1128,18 @@
     S.closeFocus = null; S.closePosition = null;
     S.detail = null; S.listScroll = null; drafts.daily = null;
     baseCloseSheet();
-    // A list/detail close returns to its real trigger. A create form opened from the header has no
-    // date trigger, so the shared sheet's own lastFocused restore (the header 加号) is kept.
     if (focus && document.contains(focus)) focus.focus({ preventScroll: true });
     else if (focus && S.selected && document.querySelector('[data-daily-date="' + S.selected + '"]')) focusCell(S.selected);
-    const scroller = document.getElementById("dailyScroller");
-    if (scroller) {
-      // The shared sheet's lastFocused.focus() can scroll the background. Restore
-      // the calendar after it runs, using a date anchor if its window was extended.
-      if (position) {
-        const cell = scroller.querySelector('[data-daily-date="' + position.date + '"]');
-        scroller.scrollLeft = cell ? scroller.scrollLeft + cell.getBoundingClientRect().left -
-          scroller.getBoundingClientRect().left - position.offset : position.left;
-        S.scrollLeft = scroller.scrollLeft;
-        anchorFromDom(scroller);
-        setAnchorFromScroll();
-      }
-      scroller.scrollTop = 0;
+    if (position) {
+      cancelLayout();
+      S.anchorDate = position.date || S.anchorDate;
+      S.anchorOffset = position.offset == null ? S.anchorOffset : position.offset;
+      layoutPosition({ date: S.anchorDate, offset: S.anchorOffset });
+      /* 恢复的是关闭清单前的浏览锚点；焦点回到触发日期不应改写这个日期+偏移。 */
+      S.anchorDate = position.date || S.anchorDate;
+      S.anchorOffset = position.offset == null ? S.anchorOffset : position.offset;
+      const scroller = document.getElementById("dailyScroller");
+      if (scroller) S.viewportHeight = scroller.clientHeight;
     }
   };
   const baseSetPage = setPage;
@@ -1046,5 +1155,6 @@
     baseRunAction(element);
   };
 
-  window.PandoraDaily = { render: render, state: S, action: action, openList: openList, goToDate: goToDate };
+  window.PandoraDaily = { render: render, state: S, action: action, openList: openList, goToDate: goToDate,
+    currentMonthKeys: () => S.months.map(block => block.key) };
 })();

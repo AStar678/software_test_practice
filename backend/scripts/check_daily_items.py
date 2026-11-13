@@ -94,8 +94,8 @@ def main():
             "version": q("SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history WHERE success=1"),
             "daily": q("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='daily_items'"),
         }
-        check("V31 creates daily_items and records the actual migration version",
-              after["daily"] == "1" and after["version"] == "31", after)
+        check("V31+V32–V35 create daily_items, range columns and record the current migration head",
+              after["daily"] == "1" and after["version"] == "35", after)
         check("V31 removes only the old personal home items",
               after["personal"] == "0" and after["company"] == before["company"], {"before": before, "after": after})
         check("V31 leaves tasks and logs byte-identical",
@@ -153,6 +153,11 @@ def main():
                         item = result[1]
                         f.call("PATCH", "/daily-items/" + item["id"], {"completed": True}, person,
                             "browser-seed-complete-" + str(offset) + "-" + str(index) + "-" + uuid.uuid4().hex, item["rowVersion"])
+            overdue_date = str(today - dt.timedelta(days=9))
+            overdue = f.call("POST", "/daily-items", {"date": overdue_date, "body": "逾期镜头备注未完成"},
+                person, "browser-overdue-" + uuid.uuid4().hex)
+            if overdue[0] != 200:
+                raise AssertionError(("overdue", overdue))
             bulk = str(today + dt.timedelta(days=30))
             for index in range(105):
                 status, result = f.call("POST", "/daily-items", {"date": bulk, "body": "Browser bulk " + str(index)},
@@ -162,7 +167,12 @@ def main():
             manifest = {"base": f"http://127.0.0.1:{f.port}", "identities": f.identities,
                         "database": f.database, "today": day, "port": f.port, "bulk": bulk}
             env = {"PANDORA_BROWSER_FIXTURE": json.dumps(manifest)}
-            subprocess.run(["node", str(BASE / "scripts/check_daily_items_browser.js")], env={**__import__("os").environ, **env}, check=True)
+            browser = subprocess.run(["node", str(BASE / "scripts/check_daily_items_browser.js")],
+                                     env={**__import__("os").environ, **env}, capture_output=True, text=True)
+            if browser.stdout: print(browser.stdout, flush=True)
+            if browser.stderr: print(browser.stderr, file=__import__("sys").stderr, flush=True)
+            if browser.returncode != 0:
+                raise AssertionError("daily-items browser checks failed with exit " + str(browser.returncode))
 
     REPORT_PATH = AUDIT / "daily-items-run.json"
     REPORT_PATH.write_text(json.dumps({"updated": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -229,10 +239,10 @@ def run_api_checks(f: Fixture, ids, business_day):
     created_ids = []
     for index in range(total_items):
         created_ids.append(call("POST", "/daily-items", {"date": page_day, "body": "Bulk " + str(index)}, key="bulk-" + str(index) + "-" + uuid.uuid4().hex)[1]["id"])
-    f.db.server_side("UPDATE daily_items SET created_at='2026-01-01 00:00:00.000000' WHERE item_date='" + page_day + "'")
+    f.db.server_side("UPDATE daily_items SET created_at='2026-01-01 00:00:00.000000' WHERE start_date='" + page_day + "'")
     first = call("GET", f"/daily-items?date={page_day}&limit=100&offset=0")[1]
     second = call("GET", f"/daily-items?date={page_day}&limit=100&offset=100")[1]
-    expected = [row[0] for row in f.db.rows("SELECT id FROM daily_items WHERE item_date='" + page_day + "' ORDER BY created_at,id")]
+    expected = [row[0] for row in f.db.rows("SELECT id FROM daily_items WHERE start_date='" + page_day + "' ORDER BY created_at,id")]
     check("one page is capped at 100 and reports the complete total",
           len(first["items"]) == 100 and first["total"] == total_items and first["nextOffset"] == 100, {"total": first["total"], "next": first["nextOffset"]})
     check("the second page returns the remaining items without duplicates",
