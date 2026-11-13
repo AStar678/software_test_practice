@@ -44,6 +44,8 @@ void main() {
           ],
           'businessDate': '2026-11-10',
         }));
+    backend.on('GET', '/tasks', (request) async => FakeResponse({'items': [], 'total': 0, 'nextCursor': null}));
+    backend.on('GET', '/work-logs', (request) async => FakeResponse({'items': [], 'total': 0, 'nextOffset': null}));
     backend.on('GET', '/daily-items', (request) async => FakeResponse({
           'items': [],
           'total': 0,
@@ -120,6 +122,13 @@ void main() {
     expect(find.text('公司事件 4'), findsNothing, reason: '卡片只保留约三条预览，其余进入完整清单');
     expect(find.text('个人任务 4'), findsNothing);
 
+    await tester.tap(find.byTooltip('通知'));
+    await tester.pumpAndSettle();
+    expect(find.text('通知'), findsWidgets);
+    await tester.tap(find.byTooltip('返回'));
+    await tester.pumpAndSettle();
+    expect(find.text('事件纪'), findsOneWidget);
+
     await tester.tap(find.text('任务看板'));
     await tester.pumpAndSettle();
     expect(find.text('个人任务 4'), findsOneWidget, reason: '完整清单展示看板全部十项以内的条目');
@@ -136,5 +145,32 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
     expect(find.text('事件纪'), findsOneWidget, reason: '逐层返回首页三模块');
+
+    await tester.tap(find.byTooltip('通知'));
+    await tester.pumpAndSettle();
+    expect(find.text('通知'), findsWidgets);
+    await session.logout();
+    await tester.pumpAndSettle();
+    expect(find.text('潘多拉'), findsWidgets, reason: '退出后进入登录页');
+    await session.login(phone: '13800000004', password: 'Demo@123456');
+    await tester.pumpAndSettle();
+    expect(find.text('事件纪'), findsOneWidget, reason: '重新登录后路由重建回首页，不保留旧分支栈');
+    expect(find.text('此页面将在后续章节接入'), findsNothing);
+
+    await tester.tap(find.text('公司'));
+    await tester.pumpAndSettle();
+    expect(find.text('日程'), findsOneWidget);
+    await tester.tap(find.text('日志'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('日志 ·'), findsOneWidget);
+    await tester.tap(find.text('统计'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('统计功能'), findsOneWidget);
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+    expect(find.text('亚里士多德'), findsWidgets);
+    await tester.tap(find.text('首页'));
+    await tester.pumpAndSettle();
+    expect(find.text('事件纪'), findsOneWidget);
   });
 }
