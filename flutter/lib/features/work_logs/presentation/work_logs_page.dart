@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/company/company_date.dart';
 import '../../../core/company/company_time.dart';
 import '../../../core/providers.dart';
+import '../../../core/router/read_context.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/state_views.dart';
@@ -259,17 +260,24 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
   WorkLog? _existing;
   bool _saving = false;
   bool _loading = true;
+  bool _allowPop = false;
   Object? _error;
 
   @override
   void initState() {
     super.initState();
     _date = widget.initialDate ?? ref.read(businessDateProvider);
+    _body.addListener(_onBodyChanged);
     unawaited(_load());
+  }
+
+  void _onBodyChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _body.removeListener(_onBodyChanged);
     _body.dispose();
     _reason.dispose();
     super.dispose();
@@ -348,6 +356,7 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
       }
       keys.complete(scope);
       if (!mounted) return;
+      _allowPop = true;
       context.pop(true);
     } catch (error) {
       if (!mounted) return;
@@ -433,6 +442,15 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
     }
   }
 
+  bool get _hasUnsavedChanges {
+    final existing = _existing;
+    if (existing == null) {
+      return _body.text.trim().isNotEmpty || _tagIds.isNotEmpty || _taskId != null;
+    }
+    final tagsChanged = _tagIds.join(',') != existing.tagIds.join(',');
+    return _body.text != existing.body || tagsChanged || _taskId != existing.taskId;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -444,7 +462,7 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
       );
     }
     final editable = _existing == null || (_existing!.editable && !_existing!.frozen);
-    return PandoraPage(
+    final page = PandoraPage(
       title: _existing == null ? '写日志' : '编辑日志',
       showBack: true,
       child: ListView(
@@ -516,6 +534,10 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
             ),
         ],
       ),
+    );
+    return UnsavedChangesGuard(
+      hasUnsavedChanges: !_allowPop && editable && _hasUnsavedChanges,
+      child: page,
     );
   }
 }
@@ -666,8 +688,13 @@ class _TaskPickerDialogState extends ConsumerState<_TaskPickerDialog> {
 }
 
 class WorkLogDetailPage extends ConsumerStatefulWidget {
-  const WorkLogDetailPage({super.key, required this.logId});
+  const WorkLogDetailPage({
+    super.key,
+    required this.logId,
+    this.readContext = const NormalReadContext(),
+  });
   final String logId;
+  final ReadContext readContext;
   @override
   ConsumerState<WorkLogDetailPage> createState() => _WorkLogDetailPageState();
 }
@@ -728,7 +755,7 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
       title: '日志详情',
       showBack: true,
       actions: [
-        if (log != null && log.editable && !log.frozen) ...[
+        if (log != null && widget.readContext.businessWritesAllowed && log.editable && !log.frozen) ...[
           IconButton(
             tooltip: '编辑日志',
             onPressed: () async {
@@ -751,6 +778,13 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    if (widget.readContext is! NormalReadContext)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: PandoraColors.petal, borderRadius: BorderRadius.circular(12)),
+                        child: Text('通过${widget.readContext.label}浏览，仅可阅读和评论。', style: const TextStyle(fontSize: 12)),
+                      ),
                     Text(log.businessDate.iso, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: PandoraColors.brand)),
                     const SizedBox(height: 8),
                     Text(log.body, style: const TextStyle(fontSize: 15, height: 1.55)),
@@ -764,8 +798,10 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
                         padding: const EdgeInsets.only(top: 12),
                         child: Text('创建时间 ${CompanyTimeZone.fallback.formatDateTime(log.createdAt!)}', style: const TextStyle(fontSize: 12, color: PandoraColors.muted)),
                       ),
-                    const Divider(height: 28),
-                    CommentsSection(objectType: 'log', objectId: log.id),
+                    if (widget.readContext.commentsAllowed) ...[
+                      const Divider(height: 28),
+                      CommentsSection(objectType: 'log', objectId: log.id),
+                    ],
                   ],
                 ),
     );

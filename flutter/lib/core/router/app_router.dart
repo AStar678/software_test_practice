@@ -12,14 +12,15 @@ import '../../features/home/presentation/home_page.dart';
 import '../../features/tasks/presentation/task_action_pages.dart';
 import '../../features/tasks/presentation/task_detail_page.dart';
 import '../../features/tasks/presentation/task_form_page.dart';
-import '../../features/tasks/presentation/task_route_args.dart';
 import '../../features/tasks/presentation/task_table_page.dart';
 import '../../features/work_logs/presentation/work_logs_page.dart';
+import '../../features/notifications/presentation/notification_task_page.dart';
 import '../../features/tags/presentation/tag_manage_page.dart';
 import '../company/company_date.dart';
 import '../../features/shell/destination_pages.dart';
 import '../../features/shell/pandora_shell.dart';
 import '../../features/stub/stub_page.dart';
+import '../router/navigation_targets.dart';
 import '../router/read_context.dart';
 import '../providers.dart';
 import '../session/session_manager.dart';
@@ -67,9 +68,14 @@ class AppRoutes {
 
   static const notifications = '/notifications';
   static const notificationPattern = '/notifications/:id';
+  static const notificationTaskPattern = '/notifications/:notificationId/task';
   static String notification(String id) => '/notifications/$id';
 
   static const people = '/people';
+  static const personPattern = '/people/:personId';
+  static const personTaskPattern = '/people/:personId/tasks/:id';
+  static const personLogPattern = '/people/:personId/logs/:id';
+  static const personApprovalPattern = '/people/:personId/approvals/:requestId';
   static const logsNew = '/logs/new';
   static const logPattern = '/logs/:id';
   static const logEditPattern = '/logs/:id/edit';
@@ -80,6 +86,7 @@ class AppRoutes {
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final manager = ref.watch(sessionManagerProvider);
+  ref.watch(accountEpochProvider);
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: AppRoutes.home,
@@ -190,14 +197,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.taskPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
-          final extra = state.extra;
-          final args = extra is TaskRouteArgs ? extra : const TaskRouteArgs(context: NormalReadContext());
-          return TaskDetailPage(
-            taskId: state.pathParameters['id'] ?? '',
-            readContext: args.context,
-          );
-        },
+        builder: (context, state) => TaskDetailPage(
+          taskId: state.pathParameters['id'] ?? '',
+          readContext: const NormalReadContext(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.taskEditPattern,
@@ -258,9 +261,54 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => StubPage(title: '通知详情', subtitle: state.pathParameters['id']),
       ),
       GoRoute(
+        path: AppRoutes.notificationTaskPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => NotificationTaskPage(
+          notificationId: state.pathParameters['notificationId'] ?? '',
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.people,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const StubPage(title: '我的下属'),
+      ),
+      GoRoute(
+        path: AppRoutes.personPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => StubPage(title: '人员资料', subtitle: state.pathParameters['personId']),
+      ),
+      GoRoute(
+        path: AppRoutes.personTaskPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final readContext = NavigationTargets.subordinateFromRoute(state.pathParameters, state.uri.queryParameters);
+          return TaskDetailPage(
+            taskId: state.pathParameters['id'] ?? '',
+            readContext: readContext,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.personLogPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final readContext = NavigationTargets.subordinateFromRoute(state.pathParameters, state.uri.queryParameters);
+          return WorkLogDetailPage(
+            logId: state.pathParameters['id'] ?? '',
+            readContext: readContext,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.personApprovalPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final readContext = NavigationTargets.subordinateFromRoute(state.pathParameters, state.uri.queryParameters);
+          return ApprovalDetailPage(
+            requestId: state.pathParameters['requestId'] ?? '',
+            readContext: readContext,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.logsNew,
