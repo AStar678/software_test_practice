@@ -6,9 +6,9 @@
 - Schema: spec-driven
 - Store: local repo (`/home/rmy/桌面/panDuola`)
 - Implementation roots: `flutter/` (new Flutter Android client), with read-only consumption of `backend/docs/employee-client-contracts.md` and the archived A change
-- Updated: 2026-11-12T20:05:00+08:00
-- Implementation revision: repo `56313ba` plus module commits `e2781c8..055f325` (this docs commit records the chapter-7 batch)
-- Progress: **42/62** tasks checked. `1.4`, `4.1`, `4.9`, `5.1`–`5.6`, `5.8`, `5.9`, `6.1`–`6.3`, `7.1`–`7.6` are closed. `5.7` remains open only for physical-device perception acceptance; `2.7` and chapters 8–11 remain.
+- Updated: 2026-11-13T13:30:00+08:00
+- Implementation revision: repo `56313ba` plus module commits `e2781c8..ec2d28c` (this docs commit records the navigation batch)
+- Progress: **43/62** tasks checked. `1.4`, `2.7`, `4.1`, `4.9`, `5.1`–`5.6`, `5.8`, `5.9`, `6.1`–`6.3`, `7.1`–`7.6` are closed. `5.7` remains open only for physical-device perception acceptance; chapters 8–11 remain.
 - The 2026-11-10 macOS sections below are historical; the 2026-11-12 Linux supplement at the end supersedes their environment/build status.
 
 ## Chapter 1–4 findings and decisions
@@ -80,7 +80,7 @@
 | 4.7 reviewer preview/applications | `tasks_api.preview`, `task_form_page.dart` outcome dialog, `approvals_pages.dart` | Preview is non-binding; after submit the real reviewer is read back from the request; founder direct outcome shown |
 | 4.8 diff/audience | `approvals_pages.dart` (`_DiffRow`, `_ProposalSummary`) and widget test | Reviewer sees field diff and order-only marker; applicant sees own proposal; bystander sees summary only |
 | 4.10 handover | `task_action_pages.dart` (`TaskHandoverPage`) | Source/target lists, preset read/save/clear, reason, task-version If-Match; no handover action in read-only contexts |
-| 2.7 / 4.1 / 4.9 | 2.7 route skeleton still partial; 4.1/4.9 real closed paths are in `real_backend_test.dart` (resubmit, concurrent decision, pending comments) | 4.1/4.9 checked 2026-11-12; 2.7 still open |
+| 2.7 / 4.1 / 4.9 | Navigation spine in `navigation_targets.dart`/`app_router.dart`, read-only task/log/approval tests; 4.1/4.9 real paths in `real_backend_test.dart` | 4.1/4.9 checked 2026-11-12; 2.7 checked 2026-11-13 |
 | App-level navigation smoke | `test/features/app_navigation_test.dart` | Real providers/router with fixed responses: five-branch shell loads home, three modules, board list (all ≤10), task detail, then back through both layers |
 | Header width fix | `home_page.dart` `_DailyItemsHeader` | Found by the 390-width navigation test: compact/`FittedBox` month controls so `每日事项` title, add and month tools stay on one row without overflow |
 
@@ -168,7 +168,7 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 - 5.7: implementation and component evidence exist, but physical-device haptic/gesture perception remains for 11.2. `5.8`/`5.9` are closed on component/build evidence.
 - 6.1–6.3: closed with a 120-row fake backend pagination test, fixed title/header layout, column groups, independent filter/page/scroll persistence, pin reset to the first filtered group, and calendar-cache isolation assertions.
 - 7.1–7.6: closed with account-scoped log filters/missing dates, delete and task picker, fill revalidation, shared tag selector, founder palette guard, cursor comments and real notification-recipient evidence.
-- 2.7 notification/people/subordinate routes still use stubs.
+- 2.7 navigation is closed; notification/people business content remains for chapters 8–9.
 - 4.1/4.9 have real backend evidence, but expired-creation resubmit, organization changes, and all old-button variants remain for the broader J08/J09/J12 journey.
 - No physical device; 11.2/11.3 release signing/API26 work is untouched.
 - `implementation-notes.md` is not a verification PASS.
@@ -260,10 +260,37 @@ Failed/skipped honestly (historical macOS note): Android build/device run were n
 - `5.7` remains unchecked pending physical-device haptic/gesture perception.
 - No physical device.
 
+## 2026-11-13 导航收口批次（2.7）
+
+### Implemented
+
+- `NavigationTargets` builds task/log/approval targets from immutable `ReadContext`; normal, subordinate and history paths are separated.
+- New routes: `/people/:personId/tasks/:id`, `/people/:personId/logs/:id`, `/people/:personId/approvals/:requestId`, `/notifications/:notificationId/task`, `/people/:personId`.
+- Task/log/approval detail pages accept read context and hide business writes on subordinate/history paths; comments remain only where allowed.
+- Removed `TaskRouteArgs`/mutable `extra` as the authoritative context source; nested parent links now use context-aware targets.
+- Home notification entry, founder/manager “我的下属” entry, and notification/history placeholder are reachable.
+- Router provider watches `accountEpoch` and resets on account switch; five tabs and home notification return are tested.
+- Log editor now guards unsaved body/tag/task changes and keeps edits on “继续编辑”.
+
+### Checks
+
+| Command | Result |
+| --- | --- |
+| `cd flutter && dart analyze` | No issues found |
+| `cd flutter && flutter test` | **132 tests passed** |
+| `flutter build apk --debug` | succeeded; APK installed on API 36 emulator |
+| `openspec validate build-flutter-employee-android-client --strict` | valid |
+
+### Remaining / not overclaimed
+
+- Notification list/detail and people/subordinate workspaces remain placeholders for chapters 8–9; 2.7 only closes navigation/context behavior.
+- `5.7` still lacks physical-device haptic/gesture acceptance.
+- No physical device.
+
 ## Verification Reminders
 
 - **1.4 is closed (2026-11-12)**: debug APK built, installed and run on API 36 AVD, login/navigation and session restore verified.
-- **2.7 remains open**: all secondary routes are registered and the implemented task/daily-item flows return correctly, but notifications, people/subordinate workspace, logs and comments still show `StubPage`; their nested-return and read-only propagation cannot be verified until chapters 7–9.
+- **2.7 is closed for navigation (2026-11-13)**: five branches, notification/people entries, path-based subordinate/history routes, read-only task/log/approval contexts, account-switch router reset and unsaved-log guard are implemented and tested. Notification/people data and subordinate workspaces remain in 8.x/9.x and are still `StubPage`.
 - **4.1 is closed for the rejected real path (2026-11-12)**: original applicant resubmits to a new request; old request remains rejected. Expired-creation variant still belongs to the broader journey.
 - **4.9 is closed for concurrency + pending comments (2026-11-12)**: one of two concurrent decisions succeeded, the other got 412; pending-task comments stayed independent and non-author edit got 403. Frozen-log/org-change variants remain in later journeys.
 - Calendar upward browsing: the page opens with the home cards and today's month; earlier months are reached with the month selector/prev arrow, then scrolling is continuous downward across years. There is no infinite upward prepend. Layout/cross-year data handling is correct; this interaction difference should be judged explicitly in verification.
