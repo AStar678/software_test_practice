@@ -9,10 +9,15 @@ final profileApiProvider = Provider<ProfileApi>((ref) {
 
 final selfProfileProvider = FutureProvider((ref) async {
   ref.watch(accountEpochProvider);
-  return ref.watch(profileApiProvider).self();
+  ref.watch(currentUserProvider.select((user) => user?.authzVersion));
+  return ref.watch(profileApiProvider).selfWithVersion();
 });
 
-final personProfileProvider = FutureProvider.family((ref, String id) async {
+final personProfileProvider = FutureProvider.autoDispose.family((
+  ref,
+  String id,
+) async {
   ref.watch(accountEpochProvider);
+  ref.watch(currentUserProvider.select((user) => user?.authzVersion));
   return ref.watch(profileApiProvider).person(id);
 });

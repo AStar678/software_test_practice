@@ -141,5 +141,21 @@ void main() {
       expect(layout.isEmpty, isTrue);
       expect(layout.weeks.every((week) => week.bars.isEmpty), isTrue);
     });
+
+    test('日历置顶项排在同周其他项之前且不改变日期', () {
+      final layout = MonthLayoutCalculator.compute(
+        month: const CompanyDate(2026, 11, 1),
+        items: [
+          item(id: 'b', start: '2026-11-12', end: '2026-11-12'),
+          item(id: 'a', start: '2026-11-12', end: '2026-11-12'),
+          item(id: 'c', start: '2026-11-10', end: '2026-11-10'),
+        ],
+        leadingIds: const {'b'},
+      );
+      final bars = layout.weeks.expand((week) => week.bars).toList();
+      expect(bars.first.itemId, 'b');
+      expect(bars.first.startDate, const CompanyDate(2026, 11, 12));
+      expect(bars.where((bar) => bar.startDate == const CompanyDate(2026, 11, 12)).map((bar) => bar.itemId), ['b', 'a']);
+    });
   });
 }

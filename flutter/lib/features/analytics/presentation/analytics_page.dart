@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/state_views.dart';
@@ -20,10 +20,12 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
   String _scope = 'auto';
   AnalyticsSummary? _summary;
   AnalyticsReport? _report;
-  Object? _error;
+  Object? _summaryError;
+  Object? _reportError;
   bool _loading = false;
   bool _generating = false;
-  int _generation = 0;
+  int _summaryGeneration = 0;
+  int _reportGeneration = 0;
 
   @override
   void initState() {
@@ -33,6 +35,10 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(
+      currentUserProvider.select((user) => (user?.id, user?.authzVersion)),
+      (_, _) => _reloadScope(),
+    );
     return Scaffold(
       appBar: AppBar(title: const Text('统计')),
       body: SafeArea(
@@ -49,8 +55,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
                 selected: {_scope},
                 onSelectionChanged: (value) {
                   _scope = value.single;
-                  _report = null;
-                  _load();
+                  _reloadScope();
                 },
               ),
               const SizedBox(height: 12),
@@ -59,8 +64,8 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
                   height: 180,
                   child: LoadingView(label: '正在统计真实任务'),
                 ),
-              if (_error != null && _summary == null)
-                ErrorView(error: _error!, onRetry: _load),
+              if (_summaryError != null)
+                ErrorView(error: _summaryError!, onRetry: _load),
               if (_summary != null) ..._summaryCards(_summary!),
               const SizedBox(height: 12),
               FilledButton.icon(
@@ -75,6 +80,12 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
                   style: TextStyle(color: PandoraColors.muted),
                 ),
               ),
+              if (_reportError != null)
+                ErrorView(
+                  error: _reportError!,
+                  onRetry: _generate,
+                  title: '生成建议失败',
+                ),
               if (_report != null) ..._reportCards(_report!),
             ],
           ),
@@ -191,48 +202,72 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     child: Text('$label $value'),
   );
 
+  void _reloadScope() {
+    _reportGeneration++;
+    _report = null;
+    _reportError = null;
+    _load();
+  }
+
   Future<void> _load() async {
-    final generation = ++_generation;
+    final generation = ++_summaryGeneration;
     setState(() {
+      _summary = null;
       _loading = true;
-      _error = null;
+      _summaryError = null;
     });
     try {
       final result = await ref
           .read(analyticsApiProvider)
           .summary(scope: _scope);
-      if (!mounted || generation != _generation) return;
+      if (!mounted || generation != _summaryGeneration) return;
       setState(() => _summary = result);
     } catch (error) {
-      if (mounted && generation == _generation) setState(() => _error = error);
+      if (mounted && generation == _summaryGeneration) {
+        setState(() => _summaryError = error);
+      }
     } finally {
-      if (mounted && generation == _generation) {
+      if (mounted && generation == _summaryGeneration) {
         setState(() => _loading = false);
       }
     }
   }
 
   Future<void> _generate() async {
+    if (_generating) return;
+    final scope = _scope;
+    final generation = ++_reportGeneration;
+    final accountEpoch = ref.read(accountEpochProvider);
     setState(() {
       _generating = true;
-      _error = null;
+      _report = null;
+      _reportError = null;
     });
     final keys = ref.read(operationKeysProvider);
+    final api = ref.read(analyticsApiProvider);
+    final operationScope = 'analytics:$scope';
     final key = keys.keyFor(
-      scope: 'analytics:$_scope',
+      scope: operationScope,
       method: 'POST',
       path: '/ai-jobs',
-      body: {'scopeType': _scope},
+      body: {'scopeType': scope},
     );
     try {
-      final id = await ref
-          .read(analyticsApiProvider)
-          .createReport(scope: _scope, idempotencyKey: key);
-      final result = await ref.read(analyticsApiProvider).report(id);
-      keys.complete('analytics:$_scope');
-      if (mounted) setState(() => _report = result);
+      final id = await api.createReport(scope: scope, idempotencyKey: key);
+      if (!mounted || accountEpoch != ref.read(accountEpochProvider)) return;
+      final result = await api.report(id);
+      keys.complete(operationScope);
+      if (mounted && generation == _reportGeneration) {
+        setState(() => _report = result);
+      }
     } catch (error) {
-      if (mounted) setState(() => _error = error);
+      final scopeChanged =
+          error is ApiException && error.code == 'ANALYSIS_SCOPE_CHANGED';
+      if (scopeChanged) keys.complete(operationScope);
+      if (mounted && generation == _reportGeneration) {
+        setState(() => _reportError = error);
+        if (scopeChanged) await _load();
+      }
     } finally {
       if (mounted) setState(() => _generating = false);
     }
@@ -240,5 +275,5 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
 
   String _time(DateTime? value) => value == null
       ? '时间未知'
-      : DateFormat('yyyy-MM-dd HH:mm').format(value.toLocal());
+      : ref.read(companyTimeZoneProvider).formatDateTime(value);
 }

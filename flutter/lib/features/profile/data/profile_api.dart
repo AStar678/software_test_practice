@@ -7,14 +7,13 @@ class ProfileApi {
 
   final ApiClient client;
 
-  Future<EmployeeUser> self() async {
-    final result = await client.get<EmployeeUser>(
-      '/me/profile',
-      versionKey: VersionRegistry.profile,
-      decode: (json) => EmployeeUser.fromJson(asJsonMap(json)),
-    );
-    return result.data;
-  }
+  Future<EmployeeUser> self() async => (await selfWithVersion()).data;
+
+  Future<ApiResult<EmployeeUser>> selfWithVersion() => client.get<EmployeeUser>(
+    '/me/profile',
+    versionKey: VersionRegistry.profile,
+    decode: (json) => EmployeeUser.fromJson(asJsonMap(json)),
+  );
 
   Future<EmployeeUser> person(String id) async {
     final result = await client.get<EmployeeUser>(
@@ -27,6 +26,7 @@ class ProfileApi {
   Future<void> update({
     required Map<String, Object?> values,
     required String idempotencyKey,
+    String? ifMatch,
   }) async {
     await client.write<Map<String, Object?>>(
       method: 'PATCH',
@@ -35,6 +35,7 @@ class ProfileApi {
       idempotencyKey: idempotencyKey,
       versionKey: VersionRegistry.profile,
       requireVersion: true,
+      ifMatch: ifMatch,
       decode: asJsonMap,
     );
   }

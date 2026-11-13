@@ -87,6 +87,7 @@ class MonthLayoutCalculator {
     required CompanyDate month,
     required Iterable<DailyItem> items,
     int maxLanes = MonthLayout.maxLanes,
+    Set<String> leadingIds = const {},
   }) {
     final monthStart = month.firstDayOfMonth;
     final monthEnd = month.lastDayOfMonth;
@@ -120,6 +121,9 @@ class MonthLayoutCalculator {
         return !to.isBefore(from);
       }).toList()
         ..sort((a, b) {
+          final aLeading = leadingIds.contains(a.id);
+          final bLeading = leadingIds.contains(b.id);
+          if (aLeading != bLeading) return aLeading ? -1 : 1;
           final startCompare = a.startDate.compareTo(b.startDate);
           return startCompare != 0 ? startCompare : a.id.compareTo(b.id);
         });

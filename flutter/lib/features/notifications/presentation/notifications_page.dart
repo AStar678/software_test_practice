@@ -3,19 +3,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/errors/app_error.dart';
+import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/state_views.dart';
 import '../domain/notification_record.dart';
 import 'notifications_providers.dart';
 
-class NotificationsPage extends ConsumerStatefulWidget {
+class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
 
   @override
-  ConsumerState<NotificationsPage> createState() => _NotificationsPageState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final epoch = ref.watch(accountEpochProvider);
+    final user = ref.watch(currentUserProvider);
+    return _NotificationsList(
+      key: ValueKey((epoch, user?.id, user?.authzVersion)),
+    );
+  }
 }
 
-class _NotificationsPageState extends ConsumerState<NotificationsPage> {
+class _NotificationsList extends ConsumerStatefulWidget {
+  const _NotificationsList({super.key});
+
+  @override
+  ConsumerState<_NotificationsList> createState() => _NotificationsListState();
+}
+
+class _NotificationsListState extends ConsumerState<_NotificationsList> {
   NotificationReadFilter _read = NotificationReadFilter.all;
   NotificationCategory _category = NotificationCategory.all;
   final List<NotificationRecord> _items = [];
@@ -242,6 +257,12 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     } catch (error) {
       if (!mounted || generation != _generation) return;
       setState(() {
+        if (error is ApiException &&
+            (error.isForbidden || error.isUnauthorized)) {
+          _items.clear();
+          _total = 0;
+          _unreadCount = 0;
+        }
         _error = error;
         _loading = false;
       });
@@ -257,5 +278,6 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
   String _time(DateTime? value) => value == null
       ? '时间未知'
-      : DateFormat('MM-dd HH:mm').format(value.toLocal());
+      : DateFormat('MM-dd HH:mm')
+            .format(ref.read(companyTimeZoneProvider).toLocal(value));
 }

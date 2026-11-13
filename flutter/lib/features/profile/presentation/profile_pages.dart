@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/state_views.dart';
@@ -67,16 +68,19 @@ class SelfProfileCard extends ConsumerWidget {
           onRetry: () => ref.invalidate(selfProfileProvider),
         ),
       ),
-      data: (person) => Card(
+      data: (result) => Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: _ProfileBody(
-            person: person,
+            person: result.data,
             actions: [
               FilledButton.tonalIcon(
                 onPressed: () => showDialog<void>(
                   context: context,
-                  builder: (_) => const _ProfileEditDialog(),
+                  builder: (_) => _ProfileEditDialog(
+                    person: result.data,
+                    version: result.etag,
+                  ),
                 ),
                 icon: const Icon(Icons.edit_outlined),
                 label: const Text('编辑头像和邮箱'),
@@ -163,7 +167,10 @@ class _ProfileBody extends StatelessWidget {
 }
 
 class _ProfileEditDialog extends ConsumerStatefulWidget {
-  const _ProfileEditDialog();
+  const _ProfileEditDialog({required this.person, required this.version});
+
+  final EmployeeUser person;
+  final String? version;
 
   @override
   ConsumerState<_ProfileEditDialog> createState() => _ProfileEditDialogState();
@@ -171,18 +178,22 @@ class _ProfileEditDialog extends ConsumerStatefulWidget {
 
 class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
   final _email = TextEditingController();
+  late String? _initialEmail;
+  late String? _initialAvatar;
+  String? _version;
   String? _avatar;
   bool _saving = false;
+  bool _needsReload = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    final user =
-        ref.read(selfProfileProvider).asData?.value ??
-        ref.read(currentUserProvider);
-    _email.text = user?.email ?? '';
-    _avatar = user?.avatar;
+    _initialEmail = widget.person.email;
+    _initialAvatar = widget.person.avatar;
+    _version = widget.version;
+    _email.text = _initialEmail ?? '';
+    _avatar = _initialAvatar;
   }
 
   @override
@@ -193,9 +204,6 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final user =
-        ref.watch(selfProfileProvider).asData?.value ??
-        ref.watch(currentUserProvider);
     return AlertDialog(
       title: const Text('编辑资料'),
       content: SizedBox(
@@ -208,7 +216,7 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
               Center(
                 child: ProfileAvatar(
                   avatar: _avatar,
-                  name: user?.displayName ?? '',
+                  name: widget.person.displayName,
                   radius: 38,
                 ),
               ),
@@ -254,8 +262,8 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
           child: const Text('取消'),
         ),
         FilledButton(
-          onPressed: _saving ? null : _save,
-          child: Text(_saving ? '保存中…' : '保存'),
+          onPressed: _saving ? null : (_needsReload ? _reload : _save),
+          child: Text(_saving ? '处理中…' : (_needsReload ? '重新读取' : '保存')),
         ),
       ],
     );
@@ -298,32 +306,77 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
       setState(() => _error = '请输入有效的邮箱地址');
       return;
     }
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
     final body = <String, Object?>{
-      'email': email.isEmpty ? null : email,
-      'avatar': _avatar,
+      if (email != (_initialEmail ?? '')) 'email': email.isEmpty ? null : email,
+      if (_avatar != _initialAvatar) 'avatar': _avatar,
     };
+    if (body.isEmpty) {
+      Navigator.of(context).pop();
+      return;
+    }
+    final version = _version;
+    if (version == null) {
+      await _reload();
+      return;
+    }
+    final api = ref.read(profileApiProvider);
     final keys = ref.read(operationKeysProvider);
     final key = keys.keyFor(
       scope: 'profile:update',
       method: 'PATCH',
       path: '/me/profile',
       body: body,
+      ifMatch: version,
     );
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
-      await ref
-          .read(profileApiProvider)
-          .update(values: body, idempotencyKey: key);
+      await api.update(values: body, idempotencyKey: key, ifMatch: version);
       keys.complete('profile:update');
+      if (!mounted) return;
       ref.invalidate(selfProfileProvider);
-      final updated = await ref.read(profileApiProvider).self();
-      ref.read(sessionManagerProvider).updateUser(updated);
-      if (mounted) Navigator.of(context).pop();
+      Navigator.of(context).pop();
     } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (!mounted) return;
+      setState(() {
+        _needsReload =
+            error is ApiException &&
+            (error.statusCode == 412 || error.statusCode == 428);
+        _error = error is ApiException ? error.message : '保存失败，请重试';
+      });
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _reload() async {
+    setState(() {
+      _needsReload = true;
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final result = await ref.refresh(selfProfileProvider.future);
+      if (!mounted) return;
+      final latest = result.data;
+      setState(() {
+        if (_email.text.trim() == (_initialEmail ?? '')) {
+          _email.text = latest.email ?? '';
+        }
+        if (_avatar == _initialAvatar) _avatar = latest.avatar;
+        _initialEmail = latest.email;
+        _initialAvatar = latest.avatar;
+        _version = result.etag;
+        _needsReload = false;
+        _error = '已读取最新资料，请确认修改后保存。';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error is ApiException ? error.message : '读取失败，请重试';
+      });
     } finally {
       if (mounted) setState(() => _saving = false);
     }

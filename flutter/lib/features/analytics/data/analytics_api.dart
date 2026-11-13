@@ -1,3 +1,4 @@
+import '../../../core/errors/app_error.dart';
 import '../../../core/net/api_client.dart';
 import '../domain/analytics_models.dart';
 
@@ -25,19 +26,22 @@ class AnalyticsApi {
       idempotencyKey: idempotencyKey,
       decode: asJsonMap,
     );
-    return result.data['jobId']?.toString() ?? '';
+    final id = result.data['jobId'];
+    if (id is! String || id.trim().isEmpty) {
+      throw ApiException(kind: ApiErrorKind.unknown, message: '服务端未返回建议任务编号');
+    }
+    return id;
   }
 
   Future<AnalyticsReport> report(String id) async {
     final result = await client.get<AnalyticsReport>(
       '/ai-jobs/$id',
       decode: (json) {
-        final row = asJsonMap(json);
-        return AnalyticsReport.fromJson(
-          row['result'] is Map
-              ? Map<String, Object?>.from(row['result'] as Map)
-              : const {},
-        );
+        final result = asJsonMap(json)['result'];
+        if (result is! Map || result.isEmpty) {
+          throw ApiException(kind: ApiErrorKind.unknown, message: '服务端未返回建议结果');
+        }
+        return AnalyticsReport.fromJson(Map<String, Object?>.from(result));
       },
     );
     return result.data;

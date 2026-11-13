@@ -27,7 +27,9 @@ class ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final value = avatar;
     ImageProvider<Object>? image;
-    if (value != null && value.startsWith('data:image/jpeg;base64,')) {
+    if (value != null &&
+        (value.startsWith('data:image/jpeg;base64,') ||
+            value.startsWith('data:image/png;base64,'))) {
       try {
         image = MemoryImage(
           base64Decode(value.substring(value.indexOf(',') + 1)),

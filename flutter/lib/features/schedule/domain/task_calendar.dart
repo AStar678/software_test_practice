@@ -1,8 +1,11 @@
+import 'dart:ui';
+
 import '../../../core/company/company_date.dart';
 import '../../../core/company/company_time.dart';
 import '../../daily_items/domain/daily_item.dart';
 import '../../daily_items/domain/month_layout.dart';
 import '../../tasks/domain/task_record.dart';
+import 'calendar_drag.dart';
 
 class CalendarTask {
   const CalendarTask({required this.task, required this.pendingProjection});
@@ -78,8 +81,15 @@ DailyItem pseudoItem(CalendarTask item) {
 }
 
 class TaskCalendarSelection {
-  TaskCalendarSelection({required this.taskId, required this.grabDay});
+  TaskCalendarSelection({
+    required this.taskId,
+    required this.grabDay,
+    this.mode = CalendarDragMode.move,
+    this.pointer,
+  });
 
   final String taskId;
   CompanyDate grabDay;
+  final CalendarDragMode mode;
+  Offset? pointer;
 }
