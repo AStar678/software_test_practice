@@ -16,6 +16,9 @@ import '../../features/tasks/presentation/task_route_args.dart';
 import '../../features/tasks/presentation/task_table_page.dart';
 import '../../features/work_logs/presentation/work_logs_page.dart';
 import '../../features/tags/presentation/tag_manage_page.dart';
+import '../../features/notifications/presentation/notifications_page.dart';
+import '../../features/people/presentation/people_page.dart';
+import '../../features/profile/presentation/profile_pages.dart';
 import '../company/company_date.dart';
 import '../../features/shell/destination_pages.dart';
 import '../../features/shell/pandora_shell.dart';
@@ -70,6 +73,9 @@ class AppRoutes {
   static String notification(String id) => '/notifications/$id';
 
   static const people = '/people';
+  static const personPattern = '/people/:id';
+  static const personSchedulePattern = '/people/:id/schedule';
+  static const personLogsPattern = '/people/:id/logs';
   static const logsNew = '/logs/new';
   static const logPattern = '/logs/:id';
   static const logEditPattern = '/logs/:id/edit';
@@ -87,14 +93,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final phase = manager.state.phase;
       final location = state.matchedLocation;
-      final onAuthPage = location == AppRoutes.login ||
+      final onAuthPage =
+          location == AppRoutes.login ||
           location == AppRoutes.password ||
           location == AppRoutes.sessionCheck;
 
-      if (phase == SessionPhase.bootstrapping || phase == SessionPhase.checking) {
-        return location == AppRoutes.sessionCheck ? null : AppRoutes.sessionCheck;
+      if (phase == SessionPhase.bootstrapping ||
+          phase == SessionPhase.checking) {
+        return location == AppRoutes.sessionCheck
+            ? null
+            : AppRoutes.sessionCheck;
       }
-      if (phase == SessionPhase.unauthenticated || phase == SessionPhase.expired) {
+      if (phase == SessionPhase.unauthenticated ||
+          phase == SessionPhase.expired) {
         return location == AppRoutes.login ? null : AppRoutes.login;
       }
       if (phase == SessionPhase.restricted) {
@@ -118,7 +129,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SessionCheckPage(),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => PandoraShell(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) =>
+            PandoraShell(navigationShell: navigationShell),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -170,7 +182,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '${AppRoutes.homeEvents}/:id',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => HomeEventDetailPage(itemId: state.pathParameters['id'] ?? ''),
+        builder: (context, state) =>
+            HomeEventDetailPage(itemId: state.pathParameters['id'] ?? ''),
       ),
       GoRoute(
         path: AppRoutes.homeBoard,
@@ -180,7 +193,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.taskNew,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => TaskCreatePage(parentId: state.uri.queryParameters['parent']),
+        builder: (context, state) =>
+            TaskCreatePage(parentId: state.uri.queryParameters['parent']),
       ),
       GoRoute(
         path: AppRoutes.taskTable,
@@ -192,7 +206,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra;
-          final args = extra is TaskRouteArgs ? extra : const TaskRouteArgs(context: NormalReadContext());
+          final args = extra is TaskRouteArgs
+              ? extra
+              : const TaskRouteArgs(context: NormalReadContext());
           return TaskDetailPage(
             taskId: state.pathParameters['id'] ?? '',
             readContext: args.context,
@@ -202,17 +218,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.taskEditPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => TaskEditPage(taskId: state.pathParameters['id'] ?? ''),
+        builder: (context, state) =>
+            TaskEditPage(taskId: state.pathParameters['id'] ?? ''),
       ),
       GoRoute(
         path: AppRoutes.taskReopenPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => TaskReopenPage(taskId: state.pathParameters['id'] ?? ''),
+        builder: (context, state) =>
+            TaskReopenPage(taskId: state.pathParameters['id'] ?? ''),
       ),
       GoRoute(
         path: AppRoutes.taskHandoverPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => TaskHandoverPage(taskId: state.pathParameters['id'] ?? ''),
+        builder: (context, state) =>
+            TaskHandoverPage(taskId: state.pathParameters['id'] ?? ''),
       ),
       GoRoute(
         path: AppRoutes.approvals,
@@ -222,7 +241,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.approvalPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => ApprovalDetailPage(requestId: state.pathParameters['requestId'] ?? ''),
+        builder: (context, state) => ApprovalDetailPage(
+          requestId: state.pathParameters['requestId'] ?? '',
+        ),
       ),
       GoRoute(
         path: AppRoutes.dailyItemNew,
@@ -245,22 +266,46 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.dailyItemPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => DailyItemDetailPage(itemId: state.pathParameters['id'] ?? ''),
+        builder: (context, state) =>
+            DailyItemDetailPage(itemId: state.pathParameters['id'] ?? ''),
       ),
       GoRoute(
         path: AppRoutes.notifications,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const StubPage(title: '通知'),
+        builder: (context, state) => const NotificationsPage(),
       ),
       GoRoute(
         path: AppRoutes.notificationPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => StubPage(title: '通知详情', subtitle: state.pathParameters['id']),
+        builder: (context, state) =>
+            StubPage(title: '通知详情', subtitle: state.pathParameters['id']),
       ),
       GoRoute(
         path: AppRoutes.people,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const StubPage(title: '我的下属'),
+        builder: (context, state) => const PeoplePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.personPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            ProfileDetailPage(personId: state.pathParameters['id'] ?? ''),
+      ),
+      GoRoute(
+        path: AppRoutes.personSchedulePattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => SubordinateWorkspacePendingPage(
+          personId: state.pathParameters['id'] ?? '',
+          title: '下属日程',
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.personLogsPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => SubordinateWorkspacePendingPage(
+          personId: state.pathParameters['id'] ?? '',
+          title: '下属日志',
+        ),
       ),
       GoRoute(
         path: AppRoutes.logsNew,
@@ -272,12 +317,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.logEditPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => WorkLogEditorPage(logId: state.pathParameters['id']),
+        builder: (context, state) =>
+            WorkLogEditorPage(logId: state.pathParameters['id']),
       ),
       GoRoute(
         path: AppRoutes.logPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => WorkLogDetailPage(logId: state.pathParameters['id'] ?? ''),
+        builder: (context, state) =>
+            WorkLogDetailPage(logId: state.pathParameters['id'] ?? ''),
       ),
       GoRoute(
         path: AppRoutes.tags,

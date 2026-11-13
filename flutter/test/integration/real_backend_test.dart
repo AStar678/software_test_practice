@@ -21,9 +21,18 @@ import 'package:pandora_employee/features/tags/data/tags_api.dart';
 import 'package:pandora_employee/features/tasks/data/tasks_api.dart';
 import 'package:pandora_employee/features/work_logs/data/work_logs_api.dart';
 import 'package:pandora_employee/features/comments/data/comments_api.dart';
+import 'package:pandora_employee/features/profile/data/profile_api.dart';
+import 'package:pandora_employee/features/people/data/people_api.dart';
+import 'package:pandora_employee/features/notifications/data/notifications_api.dart';
+import 'package:pandora_employee/features/notifications/domain/notification_record.dart';
+import 'package:pandora_employee/features/analytics/data/analytics_api.dart';
+import 'package:pandora_employee/features/holidays/data/holidays_api.dart';
+import 'package:pandora_employee/features/holidays/domain/holiday_calendar.dart';
 
 /// 真实隔离演示后端（`backend/scripts/start-demo.sh`）联调检查。
 /// 未启动时整组跳过，不把缺失环境伪装成通过。
+/// 运行时可设 PANDORA_WORKER_INITIAL_DELAY_MS=3600000，避免定时投递改变分页数据；
+/// 测试会通过演示管理员显式触发事件投递。
 final bool _backendUp = () {
   try {
     final result = Process.runSync(
@@ -50,6 +59,32 @@ void main() {
   late OperationKeys keys;
   late WorkLogsApi workLogs;
   late CommentsApi comments;
+  late NotificationsApi notifications;
+  late HolidaysApi holidays;
+  final demoAdmin = Dio(BaseOptions(
+    baseUrl: _baseUrl,
+    connectTimeout: const Duration(seconds: 5),
+    receiveTimeout: const Duration(seconds: 15),
+  ));
+  String? demoAdminToken;
+
+  Future<void> deliverDemoEvents() async {
+    if (demoAdminToken == null) {
+      final response = await demoAdmin.post<Map<String, dynamic>>(
+        '/auth/sessions',
+        data: {
+          'accountType': 'admin',
+          'accountName': 'admin',
+          'password': _demoPassword,
+        },
+      );
+      demoAdminToken = response.data!['token'] as String;
+    }
+    await demoAdmin.post<void>(
+      '/admin/worker/run-once',
+      options: Options(headers: {'Authorization': 'Bearer $demoAdminToken'}),
+    );
+  }
 
   session = SessionManager(
     api: AuthApi(
@@ -79,10 +114,24 @@ void main() {
   keys = OperationKeys();
   workLogs = WorkLogsApi(client: client);
   comments = CommentsApi(client: client);
+  notifications = NotificationsApi(client: client);
+  holidays = HolidaysApi(client: client);
 
   setUpAll(() async {
     if (!_backendUp) return;
     await session.login(phone: '13800000004', password: _demoPassword);
+  });
+  tearDownAll(() async {
+    try {
+      if (demoAdminToken != null) {
+        await demoAdmin.delete<void>(
+          '/auth/sessions/current',
+          options: Options(headers: {'Authorization': 'Bearer $demoAdminToken'}),
+        );
+      }
+    } finally {
+      demoAdmin.close();
+    }
   });
 
   final skipReason = _backendUp ? null : '真实演示后端未运行（http://127.0.0.1:8080）';
@@ -667,32 +716,40 @@ void main() {
       versions: VersionRegistry(),
     );
     final reviewerComments = CommentsApi(client: reviewerClient);
-    const body = '评审联调评论正文';
+    final body = '评审联调评论正文 ${DateTime.now().microsecondsSinceEpoch}';
     final comment = await reviewerComments.create(
       objectType: 'task',
       objectId: targetTask!.id,
       body: body,
-      idempotencyKey: keys.keyFor(scope: 'real:comment-notify', method: 'POST', path: '/tasks/${targetTask.id}/comments'),
+      idempotencyKey: keys.keyFor(scope: 'real:comment-notify', method: 'POST', path: '/tasks/${targetTask.id}/comments', body: {'body': body}),
     );
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    final employeeNotifications = await client.get<Map<String, Object?>>(
-      '/notifications',
-      query: {'limit': 100},
-      decode: (json) => asJsonMap(json),
-    );
-    final allNotifications = asJsonList(employeeNotifications.data['items'])
-        .whereType<Map>()
-        .map((row) => Map<String, Object?>.from(row))
-        .toList();
-    final target = allNotifications
-        .where((row) => row['eventType'] == 'comment.created' && row['objectId'] == targetTask.id)
-        .toList();
-    expect(target, isNotEmpty, reason: '当前负责人应收到评论通知');
-    await reviewerComments.delete(
-      commentId: comment.id,
-      rowVersion: comment.rowVersion,
-      idempotencyKey: keys.keyFor(scope: 'real:comment-notify-delete', method: 'DELETE', path: '/comments/${comment.id}'),
-    );
+    try {
+      var delivered = false;
+      for (var attempt = 0; attempt < 20; attempt++) {
+        await deliverDemoEvents();
+        final employeeNotifications = await client.get<Map<String, Object?>>(
+          '/notifications',
+          query: {'category': 'comment', 'limit': 100},
+          decode: (json) => asJsonMap(json),
+        );
+        delivered = asJsonList(employeeNotifications.data['items'])
+            .whereType<Map>()
+            .any((row) =>
+                row['eventType'] == 'comment.created' &&
+                row['objectId'] == targetTask.id &&
+                row['commentId'] == comment.id);
+        if (delivered) break;
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+      expect(delivered, isTrue, reason: '当前负责人应收到本次评论的通知');
+    } finally {
+      await reviewerComments.delete(
+        commentId: comment.id,
+        rowVersion: comment.rowVersion,
+        idempotencyKey: keys.keyFor(scope: 'real:comment-notify-delete', method: 'DELETE', path: '/comments/${comment.id}'),
+      );
+      await reviewerSession.logout();
+    }
   }, skip: skipReason);
 
   test('J22 仅创始人可维护共用标签目录', () async {
@@ -740,6 +797,173 @@ void main() {
       ),
       throwsA(isA<ApiException>()),
     );
+  }, skip: skipReason);
+
+  test('J24/J25 四角色本人资料与真实下属范围遵守详情/摘要边界', () async {
+    const accounts = <String, bool>{
+      '13800000001': true,
+      '13800000002': true,
+      '13800000011': true,
+      '13800000004': false,
+    };
+    for (final entry in accounts.entries) {
+      final scopedSession = SessionManager(
+        api: AuthApi(
+          dio: Dio(
+            BaseOptions(
+              validateStatus: (status) => status != null && status < 400,
+            ),
+          ),
+          baseUrl: _baseUrl,
+        ),
+        store: MemoryCredentialStore(),
+        clock: WorkspaceClock(),
+      );
+      await scopedSession.login(phone: entry.key, password: _demoPassword);
+      final scopedClient = ApiClient(
+        config: const AppConfig(apiBaseUrl: _baseUrl, isDebug: true),
+        session: scopedSession,
+        versions: VersionRegistry(),
+      );
+      final self = await ProfileApi(client: scopedClient).self();
+      expect(self.id, isNotEmpty);
+      expect(self.phone, entry.key);
+      expect(self.positionPath, isNotEmpty);
+      if (self.hireDate == null) expect(self.tenure, isNull);
+
+      final reports = await PeopleApi(client: scopedClient).reports();
+      expect(reports.isNotEmpty, entry.value, reason: '角色 ${self.role} 下属范围');
+      expect(
+        reports.every(
+          (person) => person.id.isNotEmpty && person.displayName.isNotEmpty,
+        ),
+        isTrue,
+      );
+      if (reports.isNotEmpty) {
+        final detail = await ProfileApi(client: scopedClient)
+            .person(reports.first.id);
+        expect(detail.id, reports.first.id);
+        expect(detail.phone, isNotEmpty);
+        // 服务端投影可以为空，但不能用账号创建日伪造 tenure。
+        if (detail.hireDate == null) expect(detail.tenure, isNull);
+      }
+      await scopedSession.logout();
+    }
+  }, skip: skipReason);
+
+  test('J26 通知 18 种组合均由真实服务过滤且列表读取不标读', () async {
+    await deliverDemoEvents();
+    final initial = await notifications.list(
+      read: NotificationReadFilter.unread,
+      category: NotificationCategory.all,
+      offset: 0,
+      limit: 7,
+    );
+    expect(initial.nextOffset, 7, reason: '演示库必须覆盖跨页未读通知');
+    final readId = initial.items.first.id;
+    final openPath = '/notifications/$readId/open';
+    await client.write(
+      method: 'POST',
+      path: openPath,
+      body: const {},
+      idempotencyKey: keys.keyFor(scope: 'real:notification-open', method: 'POST', path: openPath),
+      decode: asJsonMap,
+    );
+    final expectedGlobalUnread = initial.unreadCount - 1;
+    for (final read in NotificationReadFilter.values) {
+      for (final category in NotificationCategory.values) {
+        final items = <NotificationRecord>[];
+        int? offset = 0;
+        int? total;
+        var pageCount = 0;
+        while (offset != null) {
+          final page = await notifications.list(
+            read: read,
+            category: category,
+            offset: offset,
+            limit: 7,
+          );
+          total ??= page.total;
+          expect(page.total, total);
+          expect(page.unreadCount, expectedGlobalUnread);
+          items.addAll(page.items);
+          offset = page.nextOffset;
+          pageCount++;
+          expect(pageCount, lessThan(100), reason: '分页不得循环');
+        }
+        expect(items, hasLength(total!));
+        expect(items.map((item) => item.id).toSet(), hasLength(items.length));
+        if (read == NotificationReadFilter.unread) {
+          expect(items.every((item) => item.unread), isTrue);
+        }
+        if (read == NotificationReadFilter.read) {
+          expect(items.every((item) => !item.unread), isTrue);
+          if (category == NotificationCategory.all) {
+            expect(items.map((item) => item.id), contains(readId));
+          }
+        }
+        if (category != NotificationCategory.all) {
+          expect(
+            items.every((item) => item.category == category.apiValue),
+            isTrue,
+          );
+        }
+      }
+    }
+  }, skip: skipReason);
+
+  test('J27 四角色真实统计与本地规则建议按授权范围生成', () async {
+    const accounts = <String, String>{
+      '13800000001': 'company',
+      '13800000002': 'department',
+      '13800000011': 'team',
+      '13800000004': 'self',
+    };
+    for (final entry in accounts.entries) {
+      final scopedSession = SessionManager(
+        api: AuthApi(
+          dio: Dio(
+            BaseOptions(
+              validateStatus: (status) => status != null && status < 400,
+            ),
+          ),
+          baseUrl: _baseUrl,
+        ),
+        store: MemoryCredentialStore(),
+        clock: WorkspaceClock(),
+      );
+      await scopedSession.login(phone: entry.key, password: _demoPassword);
+      final scopedClient = ApiClient(
+        config: const AppConfig(apiBaseUrl: _baseUrl, isDebug: true),
+        session: scopedSession,
+        versions: VersionRegistry(),
+      );
+      final scopedAnalytics = AnalyticsApi(client: scopedClient);
+      final summary = await scopedAnalytics.summary(scope: 'auto');
+      expect(summary.scope, entry.value);
+      expect(summary.total, greaterThanOrEqualTo(0));
+      expect(summary.todo + summary.doing + summary.done, summary.total);
+      expect(summary.method, 'current_effective_tasks');
+      final jobId = await scopedAnalytics.createReport(
+        scope: 'auto',
+        idempotencyKey: 'real-analytics-${entry.key}',
+      );
+      final report = await scopedAnalytics.report(jobId);
+      expect(report.mode, 'rule_based');
+      expect(report.modelUsed, isFalse);
+      expect(report.generatedAt, isNotNull);
+      await scopedSession.logout();
+    }
+  }, skip: skipReason);
+
+  test('J31 项目节假日接口返回 ready/stale/missing 且 missing 不预测', () async {
+    final value = await holidays.year(clock.businessDate.year);
+    expect(value.status, isIn(HolidayCacheStatus.values));
+    if (value.status == HolidayCacheStatus.missing) {
+      expect(value.days, isEmpty);
+    } else {
+      expect(value.updatedAt, isNotNull);
+    }
   }, skip: skipReason);
 
   test('真实认证错误映射为可读 API 错误', () async {

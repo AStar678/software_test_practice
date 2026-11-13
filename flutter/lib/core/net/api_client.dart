@@ -98,6 +98,7 @@ class ApiClient {
     required T Function(Object? json) decode,
     String? versionKey,
     bool requireVersion = false,
+    String? ifMatch,
     CancelToken? cancelToken,
   }) {
     return _request(
@@ -107,6 +108,7 @@ class ApiClient {
       decode: decode,
       versionKey: versionKey,
       requireVersion: requireVersion,
+      ifMatch: ifMatch,
       idempotencyKey: idempotencyKey,
       cancelToken: cancelToken,
     );
@@ -120,6 +122,7 @@ class ApiClient {
     required T Function(Object? json) decode,
     String? versionKey,
     bool requireVersion = false,
+    String? ifMatch,
     String? idempotencyKey,
     CancelToken? cancelToken,
   }) async {
@@ -129,21 +132,13 @@ class ApiClient {
         message: '客户端未配置有效的服务地址',
       );
     }
-    String? ifMatch;
-    if (requireVersion) {
-      if (versionKey == null) {
-        throw ApiException(
-          kind: ApiErrorKind.validation,
-          message: '缺少版本信息，请重新读取后再提交',
-        );
-      }
-      ifMatch = versions[versionKey];
-      if (ifMatch == null) {
-        throw ApiException(
-          kind: ApiErrorKind.validation,
-          message: '缺少版本信息，请重新读取后再提交',
-        );
-      }
+    final match = ifMatch ??
+        (requireVersion && versionKey != null ? versions[versionKey] : null);
+    if (requireVersion && match == null) {
+      throw ApiException(
+        kind: ApiErrorKind.validation,
+        message: '缺少版本信息，请重新读取后再提交',
+      );
     }
 
     for (var attempt = 0; attempt < 2; attempt++) {
@@ -155,7 +150,7 @@ class ApiClient {
       final headers = <String, String>{
         'Authorization': 'Bearer $token',
         if (method != 'GET' && method != 'DELETE') 'Content-Type': 'application/json',
-        'If-Match': ?ifMatch,
+        'If-Match': ?match,
         'Idempotency-Key': ?idempotencyKey,
       };
       try {

@@ -13,6 +13,8 @@ import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../daily_items/domain/month_layout.dart';
+import '../../holidays/domain/holiday_calendar.dart';
+import '../../holidays/presentation/holiday_providers.dart';
 import '../../tasks/domain/task_record.dart';
 import '../data/schedule_api.dart';
 import '../domain/calendar_drag.dart';
@@ -32,6 +34,9 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage> with Widget
   final Map<String, List<TaskRecord>> _tasks = {};
   final Set<String> _loading = {};
   final Map<String, Object> _errors = {};
+  final Map<int, HolidayYear> _holidays = {};
+  final Set<int> _loadingHolidays = {};
+  final Set<int> _holidayErrors = {};
   late CompanyDate _anchor;
   final _scroll = ScrollController();
   final _currentMonthKey = GlobalKey();
@@ -61,6 +66,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage> with Widget
     WidgetsBinding.instance.addObserver(this);
     _scroll.addListener(_loadVisibleMonths);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _jumpToAnchor();
       _loadAround(_anchor);
       unawaited(_restorePreferences());
@@ -237,7 +243,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage> with Widget
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () => _loadAround(_anchor, force: true),
+          onRefresh: _refreshCalendar,
           child: ListView.builder(
             controller: _scroll,
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
@@ -255,6 +261,8 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage> with Widget
                 error: _errors[_key(month)],
                 onRetry: () => _loadMonth(month),
                 onDay: (day) => _openDay(day),
+                  holidays: _holidays,
+                  holidayUnavailable: _holidayErrors.contains(month.year),
                   onPin: _togglePin,
                   onOpenTask: (id) => _openAndRefresh('/tasks/$id'),
                   density: _density,
@@ -275,11 +283,39 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage> with Widget
   static String _key(CompanyDate month) =>
       '${month.year.toString().padLeft(4, '0')}-${month.month.toString().padLeft(2, '0')}';
 
+  Future<void> _refreshCalendar() async {
+    final years = {_anchor.year, ..._holidays.keys, ..._holidayErrors};
+    for (final year in years) {
+      unawaited(_loadHolidays(year, refresh: true));
+    }
+    await _loadAround(_anchor, force: true);
+  }
+
+  Future<void> _loadHolidays(int year, {bool refresh = false}) async {
+    if ((!refresh && (_holidays.containsKey(year) || _holidayErrors.contains(year))) ||
+        !_loadingHolidays.add(year)) {
+      return;
+    }
+    try {
+      final holidays = await ref.read(holidayRepositoryProvider).load(year, refresh: refresh);
+      if (!mounted) return;
+      setState(() {
+        _holidays[year] = holidays;
+        _holidayErrors.remove(year);
+      });
+    } catch (_) {
+      if (mounted) setState(() => _holidayErrors.add(year));
+    } finally {
+      _loadingHolidays.remove(year);
+    }
+  }
+
   Future<void> _loadAround(CompanyDate anchor, {bool force = false}) async {
     final months = CompanyCalendarGrid.continuousMonths(anchor, monthsBefore: 12, monthsAfter: 24);
     final center = months.indexWhere((month) => month.year == anchor.year && month.month == anchor.month);
     if (center < 0) return;
     for (var index = center - 2; index <= center + 2; index++) {
+      if (!mounted) return;
       if (index < 0 || index >= months.length) continue;
       final month = months[index];
       if (!force && (_tasks.containsKey(_key(month)) || _loading.contains(_key(month)))) continue;
@@ -291,13 +327,15 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage> with Widget
   Future<void> _loadMonth(CompanyDate month) async {
     final key = _key(month);
     if (_loading.contains(key)) return;
+    final from = month.firstDayOfMonth.addDays(-7);
+    final to = month.lastDayOfMonth.addDays(7);
+    unawaited(_loadHolidays(from.year));
+    if (to.year != from.year) unawaited(_loadHolidays(to.year));
     setState(() {
       _loading.add(key);
       _errors.remove(key);
     });
     try {
-      final from = month.firstDayOfMonth.addDays(-7);
-      final to = month.lastDayOfMonth.addDays(7);
       final rows = await ref.read(scheduleApiProvider).listCalendarTasks(
             assigneeId: ref.read(currentUserProvider)?.id ?? '',
             from: from.iso,
@@ -728,6 +766,8 @@ class _MonthBlock extends StatelessWidget {
     required this.loading,
     required this.error,
     required this.onRetry,
+    required this.holidays,
+    required this.holidayUnavailable,
     required this.onDay,
     required this.onPin,
     required this.onOpenTask,
@@ -745,6 +785,8 @@ class _MonthBlock extends StatelessWidget {
   final bool loading;
   final Object? error;
   final VoidCallback onRetry;
+  final Map<int, HolidayYear> holidays;
+  final bool holidayUnavailable;
   final ValueChanged<CompanyDate> onDay;
   final Future<void> Function(TaskRecord) onPin;
   final ValueChanged<String> onOpenTask;
@@ -769,6 +811,15 @@ class _MonthBlock extends StatelessWidget {
       items: projected.map(pseudoItem).toList(),
       leadingIds: leadingIds,
     );
+    final holidaysByDate = {
+      for (final year in [month.year - 1, month.year, month.year + 1])
+        ...?holidays[year]?.byDate,
+    };
+    final holidayStatus = switch (holidays[month.year]?.status) {
+      HolidayCacheStatus.stale => '节假日标签为最近有效缓存',
+      HolidayCacheStatus.missing => '本年官方节假日尚未公布',
+      _ => holidayUnavailable ? '节假日暂不可用' : null,
+    };
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -778,7 +829,20 @@ class _MonthBlock extends StatelessWidget {
             Row(
               children: [
                 Text('${month.year}年${month.month}月', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-                const Spacer(),
+                Expanded(
+                  child: holidayStatus == null
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Text(
+                            holidayStatus,
+                            textAlign: TextAlign.end,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 10, color: PandoraColors.muted),
+                          ),
+                        ),
+                ),
                 if (loading) const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                 if (error != null) TextButton(onPressed: onRetry, child: const Text('重试')),
               ],
@@ -805,6 +869,7 @@ class _MonthBlock extends StatelessWidget {
                                   builder: (context) {
                                     final day = week.days[i];
                                     final isToday = day.date == businessDate;
+                                    final holiday = holidaysByDate[day.date.iso];
                                     return InkWell(
                                       key: day.inMonth ? dayKey(day.date) : null,
                                       onTap: day.inMonth ? () => onDay(day.date) : null,
@@ -817,7 +882,28 @@ class _MonthBlock extends StatelessWidget {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.stretch,
                                           children: [
-                                            Text('${day.date.day}', style: const TextStyle(fontSize: 11)),
+                                            Row(
+                                              children: [
+                                                Text('${day.date.day}', style: const TextStyle(fontSize: 11)),
+                                                if (holiday != null) ...[
+                                                  const SizedBox(width: 2),
+                                                  Expanded(
+                                                    child: Tooltip(
+                                                      message: '${holiday.name} · ${holiday.isOffDay ? '休' : '班'}',
+                                                      child: Text(
+                                                        '${holiday.isOffDay ? '休' : '班'} ${holiday.name}',
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                        style: TextStyle(
+                                                          fontSize: 8,
+                                                          color: holiday.isOffDay ? PandoraColors.brand : PandoraColors.muted,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
                                             for (var lane = 0; lane < MonthLayout.maxLanes; lane++)
                                               if (week.bars.where((bar) => bar.lane == lane && bar.startColumn <= i && bar.endColumn >= i).isNotEmpty)
                                                 SizedBox(height: _laneStep),
