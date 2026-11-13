@@ -12,7 +12,6 @@ import '../../features/home/presentation/home_page.dart';
 import '../../features/tasks/presentation/task_action_pages.dart';
 import '../../features/tasks/presentation/task_detail_page.dart';
 import '../../features/tasks/presentation/task_form_page.dart';
-import '../../features/tasks/presentation/task_route_args.dart';
 import '../../features/tasks/presentation/task_table_page.dart';
 import '../../features/work_logs/presentation/work_logs_page.dart';
 import '../../features/tags/presentation/tag_manage_page.dart';
@@ -24,6 +23,7 @@ import '../../features/schedule/presentation/task_calendar_page.dart';
 import '../company/company_date.dart';
 import '../../features/shell/destination_pages.dart';
 import '../../features/shell/pandora_shell.dart';
+import '../router/navigation_targets.dart';
 import '../router/read_context.dart';
 import '../providers.dart';
 import '../session/session_manager.dart';
@@ -78,6 +78,9 @@ class AppRoutes {
   static const personPattern = '/people/:id';
   static const personSchedulePattern = '/people/:id/schedule';
   static const personLogsPattern = '/people/:id/logs';
+  static const personTaskPattern = '/people/:id/tasks/:taskId';
+  static const personLogPattern = '/people/:id/logs/:logId';
+  static const personApprovalPattern = '/people/:id/approvals/:requestId';
   static const logsNew = '/logs/new';
   static const logPattern = '/logs/:id';
   static const logEditPattern = '/logs/:id/edit';
@@ -88,6 +91,7 @@ class AppRoutes {
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final manager = ref.watch(sessionManagerProvider);
+  ref.watch(accountEpochProvider);
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: AppRoutes.home,
@@ -206,16 +210,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.taskPattern,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
-          final extra = state.extra;
-          final args = extra is TaskRouteArgs
-              ? extra
-              : const TaskRouteArgs(context: NormalReadContext());
-          return TaskDetailPage(
-            taskId: state.pathParameters['id'] ?? '',
-            readContext: args.context,
-          );
-        },
+        builder: (context, state) => TaskDetailPage(
+          taskId: state.pathParameters['id'] ?? '',
+          readContext: const NormalReadContext(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.taskEditPattern,
@@ -332,6 +330,51 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return WorkLogsPage(
             authorId: id,
             personName: '$name的日志',
+            readContext: readContext,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.personTaskPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final readContext = NavigationTargets.subordinateFromRoute(
+            state.pathParameters,
+            state.uri.queryParameters,
+            personParameter: 'id',
+          );
+          return TaskDetailPage(
+            taskId: state.pathParameters['taskId'] ?? '',
+            readContext: readContext,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.personLogPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final readContext = NavigationTargets.subordinateFromRoute(
+            state.pathParameters,
+            state.uri.queryParameters,
+            personParameter: 'id',
+          );
+          return WorkLogDetailPage(
+            logId: state.pathParameters['logId'] ?? '',
+            readContext: readContext,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.personApprovalPattern,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final readContext = NavigationTargets.subordinateFromRoute(
+            state.pathParameters,
+            state.uri.queryParameters,
+            personParameter: 'id',
+          );
+          return ApprovalDetailPage(
+            requestId: state.pathParameters['requestId'] ?? '',
             readContext: readContext,
           );
         },

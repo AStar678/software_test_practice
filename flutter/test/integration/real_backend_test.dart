@@ -1233,6 +1233,7 @@ void main() {
     final originalTitle = original['title'] as String;
     final originalBody = original['body'] as String;
     final changedTitle = '$originalTitle · Flutter联动';
+    final nonce = DateTime.now().microsecondsSinceEpoch;
     var version = (original['rowVersion'] as num).toInt();
     try {
       final changed = await demoAdmin.patch<Map<String, dynamic>>(
@@ -1241,7 +1242,7 @@ void main() {
         options: Options(
           headers: {
             'Authorization': 'Bearer $demoAdminToken',
-            'Idempotency-Key': 'flutter-pc-link-change-$id',
+            'Idempotency-Key': 'flutter-pc-link-change-$id-$nonce',
             'If-Match': '"$version"',
           },
         ),
@@ -1267,7 +1268,7 @@ void main() {
         options: Options(
           headers: {
             'Authorization': 'Bearer $demoAdminToken',
-            'Idempotency-Key': 'flutter-pc-link-restore-$id-$version',
+            'Idempotency-Key': 'flutter-pc-link-restore-$id-$nonce',
             'If-Match': '"$version"',
           },
         ),

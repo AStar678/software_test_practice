@@ -17,7 +17,7 @@ import '../../daily_items/domain/month_layout.dart';
 import '../../holidays/domain/holiday_calendar.dart';
 import '../../holidays/presentation/holiday_providers.dart';
 import '../../tasks/domain/task_record.dart';
-import '../../tasks/presentation/task_route_args.dart';
+import '../../../core/router/navigation_targets.dart';
 import '../data/schedule_api.dart';
 import '../domain/calendar_drag.dart';
 import '../domain/day_axis.dart';
@@ -926,10 +926,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   }
 
   Future<void> _openTaskAndRefresh(String id) async {
-    await context.push(
-      '/tasks/$id',
-      extra: TaskRouteArgs(context: widget.readContext),
-    );
+    await context.push(NavigationTargets.task(widget.readContext, id));
     if (mounted) await _loadAround(_anchor, force: true);
   }
 

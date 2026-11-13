@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/router/navigation_targets.dart';
 import '../../../core/router/read_context.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
@@ -13,7 +14,6 @@ import '../../comments/presentation/comments_section.dart';
 import '../../home/presentation/home_providers.dart';
 import '../domain/task_record.dart';
 import 'task_providers.dart';
-import 'task_route_args.dart';
 
 /// 任务详情：有效版/来源/字段资格；上下文在进入时固定，不能靠嵌套跳转升级。
 class TaskDetailPage extends ConsumerWidget {
@@ -143,10 +143,7 @@ class _TaskDetailBody extends ConsumerWidget {
             child: task.parentUnavailable
                 ? const Text('原父任务不可见，关系保留')
                 : InkWell(
-                    onTap: () => context.push(
-                      AppRoutes.task(task.parentTaskId!),
-                      extra: TaskRouteArgs(context: readContext),
-                    ),
+                    onTap: () => context.push(NavigationTargets.task(readContext, task.parentTaskId!)),
                     child: const Text('打开父任务', style: TextStyle(color: PandoraColors.brand)),
                   ),
           ),

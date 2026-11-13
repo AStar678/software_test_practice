@@ -6,8 +6,8 @@
 - Schema: spec-driven
 - Store: local repository
 - Implementation roots: `flutter/` (new Flutter Android client), with read-only consumption of `backend/docs/employee-client-contracts.md` and the archived A change
-- Updated: 2026-11-13
-- Implementation revision: working tree based on `2b9cd39f023b123d3d86f18dd15d4ae0c5661707`; the chapter 8–10 completion batch is intentionally uncommitted for independent review.
+- Updated: 2026-11-13T14:05:00+08:00
+- Implementation revision: merge of remote `main` `be19434` into `feature-rmy`, preserving both the chapter 8–10 batch and the path-based navigation/read-context batch.
 - Progress: **54/62** tasks checked. This batch closes `2.7`, `8.3–8.5`, `9.2–9.4`, and `10.2–10.4`; `8.2` and `10.1` remain open for the concrete blockers recorded below.
 - The 2026-11-10 macOS sections below are historical; the 2026-11-12 Linux supplement at the end supersedes their environment/build status.
 
@@ -326,10 +326,27 @@ The first integration attempt correctly exposed three contract mismatches (`repo
 - **5.7 / 11.2 remain open**：约 500ms 长按、取消/后台中断和自动化手势证据存在，但单次轻震的真机体感及完整现代 Android 设备旅程仍缺外部设备。
 - 此节仅是 apply 实施记录，不是独立验证 PASS；未修改 `verification.md`，未归档 change。
 
+## 2026-11-13 合并 main 与导航批次
+
+- 合并 `main` 的真实通知、人员、资料、统计、节假日能力与 `feature-rmy` 的路径化只读上下文。
+- 保留 `main` 的通知详情、历史任务摘要、人员树、下属月历和下属日志；新增 `/people/:id/tasks/:taskId`、`/people/:id/logs/:logId`、`/people/:id/approvals/:requestId`，用 `NavigationTargets` 从路径构造不可升级上下文。
+- `TaskRouteArgs` 已从仓库删除；任务父级、日历任务、日志关联任务和下属入口统一使用 `NavigationTargets`。
+- 删除重复的通知历史占位和重复“我的下属”入口；保留 `main` 的真实页面。
+- 保留日志未保存返回守卫和只读横幅；合并 `main` 的 `authorId/personName/readContext` 和查询代次。
+- 保留 2.7 的账号切换路由重建与五分支测试。
+
+合并后验证：
+
+| Command | Result |
+| --- | --- |
+| `cd flutter && dart analyze` | No issues found |
+| `cd flutter && flutter test` | **153 tests passed** against the real demo backend |
+| `openspec validate build-flutter-employee-android-client --strict` | valid |
+
 ## Verification Reminders
 
 - **1.4 is closed (2026-11-12)**: debug APK built, installed and run on API 36 AVD, login/navigation and session restore verified.
-- **2.7 is closed (2026-11-13)**: notification detail/history and people/subordinate schedule/log routes are real pages; subordinate read context is preserved through nested task/log/comment navigation and cannot be upgraded by DTO edit capabilities.
+- **2.7 is closed (2026-11-13)**: notification detail/history and people/subordinate schedule/log routes are real pages; path-based subordinate task/log/approval targets preserve read context through nested navigation, and the merged branch keeps the unsaved-log guard and account-switch router reset.
 - **4.1 is closed for the rejected real path (2026-11-12)**: original applicant resubmits to a new request; old request remains rejected. Expired-creation variant still belongs to the broader journey.
 - **4.9 is closed for concurrency + pending comments (2026-11-12)**: one of two concurrent decisions succeeded, the other got 412; pending-task comments stayed independent and non-author edit got 403. Frozen-log/org-change variants remain in later journeys.
 - Calendar upward browsing: the page opens with the home cards and today's month; earlier months are reached with the month selector/prev arrow, then scrolling is continuous downward across years. There is no infinite upward prepend. Layout/cross-year data handling is correct; this interaction difference should be judged explicitly in verification.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pandora_employee/core/widgets/common.dart';
 import 'package:pandora_employee/features/work_logs/presentation/work_logs_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -148,6 +149,49 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('日志已冻结或当前账号不可编辑'), findsOneWidget);
     expect(find.text('日志 log1'), findsOneWidget);
+  });
+
+  testWidgets('日志编辑未保存返回弹确认，继续编辑保留正文', (tester) async {
+    final backend = FakeBackend();
+    configureCommon(backend);
+    backend.on('GET', '/work-logs', (request) async => FakeResponse({
+          'items': [logJson('a', '2026-11-10'), logJson('b', '2026-11-09')],
+          'total': 2,
+        }));
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final container = buildTestContainer(backend: backend, user: employeeUser());
+    addTearDown(container.dispose);
+    await tester.pumpWidget(wrapWithScope(
+      container,
+      Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const WorkLogEditorPage()),
+              ),
+              child: const Text('打开日志'),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('打开日志'));
+    await tester.pumpAndSettle();
+
+    final body = find.widgetWithText(TextField, '日志正文');
+    await tester.enterText(body, '未保存日志正文');
+    await tester.pump();
+    expect(tester.widget<UnsavedChangesGuard>(find.byType(UnsavedChangesGuard)).hasUnsavedChanges, isTrue);
+    await tester.tap(find.byTooltip('返回'));
+    await tester.pumpAndSettle();
+    expect(find.text('放弃未保存的修改？'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, '继续编辑'));
+    await tester.pumpAndSettle();
+    expect(find.text('未保存日志正文'), findsOneWidget);
   });
 
   testWidgets('日志详情可确认删除并调用删除端点', (tester) async {

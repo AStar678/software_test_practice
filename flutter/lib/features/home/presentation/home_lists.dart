@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/router/navigation_targets.dart';
 import '../../../core/router/read_context.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/state_views.dart';
-import '../../tasks/presentation/task_route_args.dart';
 import '../domain/home_data.dart';
 import 'home_providers.dart';
 
@@ -126,10 +126,7 @@ class HomeBoardPage extends ConsumerWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      onTap: () => context.push(
-                        AppRoutes.task(task.taskId),
-                        extra: const TaskRouteArgs(context: NormalReadContext()),
-                      ),
+                      onTap: () => context.push(NavigationTargets.task(const NormalReadContext(), task.taskId)),
                     ),
                   );
                 },

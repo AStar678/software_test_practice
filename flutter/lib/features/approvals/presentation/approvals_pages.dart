@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
+import '../../../core/router/read_context.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/state_views.dart';
@@ -219,9 +220,14 @@ class _ApprovalTile extends StatelessWidget {
 
 /// 申请详情：当前审核人看专用 diff，申请人看自身提议与结果，旁观者只看安全摘要。
 class ApprovalDetailPage extends ConsumerStatefulWidget {
-  const ApprovalDetailPage({super.key, required this.requestId});
+  const ApprovalDetailPage({
+    super.key,
+    required this.requestId,
+    this.readContext = const NormalReadContext(),
+  });
 
   final String requestId;
+  final ReadContext readContext;
 
   @override
   ConsumerState<ApprovalDetailPage> createState() => _ApprovalDetailPageState();
@@ -423,7 +429,12 @@ class _ApprovalDetailPageState extends ConsumerState<ApprovalDetailPage> {
                           Text(_actionError!, style: const TextStyle(color: PandoraColors.overdue)),
                         ],
                         const SizedBox(height: 16),
-                        if (request.isPending && request.isReviewer(me?.id) && request.canApproveBy(me?.id))
+                        if (!widget.readContext.businessWritesAllowed)
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 8),
+                            child: Text('当前为只读浏览，业务操作请回到本人正常入口办理。', style: TextStyle(color: PandoraColors.muted)),
+                          ),
+                        if (widget.readContext.businessWritesAllowed && request.isPending && request.isReviewer(me?.id) && request.canApproveBy(me?.id))
                           Row(
                             children: [
                               Expanded(
@@ -442,12 +453,13 @@ class _ApprovalDetailPageState extends ConsumerState<ApprovalDetailPage> {
                               ),
                             ],
                           ),
-                        if (request.isPending && request.applicantId == me?.id)
+                        if (widget.readContext.businessWritesAllowed && request.isPending && request.applicantId == me?.id)
                           OutlinedButton(
                             onPressed: _deciding ? null : () => _decide('withdraw'),
                             child: const Text('撤销申请'),
                           ),
-                        if (!request.isPending &&
+                        if (widget.readContext.businessWritesAllowed &&
+                            !request.isPending &&
                             request.kind == 'create' &&
                             request.applicantId == me?.id &&
                             const {'rejected', 'withdrawn', 'expired'}.contains(request.status) &&
