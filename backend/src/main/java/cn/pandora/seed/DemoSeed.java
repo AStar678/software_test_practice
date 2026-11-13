@@ -254,12 +254,24 @@ public class DemoSeed implements ApplicationRunner {
         String revoked = create("comment-revoked", "upper", "第一幕评论协作镜头", List.of("employee"), schedule(), true);
 
         String tag = stable("tag-focus");
+        String linkedTag = stable("tag-animation");
         db.update("INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,'重点镜头','#F6D5D2')", tag, ORG);
+        db.update("INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,'动画联动','#D8EAF4')", linkedTag, ORG);
         remember("tag-focus", "tag", tag);
-        var taggedLog = db.one("SELECT id,row_version FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?",
+        remember("tag-animation", "tag", linkedTag);
+        /* 两种颜色的公司共用标签，供任务和日志的有序引用：两条正常任务与两篇近期日志各带两个
+           标签，首标签决定任务取色；其余任务和日志保留单标签/无标签对照，不增加主线任务数量。 */
+        var employeeLog = db.one("SELECT id,row_version FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?",
                 ORG, stable("employee"), today);
-        workspace.changeLog(actors.get("employee"), s(taggedLog, "id"), "\"" + n(taggedLog, "rowVersion") + "\"", Map.of("tagIds", List.of(tag)));
-        command("middle", doing, Map.of("command", "change", "tagIds", List.of(tag), "reason", "重点镜头跟进"), true);
+        workspace.changeLog(actors.get("employee"), s(employeeLog, "id"), "\"" + n(employeeLog, "rowVersion") + "\"",
+                Map.of("tagIds", List.of(tag, linkedTag)));
+        var middleLog = db.one("SELECT id,row_version FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?",
+                ORG, stable("middle"), today);
+        workspace.changeLog(actors.get("middle"), s(middleLog, "id"), "\"" + n(middleLog, "rowVersion") + "\"",
+                Map.of("tagIds", List.of(linkedTag, tag)));
+        String compositing = s(db.one("SELECT object_id FROM demo_seed_keys WHERE seed_key=?", "task-employee-3"), "objectId");
+        command("middle", doing, Map.of("command", "change", "tagIds", List.of(tag, linkedTag), "reason", "重点镜头跟进"), true);
+        command("employee", compositing, Map.of("command", "change", "tagIds", List.of(linkedTag, tag), "reason", "合成与镜头联动"), true);
         comments.create(actors.get("middle"), "task", doing, Map.of("body", "合成检查请保留逐镜头记录，审核时对照原画。"));
         comments.create(actors.get("upper"), "task", revoked, Map.of("body", "请按最新分镜意见继续协作，旧评论通知不应再提供正文。"));
         var delivery = worker.getIfAvailable();

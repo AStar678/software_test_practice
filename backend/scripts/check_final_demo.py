@@ -81,11 +81,30 @@ def main():
             ids={key:value['id'] for key,value in f.identities.items()}
             def call(method,path,body=None,who='upper',version=None):
                 return f.call(method,path,body,tokens[who],'demo-check-'+uuid.uuid4().hex,version)
-            status,tagged_log=call('GET','/work-logs/'+manifest['objects']['log-employee-0']['id'],who='employee')
             focus_tag=manifest['objects']['tag-focus']['id']
-            check('demo log reads its seeded shared tag through the ordered collection',
-                  status==200 and tagged_log.get('tagIds')==[focus_tag]
-                  and [tag['id'] for tag in tagged_log.get('tags',[])]==[focus_tag])
+            linked_tag=manifest['objects']['tag-animation']['id']
+            status,catalogue=call('GET','/tags',who='employee')
+            colours={row.get('color') for row in catalogue.get('items',[]) if not row.get('deleted')}
+            check('demo catalogue carries at least two shared tags with distinguishable colours',
+                  status==200 and {focus_tag,linked_tag} <= {row.get('id') for row in catalogue.get('items',[])} and len(colours)>=2,
+                  sorted(colours))
+            for log_key,who,expected in (('log-employee-0','employee',[focus_tag,linked_tag]),
+                                         ('log-middle-0','middle',[linked_tag,focus_tag])):
+                status,tagged_log=call('GET','/work-logs/'+manifest['objects'][log_key]['id'],who=who)
+                check('demo log '+log_key+' reads its seeded shared tag collection in order',
+                      status==200 and tagged_log.get('tagIds')==expected
+                      and [tag['id'] for tag in tagged_log.get('tags',[])]==expected,
+                      tagged_log.get('tagIds') if status==200 else status)
+            for task_key,who,expected,tag_colour in (('task-doing','employee',[focus_tag,linked_tag],'#F6D5D2'),
+                                                     ('task-employee-3','employee',[linked_tag,focus_tag],'#D8EAF4')):
+                status,multi=call('GET','/tasks/'+manifest['objects'][task_key]['id'],who=who)
+                check('demo task '+task_key+' keeps its ordered shared tags and takes the first tag colour',
+                      status==200 and multi.get('tagIds')==[expected[0],expected[1]]
+                      and [tag['id'] for tag in multi.get('tags',[])]==[expected[0],expected[1]]
+                      and multi.get('tags',[{}])[0].get('color')==tag_colour,
+                      {'tagIds':multi.get('tagIds'),'colors':[tag.get('color') for tag in multi.get('tags',[])]} if status==200 else status)
+            status,plain=call('GET','/tasks/'+manifest['objects']['task-upper-3']['id'],who='upper')
+            check('a no-tag control task keeps an empty ordered collection',status==200 and plain.get('tagIds')==[],plain.get('tagIds') if status==200 else status)
             for who,role in (('upper','founder'),('middle','department_head'),('product-head-1','team_head'),('employee','employee')):
                 status,me=call('GET','/me',who=who);check(who+' has the derived fixed position',status==200 and me.get('role')==role)
             status,directory=call('GET','/users?limit=100')

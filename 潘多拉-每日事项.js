@@ -248,7 +248,6 @@
     const stateText = state === "loading" ? "正在加载…" : state === "error" ? "加载失败" : "";
     return '<section class="daily-month is-' + state + '" data-month="' + block.key + '" aria-label="' + block.year + "年" + block.month + "月日历" + '">' +
       '<div class="daily-month-head"><span class="daily-month-label">' + block.year + "年" + block.month + "月</span>" +
-        '<span class="daily-status-legend" aria-hidden="true"><i class="is-open"></i>○未完成 <i class="is-done"></i>✓已完成 <i class="is-overdue"></i>!逾期</span>' +
         '<span class="daily-month-state" role="status">' + stateText + "</span>" +
         '<button type="button" class="btn tiny-btn daily-retry" data-action="daily-retry" data-month="' + block.key + '" hidden aria-label="重试加载' + block.year + "年" + block.month + '月事项">重试</button>' +
       "</div>" +
@@ -778,13 +777,17 @@
   function rowHTML(item, hitDate) {
     const range = itemRange(item), status = statusOf(item);
     const date = hitDate || range.start || item.date;
-    return '<div class="daily-row' + (item.completed ? " is-done" : "") + (status === "overdue" ? " is-overdue" : "") + '" data-daily-row="' + esc(item.id) + '">' +
+    /* 三态统一走 is-open/is-completed/is-overdue；可见区域只保留正文和实际日期，
+       真实状态通过 aria-label 与完成控件的 aria-checked 继续对辅助技术可读。 */
+    return '<div class="daily-row is-' + status + '" data-daily-row="' + esc(item.id) + '">' +
       '<button type="button" class="daily-check" role="checkbox" aria-checked="' + (item.completed ? "true" : "false") + '"' +
-        ' aria-label="' + esc((item.completed ? "取消完成：" : "标记完成：") + firstLine(item.body)) + '"' +
+        ' aria-label="' + esc((item.completed ? "取消完成：" : "标记完成：") + firstLine(item.body) + "（当前状态：" + (STATUS_TEXT[status] || status) + "）") + '"' +
         ' data-action="daily-toggle" data-id="' + esc(item.id) + '" data-date="' + esc(date) + '"><span aria-hidden="true">' + (item.completed ? "✓" : "") + "</span></button>" +
-      '<button type="button" class="daily-text" data-action="daily-open" data-id="' + esc(item.id) + '" title="' + esc(rangeLabel(range.start, range.end) + " · " + (STATUS_TEXT[status] || status)) + '">' +
+      '<button type="button" class="daily-text" data-action="daily-open" data-id="' + esc(item.id) + '"' +
+        ' aria-label="' + esc(firstLine(item.body) + "，" + rangeLabel(range.start, range.end) + "，" + (STATUS_TEXT[status] || status) + "，打开事项详情") + '"' +
+        ' title="' + esc(rangeLabel(range.start, range.end)) + '">' +
         '<span>' + esc(item.body) + "</span>" +
-        '<small class="daily-row-meta">' + esc(rangeLabel(range.start, range.end)) + " · " + esc(STATUS_TEXT[status] || status) + "</small></button>" +
+        '<small class="daily-row-meta">' + esc(rangeLabel(range.start, range.end)) + "</small></button>" +
       "</div>";
   }
   function listView(date) {
@@ -854,8 +857,8 @@
     const range = itemRange(raw), status = statusOf(raw);
     const hit = (S.detail && S.detail.hitDate) || range.start;
     return { title: "每日事项详情", dailyKind: "detail", rebuild: () => detailView(S.detail ? S.detail.raw : raw),
-      body: '<div class="daily-detail-head"><span class="daily-detail-date">' + esc(rangeLabel(range.start, range.end)) + "</span>" +
-        '<span class="badge ' + (status === "completed" ? "b-ok" : status === "overdue" ? "b-danger" : "b-normal") + '">' + esc(STATUS_TEXT[status] || status) + "</span></div>" +
+      body: '<div class="daily-detail-head is-' + status + '"><span class="daily-detail-date">' + esc(rangeLabel(range.start, range.end)) + "</span>" +
+        '<span class="sr-only">当前状态：' + esc(STATUS_TEXT[status] || status) + "</span></div>" +
         '<p class="daily-detail-body">' + esc(raw.body) + "</p>" +
         '<div class="callout" id="daily-detail-error" role="alert" hidden></div>',
       foot: dailyWithBack('<button type="button" class="btn ' + (raw.completed ? "" : "ok") + '" data-action="daily-toggle" data-id="' + esc(raw.id) + '" data-date="' + esc(hit) + '" data-target="' + (raw.completed ? "false" : "true") + '">' + (raw.completed ? "取消完成" : "标记完成") + "</button>" +
@@ -881,7 +884,6 @@
       body: '<div class="field"><label for="daily-start-date">开始日期</label><input id="daily-start-date" type="date" value="' + esc(d.startDate) + '" data-autofocus /></div>' +
         '<div class="field"><label for="daily-end-date">结束日期</label><input id="daily-end-date" type="date" value="' + esc(d.endDate) + '" /></div>' +
         '<div class="field daily-body-field"><label for="daily-body">内容</label><textarea id="daily-body" maxlength="2000" placeholder="写下今天要记住的事">' + esc(d.body) + "</textarea></div>" +
-        '<div class="tiny muted">起止日均包含；跨日仍是同一条事项。</div>' +
         '<div class="callout" id="daily-form-error" role="alert" hidden></div>',
       foot: dailyWithBack('<button type="button" class="btn primary" data-action="daily-save">保存</button>') };
   }
@@ -980,6 +982,15 @@
         S.detail = { raw: raw, etag: '"' + raw.rowVersion + '"', hitDate: detail.hitDate };
         replaceTopSheet(detailView(raw));
       }
+      /* 同一条记录会出现在它覆盖的每个日期清单缓存里：完成/取消后逐份同步，
+         切换日期时不会读到旧的完成状态；份数很少且只在写后回读时执行。 */
+      S.lists.forEach(entry => {
+        if (!entry || !entry.items) return;
+        const cached = entry.items.find(item => item.id === raw.id);
+        if (!cached) return;
+        cached.completed = raw.completed; cached.status = raw.status; cached.rowVersion = raw.rowVersion;
+        cached.startDate = raw.startDate; cached.endDate = raw.endDate;
+      });
       if (row) { row.completed = raw.completed; row.status = raw.status; row.rowVersion = raw.rowVersion; row.startDate = raw.startDate; row.endDate = raw.endDate; }
       if (openListDate() === date && !detail) rerenderOpenList(date, sheetBodyEl.scrollTop);
       P.notice(raw.completed ? "已标记完成。" : "已取消完成。");

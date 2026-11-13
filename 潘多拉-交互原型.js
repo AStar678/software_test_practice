@@ -1392,6 +1392,7 @@ function renderSheet(){
   const sheet = document.getElementById("sheet");
   if (!sheetStack.length){
     sheet.classList.remove("is-fullscreen");
+    sheet.classList.remove("is-notice-list");
     overlayEl.hidden = true;
     document.querySelector(".app").inert = false;
     document.getElementById("sheetFoot").hidden = false;
@@ -1403,6 +1404,9 @@ function renderSheet(){
   document.getElementById("sheetClose").hidden = !!view.notification;
   document.getElementById("sheetBack").hidden = !view.notification;
   sheet.classList.toggle("is-fullscreen", !!view.fullscreen);
+  /* 通知列表按当前视口固定为最大可用高度；返回、关闭或换成其他弹层时立即撤销，
+     避免把资料、表单和详情一起撑高。 */
+  sheet.classList.toggle("is-notice-list", !!view.noticeList);
   sheetTitleEl.textContent = view.title;
   sheetBodyEl.innerHTML = view.body;
   sheetFootEl.innerHTML = view.foot || "";

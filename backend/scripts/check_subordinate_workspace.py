@@ -39,6 +39,30 @@ def main():
   request=ok('GET','/approval-requests/'+created['requestId'],who='alpha-head')
   ok('PATCH','/approval-requests/'+created['requestId'],{'decision':'approve'},'alpha-head',request['rowVersion'])
   head_owned=created['taskId']
+  # Sparse overflow: a month whose first week starts with blank slots, with exactly one Thursday and
+  # one Sunday above the three visible tracks. This is the layout case that used to shift +N left.
+  def month_start_with_leading_gap(base):
+   cursor=base.replace(day=1)
+   for _ in range(36):
+    if cursor.weekday()!=0: return cursor
+    cursor=(cursor+dt.timedelta(days=32)).replace(day=1)
+   raise AssertionError('no month with a leading gap')
+  sparse_month=month_start_with_leading_gap(day+dt.timedelta(days=55))
+  sparse_thursday=sparse_month+dt.timedelta(days=(3-sparse_month.weekday())%7)
+  month_last=(sparse_month+dt.timedelta(days=32)).replace(day=1)-dt.timedelta(days=1)
+  sparse_sunday=month_last-dt.timedelta(days=(month_last.weekday()-6)%7)
+  sparse=[]
+  for target in (sparse_thursday,sparse_sunday):
+   for index in range(4):
+    sparse.append(task('溢出日任务 '+str(target)+' '+str(index),instant(target,9+index),instant(target,10+index)))
+  # A published task with a pending change keeps the dashed review frame inside the same budget.
+  pending_created=ok('POST','/tasks',{'title':'待审虚线月历任务','description':'独立人员工作页',
+    'assigneeIds':[ids['alpha-one-employee']],'allDay':False,
+    'startAt':instant(quiet+dt.timedelta(days=1),9),'dueAt':instant(quiet+dt.timedelta(days=1),10)})
+  pending_frozen=pending_created['taskId']
+  pending_view=ok('GET','/tasks/'+pending_frozen,who='alpha-one-employee')
+  ok('PATCH','/tasks/'+pending_frozen,{'command':'change','title':'待审虚线月历任务（修改中）',
+    'reason':'待审虚线布局检查'},'alpha-one-employee',pending_view['rowVersion'])
   # Old historical logs are intentionally fixture-only; create UI still enforces the real 3-day window.
   for offset in range(12):
    f.db.server_side('INSERT INTO work_logs(id,organization_id,author_id,business_date,body) VALUES('+','.join(map(quote,[str(uuid.uuid4()),'fixture-company',ids['alpha-one-employee'],str(today-dt.timedelta(days=offset)),'日志 '+str(offset)+'\n'+'跨天资料整理，下一步检查验收。'*12]))+')')
@@ -50,6 +74,8 @@ def main():
   assert ok('GET','/me/reports',who='alpha-one-employee')['items']==[]
   assert call('GET','/work-logs?scope=visible&authorId='+ids['alpha-one-employee'],who='beta-one-head')[0]==404
   assert ok('GET','/tasks?assigneeId='+ids['alpha-one-employee'],who='beta-one-head')['items']==[]
-  manifest={'base':f'http://127.0.0.1:{f.port}','identities':f.identities,'day':str(day),'normal':normal,'point':point,'cross':cross,'midnight':midnight,'other':other,'spanning':spanning,'overlaps':overlaps,'ownLog':own_log,'doneTimed':done_timed,'doneAllDay':done_allday,'doneMonth':done_month,'quiet':str(quiet),'headOwned':head_owned,'unpublished':unpublished}
+  manifest={'base':f'http://127.0.0.1:{f.port}','identities':f.identities,'day':str(day),'normal':normal,'point':point,'cross':cross,'midnight':midnight,'other':other,'spanning':spanning,'overlaps':overlaps,'ownLog':own_log,'doneTimed':done_timed,'doneAllDay':done_allday,'doneMonth':done_month,'quiet':str(quiet),'headOwned':head_owned,'unpublished':unpublished,
+    'sparseMonth':str(sparse_month)[:7],'sparseThursday':str(sparse_thursday),'sparseSunday':str(sparse_sunday),
+    'sparse':sparse,'pendingFrozen':pending_frozen,'pendingFrozenDay':str(quiet+dt.timedelta(days=1))}
   subprocess.run(['node',str(BASE/'scripts/check_subordinate_workspace_browser.js')],env={**os.environ,'PANDORA_STAFF_FIXTURE':json.dumps(manifest)},check=True)
 if __name__=='__main__':main()

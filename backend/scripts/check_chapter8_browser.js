@@ -100,11 +100,11 @@ async function main() {
     check('the list shows the complete range and keeps one row for the ranged record',
       listEvidence.meta.includes('2027年1月8日') && listEvidence.meta.includes('至') && listEvidence.meta.includes('2027年1月10日'), listEvidence);
     await ev("document.querySelector('[data-action=daily-open]').click()");
-    check('the detail shows the complete range and a status',
-      await waitFor(b, "document.getElementById('sheetTitle').textContent==='每日事项详情'&&document.querySelector('.daily-detail-date').textContent.includes('2027年1月10日')&&!!document.querySelector('.daily-detail-head .badge')", 15000));
+    check('the detail shows the complete range with a non-repeated accessible status',
+      await waitFor(b, "document.getElementById('sheetTitle').textContent==='每日事项详情'&&document.querySelector('.daily-detail-date').textContent.includes('2027年1月10日')&&/\\bis-(open|completed|overdue)\\b/.test(document.querySelector('.daily-detail-head').className)&&!!document.querySelector('.daily-detail-head .sr-only')&&!document.querySelector('.daily-detail-head .badge')", 15000));
     await ev("document.querySelector('[data-action=daily-toggle]').click()");
     check('completing from the detail keeps the same range and updates the status',
-      await waitFor(b, "Pandora.idle()&&document.querySelector('.daily-detail-head .badge').textContent==='已完成'&&document.querySelector('[data-action=daily-toggle]').textContent.includes('取消')", 15000));
+      await waitFor(b, "Pandora.idle()&&document.querySelector('.daily-detail-head').classList.contains('is-completed')&&document.querySelector('.daily-detail-head .sr-only').textContent.includes('已完成')&&document.querySelector('[data-action=daily-toggle]').textContent.includes('取消')", 15000));
     await ev("document.querySelector('[data-action=daily-edit]').click()");
     check('the edit form is prefilled with the same pair',
       await waitFor(b, "document.getElementById('sheetTitle').textContent==='编辑每日事项'&&document.getElementById('daily-start-date').value==='2027-01-08'&&document.getElementById('daily-end-date').value==='2027-01-10'"));
@@ -124,6 +124,45 @@ async function main() {
     const profileText = await ev("document.getElementById('page-me').textContent");
     check('the missing/real tenure is a real projection, not an account-created date',
       /已入职时长[^。]{0,40}年/.test(profileText), profileText.slice(0, 400));
+    /* 本人信息卡各一行入职日期/时长，组织信息折叠区不再重复这两行。 */
+    const ownEmployment = () => ev(`(()=>{const page=document.getElementById('page-me'),card=page.querySelector('.profile-card'),org=page.querySelector('[data-profile-fold=organization] .fold-content');
+      const count=(root,label)=>root?Array.from(root.querySelectorAll('.profile-row .k')).filter(node=>node.textContent.trim()===label).length:0;
+      return {cardHire:count(card,'入职日期'),cardTenure:count(card,'已入职时长'),orgHire:count(org,'入职日期'),orgTenure:count(org,'已入职时长'),
+        orgDepartment:count(org,'部门'),orgPosition:count(org,'职位'),orgManager:count(org,'直属上级'),
+        cardText:card?card.textContent:'',orgText:org?org.textContent:''}})()`);
+    const own = await ownEmployment();
+    check('own hire date and tenure appear once in the personal card and never in the organization fold',
+      own.cardHire === 1 && own.cardTenure === 1 && own.orgHire === 0 && own.orgTenure === 0 &&
+      own.orgDepartment === 1 && own.orgPosition === 1 && own.orgManager === 1 && !own.orgText.includes('入职日期未设置'), own);
+    const adminCall = (method, path, body, version) => ev(`(async()=>{const headers={Accept:'application/json',Authorization:'Bearer '+${js(fixture.adminToken)}};
+      let payload=null;if(${js(body)}!=null){headers['Content-Type']='application/json';payload=JSON.stringify(${js(body)})}
+      if(${js(version)}!=null)headers['If-Match']='"'+${js(version)}+'"';headers['Idempotency-Key']=crypto.randomUUID();
+      const response=await fetch('/api/v1'+${js(path)},{method:${js(method)},headers,body:payload});
+      let data={};try{data=await response.json()}catch(_){}return {status:response.status,body:data}})()`);
+    const located = await adminCall('GET', '/admin/employees/' + fixture.employee, null, null);
+    check('administrator can locate the signed-in employee record', located.status === 200 && !!located.body.rowVersion, located);
+    const cleared = await adminCall('PATCH', '/admin/employees/' + fixture.employee, {hireDate: null}, located.body.rowVersion);
+    check('administrator can clear the hire date for the empty-state check', cleared.status === 200, cleared);
+    await ev('Pandora.reload()');
+    check('reload after clearing the hire date keeps the same account',
+      await waitFor(b, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${js(fixture.employee)}`, 20000));
+    await ev("setPage('me')");
+    await waitFor(b, "document.getElementById('page-me') && document.getElementById('page-me').textContent.includes('入职日期未设置')", 15000);
+    const emptyOwn = await ownEmployment();
+    check('an unset hire date shows the original empty state once in the card and not in the organization fold',
+      emptyOwn.cardHire === 1 && emptyOwn.cardTenure === 1 && emptyOwn.orgHire === 0 && emptyOwn.orgTenure === 0 &&
+      (emptyOwn.cardText.match(/入职日期未设置/g) || []).length === 2, emptyOwn);
+    const restoreRow = await adminCall('GET', '/admin/employees/' + fixture.employee, null, null);
+    const restored = await adminCall('PATCH', '/admin/employees/' + fixture.employee, {hireDate: '2024-02-29'}, restoreRow.body.rowVersion);
+    check('administrator restores the hire date after the empty-state check', restored.status === 200, restored);
+    await ev('Pandora.reload()');
+    await waitFor(b, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${js(fixture.employee)}`, 20000);
+    await ev("setPage('me')");
+    check('the restored hire date comes back to the personal card',
+      await waitFor(b, "document.getElementById('page-me').textContent.includes('2024-02-29')", 15000));
+    const restoredOwn = await ownEmployment();
+    check('the restored hire date shows once in the card and the organization fold stays clean',
+      restoredOwn.cardHire === 1 && restoredOwn.cardTenure === 1 && restoredOwn.orgHire === 0 && restoredOwn.orgTenure === 0, restoredOwn);
 
     /* The five main navigations and three home modules are untouched by the new table/profile code. */
     await ev("setPage('map')");
@@ -141,11 +180,18 @@ async function main() {
     await sleep(120);
 
     /* ---------- compact/desktop geometry ---------- */
-    for (const width of [320, 390, 1440]) {
-      await b.viewport({width, height: width === 320 ? 740 : width === 390 ? 844 : 900, mobile: width < 1000});
+    for (const [width, height] of [[320, 740], [390, 844], [1440, 900], [390, 600]]) {
+      await b.viewport({width, height, mobile: width < 1000});
       await sleep(120);
-      const fit = await ev("({overflow:document.documentElement.scrollWidth>innerWidth+1,w:innerWidth})");
-      check('the employee page has no horizontal document overflow at ' + width, !fit.overflow, fit);
+      const fit = await ev("({overflow:document.documentElement.scrollWidth>innerWidth+1,w:innerWidth,h:innerHeight})");
+      check('the employee page has no horizontal document overflow at ' + width + 'x' + height, !fit.overflow, fit);
+      await ev("setPage('me')");
+      await sleep(120);
+      const ownFold = await ownEmployment();
+      check('the own employment rows stay de-duplicated at ' + width + 'x' + height,
+        ownFold.cardHire === 1 && ownFold.cardTenure === 1 && ownFold.orgHire === 0 && ownFold.orgTenure === 0, ownFold);
+      await b.screenshot(path.join(outputDir, 'chapter8-profile-' + width + 'x' + height + '.png'));
+      await ev("setPage('map')");
     }
     await b.screenshot(path.join(outputDir, 'chapter8-table.png'));
   } finally {

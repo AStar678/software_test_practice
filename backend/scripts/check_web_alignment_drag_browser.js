@@ -18,17 +18,30 @@ async function main(){
   await sleep(250);
  }
  async function point(selector){
-  return ev(`(()=>{const h=document.querySelector(${q(selector)});if(!h)return null;h.scrollIntoView({block:'center',inline:'center'});const r=h.getBoundingClientRect();if(!r.width||!r.height)return null;const mode=h.dataset.resizeMode;const bar=h.closest('.p-month-event,.p-horizontal-bar,.p-axis-event');return {x:r.x+r.width/2,y:r.y+r.height/2,unit:mode==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7:mode==='vertical'?bar.closest('.p-axis-events').getBoundingClientRect().height/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24,vertical:mode==='vertical'}})()`);
+  return ev(`(()=>{const h=document.querySelector(${q(selector)});if(!h)return null;h.scrollIntoView({block:'center',inline:'center'});const r=h.getBoundingClientRect();if(!r.width||!r.height)return null;const mode=h.dataset.resizeMode;const bar=h.closest('.p-month-event,.p-horizontal-bar,.p-axis-event');return {x:r.x+r.width/2,y:r.y+r.height/2,mode,unit:mode==='month'?bar.closest('.p-month-week').getBoundingClientRect().width/7:mode==='vertical'?bar.closest('.p-axis-events').getBoundingClientRect().height/24:bar.closest('.p-horizontal-axis').getBoundingClientRect().width/24,vertical:mode==='vertical'}})()`);
  }
  async function datePoint(day,scroll=true){
   return ev(`(()=>{const cell=document.querySelector('.p-month-date[data-date=${q(day)}]');if(!cell)return null;${scroll?"cell.scrollIntoView({block:'center'});":""}const r=cell.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+ }
+ async function mouseDown(p){
+  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y});
+  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',clickCount:1});
+  if(p.mode==='month'){
+   await sleep(320);
+   const pending=await ev("({gesture:Pandora.scheduleGesture(),preview:!!document.querySelector('.p-drag-preview'),ghost:!!document.querySelector('.p-drag-ghost')})");
+   check('month mouse press waits without a drag preview before the threshold',pending.gesture.pressing&&!pending.gesture.dragging&&!pending.preview&&!pending.ghost,pending);
+   await sleep(420);
+   const active=await ev("({gesture:Pandora.scheduleGesture(),preview:!!document.querySelector('.p-drag-preview'),ghost:!!document.querySelector('.p-drag-ghost')})");
+   check('month mouse long press activates before movement',!active.gesture.pressing&&active.gesture.dragging&&active.preview&&active.ghost,active);
+  }else{
+   check('day-axis mouse drag activates immediately',await ev("Pandora.scheduleGesture().dragging&&!!document.querySelector('.p-drag-preview')"));
+  }
  }
  async function mouseDragToDate(selector,day,cancel){
   const p=await point(selector);check('drag source exists '+selector,!!p,p);
   await sleep(150);
   const target=await datePoint(day,false);check('target date cell is visible for the mouse drop',!!target,target);
-  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y});
-  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',clickCount:1});
+  await mouseDown(p);
   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:target.x,y:target.y,button:'left',buttons:1});
   check('drag preview follows the pointer',await ev("!!document.querySelector('.p-drag-preview')"));
   if(cancel==='escape')await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
@@ -37,8 +50,7 @@ async function main(){
  }
  async function mouseDrag(selector,target,cancel){
   const p=await point(selector);check('drag source exists '+selector,!!p,p);
-  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y});
-  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',clickCount:1});
+  await mouseDown(p);
   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:target.x,y:target.y,button:'left',buttons:1});
   check('drag preview follows the pointer',await ev("!!document.querySelector('.p-drag-preview')"));
   if(cancel==='escape')await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
@@ -125,8 +137,7 @@ async function main(){
       handles:bar.querySelectorAll('[data-resize-task]').length,text:bar.textContent,classes:bar.className}})()`);
   check('a continued month segment exposes whole-task movement but no fake endpoint',!!continuation&&continuation.handles===0&&continuation.classes.includes('continues-before')&&continuation.classes.includes('continues-after'),continuation);
   if(continuation){
-    await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:continuation.x,y:continuation.y});
-    await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:continuation.x,y:continuation.y,button:'left',clickCount:1});
+    await mouseDown({...continuation,mode:'month'});
     await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:continuation.tx,y:continuation.ty,button:'left',buttons:1});
     await b.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:continuation.tx,y:continuation.ty,button:'left',clickCount:1});
     check('dragging a continued segment opens the lightweight confirmation',await waitFor(b,"!!document.getElementById('sc-reason')&&Pandora.idle()",20000));
@@ -139,8 +150,7 @@ async function main(){
   const edgeBefore=await ev("({top:document.querySelector('.p-month-scroll').scrollTop,months:Pandora.calendar.currentStream().length})");
   const scrollRect=await ev("(()=>{const r=document.querySelector('.p-month-scroll').getBoundingClientRect();return {bottom:r.bottom,left:r.left,width:r.width}})()");
   const edgePoint=await point(`[data-schedule-move="${f.edge}"][data-resize-mode=month]`);
-  await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:edgePoint.x,y:edgePoint.y});
-  await b.send('Input.dispatchMouseEvent',{type:'mousePressed',x:edgePoint.x,y:edgePoint.y,button:'left',clickCount:1});
+  await mouseDown(edgePoint);
   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:scrollRect.left+scrollRect.width/2,y:scrollRect.bottom-6,button:'left',buttons:1});
   await sleep(1200);
   const edgeAfter=await ev("({top:document.querySelector('.p-month-scroll').scrollTop,months:Pandora.calendar.currentStream().length,preview:!!document.querySelector('.p-drag-preview')})");

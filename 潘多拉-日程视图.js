@@ -953,7 +953,8 @@
   }
   function startSchedulePress(event,handle,task,mode,edge) {
     clearSchedulePress(false);
-    const press={pointerId:event.pointerId,x:event.clientX,y:event.clientY,handle,task,mode,edge,timer:0,listeners:null};
+    const press={pointerId:event.pointerId,x:event.clientX,y:event.clientY,handle,task,mode,edge,timer:0,listeners:null,
+      touch:event.pointerType==='touch'};
     schedulePress=press;
     const move=moveEvent=>{
       if(!schedulePress||schedulePress!==press||moveEvent.pointerId!==press.pointerId)return;
@@ -975,7 +976,7 @@
       if(!P.idle())return;
       /* 激活后吞掉随后的点击；长按无位移也不得误开清单/详情。 */
       suppressCalendarClickUntil=Date.now()+450;
-      beginScheduleDrag(press.x,press.y,{handle:press.handle,task:press.task,mode:press.mode,edge:press.edge,pointerId:press.pointerId,touch:true});
+      beginScheduleDrag(press.x,press.y,{handle:press.handle,task:press.task,mode:press.mode,edge:press.edge,pointerId:press.pointerId,touch:press.touch});
     },LONG_PRESS_MS);
   }
   function bindScheduleResize(root) {
@@ -990,8 +991,10 @@
         const task=taskById(handle.dataset.resizeTask||handle.dataset.scheduleMove);
         if(!task||!P.canRescheduleTask(actor(),task))return;
         const mode=handle.dataset.resizeMode||'month',edge=handle.dataset.resize||'move';
-        /* 手机/触摸：约 500ms 长按才激活；激活前保持原生滚动与普通点击。 */
-        if(event.pointerType==='touch'){startSchedulePress(event,handle,task,mode,edge);return;}
+        /* 手机/触摸：约 500ms 长按才激活；激活前保持原生滚动与普通点击。
+           月视图的鼠标与触摸同口径：门槛前不 preventDefault、不捕获指针、不生成拖影、
+           不设置点击抑制，短按释放后真实 click 仍按命中日打开当天清单。 */
+        if(event.pointerType==='touch'||mode==='month'){startSchedulePress(event,handle,task,mode,edge);return;}
         event.preventDefault();event.stopPropagation();
         beginScheduleDrag(event.clientX,event.clientY,{handle,task,mode,edge,pointerId:event.pointerId,touch:false});
       });
@@ -1088,7 +1091,12 @@
       event.preventDefault();event.stopPropagation();openTaskDetail(event.target.dataset.task);
     }
   });
-  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&scheduleDrag){event.preventDefault();event.stopImmediatePropagation();clearScheduleDrag();}},true);
+  document.addEventListener('keydown',event=>{
+    if(event.key!=='Escape')return;
+    if(scheduleDrag){event.preventDefault();event.stopImmediatePropagation();clearScheduleDrag();return;}
+    /* 门槛前按 Escape 只丢弃待激活候选，未提交任何草稿。 */
+    if(schedulePress){event.preventDefault();event.stopImmediatePropagation();clearSchedulePress(false);}
+  },true);
   window.addEventListener('blur',clearScheduleDrag);
 
   function dayHTML() {

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-12T14:48:10.703Z",
+  "updated": "2026-11-13T03:13:33.042Z",
   "viewports": [
     {
       "viewport": "320x740",
@@ -19,11 +19,11 @@
       "canSlideBack": true,
       "canSlideForward": true,
       "forward": {
-        "top": 1334,
+        "top": 1333,
         "open": false
       },
       "backward": {
-        "top": 891,
+        "top": 895,
         "open": false
       },
       "movedForward": true,
@@ -47,11 +47,11 @@
       "canSlideBack": true,
       "canSlideForward": true,
       "forward": {
-        "top": 1334,
+        "top": 1335,
         "open": false
       },
       "backward": {
-        "top": 890,
+        "top": 892,
         "open": false
       },
       "movedForward": true,
@@ -75,11 +75,11 @@
       "canSlideBack": true,
       "canSlideForward": true,
       "forward": {
-        "top": 1334,
+        "top": 1330,
         "open": false
       },
       "backward": {
-        "top": 892,
+        "top": 887,
         "open": false
       },
       "movedForward": true,
@@ -107,7 +107,7 @@
         "open": false
       },
       "backward": {
-        "top": 891,
+        "top": 897,
         "open": false
       },
       "movedForward": true,

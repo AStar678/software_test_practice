@@ -56,12 +56,12 @@
 .daily-month:last-child{border-bottom:0}
 .daily-month-head{height:24px;display:flex;align-items:center;gap:6px;min-width:0}
 .daily-month-label{font-size:11px;font-weight:700;color:var(--ink-2);white-space:nowrap}
-.daily-status-legend{display:flex;align-items:center;gap:3px;font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden}
-.daily-status-legend i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-left:3px}
-.daily-status-legend i:first-child{margin-left:0}
-.daily-status-legend i.is-open{background:var(--daily-open,#3b82f6)}
-.daily-status-legend i.is-done{background:var(--daily-done,#2f8f68)}
-.daily-status-legend i.is-overdue{background:var(--daily-overdue,#c0463a)}
+/* 三态语义色只为事项使用：待做蓝、完成灰、逾期红。条、日期清单和详情共用同一映射。 */
+:root{
+  --daily-open:#3b6fd8;--daily-open-bg:#e9f1fd;--daily-open-ink:#1b3f8f;
+  --daily-done:#8b8f98;--daily-done-bg:#f2f3f5;--daily-done-ink:#5b6068;
+  --daily-overdue:#c0463a;--daily-overdue-bg:#fdecea;--daily-overdue-ink:#8f2f27;
+}
 .daily-month-state{margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .daily-retry{min-width:34px;min-height:22px;padding:0 4px;font-size:10px;line-height:1}
 .daily-month.is-error .daily-month-state{color:#b23b32}
@@ -83,10 +83,11 @@
 /* 事项条轨道：高度固定（--daily-lanes 行），加载完成不会改变月份高度。 */
 .daily-tracks{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:var(--daily-row,18px);
   row-gap:2px;column-gap:2px;height:calc(var(--daily-lanes,3) * (var(--daily-row,18px) + 2px));padding:1px 0;min-width:0}
-.daily-bar{display:flex;align-items:center;gap:2px;min-width:0;height:100%;padding:0 3px;border:0;border-left:3px solid var(--daily-open,#3b82f6);
-  border-radius:4px;background:#eef4ff;color:#1e3a8a;font-size:10px;line-height:1.2;text-align:left;cursor:pointer;overflow:hidden}
-.daily-bar.is-done{border-left-color:var(--daily-done,#2f8f68);background:#eaf6f0;color:#1d5b40}
-.daily-bar.is-overdue{border-left-color:var(--daily-overdue,#c0463a);background:#fdeeec;color:#8f2f27}
+.daily-bar{display:flex;align-items:center;gap:2px;min-width:0;height:100%;padding:0 3px;border:0;border-left:3px solid var(--daily-open,#3b6fd8);
+  border-radius:4px;background:var(--daily-open-bg,#e9f1fd);color:var(--daily-open-ink,#1b3f8f);font-size:10px;line-height:1.2;text-align:left;cursor:pointer;overflow:hidden}
+.daily-bar.is-completed{border-left-color:var(--daily-done,#8b8f98);background:var(--daily-done-bg,#f2f3f5);color:var(--daily-done-ink,#5b6068)}
+.daily-bar.is-completed .daily-bar-name{text-decoration:line-through}
+.daily-bar.is-overdue{border-left-color:var(--daily-overdue,#c0463a);background:var(--daily-overdue-bg,#fdecea);color:var(--daily-overdue-ink,#8f2f27)}
 .daily-bar.is-overdue .daily-bar-name{font-weight:600}
 .daily-bar:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
 .daily-bar-mark{flex:0 0 auto;font-size:9px;line-height:1;font-weight:700}
@@ -104,21 +105,25 @@
 /* ---------- 日清单 ---------- */
 .daily-list-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--ink-2)}
 .daily-rows{display:flex;flex-direction:column;gap:6px}
-.daily-row{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border:1px solid var(--line);border-radius:12px;background:#fff;min-width:0}
-.daily-row.is-done{background:#f7f8fa}
-.daily-row.is-overdue{border-color:#e7c4c0}
-.daily-row.is-done .daily-text span{color:var(--muted);text-decoration:line-through}
+.daily-row{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border:1px solid var(--line);border-left:3px solid var(--daily-open,#3b6fd8);
+  border-radius:12px;background:#fff;min-width:0}
+.daily-row.is-completed{border-left-color:var(--daily-done,#8b8f98);background:var(--daily-done-bg,#f2f3f5)}
+.daily-row.is-overdue{border-color:#e7c4c0;border-left-color:var(--daily-overdue,#c0463a);background:#fff}
+.daily-row.is-completed .daily-text span{color:var(--daily-done-ink,#5b6068);text-decoration:line-through}
 .daily-row-meta{display:block;margin-top:3px;font-size:11.5px;line-height:1.35;color:var(--muted);font-weight:500}
 .badge.b-danger{background:#fdecea;color:#b23b32;border:1px solid #efc9c4}
 .daily-check{flex:0 0 44px;width:44px;min-height:44px;border:1px solid var(--line);border-radius:11px;background:#fff;
   display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--ok);cursor:pointer}
-.daily-row.is-done .daily-check{background:var(--ok-soft);border-color:#b7e0d0}
+.daily-row.is-completed .daily-check{background:var(--daily-done-bg,#f2f3f5);border-color:#d8dbe0;color:var(--daily-done-ink,#5b6068)}
 .daily-text{flex:1 1 auto;min-width:0;min-height:44px;border:0;background:transparent;text-align:left;padding:2px 0;cursor:pointer}
 .daily-text span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.5}
 
 /* ---------- 详情与表单 ---------- */
 .daily-detail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .daily-detail-date{font-size:13px;font-weight:700;color:var(--ink)}
+.daily-detail-head.is-open .daily-detail-date{color:var(--daily-open,#3b6fd8)}
+.daily-detail-head.is-completed .daily-detail-date{color:var(--daily-done,#8b8f98)}
+.daily-detail-head.is-overdue .daily-detail-date{color:var(--daily-overdue,#c0463a)}
 .daily-detail-body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.75;margin:0}
 .daily-body-field textarea{min-height:180px;resize:vertical;white-space:pre-wrap}
 .sheet.is-fullscreen .daily-body-field textarea{min-height:220px}
@@ -128,7 +133,6 @@
   /* 日期行高度不随宽度改变：宽度变化只影响列宽，日期锚点与像素偏移才能精确恢复。 */
   .daily-tools .btn{min-width:32px;min-height:32px;padding:2px 4px}
   .daily-head .btn.daily-add{min-width:32px;min-height:32px;padding:2px 4px;font-size:16px}
-  .daily-status-legend{display:none}
   .daily-scroller{height:clamp(300px,48vh,520px)}
 }
 .daily-quad{background:var(--card)}

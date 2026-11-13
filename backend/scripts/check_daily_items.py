@@ -158,6 +158,18 @@ def main():
                 person, "browser-overdue-" + uuid.uuid4().hex)
             if overdue[0] != 200:
                 raise AssertionError(("overdue", overdue))
+            # 正文明明含有“已完成/跨日”等词：清理可见状态冗余时不得改写用户正文。
+            same_words = f.call("POST", "/daily-items",
+                {"date": str(today), "body": "跨日已完成：正文里的同词不应被改写"}, person,
+                "browser-same-words-" + uuid.uuid4().hex)
+            if same_words[0] != 200:
+                raise AssertionError(("same-words", same_words))
+            # 一条跨三天的真实记录：完成/取消/刷新后每个已加载覆盖日都要同步变灰或恢复蓝。
+            ranged = f.call("POST", "/daily-items",
+                {"startDate": str(today - dt.timedelta(days=1)), "endDate": str(today + dt.timedelta(days=1)),
+                 "body": "跨日三色同步事项"}, person, "browser-ranged-" + uuid.uuid4().hex)
+            if ranged[0] != 200:
+                raise AssertionError(("ranged", ranged))
             bulk = str(today + dt.timedelta(days=30))
             for index in range(105):
                 status, result = f.call("POST", "/daily-items", {"date": bulk, "body": "Browser bulk " + str(index)},
@@ -165,7 +177,10 @@ def main():
                 if status != 200:
                     raise AssertionError(("bulk", index, status, result))
             manifest = {"base": f"http://127.0.0.1:{f.port}", "identities": f.identities,
-                        "database": f.database, "today": day, "port": f.port, "bulk": bulk}
+                        "database": f.database, "today": day, "port": f.port, "bulk": bulk,
+                        "overdue": overdue_date, "mixed": str(today + dt.timedelta(days=6)),
+                        "ranged": ranged[1]["id"], "rangedStart": str(today - dt.timedelta(days=1)),
+                        "rangedEnd": str(today + dt.timedelta(days=1))}
             env = {"PANDORA_BROWSER_FIXTURE": json.dumps(manifest)}
             browser = subprocess.run(["node", str(BASE / "scripts/check_daily_items_browser.js")],
                                      env={**__import__("os").environ, **env}, capture_output=True, text=True)

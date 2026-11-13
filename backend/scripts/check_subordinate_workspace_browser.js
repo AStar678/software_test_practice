@@ -18,6 +18,10 @@ try{
  for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});await ev("document.querySelector('[data-profile-fold=reports]').scrollIntoView({block:'start'})");check('tree fits '+width,await ev("document.documentElement.scrollWidth<=innerWidth+1"));await b.screenshot(path.join(out,'tree-'+width+'.png'));}
  await ev(`document.querySelector('[data-action=p-open-person][data-id="${f.identities['alpha-one-employee'].id}"]').click()`);
  check('person opens profile card before work with contacts and tenure rows',await waitFor(b,"Pandora.idle()&&!!document.querySelector('[data-action=p-staff-enter][data-tab=schedule]')")&&await ev("(()=>{const t=document.getElementById('sheetBody').textContent;return t.includes('联系电话')&&t.includes('邮箱')&&t.includes('已入职')})()"));
+ const staffRows=await ev("(()=>{const card=document.querySelector('#sheetBody .profile-details'),count=label=>Array.from(card.querySelectorAll('.profile-row .k')).filter(node=>node.textContent.trim()===label).length;return {hire:count('入职日期'),tenure:count('已入职'),org:count('组织职务'),phone:count('联系电话'),email:count('邮箱'),text:card.textContent}})()");
+ check('the subordinate card keeps its own hire date, tenure and contact rows after the own-profile de-duplication',
+  staffRows.hire===1&&staffRows.tenure===1&&staffRows.org===1&&staffRows.phone===1&&staffRows.email===1&&
+  /(\d{4}-\d{2}-\d{2})|入职日期未设置/.test(staffRows.text),staffRows);
  await ev("document.querySelector('[data-action=p-staff-enter][data-tab=schedule]').click()");check('person opens independent workspace',await idle());
  check('no own calendar or log reuse',await ev("!document.querySelector('#sheetBody .p-month-view,#sheetBody .log-card,#sheetBody .p-day-axis')&&!!document.querySelector('.staff-person')"));
  check('default month view present',await ev("!!document.querySelector('.staff-month-view')&&document.querySelector('[data-action=p-staff-mode][data-mode=month]').getAttribute('aria-pressed')==='true'"));
@@ -36,7 +40,80 @@ try{
  const pure=await ev(`(()=>{const raw=${js(pointRaw)},start=parseDateInput(${js(f.day)}),point=Pandora.calendar.monthWeek({start},[Pandora.mapTask(raw)],8).segments[0];const full=Pandora.calendar.monthWeek({start},[Pandora.mapTask({...raw,allDay:false,startAt:Pandora.companyDayStart(${js(f.day)}).toISOString(),dueAt:Pandora.companyDayStart(${js(new Date(Date.parse(f.day+'T00:00:00Z')+86400000).toISOString().slice(0,10))}).toISOString()})],8).segments[0];return {point,full}})()`);
  check('zero duration task keeps the day frame and an explicit point flag',pure.point.point===true&&pure.point.width===100&&pure.point.left===0,pure.point);
  check('full business day covers exactly one day',pure.full.start===0&&pure.full.end===1&&pure.full.left===0&&pure.full.width===100);
- for(const width of [320,390,1440]){await b.viewport({width,height:width===1440?900:844,mobile:width!==1440});check('month fits '+width,await ev("document.getElementById('sheetBody').scrollWidth<=document.getElementById('sheetBody').clientWidth+1"));await b.screenshot(path.join(out,'month-'+width+'.png'));}
+ for(const [width,height] of [[320,740],[390,844],[1440,900],[390,600]]){await b.viewport({width,height,mobile:width<1000});check('month fits '+width+'x'+height,await ev("document.getElementById('sheetBody').scrollWidth<=document.getElementById('sheetBody').clientWidth+1"));
+  if(width===320){
+   const clipped=await ev(`(()=>{const bars=Array.from(document.querySelectorAll('.staff-month-event')).filter(bar=>getComputedStyle(bar).display!=='none'&&!bar.classList.contains('is-hidden'));
+     const scored=bars.map(bar=>{const strong=bar.querySelector('strong');return {strong,length:strong?strong.textContent.length:0}}).sort((a,b)=>b.length-a.length)[0];
+     if(!scored||!scored.strong)return null;const style=getComputedStyle(scored.strong),r=scored.strong.getBoundingClientRect(),bar=scored.strong.closest('.staff-month-event').getBoundingClientRect();
+     return {title:scored.strong.textContent,ellipsis:style.textOverflow,scrollWidth:scored.strong.scrollWidth,clientWidth:scored.strong.clientWidth,inside:r.left>=bar.left-1&&r.right<=bar.right+1}})()`);
+   check('a long month title is clipped inside its own bar at 320px',!!clipped&&clipped.inside&&clipped.ellipsis==='ellipsis'&&clipped.clientWidth>0&&clipped.scrollWidth>=clipped.clientWidth,clipped);
+  }
+  await b.screenshot(path.join(out,'month-'+width+'x'+height+'.png'));}
+ /* 4.1/4.2 真实矩形与命中：三条可见轨道互不覆盖，日期/任务/溢出分区不交叉，+N 落在自己的日期列。 */
+ async function gotoStaffMonth(dayKey){
+  await ev(`document.getElementById('staff-calendar-date').value='${dayKey}';document.getElementById('staff-calendar-date').dispatchEvent(new Event('change',{bubbles:true}))`);
+  return idle();
+ }
+ const geometryFor=monthKey=>`(()=>{const box=node=>{const r=node.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}};
+  const block=document.querySelector('[data-staff-month=${js(monthKey)}]'),scroll=document.getElementById('staffMonthScroll').getBoundingClientRect();
+  if(!block)return [];
+  return Array.from(block.querySelectorAll('.staff-month-week')).map(week=>{const days=week.querySelector('.staff-month-days'),tracks=week.querySelector('.staff-month-tracks'),overflow=week.querySelector('.staff-month-overflow');
+   return {week:week.dataset.weekStart,days:box(days),tracks:box(tracks),overflow:box(overflow),rowHeight:getComputedStyle(tracks).gridAutoRows,
+    columns:Array.from(days.children).map(cell=>({date:cell.dataset.date||null,blank:cell.classList.contains('is-blank'),box:box(cell)})),
+    events:Array.from(week.querySelectorAll('.staff-month-event')).map(node=>{const style=getComputedStyle(node);return {id:node.dataset.id,row:style.gridRowStart,display:style.display,hidden:node.classList.contains('is-hidden'),pending:node.classList.contains('is-pending-review'),outline:style.outlineStyle,box:box(node)}}),
+    more:Array.from(week.querySelectorAll('.staff-month-more')).map(node=>{const style=getComputedStyle(node),r=node.getBoundingClientRect();
+      const inView=r.top>=scroll.top-1&&r.bottom<=scroll.bottom+1&&r.left>=scroll.left-1&&r.right<=scroll.right+1;
+      const found=inView?document.elementFromPoint(r.left+r.width/2,r.top+r.height/2):null;
+      return {date:node.dataset.date,column:style.gridColumnStart,count:node.textContent,box:box(node),inView,hit:inView?!!found&&(found===node||node.contains(found)):null}})}})})()`;
+ function auditStaffMonth(rows,label){
+  const problems=[];
+  rows.forEach((week,index)=>{
+   if(week.tracks.top<week.days.bottom-1) problems.push({week:week.week,issue:'task tracks overlap the date row'});
+   if(week.overflow.top<week.tracks.bottom-1) problems.push({week:week.week,issue:'overflow row overlaps the task tracks'});
+   const next=rows[index+1];
+   if(next&&next.days.top<week.overflow.bottom-1) problems.push({week:week.week,issue:'the next week overlaps the overflow row'});
+   week.events.forEach(event=>{
+    if(event.hidden||event.display==='none'){
+     if(event.box.width>0||event.box.height>0) problems.push({week:week.week,id:event.id,issue:'a hidden bar is still drawn',box:event.box});
+     return;
+    }
+    if(event.box.top<week.tracks.top-1||event.box.bottom>week.tracks.bottom+1) problems.push({week:week.week,id:event.id,issue:'a visible bar leaves the three-track area',box:event.box,tracks:week.tracks});
+    if(event.box.height>20.5) problems.push({week:week.week,id:event.id,issue:'a bar is taller than one track',height:event.box.height});
+   });
+   week.more.forEach(button=>{
+    const column=week.columns.findIndex(cell=>cell.date===button.date);
+    if(column<0){problems.push({week:week.week,date:button.date,issue:'the overflow date is not in this week'});return;}
+    const cell=week.columns[column].box;
+    if(button.column!==String(column+1)) problems.push({week:week.week,date:button.date,issue:'the overflow column style is wrong',column:button.column,expected:String(column+1)});
+    const centre=(button.box.left+button.box.right)/2;
+    if(centre<cell.left-1||centre>cell.right+1) problems.push({week:week.week,date:button.date,issue:'the overflow entry is outside its own date column',button:button.box,cell});
+    if(button.inView&&!button.hit) problems.push({week:week.week,date:button.date,issue:'the overflow centre point is not hittable'});
+   });
+  });
+  check(label,problems.length===0,{problems,weeks:rows.length});
+  return rows;
+ }
+ await gotoStaffMonth(f.sparseMonth+'-01');
+ const sparseWeeks=await ev(geometryFor(f.sparseMonth));
+ check('the sparse month block is mounted with four to six week rows',sparseWeeks.length>=4&&sparseWeeks.length<=6,sparseWeeks.length);
+ auditStaffMonth(sparseWeeks,'sparse month keeps the date, track and overflow bands apart');
+ const sparseBlanks=await ev("Array.from(document.querySelector('.staff-month-week .staff-month-days').children).filter(cell=>cell.classList.contains('is-blank')).length");
+ check('the sparse month starts with blank columns before its first real date',sparseBlanks>0,sparseBlanks);
+ const sparseOverflow=await ev(`(()=>{const map={},block=document.querySelector('[data-staff-month=${js(f.sparseMonth)}]');if(!block)return map;block.querySelectorAll('.staff-month-more').forEach(node=>{map[node.dataset.date]={count:node.textContent,column:getComputedStyle(node).gridColumnStart}});return map})()`);
+ check('only the Thursday and Sunday above three tasks show overflow, each counted once',
+  Object.keys(sparseOverflow).sort().join()===[f.sparseThursday,f.sparseSunday].sort().join()&&
+  sparseOverflow[f.sparseThursday].count==='+1'&&sparseOverflow[f.sparseSunday].count==='+1',sparseOverflow);
+ await ev(`document.querySelector('.staff-month-more[data-date="${f.sparseThursday}"]').click()`);
+ check('the sparse Thursday overflow opens its own complete day list, not a shifted date',
+  await idle()&&await ev("!!document.querySelector('.staff-day-popup')&&document.querySelectorAll('.staff-day-popup .staff-work-item').length===4"));
+ await ev("document.querySelector('[data-action=p-staff-day-close]').click()");
+ await gotoStaffMonth(f.quiet);
+ const quietWeeks=await ev(geometryFor(f.quiet.slice(0,7)));
+ check('the quiet month block is mounted for the layout audit',quietWeeks.length>=4,quietWeeks.length);
+ auditStaffMonth(quietWeeks,'the three visible tracks stay inside the reserved band for every week');
+ const pendingBar=await ev(`(()=>{const node=document.querySelector('.staff-month-event[data-id="${f.pendingFrozen}"]');if(!node)return null;const style=getComputedStyle(node);return {pending:node.classList.contains('is-pending-review'),outline:style.outlineStyle,border:style.borderTopWidth}})()`);
+ check('a task under review keeps its dashed frame without leaving the track band',!!pendingBar&&pendingBar.pending&&pendingBar.outline==='dashed',pendingBar);
+ await gotoStaffMonth(f.day);
  check('staff month exposes no drag or resize entry',await ev("!document.querySelector('.staff-month-event [data-schedule-move],.staff-month-event [data-resize-task]')"));
  await ev(`document.querySelector('.staff-month-event[data-id="${f.spanning}"]').focus()`);
  await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
