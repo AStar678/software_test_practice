@@ -209,8 +209,14 @@ def main():
             if ranged[0] != 200:
                 raise AssertionError(("ranged", ranged))
             # Dedicated 3-day item for the drag suite: dragging it never disturbs the status fixtures above.
+            # Keep it in a complete seven-day week so outside-drop checks cannot pass merely
+            # because a clamped Monday/Sunday happens to be a month gap.
+            drag_monday = today.replace(day=8)
+            drag_monday += dt.timedelta(days=(-drag_monday.weekday()) % 7)
+            drag_start = drag_monday + dt.timedelta(days=2)
+            drag_end = drag_monday + dt.timedelta(days=4)
             drag_item = f.call("POST", "/daily-items",
-                {"startDate": str(today - dt.timedelta(days=2)), "endDate": str(today),
+                {"startDate": str(drag_start), "endDate": str(drag_end),
                  "body": "整体拖动演示事项"}, person, "browser-drag-" + uuid.uuid4().hex)
             if drag_item[0] != 200:
                 raise AssertionError(("drag-item", drag_item))
@@ -253,8 +259,8 @@ def main():
                         "overdue": overdue_date, "mixed": str(today + dt.timedelta(days=6)),
                         "ranged": ranged[1]["id"], "rangedStart": str(today - dt.timedelta(days=1)),
                         "rangedEnd": str(today + dt.timedelta(days=1)),
-                        "drag": drag_item[1]["id"], "dragStart": str(today - dt.timedelta(days=2)),
-                        "dragEnd": str(today),
+                        "drag": drag_item[1]["id"], "dragStart": str(drag_start),
+                        "dragEnd": str(drag_end),
                         "boardOverdue": overdue_board[1]["taskId"],
                         "overflow": overflow_days,
                         "companyBodies": company_bodies}

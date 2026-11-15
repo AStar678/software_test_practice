@@ -678,28 +678,25 @@
   }
   /* 指针所在周行 + 日期列 → 真实日期；月外空格在本模块只是非交互占位，不是有效目标。 */
   function dragPointAt(clientX, clientY) {
+    const scroller = document.getElementById("dailyScroller");
+    if (!scroller) return null;
+    const viewport = scroller.getBoundingClientRect();
+    if (clientX < viewport.left || clientX >= viewport.right ||
+        clientY < viewport.top || clientY >= viewport.bottom) return null;
+    const header = scroller.querySelector(".daily-weekdays");
+    if (header && clientY < header.getBoundingClientRect().bottom) return null;
     const weeks = Array.from(document.querySelectorAll(".daily-month .daily-week"));
-    if (!weeks.length) return null;
-    let week = weeks.find(node => {
+    const week = weeks.find(node => {
       const rect = node.getBoundingClientRect();
-      return clientY >= rect.top - 2 && clientY <= rect.bottom + 2;
+      return clientY >= rect.top && clientY < rect.bottom;
     });
-    if (!week) {
-      let best = null, bestDistance = Infinity;
-      weeks.forEach(node => {
-        const rect = node.getBoundingClientRect();
-        const distance = clientY < rect.top ? rect.top - clientY : clientY > rect.bottom ? clientY - rect.bottom : 0;
-        if (distance < bestDistance) { bestDistance = distance; best = node; }
-      });
-      week = best;
-    }
     if (!week) return null;
     const month = week.closest(".daily-month"), days = week.querySelector(".daily-days");
     const start = parseKey(week.dataset.weekStart);
     if (!month || !days || !start) return null;
     const rect = days.getBoundingClientRect();
-    if (!rect.width) return null;
-    const col = Math.max(0, Math.min(6, Math.floor((clientX - rect.left) / (rect.width / 7))));
+    if (!rect.width || clientX < rect.left || clientX >= rect.right) return null;
+    const col = Math.floor((clientX - rect.left) / (rect.width / 7));
     const date = shift(start, col);
     if (monthKeyOf(date) !== month.dataset.month) return null;
     return { week: week, month: month, date: date, key: dateKey(date), col: col };
@@ -910,6 +907,9 @@
     const dragState = drag;
     if (!dragState || event.pointerId !== dragState.pointer) return;
     const released = event.type === "pointerup";
+    /* 边缘自动滚动可在无效区继续；松开必须独立命中当时可见的真实日期，
+       不能沿用上一次 pointermove 的有效目标。 */
+    if (released) updateDrag(event.clientX, event.clientY);
     const valid = released && dragState.valid && dragState.delta !== 0;
     const activated = dragState.activated;
     drag = null;

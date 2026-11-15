@@ -73,7 +73,7 @@ module.exports = async function checkDailyItemsDrag(b, fixture, check, evidence)
     return point;
   }
   async function prepare() {
-    await ev(`PandoraDaily.goToDate(${js(fixture.today)})`);
+    await ev(`PandoraDaily.goToDate(${js(fixture.dragStart)})`);
     await sleep(600);
     /* The long-press activation deliberately waits for an idle page; month loads must settle first. */
     const ready = await waitFor(b, `Pandora.ready&&Pandora.idle()&&!!document.querySelector(${js(PANEL)})`, 15000);
@@ -101,6 +101,11 @@ module.exports = async function checkDailyItemsDrag(b, fixture, check, evidence)
         if(target)window.__dragWrites.push(new Headers(opts.headers).get('Idempotency-Key'));
         if(target&&window.__dragFail==='network')throw new TypeError('simulated network failure');
         const response=await window.__dragFetch(url,opts);
+        if(target&&window.__dragFail==='hold')await new Promise((resolve,reject)=>{
+          window.__dragRelease=resolve;
+          const abort=()=>reject(new DOMException('Session cancelled','AbortError'));
+          if(opts.signal.aborted)abort();else opts.signal.addEventListener('abort',abort,{once:true});
+        });
         if(target&&window.__dragFail==='after')throw new TypeError('simulated response loss after server commit');
         return response}})()`);
   }
@@ -148,6 +153,69 @@ module.exports = async function checkDailyItemsDrag(b, fixture, check, evidence)
   const zero = await ev("({sheet:!document.getElementById('overlay').hidden,ghost:!!document.querySelector('.p-daily-drag-ghost'),move:Pandora.dailyGesture().move,writes:window.__dragWrites.length})");
   check('a zero-movement long press saves nothing and opens no confirmation',
     !zero.sheet && !zero.ghost && zero.move === null && zero.writes === 0 && (await raw(fixture.drag)).rowVersion === beforeZero, zero);
+
+  /* -------- outside releases must not be clamped to a real date -------- */
+  for (const edge of ['left', 'right', 'above', 'below']) {
+    await prepare();
+    const from = await barPoint(PANEL);
+    const before = await raw(fixture.drag);
+    const outside = await ev(`(()=>{const r=document.getElementById('dailyScroller').getBoundingClientRect();
+      const days=document.querySelector(${js(PANEL)}).closest('.daily-week').querySelector('.daily-days');
+      return {x:${js(edge)}==='left'?r.left-5:${js(edge)}==='right'?r.right+5:${from.x},
+        y:${js(edge)}==='above'?r.top-5:${js(edge)}==='below'?r.bottom+5:${from.y},
+        dates:days.querySelectorAll('[data-daily-date]').length}})()`);
+    check('outside-drop fixture uses a complete seven-day week (' + edge + ')', outside.dates === 7, outside);
+    await pressAt(from);
+    await sleep(650);
+    await moveAt(outside);
+    await releaseAt(outside);
+    await sleep(350);
+    const state = await ev("({gesture:Pandora.dailyGesture(),sheet:!document.getElementById('overlay').hidden,ghost:!!document.querySelector('.p-daily-drag-ghost'),writes:window.__dragWrites.length})");
+    const after = await raw(fixture.drag);
+    check('releasing ' + edge + ' of the scroller cancels without confirmation, PATCH or range/version change',
+      !state.sheet && !state.ghost && !state.gesture.dragging && state.gesture.move === null && state.writes === 0 &&
+      after.startDate === before.startDate && after.endDate === before.endDate && after.rowVersion === before.rowVersion,
+      { outside, state, before, after });
+  }
+
+  for (const zone of ['header', 'between-weeks', 'month-gap', 'release-only', 'pointercancel', 'blur']) {
+    await prepare();
+    const before = await raw(fixture.drag);
+    const from = await barPoint(PANEL);
+    await ev("document.addEventListener('pointerdown',e=>window.__cancelPointer=e.pointerId,{capture:true,once:true})");
+    await pressAt(from);
+    await sleep(650);
+    const validTarget = await cellPoint(shiftKey(from.grabKey, 1));
+    await moveAt(validTarget);
+    check('a valid drag precedes cancellation in ' + zone, await ev('Pandora.dailyGesture().dragging&&Pandora.dailyGesture().delta!==0'));
+    let target = validTarget;
+    if (zone === 'pointercancel') {
+      await ev("document.dispatchEvent(new PointerEvent('pointercancel',{pointerId:window.__cancelPointer,bubbles:true}))");
+    } else if (zone === 'blur') {
+      await ev("window.dispatchEvent(new Event('blur'))");
+    } else {
+      if (zone === 'month-gap') {
+        await ev("document.querySelector('.daily-month .daily-gap').scrollIntoView({block:'center',behavior:'instant'})");
+      }
+      target = await ev(`(()=>{const s=document.getElementById('dailyScroller').getBoundingClientRect();
+        const h=document.querySelector('.daily-weekdays').getBoundingClientRect();
+        const w=document.querySelector(${js(PANEL)}).closest('.daily-week').getBoundingClientRect();
+        const g=document.querySelector('.daily-month .daily-gap').getBoundingClientRect();
+        return ${js(zone)}==='header'?{x:${from.x},y:h.top+h.height/2}:
+          ${js(zone)}==='between-weeks'?{x:${from.x},y:w.bottom+1}:
+          ${js(zone)}==='month-gap'?{x:g.left+g.width/2,y:g.top+g.height/2}:{x:s.right+5,y:${from.y}}})()`);
+      // A pointerup may carry a new coordinate without a preceding pointermove.
+      if (zone !== 'release-only') await moveAt(target);
+    }
+    await releaseAt(target);
+    await sleep(350);
+    const state = await ev("({gesture:Pandora.dailyGesture(),sheet:!document.getElementById('overlay').hidden,ghost:!!document.querySelector('.p-daily-drag-ghost'),writes:window.__dragWrites.length})");
+    const after = await raw(fixture.drag);
+    check(zone + ' cancels the drag without confirmation, PATCH or range/version change',
+      !state.sheet && !state.ghost && !state.gesture.dragging && state.gesture.move === null && state.writes === 0 &&
+      after.startDate === before.startDate && after.endDate === before.endDate && after.rowVersion === before.rowVersion,
+      { target, state, before, after });
+  }
 
   /* -------- scrolling before the threshold stays ordinary scrolling -------- */
   await prepare();
@@ -333,14 +401,15 @@ module.exports = async function checkDailyItemsDrag(b, fixture, check, evidence)
   await b.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
   await sleep(250);
   const touchFrom = await barPoint(PANEL);
-  const touchTarget = await cellPoint(shiftKey(touchFrom.grabKey, touchFrom.col >= 3 ? -1 : 1));
+  const touchTarget = await cellPoint(shiftKey(touchFrom.grabKey, 7));
   const touchAt = (type, x, y) => b.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 0 }] });
   const beforeTouch = await raw(fixture.drag);
   await touchAt('touchStart', touchFrom.x, touchFrom.y);
   await sleep(700);
   await touchAt('touchMove', touchTarget.x, touchTarget.y);
   await sleep(200);
-  check('a synthetic long touch activates the same whole-bar drag', await ev("Pandora.dailyGesture().dragging===true&&!!document.querySelector('.p-daily-drag-ghost')"));
+  check('a synthetic vertical long touch hits the following week',
+    await ev(`Pandora.dailyGesture().dragging===true&&Pandora.dailyGesture().target===${js(shiftKey(touchFrom.grabKey, 7))}&&Pandora.dailyGesture().delta===7&&!!document.querySelector('.p-daily-drag-ghost')`));
   await touchAt('touchEnd', touchTarget.x, touchTarget.y);
   await sleep(350);
   check('the touch drag asks for the same confirmation without writing yet',
@@ -374,6 +443,113 @@ module.exports = async function checkDailyItemsDrag(b, fixture, check, evidence)
   }
   check('the same real employee can sign back in after the drag was cancelled',
     await waitFor(b, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${js(fixture.identities['alpha-one-employee'].id)}`, 25000));
+
+  /* -------- a committed save response arriving after an account switch is isolated -------- */
+  await prepare();
+  const savingBefore = await raw(fixture.drag);
+  const savingFrom = await barPoint(PANEL);
+  const savingTarget = await cellPoint(shiftKey(savingFrom.grabKey, 1));
+  await ev("window.__dragFail='hold';window.__dragRelease=null");
+  await pressAt(savingFrom);
+  await sleep(650);
+  await moveAt(savingTarget);
+  await releaseAt(savingTarget);
+  await waitFor(b, "!!document.querySelector('[data-action=daily-move-confirm]')");
+  await ev("document.querySelector('[data-action=daily-move-confirm]').click()");
+  check('a real save response is held after the server commits', await waitFor(b, "typeof window.__dragRelease==='function'", 10000));
+  const savingCommitted = await raw(fixture.drag);
+  check('the held save committed once to the old account', savingCommitted.rowVersion === savingBefore.rowVersion + 1 &&
+    savingCommitted.startDate === shiftKey(savingBefore.startDate, 1));
+  await ev('Pandora.logout()');
+  await waitFor(b, "!!document.getElementById('backend-login')");
+  await ev(`document.getElementById('login-user').value=${js(fixture.identities['alpha-two-employee'].identifier)};document.getElementById('login-password').value='Fixture@123456';document.getElementById('backend-login').requestSubmit()`);
+  check('another employee loads while the old save response remains pending',
+    await waitFor(b, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${js(fixture.identities['alpha-two-employee'].id)}`, 25000));
+  await ev(`PandoraDaily.openList(${js(fixture.today)})`);
+  await waitFor(b, "Pandora.idle()&&!document.getElementById('overlay').hidden");
+  await ev("window.__newDragSession={token:Pandora.token,epoch:Pandora.epoch,account:PandoraDaily.state.account,title:sheetTitleEl.textContent};window.__dragFail=null;window.__dragRelease()");
+  await sleep(600);
+  check('the late save response cannot close the new sheet, change identity/token/epoch or seed old records',
+    await ev(`Pandora.idle()&&Pandora.token===window.__newDragSession.token&&Pandora.epoch===window.__newDragSession.epoch&&
+      PandoraDaily.state.account===window.__newDragSession.account&&!overlayEl.hidden&&sheetTitleEl.textContent===window.__newDragSession.title&&
+      Pandora.dailyGesture().move===null&&![...PandoraDaily.state.records.values()].some(entry=>entry.items?.has(${js(fixture.drag)}))`));
+  await ev('Pandora.logout()');
+  await waitFor(b, "!!document.getElementById('backend-login')");
+  await ev(`document.getElementById('login-user').value=${js(fixture.identities['alpha-one-employee'].identifier)};document.getElementById('login-password').value='Fixture@123456';document.getElementById('backend-login').requestSubmit()`);
+  check('the original employee returns after the late-response check',
+    await waitFor(b, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${js(fixture.identities['alpha-one-employee'].id)}`, 25000));
+
+  /* -------- completed cross-month continuation, vertical move and edge month loading -------- */
+  const monthFirst = fixture.dragStart.slice(0, 8) + '01';
+  const crossStart = shiftKey(monthFirst, -2), crossEnd = fixture.dragStart.slice(0, 8) + '25';
+  const crossResponse = await fetch(API + '/daily-items', { method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token,
+      'Idempotency-Key': 'cross-month-drag-' + Date.now() },
+    body: JSON.stringify({ startDate: crossStart, endDate: crossEnd, body: '已完成跨月续接拖动' }) });
+  const crossCreated = await crossResponse.json();
+  check('a cross-month record is created through the real API', crossResponse.status === 200, crossCreated);
+  const completeResponse = await fetch(API + '/daily-items/' + encodeURIComponent(crossCreated.id), { method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token,
+      'Idempotency-Key': 'complete-cross-month-' + Date.now(), 'If-Match': '"' + crossCreated.rowVersion + '"' },
+    body: JSON.stringify({ completed: true }) });
+  const completeResult = await completeResponse.json();
+  check('the cross-month record is completed through the versioned API', completeResponse.status === 200 && completeResult.completed, completeResult);
+  const cross = await raw(crossCreated.id);
+  await b.send('Page.reload', { ignoreCache: true });
+  await waitFor(b, 'Pandora.ready&&Pandora.idle()', 25000);
+  await ev(`setPage('map');PandoraDaily.goToDate(${js(fixture.dragStart)})`);
+  const midWeek = shiftKey(fixture.dragStart, -2);
+  const CROSS = `.daily-week[data-week-start=${js(midWeek)}] [data-daily-bar][data-id=${js(cross.id)}]`;
+  check('the middle continuation of the completed record loads', await waitFor(b, `Pandora.idle()&&!!document.querySelector(${js(CROSS)})`, 15000));
+  await ev(`document.querySelector(${js(CROSS)}).scrollIntoView({block:'center',behavior:'instant'})`);
+  await settledPoint(CROSS);
+  const crossFrom = await barPoint(CROSS);
+  const crossTargetKey = shiftKey(crossFrom.grabKey, 7);
+  const crossTarget = await cellPoint(crossTargetKey);
+  await pressAt(crossFrom);
+  await sleep(650);
+  await moveAt(crossTarget);
+  check('the completed middle segment hits the next week in two dimensions',
+    await ev(`Pandora.dailyGesture().target===${js(crossTargetKey)}&&Pandora.dailyGesture().delta===7`));
+  await releaseAt(crossTarget);
+  await waitFor(b, "!!document.querySelector('[data-action=daily-move-confirm]')");
+  await ev("document.querySelector('[data-action=daily-move-confirm]').click()");
+  await waitFor(b, "Pandora.idle()&&overlayEl.hidden", 20000);
+  const crossMoved = await raw(cross.id);
+  check('the whole completed cross-month range moves once while preserving ID, body, completion and span',
+    crossMoved.id === cross.id && crossMoved.startDate === shiftKey(crossStart, 7) && crossMoved.endDate === shiftKey(crossEnd, 7) &&
+    crossMoved.body === cross.body && crossMoved.completed && crossMoved.rowVersion === cross.rowVersion + 1, crossMoved);
+  check('loaded old and new months contain the updated range without stale copies',
+    await waitFor(b, `(()=>{const entries=[...PandoraDaily.state.records.values()];
+      const rows=entries.flatMap(entry=>[...(entry.items||new Map()).values()]).filter(item=>item.id===${js(cross.id)});
+      return entries.every(entry=>entry.state==='ready')&&rows.length>=2&&rows.every(item=>item.startDate===${js(crossMoved.startDate)}&&item.endDate===${js(crossMoved.endDate)}&&item.completed)})()`, 15000));
+  await b.send('Page.reload', { ignoreCache: true });
+  await waitFor(b, 'Pandora.ready&&Pandora.idle()', 25000);
+  check('the completed cross-month move persists after reload', (await raw(cross.id)).rowVersion === crossMoved.rowVersion);
+  await prepare();
+  const edgeFrom = await barPoint(PANEL);
+  const beforeEdge = await raw(fixture.drag);
+  const monthsBefore = await ev('PandoraDaily.currentMonthKeys()');
+  await pressAt(edgeFrom);
+  await sleep(650);
+  const bottomEdge = await ev(`(()=>{const r=document.getElementById('dailyScroller').getBoundingClientRect();return {x:${edgeFrom.x},y:r.bottom-4}})()`);
+  await moveAt(bottomEdge);
+  check('holding at the visible bottom edge scrolls and loads a later month',
+    await waitFor(b, `PandoraDaily.currentMonthKeys().at(-1)>${js(monthsBefore.at(-1))}`, 12000));
+  check('edge loading keeps the source record mounted during dragging',
+    await ev(`Pandora.dailyGesture().dragging&&!!document.querySelector(${js(PANEL)})`));
+  // Return from the edge to a visible real date before releasing.
+  const edgeTarget = await ev(`(()=>{const s=document.getElementById('dailyScroller').getBoundingClientRect();
+    const c=Array.from(document.querySelectorAll('[data-daily-date]')).find(node=>{const r=node.getBoundingClientRect();return r.top>s.top+55&&r.bottom<s.bottom-55});
+    if(!c)return null;const r=c.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,key:c.dataset.dailyDate}})()`);
+  check('edge scrolling leaves a visible valid release target', !!edgeTarget, edgeTarget);
+  await moveAt(edgeTarget);
+  await releaseAt(edgeTarget);
+  check('a valid drop after edge month loading still asks for confirmation',
+    await waitFor(b, "!!document.querySelector('[data-action=daily-move-confirm]')"));
+  await ev("document.querySelector('[data-action=daily-move-cancel]').click()");
+  check('cancelling the edge move preserves the stored range and version', (await raw(fixture.drag)).rowVersion === beforeEdge.rowVersion);
+  evidence('drag-boundaries', { savingBefore, savingCommitted, cross, crossMoved, monthsBefore, edgeTarget });
   await ev("setPage('map')");
   await sleep(300);
 };
