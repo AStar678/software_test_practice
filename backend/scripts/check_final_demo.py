@@ -71,7 +71,7 @@ def main():
         with running_database(name,18195,OUTPUT.with_name('demo-restart-service.log'),True) as process:
             tokens={}
             for key,identity in manifest['identities'].items():
-                status,session=f.login(key,'Demo@123456');tokens[key]=session.get('token')
+                status,session=f.login(key,'111');tokens[key]=session.get('token')
                 check(key+' authenticates through its real declared account namespace after restart',status==200 and session['user']['id']==identity['id'] and 'username' not in session['user'])
             browser=subprocess.run(['node',str(BASE/'scripts/check_demo_roles_browser.js')],
                 env={**os.environ,'PANDORA_DEMO_FIXTURE':json.dumps({'base':'http://127.0.0.1:18195','identities':manifest['identities'],'objects':manifest['objects']})},

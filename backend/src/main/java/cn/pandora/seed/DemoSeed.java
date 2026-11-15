@@ -136,21 +136,29 @@ public class DemoSeed implements ApplicationRunner {
         actors.put("admin",access.actor(db.one("SELECT a.*,'admin' AS account_type FROM admin_accounts a WHERE a.organization_id=?",ORG)));
     }
     private void prepareBusiness() {
-        String[][] companyItems = {
-                {"《星尘》短片立项", "故事部与制作部共同确认十二分钟动画短片《星尘》的创作目标与交付节点。"},
-                {"第一幕分镜评审", "分镜组提交第一幕完整分镜，汇总镜头节奏与转场意见。"},
-                {"角色设定定稿", "确定星尘、旅人和守灯人的比例、服装与表情设定。"},
-                {"原画关键帧交付", "原画组交付第一幕关键帧，进入动画中间画制作。"},
-                {"配音演员试音", "完成三位主要角色的试音并确认声音方向。"},
-                {"配乐小样确认", "作曲提交主题旋律小样，确认情绪曲线与片尾留白。"},
-                {"合成镜头验收", "检查第一幕合成层、光效与景深一致性。"},
-                {"片头字幕校对", "校对片名、主创名单和多语言字幕。"},
-                {"预告片剪辑", "从成片素材剪出四十五秒预告并完成调色。"},
-                {"成片交付与归档", "输出母版、字幕和工程归档，完成交付清单。"}
+        /* 公司事件纪只保留正文；这里仍是十条有序公司事项，任务/通知标题不受影响。 */
+        /* 其中两条为自然的分段长正文，供首页两行省略与清单独立展开的真实演示；
+           其余保持短正文对照，不增加第十一条。 */
+        String[] companyBodies = {
+                "故事部与制作部共同确认十二分钟动画短片《星尘》的创作目标与交付节点。\n" +
+                        "本周先锁定成片结构与第一幕镜头节奏，再由分镜组按场次标注转场方式；" +
+                        "制作部同步排定原画、合成与配音的交付窗口。\n" +
+                        "所有变更在每日评审记录中留痕，跨部门调整提前一个工作日同步。",
+                "分镜组提交第一幕完整分镜，汇总镜头节奏与转场意见。",
+                "确定星尘、旅人和守灯人的比例、服装与表情设定。",
+                "原画组交付第一幕关键帧，进入动画中间画制作。",
+                "完成三位主要角色的试音并确认声音方向。",
+                "作曲提交主题旋律小样，确认情绪曲线与片尾留白。",
+                "检查第一幕合成层、光效与景深一致性。",
+                "校对片名、主创名单和多语言字幕。",
+                "从成片素材剪出四十五秒预告并完成调色。\n" +
+                        "预告以旅人抬头看见星尘的镜头开场，中段保留三处动作高点，片尾回到守灯人的静帧；" +
+                        "声音先沿用配乐小样的主旋律。\n" +
+                        "待成片交付后再统一调整响度与字幕位置，剪辑版本按日期归档。",
+                "输出母版、字幕和工程归档，完成交付清单。"
         };
-        for (int i = 0; i < companyItems.length; i++) {
-            var item = organization.createCompanyItem(actors.get("admin"),
-                    Map.of("title", companyItems[i][0], "body", companyItems[i][1]));
+        for (int i = 0; i < companyBodies.length; i++) {
+            var item = organization.createCompanyItem(actors.get("admin"), Map.of("body", companyBodies[i]));
             remember("company-item-" + (i + 1), "home-item", s(item, "id"));
         }
         for (String key : List.of("upper", "middle", "product-head-1", "employee")) {

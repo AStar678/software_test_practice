@@ -116,9 +116,9 @@ def witness(port: int):
                      "SELECT constraint_name,constraint_type FROM information_schema.table_constraints "
                      "WHERE table_schema=DATABASE() AND table_name='" + table + "' ORDER BY constraint_name")
                      for table in ("daily_items", "user_task_table_pins")}}
-        check("V32-V35 are applied and historical checksums never change",
+        check("V32-V36 are applied and historical checksums never change",
               all(after["checksums"].get(version) == checksum for version, checksum in before["checksums"].items())
-              and all(after["checksums"].get(version) for version in ("32", "33", "34", "35")),
+              and all(after["checksums"].get(version) for version in ("32", "33", "34", "35", "36")),
               {"before": before["checksums"], "after": after["checksums"]})
         before_row = dict(zip(["id", "organization_id", "owner_id", "item_date", "body", "completed", "row_version"], before["daily"][0]))
         row = after["daily"][0]
@@ -186,10 +186,14 @@ def witness(port: int):
         columns = {table: {row[0] for row in f.db.rows(
             "SELECT column_name FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='" + table + "'")}
             for table in ("daily_items", "user_task_table_pins", "holiday_calendar_years", "holiday_calendar_days")}
+        home_columns = {row[0] for row in f.db.rows(
+            "SELECT column_name FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='home_items'")}
         check("an empty database completes the full chain and converges on the new structures",
-              version == "35" and {"start_date", "end_date"} <= columns["daily_items"]
-              and columns["user_task_table_pins"] and columns["holiday_calendar_years"] and columns["holiday_calendar_days"],
-              {"version": version, "columns": {key: sorted(value) for key, value in columns.items()}})
+              version == "36" and {"start_date", "end_date"} <= columns["daily_items"]
+              and columns["user_task_table_pins"] and columns["holiday_calendar_years"] and columns["holiday_calendar_days"]
+              and "body" in home_columns and "title" not in home_columns,
+              {"version": version, "columns": {key: sorted(value) for key, value in columns.items()},
+               "homeColumns": sorted(home_columns)})
 
 
 def daily_items(f, ids, business_day):

@@ -84,17 +84,18 @@ async function main(){
    check('company info shows exactly ten managed entries',await waitFor(browser,"$('companyRows').querySelectorAll('tr').length===10"));
    const adminCompany=await callApi('GET','/admin/company',undefined,adminToken);
    const homeBefore=await callApi('GET','/home',undefined,tokens.founder);
-   const adminTitles=adminCompany.payload.items.map(item=>item.title);
-   const browserTitles=await evaluate("(()=>Array.from(document.querySelectorAll('#companyRows tr')).map(r=>r.cells[1].querySelector('.cell-value')?.textContent.trim()))()");
-   check('company info admin order matches the managed list',adminCompany.status===200&&adminTitles.length===10&&JSON.stringify(browserTitles)===JSON.stringify(adminTitles),{adminTitles,browserTitles});
-   check('App reads company info in the same admin order',homeBefore.status===200&&JSON.stringify(homeBefore.payload.companyItems.map(item=>item.title))===JSON.stringify(adminTitles),{appTitles:homeBefore.payload.companyItems.map(item=>item.title)});
-   const expectedTitles=[...adminTitles];[expectedTitles[8],expectedTitles[9]]=[expectedTitles[9],expectedTitles[8]];
+   const adminBodies=adminCompany.payload.items.map(item=>item.body);
+   const browserBodies=await evaluate("(()=>Array.from(document.querySelectorAll('#companyRows tr')).map(r=>r.cells[1].querySelector('.cell-value')?.textContent.trim()))()");
+   check('company info admin order matches the managed list',adminCompany.status===200&&adminBodies.length===10&&JSON.stringify(browserBodies)===JSON.stringify(adminBodies),{adminBodies,browserBodies});
+   check('App reads company info in the same admin order',homeBefore.status===200&&JSON.stringify(homeBefore.payload.companyItems.map(item=>item.body))===JSON.stringify(adminBodies),{appBodies:homeBefore.payload.companyItems.map(item=>item.body)});
+   check('company info is body-only in both admin and employee responses',adminCompany.payload.items.every(item=>!('title' in item))&&homeBefore.payload.companyItems.every(item=>!('title' in item)),{adminKeys:Object.keys(adminCompany.payload.items[0]||{}),appKeys:Object.keys(homeBefore.payload.companyItems[0]||{})});
+   const expectedBodies=[...adminBodies];[expectedBodies[8],expectedBodies[9]]=[expectedBodies[9],expectedBodies[8]];
    await evaluate("(()=>{const buttons=Array.from(document.querySelectorAll('[data-company-up]'));buttons[buttons.length-1].click()})()");
-   check('admin reorders company info through the real console',await waitFor(browser,`(()=>{const got=Array.from(document.querySelectorAll('#companyRows tr')).map(r=>r.cells[1].querySelector('.cell-value')?.textContent.trim());return JSON.stringify(got)===${JSON.stringify(JSON.stringify(expectedTitles))}})()`),{expectedTitles});
+   check('admin reorders company info through the real console',await waitFor(browser,`(()=>{const got=Array.from(document.querySelectorAll('#companyRows tr')).map(r=>r.cells[1].querySelector('.cell-value')?.textContent.trim());return JSON.stringify(got)===${JSON.stringify(JSON.stringify(expectedBodies))}})()`),{expectedBodies});
    const adminCompanyAfter=await callApi('GET','/admin/company',undefined,adminToken);
    const homeAfter=await callApi('GET','/home',undefined,tokens.founder);
-   check('admin and App read the reordered company info identically',JSON.stringify(adminCompanyAfter.payload.items.map(item=>item.title))===JSON.stringify(expectedTitles)&&JSON.stringify(homeAfter.payload.companyItems.map(item=>item.title))===JSON.stringify(expectedTitles),{adminTitles:adminCompanyAfter.payload.items.map(item=>item.title),appTitles:homeAfter.payload.companyItems.map(item=>item.title)});
-   await evaluate("$('companyTitle').value='Company Notice 11';$('companyBody').value='Eleventh managed entry';$('companyCreate').click()");
+   check('admin and App read the reordered company info identically',JSON.stringify(adminCompanyAfter.payload.items.map(item=>item.body))===JSON.stringify(expectedBodies)&&JSON.stringify(homeAfter.payload.companyItems.map(item=>item.body))===JSON.stringify(expectedBodies),{adminBodies:adminCompanyAfter.payload.items.map(item=>item.body),appBodies:homeAfter.payload.companyItems.map(item=>item.body)});
+   await evaluate("$('companyBody').value='Eleventh managed entry';$('companyCreate').click()");
    check('eleventh company entry is refused at the ten-item limit',await waitFor(browser,"$('messageDialog').open&&$('messageText').textContent.includes('最多10条')")&&await evaluate("$('companyRows').querySelectorAll('tr').length===10"),{error:await evaluate("$('messageText').textContent")});
    await evaluate("$('messageAccept').click()");
 

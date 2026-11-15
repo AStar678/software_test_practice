@@ -11,7 +11,7 @@ async function main(){
  async function idle(){return waitFor(b,'Pandora.ready&&Pandora.idle()',25000);}
  async function login(who){
   await waitFor(b,"!!document.getElementById('backend-login')",25000);
-  await ev(`document.getElementById('login-user').value=${js(f.identities[who].identifier)};document.getElementById('login-password').value='Demo@123456';document.getElementById('backend-login').requestSubmit()`);
+  await ev(`document.getElementById('login-user').value=${js(f.identities[who].identifier)};document.getElementById('login-password').value='111';document.getElementById('backend-login').requestSubmit()`);
   check('real demo login '+who,await idle());
  }
  async function logout(){await ev('Pandora.logout()');await waitFor(b,"!!document.getElementById('backend-login')&&Pandora.idle()",25000);}

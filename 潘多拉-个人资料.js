@@ -46,13 +46,15 @@
     return row("部门", user.departmentName || "公司层") + row("职位", user.positionName) +
       (user.teamName ? row("团队", user.teamName) : "") + row("直属上级", superior(user));
   }
+  /* 本人和授权下属共用：只展示真实年/月/日时长，不带“（截至 xxx）”后缀；
+     后端 asOfDate 投影和公司业务日算法不变，这里只影响可见文案。 */
   function tenureText(tenure) {
     if (!tenure || tenure.years == null) return "入职日期未设置";
     const parts = [];
     if (Number(tenure.years)) parts.push(Number(tenure.years) + "年");
     if (Number(tenure.months)) parts.push(Number(tenure.months) + "个月");
     if (Number(tenure.days) || !parts.length) parts.push(Number(tenure.days || 0) + "天");
-    return parts.join("") + (tenure.asOfDate ? "（截至 " + tenure.asOfDate + "）" : "");
+    return parts.join("");
   }
   function field(id, type, label, value, max, autocomplete, required) {
     return '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" type="' + type + '" value="' + esc(value || "") + '" maxlength="' + max + '" autocomplete="' + autocomplete + '"' + (required ? ' required data-autofocus' : '') + ' /></div>';

@@ -40,8 +40,14 @@
   rgba(138,203,170,.62)}
 .daily-head .btn.daily-add:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 
-/* 纵向滚动只发生在每日事项自己的区域；到达边界继续滚动交给首页整页。 */
-.daily-scroller{flex:1 1 auto;min-width:0;height:clamp(320px,52vh,560px);overflow-y:auto;overflow-x:hidden;
+/* 纵向滚动只发生在每日事项自己的区域；到达边界继续滚动交给首页整页。
+   视口高度由两条周行 + 星期表头 + 月标题计算，而不是按视口百分比伸展：
+   正常静止密度是两周日期行，不再出现三完整周；不同视口和月边界保持一致。 */
+.daily-quad{--daily-row:32px;--daily-days-row:36px;--daily-overflow-row:18px;
+  --daily-weekday-row:26px;--daily-month-head-row:34px}
+.daily-scroller{flex:1 1 auto;min-width:0;overflow-y:auto;overflow-x:hidden;
+  height:calc(var(--daily-weekday-row) + var(--daily-month-head-row) +
+    2 * (var(--daily-days-row) + 3 * (var(--daily-row) + 2px) + 2px + var(--daily-overflow-row) + 4px));
   overscroll-behavior-y:auto;touch-action:pan-y;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
 .daily-scroller:focus-visible{outline-offset:-2px}
 .daily-track{display:flex;flex-direction:column;min-height:100%;padding-bottom:4px}
@@ -81,10 +87,10 @@
 .daily-month.is-loading .daily-cell{color:var(--muted)}
 
 /* 事项条轨道：高度固定（--daily-lanes 行），加载完成不会改变月份高度。 */
-.daily-tracks{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:var(--daily-row,18px);
-  row-gap:2px;column-gap:2px;height:calc(var(--daily-lanes,3) * (var(--daily-row,18px) + 2px));padding:1px 0;min-width:0}
-.daily-bar{display:flex;align-items:center;gap:2px;min-width:0;height:100%;padding:0 3px;border:0;border-left:3px solid var(--daily-open,#3b6fd8);
-  border-radius:4px;background:var(--daily-open-bg,#e9f1fd);color:var(--daily-open-ink,#1b3f8f);font-size:10px;line-height:1.2;text-align:left;cursor:pointer;overflow:hidden}
+.daily-tracks{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:var(--daily-row,32px);
+  row-gap:2px;column-gap:2px;height:calc(var(--daily-lanes,3) * (var(--daily-row,32px) + 2px));padding:1px 0;min-width:0}
+.daily-bar{display:flex;align-items:center;gap:2px;min-width:0;height:100%;padding:0 4px;border:0;border-left:3px solid var(--daily-open,#3b6fd8);
+  border-radius:5px;background:var(--daily-open-bg,#e9f1fd);color:var(--daily-open-ink,#1b3f8f);font-size:11px;line-height:1.2;text-align:left;cursor:pointer;overflow:hidden}
 .daily-bar.is-completed{border-left-color:var(--daily-done,#8b8f98);background:var(--daily-done-bg,#f2f3f5);color:var(--daily-done-ink,#5b6068)}
 .daily-bar.is-completed .daily-bar-name{text-decoration:line-through}
 .daily-bar.is-overdue{border-left-color:var(--daily-overdue,#c0463a);background:var(--daily-overdue-bg,#fdecea);color:var(--daily-overdue-ink,#8f2f27)}
@@ -96,8 +102,8 @@
 .daily-bar.continues-after{border-top-right-radius:0;border-bottom-right-radius:0}
 
 /* 溢出入口反映当日完整集合；与日期数字、空白、事项条一样先开命中日清单。 */
-.daily-overflow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:2px;height:16px;align-items:center}
-.daily-more{min-width:0;height:15px;padding:0 2px;border:0;border-radius:4px;background:transparent;color:var(--muted);
+.daily-overflow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:2px;height:18px;align-items:center}
+.daily-more{min-width:0;height:17px;padding:0 2px;border:0;border-radius:4px;background:transparent;color:var(--muted);
   font-size:9.5px;line-height:1;cursor:pointer;text-align:left;overflow:hidden;white-space:nowrap}
 .daily-more:hover{background:var(--brand-soft);color:var(--ink)}
 .daily-more:focus-visible{outline:2px solid var(--brand);outline-offset:0}
@@ -133,10 +139,29 @@
   /* 日期行高度不随宽度改变：宽度变化只影响列宽，日期锚点与像素偏移才能精确恢复。 */
   .daily-tools .btn{min-width:32px;min-height:32px;padding:2px 4px}
   .daily-head .btn.daily-add{min-width:32px;min-height:32px;padding:2px 4px;font-size:16px}
-  .daily-scroller{height:clamp(300px,48vh,520px)}
 }
 .daily-quad{background:var(--card)}
 .daily-quad .daily-month-label{color:var(--ink-2)}
 
 /* 超出固定轨道的事项条不参与布局与命中；完整集合由溢出入口进入清单。 */
 .daily-bar[hidden]{display:none}
+
+/* ---------- 整条拖动：拖影、目标日反馈与确认 ---------- */
+/* 拖影固定在视口坐标系，pointer-events 关闭，只作为整条移动的视觉反馈；
+   不提供任何端点手柄，起止边缘不可拉伸。 */
+.p-daily-drag-ghost{position:fixed;z-index:70;pointer-events:none;display:flex;align-items:center;gap:2px;
+  padding:0 4px;border:0;border-left:3px solid var(--daily-open,#3b6fd8);border-radius:5px;
+  background:var(--daily-open-bg,#e9f1fd);color:var(--daily-open-ink,#1b3f8f);font-size:11px;line-height:1.2;
+  overflow:hidden;opacity:.94;box-shadow:0 6px 18px rgba(28,28,30,.18),inset 0 1px 0 rgba(255,255,255,.7)}
+.p-daily-drag-ghost.is-completed{border-left-color:var(--daily-done,#8b8f98);background:var(--daily-done-bg,#f2f3f5);color:var(--daily-done-ink,#5b6068)}
+.p-daily-drag-ghost.is-overdue{border-left-color:var(--daily-overdue,#c0463a);background:var(--daily-overdue-bg,#fdecea);color:var(--daily-overdue-ink,#8f2f27)}
+.p-daily-drag-tip{position:fixed;z-index:71;left:50%;transform:translateX(-50%);
+  bottom:calc(18px + env(safe-area-inset-bottom));max-width:calc(100% - 24px);padding:8px 12px;border-radius:12px;
+  background:#1c1c1e;color:#fff;font-size:13px;line-height:1.5;pointer-events:none;
+  box-shadow:0 8px 24px rgba(28,28,30,.24);overflow-wrap:anywhere}
+.daily-bar.is-drag-source{opacity:.35}
+body.is-daily-dragging{cursor:grabbing;user-select:none}
+body.is-daily-dragging .daily-bar{cursor:grabbing}
+/* 目标日高亮：只画在真实日期格上，月外非交互空格没有目标反馈。 */
+.daily-cell.is-drop-target{background:var(--brand-soft);box-shadow:inset 0 0 0 2px var(--brand)}
+.daily-move{display:flex;flex-direction:column;gap:4px;margin:8px 0 10px}

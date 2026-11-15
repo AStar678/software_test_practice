@@ -207,9 +207,9 @@
         <input id="offWorkTime" placeholder="HH:MM">
         <button class="primary" id="offWorkSave">保存下班时刻</button>
       </div>
-      <div class="row"><input id="companyTitle" placeholder="标题（可空）"><input id="companyBody" placeholder="内容"><button class="primary" id="companyCreate">新增公司信息</button></div>
+      <div class="row"><input id="companyBody" placeholder="正文"><button class="primary" id="companyCreate">新增公司信息</button></div>
       <p class="muted" id="companyLimit"></p>
-      <table><thead><tr><th>顺序</th><th>标题</th><th>内容</th><th></th></tr></thead><tbody id="companyRows"></tbody></table>
+      <table><thead><tr><th>顺序</th><th>正文</th><th></th></tr></thead><tbody id="companyRows"></tbody></table>
       <h3>节假日</h3>
       <form id="holidayRefreshForm" class="row">
         <label for="holidayYear">年份</label>
@@ -470,15 +470,15 @@ async function renderCompany() {
   $('offWorkTime').value = (company.offWorkTime || '18:00:00').slice(0, 5);
   $('companyLimit').textContent = `当前 ${company.items.length} / ${company.limit} 条，默认按创建顺序，可人工调序。`;
   $('companyRows').innerHTML = company.items.map((item, index) => `<tr>
-    <td>${index + 1}</td><td>${item.title}</td><td>${item.body}</td>
+    <td>${index + 1}</td><td>${item.body}</td>
     <td><button class="ghost" data-company-up="${item.id}" ${index === 0 ? 'disabled' : ''}>上移</button>
-        <button class="ghost" data-company-edit="${item.id}" data-version="${item.rowVersion}" data-title="${item.title}" data-body="${item.body}">编辑</button>
+        <button class="ghost" data-company-edit="${item.id}" data-version="${item.rowVersion}" data-body="${item.body}">编辑</button>
         <button class="ghost" data-company-delete="${item.id}" data-version="${item.rowVersion}">删除</button></td></tr>`).join('');
   document.querySelectorAll('[data-company-up]').forEach((button) => button.onclick = () => reorder(button.dataset.companyUp));
   document.querySelectorAll('[data-company-edit]').forEach((button) => button.onclick = async () => {
-    const body = await askText('编辑公司信息', button.dataset.body,{label:'内容',multiline:true});
+    const body = await askText('编辑公司信息', button.dataset.body,{label:'正文',multiline:true});
     if (body === null) return;
-    try { await api('PATCH', '/api/v1/admin/company/items/' + button.dataset.companyEdit, { title: button.dataset.title, body }, { key: newKey(), ifMatch: '"' + button.dataset.version + '"' }); ok('已保存'); renderCompany(); }
+    try { await api('PATCH', '/api/v1/admin/company/items/' + button.dataset.companyEdit, { body }, { key: newKey(), ifMatch: '"' + button.dataset.version + '"' }); ok('已保存'); renderCompany(); }
     catch (error) { fail(error); }
   });
   document.querySelectorAll('[data-company-delete]').forEach((button) => button.onclick = async () => {
@@ -902,7 +902,7 @@ $('positionCreate').onclick = async () => {
   finally { $('positionCreate').disabled=false; }
 };
 $('companyCreate').onclick = async () => {
-  try { await api('POST', '/api/v1/admin/company/items', { title: $('companyTitle').value.trim() || undefined, body: $('companyBody').value.trim() }, { key: newKey() }); $('companyTitle').value = ''; $('companyBody').value = ''; ok('公司信息已创建'); renderCompany(); }
+  try { await api('POST', '/api/v1/admin/company/items', { body: $('companyBody').value.trim() }, { key: newKey() }); $('companyBody').value = ''; ok('公司信息已创建'); renderCompany(); }
   catch (error) { fail(error); }
 };
 $('offWorkSave').onclick = async () => {

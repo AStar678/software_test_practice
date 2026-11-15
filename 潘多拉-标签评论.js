@@ -128,7 +128,7 @@
       '<div class="card-head"><h2>评论</h2><span class="hint" data-comments-count>—</span></div>' +
       '<div class="p-comment-list" data-comment-list><div class="empty">正在加载评论…</div></div>' +
       '<div class="p-comment-more" data-comment-more hidden><button type="button" class="btn tiny-btn" data-action="p-comment-more">加载更多</button></div>' +
-      '<div class="p-comment-compose"><label class="p-comment-label" for="p-comment-input">发表评论（平铺，不支持回复层级）</label>' +
+      '<div class="p-comment-compose"><label class="p-comment-label" for="p-comment-input">发表评论</label>' +
       '<textarea id="p-comment-input" maxlength="10000" placeholder="写下你的评论…"></textarea>' +
       '<div class="callout" id="p-comment-error" hidden></div>' +
       '<div class="row"><button type="button" class="btn primary tiny-btn" data-action="p-comment-submit">发表</button></div></div></section>';
@@ -143,8 +143,7 @@
     return '<article class="p-comment" data-comment-id="' + esc(comment.id) + '">' +
       '<header><strong>' + esc(comment.authorName || '相关成员') + '</strong><time>' + esc(whenText(comment.createdAt)) + '</time>' +
       (comment.edited ? '<span class="tiny muted">已编辑</span>' : '') + '<span class="spacer"></span>' +
-      (comment.canManage ? '<button type="button" class="btn tiny-btn" data-action="p-comment-edit" data-id="' + esc(comment.id) + '">编辑</button>' +
-        '<button type="button" class="btn tiny-btn danger" data-action="p-comment-delete" data-id="' + esc(comment.id) + '">删除</button>' : '') +
+      (comment.canManage ? '<button type="button" class="btn tiny-btn" data-action="p-comment-edit" data-id="' + esc(comment.id) + '">编辑</button>' : '') +
       '</header><p>' + esc(comment.body) + '</p></article>';
   }
   function paintComments(objectType, objectId) {
@@ -267,21 +266,6 @@
       P.notice('评论已更新。');
     }, 'p-comment-error');
   }
-  function deleteComment(id) {
-    const container = document.querySelector('.p-comments');
-    if (!container) return;
-    const found = commentStateFor(container.dataset.objectType, container.dataset.objectId);
-    const comment = found.items.find(item => item.id === id);
-    if (!comment) return;
-    P.busy(async function () {
-      await P.mutation('comment-delete:' + id, 'DELETE', '/comments/' + encodeURIComponent(id), null, '"' + comment.rowVersion + '"');
-      found.items = found.items.filter(item => item.id !== id);
-      found.total = Math.max(0, found.total - 1);
-      paintComments(container.dataset.objectType, container.dataset.objectId);
-      P.notice('评论已删除，正文不再展示。');
-    }, 'p-comment-error');
-  }
-
   runAction = function (element) {
     const action = element.dataset.action;
     if (action === 'p-task-tag') {
@@ -327,7 +311,6 @@
     if (action === 'p-comment-edit') { editComment(element.dataset.id); return; }
     if (action === 'p-comment-cancel') { cancelComment(element.dataset.id); return; }
     if (action === 'p-comment-save') { saveComment(element.dataset.id); return; }
-    if (action === 'p-comment-delete') { deleteComment(element.dataset.id); return; }
     return previousRunAction(element);
   };
   document.addEventListener('input', function (event) {

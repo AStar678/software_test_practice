@@ -218,11 +218,16 @@ async function main() {
       completedAt.meta.includes('至') && completedAt.text === '跨日三色同步事项', completedAt);
     await closeAll();
     const completedBars = await rangedBars();
+    const nextDay = key => new Date(Date.parse(key + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10);
+    const continuousCompletedSpan = bars => {
+      const sorted = bars.bars.slice().sort((a, b) => a.first.localeCompare(b.first));
+      return bars.count >= 1 && sorted.every((bar, index) =>
+        bar.state === 'completed' && classifyEdge(bar.edge) === 'grey' && bar.name === '跨日三色同步事项' &&
+        (index === 0 ? bar.first === fixture.rangedStart : bar.first === nextDay(sorted[index - 1].last))) &&
+        sorted[sorted.length - 1].last === fixture.rangedEnd;
+    };
     check('完成的跨日事项条覆盖全部已加载覆盖日并统一变灰',
-      completedBars.count === 1 && completedBars.bars[0].state === 'completed' &&
-      classifyEdge(completedBars.bars[0].edge) === 'grey' &&
-      completedBars.bars[0].first === fixture.rangedStart && completedBars.bars[0].last === fixture.rangedEnd,
-      completedBars);
+      continuousCompletedSpan(completedBars), completedBars);
     for (const date of covered) {
       const row = await rangedRow(date);
       check('完成状态同步到覆盖日 ' + date + ' 的清单', !!row && row.completed && row.checked === 'true' && row.meta.includes('至'), row);
@@ -234,9 +239,9 @@ async function main() {
     await closeAll();
     const reopenedBars = await rangedBars();
     check('取消完成后跨日事项条恢复待做蓝且仍覆盖同一范围',
-      reopenedBars.count === 1 && reopenedBars.bars[0].state === 'open' &&
-      classifyEdge(reopenedBars.bars[0].edge) === 'blue' &&
-      reopenedBars.bars[0].first === fixture.rangedStart && reopenedBars.bars[0].last === fixture.rangedEnd,
+      reopenedBars.count >= 1 && reopenedBars.bars.every(bar => bar.state === 'open' && classifyEdge(bar.edge) === 'blue') &&
+      reopenedBars.bars.map(bar => bar.first).sort()[0] === fixture.rangedStart &&
+      reopenedBars.bars.map(bar => bar.last).sort().at(-1) === fixture.rangedEnd,
       reopenedBars);
     for (const date of covered) {
       const row = await rangedRow(date);
@@ -252,10 +257,7 @@ async function main() {
     await sleep(500);
     const reloadedBars = await rangedBars();
     check('刷新后跨日事项的完成色与覆盖范围保持一致',
-      reloadedBars.count === 1 && reloadedBars.bars[0].state === 'completed' &&
-      classifyEdge(reloadedBars.bars[0].edge) === 'grey' &&
-      reloadedBars.bars[0].first === fixture.rangedStart && reloadedBars.bars[0].last === fixture.rangedEnd,
-      reloadedBars);
+      continuousCompletedSpan(reloadedBars), reloadedBars);
     const reloadedRow = await rangedRow(fixture.today);
     check('刷新后覆盖日清单仍读取同一条完成记录', !!reloadedRow && reloadedRow.completed && reloadedRow.text === '跨日三色同步事项', reloadedRow);
     await closeAll();
@@ -278,6 +280,9 @@ async function main() {
     await require('./check_daily_items_repairs_browser')(b, fixture, check);
     await require('./check_daily_items_lifecycle_browser')(b, fixture, check);
     await require('./check_daily_items_paging_browser')(b, fixture, check);
+
+    await require('./check_daily_items_home_browser')(b, fixture, check, evidence);
+    await require('./check_daily_items_drag_browser')(b, fixture, check, evidence);
 
     await ev("Pandora.logout()");
     await waitFor(b, "!!document.getElementById('backend-login')&&Pandora.idle()", 20000);

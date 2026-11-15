@@ -49,7 +49,7 @@ python3 backend/scripts/prepare_demo.py --database pandora_demo --demo-marker lo
 
 首次准备写入数据库名、标识、清单版本2和公司业务日；以后必须匹配。工具不建库、不删库、不清业务表，拒绝非空且无标识的库。重复准备和重启保留 ID、排期与实际用户编辑。工具启动并关闭自己的临时服务，默认18194；查看演示可使用已配置该演示库的 `PANDORA_DB_URL` 启动构建 JAR（`PANDORA_SEED=false`），避免修改普通库连接配置。
 
-演示密码为 `Demo@123456`（可用 `PANDORA_DEMO_PASSWORD` 在首次准备前覆盖）；清单文件包含实际身份和对象 ID，权限为600，不进入 Git。seed key 是清单定位键，不能用于登录。
+演示员工及独立管理员的默认登录密码为 `111`（可用 `PANDORA_DEMO_PASSWORD` 在首次准备前覆盖；只影响演示应用账号，不改变数据库连接密码）；清单文件包含实际身份和对象 ID，权限为600，不进入 Git。seed key 是清单定位键，不能用于登录。
 
 | 入口 | 登录字段 | 示例 | 固定身份 |
 | --- | --- | --- | --- |

@@ -92,7 +92,7 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
         # Only a new seed needs delivery. Repeated preparation must also work after the real
         # administrator has changed their name/password; never reset credentials to drain events.
         if not already_prepared:
-            data=json.dumps({'accountType':'admin','accountName':'admin','password':env.get('PANDORA_DEMO_PASSWORD','Demo@123456')}).encode()
+            data=json.dumps({'accountType':'admin','accountName':'admin','password':env.get('PANDORA_DEMO_PASSWORD','111')}).encode()
             with urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{port}/api/v1/auth/sessions',data=data,headers={'Content-Type':'application/json'})) as response:
                 token=json.load(response)['token']
             for _ in range(10):

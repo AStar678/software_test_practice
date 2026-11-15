@@ -328,3 +328,36 @@ button{cursor:pointer}
 #lf-fill-status{min-height:0;margin:2px 0 0}
 #lf-fill-status:empty{display:none}
 #lf-fill-status.is-error{color:#b23b32}
+
+/* ---------- 首页两卡正文排版、事件纪两行折叠与清单逾期底色 ---------- */
+/* 事件纪和任务看板共用正文排版：预览与二级清单同字号、常规字重、1.5 行距；
+   紧急程度仍是独立层，不与正文争抢字号。 */
+.map-grid .home-copy,
+.sheet-body .home-list .home-copy,
+.sheet-body .home-list .home-task-title{font-size:15px;font-weight:400;line-height:1.5;letter-spacing:0}
+@media(max-width:359px){
+  .map-grid .home-copy,
+  .sheet-body .home-list .home-copy,
+  .sheet-body .home-list .home-task-title{font-size:14px}
+}
+/* 预览与清单默认各最多两行；纯文本完整保留，只有视觉截断。 */
+.home-copy{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  white-space:pre-wrap;overflow-wrap:anywhere}
+.sheet-body .home-list .home-task .home-copy{flex:1 1 auto;min-width:0}
+/* 事件纪清单行：整行是按钮，展开只影响本条。 */
+.sheet-body .home-list .home-chronicle{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:6px;
+  align-items:start;width:100%;min-height:44px;padding:8px 0;border:0;border-bottom:1px solid var(--line-2);
+  background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.sheet-body .home-list .home-chronicle:last-child{border-bottom:0}
+.sheet-body .home-list .home-chronicle:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.sheet-body .home-list .home-chronicle[aria-expanded="true"] .home-copy{display:block;overflow:visible;-webkit-line-clamp:unset;-webkit-box-orient:initial}
+.sheet-body .home-list .home-chronicle .idx{font-size:12px;line-height:1.5;color:#90a3a7;font-variant-numeric:tabular-nums}
+/* 只有完整清单里的真实逾期任务行使用淡玻璃红底，预览不加；文字与右侧紧急度保持可读。 */
+.sheet-body .home-list .home-task.is-overdue{
+  border:1px solid rgba(192,70,58,.28);border-radius:12px;padding:7px 10px;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,241,239,.55) 55%,rgba(253,231,228,.5)),
+    rgba(240,174,164,.32);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 1px 3px rgba(143,47,39,.08);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.sheet-body .home-list .home-task.is-overdue .home-task-title{color:var(--ink)}
+.sheet-body .home-list .home-task.is-overdue .home-task-priority{color:#8f2f27}

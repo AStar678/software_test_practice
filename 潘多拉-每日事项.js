@@ -11,10 +11,12 @@
   const WEEKDAY = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
   const MAX_MONTHS = 12;
   const PAGE = 50;
-  /* 每周固定三条事项条位置；超出部分进入该日完整清单。轨道高度固定，
-     因此月份从加载中变为就绪时不会改变滚动高度。 */
+  /* 每周固定三条事项条位置；超出部分进入该日完整清单。轨道高度由
+     `潘多拉-每日事项.css` 的 --daily-row（当前 32px，高于原 18px）统一控制，
+     固定高度让月份从加载中变为就绪时不会改变滚动高度。 */
   const LANES = 3;
-  const ROW = 18;
+  /* 整条拖动沿用公司月历手势口径：约 500ms 长按识别，门槛前移动仍是普通滚动。 */
+  const LONG_PRESS_MS = 500, DRAG_TOLERANCE_PX = 8, AUTO_SCROLL_MARGIN = 48;
   const S = {
     epoch: -1, account: null, organization: null,
     companyToday: null, selected: null,
@@ -22,10 +24,10 @@
     anchorDate: null, anchorOffset: 8, restoring: false, viewportHeight: 0,
     layoutTimer: null, layoutRetryTimer: null, layoutVersion: 0, resizeObserver: null,
     detail: null, listScroll: null, closeFocus: null, closePosition: null,
-    formOrigin: "calendar", sessionSeq: 0, generation: 0
+    formOrigin: "calendar", sessionSeq: 0, generation: 0, dragMove: null
   };
   let pendingSheetQuery = null;
-  let press = null;
+  let press = null, dragPress = null, drag = null, suppressClickUntil = 0;
 
   /* ------------------------------------------------------------ 日期工具 */
   function pad(n) { return n < 10 ? "0" + n : "" + n; }
@@ -118,8 +120,11 @@
     S.companyToday = null; S.selected = null;
     S.detail = null; S.listScroll = null; S.closeFocus = null; S.closePosition = null;
     S.formOrigin = "calendar";
+    S.dragMove = null;
     drafts.daily = null;
     press = null;
+    cancelDragPress(false);
+    cancelDrag(false);
   }
   P.sessionReset.push(clearSession);
   function resetForSession() {
@@ -217,11 +222,14 @@
       '<span class="daily-bar-mark" aria-hidden="true">' + statusMark(segment.status) + "</span>" +
       '<span class="daily-bar-name">' + esc(name) + "</span></button>";
   }
+  /* +n 用显式 grid-column 固定在真实日期列：其他日期没有按钮时不会向左补位，
+     周日、仅最后一列溢出、非连续多列溢出和月边界都由同一规则处理。隐藏数量仍取完整分段集合。 */
   function overflowHTML(data, block) {
     return data.days.map((key, col) => {
       if (!data.own[col]) return "";
       const hidden = data.segments.filter(segment => segment.lane >= LANES && segment.startCol <= col && segment.endCol > col).length;
-      return hidden ? '<button type="button" class="daily-more" data-daily-more data-date="' + key + '" aria-label="' + esc(longDate(key) + "还有" + hidden + "项事项，查看完整清单") + '">+' + hidden + "</button>" : "";
+      return hidden ? '<button type="button" class="daily-more" data-daily-more data-date="' + key + '"' +
+        ' style="grid-column:' + (col + 1) + '" aria-label="' + esc(longDate(key) + "还有" + hidden + "项事项，查看完整清单") + '">+' + hidden + "</button>" : "";
     }).join("");
   }
   function weekHTML(block, weekStart) {
@@ -238,7 +246,7 @@
     }
     return '<div class="daily-week" data-week-start="' + weekStart + '">' +
       '<div class="daily-days">' + cells.join("") + "</div>" +
-      '<div class="daily-tracks" style="--daily-lanes:' + LANES + ";--daily-row:" + ROW + 'px" aria-hidden="false">' +
+      '<div class="daily-tracks" style="--daily-lanes:' + LANES + '" aria-hidden="false">' +
         data.segments.map(segment => barHTML(segment, block)).join("") + "</div>" +
       '<div class="daily-overflow">' + overflowHTML(data, block) + "</div></div>";
   }
@@ -296,6 +304,7 @@
     scroller.addEventListener("scroll", onScroll, { passive: true });
     scroller.addEventListener("keydown", onCalendarKey);
     scroller.addEventListener("pointerdown", onPointerDown, { passive: true });
+    scroller.addEventListener("pointerdown", onDragPointerDown, { passive: true });
     scroller.addEventListener("pointermove", onPointerMove, { passive: true });
     scroller.addEventListener("click", onScrollerClick);
     observeSize(scroller);
@@ -625,6 +634,8 @@
   function onScrollerClick(event) {
     const moved = press && press.moved;
     press = null;
+    /* 拖动（含长按后零位移）结束后的那次 click 必须被吞掉，不能误开命中日清单。 */
+    if (Date.now() < suppressClickUntil) { event.preventDefault(); event.stopPropagation(); return; }
     if (moved) return;
     const bar = event.target.closest("[data-daily-bar]");
     if (bar) {
@@ -646,6 +657,326 @@
     }
   }
   document.addEventListener("pointerup", () => { setTimeout(() => { press = null; }, 0); }, true);
+
+  /* ============================================================ 整条拖动
+     状态机：idle → pressing → dragging → confirming → saving。
+     门槛（500ms / 8px）之前移动仍是普通滚动；识别后才接管指针与触摸。
+     只整体平移，不提供起止端点拉伸；目标按指针所在周行与日期列二维命中。 */
+  function dayIndex(key) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || ""));
+    return match ? Math.floor(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])) / 86400000) : NaN;
+  }
+  function dragItemById(monthKey, id) {
+    const record = recordOf(monthKey);
+    const item = record && record.items && record.items.get(id);
+    if (item) return item;
+    for (const entry of S.records.values()) {
+      const found = entry && entry.items && entry.items.get(id);
+      if (found) return found;
+    }
+    return null;
+  }
+  /* 指针所在周行 + 日期列 → 真实日期；月外空格在本模块只是非交互占位，不是有效目标。 */
+  function dragPointAt(clientX, clientY) {
+    const weeks = Array.from(document.querySelectorAll(".daily-month .daily-week"));
+    if (!weeks.length) return null;
+    let week = weeks.find(node => {
+      const rect = node.getBoundingClientRect();
+      return clientY >= rect.top - 2 && clientY <= rect.bottom + 2;
+    });
+    if (!week) {
+      let best = null, bestDistance = Infinity;
+      weeks.forEach(node => {
+        const rect = node.getBoundingClientRect();
+        const distance = clientY < rect.top ? rect.top - clientY : clientY > rect.bottom ? clientY - rect.bottom : 0;
+        if (distance < bestDistance) { bestDistance = distance; best = node; }
+      });
+      week = best;
+    }
+    if (!week) return null;
+    const month = week.closest(".daily-month"), days = week.querySelector(".daily-days");
+    const start = parseKey(week.dataset.weekStart);
+    if (!month || !days || !start) return null;
+    const rect = days.getBoundingClientRect();
+    if (!rect.width) return null;
+    const col = Math.max(0, Math.min(6, Math.floor((clientX - rect.left) / (rect.width / 7))));
+    const date = shift(start, col);
+    if (monthKeyOf(date) !== month.dataset.month) return null;
+    return { week: week, month: month, date: date, key: dateKey(date), col: col };
+  }
+  function setDropTarget(dragState, key) {
+    if (dragState.dropKey === key) return;
+    const previous = dragState.dropNode;
+    if (previous) previous.classList.remove("is-drop-target");
+    dragState.dropKey = key;
+    dragState.dropNode = key ? document.querySelector('[data-daily-date="' + key + '"]') : null;
+    if (dragState.dropNode) dragState.dropNode.classList.add("is-drop-target");
+  }
+  function stopDragAutoScroll(dragState) {
+    if (!dragState) return;
+    if (dragState.autoFrame) cancelAnimationFrame(dragState.autoFrame);
+    dragState.autoFrame = 0; dragState.autoSpeed = 0;
+  }
+  function dragAutoScroll(dragState, clientY) {
+    const scroller = document.getElementById("dailyScroller");
+    if (!scroller || !scroller.clientHeight) { stopDragAutoScroll(dragState); return; }
+    const rect = scroller.getBoundingClientRect();
+    let speed = 0;
+    if (clientY < rect.top + AUTO_SCROLL_MARGIN) speed = -Math.ceil(Math.min(1, (rect.top + AUTO_SCROLL_MARGIN - clientY) / AUTO_SCROLL_MARGIN) * 10);
+    else if (clientY > rect.bottom - AUTO_SCROLL_MARGIN) speed = Math.ceil(Math.min(1, (clientY - (rect.bottom - AUTO_SCROLL_MARGIN)) / AUTO_SCROLL_MARGIN) * 10);
+    if (!speed) { stopDragAutoScroll(dragState); return; }
+    dragState.autoSpeed = speed;
+    if (dragState.autoFrame) return;
+    const tick = () => {
+      if (drag !== dragState || !dragState.autoSpeed) { dragState.autoFrame = 0; return; }
+      const before = scroller.scrollTop;
+      scroller.scrollTop = before + dragState.autoSpeed;
+      /* 到达已挂载边界时补载相邻月份；来源条与当前抓取点保持不卸载。 */
+      if (scroller.scrollTop === before) {
+        if (dragState.autoSpeed < 0) prependMonth(); else appendMonth();
+        scroller.scrollTop = before + dragState.autoSpeed;
+      }
+      updateDrag(dragState.lastX, dragState.lastY);
+      dragState.autoFrame = requestAnimationFrame(tick);
+    };
+    dragState.autoFrame = requestAnimationFrame(tick);
+  }
+  function attachDragTouch(dragState) {
+    if (!dragState.touch) return;
+    dragState.touchMove = event => {
+      if (drag !== dragState) return;
+      if (event.touches && event.touches.length > 1) { cancelDrag(true); return; }
+      if (event.cancelable) event.preventDefault();
+    };
+    dragState.touchStart = event => { if (drag === dragState && event.touches && event.touches.length > 1) cancelDrag(true); };
+    document.addEventListener("touchmove", dragState.touchMove, { capture: true, passive: false });
+    document.addEventListener("touchstart", dragState.touchStart, { capture: true, passive: true });
+  }
+  function detachDragTouch(dragState) {
+    if (!dragState) return;
+    if (dragState.touchMove) document.removeEventListener("touchmove", dragState.touchMove, { capture: true });
+    if (dragState.touchStart) document.removeEventListener("touchstart", dragState.touchStart, { capture: true });
+    dragState.touchMove = null; dragState.touchStart = null;
+  }
+  function cancelDragPress(suppress) {
+    const candidate = dragPress;
+    if (!candidate) return;
+    dragPress = null;
+    clearTimeout(candidate.timer);
+    const listeners = candidate.listeners || {};
+    document.removeEventListener("pointermove", listeners.move, true);
+    document.removeEventListener("pointerup", listeners.up, true);
+    document.removeEventListener("pointercancel", listeners.cancel, true);
+    window.removeEventListener("scroll", listeners.scroll, true);
+    document.removeEventListener("touchstart", listeners.touch, { capture: true });
+    if (suppress) suppressClickUntil = Date.now() + 450;
+  }
+  function onDragPointerDown(event) {
+    if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
+    if (!P.idle() || drag) return;
+    const bar = event.target.closest && event.target.closest("[data-daily-bar]");
+    if (!bar) return;
+    const scroller = document.getElementById("dailyScroller");
+    cancelDragPress(false);
+    const candidate = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, bar: bar,
+      scrollTop: scroller ? scroller.scrollTop : 0, moved: false, touch: event.pointerType === "touch", timer: 0, listeners: null };
+    dragPress = candidate;
+    const move = moveEvent => {
+      if (dragPress !== candidate || moveEvent.pointerId !== candidate.pointerId) return;
+      const current = document.getElementById("dailyScroller");
+      if (Math.abs(moveEvent.clientX - candidate.x) > DRAG_TOLERANCE_PX ||
+        Math.abs(moveEvent.clientY - candidate.y) > DRAG_TOLERANCE_PX ||
+        (current && Math.abs(current.scrollTop - candidate.scrollTop) > 2)) cancelDragPress(false);
+    };
+    const up = upEvent => { if (upEvent.pointerId === candidate.pointerId) cancelDragPress(false); };
+    const cancel = cancelEvent => { if (cancelEvent.pointerId === candidate.pointerId) cancelDragPress(true); };
+    const scroll = () => cancelDragPress(false);
+    const touch = touchEvent => { if (touchEvent.touches && touchEvent.touches.length > 1) cancelDragPress(false); };
+    candidate.listeners = { move: move, up: up, cancel: cancel, scroll: scroll, touch: touch };
+    document.addEventListener("pointermove", move, true);
+    document.addEventListener("pointerup", up, true);
+    document.addEventListener("pointercancel", cancel, true);
+    window.addEventListener("scroll", scroll, true);
+    document.addEventListener("touchstart", touch, { capture: true, passive: true });
+    candidate.timer = setTimeout(() => {
+      if (dragPress !== candidate) return;
+      cancelDragPress(false);
+      beginDrag(candidate);
+    }, LONG_PRESS_MS);
+  }
+  function beginDrag(candidate) {
+    if (!sameSession() || !P.idle()) return;
+    const bar = candidate.bar;
+    if (!bar || !bar.isConnected) return;
+    const week = bar.closest(".daily-week"), month = bar.closest(".daily-month");
+    if (!week || !month) return;
+    const item = dragItemById(month.dataset.month, bar.dataset.id);
+    if (!item) return;
+    const range = itemRange(item);
+    const grabDay = hitDateForBar(bar, candidate.x) || range.start;
+    if (!parseKey(grabDay)) return;
+    const rect = bar.getBoundingClientRect();
+    const tracks = week.querySelector(".daily-tracks");
+    const tip = document.createElement("div");
+    tip.className = "p-daily-drag-tip"; tip.setAttribute("role", "status");
+    document.body.appendChild(tip);
+    const ghost = document.createElement("div");
+    ghost.className = "p-daily-drag-ghost is-" + statusOf(item);
+    ghost.style.cssText = "left:" + rect.left + "px;top:" + rect.top + "px;width:" + rect.width + "px;height:" + rect.height + "px";
+    ghost.innerHTML = '<span class="daily-bar-mark" aria-hidden="true">' + statusMark(statusOf(item)) + '</span>' +
+      '<span class="daily-bar-name">' + esc(firstLine(item.body)) + '</span>';
+    document.body.appendChild(ghost);
+    const scroller = document.getElementById("dailyScroller");
+    const dragState = { item: item, bar: bar, rect: rect, pointer: candidate.pointerId, x: candidate.x, y: candidate.y,
+      touch: candidate.touch, grabDay: grabDay, grabIndex: dayIndex(grabDay), oldStart: range.start, oldEnd: range.end,
+      newStart: range.start, newEnd: range.end, delta: 0, valid: true, activated: true,
+      laneOffset: tracks ? rect.top - tracks.getBoundingClientRect().top : 0,
+      tip: tip, ghost: ghost, dropKey: null, dropNode: null, autoFrame: 0, autoSpeed: 0,
+      scrollStart: scroller ? scroller.scrollTop : 0, generation: S.generation, lastX: candidate.x, lastY: candidate.y };
+    drag = dragState;
+    press = null;
+    bar.classList.add("is-drag-source");
+    document.body.classList.add("is-daily-dragging");
+    S.restoring = true;
+    /* 长按激活后连 click 一起吞掉：零位移的长按也不得误开清单。 */
+    suppressClickUntil = Date.now() + 450;
+    if (dragState.touch) attachDragTouch(dragState);
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") { try { navigator.vibrate(12); } catch (_) {} }
+    updateDrag(dragState.x, dragState.y);
+  }
+  function placeDragGhost(dragState, point) {
+    if (!point) { dragState.ghost.hidden = true; return; }
+    dragState.ghost.hidden = false;
+    const days = point.week.querySelector(".daily-days"), tracks = point.week.querySelector(".daily-tracks");
+    if (!days || !tracks) { dragState.ghost.hidden = true; return; }
+    const rect = days.getBoundingClientRect(), trackRect = tracks.getBoundingClientRect();
+    const unit = rect.width / 7;
+    const weekStartIndex = dayIndex(point.week.dataset.weekStart);
+    const startOffset = dayIndex(dragState.newStart) - weekStartIndex;
+    const col = Math.max(0, Math.min(6, startOffset));
+    dragState.ghost.style.left = (rect.left + col * unit) + "px";
+    dragState.ghost.style.top = (trackRect.top + dragState.laneOffset) + "px";
+    dragState.ghost.style.width = Math.max(unit - 2, Math.min(dragState.rect.width, unit * 7)) + "px";
+    dragState.ghost.style.height = dragState.rect.height + "px";
+  }
+  function updateDrag(clientX, clientY) {
+    const dragState = drag;
+    if (!dragState) return;
+    dragState.lastX = clientX; dragState.lastY = clientY;
+    const point = dragPointAt(clientX, clientY);
+    const delta = point ? dayIndex(point.key) - dragState.grabIndex : null;
+    if (delta == null || !Number.isFinite(delta)) {
+      dragState.valid = false; dragState.delta = null;
+      setDropTarget(dragState, null);
+      dragState.ghost.hidden = true;
+      dragState.tip.textContent = "当前目标不可用，请拖到日历内";
+    } else {
+      dragState.valid = true; dragState.delta = delta;
+      dragState.newStart = dateKey(shift(parseKey(dragState.oldStart), delta));
+      dragState.newEnd = dateKey(shift(parseKey(dragState.oldEnd), delta));
+      setDropTarget(dragState, point.key);
+      placeDragGhost(dragState, point);
+      dragState.tip.textContent = rangeLabel(dragState.newStart, dragState.newEnd) +
+        (delta === 0 ? " · 原地未移动" : " · 松开后确认");
+    }
+    dragAutoScroll(dragState, clientY);
+  }
+  function clearDragVisuals(dragState) {
+    if (!dragState) return;
+    detachDragTouch(dragState);
+    stopDragAutoScroll(dragState);
+    if (dragState.tip) dragState.tip.remove();
+    if (dragState.ghost) dragState.ghost.remove();
+    if (dragState.dropNode) dragState.dropNode.classList.remove("is-drop-target");
+    if (dragState.bar && dragState.bar.classList) dragState.bar.classList.remove("is-drag-source");
+    document.body.classList.remove("is-daily-dragging");
+  }
+  function restoreDragAnchor(dragState) {
+    const scroller = document.getElementById("dailyScroller");
+    if (!scroller) return;
+    S.restoring = false;
+    if (Math.abs(scroller.scrollTop - dragState.scrollStart) > 1 && S.anchorDate)
+      layoutPosition({ date: S.anchorDate, offset: S.anchorOffset });
+  }
+  function cancelDrag(suppress) {
+    const dragState = drag;
+    if (!dragState) return;
+    drag = null;
+    clearDragVisuals(dragState);
+    dragState.generation = S.generation;
+    restoreDragAnchor(dragState);
+    if (suppress) suppressClickUntil = Date.now() + 450;
+  }
+  function finishDrag(event) {
+    const dragState = drag;
+    if (!dragState || event.pointerId !== dragState.pointer) return;
+    const released = event.type === "pointerup";
+    const valid = released && dragState.valid && dragState.delta !== 0;
+    const activated = dragState.activated;
+    drag = null;
+    clearDragVisuals(dragState);
+    dragState.generation = S.generation;
+    if (activated) { event.preventDefault(); event.stopImmediatePropagation(); }
+    restoreDragAnchor(dragState);
+    suppressClickUntil = Date.now() + 450;
+    if (!valid) {
+      if (released && dragState.delta == null) P.notice("当前目标不可用，本次调整未保存。");
+      return;
+    }
+    /* 松开先确认：直到用户点“确认改期”才发写入请求。 */
+    S.dragMove = { id: dragState.item.id, oldStart: dragState.oldStart, oldEnd: dragState.oldEnd,
+      newStart: dragState.newStart, newEnd: dragState.newEnd, etag: '"' + dragState.item.rowVersion + '"',
+      epoch: P.epoch, slot: newSlot(), attempted: false };
+    S.closeFocus = dragState.bar.isConnected ? dragState.bar : null;
+    S.closePosition = { date: S.anchorDate, offset: S.anchorOffset };
+    openSheet(moveConfirmView());
+  }
+  function moveConfirmView() {
+    const move = S.dragMove;
+    if (!move) return null;
+    const span = eachDate(move.oldStart, move.oldEnd).length;
+    return { title: "调整每日事项日期", dailyKind: "move", rebuild: moveConfirmView,
+      body: '<div class="daily-list-meta"><span>整体平移</span><span class="tiny muted">跨度保持 ' + span + ' 天</span></div>' +
+        '<div class="daily-move"><div class="kv"><span class="k">当前</span><span class="v">' + esc(rangeLabel(move.oldStart, move.oldEnd)) + '</span></div>' +
+        '<div class="kv"><span class="k">调整后</span><span class="v">' + esc(rangeLabel(move.newStart, move.newEnd)) + '</span></div></div>' +
+        '<p class="tiny muted">正文、完成状态与事项本身不变；确认后才保存。</p>' +
+        '<div class="callout" id="daily-move-error" role="alert" hidden></div>',
+      foot: withBack('<button type="button" class="btn primary" data-action="daily-move-confirm">确认改期</button>' +
+        '<button type="button" class="btn" data-action="daily-move-cancel">取消</button>') };
+  }
+  function cancelMove() {
+    S.dragMove = null;
+    closeSheet();
+  }
+  function confirmMove() {
+    const move = S.dragMove;
+    if (!move || move.epoch !== P.epoch) { P.notice("请重新拖动后再确认。"); return; }
+    const generation = S.generation;
+    P.busy(async () => {
+      /* 目标日期在松开时已固定为绝对日期；同一操作重试沿用同一幂等键与载荷，
+         响应丢失后重试只会保存同一范围，不会再平移一次。 */
+      await P.mutation("daily-item:move:" + move.id + ":" + move.slot, "PATCH",
+        "/daily-items/" + encodeURIComponent(move.id), { startDate: move.newStart, endDate: move.newEnd }, move.etag);
+      if (!sameSession(generation)) return;
+      S.dragMove = null;
+      await refreshDates(eachDate(move.oldStart, move.oldEnd).concat(eachDate(move.newStart, move.newEnd)));
+      closeSheet();
+      P.notice("日期已调整。");
+    }, "daily-move-error");
+  }
+  document.addEventListener("pointermove", event => {
+    const dragState = drag;
+    if (!dragState || event.pointerId !== dragState.pointer) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    updateDrag(event.clientX, event.clientY);
+  }, { capture: true, passive: false });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => document.addEventListener(type, finishDrag, true));
+  document.addEventListener("keydown", event => {
+    if (event.key !== "Escape") return;
+    if (drag) { event.preventDefault(); event.stopImmediatePropagation(); cancelDrag(true); return; }
+    if (dragPress) { event.preventDefault(); event.stopImmediatePropagation(); cancelDragPress(false); }
+  }, true);
+  window.addEventListener("blur", () => { if (drag) cancelDrag(true); if (dragPress) cancelDragPress(false); });
 
   function focusCell(key) {
     const cell = document.querySelector('[data-daily-date="' + key + '"]');
@@ -1060,6 +1391,8 @@
       case "daily-delete": openDelete(element.dataset.id); return true;
       case "daily-confirm-delete": confirmDelete(element.dataset.id); return true;
       case "daily-save": saveDraft(); return true;
+      case "daily-move-confirm": confirmMove(); return true;
+      case "daily-move-cancel": cancelMove(); return true;
       case "daily-refresh": S.months.forEach(block => loadMonth(block, true)); clearCalendarError(); return true;
       default: return false;
     }
@@ -1137,7 +1470,7 @@
     const focus = S.closeFocus;
     const position = S.closePosition;
     S.closeFocus = null; S.closePosition = null;
-    S.detail = null; S.listScroll = null; drafts.daily = null;
+    S.detail = null; S.listScroll = null; drafts.daily = null; S.dragMove = null;
     baseCloseSheet();
     if (focus && document.contains(focus)) focus.focus({ preventScroll: true });
     else if (focus && S.selected && document.querySelector('[data-daily-date="' + S.selected + '"]')) focusCell(S.selected);
@@ -1168,4 +1501,11 @@
 
   window.PandoraDaily = { render: render, state: S, action: action, openList: openList, goToDate: goToDate,
     currentMonthKeys: () => S.months.map(block => block.key) };
+  /* Automation surface for the real-browser checks: same handlers the page uses, no separate path. */
+  P.dailyGesture = () => ({ pressing: !!dragPress, dragging: !!drag,
+    pointerPress: press ? { moved: !!press.moved, x: press.x, y: press.y } : null,
+    suppressed: Date.now() < suppressClickUntil,
+    delta: drag ? drag.delta : null, target: drag ? drag.dropKey : null,
+    move: S.dragMove ? { id: S.dragMove.id, oldStart: S.dragMove.oldStart, oldEnd: S.dragMove.oldEnd,
+      newStart: S.dragMove.newStart, newEnd: S.dragMove.newEnd, slot: S.dragMove.slot } : null });
 })();

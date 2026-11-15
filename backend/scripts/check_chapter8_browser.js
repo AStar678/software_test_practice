@@ -77,8 +77,68 @@ async function main() {
     check('the pinned later-page task appears first after the server re-query', pinnedFirst, {pinId, pinState});
     check('the pin did not change the task total or version',
       await ev("Pandora.taskForm.state.server.total===55"));
+    /* ---------- the pinned row is one glass-blue band on every cell; no in-table label ---------- */
+    const pinVisual = await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');
+      if(!row)return {missing:true};
+      const cells=Array.from(row.children);
+      const paint=cell=>{const s=getComputedStyle(cell);return s.backgroundImage+'|'+s.backgroundColor};
+      const colors=cells.map(paint);
+      const others=Array.from(document.querySelectorAll('[data-task-row]')).filter(r=>r!==row);
+      const normalRow=others[0], evenRow=others[1];
+      const normalPaint=normalRow?Array.from(normalRow.children).map(paint):[];
+      const evenPaint=evenRow?Array.from(evenRow.children).map(paint):[];
+      const labelText=Array.from(document.querySelectorAll('#p-table-body .p-table-tag')).map(e=>e.textContent.trim());
+      return {cells:cells.length,rowClass:row.className,uniform:new Set(colors).size===1,colors,
+        pinnedVsNormal:colors[1]!==normalPaint[1],pinnedVsEven:colors[1]!==evenPaint[1],
+        normalEvenDiffer:normalPaint[1]!==evenPaint[1],labelText,
+        gradient:colors.every(color=>color.includes('linear-gradient'))}})()`);
+    check('the pinned row paints all of its cells, including the sticky name column, as one glass-blue band',
+      !pinVisual.missing && pinVisual.rowClass.includes('is-table-pinned') && pinVisual.uniform &&
+      pinVisual.gradient && pinVisual.pinnedVsNormal && pinVisual.pinnedVsEven, pinVisual);
+    check('non-pinned rows keep their zebra striping and no in-table form-pin label is rendered',
+      pinVisual.normalEvenDiffer && !pinVisual.labelText.includes('表单置顶'), pinVisual);
+    const hoverPoint = await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');
+      const r=row.getBoundingClientRect();return {x:r.x+Math.min(40,r.width/2),y:r.y+r.height/2}})()`);
+    await b.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: hoverPoint.x, y: hoverPoint.y });
+    await sleep(150);
+    const pinHover = await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');
+      const hovered=getComputedStyle(row.children[1]).backgroundImage;
+      row.classList.add('is-active-row');
+      const active=getComputedStyle(row.children[1]).backgroundImage;
+      row.classList.remove('is-active-row');
+      return {hovered,active}})()`);
+    check('real hover and the active row keep a recognizable blue glass background on the pinned row',
+      pinHover.hovered.includes('linear-gradient') && pinHover.active.includes('linear-gradient'), pinHover);
+    await ev("document.getElementById('p-table-scroll').scrollLeft=260");
+    await sleep(120);
+    const pinnedScrolled = await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');
+      const scroll=document.getElementById('p-table-scroll');
+      const cells=Array.from(row.children),paint=cell=>{const s=getComputedStyle(cell);return s.backgroundImage+'|'+s.backgroundColor};
+      const colors=cells.map(paint);
+      const name=row.querySelector('th').getBoundingClientRect(), box=scroll.getBoundingClientRect();
+      return {uniform:new Set(colors).size===1,left:name.left,boxLeft:box.left,scrolled:scroll.scrollLeft}})()`);
+    check('horizontal scrolling keeps the sticky pinned name column painted with the same band',
+      pinnedScrolled.uniform && pinnedScrolled.scrolled > 0 && pinnedScrolled.left <= pinnedScrolled.boxLeft + 1, pinnedScrolled);
+    await ev("document.getElementById('p-table-scroll').scrollLeft=0");
+    await ev("document.querySelector('[data-action=task-table-columns][data-columns=details]').click()");
+    await waitFor(b, "Pandora.taskForm.state.loaded&&Pandora.taskForm.state.columns==='details'", 15000);
+    check('switching column views keeps the pinned row class on the same task',
+      await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');return !!row&&row.classList.contains('is-table-pinned')})()`));
+    await ev("document.querySelector('[data-action=task-table-columns][data-columns=overview]').click()");
+    await waitFor(b, "Pandora.taskForm.state.loaded&&Pandora.taskForm.state.columns==='overview'", 15000);
+    check('the pinned row class survives switching back and the table renders no form-pin label',
+      await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');return !!row&&row.classList.contains('is-table-pinned')&&!document.getElementById('p-table-body').textContent.includes('表单置顶')})()`));
     await ev("document.querySelector('[data-action=task-table-clear-filters]').click()");
     await waitFor(b, "Pandora.taskForm.state.loaded&&Pandora.taskForm.state.page===0", 15000);
+    /* A real page refresh keeps the independent table pin and its visual state. */
+    await b.send('Page.reload', { ignoreCache: true });
+    check('the refreshed page returns to the same signed-in employee',
+      await waitFor(b, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${js(ids['alpha-one-employee'].id)}`, 25000));
+    await ev("setPage('view')");
+    await waitFor(b, "!!document.querySelector('.p-table-entry')");
+    await ev("document.querySelector('.p-table-entry').click()");
+    check('the table pin survives a real refresh with the pinned row still first and blue',
+      await waitFor(b, `Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading&&document.querySelector('[data-task-row]')&&document.querySelector('[data-task-row]').dataset.taskRow===${js(pinId)}&&document.querySelector('[data-task-row]').classList.contains('is-table-pinned')`, 25000));
 
     /* ---------- ranged daily items through the UI ---------- */
     await ev("setPage('map')");
@@ -124,6 +184,8 @@ async function main() {
     const profileText = await ev("document.getElementById('page-me').textContent");
     check('the missing/real tenure is a real projection, not an account-created date',
       /已入职时长[^。]{0,40}年/.test(profileText), profileText.slice(0, 400));
+    check('the self tenure shows only the real duration without an as-of suffix',
+      !profileText.includes('截至'), profileText.match(/已入职时长[^\n]{0,60}/));
     /* 本人信息卡各一行入职日期/时长，组织信息折叠区不再重复这两行。 */
     const ownEmployment = () => ev(`(()=>{const page=document.getElementById('page-me'),card=page.querySelector('.profile-card'),org=page.querySelector('[data-profile-fold=organization] .fold-content');
       const count=(root,label)=>root?Array.from(root.querySelectorAll('.profile-row .k')).filter(node=>node.textContent.trim()===label).length:0;
@@ -176,6 +238,23 @@ async function main() {
     await ev(`document.getElementById('login-user').value=${js(ids['founder'].identifier)};document.getElementById('login-password').value='Fixture@123456';document.getElementById('backend-login').requestSubmit()`);
     check('a different account loads only its own current authorization',
       await waitFor(b, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${js(ids['founder'].id)}`, 20000));
+    /* ---------- authorized subordinate cards: tenure without an as-of suffix, empty state kept ---------- */
+    const openReport = id => ev(`(()=>{const el=document.createElement('button');el.dataset.action='p-open-person';el.dataset.id=${js(id)};document.body.appendChild(el);runAction(el);el.remove()})()`);
+    await openReport(ids['alpha-one-employee'].id);
+    const reportTenure = await ev(`(()=>{const body=document.getElementById('sheetBody');
+      return {title:document.getElementById('sheetTitle').textContent,text:body?body.textContent:'',
+        open:!document.getElementById('overlay').hidden}})()`);
+    check('an authorized manager sees the subordinate tenure without an as-of suffix',
+      reportTenure.open && reportTenure.title.endsWith('的资料') && /已入职[^\n]{0,40}年/.test(reportTenure.text) &&
+      !reportTenure.text.includes('截至'), reportTenure);
+    await ev("document.getElementById('sheetClose').click()");
+    await waitFor(b, "document.getElementById('overlay').hidden");
+    await openReport(ids['alpha-two-employee'].id);
+    const reportEmpty = await ev(`(()=>{const body=document.getElementById('sheetBody');return {text:body?body.textContent:'',open:!document.getElementById('overlay').hidden}})()`);
+    check('a subordinate without a hire date keeps the original empty state and no invented suffix',
+      reportEmpty.open && (reportEmpty.text.match(/入职日期未设置/g) || []).length === 2 && !reportEmpty.text.includes('截至'), reportEmpty);
+    await ev("document.getElementById('sheetClose').click()");
+    await waitFor(b, "document.getElementById('overlay').hidden");
     await ev("setPage('map')");
     await sleep(120);
 

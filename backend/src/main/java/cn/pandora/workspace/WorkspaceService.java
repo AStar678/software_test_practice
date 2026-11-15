@@ -1014,16 +1014,21 @@ public class WorkspaceService {
         business(a);
         // The board is the actor's current effective responsibility, never filtered by who created the
         // task; an active assignment to a normally published, unfinished task is the only inclusion rule.
-        var assigned = db.list("SELECT t.id AS task_id,v.title,v.priority,a.assigned_at,a.assigned_source "
+        // The complete authorized set is ordered first and limited last: real effective due instant
+        // ascending (all-day versions already store the company-zone cut-off instant), then
+        // urgent/high/medium/low, then task id. Dispatch time and personal pins never participate.
+        var assigned = db.list("SELECT t.id AS task_id,v.title,v.priority,v.due_at,t.execution_state "
                 + "FROM task_assignments a JOIN tasks t ON t.organization_id=a.organization_id AND t.id=a.task_id "
                 + "JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
                 + "WHERE a.organization_id=? AND a.user_id=? AND a.active=TRUE "
                 + "AND t.current_version_id IS NOT NULL AND t.execution_state<>'done' "
-                + "ORDER BY a.assigned_at DESC,t.id LIMIT 10",a.organizationId(),a.id());
+                + "ORDER BY v.due_at ASC,"
+                + "CASE v.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END,"
+                + "t.id ASC LIMIT 10",a.organizationId(),a.id());
         LocalDate today = clock.instant().atZone(zone(a)).toLocalDate();
         // The home page no longer renders logs or personal items; the log page keeps loading its own
         // authorized /work-logs data and nothing queries a card-only log window here.
-        return Map.of("companyItems",db.list("SELECT id,kind,title,body,sort_order,row_version FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id LIMIT 10",a.organizationId()),
+        return Map.of("companyItems",db.list("SELECT id,kind,body,sort_order,row_version FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id LIMIT 10",a.organizationId()),
             "assignedTasks",assigned,"businessDate",today.toString());
     }
 
@@ -1035,28 +1040,28 @@ public class WorkspaceService {
     }
 
     public Map<String,Object> createHomeItem(Actor a,Map<String,Object> body) {
-        business(a);allowed(body,Set.of("kind","title","body"));
+        // The company chronicle contract is body-only everywhere, including this retired legacy route.
+        business(a);allowed(body,Set.of("kind","body"));
         String kind=required(body,"kind",20);
         if(!Set.of("company","personal").contains(kind)) throw bad("kind 只能为 company 或 personal");
         if("personal".equals(kind)) throw personalItemsRetired();
         requireHomeWrite(a,kind);
-        String content=required(body,"body",2000),title=body.containsKey("title")?required(body,"title",200):content.substring(0,Math.min(content.length(),200));
+        String content=required(body,"body",2000);
         var items=db.list("SELECT id,sort_order FROM home_items WHERE organization_id=? AND kind=? AND (kind='company' OR owner_id=?)",a.organizationId(),kind,a.id());
         if(items.size()>=10) throw new ApiException(409,"HOME_ITEM_LIMIT","每类首页信息最多 10 条，请先删除后再新增");
         long order=items.stream().mapToLong(r->n(r,"sortOrder")).max().orElse(0)+1;
         String itemId=id();
-        db.update("INSERT INTO home_items(id,organization_id,owner_id,kind,title,body,sort_order) VALUES(?,?,?,?,?,?,?)",itemId,a.organizationId(),"personal".equals(kind)?a.id():null,kind,title,content,order);
+        db.update("INSERT INTO home_items(id,organization_id,owner_id,kind,body,sort_order) VALUES(?,?,?,?,?,?)",itemId,a.organizationId(),"personal".equals(kind)?a.id():null,kind,content,order);
         events.record(a,null,"home_item.created",List.of(),Map.of("homeItemId",itemId,"kind",kind));
         return Map.of("id",itemId,"rowVersion",1);
     }
 
     public Map<String,Object> changeHomeItem(Actor a,String itemId,String ifMatch,Map<String,Object> body) {
-        allowed(body,Set.of("title","body"));
+        allowed(body,Set.of("body"));
         var item=readHomeItem(a,itemId,true);if("personal".equals(s(item,"kind"))) throw personalItemsRetired();
         requireHomeWrite(a,s(item,"kind"));Writes.checkVersion(ifMatch,n(item,"rowVersion"));
         String content=body.containsKey("body")?required(body,"body",2000):s(item,"body");
-        String title=body.containsKey("title")?required(body,"title",200):s(item,"title");
-        db.update("UPDATE home_items SET title=?,body=?,row_version=row_version+1 WHERE organization_id=? AND id=?",title,content,a.organizationId(),itemId);
+        db.update("UPDATE home_items SET body=?,row_version=row_version+1 WHERE organization_id=? AND id=?",content,a.organizationId(),itemId);
         events.record(a,null,"home_item.updated",List.of(),Map.of("homeItemId",itemId,"kind",s(item,"kind")));
         return Map.of("id",itemId,"rowVersion",n(item,"rowVersion")+1);
     }

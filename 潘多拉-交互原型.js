@@ -576,23 +576,23 @@ function renderMap(){
   function companyBody(){
     if (!COMPANY_ITEMS.length) return '<div class="empty">暂无公司信息</div>';
     return COMPANY_ITEMS.map(function(it, i){
-      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span></div></div>";
+      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt home-copy">' + esc(it.text) + "</span></div></div>";
     }).join("");
   }
   function assignedBody(){
     if (!assigned.length) return '<div class="empty">暂无本人负责的未完成任务</div>';
     return assigned.map(function(t){
-      return '<button type="button" class="home-task" data-task="' + t.id + '"><span class="home-task-title">' + esc(t.title) +
+      return '<button type="button" class="home-task" data-task="' + t.id + '"><span class="home-task-title home-copy">' + esc(t.title) +
         '</span><span class="home-task-priority">' + esc(t.urgency || "中") + "</span></button>";
     }).join("");
   }
   el.innerHTML =
     '<div class="map-grid">' +
       '<section class="quad company-quad" aria-labelledby="q1">' +
-        '<div class="card-head"><h2 id="q1">事件纪</h2><span class="hint">统一发布</span></div>' +
+        '<div class="card-head"><h2 id="q1">事件纪</h2></div>' +
         '<div class="q-body" tabindex="0" role="region" aria-labelledby="q1">' + companyBody() + "</div></section>" +
       '<section class="quad tasks-quad" aria-labelledby="q2">' +
-        '<div class="card-head"><h2 id="q2">任务看板</h2><span class="hint">' + assigned.length + "/10</span></div>" +
+        '<div class="card-head"><h2 id="q2">任务看板</h2></div>' +
         '<div class="q-body" tabindex="0" role="region" aria-labelledby="q2">' + assignedBody() + "</div></section>" +
       '<section class="quad daily-quad" id="dailyItemsSection" aria-labelledby="q3">' +
         '<div class="card-head"><h2 id="q3">每日事项</h2><span class="hint">本人维护</span></div></section>' +

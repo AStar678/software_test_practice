@@ -44,34 +44,55 @@
   /* 上方两卡只保留约三条普通预览；完整内容进入独立二级清单，卡片不再内部滚动，
      因此手指在卡片上纵向滑动滚动的是整个首页。 */
   const HOME_PREVIEW = 3;
+  /* 事件纪清单按真实事项 ID 维护本弹层内的展开集合；关闭清单后回到默认折叠。 */
+  let homeChronicleOpen = new Set();
   function homeCompanyItems() { return (P.data.home || {}).companyItems || []; }
   function homeAssignedItems() { return (P.data.home || {}).assignedTasks || []; }
+  /* 只有严格超过有效截止的未完成任务才算逾期；服务端已给出规范 dueAt 和执行状态，
+     因此不依赖通用任务缓存是否加载过该任务。 */
+  function homeItemOverdue(item) {
+    const due = item && item.dueAt ? Date.parse(item.dueAt) : NaN;
+    return Number.isFinite(due) && item.executionState !== "done" && Date.now() > due;
+  }
   function homeCompanyPreview() {
     const items = homeCompanyItems();
     if (!items.length) return '<div class="empty">暂无公司信息</div>';
     return items.slice(0, HOME_PREVIEW).map((item, index) =>
-      '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt">' +
-        esc(item.body || item.title) + '</span></div></div>').join("");
+      '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt home-copy">' +
+        esc(item.body || "") + '</span></div></div>').join("");
   }
   function homeTaskPreview() {
     const items = homeAssignedItems();
     if (!items.length) return '<div class="empty">暂无本人负责的未完成任务</div>';
     return items.slice(0, HOME_PREVIEW).map(item =>
-      '<div class="home-task"><span class="home-task-title">' + esc(item.title) +
+      '<div class="home-task"><span class="home-task-title home-copy">' + esc(item.title) +
         '</span><span class="home-task-priority">' + esc(HOME_PRIORITY[item.priority] || "中") + '</span></div>').join("");
+  }
+  function homeChronicleHTML(item, index) {
+    const open = homeChronicleOpen.has(item.id), bodyId = "home-chronicle-" + item.id;
+    return '<button type="button" class="home-chronicle' + (open ? " is-expanded" : "") + '"' +
+      ' data-home-chronicle="' + esc(item.id) + '" aria-expanded="' + (open ? "true" : "false") + '"' +
+      ' aria-controls="' + esc(bodyId) + '">' +
+      '<span class="idx" aria-hidden="true">' + (index + 1) + '</span>' +
+      '<span class="txt home-copy" id="' + esc(bodyId) + '">' + esc(item.body || "") + '</span></button>';
+  }
+  function homeTaskRowHTML(item) {
+    const overdue = homeItemOverdue(item), label = HOME_PRIORITY[item.priority] || "中";
+    return '<button type="button" class="home-task' + (overdue ? " is-overdue" : "") + '" data-task="' + esc(item.taskId) + '"' +
+      ' aria-label="' + esc(item.title + "，" + label + (overdue ? "，已逾期" : "") + "，打开任务详情") + '">' +
+      '<span class="home-task-title home-copy">' + esc(item.title) + '</span>' +
+      (overdue ? '<span class="sr-only">已逾期</span>' : "") +
+      '<span class="home-task-priority">' + esc(label) + '</span></button>';
   }
   function homeListHTML(kind) {
     if (kind === "company") {
       const items = homeCompanyItems();
-      return items.length ? '<div class="home-list" aria-label="事件纪完整清单">' + items.map((item, index) =>
-        '<div class="item-line"><div class="item-main"><span class="idx">' + (index + 1) + '</span><span class="txt">' +
-          esc(item.body || item.title) + '</span></div></div>').join("") + "</div>"
+      return items.length ? '<div class="home-list" aria-label="事件纪完整清单">' +
+          items.map((item, index) => homeChronicleHTML(item, index)).join("") + "</div>"
         : '<div class="empty">暂无公司信息</div>';
     }
     const items = homeAssignedItems();
-    return items.length ? '<div class="home-list" aria-label="任务看板完整清单">' + items.map(item =>
-      '<button type="button" class="home-task" data-task="' + esc(item.taskId) + '"><span class="home-task-title">' +
-        esc(item.title) + '</span><span class="home-task-priority">' + esc(HOME_PRIORITY[item.priority] || "中") + '</span></button>').join("") + "</div>"
+    return items.length ? '<div class="home-list" aria-label="任务看板完整清单">' + items.map(homeTaskRowHTML).join("") + "</div>"
       : '<div class="empty">暂无本人负责的未完成任务</div>';
   }
   function homeListView(kind) {
@@ -80,9 +101,22 @@
       rebuild: () => homeListView(kind) };
   }
   function openHomeList(kind, trigger) {
+    homeChronicleOpen = new Set();
     if (trigger) trigger.focus({ preventScroll: true });
     openSheet(homeListView(kind));
   }
+  /* 事件纪清单逐条单击展开/收起：只改本条按钮状态，不重建其他行，也不改动弹层滚动。
+     原生 button 让 Enter/Space 与点击等效，aria-expanded 同步可读。 */
+  document.addEventListener("click", function (event) {
+    const row = event.target.closest && event.target.closest("[data-home-chronicle]");
+    if (!row) return;
+    event.preventDefault(); event.stopPropagation();
+    const id = row.dataset.homeChronicle;
+    const open = !row.classList.contains("is-expanded");
+    row.classList.toggle("is-expanded", open);
+    row.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) homeChronicleOpen.add(id); else homeChronicleOpen.delete(id);
+  });
   /* 点击卡片（含预览内容）先打开完整清单；清单里的任务再进入原鉴权详情，返回恢复清单位置。 */
   document.addEventListener("click", function (event) {
     const card = event.target.closest && event.target.closest("[data-home-list]");
@@ -101,7 +135,6 @@
      日志卡片、旧个人事项列表与第四块空占位已移除；日志仍在日志页按原权限维护。 */
   renderMap = function () {
     const home = P.data.home || {};
-    const assigned = home.assignedTasks || [];
     const today = parseDateInput(companyBusinessDate()) || new Date();
     const weekday = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][today.getDay()];
     document.getElementById("page-map").innerHTML =
@@ -109,10 +142,10 @@
       '</section>' +
       '<div class="map-grid">' +
         '<section class="quad company-quad" aria-labelledby="q1" data-home-list="company" role="button" tabindex="0" aria-label="事件纪，查看完整清单">' +
-          '<div class="card-head"><h2 id="q1">事件纪</h2><span class="hint">统一发布</span></div>' +
+          '<div class="card-head"><h2 id="q1">事件纪</h2></div>' +
           '<div class="q-body">' + homeCompanyPreview() + '</div></section>' +
         '<section class="quad tasks-quad" aria-labelledby="q2" data-home-list="tasks" role="button" tabindex="0" aria-label="任务看板，查看完整清单">' +
-          '<div class="card-head"><h2 id="q2">任务看板</h2><span class="hint">' + assigned.length + '/10</span></div>' +
+          '<div class="card-head"><h2 id="q2">任务看板</h2></div>' +
           '<div class="q-body">' + homeTaskPreview() + '</div></section>' +
         '<section class="quad daily-quad" id="dailyItemsSection" aria-labelledby="q3"><div class="card-head"><h2 id="q3">每日事项</h2><span class="hint">本人维护</span></div></section>' +
       '</div>';

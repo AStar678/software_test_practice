@@ -72,8 +72,18 @@ async function main(){
   await login('alpha-one-employee');
   for(const width of [320,390,1440]){
    await b.viewport({width,height:width===320?740:width===390?844:900,mobile:width<1000});
-   const geometry=await ev(`(()=>{setPage('map');document.querySelector('.tasks-quad .q-body').scrollTop=90;return {modules:document.querySelectorAll('#page-map .quad').length,daily:!!document.querySelector('#dailyItemsSection'),personal:!!document.querySelector('.personal-quad'),logs:!!document.querySelector('.logs-quad'),scroll:Array.from(document.querySelectorAll('#page-map .q-body')).every(e=>getComputedStyle(e).overflowY==='auto'),priorities:Array.from(document.querySelectorAll('.home-task-priority')).map(e=>({width:e.getBoundingClientRect().width,visible:e.getBoundingClientRect().right<=e.closest('.q-body').getBoundingClientRect().right+1})),duplicate:!!document.querySelector('#page-map .workday button'),longTitle:!!Array.from(document.querySelectorAll('.home-task-title')).find(e=>e.textContent.length>50)}})()`);
-   check('dashboard priority and three modules at '+width,geometry.modules===3&&geometry.daily&&!geometry.personal&&!geometry.logs&&geometry.scroll&&geometry.priorities.length>0&&geometry.priorities.every(p=>p.width>10&&p.visible)&&!geometry.duplicate&&geometry.longTitle,geometry);
+   const geometry=await ev(`(()=>{setPage('map');return {modules:document.querySelectorAll('#page-map .quad').length,daily:!!document.querySelector('#dailyItemsSection'),personal:!!document.querySelector('.personal-quad'),logs:!!document.querySelector('.logs-quad'),
+     noInnerScroll:Array.from(document.querySelectorAll('#page-map .q-body')).every(e=>getComputedStyle(e).overflowY!=='auto'),
+     companyRows:document.querySelectorAll('.company-quad .q-body .item-line').length,
+     boardRows:document.querySelectorAll('.tasks-quad .q-body .home-task').length,
+     clamped:Array.from(document.querySelectorAll('#page-map .home-copy')).every(e=>getComputedStyle(e).webkitLineClamp==='2'),
+     hints:(document.querySelector('.company-quad .card-head')?.textContent||'')+(document.querySelector('.tasks-quad .card-head')?.textContent||''),
+     priorities:Array.from(document.querySelectorAll('.home-task-priority')).map(e=>({width:e.getBoundingClientRect().width,visible:e.getBoundingClientRect().right<=e.closest('.q-body').getBoundingClientRect().right+1})),
+     duplicate:!!document.querySelector('#page-map .workday button')}})()`);
+   check('dashboard preview budget, priority and three modules at '+width,
+     geometry.modules===3&&geometry.daily&&!geometry.personal&&!geometry.logs&&geometry.noInnerScroll&&
+     geometry.companyRows===3&&geometry.boardRows===3&&geometry.clamped&&!/统一发布|\/10/.test(geometry.hints)&&
+     geometry.priorities.length>0&&geometry.priorities.every(p=>p.width>10&&p.visible)&&!geometry.duplicate,geometry);
    await b.screenshot(output.replace('employee-browser.json','dashboard-'+width+'.png'));
   }
   await b.viewport({width:390,height:844,mobile:true});
@@ -95,7 +105,7 @@ async function main(){
   await ev("document.querySelector('[data-action=task-table-retry]').click()");
   check('retry after a real network failure restores the complete result',await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.error&&Pandora.taskForm.current().paged.total===109&&document.querySelectorAll('[data-task-row]').length===50",20000));
   check('task form snapshot is complete and cross-day work is counted once',await ev(`(()=>{const rows=Pandora.taskForm.current().sorted;return rows.length===109&&new Set(rows.map(t=>t.id)).size===109&&rows.filter(t=>t.id===${js(fixture.special.cross)}).length===1})()`));
-  const overview=await ev("({columns:Pandora.taskForm.state.columns,fields:Array.from(document.querySelector('[data-task-row]').children).map(e=>e.dataset.field),filterHidden:document.getElementById('p-table-filter-panel').hidden,expanded:document.getElementById('p-table-filter-toggle').getAttribute('aria-expanded'),metadata:!!document.querySelector('[data-task-row] .p-table-title-meta .p-table-tag'),priority:!!document.querySelector('[data-task-row] .p-table-priority'),schedule:document.querySelectorAll('[data-task-row] .p-table-schedule-stack time').length})");
+  const overview=await ev("({columns:Pandora.taskForm.state.columns,fields:Array.from(document.querySelector('[data-task-row]').children).map(e=>e.dataset.field),filterHidden:document.getElementById('p-table-filter-panel').hidden,expanded:document.getElementById('p-table-filter-toggle').getAttribute('aria-expanded'),metadata:!!document.querySelector('[data-task-row] .p-table-title-meta .p-table-priority'),priority:!!document.querySelector('[data-task-row] .p-table-priority'),schedule:document.querySelectorAll('[data-task-row] .p-table-schedule-stack time').length})");
   check('the default comparison groups task identity status and schedule with collapsed filters',overview.columns==='overview'&&JSON.stringify(overview.fields)===JSON.stringify(['title','summary','schedule','assignees','description'])&&overview.filterHidden&&overview.expanded==='false'&&overview.metadata&&overview.priority&&overview.schedule===100,overview);
   await waitFor(b,"document.getElementById('appNotice').hidden",6500);
   for(const width of [320,390,768,1440]){
