@@ -241,6 +241,7 @@ async function main() {
     /* ---------- authorized subordinate cards: tenure without an as-of suffix, empty state kept ---------- */
     const openReport = id => ev(`(()=>{const el=document.createElement('button');el.dataset.action='p-open-person';el.dataset.id=${js(id)};document.body.appendChild(el);runAction(el);el.remove()})()`);
     await openReport(ids['alpha-one-employee'].id);
+    await waitFor(b, "Pandora.idle()&&document.getElementById('sheetBody')&&document.getElementById('sheetBody').textContent.includes('2024-02-29')", 15000);
     const reportTenure = await ev(`(()=>{const body=document.getElementById('sheetBody');
       return {title:document.getElementById('sheetTitle').textContent,text:body?body.textContent:'',
         open:!document.getElementById('overlay').hidden}})()`);
@@ -250,6 +251,7 @@ async function main() {
     await ev("document.getElementById('sheetClose').click()");
     await waitFor(b, "document.getElementById('overlay').hidden");
     await openReport(ids['alpha-two-employee'].id);
+    await waitFor(b, "Pandora.idle()&&document.getElementById('sheetBody')&&document.getElementById('sheetBody').textContent.includes('入职日期未设置')", 15000);
     const reportEmpty = await ev(`(()=>{const body=document.getElementById('sheetBody');return {text:body?body.textContent:'',open:!document.getElementById('overlay').hidden}})()`);
     check('a subordinate without a hire date keeps the original empty state and no invented suffix',
       reportEmpty.open && (reportEmpty.text.match(/入职日期未设置/g) || []).length === 2 && !reportEmpty.text.includes('截至'), reportEmpty);

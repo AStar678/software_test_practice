@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-01T11:23:04.520Z",
+  "updated": "2026-11-15T08:58:38.739Z",
   "checks": [
     {
       "check": "login form ready founder",
@@ -42,8 +42,19 @@
       "pass": true
     },
     {
-      "check": "comment delete removes its body from the actual detail",
+      "check": "Web compose label has no flat-thread suffix",
       "pass": true
+    },
+    {
+      "check": "Web renders no comment delete control",
+      "pass": true
+    },
+    {
+      "check": "stale Web delete action sends no DELETE and keeps both comments",
+      "pass": true,
+      "evidence": {
+        "staleDeletes": 0
+      }
     },
     {
       "check": "login form ready alpha-one-employee",

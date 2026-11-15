@@ -767,7 +767,6 @@
     document.removeEventListener("pointermove", listeners.move, true);
     document.removeEventListener("pointerup", listeners.up, true);
     document.removeEventListener("pointercancel", listeners.cancel, true);
-    window.removeEventListener("scroll", listeners.scroll, true);
     document.removeEventListener("touchstart", listeners.touch, { capture: true });
     if (suppress) suppressClickUntil = Date.now() + 450;
   }
@@ -785,18 +784,18 @@
       if (dragPress !== candidate || moveEvent.pointerId !== candidate.pointerId) return;
       const current = document.getElementById("dailyScroller");
       if (Math.abs(moveEvent.clientX - candidate.x) > DRAG_TOLERANCE_PX ||
-        Math.abs(moveEvent.clientY - candidate.y) > DRAG_TOLERANCE_PX ||
-        (current && Math.abs(current.scrollTop - candidate.scrollTop) > 2)) cancelDragPress(false);
+        Math.abs(moveEvent.clientY - candidate.y) > DRAG_TOLERANCE_PX) cancelDragPress(false);
+      else if (current && Math.abs(current.scrollTop - candidate.scrollTop) > 2) cancelDragPress(false);
     };
     const up = upEvent => { if (upEvent.pointerId === candidate.pointerId) cancelDragPress(false); };
     const cancel = cancelEvent => { if (cancelEvent.pointerId === candidate.pointerId) cancelDragPress(true); };
-    const scroll = () => cancelDragPress(false);
     const touch = touchEvent => { if (touchEvent.touches && touchEvent.touches.length > 1) cancelDragPress(false); };
-    candidate.listeners = { move: move, up: up, cancel: cancel, scroll: scroll, touch: touch };
+    candidate.listeners = { move: move, up: up, cancel: cancel, touch: touch };
     document.addEventListener("pointermove", move, true);
     document.addEventListener("pointerup", up, true);
     document.addEventListener("pointercancel", cancel, true);
-    window.addEventListener("scroll", scroll, true);
+    /* No scroll listener: programmatic layout scrolls (anchor restore, month padding) must not kill
+       the long press. Real user scrolling always moves the pointer more than the tolerance first. */
     document.addEventListener("touchstart", touch, { capture: true, passive: true });
     candidate.timer = setTimeout(() => {
       if (dragPress !== candidate) return;

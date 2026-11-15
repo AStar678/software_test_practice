@@ -378,7 +378,7 @@ def run_checks(f: Fixture, check, report: dict) -> None:
             'position': {'id': 'fixture-company-title', 'oldName': 'Display title',
                          'newName': 'Browser Renamed Title'},
             'legacy': {'expectedRole': 'team_head'},
-            'company': {'titles': company_titles},
+            'company': {'bodies': company_bodies},
             'notifications': {key: {'eventId': row['eventId'], 'notificationId': row['notificationId'],
                                     'title': row['title']}
                               for key, row in notification_rows.items()},

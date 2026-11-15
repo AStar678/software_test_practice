@@ -9,44 +9,83 @@ module.exports = async function checkDailyItemsDrag(b, fixture, check, evidence)
   const ev = b.evaluate;
   const js = value => JSON.stringify(value);
   const PANEL = `[data-daily-bar][data-id=${js(fixture.drag)}]`;
+  const API = fixture.base + '/api/v1';
 
   async function loginToken(identifier) {
-    const response = await fetch(fixture.base + '/auth/sessions', {
+    const response = await fetch(API + '/auth/sessions', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accountType: 'employee', phone: identifier, password: 'Fixture@123456' }),
     });
-    return (await response.json()).token;
+    const session = await response.json();
+    if (!session.token) throw new Error('fixture login failed ' + response.status + ' ' + JSON.stringify(session));
+    return session.token;
   }
   await b.viewport({ width: 390, height: 844, mobile: true });
   await ev("setPage('map')");
+  /* The shell scrolls smoothly; a real pointer gesture must start on a settled layout. */
+  await ev("(()=>{if(document.getElementById('test-no-smooth'))return;const style=document.createElement('style');style.id='test-no-smooth';style.textContent='*{scroll-behavior:auto!important}';document.head.appendChild(style)})()");
   await sleep(300);
   const token = await loginToken(fixture.identities['alpha-one-employee'].identifier);
   async function raw(id) {
-    const response = await fetch(fixture.base + '/daily-items/' + encodeURIComponent(id), { headers: { Authorization: 'Bearer ' + token } });
-    return response.json();
+    const response = await fetch(API + '/daily-items/' + encodeURIComponent(id), { headers: { Authorization: 'Bearer ' + token } });
+    const body = await response.json();
+    if (!response.ok) throw new Error('daily-item read failed ' + response.status + ' ' + JSON.stringify(body));
+    return body;
   }
   function dayNumber(key) { return Math.floor(Date.parse(key + 'T00:00:00Z') / 86400000); }
   function shiftKey(key, days) { return new Date((dayNumber(key) + days) * 86400000).toISOString().slice(0, 10); }
 
+  /* Wait for any scroll animation (the shell uses smooth scrolling) to settle, then recompute
+     the point from the element's final rect. */
+  async function settledPoint(selector, kind) {
+    let last = null;
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const rect = await ev(`(()=>{const e=document.querySelector(${js(selector)});if(!e)return null;
+        const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()`);
+      if (!rect) return null;
+      if (last && Math.abs(rect.x - last.x) < 0.5 && Math.abs(rect.y - last.y) < 0.5)
+        return { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 };
+      last = rect;
+      await sleep(70);
+    }
+    return null;
+  }
   async function barPoint(selector) {
-    return ev(`(()=>{const bar=document.querySelector(${js(selector)});if(!bar)return null;
-      bar.scrollIntoView({block:'center'});const r=bar.getBoundingClientRect(),week=bar.closest('.daily-week'),days=week.querySelector('.daily-days').getBoundingClientRect();
+    const point = await ev(`(()=>{const bar=document.querySelector(${js(selector)});if(!bar)return null;
+      const r=bar.getBoundingClientRect(),week=bar.closest('.daily-week'),days=week.querySelector('.daily-days').getBoundingClientRect();
       const start=Number(bar.dataset.startCol),end=Number(bar.dataset.endCol);
       const col=Math.max(start,Math.min(end-1,Math.floor((r.x+r.width/2-days.left)/(days.width/7))));
       return {x:r.x+r.width/2,y:r.y+r.height/2,weekStart:week.dataset.weekStart,col,
         grabKey:toDateInput(addDays(parseDateInput(week.dataset.weekStart),col)),unit:days.width/7}})()`);
+    if (!point) return null;
+    const settled = await settledPoint(selector);
+    if (settled) { point.x = settled.x; point.y = settled.y; }
+    return point;
   }
   async function cellPoint(key) {
-    return ev(`(()=>{const cell=document.querySelector('[data-daily-date=${js(key)}]');if(!cell)return null;
-      cell.scrollIntoView({block:'center'});const r=cell.getBoundingClientRect();
+    const selector = `[data-daily-date=${js(key)}]`;
+    const point = await ev(`(()=>{const cell=document.querySelector(${js(selector)});if(!cell)return null;
+      const r=cell.getBoundingClientRect();
       return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+    if (!point) return null;
+    const settled = await settledPoint(selector);
+    if (settled) { point.x = settled.x; point.y = settled.y; }
+    return point;
   }
   async function prepare() {
     await ev(`PandoraDaily.goToDate(${js(fixture.today)})`);
     await sleep(600);
-    return waitFor(b, `!!document.querySelector(${js(PANEL)})`, 12000);
+    /* The long-press activation deliberately waits for an idle page; month loads must settle first. */
+    const ready = await waitFor(b, `Pandora.ready&&Pandora.idle()&&!!document.querySelector(${js(PANEL)})`, 15000);
+    if (!ready) return false;
+    /* Scroll once here; every later point is measured without moving the calendar again. */
+    await ev(`document.querySelector(${js(PANEL)}).scrollIntoView({block:'center',behavior:'instant'})`);
+    await settledPoint(PANEL);
+    return true;
   }
   async function pressAt(point) {
+    /* Let any queued instant scroll/layout settle before the pointer goes down. */
+    await sleep(220);
     await b.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: point.x, y: point.y });
     await b.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: point.x, y: point.y, button: 'left', clickCount: 1 });
   }
@@ -76,7 +115,14 @@ module.exports = async function checkDailyItemsDrag(b, fixture, check, evidence)
   await sleep(120);
   await releaseAt(tap);
   await sleep(500);
-  const tapState = await ev("({gesture:Pandora.dailyGesture(),overlay:document.getElementById('overlay').hidden,title:document.getElementById('sheetTitle').textContent,page:state.page,error:document.getElementById('daily-list-error')?.textContent||null,notice:document.getElementById('appNotice').textContent})");
+  const tapState = await ev(`(()=>{const bar=document.querySelector(${js(PANEL)});const r=bar?bar.getBoundingClientRect():null;
+    const top=document.elementFromPoint(${tap.x},${tap.y});
+    return {gesture:Pandora.dailyGesture(),overlay:document.getElementById('overlay').hidden,
+      title:document.getElementById('sheetTitle').textContent,page:state.page,
+      error:document.getElementById('daily-list-error')?.textContent||null,
+      notice:document.getElementById('appNotice').textContent,
+      rect:r?{x:r.x,y:r.y,w:r.width,h:r.height}:null,hidden:bar?bar.hidden:null,
+      topEl:top?{tag:top.tagName,cls:String(top.className),inBar:!!top.closest('[data-daily-bar]')}:null}})()`);
   check('a short press still opens the hit day list instead of dragging',
     await waitFor(b, "Pandora.idle()&&!document.getElementById('overlay').hidden&&document.getElementById('sheetTitle').textContent.includes('每日事项')", 12000) &&
     !(await ev("Pandora.dailyGesture().dragging")), { tap, tapState });
@@ -145,7 +191,7 @@ module.exports = async function checkDailyItemsDrag(b, fixture, check, evidence)
       writes:window.__dragWrites.length}})()`);
   check('releasing shows the old and new ranges and asks for confirmation before writing',
     confirmation.open && confirmation.move && confirmation.move.oldStart === original.startDate &&
-    confirmation.move.oldEnd === original.endDate && confirmation.body.includes('调整后') && confirmation.writes === 0, confirmation);
+    confirmation.move.oldEnd === original.endDate && confirmation.body.includes('调整后') && confirmation.writes === 0, { confirmation, original });
   await ev("document.querySelector('[data-action=daily-move-confirm]').click()");
   check('confirming saves the shifted range and returns to the calendar',
     await waitFor(b, "Pandora.idle()&&document.getElementById('overlay').hidden", 20000));
@@ -161,6 +207,8 @@ module.exports = async function checkDailyItemsDrag(b, fixture, check, evidence)
   await b.send('Page.reload', { ignoreCache: true });
   check('the reloaded page still shows the moved range', await waitFor(b, "Pandora.ready&&Pandora.idle()&&!!document.getElementById('dailyScroller')", 25000) &&
     (await raw(fixture.drag)).startDate === moved.startDate, moved);
+  /* A real reload recreates window.fetch; reinstall the probe before the failure simulations. */
+  await installFetchProbe();
 
   /* -------- cancel and Escape write nothing -------- */
   await prepare();
@@ -264,7 +312,7 @@ module.exports = async function checkDailyItemsDrag(b, fixture, check, evidence)
   await sleep(350);
   const beforeConflict = await raw(fixture.drag);
   const serverVersion = beforeConflict.rowVersion;
-  const concurrent = await fetch(fixture.base + '/daily-items/' + encodeURIComponent(fixture.drag), {
+  const concurrent = await fetch(API + '/daily-items/' + encodeURIComponent(fixture.drag), {
     method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token,
       'Idempotency-Key': 'concurrent-' + Date.now() + '-' + Math.random().toString(16).slice(2), 'If-Match': '"' + serverVersion + '"' },
     body: JSON.stringify({ body: '并发修改后的正文' }) });

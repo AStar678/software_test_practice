@@ -78,17 +78,25 @@ module.exports = async function checkDailyItemsHome(b, fixture, check, evidence)
   check('exactly the truly overdue list row carries the pale glass-red band and an accessible label',
     board.overdueCount === 1 && board.overdueLabel && board.overdueLabel.includes('已逾期') &&
     board.overdueTint !== board.normalTint && board.normalIsOverdue === false, board);
-  const detailReturn = await ev(`(async()=>{const row=document.querySelector('.sheet-body .home-list .home-task:not(.is-overdue)');
-    const body=document.getElementById('sheetBody');body.scrollTop=40;
-    const before={top:body.scrollTop,count:document.querySelectorAll('.sheet-body .home-list .home-task').length};
-    row.click();
+  const detailReturn = await ev(`(async()=>{const body=document.getElementById('sheetBody');
+    body.scrollTop=30;
+    const ids=()=>[...document.querySelectorAll('.sheet-body .home-list .home-task')].map(r=>r.dataset.task);
+    const before={top:body.scrollTop, ids:ids()};
+    document.querySelectorAll('.sheet-body .home-list .home-task')[2].click();
+    await new Promise(r=>setTimeout(r,700));
+    const detailTitle=document.getElementById('sheetTitle').textContent;
+    const detailOpen=!document.getElementById('overlay').hidden;
+    const back=document.querySelector('[data-action=sheet-back]');
+    if (back) back.click(); else document.getElementById('sheetClose').click();
     await new Promise(r=>setTimeout(r,600));
-    return {before, detail:document.getElementById('sheetTitle').textContent, overlay:!document.getElementById('overlay').hidden}})()`);
-  check('a list row opens the original authorized task detail', !!detailReturn.detail && detailReturn.overlay, detailReturn);
-  await ev("document.querySelector('[data-action=sheet-back]')?.click()||document.getElementById('sheetClose').click()");
-  await sleep(300);
-  await ev("document.querySelector('[data-action=sheet-back]')?.click()||document.getElementById('sheetClose').click()");
-  await sleep(400);
+    const afterBody=document.getElementById('sheetBody');
+    return {before, detailTitle, detailOpen, listTitle:document.getElementById('sheetTitle').textContent,
+      listOpen:!document.getElementById('overlay').hidden, after:{top:afterBody.scrollTop, ids:ids()}}})()`);
+  check('a list row opens the original authorized task detail', !!detailReturn.detailTitle && detailReturn.detailOpen, detailReturn);
+  check('returning from the detail restores the same sorted list and its scroll position',
+    detailReturn.listOpen && detailReturn.listTitle === '任务看板' &&
+    JSON.stringify(detailReturn.after.ids) === JSON.stringify(detailReturn.before.ids) &&
+    Math.abs(detailReturn.after.top - detailReturn.before.top) <= 1, detailReturn);
   await closeSheet();
   await sleep(200);
 

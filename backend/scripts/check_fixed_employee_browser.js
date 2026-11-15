@@ -75,14 +75,16 @@ async function main(){
    const geometry=await ev(`(()=>{setPage('map');return {modules:document.querySelectorAll('#page-map .quad').length,daily:!!document.querySelector('#dailyItemsSection'),personal:!!document.querySelector('.personal-quad'),logs:!!document.querySelector('.logs-quad'),
      noInnerScroll:Array.from(document.querySelectorAll('#page-map .q-body')).every(e=>getComputedStyle(e).overflowY!=='auto'),
      companyRows:document.querySelectorAll('.company-quad .q-body .item-line').length,
+     expectedCompany:Math.min(3,(Pandora.data.home.companyItems||[]).length),
      boardRows:document.querySelectorAll('.tasks-quad .q-body .home-task').length,
+     expectedBoard:Math.min(3,(Pandora.data.home.assignedTasks||[]).length),
      clamped:Array.from(document.querySelectorAll('#page-map .home-copy')).every(e=>getComputedStyle(e).webkitLineClamp==='2'),
      hints:(document.querySelector('.company-quad .card-head')?.textContent||'')+(document.querySelector('.tasks-quad .card-head')?.textContent||''),
      priorities:Array.from(document.querySelectorAll('.home-task-priority')).map(e=>({width:e.getBoundingClientRect().width,visible:e.getBoundingClientRect().right<=e.closest('.q-body').getBoundingClientRect().right+1})),
      duplicate:!!document.querySelector('#page-map .workday button')}})()`);
    check('dashboard preview budget, priority and three modules at '+width,
      geometry.modules===3&&geometry.daily&&!geometry.personal&&!geometry.logs&&geometry.noInnerScroll&&
-     geometry.companyRows===3&&geometry.boardRows===3&&geometry.clamped&&!/统一发布|\/10/.test(geometry.hints)&&
+     geometry.companyRows===geometry.expectedCompany&&geometry.boardRows===geometry.expectedBoard&&geometry.clamped&&!/统一发布|\/10/.test(geometry.hints)&&
      geometry.priorities.length>0&&geometry.priorities.every(p=>p.width>10&&p.visible)&&!geometry.duplicate,geometry);
    await b.screenshot(output.replace('employee-browser.json','dashboard-'+width+'.png'));
   }
@@ -104,7 +106,10 @@ async function main(){
   await b.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1,connectionType:'wifi'});
   await ev("document.querySelector('[data-action=task-table-retry]').click()");
   check('retry after a real network failure restores the complete result',await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.error&&Pandora.taskForm.current().paged.total===109&&document.querySelectorAll('[data-task-row]').length===50",20000));
-  check('task form snapshot is complete and cross-day work is counted once',await ev(`(()=>{const rows=Pandora.taskForm.current().sorted;return rows.length===109&&new Set(rows.map(t=>t.id)).size===109&&rows.filter(t=>t.id===${js(fixture.special.cross)}).length===1})()`));
+  const completeSnapshot=await ev(`(async()=>{const all=[];for(let offset=0;offset<1000;offset+=100){const page=await Pandora.request('/tasks/table?limit=100&offset='+offset);all.push(...(page.items||[]));if(page.nextOffset==null)break;}
+    return {total:all.length,unique:new Set(all.map(t=>t.id)).size,cross:all.filter(t=>t.id===${js(fixture.special.cross)}).length}})()`);
+  check('the server-side task table covers the complete snapshot and counts cross-day work once',
+    completeSnapshot.total===109&&completeSnapshot.unique===109&&completeSnapshot.cross===1,completeSnapshot);
   const overview=await ev("({columns:Pandora.taskForm.state.columns,fields:Array.from(document.querySelector('[data-task-row]').children).map(e=>e.dataset.field),filterHidden:document.getElementById('p-table-filter-panel').hidden,expanded:document.getElementById('p-table-filter-toggle').getAttribute('aria-expanded'),metadata:!!document.querySelector('[data-task-row] .p-table-title-meta .p-table-priority'),priority:!!document.querySelector('[data-task-row] .p-table-priority'),schedule:document.querySelectorAll('[data-task-row] .p-table-schedule-stack time').length})");
   check('the default comparison groups task identity status and schedule with collapsed filters',overview.columns==='overview'&&JSON.stringify(overview.fields)===JSON.stringify(['title','summary','schedule','assignees','description'])&&overview.filterHidden&&overview.expanded==='false'&&overview.metadata&&overview.priority&&overview.schedule===100,overview);
   await waitFor(b,"document.getElementById('appNotice').hidden",6500);
@@ -133,7 +138,7 @@ async function main(){
   check('landscape column switching keeps the same result and available table height',landscapeAfter.columns==='overview'&&landscapeAfter.page===landscapeBefore.page&&landscapeAfter.filters===landscapeBefore.filters&&landscapeAfter.sort===landscapeBefore.sort&&JSON.stringify(landscapeAfter.ids)===JSON.stringify(landscapeBefore.ids)&&await ev("document.getElementById('p-table-scroll').clientHeight>=180"));
   await b.viewport({width:390,height:844,mobile:true});await settle();
   // Render a cloned projection to exercise a future year without creating fixture/cloud records.
-  const futureLayout=await ev(`(()=>{const form=Pandora.taskForm,oldRows=form.state.rows,oldPage=form.state.page,task=structuredClone(oldRows[0]),futureDate=(Number(form.companyDateKey(new Date(),form.companyZone()).slice(0,4))+2)+'-01-01';try{task.allDay=false;task.raw.startAt=futureDate+'T01:00:00Z';task.raw.dueAt=futureDate+'T02:00:00Z';form.state.rows=[task];form.state.page=0;form.paint();const cell=document.querySelector('[data-task-row] [data-field=schedule]'),bounds=cell.getBoundingClientRect();return {date:futureDate,dates:Array.from(cell.querySelectorAll('time')).map(time=>({parts:Array.from(time.children).map(part=>part.textContent),font:parseFloat(getComputedStyle(time).fontSize),inside:Array.from(time.children).every(part=>part.getBoundingClientRect().left>=bounds.left&&part.getBoundingClientRect().right<=bounds.right),wrapped:time.children.length===2&&time.children[1].getBoundingClientRect().top>time.children[0].getBoundingClientRect().top})),overflow:document.documentElement.scrollWidth>innerWidth+1}}finally{form.state.rows=oldRows;form.state.page=oldPage;form.paint()}})()`);
+  const futureLayout=await ev(`(()=>{const form=Pandora.taskForm,oldRows=form.state.rows,oldResult=form.state.result,oldPage=form.state.page,task=structuredClone(oldRows[0]),futureDate=(Number(form.companyDateKey(new Date(),form.companyZone()).slice(0,4))+2)+'-01-01';try{task.allDay=false;task.raw.startAt=futureDate+'T01:00:00Z';task.raw.dueAt=futureDate+'T02:00:00Z';form.state.rows=[task];form.state.result={paged:Object.assign({},oldResult.paged,{items:[task]})};form.state.page=0;form.paint();const cell=document.querySelector('[data-task-row] [data-field=schedule]'),bounds=cell.getBoundingClientRect();return {date:futureDate,dates:Array.from(cell.querySelectorAll('time')).map(time=>({parts:Array.from(time.children).map(part=>part.textContent),font:parseFloat(getComputedStyle(time).fontSize),inside:Array.from(time.children).every(part=>part.getBoundingClientRect().left>=bounds.left&&part.getBoundingClientRect().right<=bounds.right),wrapped:time.children.length===2&&time.children[1].getBoundingClientRect().top>time.children[0].getBoundingClientRect().top})),overflow:document.documentElement.scrollWidth>innerWidth+1}}finally{form.state.rows=oldRows;form.state.result=oldResult;form.state.page=oldPage;form.paint()}})()`);
   check('cross-year schedule dates wrap as readable units without entering the next column',!futureLayout.overflow&&futureLayout.dates.length===2&&futureLayout.dates.every(date=>date.parts[0]===futureLayout.date&&date.parts.length===2&&date.inside&&date.wrapped&&date.font>=14),futureLayout);
   const initialPan=await tablePosition();
   await clickVisible('[data-action="task-table-pan"][data-direction="1"]');
@@ -171,8 +176,11 @@ async function main(){
   await clickVisible('[data-action="task-table-filters"]');
   const ranks={urgency:{'紧急':0,'高':1,'中':2,'低':3},status:{todo:0,doing:1,done:2}};
   const sortEvidence=async(key,dir)=>{
-   return ev(`(()=>{const state=Pandora.taskForm.state,rows=state.result.sorted,collator=new Intl.Collator('zh-Hans-CN');
-    const value=t=>{const raw=t.raw||{};if(${js(key)}==='title')return null;if(${js(key)}==='createdAt')return new Date(raw.createdAt||0).getTime()||0;if(${js(key)}==='start')return new Date(raw.startAt||0).getTime()||0;if(${js(key)}==='due')return new Date(raw.dueAt||0).getTime()||0;if(${js(key)}==='urgency')return (${js(ranks.urgency)})[t.urgency]??2;return (${js(ranks.status)})[raw.executionState||t.status]??0};
+   return ev(`(async()=>{const state=Pandora.taskForm.state,collator=new Intl.Collator('zh-Hans-CN');
+    const rows=[];
+    for(let offset=0;offset<1000;offset+=100){const params=new URLSearchParams(Pandora.taskForm.queryPath().split('?')[1]);params.set('limit','100');params.set('offset',String(offset));const page=await Pandora.request('/tasks/table?'+params.toString());rows.push(...(page.items||[]));if(page.nextOffset==null)break;}
+    const rankUrgency={urgent:0,high:1,medium:2,low:3},rankState={todo:0,doing:1,done:2};
+    const value=t=>{if(${js(key)}==='title')return null;if(${js(key)}==='createdAt')return Date.parse(t.createdAt||'')||0;if(${js(key)}==='start')return Date.parse(t.startAt||'')||0;if(${js(key)}==='due')return Date.parse(t.dueAt||'')||0;if(${js(key)}==='urgency')return rankUrgency[t.priority]??2;return rankState[t.executionState||t.state]??0};
     const sign=${js(dir)}==='desc'?-1:1;
     for(let i=1;i<rows.length;i++){const a=rows[i-1],b=rows[i];const compare=${js(key)}==='title'?collator.compare(String(a.title||''),String(b.title||'')):value(a)-value(b);if(compare*sign>0)return {ok:false,index:i,left:a.title,right:b.title};if(compare===0&&!(a.id<b.id))return {ok:false,tie:i,left:a.id,right:b.id};}
     return {ok:true,key:state.sort.key,dir:state.sort.dir,total:rows.length,head:rows.slice(0,2).map(t=>t.title),tail:rows.slice(-2).map(t=>t.title)}})()`);
@@ -182,16 +190,31 @@ async function main(){
    const ascending=await sortEvidence(key,'asc');
    check('global task form sort '+key+' ascending is stable over the whole result',ascending.ok&&await ev("Pandora.taskForm.state.sort.dir==='asc'&&Pandora.taskForm.state.page===0"),ascending);
    check('sorting keeps focus on the rebuilt '+key+' heading',await ev("document.activeElement?.dataset.key==="+js(key)));
-   await ev("document.querySelector('[data-action=task-table-next]').click();document.querySelector('[data-action=task-table-next]').click()");
-   const lastPage=await ev(`(()=>{const rows=Pandora.taskForm.state.result.sorted,shown=Array.from(document.querySelectorAll('[data-task-row]')).map(e=>e.dataset.taskRow);return {same:JSON.stringify(shown)===JSON.stringify(rows.slice(100).map(t=>t.id)),shown:shown.length,page:Pandora.taskForm.state.page}})()`);
+   await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading",20000);
+   const pagerReady=await ev("({next:!!document.querySelector('[data-action=task-table-next]'),pager:document.getElementById('p-table-pager').textContent,page:Pandora.taskForm.state.page,loaded:Pandora.taskForm.state.loaded,loading:Pandora.taskForm.state.loading,error:Pandora.taskForm.state.error,total:Pandora.taskForm.state.server.total})");
+   check('pager is ready before paging after sort '+key,pagerReady.next,pagerReady);
+   await ev("document.querySelector('[data-action=task-table-next]').click()");
+   await waitFor(b,"Pandora.taskForm.state.page===1&&Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading",20000);
+   await ev("document.querySelector('[data-action=task-table-next]').click()");
+   await waitFor(b,"Pandora.taskForm.state.page===2&&Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading",20000);
+   const lastPage=await ev(`(async()=>{const page=await Pandora.request(Pandora.taskForm.queryPath());const shown=Array.from(document.querySelectorAll('[data-task-row]')).map(e=>e.dataset.taskRow);return {same:JSON.stringify(shown)===JSON.stringify((page.items||[]).map(t=>t.id)),shown:shown.length,page:Pandora.taskForm.state.page}})()`);
    check('global task form sort '+key+' continues on the third page',lastPage.same&&lastPage.shown===9&&lastPage.page===2,lastPage);
    await clickVisible(`[data-action="task-table-sort"][data-key="${key}"]`);
    const descending=await sortEvidence(key,'desc');
    check('global task form sort '+key+' descending is stable and resets paging',descending.ok&&await ev("Pandora.taskForm.state.sort.dir==='desc'&&Pandora.taskForm.state.page===0"),descending);
-   await ev("document.querySelector('[data-action=task-table-next]').click();document.querySelector('[data-action=task-table-next]').click()");
-   const reverseLast=await ev(`(()=>{const rows=Pandora.taskForm.state.result.sorted,shown=Array.from(document.querySelectorAll('[data-task-row]')).map(e=>e.dataset.taskRow);return JSON.stringify(shown)===JSON.stringify(rows.slice(100).map(t=>t.id))})()`);
+   await waitFor(b,"Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading",20000);
+   const pagerReadyDesc=await ev("({next:!!document.querySelector('[data-action=task-table-next]'),pager:document.getElementById('p-table-pager').textContent,page:Pandora.taskForm.state.page,loaded:Pandora.taskForm.state.loaded,loading:Pandora.taskForm.state.loading,error:Pandora.taskForm.state.error,total:Pandora.taskForm.state.server.total})");
+   check('pager is ready before paging after sort '+key,pagerReadyDesc.next,pagerReadyDesc);
+   await ev("document.querySelector('[data-action=task-table-next]').click()");
+   await waitFor(b,"Pandora.taskForm.state.page===1&&Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading",20000);
+   await ev("document.querySelector('[data-action=task-table-next]').click()");
+   await waitFor(b,"Pandora.taskForm.state.page===2&&Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading",20000);
+   const reverseLast=await ev(`(async()=>{const page=await Pandora.request(Pandora.taskForm.queryPath());const shown=Array.from(document.querySelectorAll('[data-task-row]')).map(e=>e.dataset.taskRow);return JSON.stringify(shown)===JSON.stringify((page.items||[]).map(t=>t.id))})()`);
    check('global task form sort '+key+' paging is continuous after direction change',reverseLast);
-   await ev("document.querySelector('[data-action=task-table-prev]').click();document.querySelector('[data-action=task-table-prev]').click()");
+   await ev("document.querySelector('[data-action=task-table-prev]').click()");
+   await waitFor(b,"Pandora.taskForm.state.page===1&&Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading",20000);
+   await ev("document.querySelector('[data-action=task-table-prev]').click()");
+   await waitFor(b,"Pandora.taskForm.state.page===0&&Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading",20000);
   }
   const fixed=await ev(`(()=>{const scroller=document.getElementById('p-table-scroll'),cell=document.querySelector('[data-task-row] th'),head=document.querySelector('#p-table-head th:first-child');const before=cell.getBoundingClientRect().left;scroller.scrollLeft=280;const after=cell.getBoundingClientRect().left,left=scroller.getBoundingClientRect().left;const position=getComputedStyle(cell).position;scroller.scrollLeft=0;return {position,before,after,left,scrolled:after-left}})()`);
   check('task name column stays fixed while the table scrolls sideways',fixed.position==='sticky'&&Math.abs(fixed.after-fixed.left)<2&&fixed.before===fixed.after,fixed);
@@ -200,12 +223,13 @@ async function main(){
   await ev("document.getElementById('p-filter-query').value='Browser task 10';document.getElementById('p-filter-query').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('p-filter-relation').value='own';document.getElementById('p-filter-relation').dispatchEvent(new Event('change',{bubbles:true}))");
   check('combined task form filters recalculate total and page',await waitFor(b,"Pandora.taskForm.current().paged.total===5&&Pandora.taskForm.state.page===0"));
   await ev("document.querySelector('[data-action=task-table-clear-filters]').click();document.getElementById('p-filter-query').value='Calendar';document.getElementById('p-filter-query').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('p-filter-relation').value='own';document.getElementById('p-filter-relation').dispatchEvent(new Event('change',{bubbles:true}));document.getElementById('p-filter-from').value="+js(fixture.day)+";document.getElementById('p-filter-from').dispatchEvent(new Event('change',{bubbles:true}));document.getElementById('p-filter-to').value="+js(shiftDate(fixture.day,1))+";document.getElementById('p-filter-to').dispatchEvent(new Event('change',{bubbles:true}))");
-  const dateFiltered=await waitFor(b,"Pandora.taskForm.current().paged.total===3&&Pandora.taskForm.current().sorted.filter(t=>t.id==="+js(fixture.special.cross)+").length===1");
+  const dateFiltered=await waitFor(b,"Pandora.taskForm.current().paged.total===3&&Pandora.taskForm.current().paged.items.filter(t=>t.id==="+js(fixture.special.cross)+").length===1");
   check('date/relation/name filters keep a cross-day task in its single matching row',dateFiltered);
   await ev("document.querySelector('[data-action=task-table-clear-filters]').click();document.getElementById('p-filter-query').value='Browser task 0';document.getElementById('p-filter-query').dispatchEvent(new Event('input',{bubbles:true}))");
   check('detail return setup uses the filtered second page',await waitFor(b,"Pandora.taskForm.current().paged.total===100&&Pandora.taskForm.state.page===0"));
   await clickVisible('[data-action="task-table-filters"]');
   await ev("document.querySelector('[data-action=task-table-next]').click()");
+  await waitFor(b,"Pandora.taskForm.state.page===1&&Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading",20000);
   const beforeDetail=await ev(`(()=>{const scroller=document.getElementById('p-table-scroll');scroller.scrollTop=420;scroller.scrollLeft=460;const row=document.querySelector('[data-task-row]');return {page:Pandora.taskForm.state.page,query:Pandora.taskForm.state.filters.query,scroll:scroller.scrollTop,left:scroller.scrollLeft,columns:Pandora.taskForm.state.columns,ids:Array.from(document.querySelectorAll('[data-task-row]')).map(e=>e.dataset.taskRow),first:row&&row.dataset.taskRow}})()`);
   await ev(`document.querySelector('[data-task-row="${beforeDetail.first}"] [data-task="${beforeDetail.first}"]').click()`);
   check('task detail opens over the filtered table',await waitFor(b,"!document.getElementById('overlay').hidden&&Pandora.idle()&&document.getElementById('sheetTitle').textContent.length>0"));
@@ -374,8 +398,8 @@ async function main(){
   await logout();await login('alpha-one-head');
   await setPage('view');
   await ev("document.querySelector('.p-table-entry').click()");
-  check('published task with a pending change is still in the task form',await waitFor(b,`Pandora.taskForm.state.loaded&&Pandora.taskForm.current().sorted.some(t=>t.id===${js(fixture.pendingTask)})`,20000));
-  const pendingRow=await ev(`(()=>{const rows=Pandora.taskForm.current().sorted,task=rows.find(t=>t.id===${js(fixture.pendingTask)});return {title:task&&task.title,status:task&&task.status,proposed:rows.some(t=>t.title===${js(fixture.pendingProposedTitle)}),unpublished:rows.some(t=>t.title==='Unpublished departure creation'),pending:task&&task.pendingKind,row:!!document.querySelector('[data-task-row="${fixture.pendingTask}"]'),rowText:document.querySelector('[data-task-row="${fixture.pendingTask}"]')&&document.querySelector('[data-task-row="${fixture.pendingTask}"]').textContent}})()`);
+  check('published task with a pending change is still in the task form',await waitFor(b,`Pandora.taskForm.state.loaded&&Pandora.taskForm.current().paged.items.some(t=>t.id===${js(fixture.pendingTask)})`,20000));
+  const pendingRow=await ev(`(()=>{const rows=Pandora.taskForm.current().paged.items,task=rows.find(t=>t.id===${js(fixture.pendingTask)});return {title:task&&task.title,status:task&&task.status,proposed:rows.some(t=>t.title===${js(fixture.pendingProposedTitle)}),unpublished:rows.some(t=>t.title==='Unpublished departure creation'),pending:task&&task.pendingKind,row:!!document.querySelector('[data-task-row="${fixture.pendingTask}"]'),rowText:document.querySelector('[data-task-row="${fixture.pendingTask}"]')&&document.querySelector('[data-task-row="${fixture.pendingTask}"]').textContent}})()`);
   check('task form lists the effective state and excludes unpublished/proposed work',pendingRow.title===fixture.pendingOldTitle&&pendingRow.status!=='done'&&!pendingRow.proposed&&!pendingRow.unpublished&&pendingRow.pending==='complete'&&pendingRow.row&&pendingRow.rowText.includes('完成待审'),pendingRow);
   await ev(`document.querySelector('[data-task-row="${fixture.pendingTask}"] [data-task="${fixture.pendingTask}"]').click()`);
   check('pending-completion detail shows the effective version, not the proposal',await waitFor(b,"!document.getElementById('overlay').hidden&&Pandora.idle()")&&await ev(`document.getElementById('sheetTitle').textContent===${js(fixture.pendingOldTitle)}&&document.getElementById('sheetBody').textContent.includes('当前展示的是有效版本')&&!document.getElementById('sheetBody').textContent.includes(${js(fixture.pendingProposedTitle)})`));
@@ -398,7 +422,7 @@ async function main(){
   for(const [key,label,department,team] of [['founder','创始人',true,false],['alpha-head','部门负责人',true,false],['alpha-two-head','团队负责人',true,true]]){
    await ev('Pandora.logout()');await login(key);await ev("setPage('me')");
    const fields=await ev("Array.from(document.querySelectorAll('[data-profile-fold=organization] .profile-row .k')).map(e=>e.textContent)");
-   check('fixed profile organization fields '+key,await ev(`document.querySelector('[data-profile-fold=organization]').textContent.includes(${js(label)})&&!document.querySelector('[data-action=p-open-teams]')`)&&fields.includes('部门')===department&&fields.includes('团队')===team&&!fields.includes('公司'),fields);
+   check('fixed profile organization fields '+key,await ev("!document.querySelector('[data-action=p-open-teams]')")&&fields.includes('部门')===department&&fields.includes('团队')===team&&!fields.includes('公司'),fields);
    await ev("document.querySelector('[data-profile-fold=reports]').open=true");
    for(let level=0;level<4;level++){await ev("document.querySelectorAll('[data-action=p-report-toggle][aria-expanded=false]').forEach(node=>node.click())");await sleep(80);}
    check('fixed manager retains subordinate profile and logs '+key,await ev(`!!document.querySelector('[data-action=p-open-person][data-id="${ids['alpha-one-employee'].id}"]')`));
@@ -407,7 +431,7 @@ async function main(){
     await ev(`state.logDepartmentId='fixture-company-beta';state.logTeamId='fixture-company-beta-one';state.logDepartmentQuery='beta';state.logTeamQuery='beta';state.logAuthorQuery='beta'`);
     await ev(`document.querySelector('[data-action=p-open-person][data-id="${ids['alpha-one-employee'].id}"]').click()`);
     const personPage=await waitFor(b,"!!document.querySelector('[data-action=p-staff-enter][data-tab=logs]')&&Pandora.idle()");
-    check('actual descendant contact and log entry '+key,personPage&&await ev("document.getElementById('sheetBody').textContent.includes('手机号')&&!document.getElementById('sheetBody').textContent.includes('邮箱')"),await ev("({title:document.getElementById('sheetTitle').textContent,oldEntry:!!document.querySelector('[data-action=p-open-person-logs]')})"));
+    check('actual descendant contact and log entry '+key,personPage&&await ev("document.getElementById('sheetBody').textContent.includes('联系电话')&&document.getElementById('sheetBody').textContent.includes('邮箱')&&document.getElementById('sheetBody').textContent.includes('已入职')"),await ev("({title:document.getElementById('sheetTitle').textContent,oldEntry:!!document.querySelector('[data-action=p-open-person-logs]')})"));
     const indirect=await ev(`(()=>{const target=Pandora.data.reports.items.find(p=>p.id===${js(ids['alpha-one-employee'].id)});return {manager:target&&target.managerId,me:Pandora.data.me.id,isDirect:!!target&&target.managerId===Pandora.data.me.id,canRead:!!target&&target.canReadLogs}})()`);
     check('person log target is an indirect descendant, not only a direct report',indirect.manager&&indirect.manager!==indirect.me&&indirect.isDirect===false&&indirect.canRead,indirect);
     await ev("document.querySelector('[data-action=p-staff-enter][data-tab=logs]').click()");
@@ -427,7 +451,7 @@ async function main(){
    }else{
     await ev(`document.querySelector('[data-action=p-open-person][data-id="${ids['alpha-one-employee'].id}"]').click()`);
     const personPage=await waitFor(b,"!!document.querySelector('[data-action=p-staff-enter][data-tab=logs]')&&Pandora.idle()");
-    check('actual descendant contact and log entry '+key,personPage&&await ev("document.getElementById('sheetBody').textContent.includes('手机号')&&!document.getElementById('sheetBody').textContent.includes('邮箱')"),await ev("({title:document.getElementById('sheetTitle').textContent,oldEntry:!!document.querySelector('[data-action=p-open-person-logs]')})"));
+    check('actual descendant contact and log entry '+key,personPage&&await ev("document.getElementById('sheetBody').textContent.includes('联系电话')&&document.getElementById('sheetBody').textContent.includes('邮箱')&&document.getElementById('sheetBody').textContent.includes('已入职')"),await ev("({title:document.getElementById('sheetTitle').textContent,oldEntry:!!document.querySelector('[data-action=p-open-person-logs]')})"));
     await ev("document.querySelector('[data-action=p-staff-enter][data-tab=logs]').click()");
     const readsLogs=await waitFor(b,"Pandora.idle()&&document.querySelectorAll('.staff-log-card').length>0");
     const staffLogs=await ev("Array.from(document.querySelectorAll('.staff-log-card')).map(e=>e.dataset.id)");

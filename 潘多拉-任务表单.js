@@ -442,7 +442,8 @@
   function paintFromStart() {
     const scroller = document.getElementById("p-table-scroll");
     T.scrollMemory = { top: 0, left: scroller ? scroller.scrollLeft : 0 };
-    if (tableActive()) refreshTable();
+    if (tableActive()) return refreshTable();
+    return Promise.resolve();
   }
 
   function paintResults() {
@@ -616,8 +617,10 @@
       if (T.sort.key === key) T.sort.dir = T.sort.dir === "asc" ? "desc" : "asc";
       else T.sort = { key: key, dir: "asc" };
       const restoreFocus = document.activeElement === element;
-      T.page = 0; paintFromStart();
-      if (restoreFocus) document.querySelector('.p-table-sort[data-key="' + key + '"]')?.focus({ preventScroll: true });
+      T.page = 0;
+      const pending = paintFromStart();
+      // The server re-query rebuilds the whole table; focus can only return after that repaint.
+      if (restoreFocus) pending.finally(() => document.querySelector('.p-table-sort[data-key="' + key + '"]')?.focus({ preventScroll: true }));
       return;
     }
     if (action === "task-table-prev") { T.page = Math.max(0, T.page - 1); paintFromStart(); return; }

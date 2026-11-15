@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-15T08:19:57.185Z",
+  "updated": "2026-11-15T08:49:47.473Z",
   "viewports": [
     {
       "viewport": "320x740",
@@ -23,7 +23,7 @@
         "open": false
       },
       "backward": {
-        "top": 1198,
+        "top": 1199,
         "open": false
       },
       "movedForward": true,
@@ -47,7 +47,7 @@
       "canSlideBack": true,
       "canSlideForward": true,
       "forward": {
-        "top": 1642,
+        "top": 1643,
         "open": false
       },
       "backward": {
@@ -79,7 +79,7 @@
         "open": false
       },
       "backward": {
-        "top": 1197,
+        "top": 1198,
         "open": false
       },
       "movedForward": true,
@@ -107,7 +107,7 @@
         "open": false
       },
       "backward": {
-        "top": 1199,
+        "top": 1200,
         "open": false
       },
       "movedForward": true,
