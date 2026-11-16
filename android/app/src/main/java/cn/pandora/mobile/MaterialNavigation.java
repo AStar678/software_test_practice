@@ -47,9 +47,9 @@ final class MaterialNavigation extends LinearLayout {
       ImageView icon = new ImageView(context);
       icons[i] = icon;
       icon.setImageResource(resources[i]);
-      icon.setPadding(dp(20), dp(4), dp(20), dp(4));
+      icon.setPadding(dp(14), dp(4), dp(14), dp(4));
       icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-      tab.addView(icon, new LayoutParams(dp(64), dp(32)));
+      tab.addView(icon, new LayoutParams(dp(52), dp(32)));
       TextView label = new TextView(context);
       labels[i] = label;
       label.setText(names[i]);

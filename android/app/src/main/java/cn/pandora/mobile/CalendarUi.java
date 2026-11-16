@@ -15,11 +15,19 @@ final class CalendarUi {
   static ZoneId ZONE = ZoneId.of("Asia/Shanghai");
   private final MainActivity a;
   private final Ui u;
-  LocalDate date = LocalDate.now(ZONE);
+  LocalDate date;
   String person = "";
   boolean day = false;
   int dayMode = 0;
-  int capacity = 1;
+  int capacity = 3;
+  private ListView monthList;
+  private Integer monthOffset;
+  private boolean restoring;
+  private static final int MONTH_LANE = 40;
+  private LocalDate monthReturnDate;
+  private Integer monthReturnOffset;
+  private static final int STREAM_MIDDLE = 1200;
+  private static final String[] WEEK = {"一", "二", "三", "四", "五", "六", "日"};
   private final String reportId;
   private JSONArray reportTasks = new JSONArray();
   private Runnable reloadWorkspace;
@@ -39,7 +47,25 @@ final class CalendarUi {
     }
   }
 
-  void show() { render(a.page("日程")); }
+  void reset() {
+    person = "";
+    date = null;
+    day = false;
+    dayMode = 0;
+    capacity = 3;
+    monthList = null;
+    monthOffset = null;
+    monthReturnDate = null;
+    monthReturnOffset = null;
+  }
+
+  void show() {
+    if (date == null) date = a.workspaceUi.businessDate();
+    LinearLayout root = day ? a.page("公司") : a.fixedPage("公司");
+    if (!day) root.setPadding(0, 0, 0, 0);
+    render(root);
+    a.floatingCreate(() -> a.tasksUi.form(null, false, day ? date : null));
+  }
 
   void showWorkspace(LinearLayout box, JSONArray tasks, Runnable reload) {
     reportTasks = tasks;
@@ -54,84 +80,47 @@ final class CalendarUi {
 
   private void render(LinearLayout box) {
     LinearLayout row = u.row();
-    Button prev = new Button(a), pick = new Button(a), next = new Button(a);
-    styleCalendarButton(prev);
-    styleCalendarButton(pick);
-    styleCalendarButton(next);
-    prev.setText("‹");
-    prev.setContentDescription("上一月或上一日");
-    next.setText("›");
-    next.setContentDescription("下一月或下一日");
-    pick.setText(day ? date.toString() : date.getYear() + "年" + date.getMonthValue() + "月");
-    row.addView(prev, new LinearLayout.LayoutParams(u.dp(48), u.dp(48)));
-    row.addView(pick, new LinearLayout.LayoutParams(0, u.dp(56), 1));
-    row.addView(next, new LinearLayout.LayoutParams(u.dp(48), u.dp(48)));
+    row.setPadding(u.dp(8), 0, u.dp(8), 0);
+    if (day) {
+      Button back = toolbarButton("‹ 返回", "返回月历", this::returnToMonth);
+      row.addView(back, new LinearLayout.LayoutParams(u.dp(57), u.dp(48)));
+    }
+    Button pick = toolbarButton(monthTitle(YearMonth.from(date)) + " ⌄", "选择年月", this::pickDate);
+    pick.setTextColor(Ui.INK);
+    pick.setTextSize(18);
+    pick.setTypeface(null, Typeface.BOLD);
+    pick.setSingleLine(true);
+    if (android.os.Build.VERSION.SDK_INT >= 26) pick.setAutoSizeTextTypeUniformWithConfiguration(
+        11, 20, 1, android.util.TypedValue.COMPLEX_UNIT_SP);
+    row.addView(pick, new LinearLayout.LayoutParams(0, u.dp(58), 1));
+    row.addView(toolbarButton("‹", day ? "上一天" : "上一月",
+        () -> go(day ? date.minusDays(1) : date.minusMonths(1))),
+        new LinearLayout.LayoutParams(u.dp(32), u.dp(48)));
+    row.addView(toolbarButton("今天", "今天", () -> go(a.workspaceUi.businessDate())),
+        new LinearLayout.LayoutParams(u.dp(45), u.dp(48)));
+    row.addView(toolbarButton("›", day ? "下一天" : "下一月",
+        () -> go(day ? date.plusDays(1) : date.plusMonths(1))),
+        new LinearLayout.LayoutParams(u.dp(32), u.dp(48)));
+    if (reportId == null)
+      row.addView(toolbarButton("任务表单", "任务表单", () -> new TaskTableUi(a).show()),
+          new LinearLayout.LayoutParams(u.dp(75), u.dp(48)));
     box.addView(row);
-    prev.setOnClickListener(
-        v -> {
-          date = day ? date.minusDays(1) : date.minusMonths(1);
-          refreshView();
-        });
-    next.setOnClickListener(
-        v -> {
-          date = day ? date.plusDays(1) : date.plusMonths(1);
-          refreshView();
-        });
-    pick.setOnClickListener(
-        v ->
-            new DatePickerDialog(
-                    a,
-                    (picker, y, m, d) -> {
-                      date = LocalDate.of(y, m + 1, d);
-                      refreshView();
-                    },
-                    date.getYear(),
-                    date.getMonthValue() - 1,
-                    date.getDayOfMonth())
-                .show());
-    LinearLayout controls = u.row();
-    nativeButton(
-        controls,
-        "今天",
-        () -> {
-          date = a.workspaceUi.businessDate();
-          refreshView();
-        });
-    nativeButton(
-        controls,
-        day ? "切换到月历" : "切换到日程",
-        () -> {
-          day = !day;
-          refreshView();
-        });
-    box.addView(controls);
-    if (reportId == null) {
-      List<JSONObject> people = new ArrayList<>();
-      people.add(a.me);
-      people.addAll(rows(a.reports));
-      String[] names = people.stream().map(p -> s(p, "displayName")).toArray(String[]::new);
-      int index = 0;
-      for (int i = 0; i < people.size(); i++) if (id(people.get(i)).equals(person)) index = i;
-      Spinner owner = u.spinner(box, "查看负责人的日程", names, index);
-      owner.setOnItemSelectedListener(
-          new android.widget.AdapterView.OnItemSelectedListener() {
-            public void onNothingSelected(android.widget.AdapterView<?> p) {}
-
-            public void onItemSelected(android.widget.AdapterView<?> p, View v, int i, long id) {
-              String selected = Json.id(people.get(i));
-              if (!selected.equals(person) && !(person.isEmpty() && i == 0)) {
-                person = selected;
-                refreshView();
-              }
-            }
-          });
-      if (ownCalendar()) {
-        LinearLayout actions = u.row();
-        nativeButton(actions, "＋ 创建任务", () -> a.tasksUi.form(null, false));
-        nativeButton(actions, "我的申请", () -> a.tasksUi.approvals("applicant"));
-        nativeButton(actions, "任务筛选", a.tasksUi::list);
-        box.addView(actions);
+    if (!day && reportId == null) {
+      renderMonthStream(box, pick);
+      return;
+    }
+    if (day) {
+      LinearLayout strip = u.row();
+      LocalDate monday = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+      for (int i = 0; i < 7; i++) {
+        LocalDate selected = monday.plusDays(i);
+        Button b = toolbarButton(WEEK[i] + "\n" + selected.getDayOfMonth(),
+            selected + " 星期" + WEEK[i], () -> go(selected));
+        b.setSelected(date.equals(selected));
+        if (date.equals(selected)) b.setBackground(u.shape(Ui.CONTAINER, 12));
+        strip.addView(b, new LinearLayout.LayoutParams(0, u.dp(56), 1));
       }
+      box.addView(strip);
     }
     if (day) {
       LinearLayout modes = u.row();
@@ -145,21 +134,15 @@ final class CalendarUi {
       }
       box.addView(modes);
       if (dayMode == 2) {
-        boolean hasTasks = false;
-        for (JSONObject task : visible()) if (hits(task, date)) {
-          taskItem(box, task);
-          hasTasks = true;
-        }
-        if (!hasTasks) u.note(box, "当天暂无任务");
+        renderDayList(box, date);
       } else {
         u.heading(box, "全天任务");
         boolean any = false;
-        for (JSONObject t : visible()) if (t.optBoolean("allDay") && hits(t, date)) {
+        for (JSONObject t : visible()) if (fullDay(t, date) && hits(t, date)) {
           taskItem(box, t);
           any = true;
         }
         if (!any) u.note(box, "无全天任务");
-        if (ownCalendar()) u.note(box, "长按任务框拖动排期，长按边缘调整起止。每次调整 1 小时。");
         if (dayMode == 0) {
           HorizontalScrollView timeline = new HorizontalScrollView(a);
           timeline.setContentDescription("横向排期，左右滚动浏览 00:00 至 24:00");
@@ -171,21 +154,104 @@ final class CalendarUi {
         }
       }
     } else {
-      TextView rowsLabel = u.text("月历事件行数 · " + capacity + "行", 14, Ui.MUTED);
-      rowsLabel.setId(R.id.month_capacity_label);
-      box.addView(rowsLabel);
-      u.note(box, "双指沿上下方向张开或合拢，调整显示行数。");
-      if (ownCalendar()) u.note(box, "长按任务条后拖动可改排期，拖动两端可调整起止日期。");
-      box.addView(new MonthCanvas(rowsLabel));
-      u.heading(box, "本月任务列表");
-      for (JSONObject task : visible())
-        if (ScheduleMath.hits(
-            start(task),
-            end(task),
-            date.withDayOfMonth(1).atStartOfDay(ZONE).toInstant(),
-            date.withDayOfMonth(1).plusMonths(1).atStartOfDay(ZONE).toInstant()))
-          taskItem(box, task);
+      addWeekHeader(box);
+      box.addView(new MonthCanvas(YearMonth.from(date)));
     }
+  }
+
+  private Button toolbarButton(String text, String description, Runnable click) {
+    Button b = new Button(a);
+    styleCalendarButton(b);
+    b.setText(text);
+    b.setTextSize(13);
+    b.setContentDescription(description);
+    b.setOnClickListener(v -> { if (!a.busy) click.run(); });
+    return b;
+  }
+
+  private void dismissStreamOffset() { monthOffset = null; }
+
+  private void go(LocalDate value) {
+    date = value;
+    dismissStreamOffset();
+    refreshView();
+  }
+
+  private String monthTitle(YearMonth month) {
+    return month.getYear() + "年" + month.getMonthValue() + "月";
+  }
+
+  private void pickDate() {
+    u.dates.date(day ? "选择日期" : "选择年月", date, !day, this::go);
+  }
+
+  void returnToMonth() {
+    day = false;
+    if (monthReturnDate == null) monthOffset = null;
+    else {
+      date = monthReturnDate;
+      monthOffset = monthReturnOffset;
+    }
+    monthReturnDate = null;
+    monthReturnOffset = null;
+    refreshView();
+  }
+
+  private void addWeekHeader(LinearLayout box) {
+    LinearLayout row = u.row();
+    for (String name : WEEK) {
+      TextView label = u.text(name, 13, "六".equals(name) || "日".equals(name) ? Ui.PRIMARY : Ui.MUTED);
+      label.setGravity(Gravity.CENTER);
+      label.setTextIsSelectable(false);
+      row.addView(label, new LinearLayout.LayoutParams(0, u.dp(31), 1));
+    }
+    row.setBackgroundColor(0xfffcf5fa);
+    box.addView(row);
+  }
+
+  private void renderMonthStream(LinearLayout box, Button monthButton) {
+    addWeekHeader(box);
+    YearMonth center = YearMonth.from(date);
+    ListView list = new ListView(a);
+    monthList = list;
+    list.setDivider(null);
+    list.setPadding(0, 0, 0, u.dp(72));
+    list.setClipToPadding(false);
+    list.setItemsCanFocus(true);
+    list.setSelector(android.R.color.transparent);
+    list.setAdapter(new BaseAdapter() {
+      @Override public int getCount() { return STREAM_MIDDLE * 2 + 1; }
+      @Override public YearMonth getItem(int i) { return center.plusMonths(i - STREAM_MIDDLE); }
+      @Override public long getItemId(int i) { return i; }
+      @Override public View getView(int i, View old, android.view.ViewGroup parent) {
+        if (old instanceof MonthCanvas canvas) {
+          canvas.bind(getItem(i));
+          return canvas;
+        }
+        MonthCanvas canvas = new MonthCanvas(getItem(i));
+        canvas.setLayoutParams(new AbsListView.LayoutParams(-1, -2));
+        return canvas;
+      }
+    });
+    box.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));
+    restoring = true;
+    int week = (date.getDayOfMonth() + center.atDay(1).getDayOfWeek().getValue() - 2) / 7;
+    int anchor = monthOffset == null ? (week == 0 ? 0 : -u.dp(37 + week * (56 + capacity * MONTH_LANE))) : monthOffset;
+    list.setSelectionFromTop(STREAM_MIDDLE, anchor);
+    list.post(() -> { if (monthList == list) restoring = false; });
+    list.setOnScrollListener(new AbsListView.OnScrollListener() {
+      @Override public void onScrollStateChanged(AbsListView view, int state) {}
+      @Override public void onScroll(AbsListView view, int first, int count, int total) {
+        if (list != monthList || restoring || count == 0) return;
+        YearMonth next = center.plusMonths(first - STREAM_MIDDLE);
+        if (!next.equals(YearMonth.from(date))) {
+          date = next.atDay(1);
+          monthButton.setText(monthTitle(next) + " ⌄");
+        }
+        View firstMonth = list.getChildAt(0);
+        if (firstMonth != null) monthOffset = firstMonth.getTop();
+      }
+    });
   }
 
   private void styleCalendarButton(Button button) {
@@ -213,8 +279,10 @@ final class CalendarUi {
   List<JSONObject> visible() {
     String selected = person.isEmpty() ? a.uid() : person;
     List<JSONObject> out = new ArrayList<>();
+    Set<String> seen = new HashSet<>();
     for (JSONObject task : rows(reportId == null ? a.tasks : reportTasks)) {
-      if (!contains(arr(task, "assigneeIds"), selected) || !task.optBoolean("published")) continue;
+      if (!contains(arr(task, "assigneeIds"), selected) || !task.optBoolean("published")
+          || !seen.add(id(task))) continue;
       JSONObject schedule = task.optJSONObject("pendingSchedule");
       if (schedule == null) {
         out.add(task);
@@ -266,37 +334,73 @@ final class CalendarUi {
   }
 
   void dateDetail(LocalDate selected) {
-    MainActivity.Panel p = a.panel(selected.toString() + " · 日程");
-    int count = 0;
-    for (JSONObject t : visible())
-      if (hits(t, selected)) {
-        taskItem(p.body, t);
-        count++;
+    String label = selected.getMonthValue() + "月" + selected.getDayOfMonth() + "日  星期"
+        + WEEK[selected.getDayOfWeek().getValue() - 1];
+    MainActivity.Panel p = a.panel(label, 1, .37f, Gravity.BOTTOM, "✕");
+    FrameLayout handleTouch = new FrameLayout(a);
+    View handle = new View(a);
+    handle.setBackground(u.shape(0xffc6c3cb, 4));
+    handleTouch.addView(handle, new FrameLayout.LayoutParams(u.dp(40), u.dp(5), Gravity.CENTER));
+    p.shell.addView(handleTouch, 0, new LinearLayout.LayoutParams(-1, u.dp(17)));
+    handleTouch.setOnTouchListener(new View.OnTouchListener() {
+      float down;
+      @Override public boolean onTouch(View v, MotionEvent e) {
+        if (e.getActionMasked() == MotionEvent.ACTION_DOWN) down = e.getRawY();
+        if (e.getActionMasked() == MotionEvent.ACTION_UP) {
+          v.performClick();
+          if (e.getRawY() - down > u.dp(28)) p.dialog.dismiss();
+        }
+        return true;
       }
-    if (count == 0) u.note(p.body, "这一天暂无任务");
-    dayLogs(p.body, selected);
-    u.button(
-        p.actions,
-        "查看当天时间轴",
-        false,
-        () -> {
-          p.dialog.dismiss();
-          date = selected;
-          day = true;
-          refreshView();
-        });
+    });
+    Button view = toolbarButton("查看日视图 ›", "查看日视图", () -> {
+      p.dialog.dismiss();
+      if (!day) {
+        monthReturnDate = date;
+        monthReturnOffset = monthOffset;
+      }
+      day = true;
+      dayMode = 0;
+      go(selected);
+    });
+    p.header.addView(view, 1);
+    renderDayList(p.body, selected);
   }
 
-  private void dayLogs(LinearLayout body, LocalDate selected) {
-    if (!person.isEmpty() && !person.equals(a.uid())) return;
-    u.heading(body, "本人工作日志");
-    boolean found = false;
-    for (JSONObject l : rows(a.logs))
-      if (selected.toString().equals(s(l, "businessDate"))) {
-        u.item(body, s(l, "body"), "本人日志", () -> a.workspaceUi.logDetail(id(l)));
-        found = true;
+  private void renderDayList(LinearLayout body, LocalDate selected) {
+    List<JSONObject> matches = new ArrayList<>();
+    for (JSONObject task : visible()) if (hits(task, selected)) matches.add(task);
+    if (matches.isEmpty()) {
+      TextView empty = u.text("这一天还没有任务", 15, Ui.MUTED);
+      empty.setGravity(Gravity.CENTER);
+      empty.setPadding(0, u.dp(26), 0, u.dp(12));
+      body.addView(empty);
+      if (ownCalendar()) {
+        Button create = toolbarButton("创建任务", "创建任务", () -> a.tasksUi.form(null, false, selected));
+        body.addView(create, new LinearLayout.LayoutParams(-1, u.dp(48)));
       }
-    if (!found) u.note(body, "当天没有本人日志");
+      return;
+    }
+    u.note(body, "共 " + matches.size() + " 项日程");
+    for (JSONObject t : matches) {
+      Instant lo = selected.atStartOfDay(ZONE).toInstant();
+      Instant hi = selected.plusDays(1).atStartOfDay(ZONE).toInstant();
+      var clock = java.time.format.DateTimeFormatter.ofPattern("HH:mm").withZone(ZONE);
+      String time = t.optBoolean("allDay") ? "全天" :
+          (start(t).isBefore(lo) ? "前日延续" : clock.format(start(t))) + " – "
+          + (!end(t).isBefore(hi) ? "24:00" : clock.format(end(t)))
+          + (end(t).isAfter(hi) ? " · 跨日" : "");
+      LinearLayout card = u.card(body);
+      u.item(card, (t.optBoolean("pinned") ? "★ " : "") + s(t, "title"), time
+          + " · " + state(s(t, "executionState")) + " · " + priority(t)
+          + (t.optBoolean("frozen") ? " · 审核中" : ""),
+          () -> a.tasksUi.detail(id(t), viewedReport()));
+    }
+  }
+
+  private boolean fullDay(JSONObject task, LocalDate selected) {
+    return task.optBoolean("allDay") || (!start(task).isAfter(selected.atStartOfDay(ZONE).toInstant())
+        && !end(task).isBefore(selected.plusDays(1).atStartOfDay(ZONE).toInstant()));
   }
 
   private boolean ownCalendar() {
@@ -309,6 +413,14 @@ final class CalendarUi {
 
   private void taskItem(LinearLayout list, JSONObject task) {
     a.tasksUi.taskItem(list, task, viewedReport());
+  }
+
+  private int calendarColor(JSONObject task) {
+    for (JSONObject tag : rows(arr(task, "tags"))) {
+      try { return Color.parseColor(s(tag, "color")); } catch (IllegalArgumentException ignored) {}
+    }
+    int[] shades = {0xfff4d5e1, 0xffe1eafb, 0xffdfefe7, 0xffefe4f8, 0xfff8e8d7, 0xfffae3e6};
+    return shades[Math.floorMod(id(task).hashCode(), shades.length)];
   }
 
   private boolean canDrag(JSONObject task) {
@@ -549,7 +661,10 @@ final class CalendarUi {
           int distance = wasDragging ? dragSteps(x, y) : 0;
           ScheduleMath.Range result = wasDragging && distance != 0
               ? proposalAt(x, y) : null;
-          boolean click = !wasDragging && !moved && target != null && target == hit(x, y);
+          Hit up = hit(x, y);
+          boolean click = !wasDragging && !moved && target != null && up != null
+              && (target.task == null ? up.task == null && Objects.equals(target.day, up.day)
+                  : up.task != null && id(target.task).equals(id(up.task)));
           clearDrag();
           if (result != null)
             confirmSchedule(target.task, result);
@@ -573,21 +688,26 @@ final class CalendarUi {
   }
 
   private final class MonthCanvas extends ScheduleCanvas {
-    private final TextView rowsLabel;
+    private YearMonth month;
+    private int describedCapacity;
     private boolean resizing;
     private boolean spanActive;
     private int initialCapacity;
     private float initialSpan;
 
-    MonthCanvas(TextView rowsLabel) {
-      this.rowsLabel = rowsLabel;
-      updateCapacityLabel();
+    MonthCanvas(YearMonth month) { bind(month); }
+
+    void bind(YearMonth month) {
+      if (month.equals(this.month) && describedCapacity == capacity) return;
+      clearDrag();
+      this.month = month;
+      updateCapacityDescription();
+      requestLayout();
     }
 
-    private void updateCapacityLabel() {
-      rowsLabel.setText(String.format(Locale.SIMPLIFIED_CHINESE, "月历事件行数 · %d 行", capacity));
-      setContentDescription(String.format(Locale.SIMPLIFIED_CHINESE,
-          "月历，当前显示 %d 行事件。双指上下张开或合拢调整行数。任务列表位于下方。", capacity));
+    private void updateCapacityDescription() {
+      describedCapacity = capacity;
+      setContentDescription(monthTitle(month) + "月历，当前显示 " + capacity + " 行事件。双指上下张开或合拢调整行数。");
     }
 
     @Override
@@ -608,7 +728,15 @@ final class CalendarUi {
         int next = ScheduleMath.monthCapacity(initialCapacity, verticalSpan(event) - initialSpan, dp(48));
         if (next != capacity) {
           capacity = next;
-          updateCapacityLabel();
+          updateCapacityDescription();
+          if (monthList != null && getParent() == monthList) {
+            for (int i = 0; i < monthList.getChildCount(); i++)
+              if (monthList.getChildAt(i) instanceof MonthCanvas canvas && canvas != this) {
+                canvas.updateCapacityDescription();
+                canvas.requestLayout();
+                canvas.invalidate();
+              }
+          }
           requestLayout();
           invalidate();
         }
@@ -625,27 +753,29 @@ final class CalendarUi {
       return Math.abs(event.getY(0) - event.getY(1));
     }
 
-    private float weekHeight() { return dp(36 + capacity * 24 + 20); }
+    private float weekHeight() { return dp(36 + capacity * MONTH_LANE + 20); }
+    private float headerHeight() { return reportId == null ? dp(37) : 0; }
 
     @Override
     boolean canDrop(float x, float y) {
-      return ScheduleMath.monthCell(x, y, getWidth(), dp(32), weekHeight(), weeks()) >= 0;
+      int cell = ScheduleMath.monthCell(x, y, getWidth(), headerHeight(), weekHeight(), weeks());
+      return cell >= 0 && YearMonth.from(first().plusDays(cell)).equals(month);
     }
 
     @Override
     int dragSteps(float x, float y) {
-      int source = ScheduleMath.monthCell(downX, downY, getWidth(), dp(32), weekHeight(), weeks());
-      int target = ScheduleMath.monthCell(x, y, getWidth(), dp(32), weekHeight(), weeks());
+      int source = ScheduleMath.monthCell(downX, downY, getWidth(), headerHeight(), weekHeight(), weeks());
+      int target = ScheduleMath.monthCell(x, y, getWidth(), headerHeight(), weekHeight(), weeks());
       return target < 0 || source < 0 ? 0 : target - source;
     }
 
     @Override
     void drawDrag(Canvas canvas) {
       if (!dragging || pressed == null) return;
-      int index = ScheduleMath.monthCell(dragX, dragY, getWidth(), dp(32), weekHeight(), weeks());
-      if (index < 0) return;
+      int index = ScheduleMath.monthCell(dragX, dragY, getWidth(), headerHeight(), weekHeight(), weeks());
+      if (index < 0 || !canDrop(dragX, dragY)) return;
       float column = getWidth() / 7f;
-      float left = index % 7 * column, top = dp(32) + index / 7 * weekHeight();
+      float left = index % 7 * column, top = headerHeight() + index / 7 * weekHeight();
       RectF ghost = new RectF(left + dp(2), top + dp(33), left + column - dp(2), top + weekHeight() - dp(4));
       fill(canvas, ghost, proposal == null ? 0xffffeee9 : 0xfffceaf2, 6);
       strokeDashed(canvas, ghost, proposal == null ? Ui.ERROR : Ui.PRIMARY);
@@ -659,38 +789,40 @@ final class CalendarUi {
     }
 
     LocalDate first() {
-      return date.withDayOfMonth(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+      return month.atDay(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     }
 
     int weeks() {
       return (int)
               (java.time.temporal.ChronoUnit.DAYS.between(
-                      first(), date.withDayOfMonth(1).plusMonths(1).minusDays(1))
+                      first(), month.atEndOfMonth())
                   / 7)
           + 1;
     }
 
     @Override
     protected void onMeasure(int w, int h) {
-      setMeasuredDimension(MeasureSpec.getSize(w), u.dp(32 + weeks() * (36 + capacity * 24 + 20)));
+      setMeasuredDimension(MeasureSpec.getSize(w), Math.round(headerHeight() + weeks() * weekHeight()));
     }
 
     @Override
     protected void onDraw(Canvas c) {
       super.onDraw(c);
       hits.clear();
-      float width = getWidth() / 7f, weekHeight = dp(36 + capacity * 24 + 20);
-      String[] weekdays = {"一", "二", "三", "四", "五", "六", "日"};
-      for (int i = 0; i < 7; i++)
-        text(c, weekdays[i], width * i + width * .4f, dp(22), 12, Ui.MUTED);
+      float width = getWidth() / 7f, weekHeight = weekHeight();
+      fill(c, new RectF(0, 0, getWidth(), getHeight()), Ui.SURFACE, 12);
+      if (reportId == null) text(c, monthTitle(month), dp(10), dp(24), 16, Ui.INK);
+      List<JSONObject> tasks = visible();
       for (int week = 0; week < weeks(); week++) {
         LocalDate from = first().plusWeeks(week);
-        float y = dp(32) + week * weekHeight;
+        float y = headerHeight() + week * weekHeight;
         for (int d = 0; d < 7; d++) {
           LocalDate cell = from.plusDays(d);
+          if (!YearMonth.from(cell).equals(month)) continue;
           RectF r = new RectF(width * d, y, width * (d + 1), y + weekHeight);
           hits.add(new Hit(r, null, cell));
-          if (cell.equals(LocalDate.now(ZONE)))
+          if (cell.equals(a.workspaceUi.businessDate())) {
+            fill(c, r, 0xfffdf2f8, 0);
             fill(
                 c,
                 new RectF(
@@ -699,24 +831,27 @@ final class CalendarUi {
                     width * d + width * .5f + dp(14),
                     y + dp(30)),
                 Ui.PRIMARY,
-                16);
+                11);
+          }
           text(
               c,
               String.valueOf(cell.getDayOfMonth()),
-              width * d + width * .5f - dp(7),
+              width * d + width * .5f - dp(cell.getDayOfMonth() < 10 ? 5 : 10),
               y + dp(23),
-              14,
-              cell.equals(LocalDate.now(ZONE))
+              20,
+              cell.equals(a.workspaceUi.businessDate())
                   ? Ui.SURFACE
-                  : cell.getMonth() == date.getMonth() ? Ui.INK : Ui.MUTED);
+                  : Ui.INK);
           paint.setColor(Ui.LINE);
           c.drawLine(width * d, y, width * d, y + weekHeight, paint);
         }
         List<Instant> ends = new ArrayList<>();
         int[] hidden = new int[7];
-        Instant lo = from.atStartOfDay(ZONE).toInstant(),
-            hi = from.plusDays(7).atStartOfDay(ZONE).toInstant();
-        for (JSONObject t : visible()) {
+        Instant lo = ScheduleMath.max(from.atStartOfDay(ZONE).toInstant(),
+                month.atDay(1).atStartOfDay(ZONE).toInstant()),
+            hi = ScheduleMath.min(from.plusDays(7).atStartOfDay(ZONE).toInstant(),
+                month.plusMonths(1).atDay(1).atStartOfDay(ZONE).toInstant());
+        for (JSONObject t : tasks) {
           if (!ScheduleMath.hits(start(t), end(t), lo, hi)) continue;
           Instant begin = ScheduleMath.max(start(t), lo), finish = ScheduleMath.min(end(t), hi);
           int left =
@@ -748,10 +883,10 @@ final class CalendarUi {
           RectF bar =
               new RectF(
                   width * left + dp(2),
-                  y + dp(34 + lane * 24),
+                  y + dp(34 + lane * MONTH_LANE),
                   width * right - dp(2),
-                  y + dp(56 + lane * 24));
-          fill(c, bar, t.optBoolean("pinned") ? Ui.CONTAINER : 0xffe2eaf1, 4);
+                  y + dp(70 + lane * MONTH_LANE));
+          fill(c, bar, calendarColor(t), 5);
           drawPending(c, bar, t);
           text(
               c,
@@ -763,10 +898,12 @@ final class CalendarUi {
           Hit hit = new Hit(bar, t, null).handles(!start(t).isBefore(lo), !end(t).isAfter(hi));
           hits.add(hit);
           drawHandles(c, hit);
+          text(c, ellipsis(TasksUi.schedule(t), bar.width() - dp(6), 9),
+              bar.left + dp(3), bar.top + dp(27), 9, Ui.MUTED);
         }
         for (int d = 0; d < 7; d++)
           if (hidden[d] > 0) {
-            float top = y + dp(36 + capacity * 24);
+            float top = y + dp(36 + capacity * MONTH_LANE);
             text(c, "+" + hidden[d], d * width + dp(6), top + dp(15), 11, Ui.PRIMARY);
             hits.add(
                 new Hit(
@@ -793,7 +930,7 @@ final class CalendarUi {
       List<JSONObject> tasks = new ArrayList<>(visible());
       tasks.sort(Comparator.comparing(CalendarUi.this::start));
       for (JSONObject task : tasks) {
-        if (task.optBoolean("allDay") || !hits(task, date)) continue;
+        if (fullDay(task, date) || !hits(task, date)) continue;
         Instant from = ScheduleMath.max(start(task), first), to = ScheduleMath.min(end(task), last);
         int lane = ScheduleMath.lane(ends, from, to.equals(from) ? to.plusNanos(1) : to);
         events.add(new Event(task, from, to, lane));
@@ -803,7 +940,7 @@ final class CalendarUi {
 
     @Override
     protected void onMeasure(int width, int height) {
-      setMeasuredDimension(u.dp(24 * 56 + 16), u.dp(40 + laneCount * 48));
+      setMeasuredDimension(u.dp(24 * 56 + 16), u.dp(40 + laneCount * 41));
     }
 
     @Override
@@ -823,9 +960,9 @@ final class CalendarUi {
         float right = origin + (float) ScheduleMath.fraction(event.to(), first, last) * width;
         right = Math.min(getWidth(), Math.max(right, x + dp(42)));
         x = Math.min(x, right - dp(42));
-        float top = dp(36 + event.lane() * 48);
-        RectF rect = new RectF(x, top, right, top + dp(42));
-        fill(canvas, rect, Ui.CONTAINER, 8);
+        float top = dp(36 + event.lane() * 41);
+        RectF rect = new RectF(x, top, right, top + dp(35));
+        fill(canvas, rect, calendarColor(event.task()), 8);
         drawPending(canvas, rect, event.task());
         text(canvas, ellipsis(s(event.task(), "title"), rect.width() - dp(12), 12),
             rect.left + dp(6), rect.top + dp(17), 12, Ui.INK);
@@ -866,7 +1003,7 @@ final class CalendarUi {
       List<Hit> events = new ArrayList<>();
       List<Integer> lanes = new ArrayList<>();
       for (JSONObject task : tasks) {
-        if (task.optBoolean("allDay") || !hits(task, date)) continue;
+        if (fullDay(task, date) || !hits(task, date)) continue;
         Instant from = ScheduleMath.max(start(task), first), to = ScheduleMath.min(end(task), last);
         int lane = ScheduleMath.lane(ends, from, to.equals(from) ? to.plusNanos(1) : to);
         float y = top + (float) ScheduleMath.fraction(from, first, last) * 24 * hour;

@@ -20,6 +20,7 @@ public final class MainActivity extends Activity {
   ApiClient api;
   Ui u;
   TasksUi tasksUi;
+  TaskTableUi taskTable;
   WorkspaceUi workspaceUi;
   CalendarUi calendarUi;
   JSONObject me = new JSONObject(),
@@ -36,12 +37,12 @@ public final class MainActivity extends Activity {
   boolean busy, ready, destroyed;
   String page = "map";
   private final ExecutorService worker = Executors.newSingleThreadExecutor();
-  private LinearLayout root, body, toolbar;
+  private LinearLayout root, body;
   private FrameLayout content;
-  private TextView title;
   private ProgressBar loading;
   private MaterialNavigation navigation;
-  private Button bell;
+  private SessionStore sessions;
+  private Button homeBell;
   final List<Panel> panels = new ArrayList<>();
 
   interface Job<T> {
@@ -56,8 +57,9 @@ public final class MainActivity extends Activity {
     tasksUi = new TasksUi(this);
     workspaceUi = new WorkspaceUi(this);
     calendarUi = new CalendarUi(this);
+    sessions = new SessionStore(this);
     layout();
-    login("");
+    restoreSession();
     if (Build.VERSION.SDK_INT >= 33)
       getOnBackInvokedDispatcher()
           .registerOnBackInvokedCallback(
@@ -68,26 +70,6 @@ public final class MainActivity extends Activity {
   private void layout() {
     root = u.column();
     root.setBackgroundColor(Ui.BG);
-    toolbar = u.row();
-    toolbar.setPadding(u.dp(16), 0, u.dp(8), 0);
-    title = u.text("潘多拉", 22, Ui.INK);
-    title.setId(R.id.screen_title);
-    title.setGravity(Gravity.CENTER_VERTICAL);
-    toolbar.addView(title, new LinearLayout.LayoutParams(0, u.dp(64), 1));
-    bell = new Button(this);
-    bell.setText("");
-    bell.setPadding(u.dp(12), 0, u.dp(12), 0);
-    bell.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-    bell.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_notifications, 0, 0, 0);
-    bell.setAllCaps(false);
-    bell.setTextColor(Ui.PRIMARY);
-    bell.setContentDescription("通知");
-    bell.setOnClickListener(
-        v -> {
-          if (ready && !busy) workspaceUi.notifications();
-        });
-    toolbar.addView(bell, new LinearLayout.LayoutParams(u.dp(48), u.dp(48)));
-    root.addView(toolbar);
     loading = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
     loading.setIndeterminate(true);
     loading.setVisibility(View.GONE);
@@ -95,6 +77,7 @@ public final class MainActivity extends Activity {
     content = new FrameLayout(this);
     root.addView(content, new LinearLayout.LayoutParams(-1, 0, 1));
     navigation = new MaterialNavigation(this, this::navigate);
+    navigation.setVisibility(View.GONE);
     root.addView(navigation, new LinearLayout.LayoutParams(-1, u.dp(80)));
     setContentView(root);
     if (Build.VERSION.SDK_INT >= 30) {
@@ -121,7 +104,8 @@ public final class MainActivity extends Activity {
   }
 
   LinearLayout page(String label) {
-    title.setText(label);
+    if (Build.VERSION.SDK_INT >= 28) content.setAccessibilityPaneTitle(label);
+    homeBell = null;
     content.removeAllViews();
     ScrollView scroll = new ScrollView(this);
     scroll.setFillViewport(true);
@@ -132,10 +116,36 @@ public final class MainActivity extends Activity {
     return body;
   }
 
+  LinearLayout fixedPage(String label) {
+    if (Build.VERSION.SDK_INT >= 28) content.setAccessibilityPaneTitle(label);
+    homeBell = null;
+    content.removeAllViews();
+    body = u.column();
+    body.setPadding(u.dp(12), 0, u.dp(12), 0);
+    content.addView(body, new FrameLayout.LayoutParams(-1, -1));
+    return body;
+  }
+
+  void floatingCreate(Runnable create) {
+    Button button = new Button(this);
+    button.setText("＋");
+    button.setTextSize(26);
+    button.setTextColor(Ui.SURFACE);
+    button.setContentDescription("创建任务");
+    button.setPadding(0, 0, 0, 0);
+    button.setBackground(u.shape(Ui.PRIMARY, 20));
+    button.setElevation(u.dp(4));
+    button.setOnClickListener(v -> { if (!busy) create.run(); });
+    FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+        u.dp(52), u.dp(52), Gravity.BOTTOM | Gravity.END);
+    lp.setMargins(0, 0, u.dp(18), u.dp(20));
+    content.addView(button, lp);
+  }
+
   void navigate(String destination) {
     if (!ready || busy) return;
+    taskTable = null;
     page = destination;
-    updateBell();
     navigation.select(page);
     switch (page) {
       case "view" -> calendarUi.show();
@@ -147,10 +157,11 @@ public final class MainActivity extends Activity {
   }
 
   void updateBell() {
+    if (homeBell == null) return;
     long unread = rows(notifications).stream().filter(n -> s(n, "readAt").isEmpty()).count();
-    bell.setCompoundDrawablesRelativeWithIntrinsicBounds(
-        unread > 0 ? R.drawable.ic_notifications_unread : R.drawable.ic_notifications, 0, 0, 0);
-    bell.setContentDescription("通知，" + unread + "条未读");
+    homeBell.setCompoundDrawablesRelativeWithIntrinsicBounds(
+        unread == 0 ? R.drawable.ic_notifications : R.drawable.ic_notifications_unread, 0, 0, 0);
+    homeBell.setContentDescription(unread == 0 ? "通知" : "通知，" + unread + "条未读");
   }
 
   void reload() {
@@ -223,6 +234,7 @@ public final class MainActivity extends Activity {
                   if (error instanceof ApiClient.Failure f
                       && f.status == 401
                       && !api.token.isEmpty()) {
+                    sessions.forget();
                     api.clear();
                     clear();
                     login("登录已过期，请重新登录。");
@@ -247,7 +259,8 @@ public final class MainActivity extends Activity {
         result -> {
           workspaceUi.reset();
           closePanels();
-          navigate(page);
+          if (taskTable == null) navigate(page);
+          else taskTable.refresh();
           toast(s(result, "message").isEmpty() ? "操作已保存" : s(result, "message"));
         });
   }
@@ -264,10 +277,36 @@ public final class MainActivity extends Activity {
     Toast.makeText(this, message, Toast.LENGTH_LONG).show();
   }
 
+  private void restoreSession() {
+    String saved = sessions.restore();
+    if (saved.isEmpty()) {
+      login("");
+      return;
+    }
+    api.epoch++;
+    api.token = saved;
+    loadSignedInWorkspace("正在恢复登录…");
+  }
+
+  private void loadSignedInWorkspace(String message) {
+    LinearLayout box = page("正在进入工作台");
+    u.heading(box, "潘多拉");
+    u.note(box, message);
+    run(this::load, unused -> {
+      ready = true;
+      navigation.setVisibility(View.VISIBLE);
+      navigate("map");
+    }, error -> {
+      if (!box.isAttachedToWindow()) return;
+      u.note(box, error);
+      u.button(box, "重试", true, () -> loadSignedInWorkspace("正在恢复登录…"));
+      u.button(box, "换个账号登录", false, this::logout);
+    });
+  }
+
   void login(String message) {
     ready = false;
     navigation.setVisibility(View.GONE);
-    bell.setVisibility(View.GONE);
     LinearLayout box = page("登录");
     u.heading(box, "潘多拉");
     u.heading(box, "让每一天，有序向前。");
@@ -297,20 +336,14 @@ public final class MainActivity extends Activity {
               result -> {
                 api.epoch++;
                 api.token = s(result, "token");
+                boolean saved = sessions.save(api.token);
+                if (!saved) toast("本机暂时无法保存登录状态。");
                 if (result.optBoolean("passwordChangeRequired")
                     || child(result, "user").optBoolean("mustChangePassword")) {
                   password(true);
                   return;
                 }
-                run(
-                    this::load,
-                    v -> {
-                      ready = true;
-                      bell.setVisibility(View.VISIBLE);
-                      navigation.setVisibility(View.VISIBLE);
-                      page = "map";
-                      navigate(page);
-                    });
+                loadSignedInWorkspace("正在加载工作台…");
               });
         });
     u.note(box, "使用管理员登记的手机号登录。忘记密码请联系管理员。");
@@ -356,6 +389,7 @@ public final class MainActivity extends Activity {
                   api.post(
                       "/auth/password", obj("currentPassword", currentValue, "newPassword", value)),
               r -> {
+                sessions.forget();
                 api.clear();
                 clear();
                 login("密码已修改，请使用新密码登录。");
@@ -365,13 +399,15 @@ public final class MainActivity extends Activity {
   }
 
   void logout() {
-    run(
-        () -> api.request("DELETE", "/auth/sessions/current", null, null, null),
-        r -> {
-          api.clear();
-          clear();
-          login("");
-        });
+    if (busy) return;
+    sessions.forget();
+    Runnable finish = () -> {
+      api.clear();
+      clear();
+      login("");
+    };
+    run(() -> api.request("DELETE", "/auth/sessions/current", null, null, null),
+        response -> finish.run(), error -> finish.run());
   }
 
   private void clear() {
@@ -385,7 +421,8 @@ public final class MainActivity extends Activity {
     approvals = new JSONArray();
     reports = new JSONArray();
     notifications = new JSONArray();
-    calendarUi.person = "";
+    calendarUi.reset();
+    taskTable = null;
     home = new JSONObject();
     analytics = new JSONObject();
     authors = new JSONObject();
@@ -393,18 +430,37 @@ public final class MainActivity extends Activity {
   }
 
   void dashboard() {
-    LinearLayout box = page("工作台");
+    LinearLayout homePage = fixedPage("工作台");
+    homePage.setPadding(u.dp(16), 0, u.dp(16), 0);
     LinearLayout heading = u.row();
+    heading.setPadding(0, u.dp(8), 0, 0);
     java.time.LocalDate today = workspaceUi.businessDate();
     String weekday = today.getDayOfWeek().getDisplayName(
         java.time.format.TextStyle.FULL, Locale.SIMPLIFIED_CHINESE);
     LinearLayout dateBlock = u.column();
     heading.addView(dateBlock, new LinearLayout.LayoutParams(0, -2, 1));
+    heading.setGravity(Gravity.TOP);
+    homeBell = new Button(this);
+    homeBell.setId(R.id.home_notifications);
+    homeBell.setPadding(u.dp(12), 0, 0, 0);
+    homeBell.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+    homeBell.setStateListAnimator(null);
+    homeBell.setBackground(u.shape(Ui.CONTAINER, 20));
+    homeBell.setOnClickListener(v -> {
+      if (ready && !busy) workspaceUi.notifications();
+    });
+    heading.addView(homeBell, new LinearLayout.LayoutParams(u.dp(48), u.dp(48)));
+    updateBell();
     TextView date = u.text(today.getMonthValue() + "月" + today.getDayOfMonth() + "日", 26, Ui.INK);
     date.setTypeface(null, android.graphics.Typeface.BOLD);
     dateBlock.addView(date);
     u.note(dateBlock, weekday);
-    box.addView(heading);
+    homePage.addView(heading);
+    ScrollView scroll = new ScrollView(this);
+    LinearLayout box = u.column();
+    box.setPadding(0, 0, 0, u.dp(24));
+    scroll.addView(box);
+    homePage.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
     List<JSONObject> events = rows(arr(home, "companyItems"));
     List<JSONObject> assigned = rows(arr(home, "assignedTasks"));
     LinearLayout previews = u.row();
@@ -426,21 +482,7 @@ public final class MainActivity extends Activity {
     LinearLayout personal = u.card(box);
     personal.setId(R.id.dashboard_personal);
     workspaceUi.dailyItems(personal);
-    LinearLayout shortcuts = u.card(box);
-    long pending =
-        rows(approvals).stream()
-            .filter(
-                r -> "pending".equals(s(r, "status")) && uid().equals(s(r, "currentReviewerId")))
-            .count();
-    LinearLayout actions = u.row();
-    shortcuts.addView(actions);
-    LinearLayout one = u.column(), two = u.column(), three = u.column();
-    actions.addView(one, new LinearLayout.LayoutParams(0, -2, 1));
-    actions.addView(two, new LinearLayout.LayoutParams(0, -2, 1));
-    actions.addView(three, new LinearLayout.LayoutParams(0, -2, 1));
-    u.button(one, "待我审核 · " + pending, false, () -> tasksUi.approvals("reviewer"));
-    u.button(two, "我的申请", false, () -> tasksUi.approvals("applicant"));
-    u.button(three, "全部授权任务", false, tasksUi::list);
+
   }
 
   private LinearLayout dashboardPreview(LinearLayout row, int id, String heading, String detail) {
@@ -525,35 +567,73 @@ public final class MainActivity extends Activity {
   }
 
   Panel panel(String label) {
-    Panel p = new Panel(label);
+    return panel(label, 1, .92f, Gravity.BOTTOM, "关闭");
+  }
+
+  Panel panel(String label, float width, float height, int gravity, String closeLabel) {
+    Panel p = new Panel(label, closeLabel, width, height);
     panels.add(p);
     p.dialog.show();
+    if (Build.VERSION.SDK_INT >= 33) {
+      p.dialog.getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+          android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, () -> {
+            if (!hideVisibleKeyboard(p.dialog.getWindow()) && !busy) p.dialog.dismiss();
+          });
+    }
     Window w = p.dialog.getWindow();
     if (w != null) {
       w.setBackgroundDrawableResource(android.R.color.transparent);
-      w.setLayout(-1, (int) (getResources().getDisplayMetrics().heightPixels * .92));
-      w.setGravity(Gravity.BOTTOM);
-      w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+      p.resize();
+      w.setGravity(gravity);
+      w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+          | WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
     }
     return p;
   }
 
   final class Panel {
     final Dialog dialog;
-    final LinearLayout body, actions;
+    final LinearLayout body, actions, shell, header;
+    final ScrollView scroll;
     final TextView error;
+    final float width, height;
 
-    Panel(String label) {
-      dialog = new Dialog(MainActivity.this);
-      LinearLayout shell = u.column();
+    void resize() {
+      Window w = dialog.getWindow();
+      if (w != null) w.setLayout(
+          width == 1 ? -1 : Math.round(getResources().getDisplayMetrics().widthPixels * width),
+          height == 1 ? -1 : Math.round(getResources().getDisplayMetrics().heightPixels * height));
+    }
+
+    Panel(String label, String closeLabel, float width, float height) {
+      this.width = width;
+      this.height = height;
+      dialog = new Dialog(MainActivity.this) {
+        @Override public boolean dispatchTouchEvent(MotionEvent event) {
+          View focused = getCurrentFocus();
+          boolean handled = super.dispatchTouchEvent(event);
+          dismissKeyboardOutside(event, focused, getCurrentFocus());
+          return handled;
+        }
+
+        @Override
+        @android.annotation.SuppressLint("GestureBackNavigation")
+        @SuppressWarnings("deprecation")
+        public void onBackPressed() {
+          if (!hideVisibleKeyboard(getWindow()) && !busy) super.onBackPressed();
+        }
+      };
+      shell = u.column();
+      shell.setFocusableInTouchMode(true);
       shell.setBackground(u.shape(Ui.BG, 28));
       shell.setPadding(u.dp(16), u.dp(8), u.dp(16), u.dp(16));
-      LinearLayout header = u.row();
+      header = u.row();
       TextView h = u.text(label, 20, Ui.INK);
       header.addView(h, new LinearLayout.LayoutParams(0, -2, 1));
       Button close = new Button(MainActivity.this);
-      close.setText("关闭");
-      close.setContentDescription("关闭" + label);
+      close.setText(closeLabel);
+      close.setAllCaps(false);
+      close.setContentDescription(closeLabel + "，" + label);
       close.setOnClickListener(
           v -> {
             if (!busy) dialog.dismiss();
@@ -561,14 +641,23 @@ public final class MainActivity extends Activity {
       header.addView(close);
       shell.addView(header);
       error = u.text("", 14, Ui.ERROR);
+      error.setVisibility(View.GONE);
+      error.addTextChangedListener(new android.text.TextWatcher() {
+        @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+          error.setVisibility(s.length() == 0 ? View.GONE : View.VISIBLE);
+        }
+        @Override public void afterTextChanged(android.text.Editable s) {}
+      });
       shell.addView(error);
-      ScrollView scroll = new ScrollView(MainActivity.this);
+      scroll = new ScrollView(MainActivity.this);
       body = u.column();
       scroll.addView(body);
       shell.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
       actions = u.column();
       shell.addView(actions);
       dialog.setContentView(shell);
+      shell.requestFocus();
       dialog.setOnDismissListener(d -> panels.remove(this));
     }
   }
@@ -578,18 +667,46 @@ public final class MainActivity extends Activity {
     panels.clear();
   }
 
+  @Override
+  public boolean dispatchTouchEvent(MotionEvent event) {
+    View focused = getCurrentFocus();
+    boolean handled = super.dispatchTouchEvent(event);
+    dismissKeyboardOutside(event, focused, getCurrentFocus());
+    return handled;
+  }
+
+  private void dismissKeyboardOutside(MotionEvent event, View previous, View current) {
+    if (event.getActionMasked() != MotionEvent.ACTION_UP || previous != current
+        || !(current instanceof EditText editor)) return;
+    int[] origin = new int[2];
+    editor.getLocationOnScreen(origin);
+    float x = event.getRawX() - origin[0], y = event.getRawY() - origin[1];
+    if (x < 0 || x >= editor.getWidth() || y < 0 || y >= editor.getHeight()) u.dismissKeyboard(editor);
+  }
+
+  private boolean hideVisibleKeyboard(Window window) {
+    if (window == null || Build.VERSION.SDK_INT < 30) return false;
+    WindowInsets insets = window.getDecorView().getRootWindowInsets();
+    if (insets == null || !insets.isVisible(WindowInsets.Type.ime())) return false;
+    WindowInsetsController controller = window.getInsetsController();
+    if (controller == null) return false;
+    controller.hide(WindowInsets.Type.ime());
+    return true;
+  }
+
   void back() {
-    if (android.os.Build.VERSION.SDK_INT >= 30
-        && getWindow().getDecorView().getRootWindowInsets() != null
-        && getWindow()
-            .getDecorView()
-            .getRootWindowInsets()
-            .isVisible(android.view.WindowInsets.Type.ime())) {
-      getWindow().getInsetsController().hide(android.view.WindowInsets.Type.ime());
-      return;
-    }
+    Window window = panels.isEmpty() ? getWindow() : panels.get(panels.size() - 1).dialog.getWindow();
+    if (hideVisibleKeyboard(window)) return;
     if (!panels.isEmpty()) {
       panels.get(panels.size() - 1).dialog.dismiss();
+      return;
+    }
+    if (taskTable != null) {
+      navigate("view");
+      return;
+    }
+    if ("view".equals(page) && calendarUi.day) {
+      calendarUi.returnToMonth();
       return;
     }
     if (ready && !"map".equals(page)) {
@@ -611,12 +728,8 @@ public final class MainActivity extends Activity {
   public void onConfigurationChanged(Configuration config) {
     super.onConfigurationChanged(config);
     root.requestApplyInsets();
-    for (Panel p : panels)
-      if (p.dialog.getWindow() != null)
-        p.dialog
-            .getWindow()
-            .setLayout(-1, (int) (getResources().getDisplayMetrics().heightPixels * .92));
-    if (ready && panels.isEmpty()) navigate(page);
+    for (Panel p : panels) p.resize();
+    if (ready && panels.isEmpty() && taskTable == null) navigate(page);
   }
 
   @Override

@@ -3,6 +3,6 @@
  <item name="login_submit" type="id"/><item name="screen_title" type="id"/>
  <item name="dashboard_company" type="id"/><item name="dashboard_tasks" type="id"/>
  <item name="dashboard_personal" type="id"/><item name="dashboard_logs" type="id"/>
- <item name="month_capacity_label" type="id"/>
  <item name="log_content" type="id"/>
+ <item name="home_notifications" type="id"/>
 </resources>

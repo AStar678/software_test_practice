@@ -36,7 +36,7 @@ final class MemberCommentsUi {
   private void load(boolean reset) {
     final String query = reset ? "" : "&cursor=" + ApiClient.q(cursor);
     a.run(() -> {
-      a.workspaceUi.requireReport(reportId);
+      if (reportId != null) a.workspaceUi.requireReport(reportId);
       return a.api.get(path + "?limit=20" + query);
     }, result -> {
       if (!items.isAttachedToWindow()) return;
@@ -87,7 +87,7 @@ final class MemberCommentsUi {
   private void save(MainActivity.Panel draft, String slot, String method, String target,
                     JSONObject data, String version) {
     a.run(() -> {
-      a.workspaceUi.requireReport(reportId);
+      if (reportId != null) a.workspaceUi.requireReport(reportId);
       return a.api.mutate(slot, method, target, data, version);
     }, ignored -> {
       draft.dialog.dismiss();

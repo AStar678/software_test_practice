@@ -219,6 +219,15 @@ final class TasksUi {
     }
   }
 
+  static String whenMinute(String value) {
+    try {
+      return java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
+          .withZone(CalendarUi.ZONE).format(Instant.parse(value));
+    } catch (java.time.format.DateTimeParseException invalid) {
+      return value;
+    }
+  }
+
   static String schedule(JSONObject t) {
     if (!t.optBoolean("allDay") && s(t, "startAt").isEmpty()) return "查看任务排期";
     return t.optBoolean("allDay")
@@ -376,7 +385,9 @@ final class TasksUi {
     }
   }
 
-  void form(JSONObject raw, boolean reopen) {
+  void form(JSONObject raw, boolean reopen) { form(raw, reopen, null); }
+
+  void form(JSONObject raw, boolean reopen, LocalDate selectedDay) {
     boolean editing = raw != null;
     JSONObject t =
         editing && s(raw, "currentVersionId").isEmpty()
@@ -462,6 +473,7 @@ final class TasksUi {
                         "上级任务：" + (choice.isEmpty() ? "无" : s(a.task(choice), "title")));
                   }));
     }
+    SharedTagsUi tags = reopen ? null : new SharedTagsUi(a, p.body, t);
     CheckBox allDay = new CheckBox(a);
     allDay.setText("全天任务");
     allDay.setChecked(t.optBoolean("allDay"));
@@ -474,7 +486,10 @@ final class TasksUi {
       } catch (Exception ignored) {
       }
     }
-    if (!editing) due = start.plusDays(1).withHour(18).withMinute(0);
+    if (!editing) {
+      if (selectedDay != null) start = selectedDay.atTime(9, 0);
+      due = selectedDay == null ? start.plusDays(1).withHour(18).withMinute(0) : selectedDay.atTime(18, 0);
+    }
     LocalDateTime[] dates = {start, due};
     u.dateTime(p.body, "开始", dates, 0);
     u.dateTime(p.body, "截止", dates, 1);
@@ -524,6 +539,7 @@ final class TasksUi {
                   new String[] {"urgent", "high", "medium", "low"}
                       [fUrgency.getSelectedItemPosition()]);
               body.put("assigneeIds", new JSONArray(owners));
+              if (tags != null && (!editing || tags.touched())) body.put("tagIds", tags.ids());
               if (!t.optBoolean("parentUnavailable") || parentChanged[0])
                 body.put("parentTaskId", parent[0].isEmpty() ? JSONObject.NULL : parent[0]);
               if (editing)
@@ -541,6 +557,7 @@ final class TasksUi {
               body,
               editing ? tag(raw) : null);
         });
+    if (tags != null) tags.load();
   }
 
   void choosePeople(String title, JSONArray candidates, List<String> selected, Runnable done) {

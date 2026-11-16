@@ -8,6 +8,7 @@ import android.graphics.*;
 import android.net.Uri;
 import android.text.InputType;
 import android.util.Base64;
+import android.view.View;
 import android.widget.*;
 import java.io.*;
 import java.time.*;
@@ -17,8 +18,6 @@ import org.json.*;
 final class WorkspaceUi {
   private final MainActivity a;
   private final Ui u;
-  private JSONArray logRows;
-  private String logAuthor = "", logQuery = "", logFrom = "", logTo = "", department = "";
   private JSONObject analysis;
   private ProfileDraft profile;
   private LocalDate homeWeek;
@@ -30,12 +29,6 @@ final class WorkspaceUi {
   }
 
   void reset() {
-    logRows = null;
-    logAuthor = "";
-    logQuery = "";
-    logFrom = "";
-    logTo = "";
-    department = "";
     analysis = null;
     profile = null;
   }
@@ -112,8 +105,7 @@ final class WorkspaceUi {
   }
 
   private void pickDate(LocalDate initial, java.util.function.Consumer<LocalDate> onSelected) {
-    new DatePickerDialog(a, (picker, y, m, d) -> onSelected.accept(LocalDate.of(y, m + 1, d)),
-        initial.getYear(), initial.getMonthValue() - 1, initial.getDayOfMonth()).show();
+    u.dates.date("选择日期", initial, false, onSelected);
   }
 
   void personal(JSONObject item, LocalDate date, Runnable onSaved) {
@@ -180,145 +172,64 @@ final class WorkspaceUi {
   }
 
   void logsPage() {
-    LinearLayout box = a.page("记录");
-    u.heading(
-        box,
-        logAuthor.isEmpty() || logAuthor.equals(a.uid())
-            ? "我的日志"
-            : logAuthor.equals("*") ? "授权范围内的日志" : a.person(logAuthor) + "的日志");
-    u.button(box, "写日志", true, () -> editLog(null));
-    u.button(box, "选择人员或部门", false, this::authorPicker);
-    EditText query = u.field(box, "搜索日志内容", logQuery, 200, false);
-    u.button(
-        box,
-        "搜索",
-        false,
-        () -> {
-          logQuery = Ui.value(query);
-          logsPage();
-        });
-    u.note(
-        box,
-        "日期范围：" + (logFrom.isEmpty() ? "全部" : logFrom) + " 至 " + (logTo.isEmpty() ? "全部" : logTo));
-    u.button(box, "设置日期范围", false, this::logDates);
-    u.button(
-        box,
-        "清除筛选",
-        false,
-        () -> {
-          logQuery = "";
-          logFrom = "";
-          logTo = "";
-          logAuthor = "";
-          logRows = null;
-          department = "";
-          logsPage();
-        });
-    JSONArray list = logRows == null ? a.logs : logRows;
-    int count = 0;
-    for (JSONObject log : rows(list)) {
-      if (!department.isEmpty()
-          && rows(arr(a.authors, "items")).stream()
-              .noneMatch(
-                  author ->
-                      s(author, "departmentName").equals(department)
-                          && id(author).equals(s(log, "authorId")))) continue;
-      if (!s(log, "body").toLowerCase(Locale.ROOT).contains(logQuery.toLowerCase(Locale.ROOT)))
-        continue;
-      if (!logFrom.isEmpty() && s(log, "businessDate").compareTo(logFrom) < 0) continue;
-      if (!logTo.isEmpty() && s(log, "businessDate").compareTo(logTo) > 0) continue;
-      u.item(
-          box,
-          s(log, "body"),
-          s(log, "authorName")
-              + " · "
-              + s(log, "businessDate")
-              + (log.optBoolean("editable") ? " · 可编辑" : " · 只读"),
-          () -> logDetail(id(log)));
-      count++;
+    LinearLayout box = a.page("日志");
+    LinearLayout heading = u.row();
+    TextView title = u.text("日志", 22, Ui.INK);
+    title.setTypeface(null, android.graphics.Typeface.BOLD);
+    heading.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+    Button write = u.button(heading, "写日志", true, () -> editLog(null));
+    write.setLayoutParams(new LinearLayout.LayoutParams(-2, u.dp(48)));
+    box.addView(heading);
+
+    LinearLayout list = u.card(box);
+    LinearLayout label = u.row();
+    TextView mine = u.text("我的日志", 18, Ui.INK);
+    mine.setTypeface(null, android.graphics.Typeface.BOLD);
+    label.addView(mine, new LinearLayout.LayoutParams(0, -2, 1));
+    List<JSONObject> logs = new ArrayList<>();
+    for (JSONObject log : rows(a.logs)) {
+      if (a.uid().equals(s(log, "authorId"))) logs.add(log);
     }
-    if (count == 0) u.note(box, "没有符合条件的日志");
+    logs.sort(Comparator.comparing((JSONObject log) -> s(log, "createdAt")).reversed()
+        .thenComparing(log -> s(log, "businessDate"), Comparator.reverseOrder()));
+    label.addView(u.text("本人日志 · " + logs.size() + " 条", 13, Ui.MUTED));
+    list.addView(label);
+    if (logs.isEmpty()) u.note(list, "暂无个人日志");
+    for (JSONObject log : logs) logCard(list, log);
   }
 
-  private void logDates() {
-    MainActivity.Panel p = a.panel("日志日期范围");
-    LocalDate now = LocalDate.now(CalendarUi.ZONE);
-    LocalDateTime[] dates = {
-      logFrom.isEmpty()
-          ? now.minusMonths(1).atStartOfDay()
-          : LocalDate.parse(logFrom).atStartOfDay(),
-      logTo.isEmpty() ? now.atStartOfDay() : LocalDate.parse(logTo).atStartOfDay()
-    };
-    u.dateTime(p.body, "开始日期（忽略时刻）", dates, 0);
-    u.dateTime(p.body, "结束日期（忽略时刻）", dates, 1);
-    u.button(
-        p.actions,
-        "应用范围",
-        true,
-        () -> {
-          if (dates[1].isBefore(dates[0])) {
-            p.error.setText("结束日期不得早于开始日期。");
-            return;
-          }
-          logFrom = dates[0].toLocalDate().toString();
-          logTo = dates[1].toLocalDate().toString();
-          p.dialog.dismiss();
-          logsPage();
-        });
+  private void logCard(LinearLayout list, JSONObject log) {
+    LinearLayout card = u.card(list);
+    LinearLayout meta = u.row();
+    String date = s(log, "businessDate");
+    String relative = "";
+    try {
+      long age = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.parse(date), businessDate());
+      relative = age == 0 ? " · 今天" : age == 1 ? " · 昨天" : age == 2 ? " · 前天" : "";
+    } catch (java.time.format.DateTimeParseException ignored) {}
+    TextView name = u.text(s(log, "authorName") + "\n" + date + relative, 13, Ui.MUTED);
+    meta.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
+    if (log.optBoolean("editable")) {
+      Button edit = u.button(meta, "编辑", false, () ->
+          a.run(() -> a.api.get("/work-logs/" + ApiClient.q(id(log))), this::editLog));
+      edit.setLayoutParams(new LinearLayout.LayoutParams(-2, u.dp(44)));
+    } else meta.addView(u.text(log.optBoolean("frozen") ? "已冻结" : "只读", 12, Ui.MUTED));
+    card.addView(meta);
+    String labels = logTagLabels(log);
+    if (!labels.isBlank()) u.note(card, labels);
+    u.item(card, s(log, "body"), "", () -> logDetail(id(log)));
+    String taskId = s(log, "taskId");
+    if (taskId.isEmpty()) u.note(card, log.has("taskId") ? "未关联任务" : "关联任务当前不可见");
+    else {
+      Button linked = u.button(card, "关联任务：" + taskLabel(taskId, false), false, () -> a.tasksUi.detail(taskId));
+      linked.setLayoutParams(new LinearLayout.LayoutParams(-2, -2));
+    }
   }
 
-  private void loadAuthor(String author) {
-    String path =
-        "/work-logs?scope="
-            + (author.isEmpty() || author.equals(a.uid()) ? "self" : "visible")
-            + (author.isEmpty() || author.equals("*") ? "" : "&authorId=" + ApiClient.q(author));
-    a.run(
-        () -> a.api.all(path),
-        r -> {
-          logRows = r;
-          logAuthor = author;
-          a.closePanels();
-          a.page = "log";
-          a.navigate("log");
-        });
-  }
-
-  private void authorPicker() {
-    MainActivity.Panel p = a.panel("日志人员与部门");
-    List<JSONObject> candidates = rows(arr(a.authors, "items"));
-    List<String> departments = new ArrayList<>();
-    departments.add("全部部门");
-    for (JSONObject author : candidates)
-      if (!departments.contains(s(author, "departmentName")))
-        departments.add(s(author, "departmentName"));
-    Spinner dep =
-        u.spinner(
-            p.body,
-            "部门",
-            departments.toArray(new String[0]),
-            Math.max(0, departments.indexOf(department)));
-    EditText query = u.field(p.body, "搜索姓名或账号", "", 100, false);
-    LinearLayout results = u.column();
-    p.body.addView(results);
-    Runnable render =
-        () -> {
-          results.removeAllViews();
-          String chosen =
-              dep.getSelectedItemPosition() == 0 ? "" : String.valueOf(dep.getSelectedItem());
-          department = chosen;
-          u.button(results, "我的日志", false, () -> loadAuthor(a.uid()));
-          u.button(results, "全部授权人员", false, () -> loadAuthor("*"));
-          for (JSONObject author : candidates)
-            if ((chosen.isEmpty() || chosen.equals(s(author, "departmentName")))
-                && (s(author, "displayName") + s(author, "username")).contains(Ui.value(query)))
-              u.item(
-                  results,
-                  s(author, "displayName"),
-                  s(author, "departmentName"),
-                  () -> loadAuthor(id(author)));
-        };
-    u.button(p.body, "筛选人员", false, render);
-    render.run();
+  private String logTagLabels(JSONObject log) {
+    return rows(arr(log, "tags")).stream().map(t -> s(t, "name")
+        + (t.optBoolean("deleted") ? "（已删除）" : ""))
+        .collect(java.util.stream.Collectors.joining(" · "));
   }
 
   void logDetail(String id) {
@@ -336,7 +247,13 @@ final class WorkspaceUi {
         },
         log -> {
           MainActivity.Panel p = a.panel("日志详情");
-          u.note(p.body, s(log, "authorName") + " · " + s(log, "businessDate"));
+          u.note(p.body, "作者　" + s(log, "authorName"));
+          u.note(p.body, "日志日期　" + s(log, "businessDate"));
+          u.note(p.body, "创建时间　" + TasksUi.when(s(log, "createdAt")));
+          if (!s(log, "frozenAt").isEmpty())
+            u.note(p.body, log.optBoolean("frozen") ? "已冻结" : "可编辑至 " + TasksUi.when(s(log, "frozenAt")));
+          String labels = logTagLabels(log);
+          if (!labels.isBlank()) u.note(p.body, labels);
           p.body.addView(u.text(s(log, "body"), 16, Ui.INK));
           if (!s(log, "taskId").isEmpty())
             u.button(p.body, "查看关联任务", false, () -> a.tasksUi.detail(s(log, "taskId"), reportId));
@@ -362,12 +279,13 @@ final class WorkspaceUi {
                                 null,
                                 tag(log))));
           } else u.note(p.body, "历史日志只读，无法编辑。");
+          new MemberCommentsUi(a, null, "/work-logs/" + ApiClient.q(id) + "/comments").attach(p.body);
         });
   }
 
   void editLog(JSONObject log) {
     if (log != null) {
-      logForm(log, LocalDate.parse(s(log, "businessDate")));
+      logForm(log, List.of(LocalDate.parse(s(log, "businessDate"))), businessDate());
       return;
     }
     a.run(() -> {
@@ -381,93 +299,243 @@ final class WorkspaceUi {
         LocalDate date = today.minusDays(age);
         if (!occupied.contains(date.toString())) available.add(date);
       }
-      return available;
-    }, available -> {
-      MainActivity.Panel dates = a.panel("选择日志日期");
-      if (available.isEmpty()) u.note(dates.body, "最近三天都已写过日志，可从日志详情打开可编辑的记录。");
-      for (LocalDate date : available)
-        u.button(dates.body, date.toString(), false, () -> {
-          dates.dialog.dismiss();
-          logForm(null, date);
-        });
+      return new LogDates(today, available);
+    }, dates -> {
+      if (dates.available().isEmpty())
+        a.error("今天、昨天和前天都已有日志，请从日志详情进入编辑。");
+      else logForm(null, dates.available(), dates.today());
     });
   }
 
-  private void logForm(JSONObject log, LocalDate businessDate) {
+  private record LogDates(LocalDate today, List<LocalDate> available) {}
+
+  private void logForm(JSONObject log, List<LocalDate> dates, LocalDate today) {
     if (log != null && (!log.optBoolean("editable") || log.optBoolean("frozen"))) {
       a.error("这条日志只读。");
       return;
     }
-    MainActivity.Panel p = a.panel(log == null ? "写日志" : "编辑日志");
-    u.note(p.body, "所属日期：" + businessDate);
-    EditText body = u.field(p.body, "日志内容（必填）", s(log, "body"), 10000, true);
+    MainActivity.Panel p = a.panel(log == null ? "写日志" : "编辑日志", 1, 1,
+        android.view.Gravity.BOTTOM, "✕");
+    p.scroll.setFillViewport(true);
+    String[] prefixes = {"今天", "昨天", "前天"};
+    Spinner datePicker;
+    if (log == null) {
+      String[] labels = dates.stream().map(d -> {
+        int age = (int) java.time.temporal.ChronoUnit.DAYS.between(d, today);
+        return prefixes[Math.max(0, Math.min(2, age))] + " · " + d.getMonthValue() + "月" + d.getDayOfMonth() + "日";
+      }).toArray(String[]::new);
+      datePicker = u.spinner(p.body, "日志日期", labels, 0);
+      datePicker.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Ui.PRIMARY));
+      datePicker.setPadding(u.dp(8), 0, u.dp(14), 0);
+    } else {
+      datePicker = null;
+      u.note(p.body, "日志日期");
+      TextView d = u.text(dates.get(0).toString(), 16, Ui.INK);
+      d.setPadding(u.dp(12), u.dp(12), u.dp(12), u.dp(12));
+      d.setBackground(u.shape(Ui.SURFACE, 12));
+      p.body.addView(d);
+    }
+    SharedTagsUi tags = new SharedTagsUi(a, p.body, log);
+    EditText body = u.field(p.body, "日志内容", s(log, "body"), 10000, true);
     body.setId(R.id.log_content);
-    body.setMinLines(12);
+    body.setMinHeight(u.dp(225));
+    body.setMinLines(9);
     body.setMaxLines(16);
-    body.setMinHeight(u.dp(320));
-    body.setGravity(android.view.Gravity.TOP | android.view.Gravity.START);
+    var paper = u.shape(0xfffdf9fc, 12);
+    paper.setStroke(u.dp(1), Ui.LINE);
+    body.setBackground(paper);
     body.setVerticalScrollBarEnabled(true);
-    Set<String> appended = new HashSet<>();
-    u.button(p.body, "追加当日事项名称", false,
-        () -> fillLog(p, body, businessDate, "dailyItems", appended));
-    u.button(p.body, "追加当日任务名称", false,
-        () -> fillLog(p, body, businessDate, "tasks", appended));
+    Map<LocalDate, Set<String>> appended = new HashMap<>();
+    java.util.function.Supplier<LocalDate> selectedDate = () -> dates.get(
+        datePicker == null ? 0 : Math.max(0, datePicker.getSelectedItemPosition()));
+    Button names = u.button(p.body, "追加当日名称", false, () -> {
+      String[] options = {"追加当日事项名称", "追加当日任务名称"};
+      new AlertDialog.Builder(a).setTitle("追加当日名称").setItems(options, (dialog, which) -> {
+        LocalDate chosen = selectedDate.get();
+        fillLog(p, body, chosen, which == 0 ? "dailyItems" : "tasks",
+            appended.computeIfAbsent(chosen, ignored -> new HashSet<>()));
+      }).setNegativeButton("取消", null).show();
+    });
+    p.body.removeView(names);
+    LinearLayout editorLabel = u.row();
+    int index = p.body.indexOfChild(body) - 1;
+    android.view.View label = p.body.getChildAt(index);
+    p.body.removeViewAt(index);
+    editorLabel.addView(label, new LinearLayout.LayoutParams(0, -2, 1));
+    editorLabel.addView(names, new LinearLayout.LayoutParams(-2, u.dp(42)));
+    p.body.addView(editorLabel, index);
+    if (datePicker != null) {
+      TextView fillStatus = u.text("", 13, Ui.MUTED);
+      fillStatus.setVisibility(View.GONE);
+      p.body.addView(fillStatus, p.body.indexOfChild(body));
+      LogTaskFill autoFill = new LogTaskFill(p, body, fillStatus, selectedDate, appended);
+      datePicker.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+        @Override public void onItemSelected(android.widget.AdapterView<?> parent, View view, int pos, long id) {
+          autoFill.schedule();
+        }
+
+        @Override public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+      });
+      autoFill.schedule();
+    }
+    u.note(p.body, "关联任务（可选）");
     String[] task = {s(log, "taskId")};
     boolean[] changed = {false};
-    TextView selected =
-        u.text(
-            task[0].isEmpty() ? "未关联任务（原关系不可见时将保留）" : "关联任务：" + s(a.task(task[0]), "title"),
-            14,
-            Ui.MUTED);
+    TextView selected = u.text("", 14, Ui.INK);
+    selected.setPadding(u.dp(12), u.dp(10), u.dp(12), u.dp(10));
+    selected.setBackground(u.shape(0xfff4edf4, 12));
     p.body.addView(selected);
-    u.button(
-        p.body,
-        "选择或清除关联任务",
-        false,
-        () ->
-            a.tasksUi.chooseTask(
-                "",
-                task[0],
-                id -> {
-                  task[0] = id;
-                  changed[0] = true;
-                  selected.setText(id.isEmpty() ? "不关联任务" : s(a.task(id), "title"));
-                }));
-    String slot = UUID.randomUUID().toString();
-    u.button(
-        p.actions,
-        "保存日志",
-        true,
-        () -> {
-          if (Ui.value(body).isEmpty()) {
-            p.error.setText("请填写日志内容。");
-            return;
-          }
-          JSONObject data = log == null
-              ? obj("body", Ui.value(body), "businessDate", businessDate.toString(),
-                    "taskId", task[0].isEmpty() ? JSONObject.NULL : task[0])
-              : changed[0]
-                  ? obj("body", Ui.value(body), "taskId", task[0].isEmpty() ? JSONObject.NULL : task[0])
-                  : obj("body", Ui.value(body));
-          a.run(
-              () -> {
-                try {
-                  return a.api.mutate(slot, log == null ? "POST" : "PATCH",
-                      "/work-logs" + (log == null ? "" : "/" + ApiClient.q(id(log))), data,
-                      log == null ? null : tag(log));
-                } catch (ApiClient.Failure error) {
-                  if ("WORK_LOG_EXISTS".equals(error.code))
-                    throw new IOException("该日期已有日志。当前草稿已保留，可返回日志列表查看原记录。", error);
-                  throw error;
-                }
-              },
-              r -> {
-                reset();
-                a.closePanels();
-                a.reload();
-                a.toast("日志已保存。");
-              });
-        });
+    LinearLayout actions = u.row();
+    Button choose = u.button(actions, "选择关联任务", false, () ->
+        a.tasksUi.chooseTask("", task[0], id -> {
+          task[0] = id;
+          changed[0] = true;
+          selected.setText(taskLabel(id, false));
+          actions.getChildAt(1).setVisibility(id.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
+        }));
+    choose.setLayoutParams(new LinearLayout.LayoutParams(-2, -2));
+    Button clear = u.button(actions, "清空关联", false, () -> {
+      task[0] = "";
+      changed[0] = true;
+      selected.setText(taskLabel("", false));
+      actions.getChildAt(1).setVisibility(android.view.View.GONE);
+    });
+    clear.setLayoutParams(new LinearLayout.LayoutParams(-2, -2));
+    boolean hidden = log != null && !log.has("taskId");
+    clear.setVisibility(task[0].isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
+    selected.setText(taskLabel(task[0], hidden));
+    p.body.addView(actions);
+    if (!s(log, "frozenAt").isEmpty())
+      u.note(p.body, "日志将在 " + TasksUi.when(s(log, "frozenAt")) + " 后冻结");
+    TextView saveError = u.text("", 14, Ui.ERROR);
+    p.body.addView(saveError);
+    String slot = "log:" + UUID.randomUUID();
+    u.button(p.actions, "保存日志", true, () -> {
+      if (Ui.value(body).isEmpty()) {
+        saveError.setText("请填写日志内容。");
+        return;
+      }
+      LocalDate businessDate = selectedDate.get();
+      JSONObject data = obj("body", Ui.value(body));
+      try {
+        if (log == null) data.put("businessDate", businessDate.toString());
+        if (log == null || changed[0]) data.put("taskId", task[0].isEmpty() ? JSONObject.NULL : task[0]);
+        if (log == null || tags.touched()) data.put("tagIds", tags.ids());
+      } catch (JSONException invalid) { throw new IllegalStateException(invalid); }
+      saveError.setText("");
+      p.error.setText("");
+      a.run(() -> {
+        try {
+          return a.api.mutate(slot, log == null ? "POST" : "PATCH",
+              "/work-logs" + (log == null ? "" : "/" + ApiClient.q(id(log))), data,
+              log == null ? null : tag(log));
+        } catch (ApiClient.Failure error) {
+          if ("WORK_LOG_EXISTS".equals(error.code))
+            throw new IOException("该日期已有日志。草稿已保留，请到日志详情查看原记录。", error);
+          if ("WORK_LOG_FROZEN".equals(error.code))
+            throw new IOException("日志已冻结，未能保存。正文仍在页面上，可以复制。", error);
+          throw error;
+        }
+      }, result -> {
+        reset();
+        a.closePanels();
+        a.reload();
+        a.toast("日志已保存。");
+      }, message -> p.error.setText(message));
+    });
+    tags.load();
+  }
+
+  private final class LogTaskFill {
+    final MainActivity.Panel panel;
+    final EditText body;
+    final TextView status;
+    final java.util.function.Supplier<LocalDate> selectedDate;
+    final Map<LocalDate, Set<String>> appended;
+    final Runnable pending = this::load;
+    String generated = "";
+    LocalDate generatedDate;
+    Set<String> generatedKeys = Set.of();
+
+    LogTaskFill(MainActivity.Panel panel, EditText body, TextView status,
+        java.util.function.Supplier<LocalDate> selectedDate, Map<LocalDate, Set<String>> appended) {
+      this.panel = panel;
+      this.body = body;
+      this.status = status;
+      this.selectedDate = selectedDate;
+      this.appended = appended;
+    }
+
+    void schedule() {
+      body.removeCallbacks(pending);
+      status.setVisibility(View.GONE);
+      if (!generated.equals(body.getText().toString())) return;
+      if (generatedDate != null && !generatedDate.equals(selectedDate.get())) {
+        Set<String> old = appended.get(generatedDate);
+        if (old != null) old.removeAll(generatedKeys);
+        generatedDate = null;
+        generatedKeys = Set.of();
+        generated = "";
+        body.setText("");
+      }
+      body.postDelayed(pending, 100);
+    }
+
+    void load() {
+      if (!panel.dialog.isShowing() || !generated.equals(body.getText().toString())) return;
+      if (a.busy) {
+        body.postDelayed(pending, 120);
+        return;
+      }
+      LocalDate date = selectedDate.get();
+      if (date.equals(generatedDate)) return;
+      a.run(() -> a.api.get("/work-logs/fill-source?businessDate=" + date), source -> {
+        if (!stillCurrent(date)) return;
+        if (!source.optBoolean("complete") || !date.toString().equals(s(source, "businessDate"))) {
+          retry("暂时无法自动填充当日任务，点击重试");
+          return;
+        }
+        Map<String, String> names = new LinkedHashMap<>();
+        for (JSONObject task : rows(arr(source, "tasks"))) {
+          if (!id(task).isEmpty() && !s(task, "name").isEmpty())
+            names.putIfAbsent("tasks:" + id(task), s(task, "name"));
+        }
+        String next = String.join("\n", names.values());
+        if (next.length() > 10000) {
+          status.setText("当日任务名称超过正文上限，可从「追加当日名称」打开预览。");
+          status.setOnClickListener(null);
+          status.setVisibility(View.VISIBLE);
+          return;
+        }
+        generated = next;
+        generatedDate = date;
+        generatedKeys = Set.copyOf(names.keySet());
+        appended.computeIfAbsent(date, ignored -> new HashSet<>()).addAll(generatedKeys);
+        body.setText(generated);
+        body.setSelection(body.length());
+        status.setVisibility(View.GONE);
+      }, message -> {
+        if (stillCurrent(date)) retry("暂时无法自动填充当日任务，点击重试");
+      });
+    }
+
+    private boolean stillCurrent(LocalDate date) {
+      return panel.dialog.isShowing() && date.equals(selectedDate.get())
+          && generated.equals(body.getText().toString());
+    }
+
+    private void retry(String message) {
+      status.setText(message);
+      status.setOnClickListener(v -> schedule());
+      status.setVisibility(View.VISIBLE);
+    }
+  }
+
+  private String taskLabel(String taskId, boolean hidden) {
+    if (hidden) return "关联任务当前不可见，保留原关系";
+    if (taskId.isEmpty()) return "未关联任务";
+    String title = s(a.task(taskId), "title");
+    return title.isEmpty() ? "已关联任务" : title;
   }
 
   private void fillLog(MainActivity.Panel panel, EditText body, LocalDate date, String group,
@@ -503,26 +571,92 @@ final class WorkspaceUi {
     });
   }
 
+  private static final String[] NOTICE_TYPES = {"all", "review", "result", "reminder", "comment", "other"};
+  private static final String[] NOTICE_LABELS = {"全部类型", "需我审核", "结果告知", "提醒", "评论", "其他"};
+  private int noticeEpoch = -1;
+  private int noticeRead, noticeCategory, noticeMode;
+
   void notifications() {
-    a.run(
-        () -> a.api.all("/notifications"),
-        list -> {
-          a.notifications = list;
-          a.updateBell();
-          MainActivity.Panel p = a.panel("通知");
-          if (list.length() == 0) u.note(p.body, "暂无通知");
-          for (JSONObject n : rows(list))
-            u.item(
-                p.body,
-                s(n, "title").isEmpty() ? s(n, "summary") : s(n, "title"),
-                TasksUi.when(s(n, "createdAt"))
-                    + " · "
-                    + (n.optBoolean("revoked") ? "已撤回" : s(n, "readAt").isEmpty() ? "未读" : "已读"),
-                () -> notification(id(n)));
-        });
+    a.run(() -> a.api.all("/notifications"), list -> {
+      a.notifications = list;
+      a.updateBell();
+      if (noticeEpoch != a.api.epoch) {
+        noticeEpoch = a.api.epoch;
+        noticeRead = noticeCategory = noticeMode = 0;
+      }
+      MainActivity.Panel panel = a.panel("通知");
+      LinearLayout filters = u.row();
+      panel.body.addView(filters);
+      Spinner read = noticeFilter(filters, "已读状态", new String[] {"全部", "未读", "已读"}, noticeRead);
+      String[] categoryOptions = NOTICE_LABELS.clone();
+      categoryOptions[0] = "全部";
+      Spinner category = noticeFilter(filters, "通知类型", categoryOptions, noticeCategory);
+      Spinner mode = noticeFilter(filters, "显示方式", new String[] {"精简", "完整"}, noticeMode);
+      LinearLayout actions = u.row();
+      panel.body.addView(actions);
+      TextView count = u.text("", 13, Ui.MUTED);
+      actions.addView(count, new LinearLayout.LayoutParams(0, -2, 1));
+      LinearLayout results = u.column();
+      panel.body.addView(results);
+      Runnable render = new Runnable() {
+        @Override public void run() {
+          if (!panel.dialog.isShowing()) return;
+          noticeRead = Math.max(0, read.getSelectedItemPosition());
+          noticeCategory = Math.max(0, category.getSelectedItemPosition());
+          noticeMode = Math.max(0, mode.getSelectedItemPosition());
+          results.removeAllViews();
+          int matched = 0;
+          for (JSONObject n : rows(a.notifications)) {
+            boolean unread = s(n, "readAt").isEmpty();
+            if (noticeRead == 1 && !unread || noticeRead == 2 && unread) continue;
+            int type = List.of(NOTICE_TYPES).indexOf(s(n, "category"));
+            if (type <= 0) type = NOTICE_TYPES.length - 1;
+            if (noticeCategory != 0 && noticeCategory != type) continue;
+            String title = s(n, "objectName");
+            if (title.isEmpty()) title = s(n, "title");
+            if (title.isEmpty()) title = s(n, "taskId").isEmpty() ? "无关联任务" : "关联任务不可查看";
+            String meta = NOTICE_LABELS[type] + " · " + (unread ? "未读" : "已读")
+                + (n.optBoolean("revoked") ? " · 已撤回" : "") + " · " + TasksUi.whenMinute(s(n, "createdAt"));
+            if (noticeMode == 1) {
+              String summary = s(n, "summary");
+              String purpose = s(n, "purpose");
+              meta += "\n" + (purpose.isEmpty() ? "" : purpose + " · ") + summary;
+            }
+            u.item(results, title, meta, () -> notification(id(n), this));
+            matched++;
+          }
+          count.setText(matched + " 条通知");
+          if (matched == 0) u.note(results, a.notifications.length() == 0 ? "暂无通知" : "没有符合筛选条件的通知");
+        }
+      };
+      Button clear = u.button(actions, "清空筛选", false, () -> {
+        read.setSelection(0);
+        category.setSelection(0);
+        mode.setSelection(0);
+        render.run();
+      });
+      clear.setLayoutParams(new LinearLayout.LayoutParams(-2, u.dp(45)));
+      android.widget.AdapterView.OnItemSelectedListener filterChanged = new android.widget.AdapterView.OnItemSelectedListener() {
+        @Override public void onItemSelected(android.widget.AdapterView<?> parent, View view, int pos, long id) {
+          render.run();
+        }
+
+        @Override public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+      };
+      read.setOnItemSelectedListener(filterChanged);
+      category.setOnItemSelectedListener(filterChanged);
+      mode.setOnItemSelectedListener(filterChanged);
+      render.run();
+    });
   }
 
-  private void notification(String id) {
+  private Spinner noticeFilter(LinearLayout filters, String label, String[] values, int current) {
+    LinearLayout column = u.column();
+    filters.addView(column, new LinearLayout.LayoutParams(0, -2, 1));
+    return u.spinner(column, label, values, current);
+  }
+
+  private void notification(String id, Runnable refreshList) {
     a.run(
         () -> {
           a.api.mutate(
@@ -537,6 +671,7 @@ final class WorkspaceUi {
         },
         n -> {
           a.updateBell();
+          refreshList.run();
           MainActivity.Panel p = a.panel("通知详情");
           u.note(p.body, TasksUi.when(s(n, "createdAt")));
           boolean revoked = n.optBoolean("revoked");
@@ -721,6 +856,12 @@ final class WorkspaceUi {
       for (JSONObject p : rows(a.reports))
         u.item(box, s(p, "displayName"), s(p, "departmentName"), () -> person(id(p)));
     }
+    u.button(box, "任务与审批", false, () -> {
+      MainActivity.Panel work = a.panel("任务与审批");
+      u.button(work.body, "待我审核", false, () -> a.tasksUi.approvals("reviewer"));
+      u.button(work.body, "我的申请", false, () -> a.tasksUi.approvals("applicant"));
+      u.button(work.body, "全部授权任务", false, a.tasksUi::list);
+    });
   }
 
   private void showOrganizationMembers() {
@@ -804,23 +945,14 @@ final class WorkspaceUi {
           if (!s(r, "phone").isEmpty()) u.note(p.body, "手机号：" + s(r, "phone"));
           if (!s(r, "email").isEmpty()) u.note(p.body, "邮箱：" + s(r, "email"));
           if (!s(r, "hireDate").isEmpty()) u.note(p.body, "入职日期：" + s(r, "hireDate"));
-          u.button(p.actions, "查看日程", true, () -> {
-            if (self) {
-              a.closePanels();
-              a.calendarUi.person = "";
-              a.navigate("view");
-            } else new MemberWorkspace(r, false).open();
-          });
-          if (r.optBoolean("canReadLogs")) u.button(p.actions, "查看日志", false, () -> {
-            if (self) loadAuthor(id);
-            else new MemberWorkspace(r, true).open();
-          });
           if (r.optBoolean("canSetHandoverPreset"))
             u.button(p.body, "设置交接预设", false, () -> a.tasksUi.preset(id));
+          new MemberWorkspace(r, p).render();
         });
   }
 
   void requireReport(String reportId) throws Exception {
+    if (reportId.equals(a.uid())) return;
     JSONArray directory = arr(a.api.get("/me/reports"), "items");
     if (rows(directory).stream().noneMatch(person -> reportId.equals(id(person))))
       throw new IOException("当前无权查看此人的工作区。");
@@ -831,28 +963,24 @@ final class WorkspaceUi {
     final CalendarUi calendar;
     JSONObject member;
     boolean logs;
-    MainActivity.Panel panel;
+    final MainActivity.Panel panel;
+    final LinearLayout section;
     LinearLayout content;
     Button more;
 
-    MemberWorkspace(JSONObject member, boolean logs) {
+    MemberWorkspace(JSONObject member, MainActivity.Panel panel) {
       this.member = member;
-      this.logs = logs;
+      this.panel = panel;
       reportId = id(member);
       calendar = new CalendarUi(a, reportId);
-    }
-
-    void open() {
-      panel = a.panel(s(member, "displayName") + "的工作");
-      u.button(panel.actions, "刷新", false, this::refresh);
-      render();
+      section = u.column();
+      panel.body.addView(section);
     }
 
     void render() {
-      panel.body.removeAllViews();
-      u.note(panel.body, placement(member));
+      section.removeAllViews();
       LinearLayout tabs = u.row();
-      panel.body.addView(tabs);
+      section.addView(tabs);
       for (boolean logTab : new boolean[] {false, true}) {
         LinearLayout cell = u.column();
         tabs.addView(cell, new LinearLayout.LayoutParams(0, -2, 1));
@@ -866,7 +994,7 @@ final class WorkspaceUi {
         tab.setEnabled(!logTab || member.optBoolean("canReadLogs"));
       }
       content = u.column();
-      panel.body.addView(content);
+      section.addView(content);
       refresh();
     }
 
@@ -888,7 +1016,8 @@ final class WorkspaceUi {
         JSONObject latest = a.api.get("/users/" + ApiClient.q(reportId));
         if (logs) {
           if (!latest.optBoolean("canReadLogs")) throw new IOException("当前无权查看此人的日志。");
-          return obj("person", latest, "data", a.api.get("/work-logs?scope=visible&authorId="
+          String scope = reportId.equals(a.uid()) ? "self" : "visible";
+          return obj("person", latest, "data", a.api.get("/work-logs?scope=" + scope + "&authorId="
               + ApiClient.q(reportId) + "&limit=20&offset=" + offset));
         }
         return obj("person", latest, "items", a.api.all("/tasks?assigneeId=" + ApiClient.q(reportId)
