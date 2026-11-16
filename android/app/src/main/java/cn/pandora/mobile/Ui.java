@@ -14,13 +14,13 @@ import java.util.function.*;
 
 /** Native Android Views styled with Material roles, shapes and 48dp minimum targets. */
 final class Ui {
-  static final int BG = 0xfff8faf8,
+  static final int BG = 0xfffff9fc,
       SURFACE = 0xffffffff,
-      INK = 0xff191c1b,
-      MUTED = 0xff5f6964,
-      PRIMARY = 0xff006b54,
-      CONTAINER = 0xffc1ecd9,
-      LINE = 0xffdbe5de,
+      INK = 0xff51495e,
+      MUTED = 0xff7d6e80,
+      PRIMARY = 0xffa34470,
+      CONTAINER = 0xfffbe5ef,
+      LINE = 0xffeadce6,
       ERROR = 0xffba1a1a;
   final MainActivity a;
 
@@ -96,8 +96,8 @@ final class Ui {
     b.setMinHeight(dp(48));
     b.setMinimumHeight(dp(48));
     b.setPadding(dp(16), dp(8), dp(16), dp(8));
-    GradientDrawable d = shape(filled ? PRIMARY : 0xffeef3ed, 24);
-    b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22006b54), d, null));
+    GradientDrawable d = shape(filled ? PRIMARY : 0xfff6eff5, 24);
+    b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22a34470), d, null));
     LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
     lp.topMargin = dp(8);
     into.addView(b, lp);
@@ -122,7 +122,7 @@ final class Ui {
     }
     if (action != null) {
       box.setBackground(
-          new RippleDrawable(ColorStateList.valueOf(0x15006b54), shape(SURFACE, 8), null));
+          new RippleDrawable(ColorStateList.valueOf(0x15a34470), shape(SURFACE, 8), null));
       box.setClickable(true);
       box.setFocusable(true);
       box.setContentDescription(title + "，" + (detail == null ? "" : detail));

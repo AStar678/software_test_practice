@@ -24,9 +24,9 @@ final class MaterialNavigation extends LinearLayout {
     super(context);
     setOrientation(HORIZONTAL);
     setGravity(Gravity.CENTER_VERTICAL);
-    setBackgroundColor(Color.rgb(238, 243, 237));
+    setBackgroundColor(Ui.SURFACE);
     setPadding(dp(4), dp(8), dp(4), dp(8));
-    String[] names = {"工作台", "日程", "记录", "统计", "我的"};
+    String[] names = {"首页", "公司", "日志", "统计", "我的"};
     int[] resources = {
       R.drawable.ic_home,
       R.drawable.ic_calendar,
@@ -70,10 +70,10 @@ final class MaterialNavigation extends LinearLayout {
       tabs[i].setSelected(selected);
       GradientDrawable pill = new GradientDrawable();
       pill.setCornerRadius(dp(20));
-      pill.setColor(selected ? 0xffc1ecd9 : Color.TRANSPARENT);
+      pill.setColor(selected ? Ui.CONTAINER : Color.TRANSPARENT);
       icons[i].setBackground(pill);
-      icons[i].setColorFilter(selected ? 0xff002117 : 0xff3f4945);
-      labels[i].setTextColor(selected ? 0xff191c1b : 0xff3f4945);
+      icons[i].setColorFilter(selected ? Ui.PRIMARY : Ui.MUTED);
+      labels[i].setTextColor(selected ? Ui.PRIMARY : Ui.MUTED);
       labels[i].setTypeface(null, selected ? Typeface.BOLD : Typeface.NORMAL);
     }
   }

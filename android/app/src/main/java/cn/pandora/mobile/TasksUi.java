@@ -190,6 +190,10 @@ final class TasksUi {
   }
 
   void taskItem(LinearLayout into, JSONObject t) {
+    taskItem(into, t, null);
+  }
+
+  void taskItem(LinearLayout into, JSONObject t, String reportId) {
     u.item(
         into,
         s(t, "title"),
@@ -200,7 +204,7 @@ final class TasksUi {
             + schedule(t)
             + (t.optBoolean("frozen") ? " · 审核中" : "")
             + (overdue(t) ? " · 已逾期" : ""),
-        () -> detail(id(t)));
+        () -> detail(id(t), reportId));
   }
 
   static String when(String value) {
@@ -223,48 +227,69 @@ final class TasksUi {
   }
 
   void detail(String id) {
+    detail(id, null);
+  }
+
+  void detail(String id, String reportId) {
     a.run(
-        () -> a.api.get("/tasks/" + ApiClient.q(id)),
+        () -> {
+          if (reportId != null) a.workspaceUi.requireReport(reportId);
+          return a.api.get("/tasks/" + ApiClient.q(id));
+        },
         t -> {
           a.remember(t);
           if (s(t, "currentVersionId").isEmpty()) {
+            if (reportId != null) {
+              a.error("这项任务尚未发布。");
+              return;
+            }
             String request = s(t, "pendingRequestId");
             if (request.isEmpty()) request = s(t, "latestRequestId");
             if (!request.isEmpty()) approval(request);
             else a.error("任务尚未发布。");
             return;
           }
-          showDetail(t, false);
+          showDetail(t, false, reportId);
         });
   }
 
   void showDetail(JSONObject t, boolean historical) {
+    showDetail(t, historical, null);
+  }
+
+  private void showDetail(JSONObject t, boolean historical, String reportId) {
     MainActivity.Panel p = a.panel(historical ? "历史只读详情" : s(t, "title"));
     snapshot(p.body, t);
     if (historical && !s(t, "notice").isEmpty()) u.note(p.body, s(t, "notice"));
     if (t.optBoolean("frozen")) u.note(p.body, "任务有待审核申请，当前展示有效版本；审核结束前不能修改。");
     if (!historical) {
       u.note(p.body, "创建者：" + a.person(s(t, "originalCreatorId")));
-      u.note(
-          p.body, "审核人：" + (s(t, "reviewerId").isEmpty() ? "无需审核" : a.person(s(t, "reviewerId"))));
-      route(p.body, child(t, "route"));
+      if (reportId == null) {
+        u.note(p.body, "审核人：" + (s(t, "reviewerId").isEmpty() ? "无需审核" : a.person(s(t, "reviewerId"))));
+        route(p.body, child(t, "route"));
+      }
       if (!s(t, "parentTaskId").isEmpty())
         u.button(
                 p.body,
                 "上级任务" + (t.optBoolean("parentUnavailable") ? "（当前不可查看）" : ""),
                 false,
-                () -> detail(s(t, "parentTaskId")))
+                () -> detail(s(t, "parentTaskId"), reportId))
             .setEnabled(!t.optBoolean("parentUnavailable"));
       if (arr(t, "children").length() > 0) {
         u.heading(p.body, "子任务");
-        for (JSONObject c : rows(arr(t, "children"))) taskItem(p.body, c);
+        for (JSONObject c : rows(arr(t, "children"))) taskItem(p.body, c, reportId);
         u.note(p.body, "父子任务独立推进，完成状态不会自动联动。");
       }
       if (!s(t, "parentTaskId").isEmpty())
         for (JSONObject sibling : rows(a.tasks))
           if (!id(t).equals(id(sibling)) && s(t, "parentTaskId").equals(s(sibling, "parentTaskId")))
-            taskItem(p.body, sibling);
+            taskItem(p.body, sibling, reportId);
       records(p.body, arr(t, "records"));
+      if (reportId != null) {
+        new MemberCommentsUi(a, reportId, "/tasks/" + ApiClient.q(id(t)) + "/comments")
+            .attach(p.body);
+        return;
+      }
       String taskId = id(t);
       boolean frozen = t.optBoolean("frozen") || t.optBoolean("pending"),
           creator = a.uid().equals(s(t, "originalCreatorId")),

@@ -21,6 +21,8 @@ final class WorkspaceUi {
   private String logAuthor = "", logQuery = "", logFrom = "", logTo = "", department = "";
   private JSONObject analysis;
   private ProfileDraft profile;
+  private LocalDate homeWeek;
+  private int homeWeekEpoch = -1;
 
   WorkspaceUi(MainActivity a) {
     this.a = a;
@@ -38,58 +40,134 @@ final class WorkspaceUi {
     profile = null;
   }
 
-  void personal(JSONObject item) {
-    if (item == null && arr(a.home, "personalItems").length() >= 10) {
-      a.error("个人事项最多10条，请先删除一条。");
-      return;
-    }
-    MainActivity.Panel p = a.panel(item == null ? "新增个人事项" : "编辑个人事项");
-    EditText text = u.field(p.body, "事项内容（最多2000字）", s(item, "body"), 2000, true);
-    String slot = UUID.randomUUID().toString();
-    u.button(
-        p.actions,
-        "保存",
-        true,
-        () -> {
-          if (Ui.value(text).isEmpty()) {
-            p.error.setText("请填写内容。");
-            return;
-          }
-          JSONObject body =
-              item == null
-                  ? obj("kind", "personal", "body", Ui.value(text))
-                  : obj("body", Ui.value(text));
-          a.write(
-              slot,
-              item == null ? "POST" : "PATCH",
-              "/home/items" + (item == null ? "" : "/" + ApiClient.q(id(item))),
-              body,
-              item == null ? null : tag(item));
-        });
+  LocalDate businessDate() {
+    String value = s(a.home, "businessDate");
+    return value.isEmpty() ? LocalDate.now(CalendarUi.ZONE) : LocalDate.parse(value);
   }
 
-  void personalDetail(String id) {
-    a.run(
-        () -> a.api.get("/home/items/" + ApiClient.q(id)),
-        item -> {
-          MainActivity.Panel p = a.panel("个人事项");
-          p.body.addView(u.text(s(item, "body"), 16, Ui.INK));
-          u.button(p.actions, "编辑", true, () -> personal(item));
-          u.button(
-              p.body,
-              "删除",
-              false,
-              () ->
-                  confirm(
-                      "删除这条个人事项？",
-                      () ->
-                          a.write(
-                              "personal-delete:" + id,
-                              "DELETE",
-                              "/home/items/" + ApiClient.q(id),
-                              null,
-                              tag(item))));
-        });
+  void dailyItems(LinearLayout calendar) {
+    int epoch = a.api.epoch;
+    LocalDate initial = homeWeekEpoch == epoch && homeWeek != null ? homeWeek : businessDate();
+    HomeDailyCalendar view = new HomeDailyCalendar(a, businessDate(), date -> {
+      homeWeekEpoch = epoch;
+      homeWeek = date;
+    }, this::openDailyDay);
+    LinearLayout heading = u.row();
+    calendar.addView(heading);
+    heading.addView(u.text("每日事项", 18, Ui.INK), new LinearLayout.LayoutParams(0, -2, 1));
+    LinearLayout add = u.column();
+    heading.addView(add, new LinearLayout.LayoutParams(-2, -2));
+    u.button(add, "＋", true, () -> {
+      LocalDate start = view.visibleWeek();
+      LocalDate today = businessDate();
+      LocalDate date = !today.isBefore(start) && today.isBefore(start.plusWeeks(HomeDailyCalendar.VISIBLE_WEEKS))
+          ? today : start;
+      personal(null, date, view::invalidateCounts);
+    }).setContentDescription("新增每日事项");
+    view.attach(calendar, initial);
+  }
+
+  private void openDailyDay(LocalDate date, Runnable refreshCalendar) {
+    a.run(() -> a.api.all("/daily-items?date=" + date), result -> {
+      if (!"map".equals(a.page)) return;
+      MainActivity.Panel list = a.panel(date + " 每日事项");
+      boolean[] changed = {false};
+      list.dialog.setOnDismissListener(dialog -> {
+        a.panels.remove(list);
+        if (changed[0]) refreshCalendar.run();
+      });
+      renderDailyDay(date, list, result, changed);
+    });
+  }
+
+  private void renderDailyDay(LocalDate date, MainActivity.Panel list, JSONArray items, boolean[] changed) {
+    list.body.removeAllViews();
+    list.actions.removeAllViews();
+    list.error.setText("");
+    if (items.length() == 0) u.note(list.body, "这一天没有事项");
+    Runnable refresh = () -> {
+      changed[0] = true;
+      a.run(() -> a.api.all("/daily-items?date=" + date), result -> {
+        if (list.dialog.isShowing()) renderDailyDay(date, list, result, changed);
+      });
+    };
+    for (JSONObject item : rows(items))
+      u.item(list.body, s(item, "body"), dailyRange(item) + " · " + dailyStatus(item),
+          () -> personalDetail(id(item), date, refresh));
+    u.button(list.actions, "新增事项", true, () -> personal(null, date, refresh));
+    u.button(list.actions, "刷新", false, refresh);
+  }
+
+  private String dailyRange(JSONObject item) {
+    String start = s(item, "startDate"), end = s(item, "endDate");
+    return start.equals(end) ? start : start + " 至 " + end;
+  }
+
+  private String dailyStatus(JSONObject item) {
+    return switch (s(item, "status")) {
+      case "completed" -> "已完成";
+      case "overdue" -> "已逾期";
+      default -> "待完成";
+    };
+  }
+
+  private void pickDate(LocalDate initial, java.util.function.Consumer<LocalDate> onSelected) {
+    new DatePickerDialog(a, (picker, y, m, d) -> onSelected.accept(LocalDate.of(y, m + 1, d)),
+        initial.getYear(), initial.getMonthValue() - 1, initial.getDayOfMonth()).show();
+  }
+
+  void personal(JSONObject item, LocalDate date, Runnable onSaved) {
+    MainActivity.Panel p = a.panel(item == null ? "新增每日事项" : "编辑每日事项");
+    LocalDate[] range = item == null ? new LocalDate[] {date, date} : new LocalDate[] {
+        LocalDate.parse(s(item, "startDate")), LocalDate.parse(s(item, "endDate"))};
+    for (int index = 0; index < range.length; index++) {
+      int i = index;
+      String label = i == 0 ? "开始日期" : "结束日期";
+      u.heading(p.body, label);
+      Button[] control = new Button[1];
+      control[0] = u.button(p.body, range[i].toString(), false, () -> pickDate(range[i], selected -> {
+        range[i] = selected;
+        control[0].setText(selected.toString());
+        control[0].setContentDescription(label + " " + selected);
+      }));
+      control[0].setContentDescription(label + " " + range[i]);
+    }
+    EditText text = u.field(p.body, "事项内容（最多2000字）", s(item, "body"), 2000, true);
+    String slot = UUID.randomUUID().toString();
+    u.button(p.actions, "保存", true, () -> {
+      if (Ui.value(text).isEmpty() || range[1].isBefore(range[0])) {
+        p.error.setText(Ui.value(text).isEmpty() ? "请填写事项内容。" : "结束日期不得早于开始日期。");
+        return;
+      }
+      JSONObject data = obj("startDate", range[0].toString(), "endDate", range[1].toString(), "body", Ui.value(text));
+      saveDaily(slot, item == null ? "POST" : "PATCH", item, data, () -> {
+        p.dialog.dismiss();
+        onSaved.run();
+      });
+    });
+  }
+
+  private void personalDetail(String id, LocalDate date, Runnable onSaved) {
+    a.run(() -> a.api.get("/daily-items/" + ApiClient.q(id)), item -> {
+      MainActivity.Panel p = a.panel("每日事项详情");
+      u.note(p.body, dailyRange(item) + " · " + dailyStatus(item));
+      p.body.addView(u.text(s(item, "body"), 16, Ui.INK));
+      Runnable refresh = () -> { p.dialog.dismiss(); onSaved.run(); };
+      u.button(p.actions, "编辑", true, () -> personal(item, date, refresh));
+      boolean complete = item.optBoolean("completed");
+      u.button(p.body, complete ? "取消完成" : "标为完成", false, () ->
+          saveDaily("daily-complete:" + id, "PATCH", item, obj("completed", !complete), refresh));
+      u.button(p.body, "删除事项", false, () -> confirm("删除这条每日事项？", () ->
+          saveDaily("daily-delete:" + id, "DELETE", item, null, refresh)));
+    });
+  }
+
+  private void saveDaily(String slot, String method, JSONObject item, JSONObject data, Runnable onSaved) {
+    String path = "/daily-items" + (item == null ? "" : "/" + ApiClient.q(id(item)));
+    a.run(() -> a.api.mutate(slot, method, path, data, item == null ? null : tag(item)), result -> {
+      a.toast("事项已保存");
+      onSaved.run();
+    });
   }
 
   void confirm(String title, Runnable action) {
@@ -108,7 +186,7 @@ final class WorkspaceUi {
         logAuthor.isEmpty() || logAuthor.equals(a.uid())
             ? "我的日志"
             : logAuthor.equals("*") ? "授权范围内的日志" : a.person(logAuthor) + "的日志");
-    u.button(box, "写今日日志", true, () -> editLog(null));
+    u.button(box, "写日志", true, () -> editLog(null));
     u.button(box, "选择人员或部门", false, this::authorPicker);
     EditText query = u.field(box, "搜索日志内容", logQuery, 200, false);
     u.button(
@@ -244,14 +322,29 @@ final class WorkspaceUi {
   }
 
   void logDetail(String id) {
+    logDetail(id, null);
+  }
+
+  private void logDetail(String id, String reportId) {
     a.run(
-        () -> a.api.get("/work-logs/" + ApiClient.q(id)),
+        () -> {
+          if (reportId != null) requireReport(reportId);
+          JSONObject log = a.api.get("/work-logs/" + ApiClient.q(id));
+          if (reportId != null && !reportId.equals(s(log, "authorId")))
+            throw new IOException("这条日志不属于当前人员。");
+          return log;
+        },
         log -> {
           MainActivity.Panel p = a.panel("日志详情");
           u.note(p.body, s(log, "authorName") + " · " + s(log, "businessDate"));
           p.body.addView(u.text(s(log, "body"), 16, Ui.INK));
           if (!s(log, "taskId").isEmpty())
-            u.button(p.body, "查看关联任务", false, () -> a.tasksUi.detail(s(log, "taskId")));
+            u.button(p.body, "查看关联任务", false, () -> a.tasksUi.detail(s(log, "taskId"), reportId));
+          if (reportId != null) {
+            new MemberCommentsUi(a, reportId, "/work-logs/" + ApiClient.q(id) + "/comments")
+                .attach(p.body);
+            return;
+          }
           if (log.optBoolean("editable")) {
             u.button(p.actions, "编辑", true, () -> editLog(log));
             u.button(
@@ -273,31 +366,40 @@ final class WorkspaceUi {
   }
 
   void editLog(JSONObject log) {
-    if (log == null) {
-      a.run(
-          () ->
-              a.api.get(
-                  "/work-logs?scope=self&from="
-                      + ApiClient.q(s(a.home, "businessDate"))
-                      + "&to="
-                      + ApiClient.q(s(a.home, "businessDate"))
-                      + "&limit=1"),
-          r -> {
-            JSONObject existing = arr(r, "items").optJSONObject(0);
-            if (existing != null)
-              a.run(() -> a.api.get("/work-logs/" + ApiClient.q(id(existing))), this::logForm);
-            else logForm(null);
-          });
-    } else logForm(log);
+    if (log != null) {
+      logForm(log, LocalDate.parse(s(log, "businessDate")));
+      return;
+    }
+    a.run(() -> {
+      LocalDate today = LocalDate.parse(s(a.api.get("/home"), "businessDate"));
+      List<JSONObject> existing = rows(a.api.all("/work-logs?scope=self&from="
+          + today.minusDays(2) + "&to=" + today));
+      Set<String> occupied = new HashSet<>();
+      for (JSONObject row : existing) occupied.add(s(row, "businessDate"));
+      List<LocalDate> available = new ArrayList<>();
+      for (int age = 0; age < 3; age++) {
+        LocalDate date = today.minusDays(age);
+        if (!occupied.contains(date.toString())) available.add(date);
+      }
+      return available;
+    }, available -> {
+      MainActivity.Panel dates = a.panel("选择日志日期");
+      if (available.isEmpty()) u.note(dates.body, "最近三天都已写过日志，可从日志详情打开可编辑的记录。");
+      for (LocalDate date : available)
+        u.button(dates.body, date.toString(), false, () -> {
+          dates.dialog.dismiss();
+          logForm(null, date);
+        });
+    });
   }
 
-  private void logForm(JSONObject log) {
-    if (log != null && !log.optBoolean("editable")) {
+  private void logForm(JSONObject log, LocalDate businessDate) {
+    if (log != null && (!log.optBoolean("editable") || log.optBoolean("frozen"))) {
       a.error("这条日志只读。");
       return;
     }
-    MainActivity.Panel p = a.panel("写日志");
-    u.note(p.body, "公司日期：" + s(a.home, "businessDate") + " · 每天一条，历史日志只读");
+    MainActivity.Panel p = a.panel(log == null ? "写日志" : "编辑日志");
+    u.note(p.body, "所属日期：" + businessDate);
     EditText body = u.field(p.body, "日志内容（必填）", s(log, "body"), 10000, true);
     body.setId(R.id.log_content);
     body.setMinLines(12);
@@ -305,6 +407,11 @@ final class WorkspaceUi {
     body.setMinHeight(u.dp(320));
     body.setGravity(android.view.Gravity.TOP | android.view.Gravity.START);
     body.setVerticalScrollBarEnabled(true);
+    Set<String> appended = new HashSet<>();
+    u.button(p.body, "追加当日事项名称", false,
+        () -> fillLog(p, body, businessDate, "dailyItems", appended));
+    u.button(p.body, "追加当日任务名称", false,
+        () -> fillLog(p, body, businessDate, "tasks", appended));
     String[] task = {s(log, "taskId")};
     boolean[] changed = {false};
     TextView selected =
@@ -336,41 +443,64 @@ final class WorkspaceUi {
             p.error.setText("请填写日志内容。");
             return;
           }
-          JSONObject data = obj("body", Ui.value(body));
-          if (log == null || changed[0])
-            try {
-              data.put("taskId", task[0].isEmpty() ? JSONObject.NULL : task[0]);
-            } catch (JSONException ignored) {
-            }
+          JSONObject data = log == null
+              ? obj("body", Ui.value(body), "businessDate", businessDate.toString(),
+                    "taskId", task[0].isEmpty() ? JSONObject.NULL : task[0])
+              : changed[0]
+                  ? obj("body", Ui.value(body), "taskId", task[0].isEmpty() ? JSONObject.NULL : task[0])
+                  : obj("body", Ui.value(body));
           a.run(
               () -> {
                 try {
-                  return a.api.mutate(
-                      slot,
-                      log == null ? "POST" : "PATCH",
-                      "/work-logs" + (log == null ? "" : "/" + ApiClient.q(id(log))),
-                      data,
+                  return a.api.mutate(slot, log == null ? "POST" : "PATCH",
+                      "/work-logs" + (log == null ? "" : "/" + ApiClient.q(id(log))), data,
                       log == null ? null : tag(log));
-                } catch (ApiClient.Failure f) {
-                  if ("WORK_LOG_EXISTS".equals(f.code))
-                    return obj(
-                        "existingLog", a.api.get("/work-logs/" + ApiClient.q(s(f.data, "logId"))));
-                  throw f;
+                } catch (ApiClient.Failure error) {
+                  if ("WORK_LOG_EXISTS".equals(error.code))
+                    throw new IOException("该日期已有日志。当前草稿已保留，可返回日志列表查看原记录。", error);
+                  throw error;
                 }
               },
               r -> {
-                if (r.has("existingLog")) {
-                  p.dialog.dismiss();
-                  logForm(child(r, "existingLog"));
-                  a.toast("今天已有日志，已打开原记录。");
-                } else {
-                  reset();
-                  a.closePanels();
-                  a.reload();
-                  a.toast("日志已保存。");
-                }
+                reset();
+                a.closePanels();
+                a.reload();
+                a.toast("日志已保存。");
               });
         });
+  }
+
+  private void fillLog(MainActivity.Panel panel, EditText body, LocalDate date, String group,
+      Set<String> appended) {
+    panel.error.setText("");
+    a.run(() -> a.api.get("/work-logs/fill-source?businessDate=" + date), source -> {
+      if (!panel.dialog.isShowing()) return;
+      if (!source.optBoolean("complete") || !date.toString().equals(s(source, "businessDate"))) {
+        panel.error.setText("无法读取完整的当日名称，请重试。");
+        return;
+      }
+      Map<String, String> names = new LinkedHashMap<>();
+      for (JSONObject item : rows(arr(source, group))) {
+        String key = group + ":" + id(item);
+        if (!id(item).isEmpty() && !s(item, "name").isEmpty() && !appended.contains(key))
+          names.putIfAbsent(key, s(item, "name"));
+      }
+      if (names.isEmpty()) {
+        a.toast("没有可追加的新名称");
+        return;
+      }
+      String current = body.getText().toString();
+      String addition = String.join("\n", names.values());
+      String separator = current.isEmpty() || current.endsWith("\n") ? "" : "\n";
+      if (current.length() + separator.length() + addition.length() > 10000) {
+        MainActivity.Panel preview = a.panel("追加后将超过日志长度上限");
+        u.note(preview.body, "原正文已保留。可复制所需内容，再返回日志编辑。");
+        preview.body.addView(u.text(addition, 16, Ui.INK));
+        return;
+      }
+      body.append(separator + addition);
+      appended.addAll(names.keySet());
+    });
   }
 
   void notifications() {
@@ -584,12 +714,48 @@ final class WorkspaceUi {
     u.heading(card, s(a.me, "displayName"));
     u.note(card, s(a.me, "positionName") + " · " + s(a.me, "departmentName"));
     u.button(card, "个人设置", true, this::settings);
+    u.button(card, "组织成员", false, this::showOrganizationMembers);
     organization(box, a.me);
     if (a.reports.length() > 0) {
       u.heading(box, "下属资料");
       for (JSONObject p : rows(a.reports))
         u.item(box, s(p, "displayName"), s(p, "departmentName"), () -> person(id(p)));
     }
+  }
+
+  private void showOrganizationMembers() {
+    a.run(() -> obj("members", arr(a.api.get("/assignee-candidates?purpose=create"), "items"),
+        "reports", arr(a.api.get("/me/reports"), "items")), result -> {
+      if (!"me".equals(a.page)) return;
+      MainActivity.Panel panel = a.panel("组织成员");
+      List<JSONObject> members = rows(arr(result, "members"));
+      if (members.isEmpty()) u.note(panel.body, "暂无可显示的组织成员");
+      Set<String> reports = new HashSet<>();
+      for (JSONObject report : rows(arr(result, "reports"))) reports.add(id(report));
+      for (JSONObject member : members) {
+        String memberId = id(member);
+        String name = s(member, "displayName") + (memberId.equals(a.uid()) ? "（我）" : "");
+        boolean canView = reports.contains(memberId) || memberId.equals(a.uid());
+        u.item(panel.body, name, placement(member),
+            () -> { if (canView) person(memberId); else memberSummary(member); });
+      }
+    });
+  }
+
+  private String placement(JSONObject member) {
+    List<String> path = new ArrayList<>();
+    for (String field : List.of("departmentName", "teamName", "positionName")) {
+      String value = s(member, field);
+      if (!value.isEmpty()) path.add(value);
+    }
+    return String.join(" · ", path);
+  }
+
+  private void memberSummary(JSONObject member) {
+    MainActivity.Panel panel = a.panel("人员资料");
+    u.heading(panel.body, s(member, "displayName"));
+    u.note(panel.body, placement(member));
+    u.note(panel.body, "当前可查看此人的组织职务。日程和日志仅向本人及有权限的上级开放。");
   }
 
   private void organization(LinearLayout box, JSONObject p) {
@@ -625,17 +791,134 @@ final class WorkspaceUi {
   }
 
   private void person(String id) {
+    boolean self = id.equals(a.uid());
     a.run(
-        () -> a.api.get("/users/" + ApiClient.q(id)),
+        () -> {
+          if (!self) requireReport(id);
+          return a.api.get("/users/" + ApiClient.q(id));
+        },
         r -> {
           MainActivity.Panel p = a.panel("人员资料");
           u.heading(p.body, s(r, "displayName"));
-          organization(p.body, r);
-          if (r.has("phone")) u.note(p.body, "手机号：" + s(r, "phone"));
-          if (r.optBoolean("canReadLogs")) u.button(p.actions, "查看日志", true, () -> loadAuthor(id));
+          u.note(p.body, placement(r));
+          if (!s(r, "phone").isEmpty()) u.note(p.body, "手机号：" + s(r, "phone"));
+          if (!s(r, "email").isEmpty()) u.note(p.body, "邮箱：" + s(r, "email"));
+          if (!s(r, "hireDate").isEmpty()) u.note(p.body, "入职日期：" + s(r, "hireDate"));
+          u.button(p.actions, "查看日程", true, () -> {
+            if (self) {
+              a.closePanels();
+              a.calendarUi.person = "";
+              a.navigate("view");
+            } else new MemberWorkspace(r, false).open();
+          });
+          if (r.optBoolean("canReadLogs")) u.button(p.actions, "查看日志", false, () -> {
+            if (self) loadAuthor(id);
+            else new MemberWorkspace(r, true).open();
+          });
           if (r.optBoolean("canSetHandoverPreset"))
             u.button(p.body, "设置交接预设", false, () -> a.tasksUi.preset(id));
         });
+  }
+
+  void requireReport(String reportId) throws Exception {
+    JSONArray directory = arr(a.api.get("/me/reports"), "items");
+    if (rows(directory).stream().noneMatch(person -> reportId.equals(id(person))))
+      throw new IOException("当前无权查看此人的工作区。");
+  }
+
+  private final class MemberWorkspace {
+    final String reportId;
+    final CalendarUi calendar;
+    JSONObject member;
+    boolean logs;
+    MainActivity.Panel panel;
+    LinearLayout content;
+    Button more;
+
+    MemberWorkspace(JSONObject member, boolean logs) {
+      this.member = member;
+      this.logs = logs;
+      reportId = id(member);
+      calendar = new CalendarUi(a, reportId);
+    }
+
+    void open() {
+      panel = a.panel(s(member, "displayName") + "的工作");
+      u.button(panel.actions, "刷新", false, this::refresh);
+      render();
+    }
+
+    void render() {
+      panel.body.removeAllViews();
+      u.note(panel.body, placement(member));
+      LinearLayout tabs = u.row();
+      panel.body.addView(tabs);
+      for (boolean logTab : new boolean[] {false, true}) {
+        LinearLayout cell = u.column();
+        tabs.addView(cell, new LinearLayout.LayoutParams(0, -2, 1));
+        Button tab = u.button(cell, logTab ? "日志" : "日程", logTab == logs, () -> {
+          if (logs != logTab) {
+            logs = logTab;
+            render();
+          }
+        });
+        tab.setSelected(logTab == logs);
+        tab.setEnabled(!logTab || member.optBoolean("canReadLogs"));
+      }
+      content = u.column();
+      panel.body.addView(content);
+      refresh();
+    }
+
+    void refresh() {
+      panel.error.setText("");
+      content.removeAllViews();
+      more = null;
+      u.note(content, logs ? "正在读取日志…" : "正在读取日程…");
+      load(0, false);
+    }
+
+    void load(int offset, boolean append) {
+      LocalDate first = calendar.day ? calendar.date : calendar.date.withDayOfMonth(1)
+          .with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+      LocalDate last = calendar.day ? calendar.date : calendar.date.withDayOfMonth(calendar.date.lengthOfMonth())
+          .with(java.time.temporal.TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+      a.run(() -> {
+        requireReport(reportId);
+        JSONObject latest = a.api.get("/users/" + ApiClient.q(reportId));
+        if (logs) {
+          if (!latest.optBoolean("canReadLogs")) throw new IOException("当前无权查看此人的日志。");
+          return obj("person", latest, "data", a.api.get("/work-logs?scope=visible&authorId="
+              + ApiClient.q(reportId) + "&limit=20&offset=" + offset));
+        }
+        return obj("person", latest, "items", a.api.all("/tasks?assigneeId=" + ApiClient.q(reportId)
+            + "&calendarPreview=true&from=" + first + "&to=" + last));
+      }, result -> {
+        if (!panel.dialog.isShowing()) return;
+        if (!append) content.removeAllViews();
+        if (more != null) content.removeView(more);
+        more = null;
+        member = child(result, "person");
+        if (!logs) {
+          calendar.showWorkspace(content, arr(result, "items"), this::refresh);
+          return;
+        }
+        JSONObject page = child(result, "data");
+        List<JSONObject> entries = rows(arr(page, "items"));
+        if (!append && entries.isEmpty()) u.note(content, "暂无工作日志");
+        for (JSONObject entry : entries)
+          u.item(content, s(entry, "body"), s(entry, "businessDate"), () -> logDetail(id(entry), reportId));
+        if (!page.isNull("nextOffset")) {
+          int next = page.optInt("nextOffset");
+          if (next > offset) more = u.button(content, "加载更早日志", false, () -> load(next, true));
+        }
+      }, message -> {
+        if (!panel.dialog.isShowing()) return;
+        content.removeAllViews();
+        panel.error.setText(message);
+        u.button(content, "重新读取", false, this::refresh);
+      });
+    }
   }
 
   private static final int PHOTO = 70;

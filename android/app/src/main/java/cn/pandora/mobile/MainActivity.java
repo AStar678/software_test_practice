@@ -87,27 +87,6 @@ public final class MainActivity extends Activity {
           if (ready && !busy) workspaceUi.notifications();
         });
     toolbar.addView(bell, new LinearLayout.LayoutParams(u.dp(48), u.dp(48)));
-    Button menu = new Button(this);
-    menu.setText("⋮");
-    menu.setTextSize(24);
-    menu.setContentDescription("更多选项");
-    menu.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-    menu.setOnClickListener(
-        v -> {
-          PopupMenu m = new PopupMenu(this, menu);
-          m.getMenu().add("刷新数据").setEnabled(ready);
-          m.getMenu().add("退出登录").setEnabled(ready);
-          m.setOnMenuItemClickListener(
-              i -> {
-                if (!busy) {
-                  if (i.getTitle().equals("刷新数据")) reload();
-                  else logout();
-                }
-                return true;
-              });
-          m.show();
-        });
-    toolbar.addView(menu, new LinearLayout.LayoutParams(u.dp(48), u.dp(48)));
     root.addView(toolbar);
     loading = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
     loading.setIndeterminate(true);
@@ -216,6 +195,10 @@ public final class MainActivity extends Activity {
   }
 
   <T> void run(Job<T> job, Consumer<T> success) {
+    run(job, success, this::error);
+  }
+
+  <T> void run(Job<T> job, Consumer<T> success, Consumer<String> failure) {
     if (busy || destroyed) return;
     busy = true;
     loading.setVisibility(View.VISIBLE);
@@ -248,7 +231,7 @@ public final class MainActivity extends Activity {
                     clear();
                     password(true);
                   } else
-                    error(error.getMessage() == null ? "无法连接服务器，请检查网络后重试。" : error.getMessage());
+                    failure.accept(error.getMessage() == null ? "无法连接服务器，请检查网络后重试。" : error.getMessage());
                 });
           }
         });
@@ -290,9 +273,10 @@ public final class MainActivity extends Activity {
     u.heading(box, "让每一天，有序向前。");
     u.note(box, "登录你的工作台，查看任务与团队动态。");
     if (!message.isEmpty()) u.note(box, message);
-    EditText user = u.field(box, "工作账号", "", 100, false),
+    EditText user = u.field(box, "登录手机号", "", 80, false),
         password = u.field(box, "密码", "", 100, false);
     user.setId(R.id.login_username);
+    user.setInputType(InputType.TYPE_CLASS_PHONE);
     password.setId(R.id.login_password);
     password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
     u.button(
@@ -301,18 +285,20 @@ public final class MainActivity extends Activity {
         true,
         () -> {
           if (Ui.value(user).isEmpty() || password.getText().length() == 0) {
-            error("请输入账号和密码。");
+            error("请输入手机号和密码。");
             return;
           }
-          String usernameValue = Ui.value(user), passwordValue = password.getText().toString();
+          String phone = Ui.value(user), passwordValue = password.getText().toString();
           run(
               () ->
                   api.post(
-                      "/auth/sessions", obj("username", usernameValue, "password", passwordValue)),
+                      "/auth/sessions",
+                      obj("accountType", "employee", "phone", phone, "password", passwordValue)),
               result -> {
                 api.epoch++;
                 api.token = s(result, "token");
-                if (result.optBoolean("passwordChangeRequired")) {
+                if (result.optBoolean("passwordChangeRequired")
+                    || child(result, "user").optBoolean("mustChangePassword")) {
                   password(true);
                   return;
                 }
@@ -327,7 +313,7 @@ public final class MainActivity extends Activity {
                     });
               });
         });
-    u.note(box, "账号与密码由管理员提供，忘记密码请联系管理员。");
+    u.note(box, "使用管理员登记的手机号登录。忘记密码请联系管理员。");
   }
 
   void password(boolean forced) {
@@ -409,11 +395,37 @@ public final class MainActivity extends Activity {
   void dashboard() {
     LinearLayout box = page("工作台");
     LinearLayout heading = u.row();
-    java.time.LocalDate today = java.time.LocalDate.now(CalendarUi.ZONE);
+    java.time.LocalDate today = workspaceUi.businessDate();
+    String weekday = today.getDayOfWeek().getDisplayName(
+        java.time.format.TextStyle.FULL, Locale.SIMPLIFIED_CHINESE);
+    LinearLayout dateBlock = u.column();
+    heading.addView(dateBlock, new LinearLayout.LayoutParams(0, -2, 1));
     TextView date = u.text(today.getMonthValue() + "月" + today.getDayOfMonth() + "日", 26, Ui.INK);
-    heading.addView(date, new LinearLayout.LayoutParams(0, u.dp(80), 1));
-    date.setGravity(Gravity.CENTER_VERTICAL);
+    date.setTypeface(null, android.graphics.Typeface.BOLD);
+    dateBlock.addView(date);
+    u.note(dateBlock, weekday);
     box.addView(heading);
+    List<JSONObject> events = rows(arr(home, "companyItems"));
+    List<JSONObject> assigned = rows(arr(home, "assignedTasks"));
+    LinearLayout previews = u.row();
+    previews.setBaselineAligned(false);
+    previews.setGravity(Gravity.TOP);
+    box.addView(previews);
+    LinearLayout company = dashboardPreview(previews, R.id.dashboard_company, "事件纪", "统一发布");
+    if (events.isEmpty()) u.note(company, "暂无公司事件");
+    for (JSONObject event : events.subList(0, Math.min(3, events.size())))
+      preview(company, s(event, "body").isBlank() ? eventTitle(event) : s(event, "body"),
+          () -> openHomeEvents(events));
+
+    LinearLayout board = dashboardPreview(previews, R.id.dashboard_tasks, "任务看板", assigned.size() + "/10");
+    if (assigned.isEmpty()) u.note(board, "暂无本人负责的未完成任务");
+    for (JSONObject task : assigned.subList(0, Math.min(3, assigned.size())))
+      preview(board, s(task, "title"), () -> openHomeBoard(assigned));
+
+
+    LinearLayout personal = u.card(box);
+    personal.setId(R.id.dashboard_personal);
+    workspaceUi.dailyItems(personal);
     LinearLayout shortcuts = u.card(box);
     long pending =
         rows(approvals).stream()
@@ -429,48 +441,57 @@ public final class MainActivity extends Activity {
     u.button(one, "待我审核 · " + pending, false, () -> tasksUi.approvals("reviewer"));
     u.button(two, "我的申请", false, () -> tasksUi.approvals("applicant"));
     u.button(three, "全部授权任务", false, tasksUi::list);
-    GridLayout modules = new GridLayout(this);
-    modules.setColumnCount(2);
-    box.addView(modules, new LinearLayout.LayoutParams(-1, -2));
-    LinearLayout company = dashboardModule(modules, 0, R.id.dashboard_company, "公司事项");
-    if (arr(home, "companyItems").length() == 0) u.note(company, "暂无公司信息");
-    for (JSONObject item : rows(arr(home, "companyItems")))
-      u.item(company, s(item, "body"), "统一发布", null);
-    LinearLayout assigned = dashboardModule(modules, 1, R.id.dashboard_tasks, "我的待办");
-    for (JSONObject t : rows(arr(home, "assignedTasks")))
-      u.item(assigned, s(t, "title"), priority(t), () -> tasksUi.detail(s(t, "taskId")));
-    if (arr(home, "assignedTasks").length() == 0) u.note(assigned, "暂无被派发的未完成任务");
-    LinearLayout personal = dashboardModule(modules, 2, R.id.dashboard_personal, "个人事项");
-    u.button(personal, "新增", false, () -> workspaceUi.personal(null));
-    for (JSONObject item : rows(arr(home, "personalItems")))
-      u.item(personal, s(item, "body"), "点击查看或编辑", () -> workspaceUi.personalDetail(id(item)));
-    LinearLayout recent = dashboardModule(modules, 3, R.id.dashboard_logs, "工作记录");
-    for (JSONObject log : rows(arr(home, "recentLogs")))
-      u.item(recent, s(log, "body"), s(log, "businessDate"), () -> workspaceUi.logDetail(id(log)));
-    if (arr(home, "recentLogs").length() == 0) u.note(recent, "近十天暂无日志");
   }
 
-  /** Uniform tiles; long module contents scroll inside their own fixed-size body. */
-  private LinearLayout dashboardModule(GridLayout grid, int index, int resourceId, String label) {
-    LinearLayout tile = u.column();
-    tile.setId(resourceId);
-    tile.setPadding(u.dp(12), 0, u.dp(12), u.dp(12));
-    android.graphics.drawable.GradientDrawable background = u.shape(Ui.SURFACE, 16);
-    background.setStroke(u.dp(1), Ui.LINE);
-    tile.setBackground(background);
-    GridLayout.LayoutParams size =
-        new GridLayout.LayoutParams(GridLayout.spec(index / 2), GridLayout.spec(index % 2, 1f));
-    size.width = 0;
-    size.height = Math.max(u.dp(180), (content.getHeight() - u.dp(216)) / 2);
-    size.setMargins(u.dp(4), u.dp(4), u.dp(4), u.dp(4));
-    grid.addView(tile, size);
-    u.heading(tile, label);
-    ScrollView scroll = new ScrollView(this);
-    scroll.setNestedScrollingEnabled(true);
-    LinearLayout contents = u.column();
-    scroll.addView(contents, new ScrollView.LayoutParams(-1, -2));
-    tile.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-    return contents;
+  private LinearLayout dashboardPreview(LinearLayout row, int id, String heading, String detail) {
+    LinearLayout shell = u.column();
+    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -2, 1);
+    params.setMargins(u.dp(3), 0, u.dp(3), 0);
+    row.addView(shell, params);
+    LinearLayout card = u.card(shell);
+    card.setId(id);
+    card.setMinimumHeight(u.dp(208));
+    TextView title = u.text(heading, 18, Ui.INK);
+    title.setTypeface(null, android.graphics.Typeface.BOLD);
+    card.addView(title);
+    TextView subtitle = u.text(detail, 12, Ui.MUTED);
+    card.addView(subtitle);
+    return card;
+  }
+
+  private void preview(LinearLayout card, String label, Runnable open) {
+    TextView entry = u.text(label, 14, Ui.INK);
+    entry.setMaxLines(2);
+    entry.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    entry.setTextIsSelectable(false);
+    entry.setGravity(Gravity.CENTER_VERTICAL);
+    entry.setMinHeight(u.dp(48));
+    entry.setPadding(u.dp(4), u.dp(4), u.dp(4), u.dp(4));
+    entry.setBackground(new android.graphics.drawable.RippleDrawable(
+        android.content.res.ColorStateList.valueOf(Ui.CONTAINER), null, u.shape(Ui.SURFACE, 8)));
+    entry.setFocusable(true);
+    entry.setOnClickListener(view -> { if (!busy) open.run(); });
+    card.addView(entry);
+  }
+
+  private String eventTitle(JSONObject event) {
+    return s(event, "title").isBlank() ? s(event, "body") : s(event, "title");
+  }
+
+  private void openHomeEvents(List<JSONObject> events) {
+    Panel list = panel("事件纪");
+    for (JSONObject event : events) {
+      u.item(list.body, eventTitle(event), "公司发布", () -> {
+        Panel detail = panel(eventTitle(event));
+        detail.body.addView(u.text(s(event, "body"), 16, Ui.INK));
+      });
+    }
+  }
+
+  private void openHomeBoard(List<JSONObject> assigned) {
+    Panel list = panel("任务看板");
+    for (JSONObject task : assigned)
+      u.item(list.body, s(task, "title"), priority(task), () -> tasksUi.detail(s(task, "taskId")));
   }
 
   String uid() {
