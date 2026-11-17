@@ -21,24 +21,41 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final backend = FakeBackend();
-    backend.on('GET', '/me/profile', (_) => FakeResponse({
-      'id': 'u1',
-      'displayName': '亚里士多德',
-      'phone': '13800000004',
-      'email': 'employee@example.test',
-      'managerName': '柏拉图',
-      'hireDate': '2024-02-29',
-      'tenure': {'years': 2, 'months': 8, 'days': 12, 'asOfDate': '2026-11-10'},
-    }));
-    final container = buildTestContainer(backend: backend, user: employeeUser());
+    backend.on(
+      'GET',
+      '/me/profile',
+      (_) => FakeResponse({
+        'id': 'u1',
+        'displayName': '亚里士多德',
+        'phone': '13800000004',
+        'email': 'employee@example.test',
+        'managerName': '柏拉图',
+        'hireDate': '2024-02-29',
+        'tenure': {
+          'years': 2,
+          'months': 8,
+          'days': 12,
+          'asOfDate': '2026-11-10',
+        },
+      }),
+    );
+    final container = buildTestContainer(
+      backend: backend,
+      user: employeeUser(),
+    );
     addTearDown(container.dispose);
-    await tester.pumpWidget(wrapWithScope(
-      container,
-      const MediaQuery(
-        data: MediaQueryData(size: Size(320, 640), textScaler: TextScaler.linear(1.5)),
-        child: MePage(),
+    await tester.pumpWidget(
+      wrapWithScope(
+        container,
+        const MediaQuery(
+          data: MediaQueryData(
+            size: Size(320, 640),
+            textScaler: TextScaler.linear(1.5),
+          ),
+          child: MePage(),
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     final outer = tester.state<ScrollableState>(find.byType(Scrollable).first);
     expect(outer.position.pixels, 0);
@@ -46,7 +63,7 @@ void main() {
     await tester.dragFrom(const Offset(160, 420), const Offset(0, -280));
     await tester.pumpAndSettle();
     expect(outer.position.pixels, greaterThan(0));
-    expect(find.text('编辑头像和邮箱').hitTestable(), findsOneWidget);
+    expect(find.text('编辑信息').hitTestable(), findsOneWidget);
     expect(find.text('通知中心').hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -88,7 +105,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('编辑头像和邮箱'));
+      await tester.tap(find.text('编辑信息'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'draft@example.test');
       await tester.tap(find.text('从系统相册选择'));
@@ -155,7 +172,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('编辑头像和邮箱'));
+    await tester.tap(find.text('编辑信息'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'draft@example.test');
     await tester.runAsync(() async {
@@ -225,7 +242,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('编辑头像和邮箱'));
+    await tester.tap(find.text('编辑信息'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'draft@example.test');
 

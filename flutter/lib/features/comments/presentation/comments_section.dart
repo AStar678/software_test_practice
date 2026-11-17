@@ -13,7 +13,11 @@ final commentsApiProvider = Provider<CommentsApi>((ref) {
 });
 
 class CommentsSection extends ConsumerStatefulWidget {
-  const CommentsSection({super.key, required this.objectType, required this.objectId});
+  const CommentsSection({
+    super.key,
+    required this.objectType,
+    required this.objectId,
+  });
   final String objectType;
   final String objectId;
   @override
@@ -44,7 +48,9 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
     if (_loading) return;
     setState(() => _loading = true);
     try {
-      final page = await ref.read(commentsApiProvider).list(
+      final page = await ref
+          .read(commentsApiProvider)
+          .list(
             objectType: widget.objectType,
             objectId: widget.objectId,
             cursor: reset ? null : _cursor,
@@ -52,7 +58,10 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
       if (!mounted) return;
       setState(() {
         final merged = <String, CommentRecord>{};
-        for (final item in [...(reset ? const <CommentRecord>[] : _items), ...page.items]) {
+        for (final item in [
+          ...(reset ? const <CommentRecord>[] : _items),
+          ...page.items,
+        ]) {
           merged[item.id] = item;
         }
         _items = merged.values.toList();
@@ -62,7 +71,10 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() { _error = error; _loading = false; });
+      setState(() {
+        _error = error;
+        _loading = false;
+      });
     }
   }
 
@@ -71,9 +83,17 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
     if (text.isEmpty) return;
     final keys = ref.read(operationKeysProvider);
     final scope = 'comment:${widget.objectType}:${widget.objectId}';
-    final key = keys.keyFor(scope: scope, method: 'POST', path: '/${widget.objectType == 'log' ? 'work-logs' : 'tasks'}/${widget.objectId}/comments', body: {'body': text});
+    final key = keys.keyFor(
+      scope: scope,
+      method: 'POST',
+      path:
+          '/${widget.objectType == 'log' ? 'work-logs' : 'tasks'}/${widget.objectId}/comments',
+      body: {'body': text},
+    );
     try {
-      await ref.read(commentsApiProvider).create(
+      await ref
+          .read(commentsApiProvider)
+          .create(
             objectType: widget.objectType,
             objectId: widget.objectId,
             body: text,
@@ -84,7 +104,8 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
       await _load(reset: true);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
@@ -96,14 +117,27 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
     if (value == null || value.isEmpty || !mounted) return;
     final keys = ref.read(operationKeysProvider);
     final scope = 'comment:${comment.id}';
-    final key = keys.keyFor(scope: scope, method: 'PATCH', path: '/comments/${comment.id}', body: {'body': value});
+    final key = keys.keyFor(
+      scope: scope,
+      method: 'PATCH',
+      path: '/comments/${comment.id}',
+      body: {'body': value},
+    );
     try {
-      await ref.read(commentsApiProvider).change(commentId: comment.id, rowVersion: comment.rowVersion, body: value, idempotencyKey: key);
+      await ref
+          .read(commentsApiProvider)
+          .change(
+            commentId: comment.id,
+            rowVersion: comment.rowVersion,
+            body: value,
+            idempotencyKey: key,
+          );
       keys.complete(scope);
       await _load(reset: true);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
@@ -114,38 +148,82 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
       children: [
         Text('评论（$_total）', style: Theme.of(context).textTheme.titleSmall),
         if (_error != null)
-          Row(children: [
-            Expanded(child: Text('$_error', style: const TextStyle(color: PandoraColors.overdue))),
-            TextButton(onPressed: _loading ? null : () => _load(reset: true), child: const Text('重试')),
-          ]),
-        if (_items.isEmpty && !_loading) const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('还没有评论')),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$_error',
+                  style: const TextStyle(color: PandoraColors.overdue),
+                ),
+              ),
+              TextButton(
+                onPressed: _loading ? null : () => _load(reset: true),
+                child: const Text('重试'),
+              ),
+            ],
+          ),
+        if (_items.isEmpty && !_loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text('还没有评论'),
+          ),
         for (final comment in _items)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text(comment.authorName, style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text(comment.deleted ? '该评论已删除' : comment.body),
-            trailing: comment.canManage && !comment.deleted
-                ? PopupMenuButton<String>(
-                    tooltip: '管理评论',
-                    onSelected: (value) {
-                      if (value == 'edit') unawaited(_edit(comment));
-                    },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(value: 'edit', child: Text('编辑')),
-                    ],
-                  )
+            onLongPress: comment.canManage && !comment.deleted
+                ? () => unawaited(_edit(comment))
                 : null,
+            title: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    comment.authorName,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                if (!comment.deleted &&
+                    (comment.edited || comment.editedAt != null)) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    '已编辑',
+                    style: Theme.of(context).textTheme.labelSmall
+                        ?.copyWith(color: PandoraColors.muted),
+                  ),
+                ],
+              ],
+            ),
+            subtitle: Text(comment.deleted ? '该评论已删除' : comment.body),
           ),
-        if (_cursor != null) TextButton(onPressed: _loading ? null : () => _load(reset: false), child: const Text('加载更多评论')),
-        Row(children: [
-          Expanded(child: TextField(controller: _input, minLines: 1, maxLines: 4, maxLength: 10000, decoration: const InputDecoration(hintText: '发表评论', counterText: ''))),
-          IconButton(tooltip: '发送评论', onPressed: _submit, icon: const Icon(Icons.send)),
-        ]),
+        if (_cursor != null)
+          TextButton(
+            onPressed: _loading ? null : () => _load(reset: false),
+            child: const Text('加载更多评论'),
+          ),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _input,
+                minLines: 1,
+                maxLines: 4,
+                maxLength: 10000,
+                decoration: const InputDecoration(
+                  hintText: '发表评论',
+                  counterText: '',
+                ),
+              ),
+            ),
+            IconButton(
+              tooltip: '发送评论',
+              onPressed: _submit,
+              icon: const Icon(Icons.send),
+            ),
+          ],
+        ),
       ],
     );
   }
 }
-
 
 class _CommentEditDialog extends StatefulWidget {
   const _CommentEditDialog({required this.initial});
@@ -174,10 +252,22 @@ class _CommentEditDialogState extends State<_CommentEditDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('编辑评论'),
-      content: TextField(controller: _controller, minLines: 3, maxLines: 8, maxLength: 10000, autofocus: true),
+      content: TextField(
+        controller: _controller,
+        minLines: 3,
+        maxLines: 8,
+        maxLength: 10000,
+        autofocus: true,
+      ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消')),
-        FilledButton(onPressed: () => Navigator.of(context).pop(_controller.text.trim()), child: const Text('保存')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          child: const Text('保存'),
+        ),
       ],
     );
   }

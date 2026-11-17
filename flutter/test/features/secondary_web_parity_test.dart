@@ -150,7 +150,7 @@ void main() {
     expect(find.text('入职时长未设置'), findsOneWidget);
   });
 
-  testWidgets('表单置顶固定列和横滚列同蓝底，切列/刷新/取消后恢复斑马纹且不写日历置顶', (tester) async {
+  testWidgets('表单整行置顶为蓝底，取消后恢复斑马纹且不写日历置顶', (tester) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
@@ -180,44 +180,24 @@ void main() {
     addTearDown(container.dispose);
     await tester.pumpWidget(wrapWithScope(container, const TaskTablePage()));
     await tester.pumpAndSettle();
-    List<Material> rows(String side) => tester
-        .widgetList<Material>(
-          find.descendant(
-            of: find.byKey(ValueKey('task-table-$side-list')),
-            matching: find.byType(Material),
-          ),
-        )
-        .where((widget) => widget.color != null)
-        .toList();
+    Material row(int index) =>
+        tester.widget<Material>(find.byKey(ValueKey('task-table-row-t$index')));
     void blue() {
-      expect(rows('left').first.color, const Color(0xFFE8F1FC));
-      expect(rows('right').first.color, rows('left').first.color);
-      expect(rows('left')[1].color, isNot(rows('left')[2].color));
+      expect(row(0).color, const Color(0xFFE8F1FC));
+      expect(row(1).color, isNot(row(2).color));
     }
 
     blue();
     await tester.drag(
-      find.byKey(const ValueKey('task-table-body-scroll')),
-      const Offset(-180, 0),
+      find.byKey(const ValueKey('task-table-list')),
+      const Offset(0, -80),
     );
     await tester.pumpAndSettle();
     blue();
-    await tester.tap(find.text('概览'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('全部列').last);
-    await tester.pumpAndSettle();
-    blue();
-    final horizontal = tester
-        .widget<SingleChildScrollView>(
-          find.byKey(const ValueKey('task-table-body-scroll')),
-        )
-        .controller!;
-    horizontal.jumpTo(0);
-    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byTooltip('取消表单置顶').first);
     await tester.tap(find.byTooltip('取消表单置顶').first);
     await tester.pumpAndSettle();
-    expect(rows('left').first.color, isNot(const Color(0xFFE8F1FC)));
-    expect(rows('right').first.color, rows('left').first.color);
+    expect(row(0).color, isNot(const Color(0xFFE8F1FC)));
     expect(backend.requestsFor('DELETE', '/tasks/t0/table-pin'), hasLength(1));
     expect(backend.requests.where((r) => r.path.endsWith('/pin')), isEmpty);
   });

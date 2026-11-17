@@ -33,7 +33,12 @@ class LoadingView extends StatelessWidget {
 }
 
 class EmptyView extends StatelessWidget {
-  const EmptyView({super.key, required this.message, this.icon = Icons.inbox_outlined, this.action});
+  const EmptyView({
+    super.key,
+    required this.message,
+    this.icon = Icons.inbox_outlined,
+    this.action,
+  });
 
   final String message;
   final IconData icon;
@@ -52,7 +57,8 @@ class EmptyView extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: PandoraColors.muted),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: PandoraColors.muted),
             ),
             if (action != null) ...[const SizedBox(height: 12), action!],
           ],
@@ -81,12 +87,13 @@ class ErrorView extends StatelessWidget {
     final api = error is ApiException ? error as ApiException : null;
     final isForbidden = api?.isForbidden ?? false;
     final isOffline = api?.isNetwork ?? false;
-    final heading = title ??
+    final heading =
+        title ??
         (isForbidden
             ? '无权访问'
             : isOffline
-                ? '网络不可用'
-                : '加载失败');
+            ? '网络不可用'
+            : '加载失败');
     final message = api?.message ?? '请稍后重试';
     return Semantics(
       label: '$heading：$message',
@@ -101,9 +108,11 @@ class ErrorView extends StatelessWidget {
                 isForbidden
                     ? Icons.lock_outline
                     : isOffline
-                        ? Icons.wifi_off_outlined
-                        : Icons.error_outline,
-                color: isForbidden ? PandoraColors.pending : PandoraColors.overdue,
+                    ? Icons.wifi_off_outlined
+                    : Icons.error_outline,
+                color: isForbidden
+                    ? PandoraColors.pending
+                    : PandoraColors.overdue,
                 size: 32,
               ),
               const SizedBox(height: 10),
@@ -112,7 +121,8 @@ class ErrorView extends StatelessWidget {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: PandoraColors.muted),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: PandoraColors.muted),
               ),
               const SizedBox(height: 14),
               if (onRetry != null)
@@ -140,7 +150,8 @@ sealed class LoadState<T> {
   const factory LoadState.empty() = LoadEmpty<T>;
   const factory LoadState.failure(Object error) = LoadFailure<T>;
 
-  T? get valueOrNull => this is LoadData<T> ? (this as LoadData<T>).value : null;
+  T? get valueOrNull =>
+      this is LoadData<T> ? (this as LoadData<T>).value : null;
 }
 
 class LoadLoading<T> extends LoadState<T> {
@@ -163,28 +174,43 @@ class LoadFailure<T> extends LoadState<T> {
 
 /// 语义化状态徽标：状态同时用文字表达，不只靠颜色。
 class StatusBadge extends StatelessWidget {
-  const StatusBadge({super.key, required this.label, required this.color, this.icon});
+  const StatusBadge({
+    super.key,
+    required this.label,
+    required this.color,
+    this.icon,
+    this.solid = false,
+  });
 
   final String label;
   final Color color;
   final IconData? icon;
+  final bool solid;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: solid
+            ? Color.lerp(color, Colors.white, .75)
+            : color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: solid ? color : color.withValues(alpha: 0.35),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[Icon(icon, size: 13, color: color), const SizedBox(width: 4)],
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: color),
+            const SizedBox(width: 4),
+          ],
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: color, fontWeight: FontWeight.w600),
           ),
         ],
       ),

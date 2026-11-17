@@ -228,12 +228,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             TaskReopenPage(taskId: state.pathParameters['id'] ?? ''),
       ),
       GoRoute(
-        path: AppRoutes.taskHandoverPattern,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) =>
-            TaskHandoverPage(taskId: state.pathParameters['id'] ?? ''),
-      ),
-      GoRoute(
         path: AppRoutes.approvals,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ApprovalsPage(),

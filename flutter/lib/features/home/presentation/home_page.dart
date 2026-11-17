@@ -54,11 +54,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             icon: const Icon(Icons.notifications_none),
             onPressed: () => context.push(AppRoutes.notifications),
           ),
-          IconButton(
-            tooltip: '每日事项月份定位',
-            icon: const Icon(Icons.calendar_month_outlined),
-            onPressed: () => _openMonthPicker(anchor),
-          ),
         ],
       ),
       body: SafeArea(
@@ -159,11 +154,13 @@ class _HomeCards extends StatelessWidget {
             emptyText: '暂无公司事件',
             onTap: () => context.push(AppRoutes.homeEvents),
             children: [
-              for (final item in data.companyItems.take(3))
+              for (var i = 0; i < data.companyItems.take(3).length; i++) ...[
+                if (i > 0) const Divider(height: 1),
                 _PreviewRow(
-                  title: item.body,
+                  title: data.companyItems[i].body,
                   onTap: () => context.push(AppRoutes.homeEvents),
                 ),
+              ],
             ],
           ),
         ),
@@ -174,18 +171,22 @@ class _HomeCards extends StatelessWidget {
             emptyText: '暂无待办任务',
             onTap: () => context.push(AppRoutes.homeBoard),
             children: [
-              for (final task in data.assignedTasks.take(3))
+              for (var i = 0; i < data.assignedTasks.take(3).length; i++) ...[
+                if (i > 0) const Divider(height: 1),
                 _PreviewRow(
-                  title: task.title,
+                  title: data.assignedTasks[i].title,
                   trailing: Text(
-                    PandoraColors.priorityLabel(task.priority),
+                    PandoraColors.priorityLabel(data.assignedTasks[i].priority),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: PandoraColors.priority(task.priority),
+                      color: PandoraColors.priority(
+                        data.assignedTasks[i].priority,
+                      ),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   onTap: () => context.push(AppRoutes.homeBoard),
                 ),
+              ],
             ],
           ),
         ),
