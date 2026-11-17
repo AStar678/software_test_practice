@@ -1,0 +1,17 @@
+{                                                                          
+       "version": "0.2.0",                                                      
+       "configurations": [                                                      
+         {                                                                      
+           "name": "Flutter (pandora_api36)",                                   
+           "request": "launch",                                                 
+           "type": "dart",                                                      
+           "program": "lib/main.dart",                                          
+           "env": {                                                             
+             "ANDROID_HOME": "/home/rmy/Android/Sdk",                           
+             "ANDROID_SDK_ROOT": "/home/rmy/Android/Sdk",                       
+             "JAVA_HOME": "/usr/lib/jvm/java-21-openjdk-amd64",                 
+             "GRADLE_USER_HOME": "/home/rmy/development/gradle-home"            
+           }                                                                    
+         }                                                                      
+       ]                                                                        
+     }         
