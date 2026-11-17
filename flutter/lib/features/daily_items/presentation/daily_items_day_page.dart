@@ -11,6 +11,8 @@ import '../../../core/widgets/state_views.dart';
 import '../../../core/router/app_router.dart';
 import '../../home/presentation/home_providers.dart';
 import '../domain/daily_item.dart';
+import '../domain/month_layout.dart';
+import 'daily_items_calendar.dart';
 import 'daily_items_providers.dart';
 
 /// 某公司日的完整事项清单：唯一入口，含已完成，完成控件不误开详情。
@@ -28,7 +30,9 @@ class _DailyItemsDayPageState extends ConsumerState<DailyItemsDayPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(ref.read(dailyItemsProvider.notifier).ensureMonths([widget.date]));
+      unawaited(
+        ref.read(dailyItemsProvider.notifier).ensureMonths([widget.date]),
+      );
     });
   }
 
@@ -41,7 +45,11 @@ class _DailyItemsDayPageState extends ConsumerState<DailyItemsDayPage> {
     if (window == null) {
       // 账号代次/会话状态重建后缓存会清空；此时重新按当前账号读取该月。
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) unawaited(ref.read(dailyItemsProvider.notifier).ensureMonths([widget.date]));
+        if (mounted) {
+          unawaited(
+            ref.read(dailyItemsProvider.notifier).ensureMonths([widget.date]),
+          );
+        }
       });
     }
 
@@ -52,7 +60,9 @@ class _DailyItemsDayPageState extends ConsumerState<DailyItemsDayPage> {
           IconButton(
             tooltip: '新建事项',
             icon: const Icon(Icons.add),
-            onPressed: () => context.push('${AppRoutes.dailyItemNew}?date=${widget.date.iso}'),
+            onPressed: () => context.push(
+              '${AppRoutes.dailyItemNew}?date=${widget.date.iso}',
+            ),
           ),
         ],
       ),
@@ -65,14 +75,9 @@ class _DailyItemsDayPageState extends ConsumerState<DailyItemsDayPage> {
                 children: [
                   Text(
                     '共 ${items.length} 项',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: PandoraColors.muted),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: PandoraColors.muted),
                   ),
-                  const Spacer(),
-                  if (items.isNotEmpty)
-                    Text(
-                      '含已完成',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: PandoraColors.muted),
-                    ),
                 ],
               ),
             ),
@@ -84,11 +89,14 @@ class _DailyItemsDayPageState extends ConsumerState<DailyItemsDayPage> {
                     Expanded(
                       child: Text(
                         '该月部分事项加载失败，已有内容仍可查看。',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: PandoraColors.overdue),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: PandoraColors.overdue),
                       ),
                     ),
                     TextButton(
-                      onPressed: () => ref.read(dailyItemsProvider.notifier).retryMonth(widget.date),
+                      onPressed: () => ref
+                          .read(dailyItemsProvider.notifier)
+                          .retryMonth(widget.date),
                       child: const Text('重试'),
                     ),
                   ],
@@ -98,33 +106,41 @@ class _DailyItemsDayPageState extends ConsumerState<DailyItemsDayPage> {
               child: window == null || (window.loading && items.isEmpty)
                   ? const LoadingView(label: '正在读取当日事项')
                   : failed != null && items.isEmpty
-                      ? ErrorView(
-                          error: failed,
-                          title: '加载失败',
-                          onRetry: () => ref.read(dailyItemsProvider.notifier).retryMonth(widget.date),
-                        )
-                      : items.isEmpty
-                      ? EmptyView(
-                          message: '这一天没有事项',
-                          action: OutlinedButton.icon(
-                            onPressed: () => context.push('${AppRoutes.dailyItemNew}?date=${widget.date.iso}'),
-                            icon: const Icon(Icons.add),
-                            label: const Text('新增事项'),
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          itemCount: items.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final item = items[index];
-                            return _DailyItemRow(
-                              item: item,
-                              onOpen: () => context.push(AppRoutes.dailyItem(item.id)),
-                              onToggle: () => _toggle(item),
-                            );
-                          },
+                  ? ErrorView(
+                      error: failed,
+                      title: '加载失败',
+                      onRetry: () => ref
+                          .read(dailyItemsProvider.notifier)
+                          .retryMonth(widget.date),
+                    )
+                  : items.isEmpty
+                  ? EmptyView(
+                      message: '这一天没有事项',
+                      action: OutlinedButton.icon(
+                        onPressed: () => context.push(
+                          '${AppRoutes.dailyItemNew}?date=${widget.date.iso}',
                         ),
+                        icon: const Icon(Icons.add),
+                        label: const Text('新增事项'),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      itemCount: items.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        return _DailyItemRow(
+                          item: item,
+                          onOpen: () =>
+                              context.push(AppRoutes.dailyItem(item.id)),
+                          onToggle: () => _toggle(item),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -144,7 +160,11 @@ class _DailyItemsDayPageState extends ConsumerState<DailyItemsDayPage> {
 }
 
 class _DailyItemRow extends StatelessWidget {
-  const _DailyItemRow({required this.item, required this.onOpen, required this.onToggle});
+  const _DailyItemRow({
+    required this.item,
+    required this.onOpen,
+    required this.onToggle,
+  });
 
   final DailyItem item;
   final VoidCallback onOpen;
@@ -152,60 +172,71 @@ class _DailyItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = item.isCompleted
-        ? PandoraColors.completed
-        : (item.isOverdue ? PandoraColors.overdue : PandoraColors.open);
+    final color = itemStateColor(visualStateOf(item));
     return Card(
+      color: itemStateBackground(visualStateOf(item)),
       clipBehavior: Clip.antiAlias,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Semantics(
-            label: item.isCompleted ? '取消完成' : '标记完成',
-            checked: item.isCompleted,
-            child: Checkbox(
-              value: item.isCompleted,
-              onChanged: (_) => onToggle(),
-              activeColor: PandoraColors.brand,
+      child: Semantics(
+        label: item.stateLabel,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Semantics(
+              label: item.isCompleted ? '取消完成' : '标记完成',
+              checked: item.isCompleted,
+              child: Checkbox(
+                value: item.isCompleted,
+                onChanged: (_) => onToggle(),
+                activeColor: color,
+              ),
             ),
-          ),
-          Expanded(
-            child: InkWell(
-              onTap: onOpen,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.body,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            decoration: item.isCompleted ? TextDecoration.lineThrough : null,
-                            color: item.isCompleted ? PandoraColors.muted : PandoraColors.ink,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        StatusBadge(label: item.stateLabel, color: color),
-                        Text(
-                          item.startDate == item.endDate
-                              ? item.startDate.iso
-                              : '${item.startDate.iso} 至 ${item.endDate.iso}',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: PandoraColors.muted),
+            Expanded(
+              child: InkWell(
+                onTap: onOpen,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 4,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          decoration: item.isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
+                          color: item.isCompleted
+                              ? PandoraColors.muted
+                              : PandoraColors.ink,
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            item.startDate == item.endDate
+                                ? item.startDate.iso
+                                : '${item.startDate.iso} 至 ${item.endDate.iso}',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: PandoraColors.muted),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-        ],
+            const SizedBox(width: 8),
+          ],
+        ),
       ),
     );
   }

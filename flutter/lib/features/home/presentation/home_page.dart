@@ -1,18 +1,15 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/company/company_date.dart';
-import '../../../core/preferences/app_preferences.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../daily_items/presentation/daily_items_calendar.dart';
-import '../../daily_items/presentation/daily_items_providers.dart';
 import '../domain/home_data.dart';
+import 'home_copy.dart';
 import 'home_providers.dart';
 
 /// 首页：事件纪、任务看板（各约三条预览，卡片不内滚）与每日事项连续月份。
@@ -25,106 +22,28 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   final ScrollController _scrollController = ScrollController();
-  final List<CompanyDate> _months = <CompanyDate>[];
-  CompanyDate? _anchorMonth;
-  AppPreferences? _preferences;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_maybeAppendMonths);
-    unawaited(_loadPreferences());
-  }
+  final _calendarKey = GlobalKey<DailyItemsCalendarState>();
+  CompanyDate? _visibleDate;
 
   @override
   void dispose() {
-    _scrollController.removeListener(_maybeAppendMonths);
     _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadPreferences() async {
-    final accountId = ref.read(currentUserProvider)?.id;
-    final prefs = await AppPreferences.load(accountId);
-    if (!mounted) return;
-    final saved = CompanyDate.tryParse(prefs.getString('dailyItems.anchor'));
-    setState(() {
-      _preferences = prefs;
-      if (saved != null) {
-        _anchorMonth = CompanyDate(saved.year, saved.month, 1);
-        _months.clear();
-      }
-    });
-    _ensureMonths();
-  }
-
-  CompanyDate get _businessDate => ref.read(workspaceClockProvider).businessDate;
-
-  void _ensureMonths() {
-    if (_anchorMonth == null) {
-      final parsedBusiness = CompanyDate.tryParse(
-        ref.read(homeDataProvider).asData?.value.businessDate,
-      );
-      final base = parsedBusiness ?? _businessDate;
-      _anchorMonth = CompanyDate(base.year, base.month, 1);
-    }
-    final anchor = _anchorMonth!;
-    if (_months.isEmpty) {
-      for (var offset = 0; offset <= 24; offset++) {
-        _months.add(CompanyDate(anchor.year, anchor.month, 1).addMonths(offset));
-      }
-    }
-  }
-
-  void _setAnchor(CompanyDate month) {
-    final normalized = CompanyDate(month.year, month.month, 1);
-    setState(() {
-      _anchorMonth = normalized;
-      _months.clear();
-      for (var offset = 0; offset <= 24; offset++) {
-        _months.add(normalized.addMonths(offset));
-      }
-    });
-    unawaited(_preferences?.setString('dailyItems.anchor', normalized.iso));
-  }
-
-  final GlobalKey _calendarAreaKey = GlobalKey();
-
-  void _maybeAppendMonths() {
-    if (!_scrollController.hasClients || _months.isEmpty) return;
-    final position = _scrollController.position;
-    if (position.pixels > position.maxScrollExtent - 800) {
-      final last = _months.last;
-      final appended = <CompanyDate>[];
-      for (var offset = 1; offset <= 12; offset++) {
-        appended.add(last.addMonths(offset));
-      }
-      setState(() => _months.addAll(appended));
-    }
-  }
+  void _setAnchor(CompanyDate date) =>
+      _calendarKey.currentState?.goToDate(date);
 
   Future<void> _refresh() async {
     await ref.read(homeDataProvider.notifier).refresh();
-    final months = <CompanyDate>{};
-    final top = _firstVisibleMonthIndex();
-    for (var index = top; index <= top + 2; index++) {
-      if (index >= 0 && index < _months.length) months.add(_months[index]);
-    }
-    await ref.read(dailyItemsProvider.notifier).ensureMonths(months);
-  }
-
-  int _firstVisibleMonthIndex() {
-    final anchor = _anchorMonth;
-    if (anchor == null) return 0;
-    return 0;
+    await _calendarKey.currentState?.refreshVisible();
   }
 
   @override
   Widget build(BuildContext context) {
     final home = ref.watch(homeDataProvider);
     final businessDate = ref.watch(businessDateProvider);
-    _ensureMonths();
-    final anchor = _anchorMonth!;
+    final anchor = _visibleDate ?? businessDate;
 
     return Scaffold(
       appBar: AppBar(
@@ -154,12 +73,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                 sliver: SliverToBoxAdapter(
                   child: home.when(
                     data: (data) => _HomeCards(data: data),
-                    loading: () => const SizedBox(height: 220, child: LoadingView()),
+                    loading: () =>
+                        const SizedBox(height: 220, child: LoadingView()),
                     error: (error, _) => SizedBox(
                       height: 220,
                       child: ErrorView(
                         error: error,
-                        onRetry: () => ref.read(homeDataProvider.notifier).refresh(),
+                        onRetry: () =>
+                            ref.read(homeDataProvider.notifier).refresh(),
                       ),
                     ),
                   ),
@@ -168,36 +89,33 @@ class _HomePageState extends ConsumerState<HomePage> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 sliver: SliverToBoxAdapter(
-                  child: Container(
-                    key: _calendarAreaKey,
-                    child: _DailyItemsHeader(
-                      businessDate: businessDate,
-                      anchor: anchor,
-                      onPrevious: () => _setAnchor(anchor.addMonths(-1)),
-                      onNext: () => _setAnchor(anchor.addMonths(1)),
-                      onToday: () => _setAnchor(CompanyDate(businessDate.year, businessDate.month, 1)),
-                      onPick: () => _openMonthPicker(anchor),
-                      onAdd: () => context.push('${AppRoutes.dailyItemNew}?date=${businessDate.iso}'),
+                  child: _DailyItemsHeader(
+                    businessDate: businessDate,
+                    anchor: anchor,
+                    onPrevious: () => _setAnchor(anchor.addMonths(-1)),
+                    onNext: () => _setAnchor(anchor.addMonths(1)),
+                    onToday: () => _setAnchor(businessDate),
+                    onPick: () => _openMonthPicker(anchor),
+                    onAdd: () => context.push(
+                      '${AppRoutes.dailyItemNew}?date=${businessDate.iso}',
                     ),
                   ),
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                sliver: SliverList.builder(
-                  itemCount: _months.length,
-                  itemBuilder: (context, index) {
-                    final month = _months[index];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                      child: DailyItemsMonthBlock(
-                        key: ValueKey('${month.year}-${month.month}'),
-                        month: month,
-                        businessDate: businessDate,
-                        onDaySelected: (day) => context.push(AppRoutes.dailyItemDay(day.iso)),
-                      ),
-                    );
-                  },
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverToBoxAdapter(
+                  child: DailyItemsCalendar(
+                    key: _calendarKey,
+                    businessDate: businessDate,
+                    onDaySelected: (day) =>
+                        context.push(AppRoutes.dailyItemDay(day.iso)),
+                    onAnchorChanged: (day) {
+                      if (mounted && day != _visibleDate) {
+                        setState(() => _visibleDate = day);
+                      }
+                    },
+                  ),
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -243,8 +161,7 @@ class _HomeCards extends StatelessWidget {
             children: [
               for (final item in data.companyItems.take(3))
                 _PreviewRow(
-                  title: item.title,
-                  subtitle: item.body,
+                  title: item.body,
                   onTap: () => context.push(AppRoutes.homeEvents),
                 ),
             ],
@@ -263,9 +180,9 @@ class _HomeCards extends StatelessWidget {
                   trailing: Text(
                     PandoraColors.priorityLabel(task.priority),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: PandoraColors.priority(task.priority),
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: PandoraColors.priority(task.priority),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   onTap: () => context.push(AppRoutes.homeBoard),
                 ),
@@ -304,14 +221,19 @@ class _PreviewCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 8),
                 if (children.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Text(
                       emptyText,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: PandoraColors.muted),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: PandoraColors.muted),
                     ),
                   )
                 else
@@ -326,10 +248,9 @@ class _PreviewCard extends StatelessWidget {
 }
 
 class _PreviewRow extends StatelessWidget {
-  const _PreviewRow({required this.title, this.subtitle, this.trailing, required this.onTap});
+  const _PreviewRow({required this.title, this.trailing, required this.onTap});
 
   final String title;
-  final String? subtitle;
   final Widget? trailing;
   final VoidCallback onTap;
 
@@ -337,24 +258,16 @@ class _PreviewRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      child: SizedBox(
-        height: 44,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
         child: Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium),
-                  if (subtitle != null && subtitle!.isNotEmpty)
-                    Text(
-                      subtitle!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: PandoraColors.muted),
-                    ),
-                ],
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: homeCopyStyle,
               ),
             ),
             if (trailing != null) ...[const SizedBox(width: 6), trailing!],
@@ -388,7 +301,11 @@ class _DailyItemsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text('每日事项', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+          '每日事项',
+          style: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w600),
+        ),
         IconButton(
           tooltip: '新建每日事项',
           visualDensity: VisualDensity.compact,
@@ -443,6 +360,5 @@ class _DailyItemsHeader extends StatelessWidget {
         ),
       ],
     );
-  
   }
 }

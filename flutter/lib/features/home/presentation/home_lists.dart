@@ -3,21 +3,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
-import '../../../core/router/app_router.dart';
 import '../../../core/router/navigation_targets.dart';
 import '../../../core/router/read_context.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/state_views.dart';
 import '../domain/home_data.dart';
+import 'home_copy.dart';
 import 'home_providers.dart';
 
-/// 事件纪完整清单：模块顺序、最多十条、只读，先清单后详情。
-class HomeEventsPage extends ConsumerWidget {
+/// 事件纪完整清单：保留服务端顺序，按 ID 独立展开正文。
+class HomeEventsPage extends ConsumerStatefulWidget {
   const HomeEventsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeEventsPage> createState() => _HomeEventsPageState();
+}
+
+class _HomeEventsPageState extends ConsumerState<HomeEventsPage> {
+  final Set<String> _expanded = {};
+
+  @override
+  Widget build(BuildContext context) {
     final home = ref.watch(homeDataProvider);
     return PandoraPage(
       title: '事件纪',
@@ -32,12 +39,24 @@ class HomeEventsPage extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final item = data.companyItems[index];
                   return Card(
+                    key: ValueKey(item.id),
                     clipBehavior: Clip.antiAlias,
-                    child: ListTile(
-                      title: Text(item.title),
-                      subtitle: Text(item.body, maxLines: 2, overflow: TextOverflow.ellipsis),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push('${AppRoutes.homeEvents}/${item.id}'),
+                    child: Semantics(
+                      expanded: _expanded.contains(item.id),
+                      child: InkWell(
+                        onTap: () => setState(() {
+                          if (!_expanded.remove(item.id)) _expanded.add(item.id);
+                        }),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            item.body,
+                            style: homeCopyStyle,
+                            maxLines: _expanded.contains(item.id) ? null : 2,
+                            overflow: _expanded.contains(item.id) ? TextOverflow.clip : TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
                     ),
                   );
                 },
@@ -75,14 +94,7 @@ class HomeEventDetailPage extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                Text(item.title, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                Text(item.body, style: Theme.of(context).textTheme.bodyLarge),
-                const SizedBox(height: 24),
-                Text(
-                  '由管理员按公司顺序发布，员工端只读。',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: PandoraColors.muted),
-                ),
+                Text(item.body, style: homeCopyStyle),
               ],
             ),
     );
@@ -96,7 +108,6 @@ class HomeBoardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final home = ref.watch(homeDataProvider);
-    final zone = ref.watch(companyTimeZoneProvider);
     return PandoraPage(
       title: '任务看板',
       showBack: true,
@@ -109,16 +120,14 @@ class HomeBoardPage extends ConsumerWidget {
                 separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final task = data.assignedTasks[index];
+                  final overdue = task.isOverdueAt(ref.read(workspaceClockProvider).now());
                   return Card(
+                    color: overdue ? const Color(0xFFF8E7E7) : null,
                     clipBehavior: Clip.antiAlias,
-                    child: ListTile(
-                      title: Text(task.title, maxLines: 2, overflow: TextOverflow.ellipsis),
-                      subtitle: task.assignedAt == null
-                          ? null
-                          : Text(
-                              '派发时间 ${zone.formatDateTime(task.assignedAt!)}',
-                              style: const TextStyle(color: PandoraColors.muted, fontSize: 11),
-                            ),
+                    child: Semantics(
+                      label: overdue ? '已逾期' : null,
+                      child: ListTile(
+                      title: Text(task.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: homeCopyStyle),
                       trailing: Text(
                         PandoraColors.priorityLabel(task.priority),
                         style: TextStyle(
@@ -127,6 +136,7 @@ class HomeBoardPage extends ConsumerWidget {
                         ),
                       ),
                       onTap: () => context.push(NavigationTargets.task(const NormalReadContext(), task.taskId)),
+                      ),
                     ),
                   );
                 },

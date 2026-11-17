@@ -130,6 +130,7 @@ class TasksApi {
     required String command,
     required Map<String, Object?> payload,
     required String idempotencyKey,
+    String? ifMatch,
   }) async {
     final result = await _client.write<TaskMutationResult>(
       method: 'PATCH',
@@ -138,6 +139,7 @@ class TasksApi {
       idempotencyKey: idempotencyKey,
       versionKey: VersionRegistry.task(id),
       requireVersion: true,
+      ifMatch: ifMatch,
       decode: (json) => TaskMutationResult.fromJson(asJsonMap(json)),
     );
     return result.data;
@@ -150,6 +152,7 @@ class TasksApi {
     required List<String> assigneeIds,
     required String reason,
     required String idempotencyKey,
+    String? ifMatch,
   }) async {
     final result = await _client.write<TaskMutationResult>(
       method: 'PATCH',
@@ -165,6 +168,7 @@ class TasksApi {
       idempotencyKey: idempotencyKey,
       versionKey: VersionRegistry.task(id),
       requireVersion: true,
+      ifMatch: ifMatch,
       decode: (json) => TaskMutationResult.fromJson(asJsonMap(json)),
     );
     return result.data;
@@ -176,6 +180,7 @@ class TasksApi {
     String? targetUserId,
     String? reason,
     required String idempotencyKey,
+    String? ifMatch,
   }) async {
     final result = await _client.write<TaskMutationResult>(
       method: 'POST',
@@ -188,6 +193,7 @@ class TasksApi {
       idempotencyKey: idempotencyKey,
       versionKey: VersionRegistry.task(taskId),
       requireVersion: true,
+      ifMatch: ifMatch,
       decode: (json) => TaskMutationResult.fromJson(asJsonMap(json)),
     );
     return result.data;

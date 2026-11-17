@@ -63,7 +63,7 @@ def main():
         f.db.server_side("INSERT INTO home_items(id,organization_id,owner_id,kind,title,body,sort_order) VALUES('upgrade-personal','" +
             org + "','" + ids["founder"] + "','personal','Legacy personal','legacy personal item',1)")
         f.db.server_side("INSERT INTO home_items(id,organization_id,owner_id,kind,title,body,sort_order) VALUES('upgrade-company','" +
-            org + "',NULL,'company','Company notice','company item',1)")
+            org + "',NULL,'company','Legacy company title that must retire','Company body that must survive the migration',1)")
         def q(sql):
             rows = f.db.rows(sql)
             return rows[0][0] if rows and rows[0] else None
@@ -75,6 +75,9 @@ def main():
             "logRows": f.db.rows("SELECT * FROM work_logs ORDER BY id"),
             "logTags": f.db.rows("SELECT * FROM work_log_tags ORDER BY organization_id,log_id,ordinal"),
             "company": q("SELECT GROUP_CONCAT(id ORDER BY id) FROM home_items WHERE kind='company'"),
+            "companyRows": f.db.rows("SELECT id,organization_id,owner_id,kind,body,sort_order,row_version,created_at FROM home_items WHERE kind='company' ORDER BY id"),
+            "companyTitles": f.db.rows("SELECT title,body FROM home_items WHERE kind='company' ORDER BY id"),
+            "titleColumn": q("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='home_items' AND column_name='title'"),
             "personal": q("SELECT COUNT(*) FROM home_items WHERE kind='personal'"),
             "version": q("SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history WHERE success=1"),
         }
@@ -90,12 +93,25 @@ def main():
             "logRows": f.db.rows("SELECT * FROM work_logs ORDER BY id"),
             "logTags": f.db.rows("SELECT * FROM work_log_tags ORDER BY organization_id,log_id,ordinal"),
             "company": q("SELECT GROUP_CONCAT(id ORDER BY id) FROM home_items WHERE kind='company'"),
+            "companyRows": f.db.rows("SELECT id,organization_id,owner_id,kind,body,sort_order,row_version,created_at FROM home_items WHERE kind='company' ORDER BY id"),
+            "titleColumn": q("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='home_items' AND column_name='title'"),
+
+            "companyRows": f.db.rows("SELECT id,organization_id,owner_id,kind,body,sort_order,row_version,created_at FROM home_items WHERE kind='company' ORDER BY id"),
             "personal": q("SELECT COUNT(*) FROM home_items WHERE kind='personal'"),
             "version": q("SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history WHERE success=1"),
             "daily": q("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='daily_items'"),
         }
-        check("V31 creates daily_items and records the actual migration version",
-              after["daily"] == "1" and after["version"] == "31", after)
+        check("V31–V36 create daily_items, range columns and record the current migration head",
+              after["daily"] == "1" and after["version"] == "36", after)
+        title_column = f.db.rows("SELECT COUNT(*) FROM information_schema.columns "
+                                 "WHERE table_schema=DATABASE() AND table_name='home_items' AND column_name='title'")
+        check("the V30 fixture really stored a title different from its body",
+              before["titleColumn"] == "1" and bool(before["companyTitles"])
+              and before["companyTitles"][0][0] != before["companyTitles"][0][1],
+              {"column": before["titleColumn"], "rows": before["companyTitles"]})
+        check("V36 retires company-item titles and keeps each existing body, id, order, version and timestamp",
+              int(title_column[0][0]) == 0 and after["companyRows"] == before["companyRows"],
+              {"titleColumns": title_column, "before": before["companyRows"], "after": after["companyRows"]})
         check("V31 removes only the old personal home items",
               after["personal"] == "0" and after["company"] == before["company"], {"before": before, "after": after})
         check("V31 leaves tasks and logs byte-identical",
@@ -132,13 +148,35 @@ def main():
                     "assigneeIds": [board_ids["alpha-one-employee"]]}, founder, "browser-short-" + str(index) + "-" + uuid.uuid4().hex)
                 if status not in (200, 201):
                     raise AssertionError(("short-board", index, status, result))
-            # Company information: five short single-line entries for the same row budget.
-            for index in range(5):
-                status, result = f.call("POST", "/admin/company/items", {"body": "公司信息 " + str(index)},
+            # Company information: five entries for the same row budget. Two carry naturally segmented
+            # long bodies so the browser can prove the two-line clamp and independent expansion.
+            company_bodies = [
+                "公司信息 0：本周分镜评审安排\n" +
+                "第一幕分镜在周四上午完成内部评审，汇总镜头节奏与转场意见；\n" +
+                "第二幕的修改意见在下周一前同步给制作部，长正文只影响展示，不截写正文。",
+                "公司信息 1",
+                "公司信息 2",
+                "公司信息 3",
+                "公司信息 4：合成与配音联动\n" +
+                "合成组先按终稿检查光效层次，配音组同步确认三位主要角色的声音方向；\n" +
+                "两组的交付清单一并归档，任何调整都在每日评审记录中留痕。",
+            ]
+            for index, body in enumerate(company_bodies):
+                status, result = f.call("POST", "/admin/company/items", {"body": body},
                     admin, "browser-company-" + str(index) + "-" + uuid.uuid4().hex)
                 if status != 200:
                     raise AssertionError(("company", index, status, result))
             today = dt.date.fromisoformat(day)
+            # One really overdue task for the board list red tint, with a future task as control.
+            overdue_board = f.call("POST", "/tasks", {"title": "浏览器逾期看板任务", "description": "board overdue fixture",
+                "priority": "high", "allDay": False, "startAt": board_day + "T09:00:00+08:00",
+                "dueAt": board_day + "T18:00:00+08:00", "assigneeIds": [board_ids["alpha-one-employee"]]},
+                founder, "browser-board-overdue-" + uuid.uuid4().hex)
+            if overdue_board[0] not in (200, 201):
+                raise AssertionError(("board-overdue", overdue_board[0], overdue_board[1]))
+            yesterday = today - dt.timedelta(days=1)
+            f.db.server_side("UPDATE task_versions SET start_at='" + yesterday.isoformat() + " 01:00:00',due_at='" +
+                yesterday.isoformat() + " 08:00:00' WHERE task_id='" + overdue_board[1]["taskId"] + "'")
             # Seeded markers, as (open, completed): 1..6 open items, a mixed day with one open and
             # four completed items, an all-completed day with five items. Day +8 stays empty.
             plans = {0: (1, 0), 1: (2, 0), 2: (3, 0), 3: (4, 0), 4: (5, 0), 5: (6, 0), 6: (1, 4), 7: (0, 5)}
@@ -153,16 +191,86 @@ def main():
                         item = result[1]
                         f.call("PATCH", "/daily-items/" + item["id"], {"completed": True}, person,
                             "browser-seed-complete-" + str(offset) + "-" + str(index) + "-" + uuid.uuid4().hex, item["rowVersion"])
+            overdue_date = str(today - dt.timedelta(days=9))
+            overdue = f.call("POST", "/daily-items", {"date": overdue_date, "body": "逾期镜头备注未完成"},
+                person, "browser-overdue-" + uuid.uuid4().hex)
+            if overdue[0] != 200:
+                raise AssertionError(("overdue", overdue))
+            # 正文明明含有“已完成/跨日”等词：清理可见状态冗余时不得改写用户正文。
+            same_words = f.call("POST", "/daily-items",
+                {"date": str(today), "body": "跨日已完成：正文里的同词不应被改写"}, person,
+                "browser-same-words-" + uuid.uuid4().hex)
+            if same_words[0] != 200:
+                raise AssertionError(("same-words", same_words))
+            # 一条跨三天的真实记录：完成/取消/刷新后每个已加载覆盖日都要同步变灰或恢复蓝。
+            ranged = f.call("POST", "/daily-items",
+                {"startDate": str(today - dt.timedelta(days=1)), "endDate": str(today + dt.timedelta(days=1)),
+                 "body": "跨日三色同步事项"}, person, "browser-ranged-" + uuid.uuid4().hex)
+            if ranged[0] != 200:
+                raise AssertionError(("ranged", ranged))
+            # Dedicated 3-day item for the drag suite: dragging it never disturbs the status fixtures above.
+            # Keep it in a complete seven-day week so outside-drop checks cannot pass merely
+            # because a clamped Monday/Sunday happens to be a month gap.
+            drag_monday = today.replace(day=8)
+            drag_monday += dt.timedelta(days=(-drag_monday.weekday()) % 7)
+            drag_start = drag_monday + dt.timedelta(days=2)
+            drag_end = drag_monday + dt.timedelta(days=4)
+            drag_item = f.call("POST", "/daily-items",
+                {"startDate": str(drag_start), "endDate": str(drag_end),
+                 "body": "整体拖动演示事项"}, person, "browser-drag-" + uuid.uuid4().hex)
+            if drag_item[0] != 200:
+                raise AssertionError(("drag-item", drag_item))
             bulk = str(today + dt.timedelta(days=30))
             for index in range(105):
                 status, result = f.call("POST", "/daily-items", {"date": bulk, "body": "Browser bulk " + str(index)},
                     person, "browser-bulk-" + str(index) + "-" + uuid.uuid4().hex)
                 if status != 200:
                     raise AssertionError(("bulk", index, status, result))
+            # Sparse overflow fixtures: a Sunday-only overflow, two non-contiguous weekday overflows
+            # in one week, and a month-boundary overflow. Far-away weeks stay free of other items.
+            def overflow_day(target, key_label, body_label):
+                for index in range(4):
+                    result = f.call("POST", "/daily-items", {"date": target, "body": body_label + " " + str(index)},
+                        person, "browser-overflow-" + key_label + "-" + str(index) + "-" + uuid.uuid4().hex)
+                    if result[0] != 200:
+                        raise AssertionError(("overflow", key_label, index, result))
+                return target
+            today_weekday = (today.weekday())  # Monday=0
+            next_sunday = today + dt.timedelta(days=(6 - today_weekday) % 7 + 14)
+            # Two months ahead of the next month start, so the month-boundary fixture never shares
+            # a date with the sparse week below.
+            month_boundary = (today.replace(day=1) + dt.timedelta(days=92)).replace(day=1)
+
+            def next_weekday(start, weekday):
+                return start + dt.timedelta(days=(weekday - start.weekday()) % 7)
+
+            # Monday and Friday of one later week that lives entirely inside its own month, so both
+            # +n buttons are rendered in the same month block while other columns stay empty.
+            sparse_monday = next_weekday(month_boundary + dt.timedelta(days=1), 0)
+            sparse_friday = sparse_monday + dt.timedelta(days=4)
+            overflow_days = {
+                "sunday": overflow_day(str(next_sunday), "sunday", "周日溢出"),
+                "monday": overflow_day(str(sparse_monday), "monday", "稀疏一列"),
+                "friday": overflow_day(str(sparse_friday), "friday", "稀疏另一列"),
+                "month": overflow_day(str(month_boundary), "month", "月首溢出"),
+            }
             manifest = {"base": f"http://127.0.0.1:{f.port}", "identities": f.identities,
-                        "database": f.database, "today": day, "port": f.port, "bulk": bulk}
+                        "database": f.database, "today": day, "port": f.port, "bulk": bulk,
+                        "overdue": overdue_date, "mixed": str(today + dt.timedelta(days=6)),
+                        "ranged": ranged[1]["id"], "rangedStart": str(today - dt.timedelta(days=1)),
+                        "rangedEnd": str(today + dt.timedelta(days=1)),
+                        "drag": drag_item[1]["id"], "dragStart": str(drag_start),
+                        "dragEnd": str(drag_end),
+                        "boardOverdue": overdue_board[1]["taskId"],
+                        "overflow": overflow_days,
+                        "companyBodies": company_bodies}
             env = {"PANDORA_BROWSER_FIXTURE": json.dumps(manifest)}
-            subprocess.run(["node", str(BASE / "scripts/check_daily_items_browser.js")], env={**__import__("os").environ, **env}, check=True)
+            browser = subprocess.run(["node", str(BASE / "scripts/check_daily_items_browser.js")],
+                                     env={**__import__("os").environ, **env}, capture_output=True, text=True)
+            if browser.stdout: print(browser.stdout, flush=True)
+            if browser.stderr: print(browser.stderr, file=__import__("sys").stderr, flush=True)
+            if browser.returncode != 0:
+                raise AssertionError("daily-items browser checks failed with exit " + str(browser.returncode))
 
     REPORT_PATH = AUDIT / "daily-items-run.json"
     REPORT_PATH.write_text(json.dumps({"updated": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -229,10 +337,10 @@ def run_api_checks(f: Fixture, ids, business_day):
     created_ids = []
     for index in range(total_items):
         created_ids.append(call("POST", "/daily-items", {"date": page_day, "body": "Bulk " + str(index)}, key="bulk-" + str(index) + "-" + uuid.uuid4().hex)[1]["id"])
-    f.db.server_side("UPDATE daily_items SET created_at='2026-01-01 00:00:00.000000' WHERE item_date='" + page_day + "'")
+    f.db.server_side("UPDATE daily_items SET created_at='2026-01-01 00:00:00.000000' WHERE start_date='" + page_day + "'")
     first = call("GET", f"/daily-items?date={page_day}&limit=100&offset=0")[1]
     second = call("GET", f"/daily-items?date={page_day}&limit=100&offset=100")[1]
-    expected = [row[0] for row in f.db.rows("SELECT id FROM daily_items WHERE item_date='" + page_day + "' ORDER BY created_at,id")]
+    expected = [row[0] for row in f.db.rows("SELECT id FROM daily_items WHERE start_date='" + page_day + "' ORDER BY created_at,id")]
     check("one page is capped at 100 and reports the complete total",
           len(first["items"]) == 100 and first["total"] == total_items and first["nextOffset"] == 100, {"total": first["total"], "next": first["nextOffset"]})
     check("the second page returns the remaining items without duplicates",
@@ -361,8 +469,6 @@ def run_api_checks(f: Fixture, ids, business_day):
     other_created = [new_task("Founder assigned to employee " + str(index), ["alpha-one-employee"]) for index in range(2)]
     only_created = new_task("Founder created for another employee", ["beta-one-employee"])
     unpublished = new_task("Employee unpublished creation", ["alpha-one-employee"], who=f.login("alpha-one-employee")[1]["token"])
-    f.db.server_side("UPDATE task_assignments SET assigned_at='2026-02-02 02:02:02.000000' WHERE task_id IN (" +
-        ",".join("'" + item + "'" for item in self_created) + ")")
     done_id = self_created[0]
     f.db.server_side("UPDATE tasks SET execution_state='done' WHERE id='" + done_id + "'")
     inactive_id = self_created[1]
@@ -374,8 +480,66 @@ def run_api_checks(f: Fixture, ids, business_day):
           set(self_created[2:]) & set(board_ids) == set(self_created[2:]), {"board": board_ids})
     check("the home board excludes completed, removed and not-created tasks",
           done_id not in board_ids and inactive_id not in board_ids and only_created not in board_ids, {"board": board_ids})
-    check("the home board is capped at ten and ordered by assignment time then id",
+    check("the home board is capped at ten and ordered by effective due, urgency then id",
           len(board_ids) <= 10 and board_ids == expected_ids, {"board": board_ids, "expected": expected_ids})
+    check("every board row projects a canonical due instant and execution state",
+          all(row.get("dueAt", "").endswith("Z") and row.get("executionState") == "todo"
+              and row.get("title") for row in home["assignedTasks"]),
+          [{key: row.get(key) for key in ("taskId", "dueAt", "executionState")} for row in home["assignedTasks"]])
+
+    # -- complete three-key ordering before the ten-item limit --------------
+    order_token = f.login("alpha-two-employee")[1]["token"]
+    order_ids = {key: value["id"] for key, value in f.identities.items()}
+
+    def order_task(label, offset_days, priority, all_day=False, due_time="18:00:00", employee="alpha-two-employee"):
+        when = str(today + dt.timedelta(days=offset_days))
+        if all_day:
+            body = {"title": label, "priority": priority, "allDay": True, "startDate": when, "dueDate": when}
+        else:
+            body = {"title": label, "priority": priority, "allDay": False,
+                    "startAt": when + "T09:00:00+08:00", "dueAt": when + "T" + due_time + "+08:00"}
+        body.update({"description": "board ordering fixture", "assigneeIds": [order_ids[employee]]})
+        status, result = f.call("POST", "/tasks", body, founder, "order-" + uuid.uuid4().hex)
+        if status not in (200, 201):
+            raise AssertionError(("order-task", label, status, result))
+        return result["taskId"]
+
+    # The earliest deadline is created first, so the retired dispatch-time order would push it out.
+    limited = [order_task("Board order " + str(index), 1 + index, "low") for index in range(12)]
+    limited_board = [row["taskId"] for row in f.call("GET", "/home", token=order_token)[1]["assignedTasks"]]
+    check("the complete authorized set is due-ordered before the ten-item limit",
+          limited_board == limited[:10] and limited[0] in limited_board,
+          {"board": limited_board, "expected": limited[:10]})
+    # Same deadline, different urgency: urgent/high/medium/low, then identifier; noon beats the 18:00 cut-off.
+    tie_employee = "beta-two-head"
+    timed = {label: order_task(label, 20, priority, employee=tie_employee) for label, priority in
+             (("同截止低", "low"), ("同截止紧急", "urgent"), ("同截止高甲", "high"), ("同截止高乙", "high"), ("同截止中", "medium"))}
+    all_day_task = order_task("同截止全天中", 20, "medium", all_day=True, employee=tie_employee)
+    # A same-day noon deadline is a real instant earlier than the all-day 18:00 cut-off.
+    noon = order_task("同日中午截止", 20, "low", due_time="12:00:00", employee=tie_employee)
+    tie_token = f.login(tie_employee)[1]["token"]
+    ties = [row["taskId"] for row in f.call("GET", "/home", token=tie_token)[1]["assignedTasks"]]
+    expected_ties = [noon, timed["同截止紧急"]] + sorted([timed["同截止高甲"], timed["同截止高乙"]]) + \
+                    sorted([timed["同截止中"], all_day_task]) + [timed["同截止低"]]
+    check("same-instant rows fall back to urgent/high/medium/low and then id; all-day uses the real cut-off",
+          ties == expected_ties, {"board": ties, "expected": expected_ties})
+
+    # A pending proposal must not replace the effective deadline used for ordering.
+    pending_token = f.login("beta-two-employee")[1]["token"]
+    reviewer_token = f.login("beta-two-head")[1]["token"]
+    effective = order_task("待审前有效截止", 5, "high", employee="beta-two-employee")
+    later = order_task("更晚的已完成前对照", 7, "high", employee="beta-two-employee")
+    view = f.call("GET", "/tasks/" + effective, token=reviewer_token)[1]
+    proposed_day = str(today + dt.timedelta(days=9))
+    status, proposed = f.call("PATCH", "/tasks/" + effective, {"command": "change", "allDay": False,
+        "startAt": proposed_day + "T09:00:00+08:00", "dueAt": proposed_day + "T18:00:00+08:00",
+        "reason": "board pending proposal fixture"}, reviewer_token, "order-pending-" + uuid.uuid4().hex, view["rowVersion"])
+    if status not in (200, 201):
+        raise AssertionError(("pending-proposal", status, proposed))
+    pending_board = [row["taskId"] for row in f.call("GET", "/home", token=pending_token)[1]["assignedTasks"]]
+    check("a pending proposal never replaces the effective deadline used by the board",
+          pending_board == [effective, later] and proposed.get("requestId"),
+          {"board": pending_board, "expected": [effective, later], "request": proposed})
     check("the home response no longer carries personalItems or recentLogs",
           "personalItems" not in home and "recentLogs" not in home and sorted(home) == ["assignedTasks", "businessDate", "companyItems"], sorted(home))
     employee_home = f.call("GET", "/home", token=f.login("alpha-one-employee")[1]["token"])[1]

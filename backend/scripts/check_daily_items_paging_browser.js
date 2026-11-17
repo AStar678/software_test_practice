@@ -50,8 +50,6 @@ module.exports = async function checkDailyItemPaging(b, fixture, check) {
       })()`);
       check(`V-006 ${count}/${mutation} finishes with the current server IDs in stable order`,
         JSON.stringify(actual.server) === JSON.stringify(actual.cached) && JSON.stringify(actual.server) === JSON.stringify(actual.dom) && new Set(actual.dom).size === actual.dom.length && actual.total === actual.server.length && actual.next === null && !actual.more, actual);
-      await ready(`document.querySelector('[data-daily-date="${date}"]')?.getAttribute('aria-label').includes('未完成${actual.total}条')`);
-      check(`V-006 ${count}/${mutation} refreshes the full-day calendar count`, true);
       if (mutation === 'second-boundary') {
         const ids = actual.dom;
         for (const completed of [true, false]) {

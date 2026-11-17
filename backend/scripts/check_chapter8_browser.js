@@ -77,8 +77,68 @@ async function main() {
     check('the pinned later-page task appears first after the server re-query', pinnedFirst, {pinId, pinState});
     check('the pin did not change the task total or version',
       await ev("Pandora.taskForm.state.server.total===55"));
+    /* ---------- the pinned row is one glass-blue band on every cell; no in-table label ---------- */
+    const pinVisual = await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');
+      if(!row)return {missing:true};
+      const cells=Array.from(row.children);
+      const paint=cell=>{const s=getComputedStyle(cell);return s.backgroundImage+'|'+s.backgroundColor};
+      const colors=cells.map(paint);
+      const others=Array.from(document.querySelectorAll('[data-task-row]')).filter(r=>r!==row);
+      const normalRow=others[0], evenRow=others[1];
+      const normalPaint=normalRow?Array.from(normalRow.children).map(paint):[];
+      const evenPaint=evenRow?Array.from(evenRow.children).map(paint):[];
+      const labelText=Array.from(document.querySelectorAll('#p-table-body .p-table-tag')).map(e=>e.textContent.trim());
+      return {cells:cells.length,rowClass:row.className,uniform:new Set(colors).size===1,colors,
+        pinnedVsNormal:colors[1]!==normalPaint[1],pinnedVsEven:colors[1]!==evenPaint[1],
+        normalEvenDiffer:normalPaint[1]!==evenPaint[1],labelText,
+        gradient:colors.every(color=>color.includes('linear-gradient'))}})()`);
+    check('the pinned row paints all of its cells, including the sticky name column, as one glass-blue band',
+      !pinVisual.missing && pinVisual.rowClass.includes('is-table-pinned') && pinVisual.uniform &&
+      pinVisual.gradient && pinVisual.pinnedVsNormal && pinVisual.pinnedVsEven, pinVisual);
+    check('non-pinned rows keep their zebra striping and no in-table form-pin label is rendered',
+      pinVisual.normalEvenDiffer && !pinVisual.labelText.includes('表单置顶'), pinVisual);
+    const hoverPoint = await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');
+      const r=row.getBoundingClientRect();return {x:r.x+Math.min(40,r.width/2),y:r.y+r.height/2}})()`);
+    await b.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: hoverPoint.x, y: hoverPoint.y });
+    await sleep(150);
+    const pinHover = await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');
+      const hovered=getComputedStyle(row.children[1]).backgroundImage;
+      row.classList.add('is-active-row');
+      const active=getComputedStyle(row.children[1]).backgroundImage;
+      row.classList.remove('is-active-row');
+      return {hovered,active}})()`);
+    check('real hover and the active row keep a recognizable blue glass background on the pinned row',
+      pinHover.hovered.includes('linear-gradient') && pinHover.active.includes('linear-gradient'), pinHover);
+    await ev("document.getElementById('p-table-scroll').scrollLeft=260");
+    await sleep(120);
+    const pinnedScrolled = await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');
+      const scroll=document.getElementById('p-table-scroll');
+      const cells=Array.from(row.children),paint=cell=>{const s=getComputedStyle(cell);return s.backgroundImage+'|'+s.backgroundColor};
+      const colors=cells.map(paint);
+      const name=row.querySelector('th').getBoundingClientRect(), box=scroll.getBoundingClientRect();
+      return {uniform:new Set(colors).size===1,left:name.left,boxLeft:box.left,scrolled:scroll.scrollLeft}})()`);
+    check('horizontal scrolling keeps the sticky pinned name column painted with the same band',
+      pinnedScrolled.uniform && pinnedScrolled.scrolled > 0 && pinnedScrolled.left <= pinnedScrolled.boxLeft + 1, pinnedScrolled);
+    await ev("document.getElementById('p-table-scroll').scrollLeft=0");
+    await ev("document.querySelector('[data-action=task-table-columns][data-columns=details]').click()");
+    await waitFor(b, "Pandora.taskForm.state.loaded&&Pandora.taskForm.state.columns==='details'", 15000);
+    check('switching column views keeps the pinned row class on the same task',
+      await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');return !!row&&row.classList.contains('is-table-pinned')})()`));
+    await ev("document.querySelector('[data-action=task-table-columns][data-columns=overview]').click()");
+    await waitFor(b, "Pandora.taskForm.state.loaded&&Pandora.taskForm.state.columns==='overview'", 15000);
+    check('the pinned row class survives switching back and the table renders no form-pin label',
+      await ev(`(()=>{const row=document.querySelector('[data-task-row="${pinId}"]');return !!row&&row.classList.contains('is-table-pinned')&&!document.getElementById('p-table-body').textContent.includes('表单置顶')})()`));
     await ev("document.querySelector('[data-action=task-table-clear-filters]').click()");
     await waitFor(b, "Pandora.taskForm.state.loaded&&Pandora.taskForm.state.page===0", 15000);
+    /* A real page refresh keeps the independent table pin and its visual state. */
+    await b.send('Page.reload', { ignoreCache: true });
+    check('the refreshed page returns to the same signed-in employee',
+      await waitFor(b, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${js(ids['alpha-one-employee'].id)}`, 25000));
+    await ev("setPage('view')");
+    await waitFor(b, "!!document.querySelector('.p-table-entry')");
+    await ev("document.querySelector('.p-table-entry').click()");
+    check('the table pin survives a real refresh with the pinned row still first and blue',
+      await waitFor(b, `Pandora.taskForm.state.loaded&&!Pandora.taskForm.state.loading&&document.querySelector('[data-task-row]')&&document.querySelector('[data-task-row]').dataset.taskRow===${js(pinId)}&&document.querySelector('[data-task-row]').classList.contains('is-table-pinned')`, 25000));
 
     /* ---------- ranged daily items through the UI ---------- */
     await ev("setPage('map')");
@@ -100,11 +160,11 @@ async function main() {
     check('the list shows the complete range and keeps one row for the ranged record',
       listEvidence.meta.includes('2027年1月8日') && listEvidence.meta.includes('至') && listEvidence.meta.includes('2027年1月10日'), listEvidence);
     await ev("document.querySelector('[data-action=daily-open]').click()");
-    check('the detail shows the complete range and a status',
-      await waitFor(b, "document.getElementById('sheetTitle').textContent==='每日事项详情'&&document.querySelector('.daily-detail-date').textContent.includes('2027年1月10日')&&!!document.querySelector('.daily-detail-head .badge')", 15000));
+    check('the detail shows the complete range with a non-repeated accessible status',
+      await waitFor(b, "document.getElementById('sheetTitle').textContent==='每日事项详情'&&document.querySelector('.daily-detail-date').textContent.includes('2027年1月10日')&&/\\bis-(open|completed|overdue)\\b/.test(document.querySelector('.daily-detail-head').className)&&!!document.querySelector('.daily-detail-head .sr-only')&&!document.querySelector('.daily-detail-head .badge')", 15000));
     await ev("document.querySelector('[data-action=daily-toggle]').click()");
     check('completing from the detail keeps the same range and updates the status',
-      await waitFor(b, "Pandora.idle()&&document.querySelector('.daily-detail-head .badge').textContent==='已完成'&&document.querySelector('[data-action=daily-toggle]').textContent.includes('取消')", 15000));
+      await waitFor(b, "Pandora.idle()&&document.querySelector('.daily-detail-head').classList.contains('is-completed')&&document.querySelector('.daily-detail-head .sr-only').textContent.includes('已完成')&&document.querySelector('[data-action=daily-toggle]').textContent.includes('取消')", 15000));
     await ev("document.querySelector('[data-action=daily-edit]').click()");
     check('the edit form is prefilled with the same pair',
       await waitFor(b, "document.getElementById('sheetTitle').textContent==='编辑每日事项'&&document.getElementById('daily-start-date').value==='2027-01-08'&&document.getElementById('daily-end-date').value==='2027-01-10'"));
@@ -124,6 +184,47 @@ async function main() {
     const profileText = await ev("document.getElementById('page-me').textContent");
     check('the missing/real tenure is a real projection, not an account-created date',
       /已入职时长[^。]{0,40}年/.test(profileText), profileText.slice(0, 400));
+    check('the self tenure shows only the real duration without an as-of suffix',
+      !profileText.includes('截至'), profileText.match(/已入职时长[^\n]{0,60}/));
+    /* 本人信息卡各一行入职日期/时长，组织信息折叠区不再重复这两行。 */
+    const ownEmployment = () => ev(`(()=>{const page=document.getElementById('page-me'),card=page.querySelector('.profile-card'),org=page.querySelector('[data-profile-fold=organization] .fold-content');
+      const count=(root,label)=>root?Array.from(root.querySelectorAll('.profile-row .k')).filter(node=>node.textContent.trim()===label).length:0;
+      return {cardHire:count(card,'入职日期'),cardTenure:count(card,'已入职时长'),orgHire:count(org,'入职日期'),orgTenure:count(org,'已入职时长'),
+        orgDepartment:count(org,'部门'),orgPosition:count(org,'职位'),orgManager:count(org,'直属上级'),
+        cardText:card?card.textContent:'',orgText:org?org.textContent:''}})()`);
+    const own = await ownEmployment();
+    check('own hire date and tenure appear once in the personal card and never in the organization fold',
+      own.cardHire === 1 && own.cardTenure === 1 && own.orgHire === 0 && own.orgTenure === 0 &&
+      own.orgDepartment === 1 && own.orgPosition === 1 && own.orgManager === 1 && !own.orgText.includes('入职日期未设置'), own);
+    const adminCall = (method, path, body, version) => ev(`(async()=>{const headers={Accept:'application/json',Authorization:'Bearer '+${js(fixture.adminToken)}};
+      let payload=null;if(${js(body)}!=null){headers['Content-Type']='application/json';payload=JSON.stringify(${js(body)})}
+      if(${js(version)}!=null)headers['If-Match']='"'+${js(version)}+'"';headers['Idempotency-Key']=crypto.randomUUID();
+      const response=await fetch('/api/v1'+${js(path)},{method:${js(method)},headers,body:payload});
+      let data={};try{data=await response.json()}catch(_){}return {status:response.status,body:data}})()`);
+    const located = await adminCall('GET', '/admin/employees/' + fixture.employee, null, null);
+    check('administrator can locate the signed-in employee record', located.status === 200 && !!located.body.rowVersion, located);
+    const cleared = await adminCall('PATCH', '/admin/employees/' + fixture.employee, {hireDate: null}, located.body.rowVersion);
+    check('administrator can clear the hire date for the empty-state check', cleared.status === 200, cleared);
+    await ev('Pandora.reload()');
+    check('reload after clearing the hire date keeps the same account',
+      await waitFor(b, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${js(fixture.employee)}`, 20000));
+    await ev("setPage('me')");
+    await waitFor(b, "document.getElementById('page-me') && document.getElementById('page-me').textContent.includes('入职日期未设置')", 15000);
+    const emptyOwn = await ownEmployment();
+    check('an unset hire date shows the original empty state once in the card and not in the organization fold',
+      emptyOwn.cardHire === 1 && emptyOwn.cardTenure === 1 && emptyOwn.orgHire === 0 && emptyOwn.orgTenure === 0 &&
+      (emptyOwn.cardText.match(/入职日期未设置/g) || []).length === 2, emptyOwn);
+    const restoreRow = await adminCall('GET', '/admin/employees/' + fixture.employee, null, null);
+    const restored = await adminCall('PATCH', '/admin/employees/' + fixture.employee, {hireDate: '2024-02-29'}, restoreRow.body.rowVersion);
+    check('administrator restores the hire date after the empty-state check', restored.status === 200, restored);
+    await ev('Pandora.reload()');
+    await waitFor(b, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${js(fixture.employee)}`, 20000);
+    await ev("setPage('me')");
+    check('the restored hire date comes back to the personal card',
+      await waitFor(b, "document.getElementById('page-me').textContent.includes('2024-02-29')", 15000));
+    const restoredOwn = await ownEmployment();
+    check('the restored hire date shows once in the card and the organization fold stays clean',
+      restoredOwn.cardHire === 1 && restoredOwn.cardTenure === 1 && restoredOwn.orgHire === 0 && restoredOwn.orgTenure === 0, restoredOwn);
 
     /* The five main navigations and three home modules are untouched by the new table/profile code. */
     await ev("setPage('map')");
@@ -137,15 +238,41 @@ async function main() {
     await ev(`document.getElementById('login-user').value=${js(ids['founder'].identifier)};document.getElementById('login-password').value='Fixture@123456';document.getElementById('backend-login').requestSubmit()`);
     check('a different account loads only its own current authorization',
       await waitFor(b, `Pandora.ready&&Pandora.idle()&&Pandora.data.me.id===${js(ids['founder'].id)}`, 20000));
+    /* ---------- authorized subordinate cards: tenure without an as-of suffix, empty state kept ---------- */
+    const openReport = id => ev(`(()=>{const el=document.createElement('button');el.dataset.action='p-open-person';el.dataset.id=${js(id)};document.body.appendChild(el);runAction(el);el.remove()})()`);
+    await openReport(ids['alpha-one-employee'].id);
+    await waitFor(b, "Pandora.idle()&&document.getElementById('sheetBody')&&document.getElementById('sheetBody').textContent.includes('2024-02-29')", 15000);
+    const reportTenure = await ev(`(()=>{const body=document.getElementById('sheetBody');
+      return {title:document.getElementById('sheetTitle').textContent,text:body?body.textContent:'',
+        open:!document.getElementById('overlay').hidden}})()`);
+    check('an authorized manager sees the subordinate tenure without an as-of suffix',
+      reportTenure.open && reportTenure.title.endsWith('的资料') && /已入职[^\n]{0,40}年/.test(reportTenure.text) &&
+      !reportTenure.text.includes('截至'), reportTenure);
+    await ev("document.getElementById('sheetClose').click()");
+    await waitFor(b, "document.getElementById('overlay').hidden");
+    await openReport(ids['alpha-two-employee'].id);
+    await waitFor(b, "Pandora.idle()&&document.getElementById('sheetBody')&&document.getElementById('sheetBody').textContent.includes('入职日期未设置')", 15000);
+    const reportEmpty = await ev(`(()=>{const body=document.getElementById('sheetBody');return {text:body?body.textContent:'',open:!document.getElementById('overlay').hidden}})()`);
+    check('a subordinate without a hire date keeps the original empty state and no invented suffix',
+      reportEmpty.open && (reportEmpty.text.match(/入职日期未设置/g) || []).length === 2 && !reportEmpty.text.includes('截至'), reportEmpty);
+    await ev("document.getElementById('sheetClose').click()");
+    await waitFor(b, "document.getElementById('overlay').hidden");
     await ev("setPage('map')");
     await sleep(120);
 
     /* ---------- compact/desktop geometry ---------- */
-    for (const width of [320, 390, 1440]) {
-      await b.viewport({width, height: width === 320 ? 740 : width === 390 ? 844 : 900, mobile: width < 1000});
+    for (const [width, height] of [[320, 740], [390, 844], [1440, 900], [390, 600]]) {
+      await b.viewport({width, height, mobile: width < 1000});
       await sleep(120);
-      const fit = await ev("({overflow:document.documentElement.scrollWidth>innerWidth+1,w:innerWidth})");
-      check('the employee page has no horizontal document overflow at ' + width, !fit.overflow, fit);
+      const fit = await ev("({overflow:document.documentElement.scrollWidth>innerWidth+1,w:innerWidth,h:innerHeight})");
+      check('the employee page has no horizontal document overflow at ' + width + 'x' + height, !fit.overflow, fit);
+      await ev("setPage('me')");
+      await sleep(120);
+      const ownFold = await ownEmployment();
+      check('the own employment rows stay de-duplicated at ' + width + 'x' + height,
+        ownFold.cardHire === 1 && ownFold.cardTenure === 1 && ownFold.orgHire === 0 && ownFold.orgTenure === 0, ownFold);
+      await b.screenshot(path.join(outputDir, 'chapter8-profile-' + width + 'x' + height + '.png'));
+      await ev("setPage('map')");
     }
     await b.screenshot(path.join(outputDir, 'chapter8-table.png'));
   } finally {

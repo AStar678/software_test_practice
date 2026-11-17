@@ -26,7 +26,26 @@ class DailyItem {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  bool covers(CompanyDate day) => !day.isBefore(startDate) && !day.isAfter(endDate);
+  bool covers(CompanyDate day) =>
+      !day.isBefore(startDate) && !day.isAfter(endDate);
+
+  Iterable<CompanyDate> get coveredDates sync* {
+    for (var day = startDate; !day.isAfter(endDate); day = day.addDays(1)) {
+      yield day;
+    }
+  }
+
+  DailyItem shifted(int days) => DailyItem(
+    id: id,
+    body: body,
+    startDate: startDate.addDays(days),
+    endDate: endDate.addDays(days),
+    completed: completed,
+    status: status,
+    rowVersion: rowVersion,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 
   bool get isOverdue => status == 'overdue';
 
@@ -36,8 +55,12 @@ class DailyItem {
   String get stateLabel => isCompleted ? '已完成' : (isOverdue ? '已逾期' : '未完成');
 
   factory DailyItem.fromJson(Map<String, Object?> json) {
-    final start = CompanyDate.tryParse(_string(json['startDate']) ?? _string(json['date']));
-    final end = CompanyDate.tryParse(_string(json['endDate']) ?? _string(json['date']));
+    final start = CompanyDate.tryParse(
+      _string(json['startDate']) ?? _string(json['date']),
+    );
+    final end = CompanyDate.tryParse(
+      _string(json['endDate']) ?? _string(json['date']),
+    );
     if (start == null || end == null) {
       throw const FormatException('每日事项缺少有效的公司日期');
     }
@@ -79,7 +102,11 @@ class DailyItemPage {
 }
 
 class DailyDayCount {
-  const DailyDayCount({required this.date, required this.openCount, required this.completedCount});
+  const DailyDayCount({
+    required this.date,
+    required this.openCount,
+    required this.completedCount,
+  });
 
   final CompanyDate date;
   final int openCount;

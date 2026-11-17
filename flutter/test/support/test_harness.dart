@@ -60,8 +60,9 @@ class FakeBackend implements HttpClientAdapter {
     _patterns.add((pattern, method, handler));
   }
 
-  List<FakeRequest> requestsFor(String method, String path) =>
-      requests.where((request) => request.method == method && request.path == path).toList();
+  List<FakeRequest> requestsFor(String method, String path) => requests
+      .where((request) => request.method == method && request.path == path)
+      .toList();
 
   @override
   Future<ResponseBody> fetch(
@@ -135,6 +136,7 @@ ProviderContainer buildTestContainer({
   required FakeBackend backend,
   required EmployeeUser user,
   DateTime? now,
+  int Function()? accountEpoch,
 }) {
   final clock = WorkspaceClock(now: () => now ?? DateTime.utc(2026, 11, 10, 4));
   final dio = Dio(
@@ -144,7 +146,10 @@ ProviderContainer buildTestContainer({
     ),
   )..httpClientAdapter = backend;
   final client = ApiClient(
-    config: const AppConfig(apiBaseUrl: 'https://test.local/api/v1', isDebug: true),
+    config: const AppConfig(
+      apiBaseUrl: 'https://test.local/api/v1',
+      isDebug: true,
+    ),
     session: FakeGateway(),
     versions: VersionRegistry(),
     dio: dio,
@@ -152,6 +157,8 @@ ProviderContainer buildTestContainer({
   );
   final container = ProviderContainer(
     overrides: [
+      if (accountEpoch != null)
+        accountEpochProvider.overrideWith((ref) => accountEpoch()),
       appConfigProvider.overrideWithValue(
         const AppConfig(apiBaseUrl: 'https://test.local/api/v1', isDebug: true),
       ),
@@ -175,10 +182,7 @@ ProviderContainer buildTestContainer({
 Widget wrapWithScope(ProviderContainer container, Widget child) {
   return UncontrolledProviderScope(
     container: container,
-    child: MaterialApp(
-      theme: PandoraTheme.build(),
-      home: child,
-    ),
+    child: MaterialApp(theme: PandoraTheme.build(), home: child),
   );
 }
 
@@ -196,7 +200,6 @@ EmployeeUser employeeUser({String id = 'u1', String role = 'employee'}) {
   );
 }
 
-
 /// 已认证会话用的固定认证端口。
 class FakeAuthGateway implements AuthGateway {
   FakeAuthGateway(this.user);
@@ -204,15 +207,19 @@ class FakeAuthGateway implements AuthGateway {
   final EmployeeUser user;
 
   @override
-  Future<LoginResult> login({required String phone, required String password}) async => LoginResult(
-        token: 'widget-token',
-        expiresAt: DateTime.utc(2099, 1, 1),
-        user: user,
-        passwordChangeRequired: false,
-      );
+  Future<LoginResult> login({
+    required String phone,
+    required String password,
+  }) async => LoginResult(
+    token: 'widget-token',
+    expiresAt: DateTime.utc(2099, 1, 1),
+    user: user,
+    passwordChangeRequired: false,
+  );
 
   @override
-  Future<LoginResult> refresh(String token) async => login(phone: '', password: '');
+  Future<LoginResult> refresh(String token) async =>
+      login(phone: '', password: '');
 
   @override
   Future<EmployeeUser> session(String token) async => user;

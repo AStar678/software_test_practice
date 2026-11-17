@@ -252,20 +252,25 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
-                          log.businessDate.iso,
+                          '${log.businessDate.year}年${log.businessDate.month}月${log.businessDate.day}日',
                           style: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(color: PandoraColors.brand),
                         ),
-                        const Spacer(),
                         if (log.frozen)
                           const StatusBadge(
                             label: '已冻结',
                             color: PandoraColors.muted,
                           ),
-                        if (log.createdAt != null)
+                        if (_relative(
+                          log,
+                          ref.read(businessDateProvider),
+                        ).isNotEmpty)
                           Text(
                             _relative(log, ref.read(businessDateProvider)),
                             style: const TextStyle(
@@ -306,8 +311,13 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
     );
   }
 
-  String _relative(WorkLog log, CompanyDate today) =>
-      CompanyTimeZone.fallback.relativeDateLabel(log.businessDate, today);
+  String _relative(WorkLog log, CompanyDate today) {
+    final value = CompanyTimeZone.fallback.relativeDateLabel(
+      log.businessDate,
+      today,
+    );
+    return value == log.businessDate.iso ? '' : value;
+  }
 }
 
 class WorkLogEditorPage extends ConsumerStatefulWidget {
@@ -542,10 +552,14 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
   bool get _hasUnsavedChanges {
     final existing = _existing;
     if (existing == null) {
-      return _body.text.trim().isNotEmpty || _tagIds.isNotEmpty || _taskId != null;
+      return _body.text.trim().isNotEmpty ||
+          _tagIds.isNotEmpty ||
+          _taskId != null;
     }
     final tagsChanged = _tagIds.join(',') != existing.tagIds.join(',');
-    return _body.text != existing.body || tagsChanged || _taskId != existing.taskId;
+    return _body.text != existing.body ||
+        tagsChanged ||
+        _taskId != existing.taskId;
   }
 
   @override

@@ -1,6 +1,8 @@
 --- attempt 1 ---
 PASS independent admin enters real management console
 PASS retired role and manual manager controls are removed
+PASS admin employee row displays the complete login phone
+PASS admin employee editor reads the stored login phone
 PASS management console has no role/scope/rank/manual-manager editor
 PASS position catalog is independent display metadata
 PASS real employee identity is readable before the position rename
@@ -18,6 +20,7 @@ PASS employee credentials cannot enter the admin console
 PASS company info shows exactly ten managed entries
 PASS company info admin order matches the managed list
 PASS App reads company info in the same admin order
+PASS company info is body-only in both admin and employee responses
 PASS admin reorders company info through the real console
 PASS admin and App read the reordered company info identically
 PASS eleventh company entry is refused at the ten-item limit

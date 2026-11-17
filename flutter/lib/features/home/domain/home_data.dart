@@ -31,19 +31,16 @@ class HomeData {
 class CompanyItem {
   const CompanyItem({
     required this.id,
-    required this.title,
     required this.body,
     required this.sortOrder,
   });
 
   final String id;
-  final String title;
   final String body;
   final int sortOrder;
 
   factory CompanyItem.fromJson(Map<String, Object?> json) => CompanyItem(
         id: json['id']?.toString() ?? '',
-        title: json['title']?.toString() ?? '',
         body: json['body']?.toString() ?? '',
         sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
       );
@@ -56,6 +53,8 @@ class HomeTaskCard {
     required this.priority,
     this.assignedAt,
     this.assignedSource,
+    this.dueAt,
+    this.executionState,
   });
 
   final String taskId;
@@ -63,6 +62,11 @@ class HomeTaskCard {
   final String priority;
   final DateTime? assignedAt;
   final String? assignedSource;
+  final DateTime? dueAt;
+  final String? executionState;
+
+  bool isOverdueAt(DateTime now) =>
+      executionState != 'done' && dueAt != null && now.isAfter(dueAt!);
 
   factory HomeTaskCard.fromJson(Map<String, Object?> json) => HomeTaskCard(
         taskId: json['taskId']?.toString() ?? '',
@@ -70,5 +74,7 @@ class HomeTaskCard {
         priority: json['priority']?.toString() ?? 'medium',
         assignedAt: DateTime.tryParse(json['assignedAt']?.toString() ?? '')?.toUtc(),
         assignedSource: json['assignedSource']?.toString(),
+        dueAt: DateTime.tryParse(json['dueAt']?.toString() ?? '')?.toUtc(),
+        executionState: json['executionState']?.toString(),
       );
 }

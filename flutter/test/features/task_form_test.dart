@@ -11,16 +11,23 @@ void main() {
     addTearDown(tester.view.reset);
 
     final backend = FakeBackend();
+    backend.on(
+      'POST',
+      '/tasks/reviewer-preview',
+      (_) => FakeResponse({
+        'requiresApproval': true,
+        'reviewerId': 'm1',
+        'route': {
+          'participants': [
+            {'id': 'm1', 'displayName': '预览时的上级'},
+          ],
+        },
+      }),
+    );
     backend.on('GET', '/assignee-candidates', (request) async {
       return FakeResponse({
         'items': [
-          {
-            'id': 'u1',
-            'displayName': '亚里士多德',
-            'departmentName': '制作部',
-            'teamName': '原画组',
-            'positionName': '动画师',
-          },
+          {'id': 'u1', 'displayName': '亚里士多德', 'departmentName': '制作部', 'teamName': '原画组', 'positionName': '动画师'},
           {
             'id': 'm1',
             'displayName': '柏拉图',
@@ -58,16 +65,23 @@ void main() {
           {'id': 'u1', 'displayName': '亚里士多德'},
           {'id': 'm1', 'displayName': '柏拉图'},
         ],
-        'proposedVersion': {'id': 'v1', 'title': '联调任务', 'assigneeIds': ['u1'], 'tags': []},
+        'proposedVersion': {
+          'id': 'v1',
+          'title': '联调任务',
+          'assigneeIds': ['u1'],
+          'tags': [],
+        },
       }, etag: '"1"');
     });
 
-    final container = buildTestContainer(backend: backend, user: employeeUser());
+    final container = buildTestContainer(backend: backend, user: employeeUser(), accountEpoch: () => 1);
     addTearDown(container.dispose);
     await tester.pumpWidget(wrapWithScope(container, const TaskCreatePage()));
     await tester.pumpAndSettle();
 
     expect(find.text('新建任务'), findsOneWidget);
+    expect(find.text('审核人：预览时的上级'), findsOneWidget);
+    expect(backend.requestsFor('POST', '/tasks/reviewer-preview'), hasLength(1));
     expect(find.textContaining('亚里士多德'), findsWidgets, reason: '普通员工默认负责人为本人');
     expect(find.text('历史完成标准（可留空）'), findsNothing, reason: '新建不提供完成标准');
 
@@ -102,9 +116,22 @@ void main() {
     addTearDown(tester.view.reset);
 
     final backend = FakeBackend();
+    backend.on(
+      'POST',
+      '/tasks/reviewer-preview',
+      (_) => FakeResponse({
+        'requiresApproval': true,
+        'reviewerId': 'm1',
+        'route': {
+          'participants': [
+            {'id': 'm1', 'displayName': '预览时的上级'},
+          ],
+        },
+      }),
+    );
     backend.on('GET', '/assignee-candidates', (request) async => FakeResponse({'items': []}));
     backend.on('GET', '/tags', (request) async => FakeResponse({'items': []}));
-    final container = buildTestContainer(backend: backend, user: employeeUser());
+    final container = buildTestContainer(backend: backend, user: employeeUser(), accountEpoch: () => 1);
     addTearDown(container.dispose);
     await tester.pumpWidget(wrapWithScope(container, const TaskCreatePage()));
     await tester.pumpAndSettle();

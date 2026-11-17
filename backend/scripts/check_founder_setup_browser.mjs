@@ -100,8 +100,8 @@ try {
   await expectEmpty('cancelling founder draft leaves no server account');
 
   report.cancelledEmployeeIds.push(await addFounder('Discarded Founder Draft'));
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#planReload').click();
+  await page.locator('#messageAccept').click();
   await page.locator('#planNewFounder').waitFor();
   await expectEmpty('discarding the complete draft leaves no server account');
 
