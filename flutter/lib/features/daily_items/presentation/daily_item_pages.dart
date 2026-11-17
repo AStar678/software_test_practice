@@ -77,7 +77,10 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
         onBack: () => Navigator.of(context).maybePop(),
         child: Form(
           key: _formKey,
-          onChanged: () => setState(() => _dirty = true),
+          onChanged: () => setState(() {
+            _dirty = true;
+            _error = null;
+          }),
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -101,6 +104,7 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
                   _start = start;
                   _end = end;
                   _dirty = true;
+                  _error = null;
                 }),
               ),
               const SizedBox(height: 12),

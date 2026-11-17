@@ -35,7 +35,7 @@ class _HomeEventsPageState extends ConsumerState<HomeEventsPage> {
             : ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: data.companyItems.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                separatorBuilder: (_, _) => const Divider(height: 16),
                 itemBuilder: (context, index) {
                   final item = data.companyItems[index];
                   return Card(
@@ -45,15 +45,44 @@ class _HomeEventsPageState extends ConsumerState<HomeEventsPage> {
                       expanded: _expanded.contains(item.id),
                       child: InkWell(
                         onTap: () => setState(() {
-                          if (!_expanded.remove(item.id)) _expanded.add(item.id);
+                          if (!_expanded.remove(item.id)) {
+                            _expanded.add(item.id);
+                          }
                         }),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
-                          child: Text(
-                            item.body,
-                            style: homeCopyStyle,
-                            maxLines: _expanded.contains(item.id) ? null : 2,
-                            overflow: _expanded.contains(item.id) ? TextOverflow.clip : TextOverflow.ellipsis,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.body,
+                                style: homeCopyStyle,
+                                maxLines: _expanded.contains(item.id)
+                                    ? null
+                                    : 2,
+                                overflow: _expanded.contains(item.id)
+                                    ? TextOverflow.visible
+                                    : TextOverflow.ellipsis,
+                              ),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: IconButton(
+                                  tooltip: _expanded.contains(item.id)
+                                      ? '收起事件'
+                                      : '展开事件',
+                                  icon: Icon(
+                                    _expanded.contains(item.id)
+                                        ? Icons.keyboard_arrow_up
+                                        : Icons.keyboard_arrow_down,
+                                  ),
+                                  onPressed: () => setState(() {
+                                    if (!_expanded.remove(item.id)) {
+                                      _expanded.add(item.id);
+                                    }
+                                  }),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -62,7 +91,10 @@ class _HomeEventsPageState extends ConsumerState<HomeEventsPage> {
                 },
               ),
         loading: () => const LoadingView(),
-        error: (error, _) => ErrorView(error: error, onRetry: () => ref.read(homeDataProvider.notifier).refresh()),
+        error: (error, _) => ErrorView(
+          error: error,
+          onRetry: () => ref.read(homeDataProvider.notifier).refresh(),
+        ),
       ),
     );
   }
@@ -93,9 +125,7 @@ class HomeEventDetailPage extends ConsumerWidget {
           ? const EmptyView(message: '该事件不可读取')
           : ListView(
               padding: const EdgeInsets.all(20),
-              children: [
-                Text(item.body, style: homeCopyStyle),
-              ],
+              children: [Text(item.body, style: homeCopyStyle)],
             ),
     );
   }
@@ -117,32 +147,47 @@ class HomeBoardPage extends ConsumerWidget {
             : ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: data.assignedTasks.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                separatorBuilder: (_, _) => const Divider(height: 16),
                 itemBuilder: (context, index) {
                   final task = data.assignedTasks[index];
-                  final overdue = task.isOverdueAt(ref.read(workspaceClockProvider).now());
+                  final overdue = task.isOverdueAt(
+                    ref.read(workspaceClockProvider).now(),
+                  );
                   return Card(
                     color: overdue ? const Color(0xFFF8E7E7) : null,
                     clipBehavior: Clip.antiAlias,
                     child: Semantics(
                       label: overdue ? '已逾期' : null,
                       child: ListTile(
-                      title: Text(task.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: homeCopyStyle),
-                      trailing: Text(
-                        PandoraColors.priorityLabel(task.priority),
-                        style: TextStyle(
-                          color: PandoraColors.priority(task.priority),
-                          fontWeight: FontWeight.w600,
+                        title: Text(
+                          task.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: homeCopyStyle,
                         ),
-                      ),
-                      onTap: () => context.push(NavigationTargets.task(const NormalReadContext(), task.taskId)),
+                        trailing: Text(
+                          PandoraColors.priorityLabel(task.priority),
+                          style: TextStyle(
+                            color: PandoraColors.priority(task.priority),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        onTap: () => context.push(
+                          NavigationTargets.task(
+                            const NormalReadContext(),
+                            task.taskId,
+                          ),
+                        ),
                       ),
                     ),
                   );
                 },
               ),
         loading: () => const LoadingView(),
-        error: (error, _) => ErrorView(error: error, onRetry: () => ref.read(homeDataProvider.notifier).refresh()),
+        error: (error, _) => ErrorView(
+          error: error,
+          onRetry: () => ref.read(homeDataProvider.notifier).refresh(),
+        ),
       ),
     );
   }

@@ -106,3 +106,9 @@ APK SHA256：`fc01cfe0fa2aeb6bf03414549b5dd2bf782be2e142858beba8a0be7fa389ed5e`�
 Native最终补充：43-subordinate-bar-actual-thursday确认修复后跨日条点击Nov19（中段）到真实日清单；45-subordinate-vertical-axis含完整全天清单。48-final-native-edge-scroll为跨年预览，49为取消后恢复；53单日9–17拖动到10–18并取消，55合法移至00–08（没有因为指针出视口误判为业务越界），56超出00:00后不弹确认、不写；58通知font150。所有真实排期预览均取消，只有自有临时事项保存且已按ID清理。
 
 最终原生复测（11.2/11.5）：V53日轴09:00–17:00按小时移动至10:00–18:00，确认后取消；V55合法00:00–08:00可确认并取消，V56超出当日午夜无确认/写入。V58大字通知；V59编辑对话框可见。大字资料卡内部滑动曾被嵌套ListView截住，修为嵌入SelfProfileCard时禁内层滚动（独立人员资料仍可滚）；新增320×640/1.5回归，完整测试最终**196项通过/29真实无skip**、静态分析无问题。最终APK离线7s重建，哈希更新为上文fc01…ed5e；V60/61为新包大字卡内滚动/编辑复测，结束恢复字体1.0。
+
+## 2026-11-17 第二轮验收修正（本次 apply 增量）
+
+用户给出的 0–20 项模拟器反馈已纳入 tasks 13。实现以当前 Web 的接口语义和原生 Android 的任务表单信息层级为参照：日程新建限制过去日期，点击日期改为全屏日页面且默认日轴；任务表单改为统一整行列表和单一筛选入口；首页、事件纪、看板、每日事项、评论、日志、标签、资料文案及下属标签实色均完成对应修正。任务详情原有标签展示保留，交接入口和路由移除，但后端历史申请的只读解析能力保留，避免破坏旧通知/审核记录。
+
+本轮在独立最新 main worktree、分支 `codex/flutter-acceptance-fixes` 实施，未改动用户原 dirty worktree。检查结果：`flutter analyze --no-pub` 无问题；排除需要外部真实账号的 integration 目录后，`flutter test --no-pub test/core test/features test/widget_test.dart --reporter compact` 为 **167 passed**。首次完整 `flutter test` 的产品/组件用例全部通过，额外真实集成因旧隔离库密码不匹配返回 `401 BAD_CREDENTIALS`；随后保留旧库，新建 `pandora_codex_acceptance_20261117_2240` 演示库并确认 `13800000001 / 111` 登录成功，Flutter `real_backend_test.dart` 的 `J01 普通员工真实登录与会话` 也通过。本文仍是 apply 交接，不修改 `verification.md`，不自行声明独立 e13 PASS。
