@@ -16,6 +16,7 @@ import '../../tags/presentation/tag_selector.dart';
 import '../domain/task_record.dart';
 import 'assignee_picker.dart';
 import 'task_providers.dart';
+import 'task_review.dart';
 
 const Set<String> _scheduleFields = {'allDay', 'startAt', 'dueAt', 'startDate', 'dueDate'};
 
@@ -88,15 +89,15 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
   bool _saving = false;
   bool _defaultAssigneeApplied = false;
   bool _loadingMeta = true;
-  bool _previewing = false;
+  late final int _epoch;
+  bool get _current => _epoch == ref.read(accountEpochProvider);
   String? _error;
   String? _conflictHint;
 
   TaskRecord? get _existing => widget.existing;
   bool get _isCreate => _existing == null;
   Set<String> get _editableFields => _existing?.editableFields ?? const {};
-  bool get _onlySchedule =>
-      !_isCreate && _editableFields.isNotEmpty && _editableFields.every(_scheduleFields.contains);
+  bool get _onlySchedule => !_isCreate && _editableFields.isNotEmpty && _editableFields.every(_scheduleFields.contains);
 
   bool _can(String field) {
     // 新建不写完成标准或进展；完成标准只作为历史字段在有有效版的任务上按权编辑。
@@ -110,6 +111,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
   @override
   void initState() {
     super.initState();
+    _epoch = ref.read(accountEpochProvider);
     _seedFromExisting();
     unawaited(_loadMetadata());
   }
@@ -156,11 +158,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     final participants = {for (final person in existing.participants) person.id: person};
     _assignees = [
       for (final id in existing.assigneeIds)
-        PersonSummary(
-          id: id,
-          displayName: participants[id]?.displayName ?? '负责人',
-          positionName: null,
-        ),
+        PersonSummary(id: id, displayName: participants[id]?.displayName ?? '负责人', positionName: null),
     ];
     _selectedTags = List<TaskTag>.from(existing.tags);
     if (existing.allDay && existing.allDayStart != null && existing.allDayEnd != null) {
@@ -169,8 +167,12 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       _allDayEnd = existing.allDayEnd;
     } else {
       _allDay = false;
-      _startAt = existing.startAt == null ? _zone.at(ref.read(workspaceClockProvider).businessDate, hour: 9) : _zone.toLocal(existing.startAt!);
-      _dueAt = existing.dueAt == null ? _zone.at(ref.read(workspaceClockProvider).businessDate, hour: 18) : _zone.toLocal(existing.dueAt!);
+      _startAt = existing.startAt == null
+          ? _zone.at(ref.read(workspaceClockProvider).businessDate, hour: 9)
+          : _zone.toLocal(existing.startAt!);
+      _dueAt = existing.dueAt == null
+          ? _zone.at(ref.read(workspaceClockProvider).businessDate, hour: 18)
+          : _zone.toLocal(existing.dueAt!);
     }
   }
 
@@ -181,7 +183,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
         api.assigneeCandidates(purpose: _isCreate ? 'create' : 'edit'),
         api.tags(),
       ]);
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       final candidates = results[0] as List<PersonSummary>;
       final tags = results[1] as List<TaskTag>;
       final known = {for (final person in candidates) person.id: person};
@@ -196,7 +198,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
         _loadingMeta = false;
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       setState(() {
         _loadingMeta = false;
         _error = error is ApiException ? error.message : '员工与标签加载失败';
@@ -250,6 +252,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
   }
 
   Future<void> _save() async {
+    if (!_current || _saving) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final scheduleError = _validateSchedule();
     if (scheduleError != null) {
@@ -281,13 +284,9 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       final TaskMutationResult result;
       if (_isCreate) {
         final payload = _createPayload();
-        final key = keys.keyFor(
-          scope: 'task:create',
-          method: 'POST',
-          path: '/tasks',
-          body: payload,
-        );
+        final key = keys.keyFor(scope: 'task:create', method: 'POST', path: '/tasks', body: payload);
         result = await api.create(payload: payload, idempotencyKey: key);
+        if (!mounted || !_current) return;
         keys.complete('task:create');
       } else if (_onlySchedule) {
         final payload = _reschedulePayload();
@@ -297,12 +296,8 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
           path: '/tasks/${_existing!.id}',
           body: payload,
         );
-        result = await api.change(
-          id: _existing!.id,
-          command: 'reschedule',
-          payload: payload,
-          idempotencyKey: key,
-        );
+        result = await api.change(id: _existing!.id, command: 'reschedule', payload: payload, idempotencyKey: key);
+        if (!mounted || !_current) return;
         keys.complete('task:reschedule:${_existing!.id}');
       } else {
         final payload = _changePayload();
@@ -312,21 +307,17 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
           path: '/tasks/${_existing!.id}',
           body: payload,
         );
-        result = await api.change(
-          id: _existing!.id,
-          command: 'change',
-          payload: payload,
-          idempotencyKey: key,
-        );
+        result = await api.change(id: _existing!.id, command: 'change', payload: payload, idempotencyKey: key);
+        if (!mounted || !_current) return;
         keys.complete('task:change:${_existing!.id}');
       }
       ref.invalidate(taskDetailProvider(result.taskId));
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       setState(() => _saving = false);
       await _showOutcome(result);
       if (mounted) Navigator.of(context).pop(true);
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       setState(() {
         _saving = false;
         _error = error is ApiException ? error.message : '保存失败，请重试';
@@ -339,20 +330,15 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
   }
 
   Future<void> _showOutcome(TaskMutationResult result) async {
+    if (!mounted || !_current) return;
     final reviewer = await _resolveActualReviewer(result.requestId);
-    if (!mounted) return;
+    if (!mounted || !_current) return;
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(result.appliedDirectly ? '已直接生效' : '已提交审核'),
-        content: Text(
-          result.appliedDirectly
-              ? '本任务按规则直接生效。'
-              : '申请已提交${reviewer == null ? '' : '，审核人：$reviewer'}。',
-        ),
-        actions: [
-          FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('知道了')),
-        ],
+        content: Text(result.appliedDirectly ? '本任务按规则直接生效。' : '申请已提交${reviewer == null ? '' : '，审核人：$reviewer'}。'),
+        actions: [FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('知道了'))],
       ),
     );
   }
@@ -416,10 +402,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
   }
 
   Map<String, Object?> _reschedulePayload() {
-    return {
-      ..._schedulePayload(),
-      'reason': _reasonController.text.trim(),
-    };
+    return {..._schedulePayload(), 'reason': _reasonController.text.trim()};
   }
 
   Map<String, Object?> _changePayload() {
@@ -453,46 +436,6 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       payload.addAll(_schedulePayload());
     }
     return payload;
-  }
-
-  Future<void> _previewReviewer() async {
-    setState(() => _previewing = true);
-    try {
-      final preview = await ref.read(tasksApiProvider).preview(
-        {
-          if (_existing != null) 'taskId': _existing!.id,
-          'operation': _isCreate ? 'create' : (_onlySchedule ? 'reschedule' : 'change'),
-          'assigneeIds': [for (final person in _assignees) person.id],
-          if (_existing != null && _onlySchedule) 'fields': _scheduleFields.toList(),
-        },
-        ref.read(operationKeysProvider),
-      );
-      if (!mounted) return;
-      final reviewerNames = <String, String>{
-        for (final person in preview.route?.participants ?? const <TaskParticipant>[])
-          person.id: person.displayName,
-      };
-      final reviewer = preview.reviewerId == null ? null : reviewerNames[preview.reviewerId];
-      await showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('审核人预览'),
-          content: Text(
-            preview.blocked
-                ? (preview.blockedReason ?? '当前组织关系无法确定审核人，请联系管理员')
-                : preview.exemptionReason != null
-                    ? '${preview.exemptionReason}\n提交后按实际保存结果生效。'
-                    : '审核人：${reviewer ?? '按提交时的直属上级'}',
-          ),
-          actions: [FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('知道了'))],
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _error = error is ApiException ? error.message : '审核人预览失败');
-    } finally {
-      if (mounted) setState(() => _previewing = false);
-    }
   }
 
   Future<void> _pickDateTime({required bool isStart}) async {
@@ -706,10 +649,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    if (existing != null && _onlySchedule)
-                      _InfoBanner(
-                        text: '你当前只能调整这条任务的排期；其他字段与状态保持不变。',
-                      ),
+                    if (existing != null && _onlySchedule) _InfoBanner(text: '你当前只能调整这条任务的排期；其他字段与状态保持不变。'),
                     if (_can('title'))
                       TextFormField(
                         controller: _titleController,
@@ -732,10 +672,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                         minLines: 2,
                         maxLines: 4,
                         maxLength: 2000,
-                        decoration: const InputDecoration(
-                          labelText: '历史完成标准（可留空）',
-                          alignLabelWithHint: true,
-                        ),
+                        decoration: const InputDecoration(labelText: '历史完成标准（可留空）', alignLabelWithHint: true),
                       ),
                     if (_can('priority')) ...[
                       const SizedBox(height: 8),
@@ -826,10 +763,9 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                         candidates: _candidates,
                         search: (query) async {
                           try {
-                            final refreshed = await ref.read(tasksApiProvider).assigneeCandidates(
-                                  query: query,
-                                  purpose: _isCreate ? 'create' : 'edit',
-                                );
+                            final refreshed = await ref
+                                .read(tasksApiProvider)
+                                .assigneeCandidates(query: query, purpose: _isCreate ? 'create' : 'edit');
                             if (mounted) setState(() => _candidates = refreshed);
                           } catch (_) {
                             // 搜索失败保留当前候选，用户可重试。
@@ -871,9 +807,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                         children: [
                           Expanded(
                             child: Text(
-                              _parentTaskId == null
-                                  ? '未设置'
-                                  : (_parentUnavailable ? '原父任务不可见（保持不变）' : '已选择父任务'),
+                              _parentTaskId == null ? '未设置' : (_parentUnavailable ? '原父任务不可见（保持不变）' : '已选择父任务'),
                               style: const TextStyle(color: PandoraColors.muted),
                             ),
                           ),
@@ -898,10 +832,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                         minLines: 2,
                         maxLines: 4,
                         maxLength: 2000,
-                        decoration: const InputDecoration(
-                          labelText: '进展说明（可选，首次填写后进入进行中）',
-                          alignLabelWithHint: true,
-                        ),
+                        decoration: const InputDecoration(labelText: '进展说明（可选，首次填写后进入进行中）', alignLabelWithHint: true),
                       ),
                     ],
                     if (!_isCreate) ...[
@@ -912,19 +843,17 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                         decoration: const InputDecoration(labelText: '修改原因（必填）'),
                       ),
                       const SizedBox(height: 4),
-                      OutlinedButton.icon(
-                        onPressed: _previewing ? null : _previewReviewer,
-                        icon: const Icon(Icons.person_search_outlined),
-                        label: Text(_previewing ? '正在计算审核人…' : '查看审核人'),
-                      ),
-                    ] else ...[
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: _previewing ? null : _previewReviewer,
-                        icon: const Icon(Icons.person_search_outlined),
-                        label: Text(_previewing ? '正在计算审核人…' : '查看审核人'),
-                      ),
                     ],
+                    ReviewerPreviewPanel(
+                      payload: {
+                        'operation': _isCreate ? 'create' : (_onlySchedule ? 'reschedule' : 'change'),
+                        if (_existing != null) ...{
+                          'taskId': _existing!.id,
+                          'assigneeIds': [for (final person in _assignees) person.id],
+                          if (!_onlySchedule) 'fields': _editableFields.toList()..sort(),
+                        },
+                      },
+                    ),
                     if (_conflictHint != null) ...[
                       const SizedBox(height: 8),
                       _InfoBanner(text: _conflictHint!, isError: true),

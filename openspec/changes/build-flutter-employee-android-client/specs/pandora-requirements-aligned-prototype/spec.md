@@ -240,9 +240,9 @@ Flutter SHALL 同样隐藏身份标签，使用真实组织职务路径并保留
 ### Requirement: Strict prototype scope
 系统 SHALL 以当前员工Web最终有效行为、现行主规格、真实共享契约及本Flutter增量为依据。A已归档，B继续完整Flutter员工迁移；历史调查/PASS/任务勾选不替代当前证据。每项apply先读对应Web实现及检查并记录来源/行为/Flutter落点/差异/验证，不自行另定交互，冲突先协调规格。保留Web已落地场景，不恢复横向计数事项、卡片内滚、人员单月或旧通知布局豁免。
 
-B SHALL 包含现有flutter/及其独立宿主、签名APK和模拟器交付。根目录旧android/、android_shell/、android-shell/不读取、不参考、不修改，不导入旧凭证。业务使用Flutter控件，不包装WebView；原生平台适配保业务、信息层级及操作顺序，已明确的Flutter安全存储/日志超限预览等额外要求继续有效。员工Web不自动下线，独立管理员仍PC。系统推送延期，完整站内通知保留；请示回复、一人多团队、任务私人草稿、任务取消、公司草稿/定时发布、日志转待办、外部模型、MBTI、离线业务写入和移动管理员继续排除。
+B SHALL 包含现有flutter/及其独立宿主、可安装的课程演示APK和单台可用模拟器交付；允许debug及自动签名，支持显式配置本地/课程服务器HTTP地址，不要求HTTPS证书或专用release签名。根目录旧android/、android_shell/、android-shell/不读取、不参考、不修改，不导入旧凭证。业务使用Flutter控件，不包装WebView；原生平台适配保业务、信息层级及操作顺序，已明确的Flutter安全存储/日志超限预览等额外要求继续有效。员工Web不自动下线，独立管理员仍PC。系统推送延期，完整站内通知保留；请示回复、一人多团队、任务私人草稿、任务取消、公司草稿/定时发布、日志转待办、外部模型、MBTI、离线业务写入和移动管理员继续排除。
 
-验收 SHALL 使用真实认证/持久化/API与Flutter逻辑、组件及模拟器检查。2026-11-17用户明确无真机，本change不要求真机验证或以缺真机阻塞完成/归档；组员后续独立验证真机，问题另建change。未验证的触觉实感、厂商选图及设备兼容性须列明，不将模拟器/合成事件作为真机证据；独立e13仍须针对本次修订范围取得当前PASS。共享后端裁决授权、版本、幂等及状态机，不恢复员工username兼容、不另造移动审批引擎。
+验收 SHALL 使用本地真实认证/持久化/API、Flutter逻辑/组件与一台可用Android模拟器检查；四角色及现有员工业务不删减。按2026-11-17用户课程项目决定，HTTPS/证书、专用release签名、API26与现代系统双版本实测、远程服务器部署/连通、手机及厂商兼容性、生产运维和迁移备份恢复演练 SHALL 移出B完成/归档条件；A相关证据仅作归档依赖引用。后续课程展示由使用者/组员部署无证书服务器并在手机检查，移出项列未验证及后续责任，不把本地/模拟器证据称为远程/真机通过；独立e13仍须针对本次本地范围取得当前PASS。共享后端裁决授权、版本、幂等及状态机，不恢复员工username兼容、不另造移动审批引擎。
 
 #### Scenario: Validate against the selected checklist
 - **WHEN** 实施者或验证者检查本变更
@@ -250,7 +250,7 @@ B SHALL 包含现有flutter/及其独立宿主、签名APK和模拟器交付。�
 
 #### Scenario: Keep native Android outside the change
 - **WHEN** 检查修改文件和交付记录
-- **THEN** 根目录旧 `android/`、`android_shell/`、`android-shell/` SHALL 不在B读取、参考或修改范围；独立 Flutter Android 工程、独立包 APK 构建签名及模拟器验证属于 B，旧工程排除不得用来免除 Flutter 交付，共享服务及过渡兼容影响如实记录
+- **THEN** 根目录旧 `android/`、`android_shell/`、`android-shell/` SHALL 不在B读取、参考或修改范围；独立 Flutter Android 工程、可安装演示 APK 构建（debug及自动签名可接受）及单台模拟器验证属于 B，旧工程排除不得用来免除 Flutter 本地交付，共享服务及过渡兼容影响如实记录
 
 #### Scenario: Validate the real service and declared scope
 - **WHEN** 实施者或验证者检查本变更
@@ -263,6 +263,10 @@ B SHALL 包含现有flutter/及其独立宿主、签名APK和模拟器交付。�
 #### Scenario: Open the split static prototype
 - **WHEN** 从文件系统打开旧静态页面或直接读取未构建脚本
 - **THEN** 验收 SHALL 使用真实服务、认证、持久化及事件路径，静态内容不视为通过，本次按更改指导及本增量规格判定
+
+#### Scenario: Accept the local course-project boundary
+- **WHEN** 本地真实后端、自动检查和一台模拟器已满足本次业务与交付要求，而使用者没有证书、专用发布密钥、第二系统版本或手机测试条件
+- **THEN** SHALL 不以这些移出项阻塞B完成/独立验证/归档；保留实际APK和本地证据，交接后续无证书服务器HTTP配置与手机检查，不能把移出项标为已通过
 
 #### Scenario: Plan B ahead but implement after A
 - **WHEN** B 已提出而 A 未独立验证归档，或 A 最终契约偏离 B 规划

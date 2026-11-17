@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/router/navigation_targets.dart';
@@ -14,6 +13,7 @@ import '../../comments/presentation/comments_section.dart';
 import '../../home/presentation/home_providers.dart';
 import '../domain/task_record.dart';
 import 'task_providers.dart';
+import 'task_review.dart';
 
 /// 任务详情：有效版/来源/字段资格；上下文在进入时固定，不能靠嵌套跳转升级。
 class TaskDetailPage extends ConsumerWidget {
@@ -40,10 +40,7 @@ class TaskDetailPage extends ConsumerWidget {
         child: detail.when(
           data: (task) => _TaskDetailBody(task: task, readContext: readContext),
           loading: () => const LoadingView(),
-          error: (error, _) => ErrorView(
-            error: error,
-            onRetry: () => ref.invalidate(taskDetailProvider(taskId)),
-          ),
+          error: (error, _) => ErrorView(error: error, onRetry: () => ref.invalidate(taskDetailProvider(taskId))),
         ),
       ),
     );
@@ -68,8 +65,7 @@ class _TaskDetailBody extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       children: [
-        if (readContext is! NormalReadContext)
-          _ReadOnlyBanner(context: readContext),
+        if (readContext is! NormalReadContext) _ReadOnlyBanner(context: readContext),
         if (task.pending)
           _NoticeBanner(
             icon: Icons.hourglass_top,
@@ -78,8 +74,7 @@ class _TaskDetailBody extends ConsumerWidget {
           ),
         if (task.frozen && !task.pending)
           const _NoticeBanner(icon: Icons.pause_circle_outline, text: '任务当前处于冻结状态。', color: PandoraColors.pending),
-        if (overdue)
-          const _NoticeBanner(icon: Icons.schedule, text: '已超过截止时间。', color: PandoraColors.overdue),
+        if (overdue) const _NoticeBanner(icon: Icons.schedule, text: '已超过截止时间。', color: PandoraColors.overdue),
         Text(task.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         Wrap(
@@ -90,16 +85,13 @@ class _TaskDetailBody extends ConsumerWidget {
               label: task.done ? '已完成' : (task.doing ? '进行中' : '待开始'),
               color: task.done ? PandoraColors.completed : (task.doing ? PandoraColors.open : PandoraColors.muted),
             ),
-            if (task.pending)
-              StatusBadge(label: '待审核', color: PandoraColors.pending, icon: Icons.hourglass_top),
+            if (task.pending) StatusBadge(label: '待审核', color: PandoraColors.pending, icon: Icons.hourglass_top),
             StatusBadge(
               label: PandoraColors.priorityLabel(task.priority),
               color: PandoraColors.priority(task.priority),
             ),
-            if (task.allDay)
-              const StatusBadge(label: '全天', color: PandoraColors.muted, icon: Icons.wb_sunny_outlined),
-            if (task.executionRound > 1)
-              StatusBadge(label: '第 ${task.executionRound} 轮', color: PandoraColors.open),
+            if (task.allDay) const StatusBadge(label: '全天', color: PandoraColors.muted, icon: Icons.wb_sunny_outlined),
+            if (task.executionRound > 1) StatusBadge(label: '第 ${task.executionRound} 轮', color: PandoraColors.open),
           ],
         ),
         const SizedBox(height: 14),
@@ -126,16 +118,12 @@ class _TaskDetailBody extends ConsumerWidget {
               runSpacing: 6,
               children: [
                 for (final tag in task.tags)
-                  Chip(
-                    label: Text(tag.deleted ? '${tag.name}（已删除）' : tag.name),
-                    visualDensity: VisualDensity.compact,
-                  ),
+                  Chip(label: Text(tag.deleted ? '${tag.name}（已删除）' : tag.name), visualDensity: VisualDensity.compact),
               ],
             ),
           ),
         if (task.description.isNotEmpty) _Section(title: '说明', child: Text(task.description)),
-        if (task.acceptanceCriteria.isNotEmpty)
-          _Section(title: '完成标准（历史）', child: Text(task.acceptanceCriteria)),
+        if (task.acceptanceCriteria.isNotEmpty) _Section(title: '完成标准（历史）', child: Text(task.acceptanceCriteria)),
         if (task.progressNote.isNotEmpty) _Section(title: '最新进展', child: Text(task.progressNote)),
         if (task.parentTaskId != null)
           _Section(
@@ -159,9 +147,7 @@ class _TaskDetailBody extends ConsumerWidget {
           _Section(
             title: '审核',
             child: Text(
-              task.route!.blocked
-                  ? (task.route!.reasonText ?? '当前无法确定审核人')
-                  : task.route!.reasonText ?? '按提交时的直属上级审核',
+              task.route!.blocked ? (task.route!.reasonText ?? '当前无法确定审核人') : task.route!.reasonText ?? '按提交时的直属上级审核',
               style: const TextStyle(color: PandoraColors.muted),
             ),
           ),
@@ -195,7 +181,7 @@ class _TaskDetailBody extends ConsumerWidget {
               ],
             ),
           ],
-          if (task.done && me?.id != null && task.businessOwnerId == me!.id) ...[
+          if (task.done && me?.id != null && task.businessOwnerId == me!.id && !task.pending && !task.frozen) ...[
             const SizedBox(height: 10),
             OutlinedButton.icon(
               onPressed: () => context.push(AppRoutes.taskReopen(task.id)),
@@ -203,7 +189,7 @@ class _TaskDetailBody extends ConsumerWidget {
               label: const Text('重开任务'),
             ),
           ],
-          if (isAssignee && !task.pending && !task.frozen) ...[
+          if (task.canHandover && !task.pending && !task.frozen) ...[
             const SizedBox(height: 10),
             OutlinedButton.icon(
               onPressed: () => context.push(AppRoutes.taskHandover(task.id)),
@@ -219,16 +205,9 @@ class _TaskDetailBody extends ConsumerWidget {
               label: Text(task.tablePinned ? '取消表单置顶' : '置顶到表单'),
             ),
           ],
-          if (task.pending)
-            TextButton(
-              onPressed: () => context.push(AppRoutes.approvals),
-              child: const Text('查看我的申请'),
-            ),
+          if (task.pending) TextButton(onPressed: () => context.push(AppRoutes.approvals), child: const Text('查看我的申请')),
         ] else
-          const Text(
-            '当前为只读浏览，业务操作请回到本人正常入口办理。',
-            style: TextStyle(color: PandoraColors.muted),
-          ),
+          const Text('当前为只读浏览，业务操作请回到本人正常入口办理。', style: TextStyle(color: PandoraColors.muted)),
         if (readContext.commentsAllowed) ...[
           const Divider(height: 32),
           CommentsSection(objectType: 'task', objectId: task.id),
@@ -237,18 +216,19 @@ class _TaskDetailBody extends ConsumerWidget {
     );
   }
 
-  static bool _isScheduleField(String field) => const {'allDay', 'startAt', 'dueAt', 'startDate', 'dueDate'}.contains(field);
+  static bool _isScheduleField(String field) =>
+      const {'allDay', 'startAt', 'dueAt', 'startDate', 'dueDate'}.contains(field);
 
   static String _kindLabel(String kind) => switch (kind) {
-        'create' => '新建申请',
-        'change' => '修改申请',
-        'progress' => '进展申请',
-        'complete' => '完成申请',
-        'reopen' => '重开申请',
-        'handover' => '交接申请',
-        'reschedule' => '排期申请',
-        _ => '申请',
-      };
+    'create' => '新建申请',
+    'change' => '修改申请',
+    'progress' => '进展申请',
+    'complete' => '完成申请',
+    'reopen' => '重开申请',
+    'handover' => '交接申请',
+    'reschedule' => '排期申请',
+    _ => '申请',
+  };
 
   Future<void> _toggleTablePin(BuildContext context, WidgetRef ref, TaskRecord task) async {
     final keys = ref.read(operationKeysProvider);
@@ -260,11 +240,7 @@ class _TaskDetailBody extends ConsumerWidget {
       body: const {},
     );
     try {
-      await ref.read(tasksApiProvider).setTablePin(
-            taskId: task.id,
-            pinned: !task.tablePinned,
-            idempotencyKey: key,
-          );
+      await ref.read(tasksApiProvider).setTablePin(taskId: task.id, pinned: !task.tablePinned, idempotencyKey: key);
       keys.complete(scope);
       ref.invalidate(taskDetailProvider(task.id));
     } catch (error) {
@@ -273,106 +249,23 @@ class _TaskDetailBody extends ConsumerWidget {
     }
   }
 
-  Future<void> _submitProgress(BuildContext context, WidgetRef ref) async {
-    final controller = TextEditingController();
-    final note = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('提交进展'),
-        content: TextField(
-          controller: controller,
-          minLines: 3,
-          maxLines: 6,
-          maxLength: 2000,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: '进展说明', alignLabelWithHint: true),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消')),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('提交'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (note == null || note.isEmpty || !context.mounted) return;
-    await _mutate(
-      context,
-      ref,
-      command: 'progress',
-      payload: {'progressNote': note},
-      successHint: '进展已提交',
-    );
-  }
+  Future<void> _submitProgress(BuildContext context, WidgetRef ref) => _submitNote(context, ref, 'progress');
 
-  Future<void> _submitCompletion(BuildContext context, WidgetRef ref) async {
-    final controller = TextEditingController();
-    final note = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('提交完成'),
-        content: TextField(
-          controller: controller,
-          minLines: 3,
-          maxLines: 6,
-          maxLength: 2000,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: '完成说明（必填）', alignLabelWithHint: true),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消')),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('提交'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (note == null || note.isEmpty || !context.mounted) return;
-    await _mutate(
-      context,
-      ref,
-      command: 'complete',
-      payload: {'completionNote': note},
-      successHint: '完成申请已提交',
-    );
-  }
+  Future<void> _submitCompletion(BuildContext context, WidgetRef ref) => _submitNote(context, ref, 'complete');
 
-  Future<void> _mutate(
-    BuildContext context,
-    WidgetRef ref, {
-    required String command,
-    required Map<String, Object?> payload,
-    required String successHint,
-  }) async {
-    final keys = ref.read(operationKeysProvider);
-    final body = {'command': command, ...payload};
-    final key = keys.keyFor(
-      scope: 'task:$command:${task.id}',
-      method: 'PATCH',
-      path: '/tasks/${task.id}',
-      body: body,
+  Future<void> _submitNote(BuildContext context, WidgetRef ref, String command) async {
+    final epoch = ref.read(accountEpochProvider);
+    final message = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => TaskNoteDialog(taskId: task.id, rowVersion: task.rowVersion, command: command),
     );
-    try {
-      final result = await ref.read(tasksApiProvider).change(
-            id: task.id,
-            command: command,
-            payload: payload,
-            idempotencyKey: key,
-          );
-      keys.complete('task:$command:${task.id}');
-      ref.invalidate(taskDetailProvider(task.id));
-      ref.invalidate(homeDataProvider);
-      if (!context.mounted) return;
-      showSnack(context, result.pendingReview ? '$successHint，等待审核' : '$successHint，已直接生效');
-    } on ApiException catch (error) {
-      if (!context.mounted) return;
-      showSnack(context, error.message);
-      ref.invalidate(taskDetailProvider(task.id));
+    if (!context.mounted || epoch != ref.read(accountEpochProvider) || message == null) {
+      return;
     }
+    ref.invalidate(taskDetailProvider(task.id));
+    ref.invalidate(homeDataProvider);
+    showSnack(context, message);
   }
 }
 
@@ -436,19 +329,14 @@ class _ReadOnlyBanner extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: PandoraColors.petal,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: PandoraColors.petal, borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
           const Icon(Icons.visibility_outlined, size: 18, color: PandoraColors.brand),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              context is HistoryNotificationReadContext
-                  ? '历史消息中的只读任务摘要，不提供评论与业务操作。'
-                  : '通过${context.label}浏览，业务操作只读。',
+              context is HistoryNotificationReadContext ? '历史消息中的只读任务摘要，不提供评论与业务操作。' : '通过${context.label}浏览，业务操作只读。',
               style: Theme.of(widgetContext).textTheme.bodySmall,
             ),
           ),

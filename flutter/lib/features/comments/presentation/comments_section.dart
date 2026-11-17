@@ -107,36 +107,6 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
     }
   }
 
-  Future<void> _delete(CommentRecord comment, bool delete) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除评论？'),
-        content: const Text('删除后正文和通知摘要不再显示，审计记录保留。'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('删除')),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    final keys = ref.read(operationKeysProvider);
-    final scope = 'comment:${comment.id}';
-    final key = keys.keyFor(scope: scope, method: delete ? 'DELETE' : 'PATCH', path: '/comments/${comment.id}', body: delete ? const {} : {'body': comment.body});
-    try {
-      if (delete) {
-        await ref.read(commentsApiProvider).delete(commentId: comment.id, rowVersion: comment.rowVersion, idempotencyKey: key);
-      } else {
-        await ref.read(commentsApiProvider).change(commentId: comment.id, rowVersion: comment.rowVersion, body: comment.body, idempotencyKey: key);
-      }
-      keys.complete(scope);
-      await _load(reset: true);
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -157,10 +127,11 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
             trailing: comment.canManage && !comment.deleted
                 ? PopupMenuButton<String>(
                     tooltip: '管理评论',
-                    onSelected: (value) => value == 'edit' ? _edit(comment) : _delete(comment, true),
+                    onSelected: (value) {
+                      if (value == 'edit') unawaited(_edit(comment));
+                    },
                     itemBuilder: (context) => const [
                       PopupMenuItem(value: 'edit', child: Text('编辑')),
-                      PopupMenuItem(value: 'delete', child: Text('删除')),
                     ],
                   )
                 : null,

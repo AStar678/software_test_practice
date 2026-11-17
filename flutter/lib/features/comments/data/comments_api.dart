@@ -77,16 +77,4 @@ class CommentsApi {
     return result.data;
   }
 
-  Future<void> delete({required String commentId, required int rowVersion, required String idempotencyKey}) async {
-    _client.versions.put(VersionRegistry.comment(commentId), '"$rowVersion"');
-    await _client.write<void>(
-      method: 'DELETE',
-      path: '/comments/$commentId',
-      body: const {},
-      idempotencyKey: idempotencyKey,
-      versionKey: VersionRegistry.comment(commentId),
-      requireVersion: true,
-      decode: (_) {},
-    );
-  }
 }

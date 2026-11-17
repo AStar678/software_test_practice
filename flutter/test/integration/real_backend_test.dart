@@ -16,6 +16,7 @@ import 'package:pandora_employee/features/approvals/data/approvals_api.dart';
 import 'package:pandora_employee/features/auth/data/auth_api.dart';
 import 'package:pandora_employee/features/auth/domain/password_policy.dart';
 import 'package:pandora_employee/features/daily_items/data/daily_items_api.dart';
+import 'package:pandora_employee/features/daily_items/domain/daily_item.dart';
 import 'package:pandora_employee/features/home/data/home_api.dart';
 import 'package:pandora_employee/features/tags/data/tags_api.dart';
 import 'package:pandora_employee/features/tasks/data/tasks_api.dart';
@@ -52,7 +53,28 @@ final bool _backendUp = () {
 }();
 
 const String _baseUrl = 'http://127.0.0.1:8080/api/v1';
-const String _demoPassword = 'Demo@123456';
+final String _demoPassword =
+    Platform.environment['PANDORA_DEMO_PASSWORD'] ?? '111';
+
+/// Fixture cleanup exercises the retained backend capability; the app has no delete action.
+Future<void> deleteBackendComment(
+  ApiClient client, {
+  required String commentId,
+  required int rowVersion,
+  required String idempotencyKey,
+}) async {
+  final version = VersionRegistry.comment(commentId);
+  client.versions.put(version, '"$rowVersion"');
+  await client.write<void>(
+    method: 'DELETE',
+    path: '/comments/$commentId',
+    body: const {},
+    idempotencyKey: idempotencyKey,
+    versionKey: version,
+    requireVersion: true,
+    decode: (_) {},
+  );
+}
 
 void main() {
   late SessionManager session;
@@ -275,6 +297,65 @@ void main() {
           path: '/daily-items/${created.id}',
         ),
       );
+    }
+  }, skip: skipReason);
+
+  test('J05/J06 完成跨年事项绝对改期、同键重放与原版本冲突', () async {
+    final created = await dailyItems.create(
+      start: const CompanyDate(2026, 12, 30),
+      end: const CompanyDate(2027, 1, 2),
+      body: '完整正文\n跨年改期联调',
+      idempotencyKey: keys.newKey(),
+    );
+    try {
+      await dailyItems.detail(created.id);
+      final original = await dailyItems.change(
+        id: created.id,
+        completed: true,
+        idempotencyKey: keys.newKey(),
+      );
+      final version = '"${original.rowVersion}"';
+      final moveKey = keys.newKey();
+      Future<DailyItem> move(String key) => dailyItems.change(
+        id: created.id,
+        start: const CompanyDate(2027, 1, 6),
+        end: const CompanyDate(2027, 1, 9),
+        ifMatch: version,
+        idempotencyKey: key,
+      );
+      final moved = await move(moveKey);
+      final replay = await move(moveKey);
+      expect(moved.id, created.id);
+      expect(replay.rowVersion, moved.rowVersion);
+      expect(moved.body, original.body);
+      expect(moved.completed, isTrue);
+      expect(moved.endDate.differenceInDays(moved.startDate), 3);
+      expect(
+        (await dailyItems.listByDay(const CompanyDate(2026, 12, 31))).items
+            .any((item) => item.id == created.id),
+        isFalse,
+      );
+      expect(
+        (await dailyItems.listByDay(const CompanyDate(2027, 1, 8))).items
+            .any((item) => item.id == created.id),
+        isTrue,
+      );
+      await expectLater(
+        move(keys.newKey()),
+        throwsA(
+          isA<ApiException>().having(
+            (error) => error.statusCode,
+            'statusCode',
+            412,
+          ),
+        ),
+      );
+      final current = await dailyItems.detail(created.id);
+      expect(current.startDate, const CompanyDate(2027, 1, 6));
+      expect(current.completed, isTrue);
+    } finally {
+      await dailyItems.detail(created.id);
+      await dailyItems.delete(id: created.id, idempotencyKey: keys.newKey());
     }
   }, skip: skipReason);
 
@@ -670,7 +751,8 @@ void main() {
       ),
       isTrue,
     );
-    await comments.delete(
+    await deleteBackendComment(
+      client,
       commentId: comment.id,
       rowVersion: comment.rowVersion,
       idempotencyKey: keys.keyFor(
@@ -838,7 +920,8 @@ void main() {
       ),
       throwsA(isA<ApiException>()),
     );
-    await comments.delete(
+    await deleteBackendComment(
+      client,
       commentId: comment.id,
       rowVersion: comment.rowVersion,
       idempotencyKey: keys.keyFor(
@@ -919,7 +1002,8 @@ void main() {
       }
       expect(delivered, isTrue, reason: '当前负责人应收到本次评论的通知');
     } finally {
-      await reviewerComments.delete(
+      await deleteBackendComment(
+        reviewerClient,
         commentId: comment.id,
         rowVersion: comment.rowVersion,
         idempotencyKey: keys.keyFor(
@@ -1230,15 +1314,14 @@ void main() {
     expect(items, isNotEmpty);
     final original = Map<String, dynamic>.from(items.first);
     final id = original['id'] as String;
-    final originalTitle = original['title'] as String;
     final originalBody = original['body'] as String;
-    final changedTitle = '$originalTitle · Flutter联动';
+    final changedBody = '$originalBody\nFlutter联动';
     final nonce = DateTime.now().microsecondsSinceEpoch;
     var version = (original['rowVersion'] as num).toInt();
     try {
       final changed = await demoAdmin.patch<Map<String, dynamic>>(
         '/admin/company/items/$id',
-        data: {'title': changedTitle, 'body': originalBody},
+        data: {'body': changedBody},
         options: Options(
           headers: {
             'Authorization': 'Bearer $demoAdminToken',
@@ -1250,8 +1333,8 @@ void main() {
       version = (changed.data?['rowVersion'] as num).toInt();
       final mobileHome = await home.load();
       expect(
-        mobileHome.companyItems.firstWhere((item) => item.id == id).title,
-        changedTitle,
+        mobileHome.companyItems.firstWhere((item) => item.id == id).body,
+        changedBody,
       );
       final employeeAdminAttempt =
           await Dio(BaseOptions(validateStatus: (_) => true)).get<Object?>(
@@ -1264,7 +1347,7 @@ void main() {
     } finally {
       await demoAdmin.patch<Map<String, dynamic>>(
         '/admin/company/items/$id',
-        data: {'title': originalTitle, 'body': originalBody},
+        data: {'body': originalBody},
         options: Options(
           headers: {
             'Authorization': 'Bearer $demoAdminToken',
@@ -1273,6 +1356,80 @@ void main() {
           },
         ),
       );
+    }
+  }, skip: skipReason);
+
+  test('J11/J12/J13 真实进展→完成→重开→有序交接预览/提交/撤回闭环', () async {
+    Future<(SessionManager, TasksApi, ApprovalsApi)> actor(String phone) async {
+      final manager = SessionManager(
+        api: AuthApi(dio: Dio(BaseOptions(validateStatus: (status) => status != null && status < 400)), baseUrl: _baseUrl),
+        store: MemoryCredentialStore(), clock: WorkspaceClock(),
+      );
+      await manager.login(phone: phone, password: _demoPassword);
+      final api = ApiClient(config: const AppConfig(apiBaseUrl: _baseUrl, isDebug: true), session: manager, versions: VersionRegistry());
+      return (manager, TasksApi(client: api), ApprovalsApi(client: api));
+    }
+    final employee = await actor('13800000004');
+    final team = await actor('13800000011');
+    try {
+      final employeeId = employee.$1.state.user!.id;
+      final teamId = team.$1.state.user!.id;
+      final owners = [employeeId, teamId];
+      final now = DateTime.now().toUtc();
+      final created = await employee.$2.create(payload: {
+        'title': '完整执行与交接联调 ${now.microsecondsSinceEpoch}',
+        'description': '独立检查记录，不改既有演示任务', 'priority': 'medium',
+        'allDay': false, 'startAt': now.add(const Duration(days: 1)).toIso8601String(),
+        'dueAt': now.add(const Duration(days: 3)).toIso8601String(),
+        'assigneeIds': owners, 'tagIds': <String>[],
+      }, idempotencyKey: keys.newKey());
+      Future<void> approve(String requestId) async {
+        final request = await team.$3.detail(requestId);
+        expect(request.currentReviewerId, teamId);
+        await team.$3.decide(requestId: requestId, decision: 'approve', idempotencyKey: keys.newKey());
+      }
+      await approve(created.requestId!);
+      for (final command in ['progress', 'complete']) {
+        final original = await employee.$2.detail(created.taskId);
+        final preview = await employee.$2.preview({'operation': command, 'taskId': original.id}, keys);
+        expect(preview.reviewerId, teamId);
+        final changed = await employee.$2.change(id: original.id, command: command,
+          payload: {command == 'progress' ? 'progressNote' : 'completionNote': '真实${command == 'progress' ? '进展' : '完成'}说明'},
+          ifMatch: '"${original.rowVersion}"', idempotencyKey: keys.newKey());
+        final saved = await employee.$3.detail(changed.requestId!);
+        expect(saved.currentReviewerId, teamId);
+        await approve(changed.requestId!);
+        expect((await employee.$2.detail(original.id)).executionState, command == 'progress' ? 'doing' : 'done');
+      }
+      final completed = await employee.$2.detail(created.taskId);
+      final reopened = await employee.$2.reopen(id: completed.id,
+        startAt: now.add(const Duration(days: 4)), dueAt: now.add(const Duration(days: 5)),
+        assigneeIds: owners.reversed.toList(), reason: '真实有序负责人重开',
+        ifMatch: '"${completed.rowVersion}"', idempotencyKey: keys.newKey());
+      expect((await employee.$2.detail(completed.id)).done, isTrue, reason: '待审重开不提前改有效状态');
+      await approve(reopened.requestId!);
+      final active = await employee.$2.detail(completed.id);
+      expect(active.executionRound, completed.executionRound + 1);
+      expect(active.assigneeIds, owners.reversed.toList());
+      expect(active.handoverSources, [employeeId], reason: '普通员工只可交接本人，不能交接同任务的上级');
+      final targets = await employee.$2.handoverTargets(subjectId: employeeId);
+      final target = targets.items.firstWhere((person) => !active.assigneeIds.contains(person.id));
+      final proposedOwners = [for (final id in active.assigneeIds) id == employeeId ? target.id : id];
+      final route = await employee.$2.preview({'operation': 'handover', 'taskId': active.id, 'assigneeIds': proposedOwners}, keys);
+      expect(route.reviewerId, teamId, reason: '审核路线按实际申请人，不按第一负责人');
+      final handover = await employee.$2.handover(taskId: active.id, sourceUserId: employeeId,
+        targetUserId: target.id, reason: '有序位置替换检查', ifMatch: '"${active.rowVersion}"', idempotencyKey: keys.newKey());
+      final saved = await employee.$3.detail(handover.requestId!);
+      expect(saved.currentReviewerId, teamId);
+      expect(saved.proposedVersion!.assigneeIds, proposedOwners);
+      expect((await employee.$2.detail(active.id)).assigneeIds, active.assigneeIds);
+      await employee.$3.decide(requestId: saved.requestId, decision: 'withdraw', idempotencyKey: keys.newKey());
+      final retained = await employee.$2.detail(active.id);
+      expect(retained.assigneeIds, active.assigneeIds);
+      expect(retained.pending, isFalse);
+    } finally {
+      await employee.$1.logout();
+      await team.$1.logout();
     }
   }, skip: skipReason);
 

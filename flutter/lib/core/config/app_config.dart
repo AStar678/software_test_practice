@@ -8,12 +8,14 @@ class AppConfig {
   final bool isDebug;
 
   static const String _definedBaseUrl = String.fromEnvironment('API_BASE_URL');
-  static const String _definedReleaseBaseUrl = String.fromEnvironment('RELEASE_API_BASE_URL');
+  static const String _definedReleaseBaseUrl = String.fromEnvironment(
+    'RELEASE_API_BASE_URL',
+  );
 
   /// 默认值与 release 规则：
-  /// - 显式 `--dart-define=API_BASE_URL=...` 优先；
+  /// - debug/课程演示使用显式 `--dart-define=API_BASE_URL=...`；
   /// - debug 回退到本机联调地址（Android 模拟器用 10.0.2.2）；
-  /// - release 必须提供 HTTPS 地址，否则启动即报配置错误，不静默连明文。
+  /// - 可选 release 使用 RELEASE_API_BASE_URL，必须为 HTTPS。
   factory AppConfig.fromEnvironment({bool? debugOverride}) {
     final isDebug = debugOverride ?? kDebugMode;
     final configured = isDebug ? _definedBaseUrl : _definedReleaseBaseUrl;
@@ -21,7 +23,9 @@ class AppConfig {
       return AppConfig(apiBaseUrl: _normalize(configured), isDebug: isDebug);
     }
     if (isDebug) {
-      final host = !kIsWeb && defaultTargetPlatform == TargetPlatform.android ? '10.0.2.2' : '127.0.0.1';
+      final host = !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+          ? '10.0.2.2'
+          : '127.0.0.1';
       return AppConfig(apiBaseUrl: 'http://$host:8080/api/v1', isDebug: true);
     }
     return const AppConfig(apiBaseUrl: '', isDebug: false);
@@ -33,7 +37,14 @@ class AppConfig {
   bool get isTransportAllowed {
     if (apiBaseUrl.isEmpty) return false;
     final uri = Uri.tryParse(apiBaseUrl);
-    if (uri == null) return false;
+    if (uri == null ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        uri.path != '/api/v1') {
+      return false;
+    }
     if (isDebug) return uri.scheme == 'http' || uri.scheme == 'https';
     return uri.scheme == 'https';
   }

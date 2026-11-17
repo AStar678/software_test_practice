@@ -88,18 +88,6 @@ class _NotificationsListState extends ConsumerState<_NotificationsList> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SegmentedButton<NotificationReadFilter>(
-                      segments: [
-                        for (final value in NotificationReadFilter.values)
-                          ButtonSegment(value: value, label: Text(value.label)),
-                      ],
-                      selected: {_read},
-                      onSelectionChanged: (value) {
-                        _read = value.single;
-                        _load(reset: true);
-                      },
-                    ),
-                    const SizedBox(height: 8),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -119,6 +107,19 @@ class _NotificationsListState extends ConsumerState<_NotificationsList> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    SegmentedButton<NotificationReadFilter>(
+                      segments: [
+                        for (final value in NotificationReadFilter.values)
+                          ButtonSegment(value: value, label: Text(value.label)),
+                      ],
+                      selected: {_read},
+                      onSelectionChanged: (value) {
+                        _read = value.single;
+                        _load(reset: true);
+                      },
+                    ),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Text(
@@ -126,9 +127,14 @@ class _NotificationsListState extends ConsumerState<_NotificationsList> {
                           style: const TextStyle(color: PandoraColors.muted),
                         ),
                         const Spacer(),
-                        if (_read != NotificationReadFilter.all ||
-                            _category != NotificationCategory.all)
-                          TextButton(
+                        Visibility(
+                          visible:
+                              _read != NotificationReadFilter.all ||
+                              _category != NotificationCategory.all,
+                          maintainSize: true,
+                          maintainState: true,
+                          maintainAnimation: true,
+                          child: TextButton(
                             onPressed: () {
                               _read = NotificationReadFilter.all;
                               _category = NotificationCategory.all;
@@ -136,13 +142,14 @@ class _NotificationsListState extends ConsumerState<_NotificationsList> {
                             },
                             child: const Text('清空筛选'),
                           ),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
             ),
-            Expanded(child: _body()),
+            Expanded(child: SizedBox.expand(key: const ValueKey('notification-results'), child: _body())),
           ],
         ),
       ),

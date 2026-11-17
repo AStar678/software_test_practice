@@ -42,6 +42,8 @@ class TaskRecord {
     this.editableFields = const {},
     this.route,
     this.participants = const [],
+    this.canHandover = false,
+    this.handoverSources = const [],
     this.updatedAt,
   });
 
@@ -83,6 +85,8 @@ class TaskRecord {
   final Set<String> editableFields;
   final TaskRoute? route;
   final List<TaskParticipant> participants;
+  final bool canHandover;
+  final List<String> handoverSources;
   final DateTime? updatedAt;
 
   bool get done => executionState == 'done';
@@ -101,7 +105,9 @@ class TaskRecord {
     if (allDay) {
       final start = allDayStart;
       final end = allDayEnd;
-      if (start != null && end != null) return ScheduleCoverage.coversAllDay(day, start, end);
+      if (start != null && end != null) {
+        return ScheduleCoverage.coversAllDay(day, start, end);
+      }
       final startInstant = startAt;
       final dueInstant = dueAt;
       if (startInstant != null && dueInstant != null) {
@@ -134,22 +140,25 @@ class TaskRecord {
     return '${startDay.iso} ${_two(start.hour, start.minute)} 至 ${dueDay.iso} ${_two(due.hour, due.minute)}';
   }
 
-  static String _two(int hour, int minute) =>
-      '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+  static String _two(int hour, int minute) => '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 
   factory TaskRecord.fromJson(Map<String, Object?> json) {
     final tags = <TaskTag>[];
     final rawTags = json['tags'];
     if (rawTags is List) {
       for (final raw in rawTags) {
-        if (raw is Map) tags.add(TaskTag.fromJson(Map<String, Object?>.from(raw)));
+        if (raw is Map) {
+          tags.add(TaskTag.fromJson(Map<String, Object?>.from(raw)));
+        }
       }
     }
     final participants = <TaskParticipant>[];
     final rawParticipants = json['participants'];
     if (rawParticipants is List) {
       for (final raw in rawParticipants) {
-        if (raw is Map) participants.add(TaskParticipant.fromJson(Map<String, Object?>.from(raw)));
+        if (raw is Map) {
+          participants.add(TaskParticipant.fromJson(Map<String, Object?>.from(raw)));
+        }
       }
     }
     final rawRoute = json['route'];
@@ -184,9 +193,7 @@ class TaskRecord {
       pending: json['pending'] == true,
       frozen: json['frozen'] == true,
       pendingKind: _string(json['pendingKind']),
-      pendingSchedule: rawPendingSchedule is Map
-          ? Map<String, Object?>.from(rawPendingSchedule)
-          : null,
+      pendingSchedule: rawPendingSchedule is Map ? Map<String, Object?>.from(rawPendingSchedule) : null,
       canReschedule: json['canReschedule'] == true,
       canPin: json['canPin'] == true,
       canTablePin: json['canTablePin'] == true,
@@ -195,6 +202,8 @@ class TaskRecord {
       editableFields: Set<String>.from(_stringList(json['editableFields'])),
       route: rawRoute is Map ? TaskRoute.fromJson(Map<String, Object?>.from(rawRoute)) : null,
       participants: participants,
+      canHandover: json['canHandover'] == true,
+      handoverSources: _stringList(json['handoverSources']),
       updatedAt: _instant(json['updatedAt']),
     );
   }
@@ -279,10 +288,8 @@ class TaskParticipant {
   final String id;
   final String displayName;
 
-  factory TaskParticipant.fromJson(Map<String, Object?> json) => TaskParticipant(
-        id: _string(json['id']) ?? '',
-        displayName: _string(json['displayName']) ?? '',
-      );
+  factory TaskParticipant.fromJson(Map<String, Object?> json) =>
+      TaskParticipant(id: _string(json['id']) ?? '', displayName: _string(json['displayName']) ?? '');
 }
 
 /// 服务端审核路由预览：预览不是凭证，提交时服务端重算。
@@ -310,28 +317,23 @@ class TaskRoute {
   final List<TaskParticipant> participants;
 
   factory TaskRoute.fromJson(Map<String, Object?> json) => TaskRoute(
-        reviewerId: _string(json['reviewerId']),
-        basisAssigneeId: _string(json['basisAssigneeId']),
-        path: _stringList(json['path']),
-        reason: _string(json['reason']),
-        reasonText: _string(json['reasonText']),
-        reviewerAvailable: json['reviewerAvailable'] == true,
-        blocked: json['blocked'] == true,
-        creation: json['creation'] == true,
-        participants: [
-          for (final raw in json['participants'] as List? ?? const [])
-            if (raw is Map) TaskParticipant.fromJson(Map<String, Object?>.from(raw)),
-        ],
-      );
+    reviewerId: _string(json['reviewerId']),
+    basisAssigneeId: _string(json['basisAssigneeId']),
+    path: _stringList(json['path']),
+    reason: _string(json['reason']),
+    reasonText: _string(json['reasonText']),
+    reviewerAvailable: json['reviewerAvailable'] == true,
+    blocked: json['blocked'] == true,
+    creation: json['creation'] == true,
+    participants: [
+      for (final raw in json['participants'] as List? ?? const [])
+        if (raw is Map) TaskParticipant.fromJson(Map<String, Object?>.from(raw)),
+    ],
+  );
 }
 
 class TaskMutationResult {
-  const TaskMutationResult({
-    required this.taskId,
-    this.requestId,
-    required this.outcome,
-    this.rowVersion,
-  });
+  const TaskMutationResult({required this.taskId, this.requestId, required this.outcome, this.rowVersion});
 
   final String taskId;
   final String? requestId;
@@ -342,18 +344,18 @@ class TaskMutationResult {
   bool get appliedDirectly => outcome == 'direct';
 
   factory TaskMutationResult.fromJson(Map<String, Object?> json) => TaskMutationResult(
-        taskId: _string(json['taskId']) ?? '',
-        requestId: _string(json['requestId']),
-        outcome: _string(json['outcome']) ?? _string(json['status']) ?? 'pending',
-        rowVersion: _int(json['rowVersion']),
-      );
+    taskId: _string(json['taskId']) ?? '',
+    requestId: _string(json['requestId']),
+    outcome: _string(json['outcome']) ?? _string(json['status']) ?? 'pending',
+    rowVersion: _int(json['rowVersion']),
+  );
 
   /// 创始人免审直接生效（`outcome=direct`）时的原因文案。
   String get feedback => switch (outcome) {
-        'direct' => '已直接生效',
-        'pending' => '已提交审核',
-        _ => '已提交',
-      };
+    'direct' => '已直接生效',
+    'pending' => '已提交审核',
+    _ => '已提交',
+  };
 }
 
 class ReviewerPreview {
@@ -411,5 +413,8 @@ int? _int(Object? value) {
 
 List<String> _stringList(Object? value) {
   if (value is! List) return const [];
-  return [for (final item in value) if (item != null) item.toString()];
+  return [
+    for (final item in value)
+      if (item != null) item.toString(),
+  ];
 }

@@ -350,7 +350,11 @@ Flutter SHALL 提供六类型标签、三读态分段和一个具有可访问名
 - **THEN** SHALL 仅看到专用当前只读摘要，返回后正常列表仍无该任务；不恢复完整申请 diff、评论或任何操作按钮
 
 ### Requirement: Real analytics recommendations and holiday labels
-统计与 AI 图谱 SHALL 使用后端真实结果，区分执行状态、待完成审核/冻结及逾期、四档紧急程度；创始人公司、部门/团队聚合及个人、普通员工本人范围及时间筛选不扩大。现有本地规则建议 SHALL 保留关键词/来源/生成时间和授权跳转，不虚构固定数字或外部模型。月/日历 SHALL 使用 A 的按年官方休班数据，ready/stale/missing 正确表达，未公布年不预测，失败保留已有标签；标签不改变排期、提醒或统计。
+统计与 AI 图谱 SHALL 使用后端真实结果，区分执行状态、待完成审核/冻结及逾期、四档紧急程度。按2026-11-17用户确认，功能对齐当前Web，自动由服务按角色裁决范围：创始人公司统计/词云/建议，部门及团队负责人对应聚合统计/词云和本人建议，普通员工本人统计/词云/建议；不新增时间/状态/紧急程度筛选或仅本人范围切换，不扩展现行scope契约。进入和主动刷新 SHALL 重算，保留关键词/来源/生成时间和授权跳转，不虚构固定数字或外部模型。舍弃的额外功能 SHALL 有简明记录。月/日历 SHALL 使用 A 的按年官方休班数据，ready/stale/missing 正确表达，未公布年不预测，失败保留已有标签；标签不改变排期、提醒或统计。
+
+#### Scenario: Match the current Web analysis scope and refresh
+- **WHEN** 四类员工进入统计页或主动刷新
+- **THEN** SHALL 按现行自动角色范围读取真实统计并生成规则建议，无额外筛选/仅本人切换；状态及紧急程度分布、范围、来源和生成时间可读，授权变化时清理旧结果
 
 #### Scenario: Revalidate analytical sources after organization changes
 - **WHEN** 不同角色查询范围并打开建议来源，期间组织权限变化
@@ -361,18 +365,28 @@ Flutter SHALL 提供六类型标签、三读态分段和一个具有可访问名
 - **THEN** SHALL 不伪造休班、保留最近有效标签并表达状态，不让外部源故障阻止任务日历，任务和提醒不被改动
 
 ### Requirement: Android coexistence and reproducible delivery
-首轮 SHALL 提供原生 Flutter Android APK，使用独立包名与旧 `cn.pandora.mobile.debug` 共存，不覆盖旧应用或读取其登录数据；安装后以真实账号重登共享后端。交付 SHALL 记录 Flutter/Dart/JDK/Android SDK、构建命令、版本/签名指纹/APK 哈希、网络配置及模拟器镜像/API版本；密钥和凭证不入库。正式配置 SHALL 使用有效 TLS，开发 HTTP 例外明确限定且不绕过证书验证；不内置演示密码或明文业务日志。Android模拟器 SHALL 验证安装及真实后端、长按/拖动路径、系统返回、键盘/安全区/字体放大、可用选图/取消、前后台/进程重建、断网重试/重登与账号隔离；组件检查一次激活一次触觉调用。按2026-11-17用户决定，真机验证 SHALL 移出本change完成/归档条件，缺真机不阻塞；触觉实感、真实厂商选图和物理设备兼容性列为未验证，交组员后续独立验证，问题另提change。不得把模拟器/组件证据称为真机通过。
+本课程项目 SHALL 提供可安装的原生 Flutter Android 演示 APK，允许 debug 构建及其自动签名，不要求专用发布签名或 release 包。独立包名 SHALL 与旧 `cn.pandora.mobile.debug` 不同，不覆盖旧应用或读取其登录数据；安装后用真实账号重登共享后端。交付 SHALL 记录 Flutter/Dart/JDK/Android SDK、构建命令/类型、版本/ABI/APK 哈希、网络配置及实际模拟器镜像/API版本；密钥、凭证和内置演示密码不入库，请求日志脱敏。
+
+课程演示 APK SHALL 支持显式配置包含 `/api/v1` 的 HTTP 或 HTTPS 后端地址，允许模拟器访问宿主机以及后续手机访问无证书服务器；HTTP 配置 SHALL 放行实际演示目标，不因无 HTTPS 域名/TLS 证书或专用 release 密钥阻塞构建或本地验收。若使用 HTTPS SHALL 保持正常证书验证，不接受任意证书。HTTP 演示不承诺传输加密，不扩大业务权限或更改服务版本/幂等规则。
+
+本 change 必需环境 SHALL 限于本地真实隔离后端与一台可用 Android 模拟器。模拟器 SHALL 验证当前APK安装、真实后端连通及核心页面/长按拖动、系统返回、键盘/安全区/字体放大、前后台/进程重建、断网恢复/账号隔离；组件检查 SHALL 覆盖一次激活一次触觉调用和平台不可稳定制造的取消/拒绝分支。选图在模拟器支持时实测，不支持的系统差异 SHALL 明确记录并由适配组件检查覆盖。工程最低API26设置保留，不要求同时在API26和现代Android两台设备实测。
+
+HTTPS/证书部署、专用release签名验收、多版本/厂商兼容矩阵、服务器部署/远程连通及手机实测 SHALL 移出本change完成/归档条件，不能因缺少这些条件阻塞本地交付；移出不等于已通过。后续课程展示 SHALL 由使用者/组员完成服务器部署、实际HTTP地址配置及手机核心流程检查，交接列明未验证项、安装/地址配置及排障步骤。独立e13仍 SHALL 针对本次本地范围取得当前PASS后方可归档。
 
 #### Scenario: Install alongside the transition shell
-- **WHEN** 在模拟器安装交付APK并检查独立包标识与登录
-- **THEN** SHALL 使用与既定旧包不同的applicationId，新应用无旧凭证，不要求读取/运行旧工程或安装旧包作为本次验收前置；真实登录与后端写入可在过渡 Web 回读，不自动停用旧入口
+- **WHEN** 在选定模拟器安装当前课程演示APK并检查包标识与登录
+- **THEN** SHALL 使用与旧包不同的applicationId，新应用无旧凭证，不要求读取/运行旧工程或安装旧包；真实登录与后端写入可由本地Web/API回读，debug及自动签名可接受
 
 #### Scenario: Audit evidence and a missing device
-- **WHEN** 检查交付包，或实施环境暂缺SDK/签名/必需模拟器，或无真机
-- **THEN** SHALL 有可复现环境和实际完成的证据；缺SDK/签名/必需模拟器的项明确记录为未完成；仅缺真机不阻塞，真机未覆盖项交接组员，不能以旧APK、mock或历史PASS冒充当前范围已完成
+- **WHEN** 检查当前交付记录，而缺少HTTPS/专用发布密钥、API26第二台模拟器、远程服务器或手机
+- **THEN** SHALL 按本地后端、自动检查及单台模拟器证据判定；这些移出项只记未验证和后续责任，不作失败条件；没有当前可安装APK、必需模拟器运行或本地真实接口证据仍为未完成
+
+#### Scenario: Configure an HTTP course server without a certificate
+- **WHEN** 演示包配置模拟器宿主机HTTP地址或后续无证书服务器HTTP地址
+- **THEN** SHALL 能按实际地址生成可安装演示包，不要求TLS证书或专用release密钥；文档明确手机不能用自身localhost访问服务器，以及实际端口和`/api/v1`路径；远程连通实测留至展示阶段，不伪称当前已通过
 
 ### Requirement: Existing PC operations and real demonstration interoperability
-B SHALL 复用 A 的真实四角色动画链、稳定账号/ID 和业务数据，不用本地改名或假状态演示。PC 的入职维护、组织调整、停用/接管、密码重置、事件纪及审计继续可用；Flutter SHALL 在这些操作后正确刷新权限、资料、审核路由和来源。默认演示与极限夹具分开，普通应用启动不得重灌数据；A 的数据库迁移/备份检查与 B 的跨端读写分别取证。
+B SHALL 复用 A 的真实四角色动画链、稳定账号/ID 和业务数据，不用本地改名或假状态演示。PC 的入职维护、组织调整、停用/接管、密码重置、事件纪及审计继续可用；Flutter SHALL 在这些操作后正确刷新权限、资料、审核路由和来源。默认演示与极限夹具分开，普通应用启动不得重灌数据；PC触发操作可经本地管理API/浏览器完成。A的数据库迁移/备份只引用已归档依赖证据，B验证本地跨端读写，不重新执行生产部署或迁移/备份恢复演练。
 
 #### Scenario: Demonstrate and react to PC changes
 - **WHEN** 苏景昕→苏格拉底→柏拉图→亚里士多德四账号完成真实业务，PC 调整组织/停用/接管或重置密码

@@ -58,7 +58,11 @@ class BarLayout {
 }
 
 class WeekLayout {
-  const WeekLayout({required this.weekStart, required this.days, required this.bars});
+  const WeekLayout({
+    required this.weekStart,
+    required this.days,
+    required this.bars,
+  });
 
   final CompanyDate weekStart;
   final List<DayCellLayout> days;
@@ -87,6 +91,7 @@ class MonthLayoutCalculator {
     required CompanyDate month,
     required Iterable<DailyItem> items,
     int maxLanes = MonthLayout.maxLanes,
+    bool fixedWeeks = true,
     Set<String> leadingIds = const {},
   }) {
     final monthStart = month.firstDayOfMonth;
@@ -96,7 +101,9 @@ class MonthLayoutCalculator {
 
     final coveredByDay = <CompanyDate, List<DailyItem>>{};
     for (final item in itemList) {
-      final from = item.startDate.isBefore(monthStart) ? monthStart : item.startDate;
+      final from = item.startDate.isBefore(monthStart)
+          ? monthStart
+          : item.startDate;
       final to = item.endDate.isAfter(monthEnd) ? monthEnd : item.endDate;
       if (to.isBefore(from)) continue;
       for (var day = from; !day.isAfter(to); day = day.addDays(1)) {
@@ -105,7 +112,10 @@ class MonthLayoutCalculator {
     }
 
     final weeks = <WeekLayout>[];
-    for (var weekIndex = 0; weekIndex < MonthLayout.fixedWeekCount; weekIndex++) {
+    final weekCount = fixedWeeks
+        ? MonthLayout.fixedWeekCount
+        : monthEnd.mondayOfWeek.differenceInDays(gridStart) ~/ 7 + 1;
+    for (var weekIndex = 0; weekIndex < weekCount; weekIndex++) {
       final weekStart = gridStart.addDays(weekIndex * 7);
       final lanes = List<List<bool>>.generate(
         maxLanes,
@@ -115,22 +125,34 @@ class MonthLayoutCalculator {
       final overflow = <CompanyDate, int>{};
 
       // 同一周内按起点、ID 排序，命中分配到首个可用车道。
-      final weekItems = itemList.where((item) {
-        final from = _maxDate(item.startDate, _maxDate(monthStart, weekStart));
-        final to = _minDate(item.endDate, _minDate(monthEnd, weekStart.addDays(6)));
-        return !to.isBefore(from);
-      }).toList()
-        ..sort((a, b) {
-          final aLeading = leadingIds.contains(a.id);
-          final bLeading = leadingIds.contains(b.id);
-          if (aLeading != bLeading) return aLeading ? -1 : 1;
-          final startCompare = a.startDate.compareTo(b.startDate);
-          return startCompare != 0 ? startCompare : a.id.compareTo(b.id);
-        });
+      final weekItems =
+          itemList.where((item) {
+            final from = _maxDate(
+              item.startDate,
+              _maxDate(monthStart, weekStart),
+            );
+            final to = _minDate(
+              item.endDate,
+              _minDate(monthEnd, weekStart.addDays(6)),
+            );
+            return !to.isBefore(from);
+          }).toList()..sort((a, b) {
+            final aLeading = leadingIds.contains(a.id);
+            final bLeading = leadingIds.contains(b.id);
+            if (aLeading != bLeading) return aLeading ? -1 : 1;
+            final startCompare = a.startDate.compareTo(b.startDate);
+            return startCompare != 0 ? startCompare : a.id.compareTo(b.id);
+          });
 
       for (final item in weekItems) {
-        final segmentStart = _maxDate(item.startDate, _maxDate(monthStart, weekStart));
-        final segmentEnd = _minDate(item.endDate, _minDate(monthEnd, weekStart.addDays(6)));
+        final segmentStart = _maxDate(
+          item.startDate,
+          _maxDate(monthStart, weekStart),
+        );
+        final segmentEnd = _minDate(
+          item.endDate,
+          _minDate(monthEnd, weekStart.addDays(6)),
+        );
         final startColumn = segmentStart.differenceInDays(weekStart);
         final endColumn = segmentEnd.differenceInDays(weekStart);
         var lane = -1;
@@ -151,7 +173,11 @@ class MonthLayoutCalculator {
           }
         }
         if (lane == -1) {
-          for (var day = segmentStart; !day.isAfter(segmentEnd); day = day.addDays(1)) {
+          for (
+            var day = segmentStart;
+            !day.isAfter(segmentEnd);
+            day = day.addDays(1)
+          ) {
             overflow[day] = (overflow[day] ?? 0) + 1;
           }
           continue;
@@ -176,7 +202,9 @@ class MonthLayoutCalculator {
       for (var column = 0; column < 7; column++) {
         final date = weekStart.addDays(column);
         final inMonth = !date.isBefore(monthStart) && !date.isAfter(monthEnd);
-        final covered = inMonth ? (coveredByDay[date] ?? const <DailyItem>[]) : const <DailyItem>[];
+        final covered = inMonth
+            ? (coveredByDay[date] ?? const <DailyItem>[])
+            : const <DailyItem>[];
         days.add(
           DayCellLayout(
             date: date,
@@ -194,7 +222,9 @@ class MonthLayoutCalculator {
     return MonthLayout(month: monthStart, weeks: weeks);
   }
 
-  static CompanyDate _maxDate(CompanyDate a, CompanyDate b) => a.isAfter(b) ? a : b;
+  static CompanyDate _maxDate(CompanyDate a, CompanyDate b) =>
+      a.isAfter(b) ? a : b;
 
-  static CompanyDate _minDate(CompanyDate a, CompanyDate b) => a.isBefore(b) ? a : b;
+  static CompanyDate _minDate(CompanyDate a, CompanyDate b) =>
+      a.isBefore(b) ? a : b;
 }

@@ -11,6 +11,8 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../home/presentation/home_providers.dart';
 import '../domain/daily_item.dart';
+import '../domain/month_layout.dart';
+import 'daily_items_calendar.dart';
 import 'daily_items_providers.dart';
 
 /// 新增每日事项：公司日期首尾包含、纯文本；失败保草稿。
@@ -20,13 +22,15 @@ class DailyItemCreatePage extends ConsumerStatefulWidget {
   final CompanyDate? initialDate;
 
   @override
-  ConsumerState<DailyItemCreatePage> createState() => _DailyItemCreatePageState();
+  ConsumerState<DailyItemCreatePage> createState() =>
+      _DailyItemCreatePageState();
 }
 
 class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
   final _formKey = GlobalKey<FormState>();
   final _bodyController = TextEditingController();
-  late CompanyDate _start = widget.initialDate ?? ref.read(workspaceClockProvider).businessDate;
+  late CompanyDate _start =
+      widget.initialDate ?? ref.read(workspaceClockProvider).businessDate;
   late CompanyDate _end = _start;
   bool _saving = false;
   bool _dirty = false;
@@ -45,7 +49,9 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
       _error = null;
     });
     try {
-      await ref.read(dailyItemsProvider.notifier).createItem(
+      await ref
+          .read(dailyItemsProvider.notifier)
+          .createItem(
             start: _start,
             end: _end,
             body: _bodyController.text.trim(),
@@ -80,8 +86,12 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
                 minLines: 4,
                 maxLines: 8,
                 maxLength: 2000,
-                decoration: const InputDecoration(labelText: '事项内容', alignLabelWithHint: true),
-                validator: (value) => (value ?? '').trim().isEmpty ? '请输入事项内容' : null,
+                decoration: const InputDecoration(
+                  labelText: '事项内容',
+                  alignLabelWithHint: true,
+                ),
+                validator: (value) =>
+                    (value ?? '').trim().isEmpty ? '请输入事项内容' : null,
               ),
               const SizedBox(height: 12),
               _DateRangeFields(
@@ -94,19 +104,21 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
                 }),
               ),
               const SizedBox(height: 12),
-              Text(
-                '起止日期都包含；跨天仍是同一条记录。',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: PandoraColors.muted),
-              ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: TextStyle(color: PandoraColors.overdue)),
               ],
               const SizedBox(height: 20),
               FilledButton(
-                onPressed: _saving || _bodyController.text.trim().isEmpty ? null : _save,
+                onPressed: _saving || _bodyController.text.trim().isEmpty
+                    ? null
+                    : _save,
                 child: _saving
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text('保存事项'),
               ),
             ],
@@ -118,7 +130,11 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
 }
 
 class _DateRangeFields extends StatelessWidget {
-  const _DateRangeFields({required this.start, required this.end, required this.onChanged});
+  const _DateRangeFields({
+    required this.start,
+    required this.end,
+    required this.onChanged,
+  });
 
   final CompanyDate start;
   final CompanyDate end;
@@ -173,7 +189,8 @@ class DailyItemDetailPage extends ConsumerStatefulWidget {
   final String itemId;
 
   @override
-  ConsumerState<DailyItemDetailPage> createState() => _DailyItemDetailPageState();
+  ConsumerState<DailyItemDetailPage> createState() =>
+      _DailyItemDetailPageState();
 }
 
 class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
@@ -238,7 +255,9 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
       _error = null;
     });
     try {
-      final updated = await ref.read(dailyItemsProvider.notifier).updateItem(
+      final updated = await ref
+          .read(dailyItemsProvider.notifier)
+          .updateItem(
             original: original,
             body: _bodyController.text.trim(),
             start: start,
@@ -266,7 +285,9 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
     final item = _item;
     if (item == null) return;
     try {
-      final updated = await ref.read(dailyItemsProvider.notifier).toggleCompleted(item);
+      final updated = await ref
+          .read(dailyItemsProvider.notifier)
+          .toggleCompleted(item);
       unawaited(ref.read(homeDataProvider.notifier).refresh());
       if (!mounted) return;
       setState(() => _item = updated);
@@ -285,9 +306,14 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
         title: const Text('删除这条事项？'),
         content: const Text('删除后无法恢复。'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: PandoraColors.overdue),
+            style: FilledButton.styleFrom(
+              backgroundColor: PandoraColors.overdue,
+            ),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('删除'),
           ),
@@ -326,31 +352,28 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
         child: _loading
             ? const LoadingView()
             : _loadError != null
-                ? ErrorView(error: _loadError!, onRetry: _load)
-                : item == null
-                    ? const EmptyView(message: '事项不存在或已删除')
-                    : _buildContent(item),
+            ? ErrorView(error: _loadError!, onRetry: _load)
+            : item == null
+            ? const EmptyView(message: '事项不存在或已删除')
+            : _buildContent(item),
       ),
     );
   }
 
   Widget _buildContent(DailyItem item) {
     if (!_editing) {
-      final color = item.isCompleted
-          ? PandoraColors.completed
-          : (item.isOverdue ? PandoraColors.overdue : PandoraColors.open);
+      final color = itemStateColor(visualStateOf(item));
       return ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Row(
             children: [
-              StatusBadge(label: item.stateLabel, color: color),
-              const Spacer(),
               Text(
                 item.startDate == item.endDate
                     ? item.startDate.iso
                     : '${item.startDate.iso} 至 ${item.endDate.iso}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: PandoraColors.muted),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: color),
               ),
             ],
           ),
@@ -378,7 +401,8 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
           const SizedBox(height: 18),
           Text(
             '创建于 ${item.createdAt == null ? '未知' : ref.read(workspaceClockProvider).zone.formatDateTime(item.createdAt!)}',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: PandoraColors.muted),
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: PandoraColors.muted),
           ),
         ],
       );
@@ -392,7 +416,10 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
           minLines: 4,
           maxLines: 8,
           maxLength: 2000,
-          decoration: const InputDecoration(labelText: '事项内容', alignLabelWithHint: true),
+          decoration: const InputDecoration(
+            labelText: '事项内容',
+            alignLabelWithHint: true,
+          ),
           onChanged: (_) => setState(() => _dirty = true),
         ),
         const SizedBox(height: 12),
@@ -413,7 +440,11 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
         FilledButton(
           onPressed: _saving ? null : _save,
           child: _saving
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Text('保存修改'),
         ),
         const SizedBox(height: 8),
@@ -421,13 +452,13 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
           onPressed: _saving
               ? null
               : () => setState(() {
-                    _editing = false;
-                    _dirty = false;
-                    _error = null;
-                    _bodyController.text = item.body;
-                    _start = item.startDate;
-                    _end = item.endDate;
-                  }),
+                  _editing = false;
+                  _dirty = false;
+                  _error = null;
+                  _bodyController.text = item.body;
+                  _start = item.startDate;
+                  _end = item.endDate;
+                }),
           child: const Text('取消编辑'),
         ),
       ],

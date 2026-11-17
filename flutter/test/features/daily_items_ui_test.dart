@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pandora_employee/core/company/company_date.dart';
+import 'package:pandora_employee/features/daily_items/presentation/daily_items_providers.dart';
 import 'package:pandora_employee/features/daily_items/presentation/daily_items_day_page.dart';
 
 import '../support/test_harness.dart';
@@ -38,11 +39,15 @@ void main() {
         'updatedAt': '2026-11-10T02:00:00Z',
       },
     ];
-    backend.on('GET', '/home', (request) async => FakeResponse({
-          'companyItems': [],
-          'assignedTasks': [],
-          'businessDate': '2026-11-10',
-        }));
+    backend.on(
+      'GET',
+      '/home',
+      (request) async => FakeResponse({
+        'companyItems': [],
+        'assignedTasks': [],
+        'businessDate': '2026-11-10',
+      }),
+    );
     backend.on('GET', '/daily-items', (request) async {
       return FakeResponse({
         'from': '2026-11-01',
@@ -61,7 +66,9 @@ void main() {
       final item = items.firstWhere((item) => item['id'] == id);
       return FakeResponse(item, etag: '"${item['rowVersion']}"');
     });
-    backend.onPattern('PATCH', RegExp(r'^/daily-items/[^/]+$'), (request) async {
+    backend.onPattern('PATCH', RegExp(r'^/daily-items/[^/]+$'), (
+      request,
+    ) async {
       final id = request.path.split('/').last;
       final index = items.indexWhere((item) => item['id'] == id);
       final updated = Map<String, Object?>.from(items[index]);
@@ -72,10 +79,16 @@ void main() {
       return FakeResponse(updated, etag: '"3"');
     });
 
-    final container = buildTestContainer(backend: backend, user: employeeUser());
+    final container = buildTestContainer(
+      backend: backend,
+      user: employeeUser(),
+    );
     addTearDown(container.dispose);
     await tester.pumpWidget(
-      wrapWithScope(container, DailyItemsDayPage(date: const CompanyDate(2026, 11, 10))),
+      wrapWithScope(
+        container,
+        DailyItemsDayPage(date: const CompanyDate(2026, 11, 10)),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -83,8 +96,9 @@ void main() {
     expect(find.text('跨日事项：跟完第一幕'), findsOneWidget);
     expect(find.text('已完成事项'), findsOneWidget);
     expect(find.byType(Checkbox), findsNWidgets(2));
-    expect(find.text('未完成'), findsOneWidget);
-    expect(find.text('已完成'), findsOneWidget);
+    expect(find.text('未完成'), findsNothing);
+    expect(find.bySemanticsLabel(RegExp(r'^未完成')), findsOneWidget);
+    expect(find.text('已完成'), findsNothing);
 
     await tester.tap(find.byType(Checkbox).first);
     await tester.pumpAndSettle();
@@ -96,7 +110,65 @@ void main() {
     expect(patches.single.headers['Idempotency-Key'], isNotNull);
     // 完成状态变化后同源刷新，两处状态都不再显示未完成。
     expect(find.text('未完成'), findsNothing);
-    expect(find.text('已完成'), findsNWidgets(2));
+    expect(find.bySemanticsLabel(RegExp(r'^已完成')), findsNWidgets(2));
+  });
+
+  testWidgets('超过100条按月读完全部页，跨月按ID去重，含完成记录及末条均可达', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final items = [
+      for (var i = 0; i < 105; i++)
+        {
+          'id': 'item-${i.toString().padLeft(3, '0')}',
+          'body': '事项$i',
+          'startDate': '2026-11-10',
+          'endDate': '2026-12-01',
+          'completed': i.isEven,
+          'status': i.isEven ? 'completed' : 'open',
+          'createdAt': '2026-11-09T02:00:00Z',
+          'rowVersion': 1,
+        },
+    ];
+    final backend = FakeBackend();
+    backend.on('GET', '/daily-items', (request) {
+      final offset = request.query['offset'] as int;
+      final limit = request.query['limit'] as int;
+      return FakeResponse({
+        'items': items.skip(offset).take(limit).toList(),
+        'total': items.length,
+        'nextOffset': offset + limit < items.length ? offset + limit : null,
+      });
+    });
+    final container = buildTestContainer(
+      backend: backend,
+      user: employeeUser(),
+      accountEpoch: () => 1,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      wrapWithScope(
+        container,
+        const DailyItemsDayPage(date: CompanyDate(2026, 11, 10)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('共 105 项'), findsOneWidget);
+    expect(backend.requestsFor('GET', '/daily-items'), hasLength(3));
+    final load = container.read(dailyItemsProvider.notifier).ensureMonths([
+      const CompanyDate(2026, 12, 1),
+    ]);
+    await tester.pumpAndSettle();
+    await load;
+    expect(container.read(dailyItemsProvider).items, hasLength(105));
+    expect(backend.requestsFor('GET', '/daily-items'), hasLength(6));
+    await tester.scrollUntilVisible(
+      find.text('事项104'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('事项104').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('320 逻辑宽度与长文本仍可读且不溢出', (tester) async {
@@ -105,31 +177,42 @@ void main() {
     addTearDown(tester.view.reset);
 
     final backend = FakeBackend();
-    backend.on('GET', '/daily-items', (request) async => FakeResponse({
-          'items': [
-            {
-              'id': 'n1',
-              'startDate': '2026-11-09',
-              'endDate': '2026-11-11',
-              'body': '一个非常长的事项名称用于检查窄屏换行与状态徽标不会挤压到屏幕之外',
-              'completed': false,
-              'status': 'overdue',
-              'rowVersion': 1,
-              'createdAt': '2026-11-09T02:00:00Z',
-            },
-          ],
-          'total': 1,
-          'nextOffset': null,
-          'businessDate': '2026-11-10',
-        }));
-    final container = buildTestContainer(backend: backend, user: employeeUser());
+    backend.on(
+      'GET',
+      '/daily-items',
+      (request) async => FakeResponse({
+        'items': [
+          {
+            'id': 'n1',
+            'startDate': '2026-11-09',
+            'endDate': '2026-11-11',
+            'body': '一个非常长的事项名称用于检查窄屏换行与状态徽标不会挤压到屏幕之外',
+            'completed': false,
+            'status': 'overdue',
+            'rowVersion': 1,
+            'createdAt': '2026-11-09T02:00:00Z',
+          },
+        ],
+        'total': 1,
+        'nextOffset': null,
+        'businessDate': '2026-11-10',
+      }),
+    );
+    final container = buildTestContainer(
+      backend: backend,
+      user: employeeUser(),
+    );
     addTearDown(container.dispose);
     await tester.pumpWidget(
-      wrapWithScope(container, DailyItemsDayPage(date: const CompanyDate(2026, 11, 10))),
+      wrapWithScope(
+        container,
+        DailyItemsDayPage(date: const CompanyDate(2026, 11, 10)),
+      ),
     );
     await tester.pumpAndSettle();
     expect(find.textContaining('非常长的事项名称'), findsOneWidget);
-    expect(find.text('已逾期'), findsOneWidget);
+    expect(find.text('已逾期'), findsNothing);
+    expect(find.bySemanticsLabel(RegExp(r'^已逾期')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -139,14 +222,22 @@ void main() {
     addTearDown(tester.view.reset);
 
     final backend = FakeBackend();
-    backend.on('GET', '/daily-items', (request) async => FakeResponse(
-          {'code': 'SERVER', 'message': '服务暂时不可用'},
-          status: 503,
-        ));
-    final container = buildTestContainer(backend: backend, user: employeeUser());
+    backend.on(
+      'GET',
+      '/daily-items',
+      (request) async =>
+          FakeResponse({'code': 'SERVER', 'message': '服务暂时不可用'}, status: 503),
+    );
+    final container = buildTestContainer(
+      backend: backend,
+      user: employeeUser(),
+    );
     addTearDown(container.dispose);
     await tester.pumpWidget(
-      wrapWithScope(container, DailyItemsDayPage(date: const CompanyDate(2026, 11, 10))),
+      wrapWithScope(
+        container,
+        DailyItemsDayPage(date: const CompanyDate(2026, 11, 10)),
+      ),
     );
     await tester.pumpAndSettle();
 
