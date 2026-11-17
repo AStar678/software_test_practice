@@ -32,12 +32,12 @@ module.exports = async function checkDailyItemsRefresh(b, fixture, check, eviden
       const r=s.getBoundingClientRect(),nav=document.getElementById('tabbar').getBoundingClientRect();
       const top=Math.max(r.top,0),bottom=Math.min(r.bottom,nav.top,innerHeight);
       return {x:Math.round(r.left+r.width/2),y:Math.round((top+bottom)/2),onScreen:bottom-top>60}})()`);
-    if (!box.onScreen) return { left: await ev("document.getElementById('dailyScroller').scrollLeft"),
+    if (!box.onScreen) return { top: await ev("document.getElementById('dailyScroller').scrollTop"),
       open: await ev("!document.getElementById('overlay').hidden"), onScreen: false };
-    await b.send('Input.synthesizeScrollGesture', { x: box.x, y: box.y, xDistance: -distance, yDistance: 0,
+    await b.send('Input.synthesizeScrollGesture', { x: box.x, y: box.y, xDistance: 0, yDistance: -distance,
       speed: 900, gestureSourceType: 'touch', repeatCount: 1 });
     await sleep(400);
-    return ev("(()=>{const s=document.getElementById('dailyScroller');return {left:s.scrollLeft,open:!document.getElementById('overlay').hidden}})()");
+    return ev("(()=>{const s=document.getElementById('dailyScroller');return {top:s.scrollTop,open:!document.getElementById('overlay').hidden}})()");
   }
 
   const rows = [];
@@ -53,25 +53,25 @@ module.exports = async function checkDailyItemsRefresh(b, fixture, check, eviden
     const initial = await ev(`(()=>{const s=document.getElementById('dailyScroller'),r=s.getBoundingClientRect();
       const months=Array.from(s.querySelectorAll('.daily-month')).map(el=>el.dataset.month);
       const today=document.querySelector('[data-daily-date="${fixture.today}"]'),box=today?today.getBoundingClientRect():null;
-      return {months:months,clientWidth:s.clientWidth,scrollWidth:s.scrollWidth,scrollLeft:Math.round(s.scrollLeft),
-        maxLeft:Math.max(0,s.scrollWidth-s.clientWidth),
-        todayVisible:!!box&&box.left>=r.left-1&&box.right<=r.right+1}})()`);
+      return {months:months,clientHeight:s.clientHeight,scrollHeight:s.scrollHeight,scrollTop:Math.round(s.scrollTop),
+        maxTop:Math.max(0,s.scrollHeight-s.clientHeight),
+        todayVisible:!!box&&box.top>=r.top-1&&box.bottom<=r.bottom+1}})()`);
     const forward = await swipe(220);
     const backward = await swipe(-220);
     rows.push({ viewport: size.width + 'x' + size.height, ready,
       initial,
-      canSlideBack: initial.scrollLeft > 1,
-      canSlideForward: initial.maxLeft - initial.scrollLeft > 1,
+      canSlideBack: initial.scrollTop > 1,
+      canSlideForward: initial.maxTop - initial.scrollTop > 1,
       forward, backward,
-      movedForward: forward.left > initial.scrollLeft + 40,
-      movedBackward: backward.left < forward.left - 40 });
+      movedForward: forward.top > initial.scrollTop + 40,
+      movedBackward: backward.top < forward.top - 40 });
   }
   evidence('refresh-after-reload', rows);
 
   for (const row of rows) {
-    check(`after a preserved-session refresh at ${row.viewport} the calendar already has scroll range in both directions`,
+    check(`after a preserved-session refresh at ${row.viewport} the vertical calendar already has scroll range in both directions`,
       row.ready && row.canSlideBack && row.canSlideForward, row);
-    check(`a real horizontal gesture at ${row.viewport} browses forward and back without opening a day list`,
+    check(`a real vertical gesture at ${row.viewport} browses forward and back without opening a day list`,
       row.movedForward && row.movedBackward && !row.forward.open && !row.backward.open, row);
   }
 
@@ -81,9 +81,9 @@ module.exports = async function checkDailyItemsRefresh(b, fixture, check, eviden
   const returns = [];
   const facts = () => ev(`(()=>{const s=document.getElementById('dailyScroller'),r=s.getBoundingClientRect();
     const state=PandoraDaily.state;
-    return {anchor:state.anchor,date:state.anchorDate,offset:state.anchorOffset,months:state.blocks.length,
+    return {anchor:state.anchorDate?state.anchorDate.slice(0,7):null,date:state.anchorDate,offset:state.anchorOffset,months:state.months.length,
       visible:Array.from(s.querySelectorAll('[data-daily-date]')).filter(c=>{const x=c.getBoundingClientRect();
-        return x.left>=r.left-1&&x.right<=r.right+1}).map(c=>c.dataset.dailyDate)}})()`);
+        return x.top>=r.top-1&&x.bottom<=r.bottom+1}).map(c=>c.dataset.dailyDate)}})()`);
   async function mouse(action) {
     const point = await ev(`(()=>{const r=document.querySelector('[data-action="${action}"]').getBoundingClientRect();
       return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);

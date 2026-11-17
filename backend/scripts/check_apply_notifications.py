@@ -231,6 +231,7 @@ def main():
             manifest = {
                 'base': f'http://127.0.0.1:{fixture.port}',
                 'employee': f.identities['alpha-one-employee']['identifier'],
+                'head': f.identities['alpha-one-head']['identifier'],
                 'resultTaskId': result_task,
                 'resultTitle': '通知详情对象',
                 'resultNoticeId': applicant_result['id'],

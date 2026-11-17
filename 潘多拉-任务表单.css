@@ -163,3 +163,24 @@
   .p-task-table-card #p-table-filter-error{position:absolute;z-index:13;left:8px;right:8px;bottom:44px;max-height:80px;margin:0;overflow:auto;font-size:14px}
 }
 @media(prefers-reduced-motion:reduce){.p-table-scroll{scroll-behavior:auto}}
+
+/* ---------- 表单置顶行：整行统一淡玻璃蓝，名称列与横向数据列一致 ---------- */
+/* tablePinned 只影响呈现：置顶行不使用偶数行斑马纹，悬停与激活态仍保持可辨蓝底；
+   名称列是 sticky th，与数据单元格共用同一底色，横向滚动时不出现色差。
+   在表内不再显示“表单置顶”标签，详情按钮与两种置顶的独立语义不变。 */
+.p-task-table tbody tr.is-table-pinned>th,
+.p-task-table tbody tr.is-table-pinned>td{
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(241,247,255,.72) 55%,rgba(226,238,252,.62)),
+    rgba(186,214,245,.34);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+.p-task-table tbody tr.is-table-pinned>th{
+  box-shadow:1px 0 0 var(--line),inset 0 1px 0 rgba(255,255,255,.9)}
+.p-task-table tbody tr.is-table-pinned:hover>th,
+.p-task-table tbody tr.is-table-pinned:hover>td,
+.p-task-table tbody tr.is-table-pinned.is-active-row>th,
+.p-task-table tbody tr.is-table-pinned.is-active-row>td{
+  background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(236,245,255,.8) 55%,rgba(216,233,251,.72)),
+    rgba(172,206,243,.44)}
+.p-task-table tbody tr.is-table-pinned:hover>th,
+.p-task-table tbody tr.is-table-pinned.is-active-row>th{
+  box-shadow:1px 0 0 var(--line),inset 0 1px 0 rgba(255,255,255,.92),inset 0 0 0 1px rgba(120,160,214,.28)}

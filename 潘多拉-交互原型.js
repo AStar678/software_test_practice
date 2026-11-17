@@ -576,23 +576,23 @@ function renderMap(){
   function companyBody(){
     if (!COMPANY_ITEMS.length) return '<div class="empty">暂无公司信息</div>';
     return COMPANY_ITEMS.map(function(it, i){
-      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt">' + esc(it.text) + "</span></div></div>";
+      return '<div class="item-line"><div class="item-main"><span class="idx">' + (i + 1) + '</span><span class="txt home-copy">' + esc(it.text) + "</span></div></div>";
     }).join("");
   }
   function assignedBody(){
     if (!assigned.length) return '<div class="empty">暂无本人负责的未完成任务</div>';
     return assigned.map(function(t){
-      return '<button type="button" class="home-task" data-task="' + t.id + '"><span class="home-task-title">' + esc(t.title) +
+      return '<button type="button" class="home-task" data-task="' + t.id + '"><span class="home-task-title home-copy">' + esc(t.title) +
         '</span><span class="home-task-priority">' + esc(t.urgency || "中") + "</span></button>";
     }).join("");
   }
   el.innerHTML =
     '<div class="map-grid">' +
       '<section class="quad company-quad" aria-labelledby="q1">' +
-        '<div class="card-head"><h2 id="q1">事件纪</h2><span class="hint">统一发布</span></div>' +
+        '<div class="card-head"><h2 id="q1">事件纪</h2></div>' +
         '<div class="q-body" tabindex="0" role="region" aria-labelledby="q1">' + companyBody() + "</div></section>" +
       '<section class="quad tasks-quad" aria-labelledby="q2">' +
-        '<div class="card-head"><h2 id="q2">任务看板</h2><span class="hint">' + assigned.length + "/10</span></div>" +
+        '<div class="card-head"><h2 id="q2">任务看板</h2></div>' +
         '<div class="q-body" tabindex="0" role="region" aria-labelledby="q2">' + assignedBody() + "</div></section>" +
       '<section class="quad daily-quad" id="dailyItemsSection" aria-labelledby="q3">' +
         '<div class="card-head"><h2 id="q3">每日事项</h2><span class="hint">本人维护</span></div></section>' +
@@ -1392,6 +1392,7 @@ function renderSheet(){
   const sheet = document.getElementById("sheet");
   if (!sheetStack.length){
     sheet.classList.remove("is-fullscreen");
+    sheet.classList.remove("is-notice-list");
     overlayEl.hidden = true;
     document.querySelector(".app").inert = false;
     document.getElementById("sheetFoot").hidden = false;
@@ -1403,6 +1404,9 @@ function renderSheet(){
   document.getElementById("sheetClose").hidden = !!view.notification;
   document.getElementById("sheetBack").hidden = !view.notification;
   sheet.classList.toggle("is-fullscreen", !!view.fullscreen);
+  /* 通知列表按当前视口固定为最大可用高度；返回、关闭或换成其他弹层时立即撤销，
+     避免把资料、表单和详情一起撑高。 */
+  sheet.classList.toggle("is-notice-list", !!view.noticeList);
   sheetTitleEl.textContent = view.title;
   sheetBodyEl.innerHTML = view.body;
   sheetFootEl.innerHTML = view.foot || "";
@@ -1425,6 +1429,11 @@ function openSheet(view){
     view = { ...view, notification: true };
   }
   if (sheetStack.some(item => item.subordinate)) view = { ...view, subordinate: true };
+  /* 任何已有一层的二级界面都必须能逐层返回：视图在构造时只看到当前栈，
+     因此这里在压栈前补一个返回入口，而不是要求每个调用方自行判断。 */
+  if (sheetStack.length && view.foot && view.foot.indexOf('data-action="sheet-back"') === -1) {
+    view = { ...view, foot: '<button type="button" class="btn" data-action="sheet-back">返回</button>' + view.foot };
+  }
   const current = sheetStack[sheetStack.length - 1];
   if (current) {
     current.savedScroll = sheetBodyEl.scrollTop;

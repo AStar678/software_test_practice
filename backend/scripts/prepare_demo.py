@@ -2,7 +2,7 @@
 """Prepare only an explicitly selected, marker-guarded demo database. Never clears data.
 
 First run on an empty database:
-  python3 backend/scripts/prepare_demo.py --database pandora_demo --demo-marker local-web-v2 --initialize
+  python3 backend/scripts/prepare_demo.py --database pandora_demo --demo-marker local-web-v3 --initialize
 Repeat without --initialize. The marker and manifest version must match on every run.
 The command owns a short-lived packaged service; it does not touch the normal application process.
 """
@@ -59,7 +59,8 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
             raise ValueError('Target has existing data but no demo identity; refusing preparation')
         identity=db.rows('SELECT database_name,marker,manifest_version FROM demo_database_identity WHERE singleton=1')
         if identity:
-            if identity[0]!=[database,marker,'2']:raise ValueError('Target demo identity does not match')
+            if identity[0]!=[database,marker,'3']:
+                raise ValueError('Target demo identity or manifest version does not match v3; use an explicit new empty demo database instead of silently upgrading old data')
             already_prepared=bool(db.scalar('SELECT COUNT(*) FROM demo_database_identity WHERE prepared_at IS NOT NULL'))
         elif not initialize or ('organizations' in present and db.scalar('SELECT COUNT(*) FROM organizations')):
             raise ValueError('An empty target and --initialize are required for first preparation')
@@ -91,7 +92,7 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
         # Only a new seed needs delivery. Repeated preparation must also work after the real
         # administrator has changed their name/password; never reset credentials to drain events.
         if not already_prepared:
-            data=json.dumps({'accountType':'admin','accountName':'admin','password':env.get('PANDORA_DEMO_PASSWORD','Demo@123456')}).encode()
+            data=json.dumps({'accountType':'admin','accountName':'admin','password':env.get('PANDORA_DEMO_PASSWORD','111')}).encode()
             with urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{port}/api/v1/auth/sessions',data=data,headers={'Content-Type':'application/json'})) as response:
                 token=json.load(response)['token']
             for _ in range(10):
@@ -101,7 +102,7 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
         result=manifest(db)
         if output:
             output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n');output.chmod(0o600)
-        print(json.dumps({'database':database,'manifestVersion':2,'businessDate':result['businessDate'],'counts':result['counts']},ensure_ascii=False))
+        print(json.dumps({'database':database,'manifestVersion':3,'businessDate':result['businessDate'],'counts':result['counts']},ensure_ascii=False))
         return result
     finally:
         if process and process.poll() is None:
