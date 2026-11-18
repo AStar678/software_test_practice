@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/company/company_date.dart';
+import '../../../core/company/date_picker_bounds.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
@@ -145,12 +146,17 @@ class _DateRangeFields extends StatelessWidget {
   final void Function(CompanyDate start, CompanyDate end) onChanged;
 
   Future<void> _pick(BuildContext context, {required bool isStart}) async {
+    final startDay = DateTime(start.year, start.month, start.day);
     final initial = isStart ? start : end;
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(initial.year, initial.month, initial.day),
+      initialDate: DatePickerBounds.clampInitial(
+        DateTime(initial.year, initial.month, initial.day),
+        startDay,
+      )!,
       firstDate: DateTime(2020, 1, 1),
       lastDate: DateTime(2040, 12, 31),
+      selectableDayPredicate: isStart ? null : (day) => DatePickerBounds.endOnOrAfter(day, startDay),
       helpText: isStart ? '选择开始日期' : '选择结束日期',
       cancelText: '取消',
       confirmText: '确定',
@@ -160,7 +166,7 @@ class _DateRangeFields extends StatelessWidget {
     if (isStart) {
       onChanged(date, date.isAfter(end) ? date : end);
     } else {
-      onChanged(date.isBefore(start) ? date : start, date);
+      onChanged(start, date);
     }
   }
 

@@ -49,3 +49,5 @@ app.*.map.json
 
 # Gradle user home used for local builds
 .gradle/
+
+.vscode

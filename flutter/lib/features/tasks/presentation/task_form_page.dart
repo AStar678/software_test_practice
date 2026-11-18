@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/company/company_date.dart';
 import '../../../core/company/company_time.dart';
+import '../../../core/company/date_picker_bounds.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
@@ -526,13 +527,17 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     final minimum = _isCreate
         ? DateTime(businessDate.year, businessDate.month, businessDate.day)
         : DateTime(2020, 1, 1);
+    final startDate = _startAt == null ? null : _zone.dateOf(_startAt!);
+    final startDay = startDate == null ? null : DateTime(startDate.year, startDate.month, startDate.day);
     final candidate = current ?? DateTime.now();
-    final initial = candidate.isBefore(minimum) ? minimum : candidate;
+    final minimumForPick = !isStart && startDay != null && startDay.isAfter(minimum) ? startDay : minimum;
+    final initial = candidate.isBefore(minimumForPick) ? minimumForPick : candidate;
     final date = await showDatePicker(
       context: context,
       initialDate: initial,
       firstDate: minimum,
       lastDate: DateTime(2040, 12, 31),
+      selectableDayPredicate: isStart ? null : (day) => DatePickerBounds.endOnOrAfter(day, startDay),
       cancelText: '取消',
       confirmText: '确定',
     );
@@ -549,13 +554,16 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       hour: time.hour,
       minute: time.minute,
     );
+    if (!isStart && _startAt != null && value.isBefore(_startAt!)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('结束时间不能早于开始时间')));
+      return;
+    }
     setState(() {
       if (isStart) {
         _startAt = value;
         if (_dueAt != null && _dueAt!.isBefore(value)) _dueAt = value;
       } else {
         _dueAt = value;
-        if (_startAt != null && value.isBefore(_startAt!)) _startAt = value;
       }
       _dirty = true;
     });
@@ -568,12 +576,18 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     final minimum = _isCreate
         ? DateTime(businessDate.year, businessDate.month, businessDate.day)
         : DateTime(2020, 1, 1);
+    final startDay = isStart || _allDayStart == null
+        ? null
+        : DateTime(_allDayStart!.year, _allDayStart!.month, _allDayStart!.day);
+    final minimumForPick = !isStart && startDay != null && startDay.isAfter(minimum) ? startDay : minimum;
     final initialDate = DateTime(initial.year, initial.month, initial.day);
+    final selectedInitial = initialDate.isBefore(minimumForPick) ? minimumForPick : initialDate;
     final picked = await showDatePicker(
       context: context,
-      initialDate: initialDate.isBefore(minimum) ? minimum : initialDate,
+      initialDate: selectedInitial,
       firstDate: minimum,
       lastDate: DateTime(2040, 12, 31),
+      selectableDayPredicate: isStart ? null : (day) => DatePickerBounds.endOnOrAfter(day, startDay),
       cancelText: '取消',
       confirmText: '确定',
     );

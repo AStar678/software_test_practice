@@ -256,13 +256,20 @@ void main() {
     expect(find.text('未保存日志正文'), findsOneWidget);
   });
 
-  testWidgets('日志详情可确认删除并调用删除端点', (tester) async {
+  testWidgets('已冻结日志显示已不能编辑且不提供编辑删除入口', (tester) async {
     final backend = FakeBackend();
+    backend.on('GET', '/work-logs', (request) async => FakeResponse({
+          'items': [logJson('log1', '2026-11-10', editable: false, frozen: true)],
+          'total': 1,
+          'nextOffset': null,
+        }));
     backend.on(
       'GET',
       '/work-logs/log1',
-      (request) async =>
-          FakeResponse(logJson('log1', '2026-11-10'), etag: '"1"'),
+      (request) async => FakeResponse(
+        logJson('log1', '2026-11-10', editable: false, frozen: true),
+        etag: '"1"',
+      ),
     );
     backend.on(
       'GET',
@@ -274,11 +281,6 @@ void main() {
         'nextCursor': null,
       }),
     );
-    backend.on(
-      'DELETE',
-      '/work-logs/log1',
-      (request) async => FakeResponse({'deleted': true}),
-    );
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
@@ -288,15 +290,20 @@ void main() {
       user: employeeUser(),
     );
     addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      wrapWithScope(container, const WorkLogsPage()),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('已冻结（已不能编辑）'), findsOneWidget);
+
     await tester.pumpWidget(
       wrapWithScope(container, const WorkLogDetailPage(logId: 'log1')),
     );
     await tester.pumpAndSettle();
-
-    await tester.tap(find.byTooltip('删除日志'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, '删除'));
-    await tester.pumpAndSettle();
-    expect(backend.requestsFor('DELETE', '/work-logs/log1'), hasLength(1));
+    expect(find.text('已冻结（已不能编辑）'), findsOneWidget);
+    expect(find.byTooltip('编辑日志'), findsNothing);
+    expect(find.byTooltip('删除日志'), findsNothing);
+    expect(backend.requestsFor('DELETE', '/work-logs/log1'), isEmpty);
   });
 }
