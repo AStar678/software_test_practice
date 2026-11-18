@@ -9,40 +9,40 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../support/test_harness.dart';
 
 Map<String, Object?> tableTask(int index, {bool canPin = true}) => {
-      'id': 't$index',
-      'taskId': 't$index',
-      'title': '任务 ${index.toString().padLeft(3, '0')}',
-      'description': '说明 $index',
-      'acceptanceCriteria': index.isEven ? '' : '历史标准 $index',
-      'priority': index % 2 == 0 ? 'urgent' : 'medium',
-      'allDay': false,
-      'startAt': '2026-11-10T02:00:00Z',
-      'dueAt': '2026-11-11T10:00:00Z',
-      'executionState': index % 3 == 0 ? 'done' : 'todo',
-      'status': 'applied',
-      'assigneeIds': ['u1'],
-      'rowVersion': 1,
-      'published': true,
-      'pending': false,
-      'frozen': false,
-      'canReschedule': true,
-      'canPin': true,
-      'canTablePin': canPin,
-      'tablePinned': false,
-      'pinned': false,
-      'editableFields': ['title'],
-      'originalCreatorId': 'u1',
-      'createdAt': '2026-11-01T02:00:00Z',
-      'executionRound': 1,
-      'progressNote': index % 4 == 0 ? '进展 $index' : '',
-      'parentTaskId': index == 2 ? 'parent-1' : null,
-      'tags': [
-        {'id': 'tag1', 'name': '标签一'},
-      ],
-      'participants': [
-        {'id': 'u1', 'displayName': '亚里士多德'},
-      ],
-    };
+  'id': 't$index',
+  'taskId': 't$index',
+  'title': '任务 ${index.toString().padLeft(3, '0')}',
+  'description': '说明 $index',
+  'acceptanceCriteria': index.isEven ? '' : '历史标准 $index',
+  'priority': index % 2 == 0 ? 'urgent' : 'medium',
+  'allDay': false,
+  'startAt': '2026-11-10T02:00:00Z',
+  'dueAt': '2026-11-11T10:00:00Z',
+  'executionState': index % 3 == 0 ? 'done' : 'todo',
+  'status': 'applied',
+  'assigneeIds': ['u1'],
+  'rowVersion': 1,
+  'published': true,
+  'pending': false,
+  'frozen': false,
+  'canReschedule': true,
+  'canPin': true,
+  'canTablePin': canPin,
+  'tablePinned': false,
+  'pinned': false,
+  'editableFields': ['title'],
+  'originalCreatorId': 'u1',
+  'createdAt': '2026-11-01T02:00:00Z',
+  'executionRound': 1,
+  'progressNote': index % 4 == 0 ? '进展 $index' : '',
+  'parentTaskId': index == 2 ? 'parent-1' : null,
+  'tags': [
+    {'id': 'tag1', 'name': '标签一'},
+  ],
+  'participants': [
+    {'id': 'u1', 'displayName': '亚里士多德'},
+  ],
+};
 
 FakeBackend tableBackend({int total = 120, bool canPin = true}) {
   final backend = FakeBackend();
@@ -51,16 +51,31 @@ FakeBackend tableBackend({int total = 120, bool canPin = true}) {
     final limit = int.tryParse(request.query['limit']?.toString() ?? '') ?? 50;
     final end = (offset + limit).clamp(0, total);
     return FakeResponse({
-      'items': [for (var index = offset; index < end; index++) tableTask(index, canPin: canPin)],
+      'items': [
+        for (var index = offset; index < end; index++)
+          tableTask(index, canPin: canPin),
+      ],
       'total': total,
       'limit': limit,
       'offset': offset,
       'nextOffset': end < total ? end : null,
     });
   });
-  backend.onPattern('PATCH', RegExp(r'^/tasks/[^/]+/table-pin$'), (request) async => FakeResponse({'ok': true}));
-  backend.onPattern('PUT', RegExp(r'^/tasks/[^/]+/table-pin$'), (request) async => FakeResponse({'ok': true}));
-  backend.onPattern('DELETE', RegExp(r'^/tasks/[^/]+/table-pin$'), (request) async => FakeResponse({'ok': true}));
+  backend.onPattern(
+    'PATCH',
+    RegExp(r'^/tasks/[^/]+/table-pin$'),
+    (request) async => FakeResponse({'ok': true}),
+  );
+  backend.onPattern(
+    'PUT',
+    RegExp(r'^/tasks/[^/]+/table-pin$'),
+    (request) async => FakeResponse({'ok': true}),
+  );
+  backend.onPattern(
+    'DELETE',
+    RegExp(r'^/tasks/[^/]+/table-pin$'),
+    (request) async => FakeResponse({'ok': true}),
+  );
   return backend;
 }
 
@@ -97,45 +112,42 @@ void main() {
     expect(backend.requestsFor('GET', '/tasks/table').last.query['offset'], 0);
     expect(find.text('第 1 / 3 页'), findsOneWidget);
     expect(find.text('任务 050'), findsNothing);
-    expect(backend.requestsFor('GET', '/tasks'), isEmpty, reason: '表单置顶不得刷新或覆盖日历任务缓存');
+    expect(
+      backend.requestsFor('GET', '/tasks'),
+      isEmpty,
+      reason: '表单置顶不得刷新或覆盖日历任务缓存',
+    );
   });
 
-  testWidgets('列组切换保留固定标题与表头，并显示全部字段', (tester) async {
+  testWidgets('筛选集中在单一按钮，表头保持核心字段', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final backend = tableBackend(total: 3);
     await pumpTable(tester, backend);
 
     expect(find.text('任务'), findsOneWidget);
-    expect(find.text('关系'), findsWidgets);
-    expect(find.text('历史标准'), findsNothing);
+    expect(find.text('筛选'), findsOneWidget);
+    expect(find.text('负责人'), findsOneWidget);
+    expect(find.text('状态'), findsOneWidget);
+    expect(find.text('排期'), findsOneWidget);
 
-    await tester.tap(find.text('概览'));
+    await tester.tap(find.widgetWithText(FilledButton, '筛选'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('全部列').last);
-    await tester.pumpAndSettle();
-
-    expect(find.text('任务'), findsOneWidget);
-    expect(find.text('历史标准'), findsOneWidget);
-    expect(find.text('轮次'), findsOneWidget);
-    expect(find.text('创建时间'), findsOneWidget);
-    expect(find.text('置顶'), findsOneWidget);
+    expect(find.text('关系'), findsOneWidget);
+    expect(find.text('完成状态'), findsOneWidget);
+    expect(find.text('日期从：不限'), findsOneWidget);
+    expect(find.text('应用筛选'), findsOneWidget);
   });
 
-  testWidgets('横向滚动保持标题列，纵向滚动保持表头', (tester) async {
+  testWidgets('整行作为一个整体纵向滑动，表头保持固定', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final backend = tableBackend(total: 20);
     await pumpTable(tester, backend);
 
-    final titleBefore = tester.getTopLeft(find.text('任务 000'));
     final headerBefore = tester.getTopLeft(find.text('任务'));
-    await tester.drag(find.byKey(const ValueKey('task-table-body-scroll')), const Offset(-180, 0));
-    await tester.pumpAndSettle();
-    final titleAfter = tester.getTopLeft(find.text('任务 000'));
-    final headerAfter = tester.getTopLeft(find.text('任务'));
-    expect(titleAfter.dx, titleBefore.dx);
-    expect(headerAfter.dx, headerBefore.dx);
-
-    await tester.drag(find.byKey(const ValueKey('task-table-right-list')), const Offset(0, -220));
+    await tester.drag(
+      find.byKey(const ValueKey('task-table-list')),
+      const Offset(0, -220),
+    );
     await tester.pumpAndSettle();
     final headerScrolled = tester.getTopLeft(find.text('任务'));
     expect(headerScrolled.dy, headerBefore.dy);
@@ -171,7 +183,7 @@ void main() {
     expect(request.query['from'], isNull);
     expect(request.query['offset'], 50);
     expect(find.text('第 2 / 3 页'), findsOneWidget);
-    expect(find.text('历史标准'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '筛选'), findsOneWidget);
   });
 
   testWidgets('无表单置顶权限的任务不显示可写按钮', (tester) async {
@@ -181,9 +193,19 @@ void main() {
 
     expect(find.byTooltip('置顶到表单'), findsOneWidget);
     final pin = tester.widget<IconButton>(
-      find.ancestor(of: find.byTooltip('置顶到表单').first, matching: find.byType(IconButton)).first,
+      find
+          .ancestor(
+            of: find.byTooltip('置顶到表单').first,
+            matching: find.byType(IconButton),
+          )
+          .first,
     );
     expect(pin.onPressed, isNull);
-    expect(backend.requests.where((request) => request.method == 'PUT' || request.method == 'PATCH'), isEmpty);
+    expect(
+      backend.requests.where(
+        (request) => request.method == 'PUT' || request.method == 'PATCH',
+      ),
+      isEmpty,
+    );
   });
 }

@@ -42,10 +42,17 @@ class _TagManagePageState extends ConsumerState<TagManagePage> {
     try {
       final tags = await ref.read(tagsApiProvider).list();
       if (!mounted) return;
-      setState(() { _tags = tags; _loading = false; _error = null; });
+      setState(() {
+        _tags = tags;
+        _loading = false;
+        _error = null;
+      });
     } catch (error) {
       if (!mounted) return;
-      setState(() { _error = error; _loading = false; });
+      setState(() {
+        _error = error;
+        _loading = false;
+      });
     }
   }
 
@@ -60,32 +67,50 @@ class _TagManagePageState extends ConsumerState<TagManagePage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(tag == null ? '新建标签' : '编辑标签'),
-          content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            TextField(controller: name, maxLength: 40, decoration: const InputDecoration(labelText: '名称')),
-            const SizedBox(height: 10),
-            const Text('颜色（固定色板）'),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final entry in _tagPalette)
-                  ChoiceChip(
-                    label: Text(entry.label),
-                    avatar: CircleAvatar(backgroundColor: _color(entry.color), radius: 7),
-                    selected: selectedColor == entry.color,
-                    onSelected: (_) => setDialogState(() => selectedColor = entry.color),
-                  ),
-              ],
-            ),
-            if (validation.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(validation, style: const TextStyle(color: PandoraColors.overdue)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: name,
+                maxLength: 40,
+                decoration: const InputDecoration(labelText: '名称'),
               ),
-          ]),
+              const SizedBox(height: 10),
+              const Text('颜色（固定色板）'),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final entry in _tagPalette)
+                    ChoiceChip(
+                      label: Text(entry.label),
+                      avatar: CircleAvatar(
+                        backgroundColor: _color(entry.color),
+                        radius: 7,
+                      ),
+                      selected: selectedColor == entry.color,
+                      onSelected: (_) =>
+                          setDialogState(() => selectedColor = entry.color),
+                    ),
+                ],
+              ),
+              if (validation.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    validation,
+                    style: const TextStyle(color: PandoraColors.overdue),
+                  ),
+                ),
+            ],
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
             FilledButton(
               onPressed: () {
                 if (name.text.trim().isEmpty) {
@@ -107,12 +132,27 @@ class _TagManagePageState extends ConsumerState<TagManagePage> {
     if (accepted != true || !mounted) return;
     final keys = ref.read(operationKeysProvider);
     final scope = 'tag:${tag?.id ?? 'new'}';
-    final key = keys.keyFor(scope: scope, method: tag == null ? 'POST' : 'PATCH', path: tag == null ? '/tags' : '/tags/${tag.id}', body: {'name': nextName, 'color': nextColor});
+    final key = keys.keyFor(
+      scope: scope,
+      method: tag == null ? 'POST' : 'PATCH',
+      path: tag == null ? '/tags' : '/tags/${tag.id}',
+      body: {'name': nextName, 'color': nextColor},
+    );
     try {
       if (tag == null) {
-        await ref.read(tagsApiProvider).create(name: nextName, color: nextColor, idempotencyKey: key);
+        await ref
+            .read(tagsApiProvider)
+            .create(name: nextName, color: nextColor, idempotencyKey: key);
       } else {
-        await ref.read(tagsApiProvider).change(id: tag.id, name: nextName, color: nextColor, rowVersion: tag.rowVersion, idempotencyKey: key);
+        await ref
+            .read(tagsApiProvider)
+            .change(
+              id: tag.id,
+              name: nextName,
+              color: nextColor,
+              rowVersion: tag.rowVersion,
+              idempotencyKey: key,
+            );
       }
       keys.complete(scope);
       await _load();
@@ -120,7 +160,9 @@ class _TagManagePageState extends ConsumerState<TagManagePage> {
       if (!mounted) return;
       await _load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${error.toString()}；目录已刷新，请重新编辑')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${error.toString()}；目录已刷新，请重新编辑')),
+      );
     }
   }
 
@@ -131,21 +173,35 @@ class _TagManagePageState extends ConsumerState<TagManagePage> {
         title: const Text('删除标签？'),
         content: const Text('已使用该标签的任务和日志会保留名称与颜色快照。'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('删除')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('删除'),
+          ),
         ],
       ),
     );
     if (ok != true || !mounted) return;
     final keys = ref.read(operationKeysProvider);
-    final key = keys.keyFor(scope: 'tag:${tag.id}', method: 'DELETE', path: '/tags/${tag.id}', body: const {});
+    final key = keys.keyFor(
+      scope: 'tag:${tag.id}',
+      method: 'DELETE',
+      path: '/tags/${tag.id}',
+      body: const {},
+    );
     try {
-      await ref.read(tagsApiProvider).delete(id: tag.id, rowVersion: tag.rowVersion, idempotencyKey: key);
+      await ref
+          .read(tagsApiProvider)
+          .delete(id: tag.id, rowVersion: tag.rowVersion, idempotencyKey: key);
       keys.complete('tag:${tag.id}');
       await _load();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
@@ -165,23 +221,45 @@ class _TagManagePageState extends ConsumerState<TagManagePage> {
       child: _loading
           ? const LoadingView()
           : _error != null
-              ? ErrorView(error: _error!, onRetry: _load)
-              : ListView(children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: FilledButton.icon(onPressed: () => _edit(), icon: const Icon(Icons.add), label: const Text('新建标签')),
+          ? ErrorView(error: _error!, onRetry: _load)
+          : ListView(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: FilledButton.icon(
+                    onPressed: () => _edit(),
+                    icon: const Icon(Icons.add),
+                    label: const Text('新建标签'),
                   ),
-                  for (final tag in _tags)
-                    ListTile(
-                      leading: CircleAvatar(backgroundColor: _color(tag.color), radius: 12),
-                      title: Text(tag.name),
-                      subtitle: Text(tag.deleted ? '已删除' : '公司共用'),
-                      trailing: tag.deleted ? null : Row(mainAxisSize: MainAxisSize.min, children: [
-                        IconButton(tooltip: '编辑', onPressed: () => _edit(tag), icon: const Icon(Icons.edit_outlined)),
-                        IconButton(tooltip: '删除', onPressed: () => _delete(tag), icon: const Icon(Icons.delete_outline)),
-                      ]),
+                ),
+                for (final tag in _tags)
+                  ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: _color(tag.color),
+                      radius: 12,
                     ),
-                ]),
+                    title: Text(tag.name),
+                    subtitle: tag.deleted ? const Text('已删除') : null,
+                    trailing: tag.deleted
+                        ? null
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: '编辑',
+                                onPressed: () => _edit(tag),
+                                icon: const Icon(Icons.edit_outlined),
+                              ),
+                              IconButton(
+                                tooltip: '删除',
+                                onPressed: () => _delete(tag),
+                                icon: const Icon(Icons.delete_outline),
+                              ),
+                            ],
+                          ),
+                  ),
+              ],
+            ),
     );
   }
 

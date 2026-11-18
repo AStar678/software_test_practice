@@ -69,14 +69,24 @@ void main() {
     );
   });
 
-  testWidgets('仅作者评论显示管理菜单，编辑使用行版本', (tester) async {
+  testWidgets('仅作者评论可长按编辑，编辑使用行版本并显示已编辑', (tester) async {
     final backend = FakeBackend();
     var patches = 0;
     backend.on(
       'GET',
       '/tasks/t1/comments',
       (request) async => FakeResponse({
-        'items': [comment(1, manage: true), comment(2)],
+        'items': [
+          {
+            ...comment(1, manage: true),
+            if (patches > 0) ...{
+              'body': '修改后的评论',
+              'rowVersion': 2,
+              'edited': true,
+            },
+          },
+          comment(2),
+        ],
         'total': 2,
         'nextOffset': null,
         'nextCursor': null,
@@ -93,24 +103,20 @@ void main() {
         'body': '修改后的评论',
         'rowVersion': 2,
         'canManage': true,
+        'edited': true,
       });
     });
     await pumpComments(tester, backend);
 
-    expect(find.byTooltip('管理评论'), findsOneWidget);
-    await tester.tap(find.byTooltip('管理评论'));
-    await tester.pumpAndSettle();
-    expect(find.text('删除'), findsNothing);
-    await tester.tap(find.text('编辑'));
+    expect(find.byTooltip('管理评论'), findsNothing);
+    await tester.longPress(find.widgetWithText(ListTile, '评论1'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, '修改后的评论');
     await tester.tap(find.widgetWithText(FilledButton, '保存'));
     await tester.pumpAndSettle();
     expect(patches, 1);
-    final menu = tester.widget<PopupMenuButton<String>>(
-      find.byType(PopupMenuButton<String>),
-    );
-    menu.onSelected!('delete');
+    expect(find.text('已编辑'), findsOneWidget);
+    await tester.longPress(find.widgetWithText(ListTile, '评论2'));
     await tester.pumpAndSettle();
     expect(
       backend.requests.where((request) => request.method == 'DELETE'),

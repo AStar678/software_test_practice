@@ -90,7 +90,7 @@ class SelfProfileCard extends ConsumerWidget {
                   ),
                 ),
                 icon: const Icon(Icons.edit_outlined),
-                label: const Text('编辑头像和邮箱'),
+                label: const Text('编辑信息'),
               ),
             ],
           ),
@@ -255,7 +255,10 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
                 controller: _email,
                 enabled: !_saving,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: '邮箱（可留空）'),
+                decoration: const InputDecoration(
+                  labelText: '邮箱',
+                  hintText: '可留空',
+                ),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 8),

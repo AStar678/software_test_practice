@@ -18,7 +18,13 @@ import 'assignee_picker.dart';
 import 'task_providers.dart';
 import 'task_review.dart';
 
-const Set<String> _scheduleFields = {'allDay', 'startAt', 'dueAt', 'startDate', 'dueDate'};
+const Set<String> _scheduleFields = {
+  'allDay',
+  'startAt',
+  'dueAt',
+  'startDate',
+  'dueDate',
+};
 
 class TaskCreatePage extends StatelessWidget {
   const TaskCreatePage({super.key, this.parentId});
@@ -44,7 +50,10 @@ class TaskEditPage extends ConsumerWidget {
       loading: () => const Scaffold(body: LoadingView()),
       error: (error, _) => Scaffold(
         appBar: AppBar(title: const Text('编辑任务')),
-        body: ErrorView(error: error, onRetry: () => ref.invalidate(taskDetailProvider(taskId))),
+        body: ErrorView(
+          error: error,
+          onRetry: () => ref.invalidate(taskDetailProvider(taskId)),
+        ),
       ),
     );
   }
@@ -97,11 +106,16 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
   TaskRecord? get _existing => widget.existing;
   bool get _isCreate => _existing == null;
   Set<String> get _editableFields => _existing?.editableFields ?? const {};
-  bool get _onlySchedule => !_isCreate && _editableFields.isNotEmpty && _editableFields.every(_scheduleFields.contains);
+  bool get _onlySchedule =>
+      !_isCreate &&
+      _editableFields.isNotEmpty &&
+      _editableFields.every(_scheduleFields.contains);
 
   bool _can(String field) {
     // 新建不写完成标准或进展；完成标准只作为历史字段在有有效版的任务上按权编辑。
-    if (_isCreate) return field != 'acceptanceCriteria' && field != 'progressNote';
+    if (_isCreate) {
+      return field != 'acceptanceCriteria' && field != 'progressNote';
+    }
     if (_onlySchedule) return _scheduleFields.contains(field);
     return _editableFields.contains(field);
   }
@@ -155,13 +169,21 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     _priority = existing.priority;
     _parentTaskId = existing.parentTaskId;
     _parentUnavailable = existing.parentUnavailable;
-    final participants = {for (final person in existing.participants) person.id: person};
+    final participants = {
+      for (final person in existing.participants) person.id: person,
+    };
     _assignees = [
       for (final id in existing.assigneeIds)
-        PersonSummary(id: id, displayName: participants[id]?.displayName ?? '负责人', positionName: null),
+        PersonSummary(
+          id: id,
+          displayName: participants[id]?.displayName ?? '负责人',
+          positionName: null,
+        ),
     ];
     _selectedTags = List<TaskTag>.from(existing.tags);
-    if (existing.allDay && existing.allDayStart != null && existing.allDayEnd != null) {
+    if (existing.allDay &&
+        existing.allDayStart != null &&
+        existing.allDayEnd != null) {
       _allDay = true;
       _allDayStart = existing.allDayStart;
       _allDayEnd = existing.allDayEnd;
@@ -188,11 +210,16 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       final tags = results[1] as List<TaskTag>;
       final known = {for (final person in candidates) person.id: person};
       setState(() {
-        _candidates = candidates.where((person) => person.id.isNotEmpty).toList();
+        _candidates = candidates
+            .where((person) => person.id.isNotEmpty)
+            .toList();
         _tagCatalog = tags;
         _assignees = [
           for (final person in _assignees)
-            if (known[person.id] != null && _can('assigneeIds')) known[person.id]! else person,
+            if (known[person.id] != null && _can('assigneeIds'))
+              known[person.id]!
+            else
+              person,
         ];
         if (_isCreate && _assignees.isNotEmpty) _defaultAssigneeApplied = true;
         _loadingMeta = false;
@@ -209,13 +236,31 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
   bool get _hasFieldEdits {
     final existing = _existing;
     if (existing == null) return true;
-    if (_can('title') && _titleController.text.trim() != existing.title) return true;
-    if (_can('description') && _descriptionController.text.trim() != existing.description) return true;
-    if (_can('acceptanceCriteria') && _acceptanceController.text.trim() != existing.acceptanceCriteria) return true;
+    if (_can('title') && _titleController.text.trim() != existing.title) {
+      return true;
+    }
+    if (_can('description') &&
+        _descriptionController.text.trim() != existing.description) {
+      return true;
+    }
+    if (_can('acceptanceCriteria') &&
+        _acceptanceController.text.trim() != existing.acceptanceCriteria) {
+      return true;
+    }
     if (_can('priority') && _priority != existing.priority) return true;
-    if (_can('assigneeIds') && _assignees.map((p) => p.id).join(',') != existing.assigneeIds.join(',')) return true;
-    if (_can('tagIds') && _selectedTagIds.join(',') != existing.tagIds.join(',')) return true;
-    if (_can('progressNote') && _progressController.text.trim() != existing.progressNote) return true;
+    if (_can('assigneeIds') &&
+        _assignees.map((p) => p.id).join(',') !=
+            existing.assigneeIds.join(',')) {
+      return true;
+    }
+    if (_can('tagIds') &&
+        _selectedTagIds.join(',') != existing.tagIds.join(',')) {
+      return true;
+    }
+    if (_can('progressNote') &&
+        _progressController.text.trim() != existing.progressNote) {
+      return true;
+    }
     if (_parentChanged && _can('parentTaskId')) return true;
     if (_scheduleChanged(existing)) return true;
     return false;
@@ -233,21 +278,27 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     }
     final start = _startAt?.toUtc().toIso8601String();
     final due = _dueAt?.toUtc().toIso8601String();
-    return start != existing.startAt?.toIso8601String() || due != existing.dueAt?.toIso8601String();
+    return start != existing.startAt?.toIso8601String() ||
+        due != existing.dueAt?.toIso8601String();
   }
 
   String? _validateSchedule() {
+    final businessDate = ref.read(workspaceClockProvider).businessDate;
     if (_allDay) {
       final start = _allDayStart;
       final end = _allDayEnd;
       if (start == null || end == null) return '请选择开始和结束日期';
       if (end.isBefore(start)) return '结束日期不得早于开始日期';
+      if (_isCreate && start.isBefore(businessDate)) return '新建任务不能选择今天之前的日期';
       return null;
     }
     final start = _startAt;
     final due = _dueAt;
     if (start == null || due == null) return '请选择开始和结束时间';
     if (due.isBefore(start)) return '截止时间不得早于开始时间';
+    if (_isCreate && _zone.dateOf(start.toUtc()).isBefore(businessDate)) {
+      return '新建任务不能选择今天之前的日期';
+    }
     return null;
   }
 
@@ -284,7 +335,12 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       final TaskMutationResult result;
       if (_isCreate) {
         final payload = _createPayload();
-        final key = keys.keyFor(scope: 'task:create', method: 'POST', path: '/tasks', body: payload);
+        final key = keys.keyFor(
+          scope: 'task:create',
+          method: 'POST',
+          path: '/tasks',
+          body: payload,
+        );
         result = await api.create(payload: payload, idempotencyKey: key);
         if (!mounted || !_current) return;
         keys.complete('task:create');
@@ -296,7 +352,12 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
           path: '/tasks/${_existing!.id}',
           body: payload,
         );
-        result = await api.change(id: _existing!.id, command: 'reschedule', payload: payload, idempotencyKey: key);
+        result = await api.change(
+          id: _existing!.id,
+          command: 'reschedule',
+          payload: payload,
+          idempotencyKey: key,
+        );
         if (!mounted || !_current) return;
         keys.complete('task:reschedule:${_existing!.id}');
       } else {
@@ -307,7 +368,12 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
           path: '/tasks/${_existing!.id}',
           body: payload,
         );
-        result = await api.change(id: _existing!.id, command: 'change', payload: payload, idempotencyKey: key);
+        result = await api.change(
+          id: _existing!.id,
+          command: 'change',
+          payload: payload,
+          idempotencyKey: key,
+        );
         if (!mounted || !_current) return;
         keys.complete('task:change:${_existing!.id}');
       }
@@ -322,7 +388,8 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
         _saving = false;
         _error = error is ApiException ? error.message : '保存失败，请重试';
       });
-      if (error is ApiException && (error.isConflict || error.statusCode == 412)) {
+      if (error is ApiException &&
+          (error.isConflict || error.statusCode == 412)) {
         setState(() => _conflictHint = '任务已更新，当前修改仍保留；请确认后重新提交。');
         await _refreshVersion();
       }
@@ -337,8 +404,17 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(result.appliedDirectly ? '已直接生效' : '已提交审核'),
-        content: Text(result.appliedDirectly ? '本任务按规则直接生效。' : '申请已提交${reviewer == null ? '' : '，审核人：$reviewer'}。'),
-        actions: [FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('知道了'))],
+        content: Text(
+          result.appliedDirectly
+              ? '本任务按规则直接生效。'
+              : '申请已提交${reviewer == null ? '' : '，审核人：$reviewer'}。',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('知道了'),
+          ),
+        ],
       ),
     );
   }
@@ -411,25 +487,31 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     if (_can('title') && _titleController.text.trim() != existing.title) {
       payload['title'] = _titleController.text.trim();
     }
-    if (_can('description') && _descriptionController.text.trim() != existing.description) {
+    if (_can('description') &&
+        _descriptionController.text.trim() != existing.description) {
       payload['description'] = _descriptionController.text.trim();
     }
-    if (_can('acceptanceCriteria') && _acceptanceController.text.trim() != existing.acceptanceCriteria) {
+    if (_can('acceptanceCriteria') &&
+        _acceptanceController.text.trim() != existing.acceptanceCriteria) {
       payload['acceptanceCriteria'] = _acceptanceController.text.trim();
     }
     if (_can('priority') && _priority != existing.priority) {
       payload['priority'] = _priority;
     }
-    if (_can('assigneeIds') && _assignees.map((p) => p.id).join(',') != existing.assigneeIds.join(',')) {
+    if (_can('assigneeIds') &&
+        _assignees.map((p) => p.id).join(',') !=
+            existing.assigneeIds.join(',')) {
       payload['assigneeIds'] = [for (final person in _assignees) person.id];
     }
-    if (_can('tagIds') && _selectedTagIds.join(',') != existing.tagIds.join(',')) {
+    if (_can('tagIds') &&
+        _selectedTagIds.join(',') != existing.tagIds.join(',')) {
       payload['tagIds'] = _selectedTagIds;
     }
     if (_parentChanged && _can('parentTaskId')) {
       payload['parentTaskId'] = _parentTaskId;
     }
-    if (_can('progressNote') && _progressController.text.trim() != existing.progressNote) {
+    if (_can('progressNote') &&
+        _progressController.text.trim() != existing.progressNote) {
       payload['progressNote'] = _progressController.text.trim();
     }
     if (_scheduleChanged(existing)) {
@@ -440,11 +522,16 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
 
   Future<void> _pickDateTime({required bool isStart}) async {
     final current = isStart ? _startAt : _dueAt;
-    final initial = current ?? DateTime.now();
+    final businessDate = ref.read(workspaceClockProvider).businessDate;
+    final minimum = _isCreate
+        ? DateTime(businessDate.year, businessDate.month, businessDate.day)
+        : DateTime(2020, 1, 1);
+    final candidate = current ?? DateTime.now();
+    final initial = candidate.isBefore(minimum) ? minimum : candidate;
     final date = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: DateTime(2020, 1, 1),
+      firstDate: minimum,
       lastDate: DateTime(2040, 12, 31),
       cancelText: '取消',
       confirmText: '确定',
@@ -457,7 +544,11 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       confirmText: '确定',
     );
     if (time == null || !mounted) return;
-    final value = _zone.at(CompanyDate(date.year, date.month, date.day), hour: time.hour, minute: time.minute);
+    final value = _zone.at(
+      CompanyDate(date.year, date.month, date.day),
+      hour: time.hour,
+      minute: time.minute,
+    );
     setState(() {
       if (isStart) {
         _startAt = value;
@@ -473,10 +564,15 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
   Future<void> _pickAllDayDate({required bool isStart}) async {
     final current = isStart ? _allDayStart : _allDayEnd;
     final initial = current ?? ref.read(workspaceClockProvider).businessDate;
+    final businessDate = ref.read(workspaceClockProvider).businessDate;
+    final minimum = _isCreate
+        ? DateTime(businessDate.year, businessDate.month, businessDate.day)
+        : DateTime(2020, 1, 1);
+    final initialDate = DateTime(initial.year, initial.month, initial.day);
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(initial.year, initial.month, initial.day),
-      firstDate: DateTime(2020, 1, 1),
+      initialDate: initialDate.isBefore(minimum) ? minimum : initialDate,
+      firstDate: minimum,
       lastDate: DateTime(2040, 12, 31),
       cancelText: '取消',
       confirmText: '确定',
@@ -489,7 +585,9 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
         if (_allDayEnd == null || _allDayEnd!.isBefore(date)) _allDayEnd = date;
       } else {
         _allDayEnd = date;
-        if (_allDayStart == null || date.isBefore(_allDayStart!)) _allDayStart = date;
+        if (_allDayStart == null || date.isBefore(_allDayStart!)) {
+          _allDayStart = date;
+        }
       }
       _dirty = true;
     });
@@ -500,7 +598,9 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     setState(() {
       if (value) {
         // 从定时切换到全天：结束取原截止所在日；若原截止为次日 00:00，则回退一天，避免多推进一次。
-        final start = _startAt ?? zone.at(ref.read(workspaceClockProvider).businessDate, hour: 9);
+        final start =
+            _startAt ??
+            zone.at(ref.read(workspaceClockProvider).businessDate, hour: 9);
         final due = _dueAt ?? start;
         final startDate = CompanyDate(start.year, start.month, start.day);
         var dueDate = CompanyDate(due.year, due.month, due.day);
@@ -533,9 +633,13 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
             Future<void> search(String query) async {
               setSheetState(() => loading = true);
               try {
-                final found = await ref.read(tasksApiProvider).searchParentTasks(query);
+                final found = await ref
+                    .read(tasksApiProvider)
+                    .searchParentTasks(query);
                 setSheetState(() {
-                  results = found.where((task) => task.id != _existing?.id).toList();
+                  results = found
+                      .where((task) => task.id != _existing?.id)
+                      .toList();
                   loading = false;
                 });
               } catch (_) {
@@ -548,7 +652,9 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
             }
             return SafeArea(
               child: Padding(
-                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -556,7 +662,10 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                       padding: const EdgeInsets.all(12),
                       child: TextField(
                         controller: queryController,
-                        decoration: const InputDecoration(labelText: '按名称搜索父任务', isDense: true),
+                        decoration: const InputDecoration(
+                          labelText: '按名称搜索父任务',
+                          isDense: true,
+                        ),
                         onSubmitted: search,
                       ),
                     ),
@@ -575,7 +684,11 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                           }
                           final task = results[index - 1];
                           return ListTile(
-                            title: Text(task.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            title: Text(
+                              task.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             subtitle: Text(task.scheduleText(_zone)),
                             onTap: () => Navigator.of(context).pop(task),
                           );
@@ -649,13 +762,15 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    if (existing != null && _onlySchedule) _InfoBanner(text: '你当前只能调整这条任务的排期；其他字段与状态保持不变。'),
+                    if (existing != null && _onlySchedule)
+                      _InfoBanner(text: '你当前只能调整这条任务的排期；其他字段与状态保持不变。'),
                     if (_can('title'))
                       TextFormField(
                         controller: _titleController,
                         maxLength: 80,
                         decoration: const InputDecoration(labelText: '任务标题'),
-                        validator: (value) => (value ?? '').trim().isEmpty ? '请输入任务标题' : null,
+                        validator: (value) =>
+                            (value ?? '').trim().isEmpty ? '请输入任务标题' : null,
                       ),
                     if (_can('description'))
                       TextFormField(
@@ -663,8 +778,12 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                         minLines: 3,
                         maxLines: 6,
                         maxLength: 5000,
-                        decoration: const InputDecoration(labelText: '任务说明', alignLabelWithHint: true),
-                        validator: (value) => (value ?? '').trim().isEmpty ? '请填写任务说明' : null,
+                        decoration: const InputDecoration(
+                          labelText: '任务说明',
+                          alignLabelWithHint: true,
+                        ),
+                        validator: (value) =>
+                            (value ?? '').trim().isEmpty ? '请填写任务说明' : null,
                       ),
                     if (_can('acceptanceCriteria'))
                       TextFormField(
@@ -672,7 +791,10 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                         minLines: 2,
                         maxLines: 4,
                         maxLength: 2000,
-                        decoration: const InputDecoration(labelText: '历史完成标准（可留空）', alignLabelWithHint: true),
+                        decoration: const InputDecoration(
+                          labelText: '历史完成标准（可留空）',
+                          alignLabelWithHint: true,
+                        ),
                       ),
                     if (_can('priority')) ...[
                       const SizedBox(height: 8),
@@ -695,7 +817,10 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Text('排期', style: Theme.of(context).textTheme.labelLarge),
+                          Text(
+                            '排期',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
                           const Spacer(),
                           SegmentedButton<bool>(
                             segments: const [
@@ -703,7 +828,8 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                               ButtonSegment(value: true, label: Text('全天')),
                             ],
                             selected: {_allDay},
-                            onSelectionChanged: (selection) => _switchAllDay(selection.first),
+                            onSelectionChanged: (selection) =>
+                                _switchAllDay(selection.first),
                           ),
                         ],
                       ),
@@ -720,7 +846,8 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: OutlinedButton(
-                                onPressed: () => _pickAllDayDate(isStart: false),
+                                onPressed: () =>
+                                    _pickAllDayDate(isStart: false),
                                 child: Text('结束 ${_allDayEnd?.iso ?? '未选'}'),
                               ),
                             ),
@@ -751,12 +878,16 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                       const SizedBox(height: 4),
                       Text(
                         _allDay ? '全天事项按公司日期首尾包含。' : '定时事项按公司时区记录精确起止。',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: PandoraColors.muted),
+                        style: Theme.of(context).textTheme.labelSmall
+                            ?.copyWith(color: PandoraColors.muted),
                       ),
                     ],
                     if (_can('assigneeIds')) ...[
                       const SizedBox(height: 16),
-                      Text('负责人', style: Theme.of(context).textTheme.labelLarge),
+                      Text(
+                        '负责人',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
                       const SizedBox(height: 4),
                       AssigneePicker(
                         selected: _assignees,
@@ -765,8 +896,13 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                           try {
                             final refreshed = await ref
                                 .read(tasksApiProvider)
-                                .assigneeCandidates(query: query, purpose: _isCreate ? 'create' : 'edit');
-                            if (mounted) setState(() => _candidates = refreshed);
+                                .assigneeCandidates(
+                                  query: query,
+                                  purpose: _isCreate ? 'create' : 'edit',
+                                );
+                            if (mounted) {
+                              setState(() => _candidates = refreshed);
+                            }
                           } catch (_) {
                             // 搜索失败保留当前候选，用户可重试。
                           }
@@ -778,13 +914,19 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                       ),
                     ] else if (_assignees.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      Text('负责人（按当前顺序保留）', style: Theme.of(context).textTheme.labelLarge),
+                      Text(
+                        '负责人（按当前顺序保留）',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
                       for (var index = 0; index < _assignees.length; index++)
                         Text('${index + 1}. ${_assignees[index].displayName}'),
                     ],
                     if (_can('tagIds')) ...[
                       const SizedBox(height: 16),
-                      Text('标签（按顺序）', style: Theme.of(context).textTheme.labelLarge),
+                      Text(
+                        '标签（按顺序）',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
                       const SizedBox(height: 6),
                       TagSelector(
                         selected: _selectedTags,
@@ -797,21 +939,34 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                       if (_selectedTags.isEmpty)
                         Text(
                           '未选择标签；保存时会显式清空本任务的标签。',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: PandoraColors.muted),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: PandoraColors.muted),
                         ),
                     ],
                     if (_can('parentTaskId')) ...[
                       const SizedBox(height: 16),
-                      Text('父任务', style: Theme.of(context).textTheme.labelLarge),
+                      Text(
+                        '父任务',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
                       Row(
                         children: [
                           Expanded(
                             child: Text(
-                              _parentTaskId == null ? '未设置' : (_parentUnavailable ? '原父任务不可见（保持不变）' : '已选择父任务'),
-                              style: const TextStyle(color: PandoraColors.muted),
+                              _parentTaskId == null
+                                  ? '未设置'
+                                  : (_parentUnavailable
+                                        ? '原父任务不可见（保持不变）'
+                                        : '已选择父任务'),
+                              style: const TextStyle(
+                                color: PandoraColors.muted,
+                              ),
                             ),
                           ),
-                          TextButton(onPressed: _pickParent, child: const Text('搜索/更换')),
+                          TextButton(
+                            onPressed: _pickParent,
+                            child: const Text('搜索/更换'),
+                          ),
                           if (_parentTaskId != null)
                             TextButton(
                               onPressed: () => setState(() {
@@ -832,7 +987,10 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                         minLines: 2,
                         maxLines: 4,
                         maxLength: 2000,
-                        decoration: const InputDecoration(labelText: '进展说明（可选，首次填写后进入进行中）', alignLabelWithHint: true),
+                        decoration: const InputDecoration(
+                          labelText: '进展说明（可选，首次填写后进入进行中）',
+                          alignLabelWithHint: true,
+                        ),
                       ),
                     ],
                     if (!_isCreate) ...[
@@ -840,17 +998,24 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                       TextFormField(
                         controller: _reasonController,
                         maxLength: 500,
-                        decoration: const InputDecoration(labelText: '修改原因（必填）'),
+                        decoration: const InputDecoration(
+                          labelText: '修改原因（必填）',
+                        ),
                       ),
                       const SizedBox(height: 4),
                     ],
                     ReviewerPreviewPanel(
                       payload: {
-                        'operation': _isCreate ? 'create' : (_onlySchedule ? 'reschedule' : 'change'),
+                        'operation': _isCreate
+                            ? 'create'
+                            : (_onlySchedule ? 'reschedule' : 'change'),
                         if (_existing != null) ...{
                           'taskId': _existing!.id,
-                          'assigneeIds': [for (final person in _assignees) person.id],
-                          if (!_onlySchedule) 'fields': _editableFields.toList()..sort(),
+                          'assigneeIds': [
+                            for (final person in _assignees) person.id,
+                          ],
+                          if (!_onlySchedule)
+                            'fields': _editableFields.toList()..sort(),
                         },
                       },
                     ),
@@ -862,14 +1027,21 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                       const SizedBox(height: 8),
                       Semantics(
                         liveRegion: true,
-                        child: Text(_error!, style: const TextStyle(color: PandoraColors.overdue)),
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(color: PandoraColors.overdue),
+                        ),
                       ),
                     ],
                     const SizedBox(height: 20),
                     FilledButton(
                       onPressed: _saving ? null : _save,
                       child: _saving
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : Text(_isCreate ? '提交任务' : '保存修改'),
                     ),
                     const SizedBox(height: 24),

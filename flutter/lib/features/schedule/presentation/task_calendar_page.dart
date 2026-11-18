@@ -66,13 +66,12 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
       (_density == _CalendarDensity.comfortable ? 112 : 86) * _scale;
   final _scroll = ScrollController();
   final _currentMonthKey = GlobalKey();
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
   AppPreferences? _preferences;
   Timer? _preferenceTimer;
   CompanyDate? _drawerDay;
   List<TaskRecord> _drawerTasks = const [];
   bool _dayVertical = false;
-  bool _showAxis = false;
+  bool _showAxis = true;
   _CalendarDensity _density = _CalendarDensity.compact;
   final Map<String, GlobalKey> _dayKeys = {};
   TaskCalendarSelection? _dragSelection;
@@ -354,21 +353,6 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     });
   }
 
-  void _toggleDensity() {
-    final position = _position();
-    setState(() {
-      _density = _density == _CalendarDensity.compact
-          ? _CalendarDensity.comfortable
-          : _CalendarDensity.compact;
-    });
-    unawaited(_savePreference('calendar.density', _density.name));
-    if (position != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_current) unawaited(_restorePosition(position.$1, position.$2));
-      });
-    }
-  }
-
   void _toggleAxisOrientation() {
     setState(() => _dayVertical = !_dayVertical);
     unawaited(
@@ -382,54 +366,38 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   @override
   Widget build(BuildContext context) {
     final months = _months;
+    final selectedDay = _drawerDay;
     return Scaffold(
-      key: _scaffoldKey,
-      endDrawer: _drawerDay == null
-          ? null
-          : Drawer(
-              width: MediaQuery.sizeOf(context).width * .42,
-              child: _DayPanel(
-                day: _drawerDay!,
-                tasks: _drawerTasks,
-                vertical: _dayVertical,
-                showAxis: _showAxis,
-                onToggleOrientation: _toggleAxisOrientation,
-                onShowAxis: () => setState(() => _showAxis = !_showAxis),
-                readOnly: widget.readOnly,
-                onCreate: widget.readOnly
-                    ? null
-                    : () {
-                        Navigator.of(context).pop();
-                        unawaited(
-                          _openAndRefresh('/tasks/new?date=${_drawerDay!.iso}'),
-                        );
-                      },
-                onOpen: (id) {
-                  Navigator.of(context).pop();
-                  _openTask(id);
-                },
-                onPin: _togglePin,
-                onClose: () => Navigator.of(context).pop(),
-                onAxisDragStarted: _startAxisDrag,
-                onAxisDragUpdate: _updateAxisDrag,
-                onAxisDragEnd: _endAxisDrag,
-                onAccessibleAdjust: _accessibleAxisAdjust,
-              ),
-            ),
       appBar: AppBar(
         title: Text(
           widget.personName == null ? '日程' : '${widget.personName}的日程',
         ),
         actions: [
-          TextButton(onPressed: _scrollToCurrentMonth, child: const Text('今天')),
           IconButton(
-            tooltip: _density == _CalendarDensity.compact ? '切换舒适密度' : '切换紧凑密度',
-            onPressed: _toggleDensity,
+            tooltip: '月视图',
+            onPressed: selectedDay == null
+                ? null
+                : () => setState(() => _drawerDay = null),
             icon: Icon(
-              _density == _CalendarDensity.compact
-                  ? Icons.density_medium
-                  : Icons.density_small,
+              selectedDay == null
+                  ? Icons.calendar_month
+                  : Icons.calendar_month_outlined,
             ),
+          ),
+          IconButton(
+            tooltip: '日视图',
+            onPressed: selectedDay != null
+                ? null
+                : () => unawaited(_openDay(ref.read(businessDateProvider))),
+            icon: Icon(
+              selectedDay != null ? Icons.view_day : Icons.view_day_outlined,
+            ),
+          ),
+          TextButton(
+            onPressed: selectedDay == null
+                ? _scrollToCurrentMonth
+                : () => unawaited(_openDay(ref.read(businessDateProvider))),
+            child: const Text('今天'),
           ),
           if (!widget.readOnly)
             IconButton(
@@ -452,46 +420,69 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
               onPressed: () => _openAndRefresh('/tasks/new'),
               child: const Icon(Icons.add),
             ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _refreshCalendar,
-          child: ListView.builder(
-            key: _viewportKey,
-            controller: _scroll,
-            itemExtent: _monthExtent,
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
-            itemCount: months.length,
-            itemBuilder: (context, index) {
-              final month = months[index];
-              final current =
-                  month.year == _anchor.year && month.month == _anchor.month;
-              return KeyedSubtree(
-                key: current ? _currentMonthKey : null,
-                child: _MonthBlock(
-                  month: month,
-                  tasks: _tasks[_key(month)] ?? const [],
-                  businessDate: ref.watch(businessDateProvider),
-                  loading: _loading.contains(_key(month)),
-                  error: _errors[_key(month)],
-                  onRetry: () => _loadMonth(month),
-                  onDay: (day) => _openDay(day),
-                  holidays: _holidays,
-                  holidayUnavailable: _holidayErrors.contains(month.year),
-                  onPin: _togglePin,
-                  onOpenTask: _openTask,
-                  readOnly: widget.readOnly,
-                  density: _density,
-                  dayKey: _dayKey,
-                  onDragStarted: _startMonthDrag,
-                  onDragUpdate: _updateMonthDrag,
-                  onDragEnd: _endMonthDrag,
-                  onAccessibleAdjust: _accessibleMonthAdjust,
+      body: selectedDay != null
+          ? _DayPanel(
+              day: selectedDay,
+              tasks: _drawerTasks,
+              vertical: _dayVertical,
+              showAxis: _showAxis,
+              onToggleOrientation: _toggleAxisOrientation,
+              onShowAxis: () => setState(() => _showAxis = !_showAxis),
+              readOnly: widget.readOnly,
+              onCreate: widget.readOnly
+                  ? null
+                  : () => unawaited(
+                      _openAndRefresh('/tasks/new?date=${selectedDay.iso}'),
+                    ),
+              onOpen: _openTask,
+              onPin: _togglePin,
+              onClose: () => setState(() => _drawerDay = null),
+              onAxisDragStarted: _startAxisDrag,
+              onAxisDragUpdate: _updateAxisDrag,
+              onAxisDragEnd: _endAxisDrag,
+              onAccessibleAdjust: _accessibleAxisAdjust,
+            )
+          : SafeArea(
+              child: RefreshIndicator(
+                onRefresh: _refreshCalendar,
+                child: ListView.builder(
+                  key: _viewportKey,
+                  controller: _scroll,
+                  itemExtent: _monthExtent,
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
+                  itemCount: months.length,
+                  itemBuilder: (context, index) {
+                    final month = months[index];
+                    final current =
+                        month.year == _anchor.year &&
+                        month.month == _anchor.month;
+                    return KeyedSubtree(
+                      key: current ? _currentMonthKey : null,
+                      child: _MonthBlock(
+                        month: month,
+                        tasks: _tasks[_key(month)] ?? const [],
+                        businessDate: ref.watch(businessDateProvider),
+                        loading: _loading.contains(_key(month)),
+                        error: _errors[_key(month)],
+                        onRetry: () => _loadMonth(month),
+                        onDay: (day) => _openDay(day),
+                        holidays: _holidays,
+                        holidayUnavailable: _holidayErrors.contains(month.year),
+                        onPin: _togglePin,
+                        onOpenTask: _openTask,
+                        readOnly: widget.readOnly,
+                        density: _density,
+                        dayKey: _dayKey,
+                        onDragStarted: _startMonthDrag,
+                        onDragUpdate: _updateMonthDrag,
+                        onDragEnd: _endMonthDrag,
+                        onAccessibleAdjust: _accessibleMonthAdjust,
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
-        ),
-      ),
+              ),
+            ),
     );
   }
 
@@ -979,10 +970,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     setState(() {
       _drawerDay = day;
       _drawerTasks = tasks;
-      _showAxis = false;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _scaffoldKey.currentState?.openEndDrawer();
+      _showAxis = true;
     });
   }
 

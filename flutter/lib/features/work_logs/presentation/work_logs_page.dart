@@ -262,9 +262,11 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
                           style: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(color: PandoraColors.brand),
                         ),
-                        if (log.frozen)
+                        if (log.frozen ||
+                            (widget.readContext is NormalReadContext &&
+                                !log.editable))
                           const StatusBadge(
-                            label: '已冻结',
+                            label: '已冻结（已不能编辑）',
                             color: PandoraColors.muted,
                           ),
                         if (_relative(
@@ -297,6 +299,7 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
                               StatusBadge(
                                 label: tag.name,
                                 color: _tagColor(tag),
+                                solid: widget.readContext is! NormalReadContext,
                               ),
                           ],
                         ),
@@ -980,6 +983,18 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
                   style: Theme.of(context).textTheme.labelLarge
                       ?.copyWith(color: PandoraColors.brand),
                 ),
+                if (log.frozen ||
+                    (widget.readContext is NormalReadContext &&
+                        !log.editable)) ...[
+                  const SizedBox(height: 8),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: StatusBadge(
+                      label: '已冻结（已不能编辑）',
+                      color: PandoraColors.muted,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text(
                   log.body,
@@ -992,7 +1007,11 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
                       spacing: 6,
                       children: [
                         for (final tag in log.tags)
-                          StatusBadge(label: tag.name, color: _tagColor(tag)),
+                          StatusBadge(
+                            label: tag.name,
+                            color: _tagColor(tag),
+                            solid: widget.readContext is! NormalReadContext,
+                          ),
                       ],
                     ),
                   ),

@@ -102,12 +102,12 @@ void main() {
       await tester.tapAt(Offset(rect.left + rect.width * .625, rect.center.dy));
       await tester.pumpAndSettle();
       expect(find.text('2026-11-11 完整清单'), findsOneWidget);
-      expect(find.byType(Drawer), findsOneWidget);
+      expect(find.byType(Drawer), findsNothing);
       expect(backend.requests.where((r) => r.method != 'GET'), isEmpty);
     });
   }
 
-  testWidgets('本人月历命中日打开局部抽屉，并可切换横纵日轴', (tester) async {
+  testWidgets('本人月历命中日打开完整日页面，并可切换横纵日轴', (tester) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
@@ -151,21 +151,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('2026-11-10 完整清单'), findsOneWidget);
-    final drawer = find.byType(Drawer);
-    expect(drawer, findsOneWidget);
-    expect(tester.getSize(drawer).width, closeTo(390 * .42, .5));
-    expect(
-      find.descendant(of: drawer, matching: find.text('定时任务')),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: drawer, matching: find.text('全天任务')),
-      findsOneWidget,
-    );
+    expect(find.byType(Drawer), findsNothing);
+    expect(find.text('定时任务'), findsOneWidget);
+    expect(find.text('全天任务'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, '日轴'));
-    await tester.pumpAndSettle();
     expect(find.text('00:00'), findsWidgets);
+    expect(find.widgetWithText(OutlinedButton, '清单'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, '横向'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(OutlinedButton, '横向'));
@@ -299,23 +290,8 @@ void main() {
       await tester.tap(overflow);
       await tester.pumpAndSettle();
       expect(find.text('2026-11-01 完整清单'), findsOneWidget);
-      final drawer = find.byType(Drawer);
       for (var index = 0; index < 4; index++) {
-        final entry = find.descendant(
-          of: drawer,
-          matching: find.text('周日任务$index'),
-        );
-        await tester.scrollUntilVisible(
-          entry,
-          120,
-          scrollable: find
-              .descendant(of: drawer, matching: find.byType(Scrollable))
-              .last,
-        );
-        expect(
-          find.descendant(of: drawer, matching: find.text('周日任务$index')),
-          findsOneWidget,
-        );
+        expect(find.text('周日任务$index'), findsOneWidget);
       }
       await tester.tap(find.byTooltip('关闭'));
       await tester.pumpAndSettle();
@@ -327,13 +303,7 @@ void main() {
       await tester.tap(sparse);
       await tester.pumpAndSettle();
       expect(find.text('2026-11-15 完整清单'), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byType(Drawer),
-          matching: find.text('跨到周日隐藏项'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('跨到周日隐藏项'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
@@ -401,7 +371,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('密度恢复遇刷新取消后仍能继续补载月份', (tester) async {
+  testWidgets('移除密度按钮后刷新仍能继续补载月份', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final backend = FakeBackend();
     backend.on(
@@ -417,12 +387,8 @@ void main() {
     addTearDown(container.dispose);
     await tester.pumpWidget(wrapWithScope(container, const TaskCalendarPage()));
     await tester.pumpAndSettle();
-    final density = tester.widget<IconButton>(
-      find.byWidgetPredicate(
-        (widget) => widget is IconButton && widget.tooltip == '切换舒适密度',
-      ),
-    );
-    density.onPressed!();
+    expect(find.byTooltip('切换舒适密度'), findsNothing);
+    expect(find.byTooltip('切换紧凑密度'), findsNothing);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       tester
           .widget<RefreshIndicator>(find.byType(RefreshIndicator))
@@ -445,7 +411,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('本人和两位下属日期/密度/方向独立，放大字体恢复后今天仍回实际业务日', (tester) async {
+  testWidgets('本人和两位下属日期/方向独立，放大字体恢复后今天仍回实际业务日', (tester) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(320, 900);
     tester.view.devicePixelRatio = 1;
@@ -500,7 +466,8 @@ void main() {
           ),
       isTrue,
     );
-    expect(find.byTooltip('切换紧凑密度'), findsOneWidget);
+    expect(find.byTooltip('月视图'), findsOneWidget);
+    expect(find.byTooltip('日视图'), findsOneWidget);
     await tester.pumpWidget(page('p2'));
     await tester.pumpAndSettle();
     expect(
@@ -513,7 +480,7 @@ void main() {
           ),
       isTrue,
     );
-    expect(find.byTooltip('切换舒适密度'), findsOneWidget);
+    expect(find.byTooltip('切换舒适密度'), findsNothing);
     expect(own.getString('calendar.lastDate'), '2026-11-10');
     await tester.tap(find.text('今天'));
     await tester.pumpAndSettle();
