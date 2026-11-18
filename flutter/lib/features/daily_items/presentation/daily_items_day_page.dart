@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/company/company_date.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/fading_name_text.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/router/app_router.dart';
 import '../../home/presentation/home_providers.dart';
@@ -55,7 +56,7 @@ class _DailyItemsDayPageState extends ConsumerState<DailyItemsDayPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.date.month}月${widget.date.day}日 · 每日事项'),
+        title: Text('${widget.date.month}月${widget.date.day}日'),
         actions: [
           IconButton(
             tooltip: '新建事项',
@@ -201,10 +202,9 @@ class _DailyItemRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      FadingNameText(
                         item.body,
                         maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           decoration: item.isCompleted
                               ? TextDecoration.lineThrough

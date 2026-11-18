@@ -143,7 +143,13 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    // 评论位于详情滚动内容末尾：键盘弹出时为输入行保留空间，发送操作可滚动到可见区。
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: keyboardInset),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('评论（$_total）', style: Theme.of(context).textTheme.titleSmall),
@@ -199,28 +205,36 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
             onPressed: _loading ? null : () => _load(reset: false),
             child: const Text('加载更多评论'),
           ),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _input,
-                minLines: 1,
-                maxLines: 4,
-                maxLength: 10000,
-                decoration: const InputDecoration(
-                  hintText: '发表评论',
-                  counterText: '',
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _input,
+                  minLines: 1,
+                  maxLines: 4,
+                  maxLength: 10000,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  scrollPadding: const EdgeInsets.only(bottom: 96),
+                  decoration: const InputDecoration(
+                    hintText: '发表评论',
+                    counterText: '',
+                  ),
                 ),
               ),
-            ),
-            IconButton(
-              tooltip: '发送评论',
-              onPressed: _submit,
-              icon: const Icon(Icons.send),
-            ),
-          ],
+              IconButton(
+                tooltip: '发送评论',
+                onPressed: _submit,
+                icon: const Icon(Icons.send),
+              ),
+            ],
+          ),
         ),
       ],
+    ),
     );
   }
 }

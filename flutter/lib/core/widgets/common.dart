@@ -23,6 +23,23 @@ class BrandMark extends StatelessWidget {
   }
 }
 
+/// 主页面左上角标记：可见页名由潘多拉标记替代，语义仍保留页面名称。
+class PandoraPageMark extends StatelessWidget {
+  const PandoraPageMark({super.key, required this.pageName, this.size = 28});
+
+  final String pageName;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      label: pageName,
+      child: ExcludeSemantics(child: BrandMark(size: size)),
+    );
+  }
+}
+
 /// 统一页面骨架：安全区、键盘避让与可滚动内容。
 class PandoraPage extends StatelessWidget {
   const PandoraPage({
@@ -33,9 +50,11 @@ class PandoraPage extends StatelessWidget {
     this.footer,
     this.showBack = false,
     this.onBack,
+    this.titleWidget,
   });
 
   final String title;
+  final Widget? titleWidget;
   final Widget child;
   final List<Widget>? actions;
   final Widget? footer;
@@ -46,7 +65,7 @@ class PandoraPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: titleWidget ?? Text(title),
         leading: showBack
             ? IconButton(
                 tooltip: '返回',

@@ -10,6 +10,7 @@ import 'package:pandora_employee/core/net/version_registry.dart';
 import 'package:pandora_employee/core/providers.dart';
 import 'package:pandora_employee/core/session/credential_store.dart';
 import 'package:pandora_employee/core/session/session_manager.dart';
+import 'package:pandora_employee/core/widgets/common.dart';
 
 import '../support/test_harness.dart';
 
@@ -137,6 +138,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('首页'), findsWidgets);
+    expect(pageMark('首页'), findsOneWidget);
     expect(find.text('事件纪'), findsOneWidget);
     expect(find.text('任务看板'), findsOneWidget);
     expect(find.text('每日事项'), findsOneWidget);
@@ -150,6 +152,13 @@ void main() {
     await tester.tap(find.byTooltip('返回'));
     await tester.pumpAndSettle();
     expect(find.text('事件纪'), findsOneWidget);
+
+    await tester.tap(find.text('事件纪'));
+    await tester.pumpAndSettle();
+    expect(find.text('事件纪'), findsOneWidget, reason: '二级页仍显示自身导航标题');
+    expect(pageMark('事件纪'), findsNothing);
+    await tester.tap(find.byTooltip('返回'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('任务看板'));
     await tester.pumpAndSettle();
@@ -181,18 +190,25 @@ void main() {
 
     await tester.tap(find.text('公司'));
     await tester.pumpAndSettle();
-    expect(find.text('日程'), findsOneWidget);
+    expect(pageMark('日程'), findsOneWidget);
+    expect(find.text('日程'), findsNothing);
     await tester.tap(find.text('日志'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('日志 ·'), findsOneWidget);
+    expect(pageMark('日志'), findsOneWidget);
+    expect(find.text('0 条'), findsOneWidget);
     await tester.tap(find.text('统计'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('统计'), findsWidgets);
+    expect(pageMark('统计'), findsOneWidget);
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
+    expect(pageMark('我的'), findsOneWidget);
     expect(find.text('亚里士多德'), findsWidgets);
     await tester.tap(find.text('首页'));
     await tester.pumpAndSettle();
     expect(find.text('事件纪'), findsOneWidget);
   });
 }
+
+Finder pageMark(String pageName) => find.byWidgetPredicate(
+  (widget) => widget is PandoraPageMark && widget.pageName == pageName,
+);

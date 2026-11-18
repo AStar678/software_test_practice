@@ -273,7 +273,7 @@ class _TaskReopenPageState extends ConsumerState<TaskReopenPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text('负责人（按顺序，可替换已停用人员）', style: Theme.of(context).textTheme.labelLarge),
+                  Text('负责人（可替换已停用人员）', style: Theme.of(context).textTheme.labelLarge),
                   AssigneePicker(
                     selected: _assignees,
                     candidates: _candidates,

@@ -77,7 +77,7 @@ class _TagManagePageState extends ConsumerState<TagManagePage> {
                 decoration: const InputDecoration(labelText: '名称'),
               ),
               const SizedBox(height: 10),
-              const Text('颜色（固定色板）'),
+              const Text('颜色'),
               const SizedBox(height: 6),
               Wrap(
                 spacing: 6,

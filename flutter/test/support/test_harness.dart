@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:pandora_employee/core/company/workspace_clock.dart';
 import 'package:pandora_employee/core/config/app_config.dart';
 import 'package:pandora_employee/core/net/api_client.dart';
@@ -13,9 +14,17 @@ import 'package:pandora_employee/core/providers.dart';
 import 'package:pandora_employee/core/session/session_gateway.dart';
 import 'package:pandora_employee/core/session/session_manager.dart';
 import 'package:pandora_employee/core/theme/pandora_theme.dart';
+import 'package:pandora_employee/core/widgets/fading_name_text.dart';
 import 'package:pandora_employee/features/auth/data/auth_api.dart';
 import 'package:pandora_employee/features/auth/data/auth_gateway.dart';
 import 'package:pandora_employee/features/auth/domain/employee_user.dart';
+
+/// 匹配受限名称预览：普通文本或末字渐隐的名称。
+Finder namePreview(String text) => find.byWidgetPredicate(
+  (widget) =>
+      (widget is Text && widget.data == text) ||
+      (widget is FadingNameText && widget.text == text),
+);
 
 class FakeRequest {
   FakeRequest({

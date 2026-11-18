@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/state_views.dart';
+import '../domain/notification_language.dart';
 import '../domain/notification_record.dart';
 import 'notifications_providers.dart';
 
@@ -90,10 +91,11 @@ class _NotificationDetailPageState
                   ],
                   if (value.eventResult != null)
                     _line('结果', value.eventResult!),
-                  if (value.requestStatus != null)
-                    _line('申请状态', value.requestStatus!),
-                  if (value.requestComment != null)
-                    _line('处理意见', value.requestComment!),
+                  if (notificationRequestSummary(value) case final request?)
+                    _line('申请', request),
+                  if (notificationAuthorizedRequestComment(value)
+                      case final comment?)
+                    _line('处理意见', comment),
                   const SizedBox(height: 20),
                   if (value.canReadRequest && value.requestId != null)
                     FilledButton.tonalIcon(

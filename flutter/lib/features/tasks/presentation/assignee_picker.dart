@@ -74,7 +74,7 @@ class _AssigneePickerState extends State<AssigneePicker> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (widget.selected.isNotEmpty) ...[
-          Text('已选负责人（按顺序）', style: Theme.of(context).textTheme.labelMedium),
+          Text('已选负责人', style: Theme.of(context).textTheme.labelMedium),
           const SizedBox(height: 6),
           for (var index = 0; index < widget.selected.length; index++)
             _SelectedRow(
@@ -100,26 +100,21 @@ class _AssigneePickerState extends State<AssigneePicker> {
           },
         ),
         const SizedBox(height: 6),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 320),
-          child: filtered.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Text('没有匹配的员工', style: TextStyle(color: PandoraColors.muted)),
-                )
-              : widget.tree
-                  ? _tree(filtered)
-                  : _flat(filtered),
-        ),
+        if (filtered.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(12),
+            child: Text('没有匹配的员工', style: TextStyle(color: PandoraColors.muted)),
+          )
+        else
+          widget.tree ? _tree(filtered) : _flat(filtered),
       ],
     );
   }
 
   Widget _flat(List<PersonSummary> people) {
-    return ListView.builder(
-      shrinkWrap: true,
-      itemCount: people.length,
-      itemBuilder: (context, index) => _personTile(people[index]),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [for (final person in people) _personTile(person)],
     );
   }
 
@@ -130,14 +125,12 @@ class _AssigneePickerState extends State<AssigneePicker> {
       final team = _label(person.teamName, '未分组团队');
       departments.putIfAbsent(department, () => <String, List<PersonSummary>>{}).putIfAbsent(team, () => <PersonSummary>[]).add(person);
     }
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final department in departments.entries)
-            _departmentNode(department.key, department.value),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final department in departments.entries)
+          _departmentNode(department.key, department.value),
+      ],
     );
   }
 
