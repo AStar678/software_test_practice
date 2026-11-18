@@ -70,7 +70,6 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   Timer? _preferenceTimer;
   CompanyDate? _drawerDay;
   List<TaskRecord> _drawerTasks = const [];
-  bool _dayVertical = false;
   bool _showAxis = true;
   _CalendarDensity _density = _CalendarDensity.compact;
   final Map<String, GlobalKey> _dayKeys = {};
@@ -199,7 +198,6 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     setState(() {
       _preferences = prefs;
       _anchor = date;
-      _dayVertical = prefs.getString('calendar.mode') == 'vertical';
       _density = prefs.getString('calendar.density') == 'comfortable'
           ? _CalendarDensity.comfortable
           : _CalendarDensity.compact;
@@ -353,16 +351,6 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     });
   }
 
-  void _toggleAxisOrientation() {
-    setState(() => _dayVertical = !_dayVertical);
-    unawaited(
-      _savePreference(
-        'calendar.mode',
-        _dayVertical ? 'vertical' : 'horizontal',
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final months = _months;
@@ -382,15 +370,6 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
               selectedDay == null
                   ? Icons.calendar_month
                   : Icons.calendar_month_outlined,
-            ),
-          ),
-          IconButton(
-            tooltip: '日视图',
-            onPressed: selectedDay != null
-                ? null
-                : () => unawaited(_openDay(ref.read(businessDateProvider))),
-            icon: Icon(
-              selectedDay != null ? Icons.view_day : Icons.view_day_outlined,
             ),
           ),
           TextButton(
@@ -424,16 +403,9 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
           ? _DayPanel(
               day: selectedDay,
               tasks: _drawerTasks,
-              vertical: _dayVertical,
               showAxis: _showAxis,
-              onToggleOrientation: _toggleAxisOrientation,
               onShowAxis: () => setState(() => _showAxis = !_showAxis),
               readOnly: widget.readOnly,
-              onCreate: widget.readOnly
-                  ? null
-                  : () => unawaited(
-                      _openAndRefresh('/tasks/new?date=${selectedDay.iso}'),
-                    ),
               onOpen: _openTask,
               onPin: _togglePin,
               onClose: () => setState(() => _drawerDay = null),
@@ -970,7 +942,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     setState(() {
       _drawerDay = day;
       _drawerTasks = tasks;
-      _showAxis = true;
+      _showAxis = false;
     });
   }
 
@@ -1659,11 +1631,8 @@ class _DayPanel extends StatelessWidget {
   const _DayPanel({
     required this.day,
     required this.tasks,
-    required this.vertical,
     required this.showAxis,
-    required this.onToggleOrientation,
     required this.onShowAxis,
-    required this.onCreate,
     required this.onOpen,
     required this.onPin,
     required this.onClose,
@@ -1676,11 +1645,8 @@ class _DayPanel extends StatelessWidget {
 
   final CompanyDate day;
   final List<TaskRecord> tasks;
-  final bool vertical;
   final bool showAxis;
-  final VoidCallback onToggleOrientation;
   final VoidCallback onShowAxis;
-  final VoidCallback? onCreate;
   final ValueChanged<String> onOpen;
   final Future<void> Function(TaskRecord) onPin;
   final VoidCallback onClose;
@@ -1729,25 +1695,8 @@ class _DayPanel extends StatelessWidget {
                     showAxis ? Icons.list_alt : Icons.view_timeline_outlined,
                     size: 16,
                   ),
-                  label: Text(showAxis ? '清单' : '日轴'),
+                  label: const Text('时间轴'),
                 ),
-                if (showAxis)
-                  OutlinedButton.icon(
-                    onPressed: onToggleOrientation,
-                    icon: Icon(
-                      vertical
-                          ? Icons.view_stream_outlined
-                          : Icons.view_agenda_outlined,
-                      size: 16,
-                    ),
-                    label: Text(vertical ? '纵向' : '横向'),
-                  ),
-                if (onCreate != null)
-                  FilledButton.tonalIcon(
-                    onPressed: onCreate,
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('新建'),
-                  ),
               ],
             ),
             const Divider(height: 12),
@@ -1758,7 +1707,6 @@ class _DayPanel extends StatelessWidget {
                   ? _DayAxisView(
                       day: day,
                       tasks: tasks,
-                      vertical: vertical,
                       onOpen: onOpen,
                       onDragStarted: onAxisDragStarted,
                       onDragUpdate: onAxisDragUpdate,
@@ -1837,7 +1785,6 @@ class _DayAxisView extends StatelessWidget {
   const _DayAxisView({
     required this.day,
     required this.tasks,
-    required this.vertical,
     required this.onOpen,
     required this.onDragStarted,
     required this.onDragUpdate,
@@ -1848,7 +1795,6 @@ class _DayAxisView extends StatelessWidget {
 
   final CompanyDate day;
   final List<TaskRecord> tasks;
-  final bool vertical;
   final ValueChanged<String> onOpen;
   final void Function(_AxisDragData, Offset) onDragStarted;
   final void Function(Offset) onDragUpdate;
@@ -1861,20 +1807,9 @@ class _DayAxisView extends StatelessWidget {
     final layout = DayAxisLayout.compute(
       day: day,
       tasks: tasks,
-      mode: vertical ? DayAxisMode.vertical : DayAxisMode.horizontal,
-      allowDrag: !readOnly,
+      mode: DayAxisMode.vertical,
     );
     if (layout.entries.isEmpty) return const EmptyView(message: '这一天暂无负责的任务');
-    if (!vertical) {
-      return _HorizontalAxis(
-        layout: layout,
-        onOpen: onOpen,
-        onDragStarted: onDragStarted,
-        onDragUpdate: onDragUpdate,
-        onDragEnd: onDragEnd,
-        onAccessibleAdjust: onAccessibleAdjust,
-      );
-    }
     return Column(
       children: [
         if (layout.allDay.isNotEmpty)
@@ -1908,11 +1843,7 @@ class _AllDayStrip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '全天',
-            style: Theme.of(context).textTheme.labelSmall
-                ?.copyWith(color: PandoraColors.muted),
-          ),
+          Text('全天', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: PandoraColors.muted)),
           const SizedBox(height: 4),
           Wrap(
             spacing: 4,
@@ -1920,98 +1851,13 @@ class _AllDayStrip extends StatelessWidget {
             children: [
               for (final entry in entries)
                 ActionChip(
-                  label: Text(
-                    entry.task.title,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  avatar: entry.pendingProjection
-                      ? const Icon(Icons.edit_calendar_outlined, size: 14)
-                      : null,
+                  label: Text(entry.task.title, overflow: TextOverflow.ellipsis),
+                  avatar: entry.pendingProjection ? const Icon(Icons.edit_calendar_outlined, size: 14) : null,
                   onPressed: () => onOpen(entry.task.id),
                 ),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _HorizontalAxis extends StatelessWidget {
-  const _HorizontalAxis({
-    required this.layout,
-    required this.onOpen,
-    required this.onDragStarted,
-    required this.onDragUpdate,
-    required this.onDragEnd,
-    required this.onAccessibleAdjust,
-  });
-
-  final DayAxisLayout layout;
-  final ValueChanged<String> onOpen;
-  final void Function(_AxisDragData, Offset) onDragStarted;
-  final void Function(Offset) onDragUpdate;
-  final void Function(_AxisDragData) onDragEnd;
-  final void Function(DayAxisEntry, CalendarDragMode, int) onAccessibleAdjust;
-
-  static const double _timelineWidth = 1440;
-  static const double _rowHeight = 38;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SizedBox(
-        width: _timelineWidth,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _TimeRuler(rowHeight: 24, timelineWidth: _timelineWidth),
-            for (final entry in layout.entries)
-              SizedBox(
-                height: _rowHeight,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final start = entry.startMinutes.clamp(0, 1440);
-                    final end = entry.endMinutes.clamp(start, 1440);
-                    final left = start / 1440 * constraints.maxWidth;
-                    final width = ((end - start) / 1440 * constraints.maxWidth)
-                        .clamp(8.0, constraints.maxWidth);
-                    return Stack(
-                      children: [
-                        Positioned.fill(
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(color: PandoraColors.line),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          left: left,
-                          width: width,
-                          top: 5,
-                          bottom: 5,
-                          child: _AxisTaskBlock(
-                            entry: entry,
-                            onOpen: onOpen,
-                            compact: false,
-                            vertical: false,
-                            pixelsPerHour: constraints.maxWidth / 24,
-                            onDragStarted: onDragStarted,
-                            onDragUpdate: onDragUpdate,
-                            onDragEnd: onDragEnd,
-                            onAccessibleAdjust: onAccessibleAdjust,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-          ],
-        ),
       ),
     );
   }
@@ -2108,33 +1954,6 @@ class _VerticalAxis extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _TimeRuler extends StatelessWidget {
-  const _TimeRuler({required this.rowHeight, required this.timelineWidth});
-
-  final double rowHeight;
-  final double timelineWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: rowHeight,
-      child: Stack(
-        children: [
-          for (var hour = 0; hour <= 24; hour += 3)
-            Positioned(
-              left: hour / 24 * timelineWidth,
-              top: 4,
-              child: Text(
-                '${hour.toString().padLeft(2, '0')}:00',
-                style: const TextStyle(fontSize: 9, color: PandoraColors.muted),
-              ),
-            ),
-        ],
       ),
     );
   }

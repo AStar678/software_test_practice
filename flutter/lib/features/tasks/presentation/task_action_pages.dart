@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/company/company_date.dart';
 import '../../../core/company/company_time.dart';
+import '../../../core/company/date_picker_bounds.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
@@ -173,11 +174,19 @@ class _TaskReopenPageState extends ConsumerState<TaskReopenPage> {
 
   Future<void> _pickDate({required bool isStart}) async {
     final current = (isStart ? _startDate : _dueDate) ?? ref.read(workspaceClockProvider).businessDate;
+    final startDay = isStart || _startDate == null
+        ? null
+        : DateTime(_startDate!.year, _startDate!.month, _startDate!.day);
+    final initial = DatePickerBounds.clampInitial(
+      DateTime(current.year, current.month, current.day),
+      startDay,
+    )!;
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(current.year, current.month, current.day),
+      initialDate: initial,
       firstDate: DateTime(2020, 1, 1),
       lastDate: DateTime(2040, 12, 31),
+      selectableDayPredicate: isStart ? null : (day) => DatePickerBounds.endOnOrAfter(day, startDay),
       cancelText: '取消',
       confirmText: '确定',
     );
@@ -189,7 +198,6 @@ class _TaskReopenPageState extends ConsumerState<TaskReopenPage> {
         if (_dueDate == null || _dueDate!.isBefore(date)) _dueDate = date;
       } else {
         _dueDate = date;
-        if (_startDate == null || date.isBefore(_startDate!)) _startDate = date;
       }
     });
   }

@@ -246,11 +246,13 @@ void main() {
     await pumpCalendar(tester, backend);
     await tester.tap(find.text('拖动任务').hitTestable().first);
     await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, '时间轴'));
+    await tester.pumpAndSettle();
 
     final handle = find.byKey(const ValueKey('axis-end-t1'));
     final gesture = await tester.startGesture(tester.getCenter(handle));
     await tester.pump(const Duration(milliseconds: 600));
-    await gesture.moveBy(const Offset(44, 0));
+    await gesture.moveBy(const Offset(0, 44));
     await tester.pump(const Duration(milliseconds: 100));
     await gesture.up();
     await tester.pumpAndSettle();
@@ -288,12 +290,14 @@ void main() {
 
     await tester.tap(find.text('拖动任务').hitTestable().first);
     await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, '时间轴'));
+    await tester.pumpAndSettle();
 
     final axisBlock = find.byKey(const ValueKey('axis-task-t1'));
     expect(axisBlock, findsOneWidget);
     final gesture = await tester.startGesture(tester.getCenter(axisBlock));
     await tester.pump(const Duration(milliseconds: 600));
-    await gesture.moveBy(const Offset(60, 0));
+    await gesture.moveBy(const Offset(0, 44));
     await tester.pump(const Duration(milliseconds: 100));
     await gesture.up();
     await tester.pumpAndSettle();

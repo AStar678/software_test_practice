@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/company/date_picker_bounds.dart';
 import '../../../core/preferences/app_preferences.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
@@ -328,7 +329,7 @@ class _TaskTablePageState extends ConsumerState<TaskTablePage> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () async {
-                            final picked = await _pickFilterDate(to);
+                            final picked = await _pickFilterDate(to, start: from);
                             if (picked != null) {
                               setSheetState(() => to = picked);
                             }
@@ -385,11 +386,12 @@ class _TaskTablePageState extends ConsumerState<TaskTablePage> {
     );
   }
 
-  Future<DateTime?> _pickFilterDate(DateTime? current) => showDatePicker(
+  Future<DateTime?> _pickFilterDate(DateTime? current, {DateTime? start}) => showDatePicker(
     context: context,
-    initialDate: current ?? DateTime.now(),
+    initialDate: DatePickerBounds.clampInitial(current ?? DateTime.now(), start)!,
     firstDate: DateTime(2020),
     lastDate: DateTime(2040, 12, 31),
+    selectableDayPredicate: start == null ? null : (day) => DatePickerBounds.endOnOrAfter(day, start),
   );
 
   Widget _body() {

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/company/company_date.dart';
 import '../../../core/company/company_time.dart';
+import '../../../core/company/date_picker_bounds.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/navigation_targets.dart';
 import '../../../core/router/read_context.dart';
@@ -15,6 +16,7 @@ import '../../../core/widgets/state_views.dart';
 import '../../comments/presentation/comments_section.dart';
 import '../../tasks/domain/task_record.dart';
 import '../../tasks/presentation/task_providers.dart';
+import '../../tags/presentation/tag_badge.dart';
 import '../../tags/presentation/tag_selector.dart';
 import '../../tags/presentation/tags_providers.dart';
 import '../domain/work_log.dart';
@@ -120,11 +122,13 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
   Future<void> _pickDate({required bool from}) async {
     final today = DateTime.now();
     final current = from ? _from : _to;
+    final start = from ? null : _from;
     final picked = await showDatePicker(
       context: context,
-      initialDate: current ?? today,
+      initialDate: DatePickerBounds.clampInitial(current ?? today, start)!,
       firstDate: DateTime(today.year - 5),
       lastDate: DateTime(today.year + 5),
+      selectableDayPredicate: start == null ? null : (day) => DatePickerBounds.endOnOrAfter(day, start),
       helpText: from ? '选择开始日期' : '选择结束日期',
     );
     if (picked == null || !mounted) return;
@@ -296,11 +300,7 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
                           spacing: 6,
                           children: [
                             for (final tag in log.tags)
-                              StatusBadge(
-                                label: tag.name,
-                                color: _tagColor(tag),
-                                solid: widget.readContext is! NormalReadContext,
-                              ),
+                              TagBadge(tag: tag),
                           ],
                         ),
                       ),
@@ -872,7 +872,6 @@ class WorkLogDetailPage extends ConsumerStatefulWidget {
 class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
   WorkLog? _log;
   Object? _error;
-  bool _deleting = false;
 
   @override
   void initState() {
@@ -888,47 +887,6 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = error);
-    }
-  }
-
-  Future<void> _delete(WorkLog log) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除日志？'),
-        content: const Text('删除后同一业务日不能重置首次创建时间，重新填写仍受原冻结窗口约束。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
-    setState(() => _deleting = true);
-    final keys = ref.read(operationKeysProvider);
-    final key = keys.keyFor(
-      scope: 'log-delete:${log.id}',
-      method: 'DELETE',
-      path: '/work-logs/${log.id}',
-      body: const {},
-    );
-    try {
-      await ref
-          .read(workLogsApiProvider)
-          .delete(id: log.id, idempotencyKey: key);
-      keys.complete('log-delete:${log.id}');
-      if (mounted) Navigator.of(context).pop();
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _deleting = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
@@ -950,11 +908,6 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
               if (mounted) unawaited(_load());
             },
             icon: const Icon(Icons.edit_outlined),
-          ),
-          IconButton(
-            tooltip: '删除日志',
-            onPressed: _deleting ? null : () => _delete(log),
-            icon: const Icon(Icons.delete_outline),
           ),
         ],
       ],
@@ -1007,11 +960,7 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
                       spacing: 6,
                       children: [
                         for (final tag in log.tags)
-                          StatusBadge(
-                            label: tag.name,
-                            color: _tagColor(tag),
-                            solid: widget.readContext is! NormalReadContext,
-                          ),
+                          TagBadge(tag: tag),
                       ],
                     ),
                   ),
@@ -1044,12 +993,4 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
             ),
     );
   }
-}
-
-Color _tagColor(TaskTag tag) {
-  final parsed = int.tryParse(
-    (tag.color ?? '').replaceFirst('#', ''),
-    radix: 16,
-  );
-  return parsed == null ? PandoraColors.petal : Color(0xFF000000 | parsed);
 }

@@ -74,6 +74,7 @@ class WorkLogsApi {
     return result.data;
   }
 
+  /// 保留底层清理能力；日志详情不再提供用户删除入口。
   Future<void> delete({required String id, required String idempotencyKey}) async {
     await _client.write<void>(
       method: 'DELETE',

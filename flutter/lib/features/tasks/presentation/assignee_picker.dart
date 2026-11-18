@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../people/domain/person_summary.dart';
 
-/// 有序多负责人选择：可搜索、可增删、可调整顺序，候选只带授权摘要。
+/// 有序多负责人选择：组织树展示、可搜索、可增删、可调整顺序。
 class AssigneePicker extends StatefulWidget {
   const AssigneePicker({
     super.key,
@@ -12,6 +12,7 @@ class AssigneePicker extends StatefulWidget {
     required this.onChanged,
     this.allowReorder = true,
     this.search,
+    this.tree = true,
   });
 
   final List<PersonSummary> selected;
@@ -19,6 +20,7 @@ class AssigneePicker extends StatefulWidget {
   final ValueChanged<List<PersonSummary>> onChanged;
   final bool allowReorder;
   final ValueChanged<String>? search;
+  final bool tree;
 
   @override
   State<AssigneePicker> createState() => _AssigneePickerState();
@@ -26,6 +28,8 @@ class AssigneePicker extends StatefulWidget {
 
 class _AssigneePickerState extends State<AssigneePicker> {
   final _searchController = TextEditingController();
+  final Set<String> _expandedTeams = <String>{};
+  final Set<String> _collapsedDepartments = <String>{};
   String _query = '';
 
   @override
@@ -55,13 +59,17 @@ class _AssigneePickerState extends State<AssigneePicker> {
     widget.onChanged(next);
   }
 
+  List<PersonSummary> get _filtered {
+    final query = _query.toLowerCase();
+    return widget.candidates.where((person) {
+      if (query.isEmpty) return true;
+      return '${person.displayName} ${person.positionPath}'.toLowerCase().contains(query);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filtered = widget.candidates.where((person) {
-      if (_query.isEmpty) return true;
-      final haystack = '${person.displayName} ${person.positionPath}'.toLowerCase();
-      return haystack.contains(_query.toLowerCase());
-    }).toList();
+    final filtered = _filtered;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -93,39 +101,139 @@ class _AssigneePickerState extends State<AssigneePicker> {
         ),
         const SizedBox(height: 6),
         ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 240),
+          constraints: const BoxConstraints(maxHeight: 320),
           child: filtered.isEmpty
               ? const Padding(
                   padding: EdgeInsets.all(12),
                   child: Text('没有匹配的员工', style: TextStyle(color: PandoraColors.muted)),
                 )
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final person = filtered[index];
-                    final selectedIndex = widget.selected.indexWhere((item) => item.id == person.id);
-                    return CheckboxListTile(
-                      dense: true,
-                      value: selectedIndex >= 0,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      title: Text(person.displayName, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      subtitle: person.positionPath.isEmpty
-                          ? null
-                          : Text(
-                              person.positionPath,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 11, color: PandoraColors.muted),
-                            ),
-                      secondary: selectedIndex >= 0 ? Text('第 ${selectedIndex + 1} 位') : null,
-                      onChanged: (_) => _toggle(person),
-                    );
-                  },
-                ),
+              : widget.tree
+                  ? _tree(filtered)
+                  : _flat(filtered),
         ),
       ],
     );
+  }
+
+  Widget _flat(List<PersonSummary> people) {
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: people.length,
+      itemBuilder: (context, index) => _personTile(people[index]),
+    );
+  }
+
+  Widget _tree(List<PersonSummary> people) {
+    final departments = <String, Map<String, List<PersonSummary>>>{};
+    for (final person in people) {
+      final department = _label(person.departmentName, '未分组部门');
+      final team = _label(person.teamName, '未分组团队');
+      departments.putIfAbsent(department, () => <String, List<PersonSummary>>{}).putIfAbsent(team, () => <PersonSummary>[]).add(person);
+    }
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final department in departments.entries)
+            _departmentNode(department.key, department.value),
+        ],
+      ),
+    );
+  }
+
+  Widget _departmentNode(String name, Map<String, List<PersonSummary>> teams) {
+    final searchExpanded = _query.isNotEmpty;
+    final expanded = searchExpanded || !_collapsedDepartments.contains(name);
+    final total = teams.values.fold<int>(0, (sum, people) => sum + people.length);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: () => setState(() {
+            if (!expanded) {
+              _collapsedDepartments.remove(name);
+            } else {
+              _collapsedDepartments.add(name);
+            }
+          }),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: Row(children: [
+              _expander(expanded),
+              const SizedBox(width: 6),
+              Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.w600))),
+              Text('$total 人', style: const TextStyle(fontSize: 11, color: PandoraColors.muted)),
+            ]),
+          ),
+        ),
+        if (expanded)
+          for (final team in teams.entries) _teamNode(name, team.key, team.value),
+      ],
+    );
+  }
+
+  Widget _teamNode(String department, String name, List<PersonSummary> people) {
+    final key = '$department/$name';
+    final expanded = _query.isNotEmpty || _expandedTeams.contains(key);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: () => setState(() {
+            if (expanded) {
+              _expandedTeams.remove(key);
+            } else {
+              _expandedTeams.add(key);
+            }
+          }),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 22, top: 6, bottom: 6, right: 4),
+            child: Row(children: [
+              _expander(expanded),
+              const SizedBox(width: 6),
+              Expanded(child: Text(name)),
+              Text('${people.length} 人', style: const TextStyle(fontSize: 11, color: PandoraColors.muted)),
+            ]),
+          ),
+        ),
+        if (expanded)
+          for (final person in people) _personTile(person, indent: 46),
+      ],
+    );
+  }
+
+  Widget _expander(bool expanded) => AnimatedRotation(
+        turns: expanded ? .25 : 0,
+        duration: const Duration(milliseconds: 120),
+        child: const Icon(Icons.chevron_right, size: 18, color: PandoraColors.muted),
+      );
+
+  Widget _personTile(PersonSummary person, {double indent = 0}) {
+    final selectedIndex = widget.selected.indexWhere((item) => item.id == person.id);
+    return Padding(
+      padding: EdgeInsets.only(left: indent),
+      child: CheckboxListTile(
+        dense: true,
+        value: selectedIndex >= 0,
+        controlAffinity: ListTileControlAffinity.leading,
+        title: Text(person.displayName, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: person.positionName == null || person.positionName!.trim().isEmpty
+            ? null
+            : Text(
+                person.positionName!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, color: PandoraColors.muted),
+              ),
+        secondary: selectedIndex >= 0 ? Text('第 ${selectedIndex + 1} 位') : null,
+        onChanged: (_) => _toggle(person),
+      ),
+    );
+  }
+
+  static String _label(String? value, String fallback) {
+    final text = value?.trim() ?? '';
+    return text.isEmpty ? fallback : text;
   }
 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pandora_employee/features/tags/presentation/tag_manage_page.dart';
 import 'package:pandora_employee/features/tags/presentation/tag_selector.dart';
+import 'package:pandora_employee/features/tags/presentation/tag_badge.dart';
 import 'package:pandora_employee/features/tasks/domain/task_record.dart';
 
 import '../support/test_harness.dart';
@@ -24,13 +25,30 @@ void main() {
     ));
 
     expect(find.text('旧标签（已删除）'), findsOneWidget);
-    expect(find.text('旧标签'), findsNothing, reason: '已删除项不能作为可新增候选出现');
-    expect(find.widgetWithText(ActionChip, '新标签'), findsOneWidget);
+    expect(find.text('新标签'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Delete'));
+    await tester.tap(find.byKey(const ValueKey('tag-tile-new')));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.check_circle), findsNWidgets(2));
+    expect(find.text('新标签'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('tag-tile-new')));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    expect(selected.map((tag) => tag.id), ['old']);
+
+    await tester.tap(find.byKey(const ValueKey('tag-tile-old')));
     await tester.pumpAndSettle();
     expect(find.text('旧标签（已删除）'), findsNothing);
-    expect(find.widgetWithText(ActionChip, '旧标签'), findsNothing);
+    expect(find.byIcon(Icons.check_circle), findsNothing);
+    expect(find.text('旧标签'), findsNothing, reason: '已删除项不能重新挂回');
+  });
+
+  testWidgets('标签徽标使用深色边框文字，避免浅色文字', (tester) async {
+    const tag = TaskTag(id: 't1', name: '珊瑚红', color: '#F6D5D2', border: '#C05B52');
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: TagBadge(tag: tag))));
+    final text = tester.widget<Text>(find.text('珊瑚红'));
+    expect(text.style?.color, const Color(0xFFC05B52));
   });
 
   testWidgets('只有固定创始人能看到标签维护入口', (tester) async {
