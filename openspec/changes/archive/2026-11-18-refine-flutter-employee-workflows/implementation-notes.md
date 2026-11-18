@@ -4,16 +4,18 @@
 - Schema: spec-driven
 - Store: local（仓库 `openspec/`）
 - Implementation roots: `/Users/watuji/MyGitDev/software_test_practice/flutter`（后端未改）
-- Updated: 2026-11-18T19:40:00+08:00
-- Implementation revision: `ec30688` + 未提交改动（53 个文件，工作区 dirty）
-- Progress: 16/16 tasks complete
+- Updated: 2026-11-18T20:24:00+08:00
+- Implementation revision: `fe3b17f` + 未提交改动（Flutter 首页、测试与变更文档，工作区 dirty）
+- Progress: 16/16 tasks complete；本轮完成重新打开的 1.2 与 5.2，待独立验证。
+
+Apply 续接（2026-11-18 20:31，`fe3b17f` + 当前未提交改动）：OpenSpec 返回 `all_done`（16/16）。确认首页限高、日期工具栏和两种视口的回归已在当前工作区；未重复修改代码或任务，也未将以下既有 apply 检查当作本次重跑的结果。转入独立验证。
 
 ## Implementation Map
 
 | Task / requirement / scenario | Code and tests | Decisions / context |
 | ----------------------------- | -------------- | ------------------- |
 | 1.1 五主页标记、日期标题、资料行、文案 | `lib/core/widgets/common.dart`（`PandoraPageMark`/`PandoraPage.titleWidget`）、`home_page.dart`、`task_calendar_page.dart`、`work_logs_page.dart`、`analytics_page.dart`、`destination_pages.dart`、`daily_items_day_page.dart`、`login_page.dart`、`profile_pages.dart`、`tag_manage_page.dart`、任务表单/详情/选人/动作文案 | 主页 AppBar 用标记替代可见页名，语义保留页名；二级页保留文字标题。`test/features/app_navigation_test.dart`、`page_chrome_test.dart` 覆盖五页、二级标题、每日事项仅日期、有无直属上级两种资料。 |
-| 1.2 首页日期工具栏与事件纪紧凑展开 | `home_page.dart` 的 `Wrap` 工具栏（去掉无约束 `FittedBox`）；`home_lists.dart` 的 `_EventCard` 用 `TextPainter.didExceedMaxLines` 判断是否显示行内箭头，整条点击且未截断不可展开 | `test/features/home_web_parity_test.dart` 覆盖 320 宽 + 1.5 字体、上/下月/今天/年月选择器、恰好两行无箭头、长文独立展开与原文换行。 |
+| 1.2 首页半屏、独立日历滚动与事件纪紧凑展开 | `lib/features/home/presentation/home_page.dart` 在 `SafeArea` 内、首页滚动视口外量高度；标题、日期工具栏与弹性日历合在一个限高区块，标题和工具栏只参与外层滚动。把「今天」与标题、加号同组，避免窄屏工具栏折成三行；日期格尺寸、日历锚点和事件纪实现不变。 | `test/features/home_web_parity_test.dart` 在真实导航壳与模拟安全区下覆盖 390×640 / 1.0 与 320×568 / 1.5：上滑到底量整个区块、内外滚动独立、从标题或「今天」下滑、上/下月、今天、年月选择器、新建、当天清单；保留恰好两行无箭头、长文独立展开和原文换行。 |
 | 1.3 名称末字渐隐 | `lib/core/widgets/fading_name_text.dart`（`resolveNameFade`/`FadingNameText`）；接入月历条、日轴、清单、看板、首页任务预览、任务表单父任务、任务表单表格、每日事项条与当天列表 | 按字素边界只渐隐最后一个完整可见字素；`ShaderMask` 仅覆盖该字素；完整名称进入语义。`fading_name_test.dart` 覆盖字素/缩放/恰好容纳；`daily_calendar_web_parity_test.dart` 覆盖跨月条。日志正文不使用该组件。 |
 | 2.1 通知申请中文与筛选空态 | `notifications/domain/notification_language.dart`；`notification_detail_page.dart` 用「申请：类型 · 结果」；`direct`→已生效、未知→任务申请/已处理；无权限/撤回不显示申请元数据与处理意见 | `notification_language_test.dart`（7 项）、`notification_list_test.dart`（服务端筛选/分页/空待审不合成行）。真实服务只读回归 `J28`：经理待审可审、无关账号空、历史申请不计待审、founder `direct` 消息。未重置 demo 库。 |
 | 2.2 完成标准、负责人树、空标签 | `task_form_page.dart` 移除完成标准输入与提交分支、去掉空标签提示；`task_detail_page.dart` 移除常规完成标准段；`assignee_picker.dart` 去掉 320 限高与嵌套滚动，改为随外层 `Column` 展开 | `task_form_test.dart` 编辑场景验证不显示/不发送完成标准、移除最后标签传 `tagIds: []`、长树后末端字段可达；`assignee_picker_test.dart` 验证搜索、展开、无内层滚动、树高超过 320 且拖动滚动外层。DTO/审核历史仍保留字段。 |
@@ -27,9 +29,31 @@
 | 4.2 日志保存回读 | 根因：服务端 PATCH `/work-logs/{id}` 只返回 `logId/rowVersion/businessDate`，`WorkLogsApi.change` 却按完整 `WorkLog` 解码，编辑器再把空正文结果传回详情，表现为保存后旧/空内容。修复：`work_logs_api.dart` 按信封解析并用提交值+基线拼出完整新版本；`work_logs_page.dart` 详情 `_loadGeneration` 防落后响应、保存结果立即应用后按版本重验；列表按单条 `_applySavedLog` 更新并保留分页/筛选/位置；详情 `PopScope` 返回最新日志。 | `work_log_freshness_test.dart`（真实路由：筛选+第二页+位置、详情/列表同版本、stale GET 不覆盖、失败保留草稿）；真实服务 `J32`（创建/编辑后 detail/list 均为新正文与同一 rowVersion，测试后清理或恢复）。**后端未改**：服务端最小信封是有意行为，证据是响应只含三字段。 |
 | 4.3 评论键盘避让 | `comments_section.dart`：`AnimatedPadding(viewInsets.bottom)`、输入 `minLines 1/maxLines 4`、发送行最小高度、`scrollPadding` 与多行键盘类型；提交失败不清空 | `comments_keyboard_test.dart` 覆盖 320 高键盘 inset 下发送可达、输入不被压缩、长文保留、收起键盘草稿、失败保留/成功清空、下属有评论权限。设备实测见 5.2。 |
 | 5.1 静态检查/组件/真实服务回归 | 见下方「Checks Run」 | 真实服务目标为本机 `pandora_demo` 演示库；组件/交互均为 `FakeBackend` 夹具。后端无改动。 |
-| 5.2 Android 模拟器验收 | `output/flutter-client-2026-11-17/native/200-215*.png`；`tool/native_acceptance.py`；双指用 adb root + `/dev/input/event1` MT-B 注入 | API36 ARM64 `employee_api36`/emulator-5554，逻辑 320×640；字体 1.5 与 1.0。覆盖首页工具栏无溢出、标题渐隐、本人/下属双指与返回、日志保存回读、任务/日志真实软键盘。未覆盖第二 Android 版本/真机。 |
+| 5.2 Android 模拟器验收 | `output/flutter-client-2026-11-17/native/230-246` 号截图与无障碍坐标；旧证据 `201-215` 号 | 本轮用最终 APK 实测两档首页；其余按任务要求核对已有 Android 证据，不把组件或 Web 当设备测试。见下面复现步骤和证据边界。 |
 
-## Checks Run
+## Checks Run This Session
+
+| Command | Working directory / setup | Result / evidence |
+| ------- | ------------------------- | ----------------- |
+| `flutter analyze --no-pub` | `flutter/` | No issues found；`/tmp/refine-home-analyze.log`。 |
+| `flutter test --no-pub test/features/home_web_parity_test.dart test/features/daily_calendar_web_parity_test.dart test/features/daily_items_ui_test.dart test/features/app_navigation_test.dart --reporter expanded` | `flutter/`，`FakeBackend` | 最终 19 项通过；`/tmp/refine-home-components.log`。前几轮先后修正了空安全类型、中文返回控件定位和窄屏大字下栏位分组。 |
+| `flutter test --no-pub test/core test/features test/widget_test.dart --reporter expanded` | `flutter/`，夹具，不写入演示服务 | 231 项通过；`/tmp/refine-home-full-components.log`。本轮未重跑历史真实服务集成。 |
+| `./tool/build_demo.sh`；`adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk` | `flutter/`，离线缓存，现有 API 36 ARM64 模拟器和本机演示服务 | BUILD SUCCESSFUL（`/tmp/refine-home-build.log`），安装成功；最终 APK SHA256 `f2ebe315a4d9707f22650296bdf9b8b2afd585d60d51581fef14a7dac8df90d4`。 |
+
+## Android Home Reproduction
+
+使用 `emulator-5554`（`employee_api36`，API 36，密度 `480`）的演示登录态；无需录入手机号、密码或提交内容。不重置演示库，不保存新建事项。截图及坐标 JSON 由 `flutter/` 下 `python3 tool/native_acceptance.py snap <名称>` 产出，保存在本机忽略目录 `output/flutter-client-2026-11-17/native/`。坐标为物理像素。
+
+| 档位 | 复现输入（`adb -s emulator-5554 shell input swipe` 参数） | 结果 |
+| --- | --- | --- |
+| 普通 390×640 / 1.0 (`wm size 1170x1920`) | 上滑到底 `300 720 300 305 420`，点「今天」；日历内 `630 1330 630 880 350`；从「今天」中心 `433 924 433 1370 420` 下滑 | `230`：内容 `y=240…1608`，区块 `y=852…1536`，`684/1368=50%`；`231`：日期向后翻，工具栏和卡片坐标不动；`232`：两张上方卡片恢复完整。 |
+| 窄短 320×568 / 1.5 (`wm size 960x1704`) | `settings put system font_scale 1.5` 后重启 App；上滑到底 `275 710 275 300 420`，点「今天」；日历内 `420 1250 420 930 350`；从「今天」中心 `535 816 535 1280 420` 下滑 | `240`：内容 `y=240…1392`，区块 `y=744…1320`，`576/1152=50%`；`241`：可见日期变化、外层坐标不变；`242`：恢复事件纪及任务看板；`246`：「今天」后点击 11 月 18 日进入当天清单。 |
+
+两档均点过「今天」、上月（到 10 月）、下月（回 11 月）、年月按钮（打开选择器后取消）和加号（打开新建后返回）；截图 `233–235` 和 `243–245`，未见横向溢出。测量取截图与无障碍边界，排除顶栏、底栏、安全区及区块外的 24 dp 尾部留白。结束时已恢复原 `960x1920`、密度 `480`、字体 `1.0`。
+
+旧设备证据核对：`201` 有截断标题与状态的共存截图；`202–205` 和历史手势记录提供本人密度变化、下属日程及返回路径，其中 `205` 是下属拉开后的单帧，不单凭该图推断手势过程。`210–212`、`215` 对应真实键盘、日志发送与任务评论区；`214` 可见保存后的合成测试标记，历史记录报告详情也回读成功，但 `213` 停在评论区，不能从该截图独立读到正文。本轮未重复写日志或评论；需要完整详情画面时，独立验证可在隔离样例上补拍。
+
+## Historical Checks (2026-11-18, Prior Session)
 
 | Command | Working directory / setup | Result / evidence | Run time or revision |
 | ------- | ------------------------- | ----------------- | -------------------- |
@@ -41,7 +65,7 @@
 | `settings put system font_scale 1.5` + 重启 App；`python3 tool/native_acceptance.py snap …` | 同上 | 200 首页工具栏换行无黄黑条；201 月条末字渐隐；205 下属日历；退出前恢复 1.0 | 2026-11-18 19:31–19:37 |
 | MT-B 双指注入（`sendevent /dev/input/event1` ABS_MT_SLOT/TRACKING_ID/POSITION） | 同上，`adb root` 后注入；人工查看 UI 树/截图 | 本人 203 拉开后 `+2` 消失、204 收拢后 `+2/+3` 回来且未开清单；205 下属拉开/返回月历/日视图均正常；偏好写入 `calendar.weekHeight=72.0`（账号隔离） | 2026-11-18 19:33–19:35 |
 | 设备真实软键盘：日志详情评论、任务详情评论 | 同上；`settings put secure show_ime_with_hard_keyboard 1` | 210 日志、215 任务：键盘弹出后输入框与发送按钮完整位于键盘上方；211 输入 `real-keyboard-check`，212 发送成功计数变为 1，输入清空。任务评论仅聚焦未发送，避免污染 demo。 | 2026-11-18 19:36–19:38 |
-| 设备日志保存回读 | 同上，字体 1.5 | 编辑今日日志插入 `[mobile-check]` 后保存，213 详情、214 列表均显示新正文；随后用 API 恢复原文并删除临时评论（rowVersion 现为 3，正文已还原） | 2026-11-18 19:37 |
+| 设备日志保存回读 | 同上，字体 1.5 | 当时记录编辑并保存 `[mobile-check]` 后详情、列表回读成功；214 可见新正文，213 未拍到正文。历史记录注明用 API 恢复原文并删除临时评论。 | 2026-11-18 19:37 |
 
 ## Verification Reminders
 
@@ -52,5 +76,5 @@
 - **日志保存链路的关键假设**：客户端把最小 PATCH 信封与提交值合成新版本；若服务端以后返回完整 `WorkLog`，当前解析仍兼容（优先使用响应 `logId/rowVersion/businessDate`，正文用提交值）。列表单条更新按 `rowVersion` 丢弃旧响应；若服务端出现同版本不同正文，客户端会保留较新的本地值，需服务契约保证版本递增。
 - **`_withinAuthorScope`** 对本人用当前账号、对下属用 `authorId` 过滤；构造的已保存日志沿用基线作者。未专门模拟服务端返回跨作者异常的界面场景（组件测试覆盖版本/代次守卫）。
 - **日视图入口锚点**：顶栏直进取“最上方可见日”（含部分可见行），设备一次实测从 2026-11-09 进入；若验收期望严格从整行首日进入，需要与设计确认，当前实现与既有 `_position()` 保存口径一致。
-- **未测**：第二 Android 版本、真机软键盘/手势、远端 HTTP 服务器连通、真实振感、release 签名与 HTTPS；这些仍由使用者/组员在后续展示阶段负责，不能由本次组件或模拟器证据替代。
+- **本轮范围**：最终 APK 的设备实测是首页；其余为旧设备证据核对。未覆盖第二 Android 版本、真机软键盘/手势、远端 HTTP 服务器连通、真实振感、release 签名与 HTTPS；不能由组件或单台模拟器结果替代。
 - 本次未改 `verification.md`，未声明独立 e13 验证结论；上述均为 apply 证据。

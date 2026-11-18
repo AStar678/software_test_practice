@@ -146,6 +146,7 @@ ProviderContainer buildTestContainer({
   required EmployeeUser user,
   DateTime? now,
   int Function()? accountEpoch,
+  SessionManager? sessionManager,
 }) {
   final clock = WorkspaceClock(now: () => now ?? DateTime.utc(2026, 11, 10, 4));
   final dio = Dio(
@@ -173,6 +174,8 @@ ProviderContainer buildTestContainer({
       ),
       workspaceClockProvider.overrideWithValue(clock),
       apiClientProvider.overrideWithValue(client),
+      if (sessionManager != null)
+        sessionManagerProvider.overrideWithValue(sessionManager),
       sessionStateProvider.overrideWith(
         (ref) => Stream<SessionState>.value(
           SessionState(
