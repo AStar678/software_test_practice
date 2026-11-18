@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:pandora_employee/core/providers.dart';
+import 'package:pandora_employee/core/widgets/fading_name_text.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pandora_employee/core/company/company_date.dart';
@@ -28,6 +29,61 @@ Map<String, Object?> record({
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('跨月条长名称在完整字素处渐隐且不使用省略号', (tester) async {
+    tester.view.physicalSize = const Size(390, 850);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    const longName = '跨月条的每日事项名称很长需要渐隐而不是省略号';
+    final saved = {
+      ...record(start: '2026-10-28', end: '2026-11-12'),
+      'body': longName,
+      'completed': false,
+      'status': 'active',
+    };
+    final backend = FakeBackend();
+    backend.on(
+      'GET',
+      '/daily-items',
+      (_) => FakeResponse({
+        'items': [saved],
+        'total': 1,
+      }),
+    );
+    final container = buildTestContainer(
+      backend: backend,
+      user: employeeUser(),
+    );
+    addTearDown(container.dispose);
+    final key = GlobalKey<DailyItemsCalendarState>();
+    await tester.pumpWidget(
+      wrapWithScope(
+        container,
+        Scaffold(
+          body: DailyItemsCalendar(
+            key: key,
+            businessDate: const CompanyDate(2026, 11, 10),
+            onDaySelected: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    key.currentState!.goToDate(const CompanyDate(2026, 11, 5));
+    await tester.pumpAndSettle();
+    final fading = tester
+        .widgetList<FadingNameText>(find.byType(FadingNameText))
+        .where((widget) => widget.text == longName);
+    expect(fading, isNotEmpty, reason: '跨月条仍使用名称渐隐预览');
+    expect(
+      tester
+          .widgetList<Text>(find.byType(Text))
+          .where((text) => (text.data ?? '').contains('…')),
+      isEmpty,
+      reason: '跨月条名称不用省略号',
+    );
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('续接中段短按命中实际日，500ms长按一次触觉，完成事项整条确认后平移', (tester) async {
     tester.view.physicalSize = const Size(390, 850);

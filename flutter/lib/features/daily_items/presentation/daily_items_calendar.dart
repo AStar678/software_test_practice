@@ -8,6 +8,7 @@ import '../../../core/company/company_date.dart';
 import '../../../core/preferences/app_preferences.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
+import '../../../core/widgets/fading_name_text.dart';
 import '../domain/daily_item.dart';
 import '../domain/month_layout.dart';
 import 'daily_items_providers.dart';
@@ -892,10 +893,10 @@ class _BarVisual extends StatelessWidget {
             }, style: TextStyle(fontSize: 10, color: color)),
             const SizedBox(width: 2),
             Expanded(
-              child: Text(
+              child: FadingNameText(
                 bar.name.split('\n').first,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                semanticsLabel: bar.name.split('\n').first,
                 style: TextStyle(
                   fontSize: 11,
                   color: color,

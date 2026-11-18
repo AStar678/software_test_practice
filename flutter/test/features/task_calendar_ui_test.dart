@@ -107,7 +107,7 @@ void main() {
     });
   }
 
-  testWidgets('本人月历命中日打开完整清单，时间轴仅纵向', (tester) async {
+  testWidgets('本人月历命中日打开完整清单，日视图仅纵向', (tester) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
@@ -147,7 +147,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('2026年11月'), findsOneWidget);
-    await tester.tap(find.text('定时任务').hitTestable().first);
+    await tester.tap(namePreview('定时任务').hitTestable().first);
     await tester.pumpAndSettle();
 
     expect(find.text('2026-11-10 完整清单'), findsOneWidget);
@@ -158,14 +158,15 @@ void main() {
     expect(find.widgetWithText(OutlinedButton, '清单'), findsNothing);
     expect(find.widgetWithText(OutlinedButton, '横向'), findsNothing);
     expect(find.widgetWithText(OutlinedButton, '纵向'), findsNothing);
-    expect(find.widgetWithText(OutlinedButton, '时间轴'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, '日视图'), findsOneWidget);
     expect(find.text('新建'), findsNothing);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, '时间轴'));
+    await tester.tap(find.widgetWithText(OutlinedButton, '日视图'));
     await tester.pumpAndSettle();
+    expect(find.widgetWithText(OutlinedButton, '清单'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, '日视图'), findsNothing);
     expect(find.text('00:00'), findsWidgets);
     expect(find.text('全天'), findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, '时间轴'), findsOneWidget);
     expect(find.text('新建'), findsNothing);
 
     await tester.tap(find.byTooltip('关闭'));
@@ -174,7 +175,7 @@ void main() {
     expect(find.text('2026年11月'), findsOneWidget);
   });
 
-  testWidgets('下属日清单默认列表，仅有时间轴切换', (tester) async {
+  testWidgets('下属日清单默认列表，仅有日视图切换', (tester) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
@@ -208,17 +209,18 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('下属任务').hitTestable().first);
+    await tester.tap(namePreview('下属任务').hitTestable().first);
     await tester.pumpAndSettle();
     expect(find.widgetWithText(OutlinedButton, '清单'), findsNothing);
     expect(find.widgetWithText(OutlinedButton, '纵向'), findsNothing);
     expect(find.widgetWithText(OutlinedButton, '横向'), findsNothing);
-    expect(find.widgetWithText(OutlinedButton, '时间轴'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, '日视图'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, '时间轴'));
+    await tester.tap(find.widgetWithText(OutlinedButton, '日视图'));
     await tester.pumpAndSettle();
+    expect(find.widgetWithText(OutlinedButton, '清单'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, '日视图'), findsNothing);
     expect(find.text('00:00'), findsWidgets);
-    expect(find.widgetWithText(OutlinedButton, '时间轴'), findsOneWidget);
   });
 
   testWidgets('跨日条按实际触点日期打开清单，不固定回条首日', (tester) async {
@@ -330,7 +332,7 @@ void main() {
       await tester.pumpAndSettle();
       final counter = tester.getRect(overflow);
       for (var lane = 0; lane < 3; lane++) {
-        final bar = tester.getRect(find.text('周日任务$lane').first);
+        final bar = tester.getRect(namePreview('周日任务$lane').first);
         expect(bar.bottom, lessThanOrEqualTo(counter.top));
         expect(
           counter.center.dx,
@@ -517,8 +519,8 @@ void main() {
           ),
       isTrue,
     );
-    expect(find.byTooltip('月视图'), findsOneWidget);
-    expect(find.byTooltip('日视图'), findsNothing);
+    expect(find.byTooltip('日视图'), findsOneWidget);
+    expect(find.byTooltip('返回月历'), findsNothing);
     await tester.pumpWidget(page('p2'));
     await tester.pumpAndSettle();
     expect(

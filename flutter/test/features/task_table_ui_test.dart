@@ -128,7 +128,7 @@ void main() {
     expect(find.text('筛选'), findsOneWidget);
     expect(find.text('负责人'), findsOneWidget);
     expect(find.text('状态'), findsOneWidget);
-    expect(find.text('排期'), findsOneWidget);
+    expect(find.text('截止时间'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilledButton, '筛选'));
     await tester.pumpAndSettle();
@@ -207,5 +207,43 @@ void main() {
       ),
       isEmpty,
     );
+  });
+
+  testWidgets('截止列用有效截止：公司时区、全天口径，待审提议不覆盖', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final backend = FakeBackend();
+    backend.on('GET', '/tasks/table', (_) => FakeResponse({
+      'items': [
+        {
+          ...tableTask(0),
+          'dueAt': '2026-11-11T10:00:00Z',
+          'pending': true,
+          'frozen': true,
+          'pendingKind': 'reschedule',
+          'pendingRequestId': 'r-pending',
+          'pendingSchedule': {'dueAt': '2026-11-20T10:00:00Z'},
+        },
+        {
+          ...tableTask(1),
+          'title': '全天任务',
+          'allDay': true,
+          'startAt': null,
+          'dueAt': null,
+          'startDate': '2026-11-10',
+          'dueDate': '2026-11-12',
+        },
+      ],
+      'total': 2,
+      'limit': 50,
+      'offset': 0,
+      'nextOffset': null,
+    }));
+    await pumpTable(tester, backend);
+    expect(find.text('2026-11-11 18:00'), findsOneWidget, reason: '定时截止用公司时区');
+    expect(find.textContaining('2026-11-20'), findsNothing, reason: '待审提议不取代有效截止');
+    expect(find.textContaining('10:00'), findsNothing, reason: '不拼开始时间');
+    expect(find.text('2026-11-12（全天）'), findsOneWidget, reason: '全天按结束日');
+    expect(find.text('排期'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 }

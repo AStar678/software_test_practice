@@ -83,24 +83,11 @@ class _TaskDetailBody extends ConsumerWidget {
       children: [
         if (readContext is! NormalReadContext)
           _ReadOnlyBanner(context: readContext),
-        if (task.pending)
-          _NoticeBanner(
-            icon: Icons.hourglass_top,
-            text:
-                '有待审核的${task.pendingKind == null ? '申请' : _kindLabel(task.pendingKind!)}，业务写入暂停。',
-            color: PandoraColors.pending,
-          ),
         if (task.frozen && !task.pending)
           const _NoticeBanner(
             icon: Icons.pause_circle_outline,
             text: '任务当前处于冻结状态。',
             color: PandoraColors.pending,
-          ),
-        if (overdue)
-          const _NoticeBanner(
-            icon: Icons.schedule,
-            text: '已超过截止时间。',
-            color: PandoraColors.overdue,
           ),
         Text(
           task.title,
@@ -141,27 +128,33 @@ class _TaskDetailBody extends ConsumerWidget {
               ),
           ],
         ),
-        const SizedBox(height: 14),
-        _Section(title: '排期', child: Text(task.scheduleText(zone))),
-        _Section(
-          title: '负责人（按顺序）',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var index = 0; index < task.assigneeIds.length; index++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Text(
-                    '${index + 1}. ${participantById[task.assigneeIds[index]] ?? task.assigneeIds[index]}',
-                  ),
-                ),
-              if (task.assigneeIds.isEmpty) const Text('暂无负责人'),
-            ],
+        const SizedBox(height: 12),
+        _MetaRow(
+          label: '截止',
+          child: Text(
+            overdue
+                ? '${task.deadlineText(zone)} · 已逾期'
+                : task.deadlineText(zone),
+            style: overdue
+                ? const TextStyle(color: PandoraColors.overdue)
+                : null,
+          ),
+        ),
+        _MetaRow(label: '排期', child: Text(task.scheduleText(zone))),
+        _MetaRow(
+          label: '负责人',
+          child: Text(
+            task.assigneeIds.isEmpty
+                ? '暂无负责人'
+                : [
+                    for (var index = 0; index < task.assigneeIds.length; index++)
+                      '${index + 1}. ${participantById[task.assigneeIds[index]] ?? task.assigneeIds[index]}',
+                  ].join('\n'),
           ),
         ),
         if (task.tags.isNotEmpty)
-          _Section(
-            title: '标签',
+          _MetaRow(
+            label: '标签',
             child: Wrap(
               spacing: 6,
               runSpacing: 6,
@@ -174,12 +167,18 @@ class _TaskDetailBody extends ConsumerWidget {
               ],
             ),
           ),
+        _MetaRow(
+          label: '创建',
+          child: Text(
+            '${participantById[task.originalCreatorId] ?? '未知'}'
+            '${task.createdAt == null ? '' : ' · ${zone.formatDateTime(task.createdAt!)}'}',
+            style: const TextStyle(color: PandoraColors.muted),
+          ),
+        ),
         if (task.description.isNotEmpty)
           _Section(title: '说明', child: Text(task.description)),
-        if (task.acceptanceCriteria.isNotEmpty)
-          _Section(title: '完成标准（历史）', child: Text(task.acceptanceCriteria)),
         if (task.progressNote.isNotEmpty)
-          _Section(title: '最新进展', child: Text(task.progressNote)),
+          _Section(title: '当前进展', child: Text(task.progressNote)),
         if (task.parentTaskId != null)
           _Section(
             title: '父任务',
@@ -194,24 +193,6 @@ class _TaskDetailBody extends ConsumerWidget {
                       style: TextStyle(color: PandoraColors.brand),
                     ),
                   ),
-          ),
-        _Section(
-          title: '来源',
-          child: Text(
-            '原创建者：${participantById[task.originalCreatorId] ?? '未知'}\n'
-            '创建时间：${task.createdAt == null ? '未知' : zone.formatDateTime(task.createdAt!)}',
-            style: const TextStyle(color: PandoraColors.muted, height: 1.5),
-          ),
-        ),
-        if (task.route != null)
-          _Section(
-            title: '审核',
-            child: Text(
-              task.route!.blocked
-                  ? (task.route!.reasonText ?? '当前无法确定审核人')
-                  : task.route!.reasonText ?? '按提交时的直属上级审核',
-              style: const TextStyle(color: PandoraColors.muted),
-            ),
           ),
         const SizedBox(height: 8),
         if (canWrite) ...[
@@ -245,6 +226,15 @@ class _TaskDetailBody extends ConsumerWidget {
               ],
             ),
           ],
+          if (task.pending && task.pendingRequestId != null) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () =>
+                  context.push(AppRoutes.approval(task.pendingRequestId!)),
+              icon: const Icon(Icons.fact_check_outlined),
+              label: const Text('查看当前申请'),
+            ),
+          ],
           if (task.done &&
               me?.id != null &&
               task.businessOwnerId == me!.id &&
@@ -267,11 +257,6 @@ class _TaskDetailBody extends ConsumerWidget {
               label: Text(task.tablePinned ? '取消表单置顶' : '置顶到表单'),
             ),
           ],
-          if (task.pending)
-            TextButton(
-              onPressed: () => context.push(AppRoutes.approvals),
-              child: const Text('查看我的申请'),
-            ),
         ] else
           const Text(
             '当前为只读浏览，业务操作请回到本人正常入口办理。',
@@ -292,17 +277,6 @@ class _TaskDetailBody extends ConsumerWidget {
     'startDate',
     'dueDate',
   }.contains(field);
-
-  static String _kindLabel(String kind) => switch (kind) {
-    'create' => '新建申请',
-    'change' => '修改申请',
-    'progress' => '进展申请',
-    'complete' => '完成申请',
-    'reopen' => '重开申请',
-    'handover' => '交接申请',
-    'reschedule' => '排期申请',
-    _ => '申请',
-  };
 
   Future<void> _toggleTablePin(
     BuildContext context,
@@ -363,6 +337,34 @@ class _TaskDetailBody extends ConsumerWidget {
     ref.invalidate(taskDetailProvider(task.id));
     ref.invalidate(homeDataProvider);
     showSnack(context, message);
+  }
+}
+
+class _MetaRow extends StatelessWidget {
+  const _MetaRow({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 56,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: PandoraColors.muted),
+            ),
+          ),
+          Expanded(child: child),
+        ],
+      ),
+    );
   }
 }
 

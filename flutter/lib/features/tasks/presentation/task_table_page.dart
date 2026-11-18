@@ -10,6 +10,7 @@ import '../../../core/preferences/app_preferences.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/fading_name_text.dart';
 import '../../../core/widgets/state_views.dart';
 import '../domain/task_record.dart';
 import 'task_providers.dart';
@@ -413,7 +414,7 @@ class _TaskTablePageState extends ConsumerState<TaskTablePage> {
               Expanded(flex: 4, child: _CompactHeader('任务')),
               Expanded(flex: 2, child: _CompactHeader('负责人')),
               Expanded(flex: 2, child: _CompactHeader('状态')),
-              Expanded(flex: 3, child: _CompactHeader('排期')),
+              Expanded(flex: 3, child: _CompactHeader('截止时间')),
             ],
           ),
         ),
@@ -448,11 +449,7 @@ class _TaskTablePageState extends ConsumerState<TaskTablePage> {
                                   ),
                                 if (task.tablePinned) const SizedBox(width: 4),
                                 Expanded(
-                                  child: Text(
-                                    task.title,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                  child: FadingNameText(task.title, maxLines: 2),
                                 ),
                                 IconButton(
                                   tooltip: task.tablePinned
@@ -488,7 +485,7 @@ class _TaskTablePageState extends ConsumerState<TaskTablePage> {
                         Expanded(
                           flex: 3,
                           child: _CompactCell(
-                            task.scheduleText(
+                            task.deadlineText(
                               ref.read(companyTimeZoneProvider),
                             ),
                           ),

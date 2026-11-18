@@ -7,6 +7,7 @@ import '../../../core/router/navigation_targets.dart';
 import '../../../core/router/read_context.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/fading_name_text.dart';
 import '../../../core/widgets/state_views.dart';
 import '../domain/home_data.dart';
 import 'home_copy.dart';
@@ -33,60 +34,19 @@ class _HomeEventsPageState extends ConsumerState<HomeEventsPage> {
         data: (data) => data.companyItems.isEmpty
             ? const EmptyView(message: '暂无公司事件')
             : ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                 itemCount: data.companyItems.length,
-                separatorBuilder: (_, _) => const Divider(height: 16),
+                separatorBuilder: (_, _) => const Divider(height: 8),
                 itemBuilder: (context, index) {
                   final item = data.companyItems[index];
-                  return Card(
-                    key: ValueKey(item.id),
-                    clipBehavior: Clip.antiAlias,
-                    child: Semantics(
-                      expanded: _expanded.contains(item.id),
-                      child: InkWell(
-                        onTap: () => setState(() {
-                          if (!_expanded.remove(item.id)) {
-                            _expanded.add(item.id);
-                          }
-                        }),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.body,
-                                style: homeCopyStyle,
-                                maxLines: _expanded.contains(item.id)
-                                    ? null
-                                    : 2,
-                                overflow: _expanded.contains(item.id)
-                                    ? TextOverflow.visible
-                                    : TextOverflow.ellipsis,
-                              ),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: IconButton(
-                                  tooltip: _expanded.contains(item.id)
-                                      ? '收起事件'
-                                      : '展开事件',
-                                  icon: Icon(
-                                    _expanded.contains(item.id)
-                                        ? Icons.keyboard_arrow_up
-                                        : Icons.keyboard_arrow_down,
-                                  ),
-                                  onPressed: () => setState(() {
-                                    if (!_expanded.remove(item.id)) {
-                                      _expanded.add(item.id);
-                                    }
-                                  }),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                  return _EventCard(
+                    item: item,
+                    expanded: _expanded.contains(item.id),
+                    onToggle: () => setState(() {
+                      if (!_expanded.remove(item.id)) {
+                        _expanded.add(item.id);
+                      }
+                    }),
                   );
                 },
               ),
@@ -97,6 +57,100 @@ class _HomeEventsPageState extends ConsumerState<HomeEventsPage> {
         ),
       ),
     );
+  }
+}
+
+/// 紧凑事件条目：仅正文确实超出两行时在正文旁显示箭头；整条切换展开。
+class _EventCard extends StatelessWidget {
+  const _EventCard({
+    required this.item,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final CompanyItem item;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  static const _arrowWidth = 26.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = DefaultTextStyle.of(context).style.merge(homeCopyStyle);
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    return Card(
+      key: ValueKey(item.id),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final truncated =
+                !expanded &&
+                _overflows(
+                  item.body,
+                  constraints.maxWidth - _arrowWidth,
+                  style,
+                  scaler,
+                  direction,
+                );
+            return Semantics(
+              expanded: expanded,
+              child: InkWell(
+                onTap: (expanded || truncated) ? onToggle : null,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.body,
+                        style: homeCopyStyle,
+                        maxLines: expanded ? null : 2,
+                        overflow: expanded
+                            ? TextOverflow.visible
+                            : TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (expanded || truncated)
+                      SizedBox(
+                        width: _arrowWidth,
+                        height: 22,
+                        child: Icon(
+                          expanded
+                              ? Icons.keyboard_arrow_up
+                              : Icons.keyboard_arrow_down,
+                          key: ValueKey('event-arrow-${item.id}'),
+                          size: 20,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  static bool _overflows(
+    String body,
+    double width,
+    TextStyle style,
+    TextScaler scaler,
+    TextDirection direction,
+  ) {
+    if (width <= 0) return true;
+    final painter = TextPainter(
+      text: TextSpan(text: body, style: style),
+      maxLines: 2,
+      textDirection: direction,
+      textScaler: scaler,
+    )..layout(maxWidth: width);
+    final exceeded = painter.didExceedMaxLines;
+    painter.dispose();
+    return exceeded;
   }
 }
 
@@ -159,10 +213,9 @@ class HomeBoardPage extends ConsumerWidget {
                     child: Semantics(
                       label: overdue ? '已逾期' : null,
                       child: ListTile(
-                        title: Text(
+                        title: FadingNameText(
                           task.title,
                           maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                           style: homeCopyStyle,
                         ),
                         trailing: Text(

@@ -33,6 +33,7 @@ class TaskRecord {
     this.pending = false,
     this.frozen = false,
     this.pendingKind,
+    this.pendingRequestId,
     this.pendingSchedule,
     this.canReschedule = false,
     this.canPin = false,
@@ -76,6 +77,7 @@ class TaskRecord {
   final bool pending;
   final bool frozen;
   final String? pendingKind;
+  final String? pendingRequestId;
   final Map<String, Object?>? pendingSchedule;
   final bool canReschedule;
   final bool canPin;
@@ -140,6 +142,16 @@ class TaskRecord {
     return '${startDay.iso} ${_two(start.hour, start.minute)} 至 ${dueDay.iso} ${_two(due.hour, due.minute)}';
   }
 
+  /// 只读取有效版本的实际截止：全天按结束日、定时按公司时区，不采用待审提议。
+  String deadlineText(CompanyTimeZone zone) {
+    if (allDay) {
+      final end = allDayEnd;
+      return end == null ? '未设置' : '${end.iso}（全天）';
+    }
+    final due = dueAt;
+    return due == null ? '未设置' : zone.formatDateTime(due);
+  }
+
   static String _two(int hour, int minute) => '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 
   factory TaskRecord.fromJson(Map<String, Object?> json) {
@@ -193,6 +205,7 @@ class TaskRecord {
       pending: json['pending'] == true,
       frozen: json['frozen'] == true,
       pendingKind: _string(json['pendingKind']),
+      pendingRequestId: _string(json['pendingRequestId']),
       pendingSchedule: rawPendingSchedule is Map ? Map<String, Object?>.from(rawPendingSchedule) : null,
       canReschedule: json['canReschedule'] == true,
       canPin: json['canPin'] == true,

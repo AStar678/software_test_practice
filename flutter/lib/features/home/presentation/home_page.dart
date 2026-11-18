@@ -6,6 +6,8 @@ import '../../../core/company/company_date.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/pandora_theme.dart';
+import '../../../core/widgets/common.dart';
+import '../../../core/widgets/fading_name_text.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../daily_items/presentation/daily_items_calendar.dart';
 import '../domain/home_data.dart';
@@ -47,7 +49,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('首页'),
+        title: const PandoraPageMark(pageName: '首页'),
         actions: [
           IconButton(
             tooltip: '通知',
@@ -175,6 +177,7 @@ class _HomeCards extends StatelessWidget {
                 if (i > 0) const Divider(height: 1),
                 _PreviewRow(
                   title: data.assignedTasks[i].title,
+                  fadeName: true,
                   trailing: Text(
                     PandoraColors.priorityLabel(data.assignedTasks[i].priority),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -249,11 +252,19 @@ class _PreviewCard extends StatelessWidget {
 }
 
 class _PreviewRow extends StatelessWidget {
-  const _PreviewRow({required this.title, this.trailing, required this.onTap});
+  const _PreviewRow({
+    required this.title,
+    this.trailing,
+    required this.onTap,
+    this.fadeName = false,
+  });
 
   final String title;
   final Widget? trailing;
   final VoidCallback onTap;
+
+  /// 任务名使用末字渐隐；事件纪正文保持普通省略号。
+  final bool fadeName;
 
   @override
   Widget build(BuildContext context) {
@@ -264,12 +275,14 @@ class _PreviewRow extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: homeCopyStyle,
-              ),
+              child: fadeName
+                  ? FadingNameText(title, maxLines: 2, style: homeCopyStyle)
+                  : Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: homeCopyStyle,
+                    ),
             ),
             if (trailing != null) ...[const SizedBox(width: 6), trailing!],
           ],
@@ -300,64 +313,68 @@ class _DailyItemsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w600,
+    );
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 12,
+      runSpacing: 4,
       children: [
-        Text(
-          '每日事项',
-          style: Theme.of(context).textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.w600),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('每日事项', style: titleStyle),
+            IconButton(
+              tooltip: '新建每日事项',
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              onPressed: onAdd,
+              icon: const Icon(Icons.add_circle_outline),
+              color: PandoraColors.brand,
+            ),
+          ],
         ),
-        IconButton(
-          tooltip: '新建每日事项',
-          visualDensity: VisualDensity.compact,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          onPressed: onAdd,
-          icon: const Icon(Icons.add_circle_outline),
-          color: PandoraColors.brand,
-        ),
-        const Spacer(),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: '上个月',
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                onPressed: onPrevious,
-                icon: const Icon(Icons.chevron_left),
+        Wrap(
+          spacing: 2,
+          runSpacing: 2,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            IconButton(
+              tooltip: '上个月',
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              onPressed: onPrevious,
+              icon: const Icon(Icons.chevron_left),
+            ),
+            TextButton(
+              onPressed: onPick,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                minimumSize: const Size(0, 36),
               ),
-              TextButton(
-                onPressed: onPick,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  minimumSize: const Size(0, 32),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text('${anchor.year}年${anchor.month}月'),
+              child: Text('${anchor.year}年${anchor.month}月'),
+            ),
+            IconButton(
+              tooltip: '下个月',
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              onPressed: onNext,
+              icon: const Icon(Icons.chevron_right),
+            ),
+            TextButton(
+              onPressed: onToday,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(0, 36),
               ),
-              IconButton(
-                tooltip: '下个月',
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                onPressed: onNext,
-                icon: const Icon(Icons.chevron_right),
-              ),
-              TextButton(
-                onPressed: onToday,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  minimumSize: const Size(0, 32),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text('今天'),
-              ),
-            ],
-          ),
+              child: const Text('今天'),
+            ),
+          ],
         ),
       ],
     );

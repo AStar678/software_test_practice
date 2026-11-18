@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/providers.dart';
+import '../../core/widgets/common.dart';
 import '../analytics/presentation/analytics_page.dart';
 import '../auth/presentation/password_change_page.dart';
 import '../profile/presentation/profile_pages.dart';
@@ -44,7 +45,7 @@ class MePage extends ConsumerWidget {
       return const Scaffold(body: Center(child: Text('未登录')));
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      appBar: AppBar(title: const PandoraPageMark(pageName: '我的')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),

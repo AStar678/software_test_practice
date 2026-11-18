@@ -80,12 +80,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '员工工作客户端',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: PandoraColors.muted),
-                    ),
                     const SizedBox(height: 24),
                     if (notice != null) ...[
                       _NoticeBanner(text: notice),

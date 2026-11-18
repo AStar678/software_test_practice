@@ -21,6 +21,7 @@ import '../../tags/presentation/tag_selector.dart';
 import '../../tags/presentation/tags_providers.dart';
 import '../domain/work_log.dart';
 import '../domain/work_log_fill.dart';
+import 'log_body_preview.dart';
 import 'work_logs_providers.dart';
 
 class WorkLogsPage extends ConsumerStatefulWidget {
@@ -119,39 +120,86 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
       ? null
       : '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
 
-  Future<void> _pickDate({required bool from}) async {
-    final today = DateTime.now();
-    final current = from ? _from : _to;
-    final start = from ? null : _from;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DatePickerBounds.clampInitial(current ?? today, start)!,
-      firstDate: DateTime(today.year - 5),
-      lastDate: DateTime(today.year + 5),
-      selectableDayPredicate: start == null ? null : (day) => DatePickerBounds.endOnOrAfter(day, start),
-      helpText: from ? '选择开始日期' : '选择结束日期',
-    );
-    if (picked == null || !mounted) return;
-    setState(() {
-      if (from) {
-        _from = picked;
-      } else {
-        _to = picked;
-      }
-    });
-    await _load(reset: true);
-  }
-
   Future<void> _returnFromDetail(String id) async {
     final offset = _scroll.hasClients ? _scroll.offset : 0.0;
-    await context.push<void>('/logs/$id', extra: widget.readContext);
-    if (!mounted) return;
-    await _load(reset: true);
+    final generation = _queryGeneration;
+    final author = widget.authorId;
+    final saved = await context.push<WorkLog>(
+      '/logs/$id',
+      extra: widget.readContext,
+    );
+    if (!mounted || generation != _queryGeneration || author != widget.authorId) {
+      return;
+    }
+    if (saved != null) _applySavedLog(saved);
+    // 按同一权限重验该条；迟到或更旧响应被版本守卫忽略，不改动分页与其他行。
+    unawaited(_revalidateOne(id, generation));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _scroll.hasClients) {
         _scroll.jumpTo(offset.clamp(0, _scroll.position.maxScrollExtent));
       }
     });
+  }
+
+  bool _matchesDateFilter(WorkLog log) {
+    final from = _from;
+    final to = _to;
+    final day = DateTime(
+      log.businessDate.year,
+      log.businessDate.month,
+      log.businessDate.day,
+    );
+    if (from != null &&
+        day.isBefore(DateTime(from.year, from.month, from.day))) {
+      return false;
+    }
+    if (to != null && day.isAfter(DateTime(to.year, to.month, to.day))) {
+      return false;
+    }
+    return true;
+  }
+
+  bool _withinAuthorScope(WorkLog log) {
+    final author = widget.authorId;
+    if (author != null) return log.authorId == author;
+    final me = ref.read(currentUserProvider)?.id;
+    return me == null || log.authorId.isEmpty || log.authorId == me;
+  }
+
+  /// 只替换同一条已保存版本：保留分页、筛选与浏览位置，不整表重置。
+  void _applySavedLog(WorkLog saved) {
+    if (!mounted || !_withinAuthorScope(saved)) return;
+    final index = _items.indexWhere((log) => log.id == saved.id);
+    if (index < 0) {
+      if (!_matchesDateFilter(saved)) return;
+      setState(() {
+        _items = [saved, ..._items];
+        _total += 1;
+      });
+      return;
+    }
+    if (saved.rowVersion < _items[index].rowVersion) return;
+    setState(() {
+      final next = List<WorkLog>.from(_items);
+      if (_matchesDateFilter(saved)) {
+        next[index] = saved;
+      } else {
+        next.removeAt(index);
+        _total = _total > 0 ? _total - 1 : 0;
+      }
+      _items = next;
+    });
+  }
+
+  Future<void> _revalidateOne(String id, int generation) async {
+    if (!mounted || generation != _queryGeneration) return;
+    try {
+      final fresh = await ref.read(workLogsApiProvider).detail(id);
+      if (!mounted || generation != _queryGeneration) return;
+      _applySavedLog(fresh);
+    } catch (_) {
+      // 已保存的本地版本仍然有效；读取失败不能回滚或清空列表。
+    }
   }
 
   Future<void> _refreshToTop() async {
@@ -163,14 +211,29 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
   Widget build(BuildContext context) {
     return PandoraPage(
       title: '${widget.personName ?? '日志'} · $_total 条',
+      titleWidget: widget.personName == null
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const PandoraPageMark(pageName: '日志'),
+                const SizedBox(width: 8),
+                Text(
+                  '$_total 条',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: PandoraColors.muted,
+                  ),
+                ),
+              ],
+            )
+          : null,
       actions: [
         if (widget.readContext.businessWritesAllowed)
           IconButton(
             tooltip: '写日志',
             onPressed: () async {
-              final saved = await context.push<bool>('/logs/new');
+              final saved = await context.push<WorkLog>('/logs/new');
               if (!mounted) return;
-              if (saved == true) await _load(reset: true);
+              if (saved != null) await _load(reset: true);
             },
             icon: const Icon(Icons.add),
           ),
@@ -186,43 +249,128 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
   }
 
   Widget _filters() {
+    final active = _from != null || _to != null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-      child: Row(
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 8,
+        runSpacing: 4,
         children: [
           Text(
             widget.authorId == null ? '本人日志' : '下属日志（只读）',
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () => _pickDate(from: true),
-              child: Text(_from == null ? '开始：全部' : '开始：${_dateIso(_from)}'),
-            ),
+          OutlinedButton.icon(
+            onPressed: _openDateFilter,
+            icon: const Icon(Icons.filter_alt_outlined, size: 18),
+            label: Text(active ? '筛选（${_filterSummary()}）' : '筛选'),
           ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () => _pickDate(from: false),
-              child: Text(_to == null ? '结束：全部' : '结束：${_dateIso(_to)}'),
-            ),
-          ),
-          if (_from != null || _to != null)
-            IconButton(
-              tooltip: '清除日期筛选',
-              onPressed: () {
-                setState(() {
-                  _from = null;
-                  _to = null;
-                });
-                unawaited(_load(reset: true));
-              },
-              icon: const Icon(Icons.event_busy),
-            ),
         ],
       ),
     );
+  }
+
+  String _filterSummary() {
+    final since = _from == null ? '不限' : _dateIso(_from);
+    final until = _to == null ? '不限' : _dateIso(_to);
+    return '$since 至 $until';
+  }
+
+  Future<void> _openDateFilter() async {
+    var from = _from;
+    var to = _to;
+    Future<DateTime?> pick(DateTime? current, {DateTime? start}) {
+      return showDatePicker(
+        context: context,
+        initialDate: DatePickerBounds.clampInitial(current ?? DateTime.now(), start),
+        firstDate: DateTime(DateTime.now().year - 5),
+        lastDate: DateTime(DateTime.now().year + 5),
+        selectableDayPredicate: start == null
+            ? null
+            : (day) => DatePickerBounds.endOnOrAfter(day, start),
+        helpText: '选择日期',
+      );
+    }
+
+    final result = await showModalBottomSheet<_LogFilterResult>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              MediaQuery.viewInsetsOf(context).bottom + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('筛选日志日期', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () async {
+                    final picked = await pick(from);
+                    if (picked == null) return;
+                    setSheetState(() {
+                      from = picked;
+                      if (to != null && to!.isBefore(picked)) to = null;
+                    });
+                  },
+                  child: Text(
+                    from == null ? '开始日期：不限' : '开始日期：${_dateIso(from)}',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () async {
+                    final picked = await pick(to, start: from);
+                    if (picked == null) return;
+                    setSheetState(() => to = picked);
+                  },
+                  child: Text(
+                    to == null ? '结束日期：不限' : '结束日期：${_dateIso(to)}',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(
+                        const _LogFilterResult.clear(),
+                      ),
+                      child: const Text('清除'),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('取消'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () => Navigator.of(context).pop(
+                        _LogFilterResult.range(from: from, to: to),
+                      ),
+                      child: const Text('应用'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _from = result.clear ? null : result.from;
+      _to = result.clear ? null : result.to;
+    });
+    await _load(reset: true);
   }
 
   Widget _body() {
@@ -266,9 +414,7 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
                           style: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(color: PandoraColors.brand),
                         ),
-                        if (log.frozen ||
-                            (widget.readContext is NormalReadContext &&
-                                !log.editable))
+                        if (log.frozen)
                           const StatusBadge(
                             label: '已冻结（已不能编辑）',
                             color: PandoraColors.muted,
@@ -287,10 +433,9 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text(
+                    LogBodyPreview(
                       log.body,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: 3,
                       style: const TextStyle(fontSize: 15, height: 1.55),
                     ),
                     if (log.tags.isNotEmpty)
@@ -321,6 +466,19 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
     );
     return value == log.businessDate.iso ? '' : value;
   }
+}
+
+class _LogFilterResult {
+  const _LogFilterResult.range({this.from, this.to}) : clear = false;
+
+  const _LogFilterResult.clear()
+    : from = null,
+      to = null,
+      clear = true;
+
+  final DateTime? from;
+  final DateTime? to;
+  final bool clear;
 }
 
 class WorkLogEditorPage extends ConsumerStatefulWidget {
@@ -436,8 +594,9 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
             : '/work-logs/${widget.logId}',
         body: {'body': _body.text},
       );
+      final WorkLog saved;
       if (_existing == null) {
-        await ref
+        saved = await ref
             .read(workLogsApiProvider)
             .create(
               businessDate: _date.iso,
@@ -447,20 +606,25 @@ class _WorkLogEditorPageState extends ConsumerState<WorkLogEditorPage> {
               idempotencyKey: key,
             );
       } else {
-        await ref
+        saved = await ref
             .read(workLogsApiProvider)
             .change(
               id: _existing!.id,
               body: _body.text,
               taskId: _taskId,
               tagIds: _tagIds,
+              tags: [
+                for (final tag in _catalog)
+                  if (_tagIds.contains(tag.id)) tag,
+              ],
+              base: _existing,
               idempotencyKey: key,
             );
       }
       keys.complete(scope);
       if (!mounted) return;
       _allowPop = true;
-      context.pop(true);
+      context.pop(saved);
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -872,6 +1036,7 @@ class WorkLogDetailPage extends ConsumerStatefulWidget {
 class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
   WorkLog? _log;
   Object? _error;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -880,20 +1045,51 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
   }
 
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
     try {
       final log = await ref.read(workLogsApiProvider).detail(widget.logId);
-      if (!mounted) return;
-      setState(() => _log = log);
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _log = log;
+        _error = null;
+      });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || generation != _loadGeneration) return;
       setState(() => _error = error);
+    }
+  }
+
+  /// 保存响应优先于旧的读取；滞后详情响应不得覆盖已保存版本。
+  void _applySaved(WorkLog saved) {
+    final current = _log;
+    if (current != null && saved.rowVersion < current.rowVersion) return;
+    _loadGeneration += 1;
+    setState(() {
+      _log = saved;
+      _error = null;
+    });
+  }
+
+  Future<void> _revalidateSaved(int generation) async {
+    try {
+      final fresh = await ref.read(workLogsApiProvider).detail(widget.logId);
+      if (!mounted || generation != _loadGeneration) return;
+      _applySaved(fresh);
+    } catch (_) {
+      // 写入已成功；重验失败保留已保存版本，不显示旧内容。
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final log = _log;
-    return PandoraPage(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        Navigator.of(context).pop(_log);
+      },
+      child: PandoraPage(
       title: '日志详情',
       showBack: true,
       actions: [
@@ -904,8 +1100,16 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
           IconButton(
             tooltip: '编辑日志',
             onPressed: () async {
-              await context.push('/logs/${log.id}/edit');
-              if (mounted) unawaited(_load());
+              final saved = await context.push<WorkLog>(
+                '/logs/${log.id}/edit',
+              );
+              if (!mounted) return;
+              if (saved != null && saved.id == log.id) {
+                _applySaved(saved);
+                unawaited(_revalidateSaved(_loadGeneration));
+              } else {
+                unawaited(_load());
+              }
             },
             icon: const Icon(Icons.edit_outlined),
           ),
@@ -936,9 +1140,7 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
                   style: Theme.of(context).textTheme.labelLarge
                       ?.copyWith(color: PandoraColors.brand),
                 ),
-                if (log.frozen ||
-                    (widget.readContext is NormalReadContext &&
-                        !log.editable)) ...[
+                if (log.frozen) ...[
                   const SizedBox(height: 8),
                   const Align(
                     alignment: Alignment.centerLeft,
@@ -991,6 +1193,7 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
                   CommentsSection(objectType: 'log', objectId: log.id),
               ],
             ),
+      ),
     );
   }
 }

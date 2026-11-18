@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
+import '../../../core/widgets/common.dart';
 import '../../../core/widgets/state_views.dart';
 import '../domain/analytics_models.dart';
 import 'analytics_providers.dart';
@@ -39,7 +40,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
       (_, _) => _reloadScope(),
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('统计')),
+      appBar: AppBar(title: const PandoraPageMark(pageName: '统计')),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _load,

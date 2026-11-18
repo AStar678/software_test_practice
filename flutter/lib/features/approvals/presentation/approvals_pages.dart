@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/company/company_time.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/read_context.dart';
@@ -397,22 +398,77 @@ class _ApprovalDetailPageState extends ConsumerState<ApprovalDetailPage> {
                           _MetaRow(label: '有效截止', value: zone.formatDateTime(request.applicableDeadline!)),
                         if (request.applicantId == me?.id && request.exemptionReason != null)
                           _MetaRow(label: '免审原因', value: request.exemptionReason!),
-                        if (request.isReviewer(me?.id) && request.isPending) ...[
+                        if (request.isReviewer(me?.id)) ...[
                           const SizedBox(height: 8),
-                          Text(
+                          const Text(
                             '逐字段原上新下',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 6),
-                          if (request.diff.isEmpty)
-                            const Text('没有字段差异。', style: TextStyle(color: PandoraColors.muted))
+                          if (request.diff.isNotEmpty)
+                            for (final diff in request.diff)
+                              _DiffRow(diff: diff, request: request)
+                          else if (!_hasBaseVersion(request)) ...[
+                            // 新建申请没有有效旧版：直接呈现提议，不显示空对比。
+                            Text(
+                              request.proposedVersion == null
+                                  ? '本次提议暂不可查看。'
+                                  : '本次提议（无旧版可对比）',
+                              style: const TextStyle(color: PandoraColors.muted),
+                            ),
+                            if (request.proposedVersion != null) ...[
+                              const SizedBox(height: 6),
+                              _VersionDetails(
+                                version: request.proposedVersion!,
+                                request: request,
+                                zone: zone,
+                              ),
+                            ],
+                          ] else if (request.baseVersion == null)
+                            const Text(
+                              '原有效版本不可查看，暂不展示字段变化。',
+                              style: TextStyle(color: PandoraColors.muted),
+                            )
                           else
-                            for (final diff in request.diff) _DiffRow(diff: diff, request: request),
+                            const Text(
+                              '该申请有原有效版本，但没有可比较的字段变化。',
+                              style: TextStyle(color: PandoraColors.muted),
+                            ),
+                          if (request.baseVersion != null) ...[
+                            const SizedBox(height: 8),
+                            _VersionExpansion(
+                              title: '展开原有效版本',
+                              version: request.baseVersion!,
+                              request: request,
+                              zone: zone,
+                            ),
+                          ],
+                          if (request.baseVersion != null &&
+                              request.proposedVersion != null)
+                            _VersionExpansion(
+                              title: '展开本次完整提议',
+                              version: request.proposedVersion!,
+                              request: request,
+                              zone: zone,
+                            ),
                         ] else if (request.applicantId == me?.id) ...[
                           const SizedBox(height: 8),
-                          Text('本次提交内容', style: Theme.of(context).textTheme.titleSmall),
+                          Text(
+                            '本次提交内容',
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
                           const SizedBox(height: 6),
-                          _ProposalSummary(request: request),
+                          if (request.proposedVersion == null)
+                            const Text(
+                              '无提议内容',
+                              style: TextStyle(color: PandoraColors.muted),
+                            )
+                          else
+                            _VersionDetails(
+                              version: request.proposedVersion!,
+                              request: request,
+                              zone: zone,
+                            ),
                         ],
                         if (request.comment != null && request.comment!.trim().isNotEmpty) ...[
                           const SizedBox(height: 12),
@@ -588,34 +644,90 @@ class _DiffRow extends StatelessWidget {
   }
 }
 
-class _ProposalSummary extends StatelessWidget {
-  const _ProposalSummary({required this.request});
+class _VersionDetails extends StatelessWidget {
+  const _VersionDetails({
+    required this.version,
+    required this.request,
+    required this.zone,
+  });
 
+  final TaskRecord version;
   final ApprovalRequest request;
+  final CompanyTimeZone zone;
+
+  String get _assignees {
+    if (version.assigneeIds.isEmpty) return '（空）';
+    final names = {
+      for (final person in request.participants) person.id: person.displayName,
+    };
+    return [
+      for (var index = 0; index < version.assigneeIds.length; index++)
+        '${index + 1}. ${names[version.assigneeIds[index]] ?? version.assigneeIds[index]}',
+    ].join('\n');
+  }
 
   @override
   Widget build(BuildContext context) {
-    final proposal = request.proposedVersion;
-    if (proposal == null) return const Text('无提议内容');
-    final names = {for (final person in request.participants) person.id: person.displayName};
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _MetaRow(label: '标题', value: proposal.title),
+        _MetaRow(label: '标题', value: version.title),
+        if (version.description.isNotEmpty)
+          _MetaRow(label: '说明', value: version.description),
         _MetaRow(
-          label: '负责人',
-          value: proposal.assigneeIds.isEmpty
-              ? '（空）'
-              : [for (var i = 0; i < proposal.assigneeIds.length; i++) '${i + 1}. ${names[proposal.assigneeIds[i]] ?? proposal.assigneeIds[i]}'].join('\n'),
+          label: '紧急程度',
+          value: PandoraColors.priorityLabel(version.priority),
         ),
-        if (proposal.tags.isNotEmpty)
-          _MetaRow(label: '标签', value: proposal.tags.map((tag) => tag.name).join('、')),
-        if (proposal.progressNote.isNotEmpty) _MetaRow(label: '进展', value: proposal.progressNote),
+        _MetaRow(label: '排期', value: version.scheduleText(zone)),
+        _MetaRow(label: '截止', value: version.deadlineText(zone)),
+        _MetaRow(label: '负责人', value: _assignees),
+        if (version.tags.isNotEmpty)
+          _MetaRow(
+            label: '标签',
+            value: version.tags.map((tag) => tag.name).join('、'),
+          ),
+        if (version.acceptanceCriteria.isNotEmpty)
+          _MetaRow(label: '完成标准', value: version.acceptanceCriteria),
+        if (version.progressNote.isNotEmpty)
+          _MetaRow(label: '进展', value: version.progressNote),
       ],
     );
   }
 }
 
+class _VersionExpansion extends StatelessWidget {
+  const _VersionExpansion({
+    required this.title,
+    required this.version,
+    required this.request,
+    required this.zone,
+  });
+
+  final String title;
+  final TaskRecord version;
+  final ApprovalRequest request;
+  final CompanyTimeZone zone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(top: 8),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        title: Text(title, style: const TextStyle(fontSize: 13)),
+        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _VersionDetails(version: version, request: request, zone: zone),
+        ],
+      ),
+    );
+  }
+}
+
+bool _hasBaseVersion(ApprovalRequest request) =>
+    request.baseVersion != null ||
+    (request.baseVersionId != null && request.baseVersionId!.trim().isNotEmpty);
 
 class _CreationResubmitPage extends ConsumerStatefulWidget {
   const _CreationResubmitPage({required this.request});

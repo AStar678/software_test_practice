@@ -80,6 +80,7 @@ class SelfProfileCard extends ConsumerWidget {
           child: _ProfileBody(
             person: result.data,
             scrollable: false,
+            showManagerRow: (result.data.managerName ?? '').isNotEmpty,
             actions: [
               FilledButton.tonalIcon(
                 onPressed: () => showDialog<void>(
@@ -105,11 +106,13 @@ class _ProfileBody extends StatelessWidget {
     required this.person,
     required this.actions,
     this.scrollable = true,
+    this.showManagerRow = true,
   });
 
   final EmployeeUser person;
   final List<Widget> actions;
   final bool scrollable;
+  final bool showManagerRow;
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +153,7 @@ class _ProfileBody extends StatelessWidget {
         const SizedBox(height: 16),
         _row('手机号', person.phone ?? '无权查看或未设置'),
         _row('邮箱', person.email ?? '无权查看或未设置'),
-        _row('直属上级', person.managerName ?? '未设置'),
+        if (showManagerRow) _row('直属上级', person.managerName ?? '未设置'),
         _row('入职日期', person.hireDate ?? '入职日期未设置'),
         _row('入职时长', person.tenure?.label ?? '入职时长未设置'),
         const SizedBox(height: 16),

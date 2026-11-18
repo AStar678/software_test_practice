@@ -273,6 +273,45 @@ void main() {
     });
   }
 
+  testWidgets('提交进展保存成功但审核人回读失败仍按成功提示，不误报保存失败', (tester) async {
+    tester.view.physicalSize = const Size(390, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final backend = FakeBackend();
+    configureTask(backend);
+    backend.on(
+      'PATCH',
+      '/tasks/task1',
+      (_) => FakeResponse({'taskId': 'task1', 'requestId': 'r1', 'outcome': 'pending'}),
+    );
+    backend.on(
+      'GET',
+      '/approval-requests/r1',
+      (_) => FakeResponse({'message': '读取失败'}, status: 503),
+    );
+    final container = buildTestContainer(backend: backend, user: employeeUser(), accountEpoch: () => 1);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(wrapWithScope(container, const TaskDetailPage(taskId: 'task1')));
+    await tester.pumpAndSettle();
+    await tapVisible(tester, find.text('提交进展'));
+    expect(find.text('审核人：预览上级'), findsOneWidget, reason: '提交前仍显示预览审核人');
+    await tester.enterText(
+      find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField)),
+      '进展说明',
+    );
+    await tester.tap(find.text('提交'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing, reason: '保存成功应关闭对话框');
+    expect(
+      find.text('已提交审核，可在我的申请中查看实际审核人'),
+      findsOneWidget,
+      reason: '回读失败只影响审核人展示，不改变保存结果',
+    );
+    expect(find.text('读取失败'), findsNothing);
+    expect(find.textContaining('保存失败'), findsNothing);
+    expect(backend.requestsFor('GET', '/approval-requests/r1'), hasLength(1));
+  });
+
   testWidgets('重开到期旧排期从公司今天09点/明天18点开始，保留有序旧负责人并预览', (tester) async {
     tester.view.physicalSize = const Size(390, 1800);
     tester.view.devicePixelRatio = 1;

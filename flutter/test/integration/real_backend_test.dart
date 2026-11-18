@@ -21,10 +21,12 @@ import 'package:pandora_employee/features/home/data/home_api.dart';
 import 'package:pandora_employee/features/tags/data/tags_api.dart';
 import 'package:pandora_employee/features/tasks/data/tasks_api.dart';
 import 'package:pandora_employee/features/work_logs/data/work_logs_api.dart';
+import 'package:pandora_employee/features/work_logs/domain/work_log.dart';
 import 'package:pandora_employee/features/comments/data/comments_api.dart';
 import 'package:pandora_employee/features/profile/data/profile_api.dart';
 import 'package:pandora_employee/features/people/data/people_api.dart';
 import 'package:pandora_employee/features/notifications/data/notifications_api.dart';
+import 'package:pandora_employee/features/notifications/domain/notification_language.dart';
 import 'package:pandora_employee/features/notifications/domain/notification_record.dart';
 import 'package:pandora_employee/features/analytics/data/analytics_api.dart';
 import 'package:pandora_employee/features/holidays/data/holidays_api.dart';
@@ -502,6 +504,72 @@ void main() {
     }
   }, skip: skipReason);
 
+  test('J30 真实申请只向审核人给出对比与旧版，申请人只看到自己的提议（只读）', () async {
+    final sessions = <SessionManager>[];
+    Future<(ApprovalsApi, String)> loginAs(String phone) async {
+      final scopedSession = SessionManager(
+        api: AuthApi(
+          dio: Dio(
+            BaseOptions(
+              validateStatus: (status) => status != null && status < 400,
+            ),
+          ),
+          baseUrl: _baseUrl,
+        ),
+        store: MemoryCredentialStore(),
+        clock: WorkspaceClock(),
+      );
+      await scopedSession.login(phone: phone, password: _demoPassword);
+      sessions.add(scopedSession);
+      final scopedClient = ApiClient(
+        config: const AppConfig(apiBaseUrl: _baseUrl, isDebug: true),
+        session: scopedSession,
+        versions: VersionRegistry(),
+      );
+      return (ApprovalsApi(client: scopedClient), scopedSession.state.user!.id);
+    }
+
+    final manager = await loginAs('13800000011');
+    final applicant = await loginAs('13800000004');
+    try {
+      final reviewList = await manager.$1.list(mine: 'reviewer', limit: 50);
+      expect(reviewList.items, isNotEmpty);
+      var sawDiff = false;
+      var sawBaseWithoutDiff = false;
+      var sawCreateWithoutBase = false;
+      for (final row in reviewList.items) {
+        final detail = await manager.$1.detail(row.requestId);
+        expect(detail.proposedVersion, isNotNull, reason: '审核人可按接口读取提议');
+        expect(detail.currentReviewerId, manager.$2);
+        if (detail.diff.isNotEmpty) sawDiff = true;
+        if (detail.baseVersion != null && detail.diff.isEmpty) {
+          sawBaseWithoutDiff = true;
+        }
+        if (detail.kind == 'create' && detail.baseVersion == null) {
+          sawCreateWithoutBase = true;
+        }
+      }
+      expect(sawDiff, isTrue, reason: '演示数据覆盖字段变化');
+      expect(sawBaseWithoutDiff, isTrue, reason: '演示数据覆盖有旧版但无可比变化');
+      expect(sawCreateWithoutBase, isTrue, reason: '演示数据覆盖无有效旧版的新建申请');
+
+      final applicantList = await applicant.$1.list(mine: 'applicant', limit: 50);
+      final changeRow = applicantList.items.firstWhere(
+        (row) => row.kind == 'change',
+        orElse: () => applicantList.items.first,
+      );
+      final applicantView = await applicant.$1.detail(changeRow.requestId);
+      expect(applicantView.proposedVersion, isNotNull);
+      expect(applicantView.diff, isEmpty, reason: '申请人不获得审核专用差异');
+      expect(applicantView.baseVersion, isNull, reason: '申请人不获得原有效快照');
+      expect(applicantView.baseVersionId, isNull);
+    } finally {
+      for (final session in sessions) {
+        await session.logout();
+      }
+    }
+  }, skip: skipReason);
+
   test('J14 任务表单独立端点返回全局过滤与置顶字段', () async {
     final today = clock.businessDate;
     final page = await tasks.table(
@@ -771,6 +839,100 @@ void main() {
           path: '/work-logs/${created.id}',
         ),
       );
+    }
+  }, skip: skipReason);
+
+  test('J32 日志保存响应与详情、列表回读为同一新版本', () async {
+    final today = clock.businessDate;
+    final suffix = DateTime.now().microsecondsSinceEpoch;
+    var original = '日志旧内容联调 $suffix';
+    final updated = '日志新内容联调 $suffix';
+    final recent = await workLogs.list(
+      from: today.addDays(-2).iso,
+      to: today.iso,
+      limit: 100,
+    );
+    final occupied = {for (final log in recent.items) log.businessDate.iso};
+    final free = [
+      for (var offset = 0; offset <= 2; offset++) today.addDays(-offset),
+    ].where((day) => !occupied.contains(day.iso)).firstOrNull;
+    WorkLog? target;
+    var ownsCreated = false;
+    String restoreBody = '';
+    if (free != null) {
+      target = await workLogs.create(
+        businessDate: free.iso,
+        body: original,
+        idempotencyKey: keys.keyFor(
+          scope: 'real:log:fresh-create',
+          method: 'POST',
+          path: '/work-logs',
+          body: {'businessDate': free.iso, 'body': original},
+        ),
+      );
+      ownsCreated = true;
+    } else {
+      final existing = recent.items.firstWhere(
+        (log) => log.editable && !log.frozen,
+        orElse: () => recent.items.first,
+      );
+      target = existing;
+      restoreBody = existing.body;
+      original = existing.body;
+    }
+    target = await workLogs.detail(target.id);
+    try {
+      final changed = await workLogs.change(
+        id: target.id,
+        body: updated,
+        idempotencyKey: keys.keyFor(
+          scope: 'real:log:fresh-change:$suffix',
+          method: 'PATCH',
+          path: '/work-logs/${target.id}',
+          body: {'body': updated},
+        ),
+      );
+      expect(changed.body, updated);
+      expect(changed.rowVersion, greaterThan(target.rowVersion));
+
+      final detail = await workLogs.detail(target.id);
+      expect(detail.body, updated, reason: '详情回读不得返回旧正文');
+      expect(detail.rowVersion, changed.rowVersion);
+
+      final page = await workLogs.list(
+        from: detail.businessDate.iso,
+        to: detail.businessDate.iso,
+        limit: 100,
+      );
+      final listed = page.items
+          .where((row) => row.id == target!.id)
+          .toList();
+      expect(listed, hasLength(1));
+      expect(listed.single.body, updated, reason: '列表回读不得返回旧正文');
+      expect(listed.single.rowVersion, changed.rowVersion);
+    } finally {
+      if (ownsCreated) {
+        await workLogs.delete(
+          id: target.id,
+          idempotencyKey: keys.keyFor(
+            scope: 'real:log:fresh-delete',
+            method: 'DELETE',
+            path: '/work-logs/${target.id}',
+          ),
+        );
+      } else if (restoreBody.isNotEmpty) {
+        await workLogs.detail(target.id);
+        await workLogs.change(
+          id: target.id,
+          body: restoreBody,
+          idempotencyKey: keys.keyFor(
+            scope: 'real:log:fresh-restore:$suffix',
+            method: 'PATCH',
+            path: '/work-logs/${target.id}',
+            body: {'body': restoreBody},
+          ),
+        );
+      }
     }
   }, skip: skipReason);
 
@@ -1246,6 +1408,140 @@ void main() {
           );
         }
       }
+    }
+  }, skip: skipReason);
+
+  test('J28 通知待审按真实资格分层，direct 与历史申请不算待审（只读）', () async {
+    await deliverDemoEvents();
+
+    Future<(SessionManager, NotificationsApi)> loginAs(String phone) async {
+      final scopedSession = SessionManager(
+        api: AuthApi(
+          dio: Dio(
+            BaseOptions(
+              validateStatus: (status) => status != null && status < 400,
+            ),
+          ),
+          baseUrl: _baseUrl,
+        ),
+        store: MemoryCredentialStore(),
+        clock: WorkspaceClock(),
+      );
+      await scopedSession.login(phone: phone, password: _demoPassword);
+      final scopedClient = ApiClient(
+        config: const AppConfig(apiBaseUrl: _baseUrl, isDebug: true),
+        session: scopedSession,
+        versions: VersionRegistry(),
+      );
+      return (scopedSession, NotificationsApi(client: scopedClient));
+    }
+
+    Future<List<NotificationRecord>> pages(
+      NotificationsApi api, {
+      required NotificationReadFilter read,
+      required NotificationCategory category,
+    }) async {
+      final items = <NotificationRecord>[];
+      int? offset = 0;
+      while (offset != null) {
+        final page = await api.list(
+          read: read,
+          category: category,
+          offset: offset,
+          limit: 100,
+        );
+        items.addAll(page.items);
+        offset = page.nextOffset;
+      }
+      return items;
+    }
+
+    final manager = await loginAs('13800000011');
+    final employee = await loginAs('13800000004');
+    final founder = await loginAs('13800000001');
+    try {
+      final managerReview = await pages(
+        manager.$2,
+        read: NotificationReadFilter.all,
+        category: NotificationCategory.review,
+      );
+      expect(
+        managerReview,
+        isNotEmpty,
+        reason: '演示库覆盖团队负责人当前有效待审',
+      );
+      for (final item in managerReview) {
+        final detail = await manager.$2.detail(item.id);
+        expect(detail.category, 'review');
+        expect(detail.canReview, isTrue);
+        expect(detail.canReadRequest, isTrue);
+        expect(detail.requestStatus, 'pending');
+        final summary = notificationRequestSummary(detail);
+        expect(summary, isNotNull);
+        expect(summary, endsWith('待审核'));
+        expect(summary, isNot(contains('pending')));
+      }
+
+      final employeeReview = await pages(
+        employee.$2,
+        read: NotificationReadFilter.all,
+        category: NotificationCategory.review,
+      );
+      expect(employeeReview, isEmpty, reason: '不相关账号看不到待审，也不合成行');
+
+      final managerAll = await pages(
+        manager.$2,
+        read: NotificationReadFilter.all,
+        category: NotificationCategory.all,
+      );
+      NotificationDetail? historical;
+      for (final item in managerAll.take(40)) {
+        if (!(item.eventType.endsWith('.approved') ||
+            item.eventType.endsWith('.rejected') ||
+            item.eventType.endsWith('.withdrawn') ||
+            item.eventType.endsWith('.expired'))) {
+          continue;
+        }
+        final detail = await manager.$2.detail(item.id);
+        if (detail.requestStatus == 'approved' ||
+            detail.requestStatus == 'rejected' ||
+            detail.requestStatus == 'withdrawn' ||
+            detail.requestStatus == 'expired') {
+          historical = detail;
+          break;
+        }
+      }
+      expect(historical, isNotNull, reason: '演示库覆盖已裁决的历史申请');
+      expect(historical!.category, isNot('review'));
+      expect(historical.canReview, isFalse);
+      final historicalSummary = notificationRequestSummary(historical);
+      expect(historicalSummary, isNot(contains('待审核')));
+      expect(historicalSummary, isNot(contains('approved')));
+
+      final founderAll = await pages(
+        founder.$2,
+        read: NotificationReadFilter.all,
+        category: NotificationCategory.all,
+      );
+      NotificationDetail? direct;
+      for (final item in founderAll.take(40)) {
+        if (!item.eventType.endsWith('.applied')) continue;
+        final detail = await founder.$2.detail(item.id);
+        if (detail.requestStatus == 'direct') {
+          direct = detail;
+          break;
+        }
+      }
+      expect(direct, isNotNull, reason: '演示库覆盖免审直接生效的消息');
+      expect(direct!.category, isNot('review'));
+      expect(direct.canReview, isFalse);
+      final directSummary = notificationRequestSummary(direct);
+      expect(directSummary, endsWith('已生效'));
+      expect(directSummary, isNot(contains('direct')));
+    } finally {
+      await manager.$1.logout();
+      await employee.$1.logout();
+      await founder.$1.logout();
     }
   }, skip: skipReason);
 

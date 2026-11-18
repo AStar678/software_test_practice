@@ -10,6 +10,7 @@ import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/fading_name_text.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../auth/domain/employee_user.dart';
 import '../../people/domain/person_summary.dart';
@@ -61,7 +62,7 @@ class TaskEditPage extends ConsumerWidget {
 }
 
 /// 创建普通任务与字段敏感编辑共用表单。
-/// 新建不写完成标准/抽象任务/百分比；编辑只提交服务端允许的字段。
+/// 新建与常规编辑都不写完成标准/抽象任务/百分比；编辑只提交服务端允许的字段。
 class TaskFormPage extends ConsumerStatefulWidget {
   const TaskFormPage({super.key, this.existing, this.initialParentId});
 
@@ -76,7 +77,6 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _acceptanceController = TextEditingController();
   final _progressController = TextEditingController();
   final _reasonController = TextEditingController();
 
@@ -113,9 +113,10 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       _editableFields.every(_scheduleFields.contains);
 
   bool _can(String field) {
-    // 新建不写完成标准或进展；完成标准只作为历史字段在有有效版的任务上按权编辑。
+    // 新建不写完成标准或进展；完成标准字段保留在 DTO 与授权审核中，表单不再写入。
+    if (field == 'acceptanceCriteria') return false;
     if (_isCreate) {
-      return field != 'acceptanceCriteria' && field != 'progressNote';
+      return field != 'progressNote';
     }
     if (_onlySchedule) return _scheduleFields.contains(field);
     return _editableFields.contains(field);
@@ -135,7 +136,6 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _acceptanceController.dispose();
     _progressController.dispose();
     _reasonController.dispose();
     super.dispose();
@@ -165,7 +165,6 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     }
     _titleController.text = existing.title;
     _descriptionController.text = existing.description;
-    _acceptanceController.text = existing.acceptanceCriteria;
     _progressController.text = existing.progressNote;
     _priority = existing.priority;
     _parentTaskId = existing.parentTaskId;
@@ -242,10 +241,6 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     }
     if (_can('description') &&
         _descriptionController.text.trim() != existing.description) {
-      return true;
-    }
-    if (_can('acceptanceCriteria') &&
-        _acceptanceController.text.trim() != existing.acceptanceCriteria) {
       return true;
     }
     if (_can('priority') && _priority != existing.priority) return true;
@@ -492,10 +487,6 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
         _descriptionController.text.trim() != existing.description) {
       payload['description'] = _descriptionController.text.trim();
     }
-    if (_can('acceptanceCriteria') &&
-        _acceptanceController.text.trim() != existing.acceptanceCriteria) {
-      payload['acceptanceCriteria'] = _acceptanceController.text.trim();
-    }
     if (_can('priority') && _priority != existing.priority) {
       payload['priority'] = _priority;
     }
@@ -698,11 +689,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                           }
                           final task = results[index - 1];
                           return ListTile(
-                            title: Text(
-                              task.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            title: FadingNameText(task.title, maxLines: 1),
                             subtitle: Text(task.scheduleText(_zone)),
                             onTap: () => Navigator.of(context).pop(task),
                           );
@@ -799,17 +786,6 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                         validator: (value) =>
                             (value ?? '').trim().isEmpty ? '请填写任务说明' : null,
                       ),
-                    if (_can('acceptanceCriteria'))
-                      TextFormField(
-                        controller: _acceptanceController,
-                        minLines: 2,
-                        maxLines: 4,
-                        maxLength: 2000,
-                        decoration: const InputDecoration(
-                          labelText: '历史完成标准（可留空）',
-                          alignLabelWithHint: true,
-                        ),
-                      ),
                     if (_can('priority')) ...[
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
@@ -889,12 +865,6 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                             ),
                           ],
                         ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _allDay ? '全天事项按公司日期首尾包含。' : '定时事项按公司时区记录精确起止。',
-                        style: Theme.of(context).textTheme.labelSmall
-                            ?.copyWith(color: PandoraColors.muted),
-                      ),
                     ],
                     if (_can('assigneeIds')) ...[
                       const SizedBox(height: 16),
@@ -929,7 +899,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                     ] else if (_assignees.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       Text(
-                        '负责人（按当前顺序保留）',
+                        '负责人',
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
                       for (var index = 0; index < _assignees.length; index++)
@@ -938,7 +908,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                     if (_can('tagIds')) ...[
                       const SizedBox(height: 16),
                       Text(
-                        '标签（按顺序）',
+                        '标签',
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
                       const SizedBox(height: 6),
@@ -950,12 +920,6 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                           _dirty = true;
                         }),
                       ),
-                      if (_selectedTags.isEmpty)
-                        Text(
-                          '未选择标签；保存时会显式清空本任务的标签。',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(color: PandoraColors.muted),
-                        ),
                     ],
                     if (_can('parentTaskId')) ...[
                       const SizedBox(height: 16),

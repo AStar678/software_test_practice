@@ -17,6 +17,7 @@ class AppPreferences {
     'dailyItems.anchorOffset',
     'calendar.mode',
     'calendar.density',
+    'calendar.weekHeight',
     'calendar.lastDate',
     'calendar.lastOffset',
     'board.scroll',

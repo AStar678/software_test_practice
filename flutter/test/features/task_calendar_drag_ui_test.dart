@@ -244,9 +244,9 @@ void main() {
       });
     });
     await pumpCalendar(tester, backend);
-    await tester.tap(find.text('拖动任务').hitTestable().first);
+    await tester.tap(namePreview('拖动任务').hitTestable().first);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(OutlinedButton, '时间轴'));
+    await tester.tap(find.widgetWithText(OutlinedButton, '日视图'));
     await tester.pumpAndSettle();
 
     final handle = find.byKey(const ValueKey('axis-end-t1'));
@@ -288,9 +288,9 @@ void main() {
     });
     await pumpCalendar(tester, backend);
 
-    await tester.tap(find.text('拖动任务').hitTestable().first);
+    await tester.tap(namePreview('拖动任务').hitTestable().first);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(OutlinedButton, '时间轴'));
+    await tester.tap(find.widgetWithText(OutlinedButton, '日视图'));
     await tester.pumpAndSettle();
 
     final axisBlock = find.byKey(const ValueKey('axis-task-t1'));

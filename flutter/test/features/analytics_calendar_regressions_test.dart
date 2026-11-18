@@ -197,13 +197,13 @@ void main() {
 
     await tester.pumpWidget(wrapWithScope(container, const TaskCalendarPage()));
     await tester.pumpAndSettle();
-    expect(find.text('日历测试任务').hitTestable(), findsWidgets);
+    expect(namePreview('日历测试任务').hitTestable(), findsWidgets);
     expect(backend.requestsFor('GET', '/calendar/holidays/2026'), hasLength(1));
 
     holidays.complete(FakeResponse({'message': '暂不可用'}, status: 503));
     await tester.pumpAndSettle();
     expect(find.text('节假日暂不可用'), findsWidgets);
-    expect(find.text('日历测试任务').hitTestable(), findsWidgets);
+    expect(namePreview('日历测试任务').hitTestable(), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 }
