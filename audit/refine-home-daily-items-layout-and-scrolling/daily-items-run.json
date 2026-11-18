@@ -1,8 +1,8 @@
 {
-  "updated": "2026-11-05T06:59:39.346700+00:00",
+  "updated": "2026-11-15T08:51:48.840967+00:00",
   "checks": [
     {
-      "check": "V28 fixture writes a real task and log before the migration",
+      "check": "V30 fixture writes a real task and log before the migration",
       "pass": true,
       "evidence": {
         "task": 201,
@@ -10,66 +10,456 @@
       }
     },
     {
-      "check": "baseline is V28 and still holds the old personal item",
+      "check": "baseline is V30 and still holds the old personal item",
       "pass": true,
       "evidence": {
-        "tasks": "826673f5-7da8-4e59-ae2b-afce29becdd9",
-        "logs": "d8d757fa-12c6-4083-948d-ce554a282462",
+        "tasks": "ce8966a4-6df9-442d-a347-e58a5bc08306",
+        "logs": "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+        "taskRows": [
+          [
+            "ce8966a4-6df9-442d-a347-e58a5bc08306",
+            "fixture-company",
+            "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "2e23f477-0e20-4ae8-a77b-6f2f10becf50",
+            "todo",
+            "2",
+            "1",
+            "1",
+            "2026-11-15 08:49:18.430849",
+            "2026-11-15 08:49:18.436958",
+            "1",
+            "NULL"
+          ]
+        ],
+        "logRows": [
+          [
+            "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+            "fixture-company",
+            "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "2026-11-15",
+            "V30 migration witness log",
+            "NULL",
+            "1",
+            "2026-11-15 08:49:18.460490",
+            "2026-11-15 08:49:18.460490",
+            "NULL",
+            "log-row"
+          ]
+        ],
+        "logTags": [
+          [
+            "fixture-company",
+            "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+            "88ecba89-62fe-44ee-9ba1-3f368a5264ab",
+            "0",
+            "Migration witness tag",
+            "#F6D5D2"
+          ]
+        ],
         "company": "upgrade-company",
+        "companyRows": [
+          [
+            "upgrade-company",
+            "fixture-company",
+            "NULL",
+            "company",
+            "Company body that must survive the migration",
+            "1",
+            "1",
+            "2026-11-15 08:49:18.491750"
+          ]
+        ],
+        "companyTitles": [
+          [
+            "Legacy company title that must retire",
+            "Company body that must survive the migration"
+          ]
+        ],
+        "titleColumn": "1",
         "personal": "1",
-        "version": "28"
+        "version": "30"
       }
     },
     {
-      "check": "V29 creates daily_items and records the actual migration version",
+      "check": "V31–V36 create daily_items, range columns and record the current migration head",
       "pass": true,
       "evidence": {
-        "tasks": "826673f5-7da8-4e59-ae2b-afce29becdd9",
-        "logs": "d8d757fa-12c6-4083-948d-ce554a282462",
+        "tasks": "ce8966a4-6df9-442d-a347-e58a5bc08306",
+        "logs": "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+        "taskRows": [
+          [
+            "ce8966a4-6df9-442d-a347-e58a5bc08306",
+            "fixture-company",
+            "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "2e23f477-0e20-4ae8-a77b-6f2f10becf50",
+            "todo",
+            "2",
+            "1",
+            "1",
+            "2026-11-15 08:49:18.430849",
+            "2026-11-15 08:49:18.436958",
+            "1",
+            "NULL"
+          ]
+        ],
+        "logRows": [
+          [
+            "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+            "fixture-company",
+            "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "2026-11-15",
+            "V30 migration witness log",
+            "NULL",
+            "1",
+            "2026-11-15 08:49:18.460490",
+            "2026-11-15 08:49:18.460490",
+            "NULL",
+            "log-row"
+          ]
+        ],
+        "logTags": [
+          [
+            "fixture-company",
+            "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+            "88ecba89-62fe-44ee-9ba1-3f368a5264ab",
+            "0",
+            "Migration witness tag",
+            "#F6D5D2"
+          ]
+        ],
         "company": "upgrade-company",
+        "companyRows": [
+          [
+            "upgrade-company",
+            "fixture-company",
+            "NULL",
+            "company",
+            "Company body that must survive the migration",
+            "1",
+            "1",
+            "2026-11-15 08:49:18.491750"
+          ]
+        ],
+        "titleColumn": "0",
         "personal": "0",
-        "version": "29",
+        "version": "36",
         "daily": "1"
       }
     },
     {
-      "check": "V29 removes only the old personal home items",
+      "check": "the V30 fixture really stored a title different from its body",
+      "pass": true,
+      "evidence": {
+        "column": "1",
+        "rows": [
+          [
+            "Legacy company title that must retire",
+            "Company body that must survive the migration"
+          ]
+        ]
+      }
+    },
+    {
+      "check": "V36 retires company-item titles and keeps each existing body, id, order, version and timestamp",
+      "pass": true,
+      "evidence": {
+        "titleColumns": [
+          [
+            "0"
+          ]
+        ],
+        "before": [
+          [
+            "upgrade-company",
+            "fixture-company",
+            "NULL",
+            "company",
+            "Company body that must survive the migration",
+            "1",
+            "1",
+            "2026-11-15 08:49:18.491750"
+          ]
+        ],
+        "after": [
+          [
+            "upgrade-company",
+            "fixture-company",
+            "NULL",
+            "company",
+            "Company body that must survive the migration",
+            "1",
+            "1",
+            "2026-11-15 08:49:18.491750"
+          ]
+        ]
+      }
+    },
+    {
+      "check": "V31 removes only the old personal home items",
       "pass": true,
       "evidence": {
         "before": {
-          "tasks": "826673f5-7da8-4e59-ae2b-afce29becdd9",
-          "logs": "d8d757fa-12c6-4083-948d-ce554a282462",
+          "tasks": "ce8966a4-6df9-442d-a347-e58a5bc08306",
+          "logs": "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+          "taskRows": [
+            [
+              "ce8966a4-6df9-442d-a347-e58a5bc08306",
+              "fixture-company",
+              "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+              "2e23f477-0e20-4ae8-a77b-6f2f10becf50",
+              "todo",
+              "2",
+              "1",
+              "1",
+              "2026-11-15 08:49:18.430849",
+              "2026-11-15 08:49:18.436958",
+              "1",
+              "NULL"
+            ]
+          ],
+          "logRows": [
+            [
+              "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+              "fixture-company",
+              "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+              "2026-11-15",
+              "V30 migration witness log",
+              "NULL",
+              "1",
+              "2026-11-15 08:49:18.460490",
+              "2026-11-15 08:49:18.460490",
+              "NULL",
+              "log-row"
+            ]
+          ],
+          "logTags": [
+            [
+              "fixture-company",
+              "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+              "88ecba89-62fe-44ee-9ba1-3f368a5264ab",
+              "0",
+              "Migration witness tag",
+              "#F6D5D2"
+            ]
+          ],
           "company": "upgrade-company",
+          "companyRows": [
+            [
+              "upgrade-company",
+              "fixture-company",
+              "NULL",
+              "company",
+              "Company body that must survive the migration",
+              "1",
+              "1",
+              "2026-11-15 08:49:18.491750"
+            ]
+          ],
+          "companyTitles": [
+            [
+              "Legacy company title that must retire",
+              "Company body that must survive the migration"
+            ]
+          ],
+          "titleColumn": "1",
           "personal": "1",
-          "version": "28"
+          "version": "30"
         },
         "after": {
-          "tasks": "826673f5-7da8-4e59-ae2b-afce29becdd9",
-          "logs": "d8d757fa-12c6-4083-948d-ce554a282462",
+          "tasks": "ce8966a4-6df9-442d-a347-e58a5bc08306",
+          "logs": "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+          "taskRows": [
+            [
+              "ce8966a4-6df9-442d-a347-e58a5bc08306",
+              "fixture-company",
+              "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+              "2e23f477-0e20-4ae8-a77b-6f2f10becf50",
+              "todo",
+              "2",
+              "1",
+              "1",
+              "2026-11-15 08:49:18.430849",
+              "2026-11-15 08:49:18.436958",
+              "1",
+              "NULL"
+            ]
+          ],
+          "logRows": [
+            [
+              "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+              "fixture-company",
+              "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+              "2026-11-15",
+              "V30 migration witness log",
+              "NULL",
+              "1",
+              "2026-11-15 08:49:18.460490",
+              "2026-11-15 08:49:18.460490",
+              "NULL",
+              "log-row"
+            ]
+          ],
+          "logTags": [
+            [
+              "fixture-company",
+              "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+              "88ecba89-62fe-44ee-9ba1-3f368a5264ab",
+              "0",
+              "Migration witness tag",
+              "#F6D5D2"
+            ]
+          ],
           "company": "upgrade-company",
+          "companyRows": [
+            [
+              "upgrade-company",
+              "fixture-company",
+              "NULL",
+              "company",
+              "Company body that must survive the migration",
+              "1",
+              "1",
+              "2026-11-15 08:49:18.491750"
+            ]
+          ],
+          "titleColumn": "0",
           "personal": "0",
-          "version": "29",
+          "version": "36",
           "daily": "1"
         }
       }
     },
     {
-      "check": "V29 leaves tasks and logs byte-identical",
+      "check": "V31 leaves tasks and logs byte-identical",
       "pass": true,
       "evidence": {
         "before": {
-          "tasks": "826673f5-7da8-4e59-ae2b-afce29becdd9",
-          "logs": "d8d757fa-12c6-4083-948d-ce554a282462",
+          "tasks": "ce8966a4-6df9-442d-a347-e58a5bc08306",
+          "logs": "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+          "taskRows": [
+            [
+              "ce8966a4-6df9-442d-a347-e58a5bc08306",
+              "fixture-company",
+              "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+              "2e23f477-0e20-4ae8-a77b-6f2f10becf50",
+              "todo",
+              "2",
+              "1",
+              "1",
+              "2026-11-15 08:49:18.430849",
+              "2026-11-15 08:49:18.436958",
+              "1",
+              "NULL"
+            ]
+          ],
+          "logRows": [
+            [
+              "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+              "fixture-company",
+              "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+              "2026-11-15",
+              "V30 migration witness log",
+              "NULL",
+              "1",
+              "2026-11-15 08:49:18.460490",
+              "2026-11-15 08:49:18.460490",
+              "NULL",
+              "log-row"
+            ]
+          ],
+          "logTags": [
+            [
+              "fixture-company",
+              "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+              "88ecba89-62fe-44ee-9ba1-3f368a5264ab",
+              "0",
+              "Migration witness tag",
+              "#F6D5D2"
+            ]
+          ],
           "company": "upgrade-company",
+          "companyRows": [
+            [
+              "upgrade-company",
+              "fixture-company",
+              "NULL",
+              "company",
+              "Company body that must survive the migration",
+              "1",
+              "1",
+              "2026-11-15 08:49:18.491750"
+            ]
+          ],
+          "companyTitles": [
+            [
+              "Legacy company title that must retire",
+              "Company body that must survive the migration"
+            ]
+          ],
+          "titleColumn": "1",
           "personal": "1",
-          "version": "28"
+          "version": "30"
         },
         "after": {
-          "tasks": "826673f5-7da8-4e59-ae2b-afce29becdd9",
-          "logs": "d8d757fa-12c6-4083-948d-ce554a282462",
+          "tasks": "ce8966a4-6df9-442d-a347-e58a5bc08306",
+          "logs": "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+          "taskRows": [
+            [
+              "ce8966a4-6df9-442d-a347-e58a5bc08306",
+              "fixture-company",
+              "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+              "2e23f477-0e20-4ae8-a77b-6f2f10becf50",
+              "todo",
+              "2",
+              "1",
+              "1",
+              "2026-11-15 08:49:18.430849",
+              "2026-11-15 08:49:18.436958",
+              "1",
+              "NULL"
+            ]
+          ],
+          "logRows": [
+            [
+              "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+              "fixture-company",
+              "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+              "2026-11-15",
+              "V30 migration witness log",
+              "NULL",
+              "1",
+              "2026-11-15 08:49:18.460490",
+              "2026-11-15 08:49:18.460490",
+              "NULL",
+              "log-row"
+            ]
+          ],
+          "logTags": [
+            [
+              "fixture-company",
+              "aef11e11-a042-473a-8bdb-7bb5bcb59f35",
+              "88ecba89-62fe-44ee-9ba1-3f368a5264ab",
+              "0",
+              "Migration witness tag",
+              "#F6D5D2"
+            ]
+          ],
           "company": "upgrade-company",
+          "companyRows": [
+            [
+              "upgrade-company",
+              "fixture-company",
+              "NULL",
+              "company",
+              "Company body that must survive the migration",
+              "1",
+              "1",
+              "2026-11-15 08:49:18.491750"
+            ]
+          ],
+          "titleColumn": "0",
           "personal": "0",
-          "version": "29",
+          "version": "36",
           "daily": "1"
         }
       }
@@ -78,22 +468,28 @@
       "check": "a valid leap-day item with internal newlines is created",
       "pass": true,
       "evidence": {
-        "rowVersion": 1,
+        "id": "35756cfd-04c5-4b8a-b2e8-da3c28fc1ed5",
+        "startDate": "2024-02-29",
+        "endDate": "2024-02-29",
         "date": "2024-02-29",
-        "id": "7469bef7-5cf5-42c1-a833-4b4797283776"
+        "rowVersion": 1,
+        "businessDate": "2026-11-15"
       }
     },
     {
       "check": "detail returns the exact leap date and plain text with rowVersion",
       "pass": true,
       "evidence": {
-        "id": "7469bef7-5cf5-42c1-a833-4b4797283776",
+        "id": "35756cfd-04c5-4b8a-b2e8-da3c28fc1ed5",
+        "startDate": "2024-02-29",
+        "endDate": "2024-02-29",
         "date": "2024-02-29",
         "body": "闰日事项\n第二行",
         "completed": false,
+        "status": "overdue",
         "rowVersion": 1,
-        "createdAt": "2026-11-05T06:58:08.648225Z",
-        "updatedAt": "2026-11-05T06:58:08.648225Z"
+        "createdAt": "2026-11-15T08:49:22.716592Z",
+        "updatedAt": "2026-11-15T08:49:22.716592Z"
       }
     },
     {
@@ -156,9 +552,12 @@
       "check": "2000-character body boundary is accepted",
       "pass": true,
       "evidence": {
+        "id": "ba90f36f-d336-4460-a4a5-57fe42bce38c",
+        "startDate": "2026-11-15",
+        "endDate": "2026-11-15",
+        "date": "2026-11-15",
         "rowVersion": 1,
-        "date": "2026-11-05",
-        "id": "a7500c4e-f164-4745-8a05-cc51579d90c9"
+        "businessDate": "2026-11-15"
       }
     },
     {
@@ -197,20 +596,26 @@
       "check": "date, body and completed are saved atomically with a new version",
       "pass": true,
       "evidence": {
-        "id": "a7500c4e-f164-4745-8a05-cc51579d90c9",
+        "id": "ba90f36f-d336-4460-a4a5-57fe42bce38c",
+        "startDate": "2026-11-16",
+        "endDate": "2026-11-16",
+        "date": "2026-11-16",
         "completed": true,
-        "date": "2026-11-06",
-        "rowVersion": 2
+        "rowVersion": 2,
+        "businessDate": "2026-11-15"
       }
     },
     {
       "check": "completion is explicitly reversible",
       "pass": true,
       "evidence": {
-        "id": "a7500c4e-f164-4745-8a05-cc51579d90c9",
+        "id": "ba90f36f-d336-4460-a4a5-57fe42bce38c",
+        "startDate": "2026-11-16",
+        "endDate": "2026-11-16",
+        "date": "2026-11-16",
         "completed": false,
-        "date": "2026-11-06",
-        "rowVersion": 3
+        "rowVersion": 3,
+        "businessDate": "2026-11-15"
       }
     },
     {
@@ -233,9 +638,9 @@
       "pass": true,
       "evidence": {
         "expected": [
-          "0070471a-bda6-46ac-bd81-2f6f7bef16f6",
-          "0113606c-0751-4fa9-a866-beb4476bbfc5",
-          "037f9d6b-f3ae-4a9a-b11a-b9556ad54f7c"
+          "018e61fa-31a7-4e11-9684-492b3c8a6644",
+          "06bd4ab4-8e9f-4f1d-92ca-9b7de6973af2",
+          "0d7cdae7-a85c-4e61-a9e0-49c40403376c"
         ]
       }
     },
@@ -251,14 +656,14 @@
       "pass": true,
       "evidence": {
         "days": [
-          "2026-11-16",
-          "2026-11-17",
-          "2026-11-18",
-          "2026-11-19",
-          "2026-11-20",
-          "2026-11-21",
-          "2026-11-22",
-          "2026-11-23"
+          "2026-11-26",
+          "2026-11-27",
+          "2026-11-28",
+          "2026-11-29",
+          "2026-11-30",
+          "2026-12-01",
+          "2026-12-02",
+          "2026-12-03"
         ]
       }
     },
@@ -266,7 +671,7 @@
       "check": "summary counts 1 open item(s) on day 11",
       "pass": true,
       "evidence": {
-        "date": "2026-11-16",
+        "date": "2026-11-26",
         "openCount": 1,
         "completedCount": 0
       }
@@ -275,7 +680,7 @@
       "check": "summary counts 2 open item(s) on day 12",
       "pass": true,
       "evidence": {
-        "date": "2026-11-17",
+        "date": "2026-11-27",
         "openCount": 2,
         "completedCount": 0
       }
@@ -284,7 +689,7 @@
       "check": "summary counts 3 open item(s) on day 13",
       "pass": true,
       "evidence": {
-        "date": "2026-11-18",
+        "date": "2026-11-28",
         "openCount": 3,
         "completedCount": 0
       }
@@ -293,7 +698,7 @@
       "check": "summary counts 4 open item(s) on day 14",
       "pass": true,
       "evidence": {
-        "date": "2026-11-19",
+        "date": "2026-11-29",
         "openCount": 4,
         "completedCount": 0
       }
@@ -302,7 +707,7 @@
       "check": "summary counts 5 open item(s) on day 15",
       "pass": true,
       "evidence": {
-        "date": "2026-11-20",
+        "date": "2026-11-30",
         "openCount": 5,
         "completedCount": 0
       }
@@ -311,7 +716,7 @@
       "check": "summary counts 7 open item(s) on day 16",
       "pass": true,
       "evidence": {
-        "date": "2026-11-21",
+        "date": "2026-12-01",
         "openCount": 7,
         "completedCount": 0
       }
@@ -320,12 +725,14 @@
       "check": "summary keeps 105 items independent of the 100-row list page",
       "pass": true,
       "evidence": {
-        "from": "2026-11-08",
-        "to": "2026-11-08",
+        "from": "2026-11-18",
+        "to": "2026-11-18",
         "maxDays": 93,
+        "businessDate": "2026-11-15",
+        "organizationTimeZone": "Asia/Shanghai",
         "days": [
           {
-            "date": "2026-11-08",
+            "date": "2026-11-18",
             "openCount": 105,
             "completedCount": 0
           }
@@ -336,7 +743,7 @@
       "check": "summary reports mixed open/completed counts",
       "pass": true,
       "evidence": {
-        "date": "2026-11-22",
+        "date": "2026-12-02",
         "openCount": 3,
         "completedCount": 2
       }
@@ -345,7 +752,7 @@
       "check": "summary reports an all-completed day as zero open",
       "pass": true,
       "evidence": {
-        "date": "2026-11-23",
+        "date": "2026-12-03",
         "openCount": 0,
         "completedCount": 4
       }
@@ -390,9 +797,11 @@
       "check": "same-team peer summary does not expose another person's count",
       "pass": true,
       "evidence": {
-        "from": "2026-11-25",
-        "to": "2026-11-25",
+        "from": "2026-12-05",
+        "to": "2026-12-05",
         "maxDays": 93,
+        "businessDate": "2026-11-15",
+        "organizationTimeZone": "Asia/Shanghai",
         "days": []
       }
     },
@@ -420,9 +829,11 @@
       "check": "department head summary does not expose another person's count",
       "pass": true,
       "evidence": {
-        "from": "2026-11-25",
-        "to": "2026-11-25",
+        "from": "2026-12-05",
+        "to": "2026-12-05",
         "maxDays": 93,
+        "businessDate": "2026-11-15",
+        "organizationTimeZone": "Asia/Shanghai",
         "days": []
       }
     },
@@ -450,9 +861,11 @@
       "check": "founder summary does not expose another person's count",
       "pass": true,
       "evidence": {
-        "from": "2026-11-25",
-        "to": "2026-11-25",
+        "from": "2026-12-05",
+        "to": "2026-12-05",
         "maxDays": 93,
+        "businessDate": "2026-11-15",
+        "organizationTimeZone": "Asia/Shanghai",
         "days": []
       }
     },
@@ -480,9 +893,11 @@
       "check": "other company summary does not expose another person's count",
       "pass": true,
       "evidence": {
-        "from": "2026-11-25",
-        "to": "2026-11-25",
+        "from": "2026-12-05",
+        "to": "2026-12-05",
         "maxDays": 93,
+        "businessDate": "2026-11-15",
+        "organizationTimeZone": "Asia/Shanghai",
         "days": []
       }
     },
@@ -531,7 +946,7 @@
       "evidence": {
         "audit": [
           [
-            "{\"date\": \"2026-11-28\", \"dailyItemId\": \"7c114708-e485-4b8b-bac6-a4535f3671b8\"}"
+            "{\"endDate\": \"2026-12-08\", \"startDate\": \"2026-12-08\", \"dailyItemId\": \"c9d247b7-09f2-4223-90ab-099770585960\"}"
           ]
         ],
         "events": [
@@ -547,9 +962,12 @@
       "pass": true,
       "evidence": {
         "replay": {
-          "id": "cd241631-33e4-4185-b067-3c38a3c38e32",
-          "date": "2026-11-26",
-          "rowVersion": 1
+          "id": "399649d6-a431-4e7f-ad18-69ef66aa4639",
+          "date": "2026-12-06",
+          "endDate": "2026-12-06",
+          "startDate": "2026-12-06",
+          "rowVersion": 1,
+          "businessDate": "2026-11-15"
         },
         "total": 1
       }
@@ -558,7 +976,7 @@
       "check": "deleting and replaying the same idempotent request returns the cached result",
       "pass": true,
       "evidence": {
-        "id": "cd241631-33e4-4185-b067-3c38a3c38e32",
+        "id": "399649d6-a431-4e7f-ad18-69ef66aa4639",
         "deleted": true
       }
     },
@@ -584,16 +1002,16 @@
       "pass": true,
       "evidence": {
         "board": [
-          "0c140a46-ff78-417c-b682-28c2ddc547c2",
-          "2c2925cc-268b-4c58-8ab0-6af628e0386f",
-          "4b10f29e-f69d-4bf9-bd99-f3f54c9d7fd0",
-          "6162d083-23da-4402-9b56-390f53d93238",
-          "6e851e3d-42a9-43a5-98a4-49a8b01d4897",
-          "83ab7f4d-73dc-45b5-8d61-0625d23930aa",
-          "83e3cf5d-0a77-4b2a-b2c6-3375100f4b05",
-          "b6dd183d-c7cd-44e7-8815-66631fe0c7e2",
-          "b8978ea8-5be9-4745-b6dc-759de3892c1f",
-          "e115dd5f-cc19-4dde-8dcd-c6eab8f5f853"
+          "5ebf91c2-6bfb-4f19-ac07-26978e389372",
+          "61a47ecf-d02a-4ffc-8be8-40d61726c822",
+          "75def742-f2a0-4199-bee5-ca294099b9dc",
+          "88ca1278-d805-43c0-a8c0-2ffd33d94753",
+          "8be8cdf2-b38a-4d72-bb76-a8fee9839db6",
+          "94c29e6c-33d5-4c93-996f-74531bffc360",
+          "b3836185-be59-4264-aeb2-58be672f69ce",
+          "b6a20287-6b34-43a3-bc37-a3532c88b1b9",
+          "d04ffec4-2a1e-40a8-8e18-097de589805c",
+          "e6297b19-fa7d-4e68-b486-511a719c68e5"
         ]
       }
     },
@@ -602,47 +1020,177 @@
       "pass": true,
       "evidence": {
         "board": [
-          "0c140a46-ff78-417c-b682-28c2ddc547c2",
-          "2c2925cc-268b-4c58-8ab0-6af628e0386f",
-          "4b10f29e-f69d-4bf9-bd99-f3f54c9d7fd0",
-          "6162d083-23da-4402-9b56-390f53d93238",
-          "6e851e3d-42a9-43a5-98a4-49a8b01d4897",
-          "83ab7f4d-73dc-45b5-8d61-0625d23930aa",
-          "83e3cf5d-0a77-4b2a-b2c6-3375100f4b05",
-          "b6dd183d-c7cd-44e7-8815-66631fe0c7e2",
-          "b8978ea8-5be9-4745-b6dc-759de3892c1f",
-          "e115dd5f-cc19-4dde-8dcd-c6eab8f5f853"
+          "5ebf91c2-6bfb-4f19-ac07-26978e389372",
+          "61a47ecf-d02a-4ffc-8be8-40d61726c822",
+          "75def742-f2a0-4199-bee5-ca294099b9dc",
+          "88ca1278-d805-43c0-a8c0-2ffd33d94753",
+          "8be8cdf2-b38a-4d72-bb76-a8fee9839db6",
+          "94c29e6c-33d5-4c93-996f-74531bffc360",
+          "b3836185-be59-4264-aeb2-58be672f69ce",
+          "b6a20287-6b34-43a3-bc37-a3532c88b1b9",
+          "d04ffec4-2a1e-40a8-8e18-097de589805c",
+          "e6297b19-fa7d-4e68-b486-511a719c68e5"
         ]
       }
     },
     {
-      "check": "the home board is capped at ten and ordered by assignment time then id",
+      "check": "the home board is capped at ten and ordered by effective due, urgency then id",
       "pass": true,
       "evidence": {
         "board": [
-          "0c140a46-ff78-417c-b682-28c2ddc547c2",
-          "2c2925cc-268b-4c58-8ab0-6af628e0386f",
-          "4b10f29e-f69d-4bf9-bd99-f3f54c9d7fd0",
-          "6162d083-23da-4402-9b56-390f53d93238",
-          "6e851e3d-42a9-43a5-98a4-49a8b01d4897",
-          "83ab7f4d-73dc-45b5-8d61-0625d23930aa",
-          "83e3cf5d-0a77-4b2a-b2c6-3375100f4b05",
-          "b6dd183d-c7cd-44e7-8815-66631fe0c7e2",
-          "b8978ea8-5be9-4745-b6dc-759de3892c1f",
-          "e115dd5f-cc19-4dde-8dcd-c6eab8f5f853"
+          "5ebf91c2-6bfb-4f19-ac07-26978e389372",
+          "61a47ecf-d02a-4ffc-8be8-40d61726c822",
+          "75def742-f2a0-4199-bee5-ca294099b9dc",
+          "88ca1278-d805-43c0-a8c0-2ffd33d94753",
+          "8be8cdf2-b38a-4d72-bb76-a8fee9839db6",
+          "94c29e6c-33d5-4c93-996f-74531bffc360",
+          "b3836185-be59-4264-aeb2-58be672f69ce",
+          "b6a20287-6b34-43a3-bc37-a3532c88b1b9",
+          "d04ffec4-2a1e-40a8-8e18-097de589805c",
+          "e6297b19-fa7d-4e68-b486-511a719c68e5"
         ],
         "expected": [
-          "0c140a46-ff78-417c-b682-28c2ddc547c2",
-          "2c2925cc-268b-4c58-8ab0-6af628e0386f",
-          "4b10f29e-f69d-4bf9-bd99-f3f54c9d7fd0",
-          "6162d083-23da-4402-9b56-390f53d93238",
-          "6e851e3d-42a9-43a5-98a4-49a8b01d4897",
-          "83ab7f4d-73dc-45b5-8d61-0625d23930aa",
-          "83e3cf5d-0a77-4b2a-b2c6-3375100f4b05",
-          "b6dd183d-c7cd-44e7-8815-66631fe0c7e2",
-          "b8978ea8-5be9-4745-b6dc-759de3892c1f",
-          "e115dd5f-cc19-4dde-8dcd-c6eab8f5f853"
+          "5ebf91c2-6bfb-4f19-ac07-26978e389372",
+          "61a47ecf-d02a-4ffc-8be8-40d61726c822",
+          "75def742-f2a0-4199-bee5-ca294099b9dc",
+          "88ca1278-d805-43c0-a8c0-2ffd33d94753",
+          "8be8cdf2-b38a-4d72-bb76-a8fee9839db6",
+          "94c29e6c-33d5-4c93-996f-74531bffc360",
+          "b3836185-be59-4264-aeb2-58be672f69ce",
+          "b6a20287-6b34-43a3-bc37-a3532c88b1b9",
+          "d04ffec4-2a1e-40a8-8e18-097de589805c",
+          "e6297b19-fa7d-4e68-b486-511a719c68e5"
         ]
+      }
+    },
+    {
+      "check": "every board row projects a canonical due instant and execution state",
+      "pass": true,
+      "evidence": [
+        {
+          "taskId": "5ebf91c2-6bfb-4f19-ac07-26978e389372",
+          "dueAt": "2026-11-16T10:00:00Z",
+          "executionState": "todo"
+        },
+        {
+          "taskId": "61a47ecf-d02a-4ffc-8be8-40d61726c822",
+          "dueAt": "2026-11-16T10:00:00Z",
+          "executionState": "todo"
+        },
+        {
+          "taskId": "75def742-f2a0-4199-bee5-ca294099b9dc",
+          "dueAt": "2026-11-16T10:00:00Z",
+          "executionState": "todo"
+        },
+        {
+          "taskId": "88ca1278-d805-43c0-a8c0-2ffd33d94753",
+          "dueAt": "2026-11-16T10:00:00Z",
+          "executionState": "todo"
+        },
+        {
+          "taskId": "8be8cdf2-b38a-4d72-bb76-a8fee9839db6",
+          "dueAt": "2026-11-16T10:00:00Z",
+          "executionState": "todo"
+        },
+        {
+          "taskId": "94c29e6c-33d5-4c93-996f-74531bffc360",
+          "dueAt": "2026-11-16T10:00:00Z",
+          "executionState": "todo"
+        },
+        {
+          "taskId": "b3836185-be59-4264-aeb2-58be672f69ce",
+          "dueAt": "2026-11-16T10:00:00Z",
+          "executionState": "todo"
+        },
+        {
+          "taskId": "b6a20287-6b34-43a3-bc37-a3532c88b1b9",
+          "dueAt": "2026-11-16T10:00:00Z",
+          "executionState": "todo"
+        },
+        {
+          "taskId": "d04ffec4-2a1e-40a8-8e18-097de589805c",
+          "dueAt": "2026-11-16T10:00:00Z",
+          "executionState": "todo"
+        },
+        {
+          "taskId": "e6297b19-fa7d-4e68-b486-511a719c68e5",
+          "dueAt": "2026-11-16T10:00:00Z",
+          "executionState": "todo"
+        }
+      ]
+    },
+    {
+      "check": "the complete authorized set is due-ordered before the ten-item limit",
+      "pass": true,
+      "evidence": {
+        "board": [
+          "e05b510d-1cdb-4664-8bae-bcd771da42e5",
+          "e03cefa4-c5b7-4620-921e-ba9c5f7693da",
+          "da72eed4-c721-4280-bf1c-6a2f6edc039b",
+          "ceb73fc2-9fa6-4184-874a-a5e47a3381eb",
+          "4e87a56f-9d92-4952-bb97-e77423ce1959",
+          "27d56813-61a8-4e85-920b-57c334db688b",
+          "3cd63ebd-defd-46fc-a173-42b3535c155c",
+          "a620ddf5-f2f8-4d05-b44f-dd573401407c",
+          "26795660-cf29-4723-82b0-e8c1a3de7ab5",
+          "265d5f4f-abd1-4777-8a04-2475da97cecd"
+        ],
+        "expected": [
+          "e05b510d-1cdb-4664-8bae-bcd771da42e5",
+          "e03cefa4-c5b7-4620-921e-ba9c5f7693da",
+          "da72eed4-c721-4280-bf1c-6a2f6edc039b",
+          "ceb73fc2-9fa6-4184-874a-a5e47a3381eb",
+          "4e87a56f-9d92-4952-bb97-e77423ce1959",
+          "27d56813-61a8-4e85-920b-57c334db688b",
+          "3cd63ebd-defd-46fc-a173-42b3535c155c",
+          "a620ddf5-f2f8-4d05-b44f-dd573401407c",
+          "26795660-cf29-4723-82b0-e8c1a3de7ab5",
+          "265d5f4f-abd1-4777-8a04-2475da97cecd"
+        ]
+      }
+    },
+    {
+      "check": "same-instant rows fall back to urgent/high/medium/low and then id; all-day uses the real cut-off",
+      "pass": true,
+      "evidence": {
+        "board": [
+          "ce815363-5183-4b73-8890-e96e8207a972",
+          "6cd8360e-b5bc-44e5-b9a0-26e207ff8720",
+          "1901e2b1-584f-4e01-981b-894481a21f26",
+          "41596716-3b8b-44cf-bdad-a997f9a04330",
+          "1534e8f3-d7ad-49cd-855a-10b42e246ccb",
+          "78953fe2-5409-440d-b183-3fc6358a1d4f",
+          "4db839fd-478a-4312-9013-9fa76b113eff"
+        ],
+        "expected": [
+          "ce815363-5183-4b73-8890-e96e8207a972",
+          "6cd8360e-b5bc-44e5-b9a0-26e207ff8720",
+          "1901e2b1-584f-4e01-981b-894481a21f26",
+          "41596716-3b8b-44cf-bdad-a997f9a04330",
+          "1534e8f3-d7ad-49cd-855a-10b42e246ccb",
+          "78953fe2-5409-440d-b183-3fc6358a1d4f",
+          "4db839fd-478a-4312-9013-9fa76b113eff"
+        ]
+      }
+    },
+    {
+      "check": "a pending proposal never replaces the effective deadline used by the board",
+      "pass": true,
+      "evidence": {
+        "board": [
+          "ac7da7f6-f2d8-4b7e-b569-3a922186b26e",
+          "2ba74223-b30f-4dec-86da-7127faf63a77"
+        ],
+        "expected": [
+          "ac7da7f6-f2d8-4b7e-b569-3a922186b26e",
+          "2ba74223-b30f-4dec-86da-7127faf63a77"
+        ],
+        "request": {
+          "taskId": "ac7da7f6-f2d8-4b7e-b569-3a922186b26e",
+          "requestId": "a0f846c9-4416-40f3-98be-bb3453a36629",
+          "outcome": "pending",
+          "rowVersion": 3
+        }
       }
     },
     {
@@ -659,8 +1207,8 @@
       "pass": true,
       "evidence": {
         "board": [
-          "bc506102-a432-4516-aef6-fab097f1931d",
-          "e44a31d9-8c50-445c-8556-910925585a8c"
+          "153cc673-29e2-42fd-96f1-5f7c1b3eaabf",
+          "1cb6a009-6048-416d-adde-0534e359e57d"
         ]
       }
     },
@@ -669,8 +1217,8 @@
       "pass": true,
       "evidence": {
         "board": [
-          "bc506102-a432-4516-aef6-fab097f1931d",
-          "e44a31d9-8c50-445c-8556-910925585a8c"
+          "153cc673-29e2-42fd-96f1-5f7c1b3eaabf",
+          "1cb6a009-6048-416d-adde-0534e359e57d"
         ]
       }
     },

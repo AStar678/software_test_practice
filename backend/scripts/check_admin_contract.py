@@ -209,20 +209,31 @@ def run_checks(f: Fixture, check, report: dict) -> None:
           preview_before.get('reviewerId') == ids['beta-head'], {
               'reviewerId': preview_before.get('reviewerId'), 'basis': preview_before.get('route', {}).get('basisAssigneeId')})
 
-    # --- Company information: ten real rows, the eleventh refused, admin and App read the same order.
+    # --- Company information: body-only rows, ten real entries, the eleventh refused, admin and App
+    # --- read the same order. A request that still sends the retired title is rejected atomically.
     for index in range(10):
-        call('POST', '/admin/company/items', {'title': f'Company Notice {index + 1:02d}',
-                                              'body': f'Real company information item {index + 1:02d}'}, 'admin')
-    status, body = raw('POST', '/admin/company/items', {'title': 'Company Notice 11', 'body': 'Eleventh item'}, 'admin')
+        call('POST', '/admin/company/items',
+             {'body': f'Company Notice {index + 1:02d} · Real company information item'}, 'admin')
+    before_items = call('GET', '/admin/company', who='admin').get('items', [])
+    status, body = raw('POST', '/admin/company/items', {'title': 'Retired title', 'body': 'Rejected title input'}, 'admin')
+    after_items = call('GET', '/admin/company', who='admin').get('items', [])
+    check('company information rejects the retired title without a partial write',
+          status == 400 and body.get('code') == 'INVALID_INPUT' and after_items == before_items,
+          {'status': status, 'code': body.get('code'), 'count': len(after_items)})
+    status, body = raw('POST', '/admin/company/items', {'body': 'Eleventh item'}, 'admin')
     check('sequential eleventh company item is refused with HOME_ITEM_LIMIT',
           status == 409 and body.get('code') == 'HOME_ITEM_LIMIT', {'status': status, 'code': body.get('code')})
     company = call('GET', '/admin/company', who='admin')
-    company_titles = [item['title'] for item in company.get('items', [])]
+    company_bodies = [item['body'] for item in company.get('items', [])]
     home_before = call('GET', '/home', who='founder')
-    app_titles = [item['title'] for item in home_before.get('companyItems', [])]
+    app_bodies = [item['body'] for item in home_before.get('companyItems', [])]
     check('company information is capped at ten and admin/App order agree',
-          company.get('limit') == 10 and len(company_titles) == 10 and app_titles == company_titles,
-          {'limit': company.get('limit'), 'adminTitles': company_titles, 'appTitles': app_titles})
+          company.get('limit') == 10 and len(company_bodies) == 10 and app_bodies == company_bodies,
+          {'limit': company.get('limit'), 'adminBodies': company_bodies, 'appBodies': app_bodies})
+    check('company information responses carry no retired title',
+          all('title' not in item for item in company.get('items', []))
+          and all('title' not in item for item in home_before.get('companyItems', [])),
+          {'adminKeys': sorted(company.get('items', [{}])[0]), 'appKeys': sorted(home_before.get('companyItems', [{}])[0])})
 
     # --- Real completed departure work and unpublished departure creation (preserves the existing
     # --- admin-browser inventory/departure checks).
@@ -367,7 +378,7 @@ def run_checks(f: Fixture, check, report: dict) -> None:
             'position': {'id': 'fixture-company-title', 'oldName': 'Display title',
                          'newName': 'Browser Renamed Title'},
             'legacy': {'expectedRole': 'team_head'},
-            'company': {'titles': company_titles},
+            'company': {'bodies': company_bodies},
             'notifications': {key: {'eventId': row['eventId'], 'notificationId': row['notificationId'],
                                     'title': row['title']}
                               for key, row in notification_rows.items()},
@@ -440,14 +451,14 @@ def run_checks(f: Fixture, check, report: dict) -> None:
 
     admin_company_after = call('GET', '/admin/company', who='admin')
     home_after = call('GET', '/home', who='founder')
-    expected_titles = list(company_titles)
-    expected_titles[8], expected_titles[9] = expected_titles[9], expected_titles[8]
-    actual_admin_titles = [item['title'] for item in admin_company_after.get('items', [])]
-    actual_app_titles = [item['title'] for item in home_after.get('companyItems', [])]
+    expected_bodies = list(company_bodies)
+    expected_bodies[8], expected_bodies[9] = expected_bodies[9], expected_bodies[8]
+    actual_admin_bodies = [item['body'] for item in admin_company_after.get('items', [])]
+    actual_app_bodies = [item['body'] for item in home_after.get('companyItems', [])]
     check('browser reorder persists and the App reads the identical admin order',
-          actual_admin_titles == expected_titles and actual_app_titles == expected_titles,
-          {'expected': expected_titles, 'admin': actual_admin_titles, 'app': actual_app_titles})
-    status, body = raw('POST', '/admin/company/items', {'title': 'Company Notice 11 again', 'body': 'Eleventh item'}, 'admin')
+          actual_admin_bodies == expected_bodies and actual_app_bodies == expected_bodies,
+          {'expected': expected_bodies, 'admin': actual_admin_bodies, 'app': actual_app_bodies})
+    status, body = raw('POST', '/admin/company/items', {'body': 'Eleventh item'}, 'admin')
     check('eleventh company item is still refused after the browser reorder',
           status == 409 and body.get('code') == 'HOME_ITEM_LIMIT', {'status': status, 'code': body.get('code')})
 

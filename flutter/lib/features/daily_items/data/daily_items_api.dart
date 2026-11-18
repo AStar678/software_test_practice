@@ -8,15 +8,19 @@ import '../domain/daily_item.dart';
 class DailyItemsApi {
   // ignore: prefer_initializing_formals
   DailyItemsApi({required ApiClient client, required WorkspaceClock clock})
+    // ignore: prefer_initializing_formals
+    : _client = client,
       // ignore: prefer_initializing_formals
-      : _client = client,
-        // ignore: prefer_initializing_formals
-        _clock = clock;
+      _clock = clock;
 
   final ApiClient _client;
   final WorkspaceClock _clock;
 
-  Future<DailyItemPage> listByDay(CompanyDate day, {int limit = 50, int offset = 0}) async {
+  Future<DailyItemPage> listByDay(
+    CompanyDate day, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
     final result = await _client.get<DailyItemPage>(
       '/daily-items',
       query: {'date': day.iso, 'limit': limit, 'offset': offset},
@@ -25,13 +29,22 @@ class DailyItemsApi {
     return result.data;
   }
 
-  Future<DailyItemPage> listRange(CompanyDateRange range, {int limit = 50, int offset = 0}) async {
+  Future<DailyItemPage> listRange(
+    CompanyDateRange range, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
     if (range.dayCount > 93) {
       throw ArgumentError('每日事项查询窗口最多 93 天');
     }
     final result = await _client.get<DailyItemPage>(
       '/daily-items',
-      query: {'from': range.start.iso, 'to': range.end.iso, 'limit': limit, 'offset': offset},
+      query: {
+        'from': range.start.iso,
+        'to': range.end.iso,
+        'limit': limit,
+        'offset': offset,
+      },
       decode: _decodePage,
     );
     return result.data;
@@ -56,7 +69,10 @@ class DailyItemsApi {
             completedCount: (item['completedCount'] as num?)?.toInt() ?? 0,
           );
         }
-        return DailyItemSummary(days: days, businessDate: map['businessDate']?.toString());
+        return DailyItemSummary(
+          days: days,
+          businessDate: map['businessDate']?.toString(),
+        );
       },
     );
     return result.data;
@@ -99,6 +115,7 @@ class DailyItemsApi {
     CompanyDate? start,
     CompanyDate? end,
     bool? completed,
+    String? ifMatch,
   }) async {
     if ((start == null) != (end == null)) {
       throw ArgumentError('开始日与结束日必须同时提供或同时省略');
@@ -117,12 +134,16 @@ class DailyItemsApi {
       idempotencyKey: idempotencyKey,
       versionKey: VersionRegistry.dailyItem(id),
       requireVersion: true,
+      ifMatch: ifMatch,
       decode: (json) => DailyItem.fromJson(asJsonMap(json)),
     );
     return result.data;
   }
 
-  Future<void> delete({required String id, required String idempotencyKey}) async {
+  Future<void> delete({
+    required String id,
+    required String idempotencyKey,
+  }) async {
     await _client.write<void>(
       method: 'DELETE',
       path: '/daily-items/$id',

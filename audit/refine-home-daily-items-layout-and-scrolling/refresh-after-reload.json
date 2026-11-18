@@ -1,31 +1,29 @@
 {
-  "updated": "2026-11-05T06:58:31.645Z",
+  "updated": "2026-11-15T08:49:47.473Z",
   "viewports": [
     {
       "viewport": "320x740",
       "ready": true,
       "initial": {
         "months": [
-          "2026-09",
           "2026-10",
           "2026-11",
-          "2026-12",
-          "2027-01"
+          "2026-12"
         ],
-        "clientWidth": 256,
-        "scrollWidth": 1192,
-        "scrollLeft": 416,
-        "maxLeft": 936,
+        "clientHeight": 384,
+        "scrollHeight": 2694,
+        "scrollTop": 1199,
+        "maxTop": 2310,
         "todayVisible": true
       },
       "canSlideBack": true,
       "canSlideForward": true,
       "forward": {
-        "left": 859,
+        "top": 1642,
         "open": false
       },
       "backward": {
-        "left": 415,
+        "top": 1199,
         "open": false
       },
       "movedForward": true,
@@ -36,26 +34,24 @@
       "ready": true,
       "initial": {
         "months": [
-          "2026-09",
           "2026-10",
           "2026-11",
-          "2026-12",
-          "2027-01"
+          "2026-12"
         ],
-        "clientWidth": 310,
-        "scrollWidth": 1244,
-        "scrollLeft": 438,
-        "maxLeft": 934,
+        "clientHeight": 384,
+        "scrollHeight": 2694,
+        "scrollTop": 1199,
+        "maxTop": 2310,
         "todayVisible": true
       },
       "canSlideBack": true,
       "canSlideForward": true,
       "forward": {
-        "left": 881,
+        "top": 1643,
         "open": false
       },
       "backward": {
-        "left": 438,
+        "top": 1200,
         "open": false
       },
       "movedForward": true,
@@ -66,32 +62,24 @@
       "ready": true,
       "initial": {
         "months": [
-          "2026-06",
-          "2026-07",
-          "2026-08",
-          "2026-09",
           "2026-10",
           "2026-11",
-          "2026-12",
-          "2027-01",
-          "2027-02",
-          "2027-03",
-          "2027-04"
+          "2026-12"
         ],
-        "clientWidth": 1052,
-        "scrollWidth": 2696,
-        "scrollLeft": 1210,
-        "maxLeft": 1644,
+        "clientHeight": 384,
+        "scrollHeight": 2694,
+        "scrollTop": 1199,
+        "maxTop": 2310,
         "todayVisible": true
       },
       "canSlideBack": true,
       "canSlideForward": true,
       "forward": {
-        "left": 1652,
+        "top": 1641,
         "open": false
       },
       "backward": {
-        "left": 1208,
+        "top": 1198,
         "open": false
       },
       "movedForward": true,
@@ -102,26 +90,24 @@
       "ready": true,
       "initial": {
         "months": [
-          "2026-09",
           "2026-10",
           "2026-11",
-          "2026-12",
-          "2027-01"
+          "2026-12"
         ],
-        "clientWidth": 310,
-        "scrollWidth": 1244,
-        "scrollLeft": 438,
-        "maxLeft": 934,
+        "clientHeight": 384,
+        "scrollHeight": 2694,
+        "scrollTop": 1199,
+        "maxTop": 2310,
         "todayVisible": true
       },
       "canSlideBack": true,
       "canSlideForward": true,
       "forward": {
-        "left": 880,
+        "top": 1642,
         "open": false
       },
       "backward": {
-        "left": 437,
+        "top": 1200,
         "open": false
       },
       "movedForward": true,

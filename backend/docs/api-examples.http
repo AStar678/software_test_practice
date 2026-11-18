@@ -8,7 +8,7 @@
 # Demo credentials are for the seeded local environment only.
 
 @baseUrl = http://localhost:8080
-@password = Demo@123456
+@password = 111
 @employeeToken = PASTE_EMPLOYEE_TOKEN
 @managerToken = PASTE_TEAM_HEAD_TOKEN
 @profileVersion = PASTE_PROFILE_ROW_VERSION
@@ -246,7 +246,7 @@ POST {{baseUrl}}/api/v1/auth/password
 Authorization: Bearer {{employeeToken}}
 Content-Type: application/json
 
-{"currentPassword":"Demo@123456","newPassword":"NewPass12345"}
+{"currentPassword":"111","newPassword":"NewPass12345"}
 
 ### Administration overview: fixed organization, display-only positions and readiness blockers.
 GET {{baseUrl}}/api/v1/admin/organization
@@ -337,7 +337,10 @@ Authorization: Bearer {{adminToken}}
 Idempotency-Key: {{$guid}}
 Content-Type: application/json
 
-{"title":"公司信息标题","body":"公司信息内容"}
+{"body":"公司信息正文"}
+
+# Company chronicles are body-only; a request that still sends title is rejected with 400
+# before any row is written, and no company item response carries title.
 
 POST {{baseUrl}}/api/v1/admin/company/items/reorder
 Authorization: Bearer {{adminToken}}

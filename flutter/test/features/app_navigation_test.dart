@@ -140,8 +140,8 @@ void main() {
     expect(find.text('事件纪'), findsOneWidget);
     expect(find.text('任务看板'), findsOneWidget);
     expect(find.text('每日事项'), findsOneWidget);
-    expect(find.text('公司事件 1'), findsOneWidget);
-    expect(find.text('公司事件 4'), findsNothing, reason: '卡片只保留约三条预览，其余进入完整清单');
+    expect(find.text('事件内容 1'), findsOneWidget);
+    expect(find.text('事件内容 4'), findsNothing, reason: '卡片只保留约三条预览，其余进入完整清单');
     expect(find.text('个人任务 4'), findsNothing);
 
     await tester.tap(find.byTooltip('通知'));

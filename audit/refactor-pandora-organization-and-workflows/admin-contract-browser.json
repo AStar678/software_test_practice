@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-04T11:46:16.305Z",
+  "updated": "2026-11-15T08:49:19.730Z",
   "checks": [
     {
       "check": "independent admin enters real management console",
@@ -10,10 +10,18 @@
       "pass": true
     },
     {
+      "check": "admin employee row displays the complete login phone",
+      "pass": true
+    },
+    {
+      "check": "admin employee editor reads the stored login phone",
+      "pass": true
+    },
+    {
       "check": "management console has no role/scope/rank/manual-manager editor",
       "pass": true,
       "evidence": {
-        "nav": "员工组织调整展示职位停用与接管管理员账号公司信息组织完整性任务历史通知管理"
+        "nav": "员工组织调整展示职位停用与接管管理员账号公司信息任务历史通知管理"
       }
     },
     {
@@ -133,29 +141,29 @@
       "check": "company info admin order matches the managed list",
       "pass": true,
       "evidence": {
-        "adminTitles": [
-          "Company Notice 01",
-          "Company Notice 02",
-          "Company Notice 03",
-          "Company Notice 04",
-          "Company Notice 05",
-          "Company Notice 06",
-          "Company Notice 07",
-          "Company Notice 08",
-          "Company Notice 09",
-          "Company Notice 10"
+        "adminBodies": [
+          "Company Notice 01 · Real company information item",
+          "Company Notice 02 · Real company information item",
+          "Company Notice 03 · Real company information item",
+          "Company Notice 04 · Real company information item",
+          "Company Notice 05 · Real company information item",
+          "Company Notice 06 · Real company information item",
+          "Company Notice 07 · Real company information item",
+          "Company Notice 08 · Real company information item",
+          "Company Notice 09 · Real company information item",
+          "Company Notice 10 · Real company information item"
         ],
-        "browserTitles": [
-          "Company Notice 01",
-          "Company Notice 02",
-          "Company Notice 03",
-          "Company Notice 04",
-          "Company Notice 05",
-          "Company Notice 06",
-          "Company Notice 07",
-          "Company Notice 08",
-          "Company Notice 09",
-          "Company Notice 10"
+        "browserBodies": [
+          "Company Notice 01 · Real company information item",
+          "Company Notice 02 · Real company information item",
+          "Company Notice 03 · Real company information item",
+          "Company Notice 04 · Real company information item",
+          "Company Notice 05 · Real company information item",
+          "Company Notice 06 · Real company information item",
+          "Company Notice 07 · Real company information item",
+          "Company Notice 08 · Real company information item",
+          "Company Notice 09 · Real company information item",
+          "Company Notice 10 · Real company information item"
         ]
       }
     },
@@ -163,17 +171,37 @@
       "check": "App reads company info in the same admin order",
       "pass": true,
       "evidence": {
-        "appTitles": [
-          "Company Notice 01",
-          "Company Notice 02",
-          "Company Notice 03",
-          "Company Notice 04",
-          "Company Notice 05",
-          "Company Notice 06",
-          "Company Notice 07",
-          "Company Notice 08",
-          "Company Notice 09",
-          "Company Notice 10"
+        "appBodies": [
+          "Company Notice 01 · Real company information item",
+          "Company Notice 02 · Real company information item",
+          "Company Notice 03 · Real company information item",
+          "Company Notice 04 · Real company information item",
+          "Company Notice 05 · Real company information item",
+          "Company Notice 06 · Real company information item",
+          "Company Notice 07 · Real company information item",
+          "Company Notice 08 · Real company information item",
+          "Company Notice 09 · Real company information item",
+          "Company Notice 10 · Real company information item"
+        ]
+      }
+    },
+    {
+      "check": "company info is body-only in both admin and employee responses",
+      "pass": true,
+      "evidence": {
+        "adminKeys": [
+          "id",
+          "body",
+          "sortOrder",
+          "rowVersion",
+          "createdAt"
+        ],
+        "appKeys": [
+          "id",
+          "kind",
+          "body",
+          "sortOrder",
+          "rowVersion"
         ]
       }
     },
@@ -181,17 +209,17 @@
       "check": "admin reorders company info through the real console",
       "pass": true,
       "evidence": {
-        "expectedTitles": [
-          "Company Notice 01",
-          "Company Notice 02",
-          "Company Notice 03",
-          "Company Notice 04",
-          "Company Notice 05",
-          "Company Notice 06",
-          "Company Notice 07",
-          "Company Notice 08",
-          "Company Notice 10",
-          "Company Notice 09"
+        "expectedBodies": [
+          "Company Notice 01 · Real company information item",
+          "Company Notice 02 · Real company information item",
+          "Company Notice 03 · Real company information item",
+          "Company Notice 04 · Real company information item",
+          "Company Notice 05 · Real company information item",
+          "Company Notice 06 · Real company information item",
+          "Company Notice 07 · Real company information item",
+          "Company Notice 08 · Real company information item",
+          "Company Notice 10 · Real company information item",
+          "Company Notice 09 · Real company information item"
         ]
       }
     },
@@ -199,29 +227,29 @@
       "check": "admin and App read the reordered company info identically",
       "pass": true,
       "evidence": {
-        "adminTitles": [
-          "Company Notice 01",
-          "Company Notice 02",
-          "Company Notice 03",
-          "Company Notice 04",
-          "Company Notice 05",
-          "Company Notice 06",
-          "Company Notice 07",
-          "Company Notice 08",
-          "Company Notice 10",
-          "Company Notice 09"
+        "adminBodies": [
+          "Company Notice 01 · Real company information item",
+          "Company Notice 02 · Real company information item",
+          "Company Notice 03 · Real company information item",
+          "Company Notice 04 · Real company information item",
+          "Company Notice 05 · Real company information item",
+          "Company Notice 06 · Real company information item",
+          "Company Notice 07 · Real company information item",
+          "Company Notice 08 · Real company information item",
+          "Company Notice 10 · Real company information item",
+          "Company Notice 09 · Real company information item"
         ],
-        "appTitles": [
-          "Company Notice 01",
-          "Company Notice 02",
-          "Company Notice 03",
-          "Company Notice 04",
-          "Company Notice 05",
-          "Company Notice 06",
-          "Company Notice 07",
-          "Company Notice 08",
-          "Company Notice 10",
-          "Company Notice 09"
+        "appBodies": [
+          "Company Notice 01 · Real company information item",
+          "Company Notice 02 · Real company information item",
+          "Company Notice 03 · Real company information item",
+          "Company Notice 04 · Real company information item",
+          "Company Notice 05 · Real company information item",
+          "Company Notice 06 · Real company information item",
+          "Company Notice 07 · Real company information item",
+          "Company Notice 08 · Real company information item",
+          "Company Notice 10 · Real company information item",
+          "Company Notice 09 · Real company information item"
         ]
       }
     },
@@ -268,7 +296,7 @@
       "check": "closed-window notification remains unread and withdrawable",
       "pass": true,
       "evidence": {
-        "text": "\n      alpha-one-head\n      Contract window closedtask.create.submitted\n      未读2026/11/4 19:46:152027/2/4 19:46:15\n      撤回",
+        "text": "\n      alpha-one-head\n      Contract window closedtask.create.submitted\n      未读2026/11/15 16:49:192027/2/15 16:49:19\n      撤回",
         "withdraw": true
       }
     },
@@ -322,7 +350,7 @@
         "active": 0,
         "planError": "",
         "notice": null,
-        "body": "two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nbeta-one-employee\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nbeta-two-employee\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nfounder\n\t\n创始人（固定）\n\t\n公司\n\t\n—\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nbeta-two-head\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n停用与业务责任安排\n待停用 0 人，业务责任接管 0 项，管理撤销未发布创建 0 项。\n调整原因\n保存完整结果\n完整组织结果已保存"
+        "body": " two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nbeta-one-employee\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nbeta-two-employee\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nfounder\n\t\n创始人（固定）\n\t\n公司\n\t\n—\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n\n\nbeta-two-head\n\t\n请选择\n部门负责人\n团队负责人\n员工\n\t\n请选择\nalpha\nbeta\n\t\n请选择\nbeta one\nbeta two\n\t\n请选择\nBrowser Catalog Analyst\nBrowser Renamed Title\n停用与业务责任安排\n待停用 0 人，业务责任接管 0 项，管理撤销未发布创建 0 项。\n调整原因\n保存并生效\n完整组织结果已保存"
       }
     },
     {

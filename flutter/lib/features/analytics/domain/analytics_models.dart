@@ -76,11 +76,16 @@ class AnalyticsSuggestion {
     required this.taskId,
     required this.title,
     required this.message,
+    this.sourceTaskIds = const [],
   });
   final String rule;
   final String taskId;
   final String title;
   final String message;
+  final List<String> sourceTaskIds;
+
+  List<String> get taskIds =>
+      {...sourceTaskIds, if (taskId.isNotEmpty) taskId}.toList();
 
   factory AnalyticsSuggestion.fromJson(Map<String, Object?> json) =>
       AnalyticsSuggestion(
@@ -88,6 +93,10 @@ class AnalyticsSuggestion {
         taskId: json['taskId']?.toString() ?? '',
         title: json['title']?.toString() ?? '',
         message: json['message']?.toString() ?? '',
+        sourceTaskIds: [
+          for (final value in json['sourceTaskIds'] as List? ?? const [])
+            if (value is String && value.isNotEmpty) value,
+        ],
       );
 }
 

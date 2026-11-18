@@ -498,11 +498,14 @@ class _TaskTablePageState extends ConsumerState<TaskTablePage> {
                 itemCount: _items.length,
                 itemBuilder: (context, index) {
                   final task = _items[index];
-                  return InkWell(
+                  return Material(
+                    color: _rowColor(task, index),
+                    child: InkWell(
                     onTap: () => _openTask(task.id),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       child: Text(task.title, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ),
                     ),
                   );
                 },
@@ -522,9 +525,12 @@ class _TaskTablePageState extends ConsumerState<TaskTablePage> {
                     itemCount: _items.length,
                     itemBuilder: (context, index) {
                       final task = _items[index];
-                      return InkWell(
+                      return Material(
+                        color: _rowColor(task, index),
+                        child: InkWell(
                         onTap: () => _openTask(task.id),
                         child: Row(children: [for (final column in columns) _cell(column, task)]),
+                        ),
                       );
                     },
                   ),
@@ -547,6 +553,10 @@ class _TaskTablePageState extends ConsumerState<TaskTablePage> {
       child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
     );
   }
+
+  Color _rowColor(TaskRecord task, int index) => task.tablePinned
+      ? const Color(0xFFE8F1FC)
+      : index.isEven ? PandoraColors.paper : const Color(0xFFF7F2F6);
 
   Widget _cell(_TableColumn column, TaskRecord task) {
     final child = switch (column) {

@@ -4,6 +4,79 @@
 
 ## ADDED Requirements
 
+### Requirement: Current Web parity and traceable implementation
+Flutter SHALL 对齐 `8625617`（2026-11-17）所代表的员工 Web 最终有效行为、现行主规格和当前共享契约，涵盖新增改动与历史遗漏。每项实施 SHALL 先核对对应 Web 最终实现及相关检查，交付“来源文件/函数或样式、基线提交、Web行为、Flutter落点、差异理由、验证结果”的对照证据。不能只凭旧任务勾选或个人偏好另定交互；基线变化须记录并重核。原生平台适配 SHALL 保持业务、信息层级、文案及操作顺序；已明确的 Flutter 特有要求继续有效，冲突先协调规格。
+
+#### Scenario: Compare every module before implementing
+- **WHEN** apply 开始某模块或复核已勾选任务
+- **THEN** SHALL 先查阅最终 Web 代码、现行契约与检查用例，再实现并核验同场景；每处差异有任务或明确规格决策，不以未核对当作一致
+
+### Requirement: Current home and private-item presentation
+事件纪 SHALL 仅消费纯文本 body，保留换行，不依赖或生成 title；首页预览和清单每条默认最多两行并省略，清单按 ID 独立展开/收起，键盘及辅助技术可同等操作。两卡及清单正文排版一致，无“统一发布”或 n/10。看板 SHALL 直接消费服务端完整集合三键排序后的前十项，预览取前三条；首页响应的有效截止与执行状态用于判定逾期，不依赖通用任务缓存。只有完整清单中严格超过有效截止且未完成的行使用淡玻璃红底及逾期语义；预览、恰好截止、未逾期行无该底色，待审提议不替换有效截止。
+
+事项 SHALL 以两周为正常可视密度、每天三条高度超过旧18px的轨道提供命中空间，双向连续月份与首页协调滚动；初始化公司今天可见，按真实可见日期和像素偏移恢复。稀疏 +n SHALL 固定对应真实日期列并反映完整隐藏数量，月外空格不可命中。条、清单、详情统一完成灰/待做蓝/逾期红，清除重复可见状态描述/徽标与跨日解释，保留实际日期、完成操作和状态辅助语义；用户正文不被改写。
+
+#### Scenario: Expand independent body-only chronicles
+- **WHEN** 两条事件纪含长正文、换行和特殊字符，用户分别展开再收起第一条
+- **THEN** SHALL 保留第二条展开及清单位置，正文安全完整且无空标题占位，预览仍先开清单
+
+#### Scenario: Consume the ranked home projection without another cache
+- **WHEN** 超过十条合法任务的新旧排序不同，含同截止、同紧急度、全天及待审项
+- **THEN** SHALL 使用服务端有效截止/紧急度/ID排序后的十项和前三条预览，仅清单真实逾期行红底，不先取旧十项局部重排
+
+#### Scenario: Restore the actual visible month in both directions
+- **WHEN** 用户前后连续跨年、刷新当前可见月份、切页返回或改变尺寸
+- **THEN** SHALL 保持真实可见日期和偏移，刷新该窗口而非固定首月；两周密度、三轨与周日/非连续列/月边界溢出命中正确，加载失败可重试
+
+#### Scenario: Keep private-item state concise and accessible
+- **WHEN** 用户在任一覆盖日完成或取消跨月事项并查看条、清单、详情
+- **THEN** SHALL 全覆盖范围同步三态颜色，无重复状态说明，实际日期和辅助状态可读且完成控件不误开详情
+
+### Requirement: Independent private-item whole-range dragging
+本人事项 SHALL 约500ms长按后整条拖动，门槛前自然滚动；按实际抓取日与目标日二维公历日差平移完整首尾日，跨行/月/年边缘自动补载。已完成项也可移动，ID/正文/完成值/跨度不变，无端点拉伸。松开 SHALL 展示新旧范围，确认后才按原版本/幂等写入，成功刷新所有已加载旧新范围且保持浏览锚点。取消、无效点、零位移、系统中断、退出或换账号不得写入或误开清单；冲突不覆盖，响应丢失沿用同一操作绝对目标范围重试，不二次平移。事项拖动不走任务审批、不要求任务原因、不改变公司任务日历。
+
+#### Scenario: Move a completed continuation safely
+- **WHEN** 从已完成跨月事项中间续接段长按、跨月移动并确认
+- **THEN** SHALL 同ID完整范围平移且保完成值/正文/跨度，确认前无写入，成功同步旧新范围并保浏览位置
+
+#### Scenario: Cancel or retry a range move
+- **WHEN** 用户取消/零位移/换账号，或确认后遇到版本冲突、失权、响应丢失
+- **THEN** SHALL 取消不写、冲突不覆盖、迟到响应不污染新会话；同载荷同版本重试只保存一个目标范围，保可靠数据和明确反馈
+
+### Requirement: Current table comments profiles and notification details
+表单置顶行 SHALL 所有单元格及固定名称列统一淡玻璃蓝，无置顶组斑马纹；非置顶行保留斑马纹，横滚、切列、焦点/选中不丢蓝底，表内无重复“表单置顶”标签。正常详情/表单合法置顶操作及两种独立偏好保留。
+
+任务/日志评论 SHALL 仅保留合法发表和作者编辑入口，无删除入口/有效删除动作，也无平铺说明后缀；后端既有删除能力及删除/撤权后的通知脱敏继续有效。本人信息卡 SHALL 各显示一次入职日期和已入职时长，组织区不重复；授权下属保留日期/时长/联系方式及空态。两者均无截至后缀或独立统计日期，内部 asOfDate 和公司日期算法不变。
+
+通知 SHALL 类型标签在读态分段上方，模式保持单图标直接切换，与 Web 信息层级一致。列表占视口安全区内稳定可用高度，切条件/模式、单条、空、加载、失败、分页不因结果数量收缩；尺寸变化重新适配，头部/筛选/返回可达，不把列表高度强加其他详情。下属月历 SHALL 为日期、三条可见轨道和 +n 各留互不遮挡空间，隐藏条不绘制或拦截点击；稀疏溢出及月首空位仍保持真实列与完整数量。
+
+#### Scenario: Keep pinned tint across fixed and scrolling columns
+- **WHEN** 用户横滚、切列、切换表单置顶并刷新
+- **THEN** SHALL 固定列与数据列颜色一致、分组正确，非置顶仍有斑马纹且日历置顶不变
+
+#### Scenario: Remove comment deletion without weakening redaction
+- **WHEN** 作者使用任务/日志评论并尝试旧删除动作，随后读取后端已删评论的通知
+- **THEN** SHALL 可合法发表/编辑，旧动作不发DELETE，已删或失权正文/摘要不能恢复，下属业务只读上下文不升级
+
+#### Scenario: Show employment fields once without an as-of date
+- **WHEN** 本人或合法上级查看有值/缺失入职日期的资料并展开组织信息
+- **THEN** SHALL 保留日期、时长及对应空态，不重复、不显示统计日期且不扩大资料权
+
+#### Scenario: Keep notification geometry stable across result states
+- **WHEN** 同一视口切换多条/单条/空/加载/失败并从详情返回
+- **THEN** SHALL 列表框体稳定、条件及有效位置恢复，窄屏/短屏和放大字体下筛选/返回可用
+
+#### Scenario: Hit sparse subordinate overflow without overlapping rows
+- **WHEN** 密集下属月历含长标题、跨月、完成、待审任务且仅周日或不连续日期溢出
+- **THEN** SHALL 三轨、日期和+n互不覆盖，入口在真实列且到完整当日清单，返回保原人员状态，全链业务只读
+
+### Requirement: Current demonstration interoperability
+演示 SHALL 使用当前真实四角色种子和契约，覆盖长事件正文、逾期/普通看板对照、跨日事项、独立表单置顶、多标签任务和日志及单标签/无标签对照。演示默认密码111仅为明确隔离演示环境配置，不内置客户端、不弱化正式改密规则；保留模式/重复准备不覆盖已有修改，重建需明确目标及授权。
+
+#### Scenario: Compare the current examples in Web and Flutter
+- **WHEN** 四角色通过同一明确演示后端在Web与Flutter操作新增场景
+- **THEN** SHALL 真实数据、排序及状态一致，修改持久回读，不以本地假数据补齐或静默重建库
+
 ### Requirement: Complete employee migration and shared service dependency
 Flutter 客户端 SHALL 覆盖迁移盘点中全部员工业务，而非只覆盖新指导或五页入口；创始人、部门负责人、团队负责人和普通员工均为正式支持角色。全部 90 项盘点、54 条既有主规格及 J01–J32 SHALL 有交付或明确 PC/A 依赖落点。共享后端继续唯一裁决业务；B 实施 SHALL 以 A 独立验证通过并归档后的实际契约为输入，存在漂移先修订本规划，不伪造接口成功。独立管理员继续 PC，系统推送继续延期，完整站内通知不得因此删减。
 
@@ -81,7 +154,7 @@ Flutter SHALL 保持五页及完整二级流程，按账号、人员、日历种
 - **THEN** 客户端 SHALL 恢复原页条件、日期及位置并关闭正确层级，账号或权限已变则清除失效状态
 
 ### Requirement: Private range daily-item workflows
-Flutter SHALL 消费 A 的 startDate/endDate 范围事项，保留一条真实 ID、纯文本及全范围完成状态。纵向连续月份 SHALL 显示跨日名称条、跨周/月续接及真实命中日期；点日期、空白、条或溢出均先进入该日完整含完成清单，清单文本开详情，完成控件不误开详情。创建/编辑/完成/取消完成/确认删除 SHALL 使用实际版本和 ID；range 查询窗口至多 93 日，读完所有页后才视为完整，跨窗口去重，失败区域不伪装无事项。事项不得拥有任务拖动、标签、评论、审核或他人读取。
+Flutter SHALL 消费 A 的 startDate/endDate 范围事项，保留一条真实 ID、纯文本及全范围完成状态。纵向连续月份 SHALL 显示跨日名称条、跨周/月续接及真实命中日期；点日期、空白、条或溢出均先进入该日完整含完成清单，清单文本开详情，完成控件不误开详情。创建/编辑/完成/取消完成/确认删除 SHALL 使用实际版本和 ID；range 查询窗口至多 93 日，读完所有页后才视为完整，跨窗口去重，失败区域不伪装无事项。事项 SHALL 支持本人整条范围拖动，不提供任务式端点拉伸、标签、评论、审核或他人读取。
 
 #### Scenario: Act on a continuation in another month
 - **WHEN** 用户点跨月事项在后一个月某日的续接条并完成
@@ -92,7 +165,7 @@ Flutter SHALL 消费 A 的 startDate/endDate 范围事项，保留一条真实 I
 - **THEN** 全部本人记录 SHALL 可到达，失败不截断为全量或覆盖新数据；他人、实际管理者、管理员均无读取入口，错误不泄露他人正文
 
 ### Requirement: Home previews and list-first entry
-Flutter 首页 SHALL 保留事件纪、任务看板、每日事项三模块及主规格的数据范围。上方卡片显示约三条少量预览且无内部纵滚，整页可滚；卡片及预览条均先开相应完整清单，再开详情。事件纪最多十条按 PC 顺序只读，任务看板最多十条按本人分派时间倒序及 ID 升序，只含当前负责的正常未完成任务，包含自建自负责；独立事项不受十条限制。
+Flutter 首页 SHALL 保留事件纪、任务看板、每日事项三模块及主规格的数据范围。上方卡片显示约三条少量预览且无内部纵滚，整页可滚；卡片及预览条均先开相应完整清单；任务由清单进入详情，事件纪在清单逐条展开正文。事件纪最多十条按 PC 顺序只读，任务看板由服务对完整符合条件集合按有效截止升序、紧急/高/中/低、ID升序排序后取最多十条，只含当前负责的正常未完成任务，包含自建自负责；独立事项不受十条限制。
 
 #### Scenario: Open a board preview with more than ten source tasks
 - **WHEN** 本人存在超过十条合法任务及仅创建未负责、未发布、完成任务
@@ -168,8 +241,8 @@ Flutter 公司日历 SHALL 只包含本人当前有效负责的正常已发布�
 Flutter 拖动 SHALL 遵守修订后的主规格：约 500ms 长按激活、一次轻震、激活前自然滚动；月历二维跨行/月/年并边缘自动滚动，按实际抓取日差平移完整任务，只有真实端点能缩放；日轴按小时相对变化保留分钟且最终全区间仍在当前日 00:00—24:00。轻量确认 SHALL 显示完整旧/新排期、原因和实际审核提示，不提前保存。取消、系统中断、无位移、无效落点或失权不得写入或误开详情。键盘/可访问替代 SHALL 使用同一规则；详情合法跨日排期不受日轴限制。
 
 #### Scenario: Drag across a month boundary on a device
-- **WHEN** 真机上从续接片段长按激活、移入边缘自动滚动并跨年落到另一日期
-- **THEN** SHALL 只轻震一次、按实际日期差移动整条保留时刻工期，确认才调用原排期接口；取消/中断不建申请且不误开清单
+- **WHEN** 在模拟器或组件指针路径中从续接片段长按激活、移入边缘自动滚动并跨年落到另一日期
+- **THEN** SHALL 只调用一次轻震适配并提供视觉反馈、按实际日期差移动整条保留时刻工期，确认才调用原排期接口；取消/中断不建申请且不误开清单
 
 #### Scenario: Reject a final day-axis crossing
 - **WHEN** 原本当日内任务按小时移动或拉端后超出 00:00—24:00，包含键盘和确认路径
@@ -230,7 +303,7 @@ Flutter 任务表单 SHALL 使用 A 的全局管线：正常授权下原创建�
 - **THEN** SHALL 仅创始人员工入口可用且服务端重验，其他角色仅按对象权选用
 
 ### Requirement: Flat comments and revoked-access safety
-任务/日志评论 SHALL 平铺、时间正序及稳定 ID 游标，当前对象访问权独立检查，作者在仍有权时可改/删本人评论。任务完成/待审和日志冻结 SHALL 不冻结独立评论，不提供楼中楼/他人管理权。评论通知仅面向当前负责人或日志作者且排除本人；删除/失权后清理摘要及跳转，不借历史消息例外恢复评论。发表评论返回 SHALL 保留原路由上下文。
+任务/日志评论 SHALL 平铺、时间正序及稳定 ID 游标，当前对象访问权独立检查，作者在仍有权时可编辑本人评论，Flutter SHALL 不提供删除入口或有效删除动作；后端既有删除能力与权限规则保留。任务完成/待审和日志冻结 SHALL 不冻结独立评论，不提供楼中楼/他人管理权。评论通知仅面向当前负责人或日志作者且排除本人；删除/失权后清理摘要及跳转，不借历史消息例外恢复评论。发表评论返回 SHALL 保留原路由上下文。
 
 #### Scenario: Comment while business edits are frozen
 - **WHEN** 对象完成、待审或日志冻结，但当前员工仍有正常读取与评论资格
@@ -241,7 +314,7 @@ Flutter 任务表单 SHALL 使用 A 的全局管线：正常授权下原创建�
 - **THEN** SHALL 不显示旧正文、摘要或评论入口，不通过历史任务路由恢复内容
 
 ### Requirement: Profiles avatars and actual organization paths
-Flutter 本人资料 SHALL 允许改头像/邮箱、改密和退出，姓名/电话/组织/入职日期只读。预设 rabbit/cat/bear/panda 与 PNG/JPG 源图至多 10MB SHALL 支持，中心裁剪压缩为 256px JPEG，再满足服务端二进制至多 300000 字节、尺寸至多 512px、data URI 至多 400000 字符；取消/权限失败可恢复，不使用不存在的 multipart 接口。本人及授权下属详情 SHALL 渲染服务端 tenure 年/月/日/asOfDate，空值显示未设置，不用账号创建日或本地 365/30 算法；身份标签隐藏，展示实际“部门 ▸ 团队 ▸ 实际职位”，缺层省略。联系方式仅在有权本人/实际链上级详情读取，不进入树或候选。
+Flutter 本人资料 SHALL 允许改头像/邮箱、改密和退出，姓名/电话/组织/入职日期只读。预设 rabbit/cat/bear/panda 与 PNG/JPG 源图至多 10MB SHALL 支持，中心裁剪压缩为 256px JPEG，再满足服务端二进制至多 300000 字节、尺寸至多 512px、data URI 至多 400000 字符；取消/权限失败可恢复，不使用不存在的 multipart 接口。本人及授权下属详情 SHALL 使用服务端 tenure 年/月/日，保留 asOfDate 数据但不展示截至后缀或等价统计日期，空值显示未设置，不用账号创建日或本地 365/30 算法；身份标签隐藏，展示实际“部门 ▸ 团队 ▸ 实际职位”，缺层省略。联系方式仅在有权本人/实际链上级详情读取，不进入树或候选。
 
 #### Scenario: Read tenure and a partial position path
 - **WHEN** 入职日为空或位于闰日/月末，或真实组织缺部门/团队
@@ -277,7 +350,11 @@ Flutter SHALL 提供六类型标签、三读态分段和一个具有可访问名
 - **THEN** SHALL 仅看到专用当前只读摘要，返回后正常列表仍无该任务；不恢复完整申请 diff、评论或任何操作按钮
 
 ### Requirement: Real analytics recommendations and holiday labels
-统计与 AI 图谱 SHALL 使用后端真实结果，区分执行状态、待完成审核/冻结及逾期、四档紧急程度；创始人公司、部门/团队聚合及个人、普通员工本人范围及时间筛选不扩大。现有本地规则建议 SHALL 保留关键词/来源/生成时间和授权跳转，不虚构固定数字或外部模型。月/日历 SHALL 使用 A 的按年官方休班数据，ready/stale/missing 正确表达，未公布年不预测，失败保留已有标签；标签不改变排期、提醒或统计。
+统计与 AI 图谱 SHALL 使用后端真实结果，区分执行状态、待完成审核/冻结及逾期、四档紧急程度。按2026-11-17用户确认，功能对齐当前Web，自动由服务按角色裁决范围：创始人公司统计/词云/建议，部门及团队负责人对应聚合统计/词云和本人建议，普通员工本人统计/词云/建议；不新增时间/状态/紧急程度筛选或仅本人范围切换，不扩展现行scope契约。进入和主动刷新 SHALL 重算，保留关键词/来源/生成时间和授权跳转，不虚构固定数字或外部模型。舍弃的额外功能 SHALL 有简明记录。月/日历 SHALL 使用 A 的按年官方休班数据，ready/stale/missing 正确表达，未公布年不预测，失败保留已有标签；标签不改变排期、提醒或统计。
+
+#### Scenario: Match the current Web analysis scope and refresh
+- **WHEN** 四类员工进入统计页或主动刷新
+- **THEN** SHALL 按现行自动角色范围读取真实统计并生成规则建议，无额外筛选/仅本人切换；状态及紧急程度分布、范围、来源和生成时间可读，授权变化时清理旧结果
 
 #### Scenario: Revalidate analytical sources after organization changes
 - **WHEN** 不同角色查询范围并打开建议来源，期间组织权限变化
@@ -288,18 +365,28 @@ Flutter SHALL 提供六类型标签、三读态分段和一个具有可访问名
 - **THEN** SHALL 不伪造休班、保留最近有效标签并表达状态，不让外部源故障阻止任务日历，任务和提醒不被改动
 
 ### Requirement: Android coexistence and reproducible delivery
-首轮 SHALL 提供原生 Flutter Android APK，使用独立包名与旧 `cn.pandora.mobile.debug` 共存，不覆盖旧应用或读取其登录数据；安装后以真实账号重登共享后端。交付 SHALL 记录 Flutter/Dart/JDK/Android SDK、构建命令、版本/签名指纹/APK 哈希、网络配置及真实设备版本；密钥和凭证不入库。正式配置 SHALL 使用有效 TLS，开发 HTTP 例外明确限定且不绕过证书验证；不内置演示密码或明文业务日志。真实安卓设备 SHALL 验证长按轻震、系统返回、键盘/安全区/字体放大、选图、前后台/进程重建、断网重试/重登与账号隔离；仅模拟或 Web 证据不得冒充设备通过。
+本课程项目 SHALL 提供可安装的原生 Flutter Android 演示 APK，允许 debug 构建及其自动签名，不要求专用发布签名或 release 包。独立包名 SHALL 与旧 `cn.pandora.mobile.debug` 不同，不覆盖旧应用或读取其登录数据；安装后用真实账号重登共享后端。交付 SHALL 记录 Flutter/Dart/JDK/Android SDK、构建命令/类型、版本/ABI/APK 哈希、网络配置及实际模拟器镜像/API版本；密钥、凭证和内置演示密码不入库，请求日志脱敏。
+
+课程演示 APK SHALL 支持显式配置包含 `/api/v1` 的 HTTP 或 HTTPS 后端地址，允许模拟器访问宿主机以及后续手机访问无证书服务器；HTTP 配置 SHALL 放行实际演示目标，不因无 HTTPS 域名/TLS 证书或专用 release 密钥阻塞构建或本地验收。若使用 HTTPS SHALL 保持正常证书验证，不接受任意证书。HTTP 演示不承诺传输加密，不扩大业务权限或更改服务版本/幂等规则。
+
+本 change 必需环境 SHALL 限于本地真实隔离后端与一台可用 Android 模拟器。模拟器 SHALL 验证当前APK安装、真实后端连通及核心页面/长按拖动、系统返回、键盘/安全区/字体放大、前后台/进程重建、断网恢复/账号隔离；组件检查 SHALL 覆盖一次激活一次触觉调用和平台不可稳定制造的取消/拒绝分支。选图在模拟器支持时实测，不支持的系统差异 SHALL 明确记录并由适配组件检查覆盖。工程最低API26设置保留，不要求同时在API26和现代Android两台设备实测。
+
+HTTPS/证书部署、专用release签名验收、多版本/厂商兼容矩阵、服务器部署/远程连通及手机实测 SHALL 移出本change完成/归档条件，不能因缺少这些条件阻塞本地交付；移出不等于已通过。后续课程展示 SHALL 由使用者/组员完成服务器部署、实际HTTP地址配置及手机核心流程检查，交接列明未验证项、安装/地址配置及排障步骤。独立e13仍 SHALL 针对本次本地范围取得当前PASS后方可归档。
 
 #### Scenario: Install alongside the transition shell
-- **WHEN** 安装交付 APK 到已有旧套壳的安卓设备
-- **THEN** SHALL 两个独立应用均可保留，新应用无旧凭证；真实登录与后端写入可在过渡 Web 回读，不自动停用旧入口
+- **WHEN** 在选定模拟器安装当前课程演示APK并检查包标识与登录
+- **THEN** SHALL 使用与旧包不同的applicationId，新应用无旧凭证，不要求读取/运行旧工程或安装旧包；真实登录与后端写入可由本地Web/API回读，debug及自动签名可接受
 
 #### Scenario: Audit evidence and a missing device
-- **WHEN** 检查交付包，或实施环境暂缺 SDK/签名/设备
-- **THEN** SHALL 有可复现环境和实际完成的证据；缺项明确记录为未完成阻塞，不以旧原生 APK、mock、截图或历史 PASS 宣称本次交付通过
+- **WHEN** 检查当前交付记录，而缺少HTTPS/专用发布密钥、API26第二台模拟器、远程服务器或手机
+- **THEN** SHALL 按本地后端、自动检查及单台模拟器证据判定；这些移出项只记未验证和后续责任，不作失败条件；没有当前可安装APK、必需模拟器运行或本地真实接口证据仍为未完成
+
+#### Scenario: Configure an HTTP course server without a certificate
+- **WHEN** 演示包配置模拟器宿主机HTTP地址或后续无证书服务器HTTP地址
+- **THEN** SHALL 能按实际地址生成可安装演示包，不要求TLS证书或专用release密钥；文档明确手机不能用自身localhost访问服务器，以及实际端口和`/api/v1`路径；远程连通实测留至展示阶段，不伪称当前已通过
 
 ### Requirement: Existing PC operations and real demonstration interoperability
-B SHALL 复用 A 的真实四角色动画链、稳定账号/ID 和业务数据，不用本地改名或假状态演示。PC 的入职维护、组织调整、停用/接管、密码重置、事件纪及审计继续可用；Flutter SHALL 在这些操作后正确刷新权限、资料、审核路由和来源。默认演示与极限夹具分开，普通应用启动不得重灌数据；A 的数据库迁移/备份检查与 B 的跨端读写分别取证。
+B SHALL 复用 A 的真实四角色动画链、稳定账号/ID 和业务数据，不用本地改名或假状态演示。PC 的入职维护、组织调整、停用/接管、密码重置、事件纪及审计继续可用；Flutter SHALL 在这些操作后正确刷新权限、资料、审核路由和来源。默认演示与极限夹具分开，普通应用启动不得重灌数据；PC触发操作可经本地管理API/浏览器完成。A的数据库迁移/备份只引用已归档依赖证据，B验证本地跨端读写，不重新执行生产部署或迁移/备份恢复演练。
 
 #### Scenario: Demonstrate and react to PC changes
 - **WHEN** 苏景昕→苏格拉底→柏拉图→亚里士多德四账号完成真实业务，PC 调整组织/停用/接管或重置密码

@@ -6,7 +6,7 @@ module.exports = async function checkDailyItemForm(b, fixture, check) {
   const ev = b.evaluate, js = JSON.stringify;
   const hint = '每日事项仅本人可见，可填写过去、今天或未来的日期，最多 2000 字。';
   const cleanForm = () => ev(`(()=>{const body=document.getElementById('sheetBody');
-    return !body.textContent.includes(${js(hint)})&&!!body.querySelector('#daily-date')&&
+    return !body.textContent.includes(${js(hint)})&&!!body.querySelector('#daily-start-date')&&!!body.querySelector('#daily-end-date')&&
       body.querySelector('#daily-body')?.maxLength===2000&&!!document.querySelector('[data-action=daily-save]')})()`);
   const close = () => ev("document.getElementById('sheetClose').click()");
   const save = () => ev("document.querySelector('[data-action=daily-save]').click()");
@@ -29,10 +29,10 @@ module.exports = async function checkDailyItemForm(b, fixture, check) {
     if (width === 390) {
       for (const [label, input, text, expected] of [
         ['blank content', fixture.today, '   ', '请填写内容'],
-        ['invalid date', '2023-02-29', 'draft', '有效的公历日期'],
+        ['invalid date', '2023-02-29', 'draft', '有效的公历起止日期'],
         ['overlong content', fixture.today, '字'.repeat(2001), '2000'],
       ]) {
-        await ev(`document.getElementById('daily-date').value=${js(input)};document.getElementById('daily-body').value=${js(text)}`);
+        await ev(`document.getElementById('daily-start-date').value=${js(input)};document.getElementById('daily-end-date').value=${js(input)};document.getElementById('daily-body').value=${js(text)}`);
         await save();
         check(`${label} still produces the original error without discarding the form`,
           await waitFor(b, `!document.getElementById('daily-form-error').hidden&&
@@ -40,13 +40,13 @@ module.exports = async function checkDailyItemForm(b, fixture, check) {
           await ev(`document.getElementById('daily-body').value===${js(text)}&&!overlayEl.hidden`));
       }
     }
-    await ev(`document.getElementById('daily-date').value=${js(date)};document.getElementById('daily-body').value=${js(body)}`);
+    await ev(`document.getElementById('daily-start-date').value=${js(date)};document.getElementById('daily-end-date').value=${js(date)};document.getElementById('daily-body').value=${js(body)}`);
     await save();
     check(`header create saves at ${width}px and restores focus`,
       await waitFor(b, "overlayEl.hidden&&Pandora.idle()") &&
       await ev("document.activeElement.classList.contains('daily-add')"));
     const item = await ev(`Pandora.request('/daily-items?date=${date}').then(r=>r.items.find(i=>i.body===${js(body)}))`);
-    check(`header create at ${width}px persisted the selected date and content`, item?.date === date, item);
+    check(`header create at ${width}px persisted the selected date and content`, item?.startDate === date && item?.endDate === date, item);
 
     // A separate empty date checks the other create entry without affecting the suite's seed days.
     const empty = date.slice(0, 8) + String(Number(date.slice(8)) + 10);
@@ -55,7 +55,7 @@ module.exports = async function checkDailyItemForm(b, fixture, check) {
     check(`empty date list at ${width}px is ready`, await waitFor(b, "sheetStack.at(-1)?.dailyKind==='list'&&Pandora.idle()"));
     await ev("document.querySelector('#sheetFoot [data-action=daily-new]').click()");
     check(`empty-day create at ${width}px omits the explanation and keeps the date`,
-      await cleanForm() && await usable() && await ev(`document.getElementById('daily-date').value===${js(empty)}`));
+      await cleanForm() && await usable() && await ev(`document.getElementById('daily-start-date').value===${js(empty)}&&document.getElementById('daily-end-date').value===${js(empty)}`));
     await close();
     check(`empty-day create cancellation at ${width}px restores visible date focus`,
       await ev(`overlayEl.hidden&&document.activeElement.dataset.dailyDate===${js(empty)}`));

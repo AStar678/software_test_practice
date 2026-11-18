@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-09T14:07:12.606351+00:00",
+  "updated": "2026-11-12T14:16:32.975797+00:00",
   "checks": [
     {
       "check": "an employee reads a missing year as a stable empty state",
@@ -39,7 +39,7 @@
       "evidence": {
         "status": 403,
         "code": "FORBIDDEN",
-        "message": "ĞèÒª¶ÀÁ¢¹ÜÀíÔ±Éí·İ"
+        "message": "éœ€è¦ç‹¬ç«‹ç®¡ç†å‘˜èº«ä»½"
       }
     },
     {
@@ -48,7 +48,7 @@
       "evidence": {
         "status": 400,
         "code": "IDEMPOTENCY_KEY_REQUIRED",
-        "message": "ÇëÌá¹©8ÖÁ80Î» Idempotency-Key"
+        "message": "è¯·æä¾›8è‡³80ä½ Idempotency-Key"
       }
     },
     {
@@ -57,7 +57,7 @@
       "evidence": {
         "status": 400,
         "code": "INVALID_YEAR",
-        "message": "Äê·İĞëÎª 1900¨C9999 µÄËÄÎ»¹«ÀúÄê"
+        "message": "å¹´ä»½é¡»ä¸º 1900â€“9999 çš„å››ä½å…¬å†å¹´"
       }
     },
     {
@@ -66,7 +66,7 @@
       "evidence": {
         "status": 400,
         "code": "INVALID_YEAR",
-        "message": "Äê·İĞëÎª 1900¨C9999 µÄËÄÎ»¹«ÀúÄê"
+        "message": "å¹´ä»½é¡»ä¸º 1900â€“9999 çš„å››ä½å…¬å†å¹´"
       }
     },
     {
@@ -88,202 +88,202 @@
         "days": [
           {
             "date": "2026-01-01",
-            "name": "Ôªµ©",
+            "name": "å…ƒæ—¦",
             "isOffDay": true
           },
           {
             "date": "2026-01-02",
-            "name": "Ôªµ©",
+            "name": "å…ƒæ—¦",
             "isOffDay": true
           },
           {
             "date": "2026-01-03",
-            "name": "Ôªµ©",
+            "name": "å…ƒæ—¦",
             "isOffDay": true
           },
           {
             "date": "2026-01-04",
-            "name": "Ôªµ©",
+            "name": "å…ƒæ—¦",
             "isOffDay": false
           },
           {
             "date": "2026-02-14",
-            "name": "´º½Ú",
+            "name": "æ˜¥èŠ‚",
             "isOffDay": false
           },
           {
             "date": "2026-02-15",
-            "name": "´º½Ú",
+            "name": "æ˜¥èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-02-16",
-            "name": "´º½Ú",
+            "name": "æ˜¥èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-02-17",
-            "name": "´º½Ú",
+            "name": "æ˜¥èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-02-18",
-            "name": "´º½Ú",
+            "name": "æ˜¥èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-02-19",
-            "name": "´º½Ú",
+            "name": "æ˜¥èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-02-20",
-            "name": "´º½Ú",
+            "name": "æ˜¥èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-02-21",
-            "name": "´º½Ú",
+            "name": "æ˜¥èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-02-22",
-            "name": "´º½Ú",
+            "name": "æ˜¥èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-02-23",
-            "name": "´º½Ú",
+            "name": "æ˜¥èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-02-28",
-            "name": "´º½Ú",
+            "name": "æ˜¥èŠ‚",
             "isOffDay": false
           },
           {
             "date": "2026-04-04",
-            "name": "ÇåÃ÷½Ú",
+            "name": "æ¸…æ˜èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-04-05",
-            "name": "ÇåÃ÷½Ú",
+            "name": "æ¸…æ˜èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-04-06",
-            "name": "ÇåÃ÷½Ú",
+            "name": "æ¸…æ˜èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-05-01",
-            "name": "ÀÍ¶¯½Ú",
+            "name": "åŠ³åŠ¨èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-05-02",
-            "name": "ÀÍ¶¯½Ú",
+            "name": "åŠ³åŠ¨èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-05-03",
-            "name": "ÀÍ¶¯½Ú",
+            "name": "åŠ³åŠ¨èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-05-04",
-            "name": "ÀÍ¶¯½Ú",
+            "name": "åŠ³åŠ¨èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-05-05",
-            "name": "ÀÍ¶¯½Ú",
+            "name": "åŠ³åŠ¨èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-05-09",
-            "name": "ÀÍ¶¯½Ú",
+            "name": "åŠ³åŠ¨èŠ‚",
             "isOffDay": false
           },
           {
             "date": "2026-06-19",
-            "name": "¶ËÎç½Ú",
+            "name": "ç«¯åˆèŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-06-20",
-            "name": "¶ËÎç½Ú",
+            "name": "ç«¯åˆèŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-06-21",
-            "name": "¶ËÎç½Ú",
+            "name": "ç«¯åˆèŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-09-20",
-            "name": "¹úÇì½Ú",
+            "name": "å›½åº†èŠ‚",
             "isOffDay": false
           },
           {
             "date": "2026-09-25",
-            "name": "ÖĞÇï½Ú",
+            "name": "ä¸­ç§‹èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-09-26",
-            "name": "ÖĞÇï½Ú",
+            "name": "ä¸­ç§‹èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-09-27",
-            "name": "ÖĞÇï½Ú",
+            "name": "ä¸­ç§‹èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-10-01",
-            "name": "¹úÇì½Ú",
+            "name": "å›½åº†èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-10-02",
-            "name": "¹úÇì½Ú",
+            "name": "å›½åº†èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-10-03",
-            "name": "¹úÇì½Ú",
+            "name": "å›½åº†èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-10-04",
-            "name": "¹úÇì½Ú",
+            "name": "å›½åº†èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-10-05",
-            "name": "¹úÇì½Ú",
+            "name": "å›½åº†èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-10-06",
-            "name": "¹úÇì½Ú",
+            "name": "å›½åº†èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-10-07",
-            "name": "¹úÇì½Ú",
+            "name": "å›½åº†èŠ‚",
             "isOffDay": true
           },
           {
             "date": "2026-10-10",
-            "name": "¹úÇì½Ú",
+            "name": "å›½åº†èŠ‚",
             "isOffDay": false
           }
         ],
         "source": "fixture-holiday-source",
-        "updatedAt": "2026-11-09T14:06:30.722986Z"
+        "updatedAt": "2026-11-12T14:16:20.625196Z"
       }
     },
     {
@@ -292,17 +292,17 @@
       "evidence": [
         {
           "date": "2026-01-01",
-          "name": "Ôªµ©",
+          "name": "å…ƒæ—¦",
           "isOffDay": true
         },
         {
           "date": "2026-01-02",
-          "name": "Ôªµ©",
+          "name": "å…ƒæ—¦",
           "isOffDay": true
         },
         {
           "date": "2026-01-03",
-          "name": "Ôªµ©",
+          "name": "å…ƒæ—¦",
           "isOffDay": true
         }
       ]
@@ -348,202 +348,202 @@
             "days": [
               {
                 "date": "2026-01-01",
-                "name": "Ôªµ©ĞŞ¶©",
+                "name": "å…ƒæ—¦ä¿®è®¢",
                 "isOffDay": true
               },
               {
                 "date": "2026-01-02",
-                "name": "Ôªµ©",
+                "name": "å…ƒæ—¦",
                 "isOffDay": true
               },
               {
                 "date": "2026-01-03",
-                "name": "Ôªµ©",
+                "name": "å…ƒæ—¦",
                 "isOffDay": true
               },
               {
                 "date": "2026-01-04",
-                "name": "Ôªµ©",
+                "name": "å…ƒæ—¦",
                 "isOffDay": false
               },
               {
                 "date": "2026-02-14",
-                "name": "´º½Ú",
+                "name": "æ˜¥èŠ‚",
                 "isOffDay": false
               },
               {
                 "date": "2026-02-15",
-                "name": "´º½Ú",
+                "name": "æ˜¥èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-02-16",
-                "name": "´º½Ú",
+                "name": "æ˜¥èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-02-17",
-                "name": "´º½Ú",
+                "name": "æ˜¥èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-02-18",
-                "name": "´º½Ú",
+                "name": "æ˜¥èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-02-19",
-                "name": "´º½Ú",
+                "name": "æ˜¥èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-02-20",
-                "name": "´º½Ú",
+                "name": "æ˜¥èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-02-21",
-                "name": "´º½Ú",
+                "name": "æ˜¥èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-02-22",
-                "name": "´º½Ú",
+                "name": "æ˜¥èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-02-23",
-                "name": "´º½Ú",
+                "name": "æ˜¥èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-02-28",
-                "name": "´º½Ú",
+                "name": "æ˜¥èŠ‚",
                 "isOffDay": false
               },
               {
                 "date": "2026-04-04",
-                "name": "ÇåÃ÷½Ú",
+                "name": "æ¸…æ˜èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-04-05",
-                "name": "ÇåÃ÷½Ú",
+                "name": "æ¸…æ˜èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-04-06",
-                "name": "ÇåÃ÷½Ú",
+                "name": "æ¸…æ˜èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-05-01",
-                "name": "ÀÍ¶¯½Ú",
+                "name": "åŠ³åŠ¨èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-05-02",
-                "name": "ÀÍ¶¯½Ú",
+                "name": "åŠ³åŠ¨èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-05-03",
-                "name": "ÀÍ¶¯½Ú",
+                "name": "åŠ³åŠ¨èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-05-04",
-                "name": "ÀÍ¶¯½Ú",
+                "name": "åŠ³åŠ¨èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-05-05",
-                "name": "ÀÍ¶¯½Ú",
+                "name": "åŠ³åŠ¨èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-05-09",
-                "name": "ÀÍ¶¯½Ú",
+                "name": "åŠ³åŠ¨èŠ‚",
                 "isOffDay": false
               },
               {
                 "date": "2026-06-19",
-                "name": "¶ËÎç½Ú",
+                "name": "ç«¯åˆèŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-06-20",
-                "name": "¶ËÎç½Ú",
+                "name": "ç«¯åˆèŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-06-21",
-                "name": "¶ËÎç½Ú",
+                "name": "ç«¯åˆèŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-09-20",
-                "name": "¹úÇì½Ú",
+                "name": "å›½åº†èŠ‚",
                 "isOffDay": false
               },
               {
                 "date": "2026-09-25",
-                "name": "ÖĞÇï½Ú",
+                "name": "ä¸­ç§‹èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-09-26",
-                "name": "ÖĞÇï½Ú",
+                "name": "ä¸­ç§‹èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-09-27",
-                "name": "ÖĞÇï½Ú",
+                "name": "ä¸­ç§‹èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-10-01",
-                "name": "¹úÇì½Ú",
+                "name": "å›½åº†èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-10-02",
-                "name": "¹úÇì½Ú",
+                "name": "å›½åº†èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-10-03",
-                "name": "¹úÇì½Ú",
+                "name": "å›½åº†èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-10-04",
-                "name": "¹úÇì½Ú",
+                "name": "å›½åº†èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-10-05",
-                "name": "¹úÇì½Ú",
+                "name": "å›½åº†èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-10-06",
-                "name": "¹úÇì½Ú",
+                "name": "å›½åº†èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-10-07",
-                "name": "¹úÇì½Ú",
+                "name": "å›½åº†èŠ‚",
                 "isOffDay": true
               },
               {
                 "date": "2026-10-10",
-                "name": "¹úÇì½Ú",
+                "name": "å›½åº†èŠ‚",
                 "isOffDay": false
               }
             ],
             "source": "fixture-holiday-source",
-            "updatedAt": "2026-11-09T14:06:31.776566Z"
+            "updatedAt": "2026-11-12T14:16:21.484586Z"
           }
         ]
       ]
@@ -553,7 +553,7 @@
       "pass": true,
       "evidence": {
         "date": "2026-01-01",
-        "name": "Ôªµ©ĞŞ¶©",
+        "name": "å…ƒæ—¦ä¿®è®¢",
         "isOffDay": true
       }
     },
@@ -587,7 +587,7 @@
       }
     },
     {
-      "check": "GET /tasks/abc172a3-e302-42fc-8d75-c1185cc50de8 succeeds",
+      "check": "GET /tasks/2e8bf8fb-b6f2-49b0-8d16-b4bd4f08a225 succeeds",
       "pass": true,
       "evidence": {
         "status": 200,
@@ -605,7 +605,7 @@
       }
     },
     {
-      "check": "GET /tasks/abc172a3-e302-42fc-8d75-c1185cc50de8 succeeds",
+      "check": "GET /tasks/2e8bf8fb-b6f2-49b0-8d16-b4bd4f08a225 succeeds",
       "pass": true,
       "evidence": {
         "status": 200,
@@ -636,18 +636,18 @@
       "pass": true,
       "evidence": {
         "status": "ready",
-        "beforeUpdated": "2026-11-09T14:06:32.159087Z",
-        "afterUpdated": "2026-11-09T14:06:32.159087Z",
+        "beforeUpdated": "2026-11-12T14:16:21.553467Z",
+        "afterUpdated": "2026-11-12T14:16:21.553467Z",
         "beforeDays": 39,
         "afterDays": 39,
         "firstBefore": {
           "date": "2026-01-01",
-          "name": "Ôªµ©ĞŞ¶©",
+          "name": "å…ƒæ—¦ä¿®è®¢",
           "isOffDay": true
         },
         "firstAfter": {
           "date": "2026-01-01",
-          "name": "Ôªµ©ĞŞ¶©",
+          "name": "å…ƒæ—¦ä¿®è®¢",
           "isOffDay": true
         }
       }
@@ -665,7 +665,7 @@
       "pass": true,
       "evidence": {
         "code": "HOLIDAY_REFRESH_FAILED",
-        "message": "½Ú¼ÙÈÕÊı¾İË¢ĞÂÊ§°Ü£¬ÒÑ±£ÁôÏÖÓĞ»º´æ",
+        "message": "èŠ‚å‡æ—¥æ•°æ®åˆ·æ–°å¤±è´¥ï¼Œå·²ä¿ç•™ç°æœ‰ç¼“å­˜",
         "reason": "HOLIDAY_SOURCE_HTTP"
       }
     },
@@ -674,7 +674,7 @@
       "pass": true,
       "evidence": {
         "status": "stale",
-        "updatedAt": "2026-11-09T14:06:32.159087Z",
+        "updatedAt": "2026-11-12T14:16:21.553467Z",
         "days": 39
       }
     },
@@ -683,7 +683,7 @@
       "pass": true,
       "evidence": {
         "code": "HOLIDAY_REFRESH_FAILED",
-        "message": "½Ú¼ÙÈÕÊı¾İË¢ĞÂÊ§°Ü£¬ÒÑ±£ÁôÏÖÓĞ»º´æ",
+        "message": "èŠ‚å‡æ—¥æ•°æ®åˆ·æ–°å¤±è´¥ï¼Œå·²ä¿ç•™ç°æœ‰ç¼“å­˜",
         "reason": "HOLIDAY_DATE_OUT_OF_YEAR"
       }
     },
@@ -719,17 +719,17 @@
         "days": [
           {
             "date": "2027-01-01",
-            "name": "Ôªµ©",
+            "name": "å…ƒæ—¦",
             "isOffDay": true
           },
           {
             "date": "2027-01-02",
-            "name": "Ôªµ©",
+            "name": "å…ƒæ—¦",
             "isOffDay": false
           }
         ],
         "source": "fixture-holiday-source",
-        "updatedAt": "2026-11-09T14:06:40.938425Z"
+        "updatedAt": "2026-11-12T14:16:24.847050Z"
       }
     },
     {

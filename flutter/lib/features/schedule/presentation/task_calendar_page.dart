@@ -1,3 +1,5 @@
+import 'schedule_confirmation.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -52,6 +54,16 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   final Set<int> _loadingHolidays = {};
   final Set<int> _holidayErrors = {};
   late CompanyDate _anchor;
+  late List<CompanyDate> _months;
+  late final int _epoch;
+  bool _restoring = true;
+  bool _changingWindow = false;
+  double? _lastScale;
+  final _viewportKey = GlobalKey();
+  bool get _current => mounted && _epoch == ref.read(accountEpochProvider);
+  double get _scale => MediaQuery.textScalerOf(context).scale(10) / 10;
+  double get _weekExtent =>
+      (_density == _CalendarDensity.comfortable ? 112 : 86) * _scale;
   final _scroll = ScrollController();
   final _currentMonthKey = GlobalKey();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -73,37 +85,74 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   _AxisDragData? _axisDrag;
   Offset? _axisDragStart;
   int _queryGeneration = 0;
+  int _positionRestoreGeneration = 0;
 
   @override
   void initState() {
     super.initState();
+    _epoch = ref.read(accountEpochProvider);
     _anchor = ref.read(businessDateProvider);
+    _resetMonths(_anchor);
     WidgetsBinding.instance.addObserver(this);
     _scroll.addListener(_loadVisibleMonths);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _jumpToAnchor();
-      _loadAround(_anchor);
-      unawaited(_restorePreferences());
+      if (_current) unawaited(_restorePreferences());
     });
+  }
+
+  void _resetMonths(CompanyDate date) {
+    _months = CompanyCalendarGrid.continuousMonths(
+      date,
+      monthsBefore: 1,
+      monthsAfter: 1,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final scale = _scale;
+    final previous = _lastScale;
+    _lastScale = scale;
+    if (previous != null && previous != scale) {
+      final position = _position();
+      if (position != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_current) unawaited(_restorePosition(position.$1, position.$2));
+        });
+      }
+    }
   }
 
   @override
   void didUpdateWidget(covariant TaskCalendarPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.assigneeId == widget.assigneeId) return;
+    _saveCurrentPosition();
+    _preferenceTimer?.cancel();
+    _preferences = null;
     _queryGeneration += 1;
+    _positionRestoreGeneration += 1;
+    _changingWindow = false;
     _tasks.clear();
     _loading.clear();
     _errors.clear();
+    _dayKeys.clear();
+    _drawerDay = null;
+    _drawerTasks = const [];
+    _anchor = ref.read(businessDateProvider);
+    _resetMonths(_anchor);
+    _restoring = true;
+    _cancelActiveDrag();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_loadAround(_anchor));
+      if (_current) unawaited(_restorePreferences());
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _saveCurrentPosition();
     _preferenceTimer?.cancel();
     _dragTimer?.cancel();
     _dragOverlay?.remove();
@@ -113,8 +162,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     super.dispose();
   }
 
-  double get _monthExtent =>
-      _density == _CalendarDensity.comfortable ? 642 : 510;
+  double get _monthExtent => 6 * _weekExtent + 100 * _scale;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -138,101 +186,187 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   }
 
   Future<void> _restorePreferences() async {
-    String? accountId;
-    for (var attempt = 0; attempt < 5 && accountId == null; attempt++) {
-      accountId = ref.read(currentUserProvider)?.id;
-      if (accountId == null) {
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-      }
-    }
-    final prefs = await AppPreferences.load(accountId);
-    if (!mounted) return;
+    final generation = _queryGeneration;
+    final prefs = await AppPreferences.load(
+      ref.read(currentUserProvider)?.id,
+      calendarPerson: widget.assigneeId,
+    );
+    if (!_current || generation != _queryGeneration) return;
+    final CompanyDate date =
+        CompanyDate.tryParse(prefs.getString('calendar.lastDate') ?? '') ??
+        ref.read<CompanyDate>(businessDateProvider);
+    final offset =
+        double.tryParse(prefs.getString('calendar.lastOffset') ?? '') ?? 0;
     setState(() {
       _preferences = prefs;
-      final savedDate = CompanyDate.tryParse(
-        prefs.getString('calendar.lastDate') ?? '',
-      );
-      if (savedDate != null) _anchor = savedDate;
+      _anchor = date;
       _dayVertical = prefs.getString('calendar.mode') == 'vertical';
       _density = prefs.getString('calendar.density') == 'comfortable'
           ? _CalendarDensity.comfortable
           : _CalendarDensity.compact;
+      _resetMonths(date);
     });
-    _jumpToAnchor();
-    await _loadAround(_anchor);
+    await _restorePosition(date, offset);
+    if (!_current || generation != _queryGeneration) return;
+    _restoring = false;
+    _loadVisibleMonths();
+    await _loadAround(date);
   }
 
-  void _jumpToAnchor() {
-    if (!_scroll.hasClients) return;
-    final months = CompanyCalendarGrid.continuousMonths(
-      _anchor,
-      monthsBefore: 12,
-      monthsAfter: 24,
-    );
-    final index = months.indexWhere(
-      (month) => month.year == _anchor.year && month.month == _anchor.month,
-    );
-    if (index >= 0) _scroll.jumpTo(index * _monthExtent);
-    _scrollToCurrentMonth();
+  (CompanyDate, double)? _position() {
+    final viewport = _viewportKey.currentContext?.findRenderObject();
+    if (viewport is! RenderBox || !viewport.attached) return null;
+    final top = viewport.localToGlobal(Offset.zero).dy;
+    (CompanyDate, double)? best;
+    for (final entry in _dayKeys.entries) {
+      final box = entry.value.currentContext?.findRenderObject();
+      if (box is! RenderBox || !box.attached) continue;
+      final y = box.localToGlobal(Offset.zero).dy - top;
+      if (y + box.size.height <= 0 || y >= viewport.size.height) continue;
+      final date = CompanyDate.tryParse(entry.key)!;
+      if (best == null ||
+          y < best.$2 - .1 ||
+          ((y - best.$2).abs() < .1 && date.isBefore(best.$1))) {
+        best = (date, y);
+      }
+    }
+    return best;
+  }
+
+  Future<void> _restorePosition(CompanyDate date, double offset) async {
+    if (!_current || !_scroll.hasClients) return;
+    final generation = _queryGeneration;
+    final restoreGeneration = ++_positionRestoreGeneration;
+    _changingWindow = true;
+    try {
+      final index = _months.indexWhere((month) => _key(month) == _key(date));
+      if (index < 0) return;
+      _scroll.jumpTo(
+        (index * _monthExtent).clamp(0, _scroll.position.maxScrollExtent),
+      );
+      await WidgetsBinding.instance.endOfFrame;
+      if (!_current ||
+          generation != _queryGeneration ||
+          restoreGeneration != _positionRestoreGeneration ||
+          !_scroll.hasClients) {
+        return;
+      }
+      final viewport = _viewportKey.currentContext?.findRenderObject();
+      final day = _dayKeys[date.iso]?.currentContext?.findRenderObject();
+      if (viewport is RenderBox && day is RenderBox) {
+        final y =
+            day.localToGlobal(Offset.zero).dy -
+            viewport.localToGlobal(Offset.zero).dy;
+        _scroll.jumpTo(
+          (_scroll.offset + y - offset).clamp(
+            0,
+            _scroll.position.maxScrollExtent,
+          ),
+        );
+      }
+    } finally {
+      if (_current && restoreGeneration == _positionRestoreGeneration) {
+        _changingWindow = false;
+        if (!_restoring) _loadVisibleMonths();
+      }
+    }
+  }
+
+  void _saveCurrentPosition() {
+    final position = _position();
+    final prefs = _preferences;
+    if (position == null || prefs == null) return;
+    unawaited(prefs.setString('calendar.lastDate', position.$1.iso));
+    unawaited(prefs.setString('calendar.lastOffset', position.$2.toString()));
   }
 
   Future<void> _savePreference(String key, String value) async {
-    final prefs = _preferences;
-    if (prefs == null) return;
-    await prefs.setString(key, value);
-  }
-
-  void _scheduleSavePosition(CompanyDate date) {
-    _preferenceTimer?.cancel();
-    _preferenceTimer = Timer(const Duration(milliseconds: 600), () {
-      unawaited(_savePreference('calendar.lastDate', date.iso));
-    });
+    if (!_current) return;
+    await _preferences?.setString(key, value);
   }
 
   void _loadVisibleMonths() {
-    if (!_scroll.hasClients) return;
-    final months = CompanyCalendarGrid.continuousMonths(
-      _anchor,
-      monthsBefore: 12,
-      monthsAfter: 24,
+    if (!_current || !_scroll.hasClients || _restoring || _changingWindow) {
+      return;
+    }
+    _preferenceTimer?.cancel();
+    _preferenceTimer = Timer(
+      const Duration(milliseconds: 600),
+      _saveCurrentPosition,
     );
-    final first = (_scroll.offset / _monthExtent).floor().clamp(
+    final first = ((_scroll.offset - 8) / _monthExtent).floor().clamp(
       0,
-      months.length - 1,
+      _months.length - 1,
     );
     final last =
         ((_scroll.offset + _scroll.position.viewportDimension) / _monthExtent)
             .ceil()
-            .clamp(0, months.length);
-    _scheduleSavePosition(months[first].firstDayOfMonth);
+            .clamp(first + 1, _months.length);
     for (var index = first; index < last; index++) {
-      final month = months[index];
-      if (_tasks.containsKey(_key(month)) || _loading.contains(_key(month))) {
-        continue;
+      final month = _months[index];
+      if (!_tasks.containsKey(_key(month)) &&
+          !_loading.contains(_key(month)) &&
+          !_errors.containsKey(_key(month))) {
+        unawaited(_loadMonth(month));
       }
-      unawaited(_loadMonth(month));
     }
+    var shift = 0.0;
+    final nearStart = _scroll.offset < _monthExtent / 2;
+    final nearEnd =
+        _scroll.position.maxScrollExtent - _scroll.offset < _monthExtent / 2;
+    if (!nearStart && !nearEnd) return;
+    _changingWindow = true;
+    final oldOffset = _scroll.offset;
+    setState(() {
+      if (nearStart) {
+        _months.insert(0, _months.first.addMonths(-1));
+        shift += _monthExtent;
+      } else {
+        _months.add(_months.last.addMonths(1));
+      }
+      if (_months.length > 12 && _dragSelection == null && _axisDrag == null) {
+        final removed = nearStart ? _months.removeLast() : _months.removeAt(0);
+        if (!nearStart) shift -= _monthExtent;
+        _tasks.remove(_key(removed));
+        _errors.remove(_key(removed));
+        _dayKeys.removeWhere((key, _) => key.startsWith(_key(removed)));
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_current || !_scroll.hasClients) return;
+      _scroll.jumpTo(
+        (oldOffset + shift).clamp(0, _scroll.position.maxScrollExtent),
+      );
+      _changingWindow = false;
+      _loadVisibleMonths();
+    });
   }
 
   void _scrollToCurrentMonth() {
-    final context = _currentMonthKey.currentContext;
-    if (context != null) {
-      Scrollable.ensureVisible(
-        context,
-        alignment: 0,
-        duration: const Duration(milliseconds: 250),
-      );
-    }
-    unawaited(_savePreference('calendar.lastDate', _anchor.iso));
+    if (!_current) return;
+    final today = ref.read(businessDateProvider);
+    setState(() {
+      _anchor = today;
+      _resetMonths(today);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_current) unawaited(_restorePosition(today, 0));
+    });
   }
 
   void _toggleDensity() {
+    final position = _position();
     setState(() {
       _density = _density == _CalendarDensity.compact
           ? _CalendarDensity.comfortable
           : _CalendarDensity.compact;
     });
     unawaited(_savePreference('calendar.density', _density.name));
+    if (position != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_current) unawaited(_restorePosition(position.$1, position.$2));
+      });
+    }
   }
 
   void _toggleAxisOrientation() {
@@ -247,11 +381,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
 
   @override
   Widget build(BuildContext context) {
-    final months = CompanyCalendarGrid.continuousMonths(
-      _anchor,
-      monthsBefore: 12,
-      monthsAfter: 24,
-    );
+    final months = _months;
     return Scaffold(
       key: _scaffoldKey,
       endDrawer: _drawerDay == null
@@ -326,7 +456,9 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
         child: RefreshIndicator(
           onRefresh: _refreshCalendar,
           child: ListView.builder(
+            key: _viewportKey,
             controller: _scroll,
+            itemExtent: _monthExtent,
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
             itemCount: months.length,
             itemBuilder: (context, index) {
@@ -338,7 +470,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
                 child: _MonthBlock(
                   month: month,
                   tasks: _tasks[_key(month)] ?? const [],
-                  businessDate: _anchor,
+                  businessDate: ref.watch(businessDateProvider),
                   loading: _loading.contains(_key(month)),
                   error: _errors[_key(month)],
                   onRetry: () => _loadMonth(month),
@@ -384,7 +516,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
       final holidays = await ref
           .read(holidayRepositoryProvider)
           .load(year, refresh: refresh);
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       setState(() {
         _holidays[year] = holidays;
         _holidayErrors.remove(year);
@@ -397,31 +529,33 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   }
 
   Future<void> _loadAround(CompanyDate anchor, {bool force = false}) async {
-    final months = CompanyCalendarGrid.continuousMonths(
-      anchor,
-      monthsBefore: 12,
-      monthsAfter: 24,
-    );
-    final center = months.indexWhere(
-      (month) => month.year == anchor.year && month.month == anchor.month,
-    );
-    if (center < 0) return;
-    for (var index = center - 2; index <= center + 2; index++) {
-      if (!mounted) return;
-      if (index < 0 || index >= months.length) continue;
-      final month = months[index];
+    if (!_current) return;
+    if (force) {
+      _queryGeneration++;
+      _loading.clear();
+      _errors.clear();
+    }
+    final generation = _queryGeneration;
+    final months = force
+        ? List<CompanyDate>.from(_months)
+        : CompanyCalendarGrid.continuousMonths(
+            anchor,
+            monthsBefore: 1,
+            monthsAfter: 1,
+          );
+    for (final month in months) {
+      if (!_current || generation != _queryGeneration) return;
       if (!force &&
           (_tasks.containsKey(_key(month)) || _loading.contains(_key(month)))) {
         continue;
       }
-      if (force) _tasks.remove(_key(month));
       await _loadMonth(month);
     }
   }
 
   Future<void> _loadMonth(CompanyDate month) async {
     final key = _key(month);
-    if (_loading.contains(key)) return;
+    if (!_current || _loading.contains(key)) return;
     final generation = _queryGeneration;
     final assigneeId =
         widget.assigneeId ?? ref.read(currentUserProvider)?.id ?? '';
@@ -441,10 +575,14 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
             from: from.iso,
             to: to.iso,
           );
-      if (!mounted ||
+      if (!_current ||
           generation != _queryGeneration ||
           assigneeId !=
               (widget.assigneeId ?? ref.read(currentUserProvider)?.id ?? '')) {
+        return;
+      }
+      if (!_months.any((month) => _key(month) == key)) {
+        _loading.remove(key);
         return;
       }
       setState(() {
@@ -452,7 +590,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
         _loading.remove(key);
       });
     } catch (error) {
-      if (!mounted || generation != _queryGeneration) return;
+      if (!_current || generation != _queryGeneration) return;
       setState(() {
         _errors[key] = error;
         _loading.remove(key);
@@ -753,91 +891,23 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     TaskRecord task,
     CalendarDragPreview preview,
   ) async {
-    final zone = CompanyTimeZone.fallback;
-    final controller = TextEditingController();
-    final reason = await showDialog<String>(
+    if (widget.readOnly) return;
+    final epoch = ref.read(accountEpochProvider);
+    final message = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认调整排期'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('任务：${task.title}'),
-              const SizedBox(height: 8),
-              Text('原排期：${_scheduleLabel(task, zone)}'),
-              Text('新排期：${preview.label(zone)}'),
-              const SizedBox(height: 8),
-              const Text(
-                '提交后按当前直属上级审核，固定创始人按原规则免审。',
-                style: TextStyle(fontSize: 12, color: PandoraColors.muted),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                maxLength: 500,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: '原因（必填）',
-                  alignLabelWithHint: true,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isNotEmpty) Navigator.of(context).pop(text);
-            },
-            child: const Text('提交'),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (_) => ScheduleConfirmation(task: task, preview: preview),
     );
-    await Future<void>.delayed(const Duration(milliseconds: 350));
-    controller.dispose();
-    if (reason == null || !mounted) return;
-    final payload = preview.payload(reason);
-    try {
-      // 列表不带任务 ETag；写入前必须重新读取当前任务版本。
-      await ref.read(scheduleApiProvider).detail(task.id);
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+    if (!mounted ||
+        epoch != ref.read(accountEpochProvider) ||
+        message == null) {
       return;
     }
-    final keys = ref.read(operationKeysProvider);
-    final key = keys.keyFor(
-      scope: 'calendar-move:${task.id}',
-      method: 'PATCH',
-      path: '/tasks/${task.id}',
-      body: {'command': 'reschedule', ...payload},
-    );
-    try {
-      await ref
-          .read(scheduleApiProvider)
-          .change(
-            id: task.id,
-            command: 'reschedule',
-            payload: payload,
-            idempotencyKey: key,
-          );
-      keys.complete('calendar-move:${task.id}');
-      await _loadAround(_anchor, force: true);
-      _refreshDrawer();
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
-    }
+    await _loadAround(_anchor, force: true);
+    if (!mounted || epoch != ref.read(accountEpochProvider)) return;
+    _refreshDrawer();
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _accessibleMonthAdjust(
@@ -962,7 +1032,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   }
 
   Future<void> _togglePin(TaskRecord task) async {
-    if (!task.canPin) return;
+    if (!_current || widget.readOnly || !task.canPin) return;
     final pinned = !task.pinned;
     final key = ref.read(operationKeysProvider);
     final idempotency = key.keyFor(
@@ -979,11 +1049,12 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
             pinned: pinned,
             idempotencyKey: idempotency,
           );
+      if (!_current) return;
       key.complete('calendar-pin:${task.id}');
       await _loadAround(_anchor, force: true);
       _refreshDrawer();
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(error.toString())));
     }
@@ -1042,12 +1113,15 @@ class _MonthBlock extends StatelessWidget {
   final bool readOnly;
 
   bool get _comfortable => density == _CalendarDensity.comfortable;
-  double get _rowHeight => _comfortable ? 96 : 74;
-  double get _laneStep => _comfortable ? 24 : 16;
-  double get _barHeight => _comfortable ? 24 : 15;
+  double _scale(BuildContext context) =>
+      MediaQuery.textScalerOf(context).scale(10) / 10;
 
   @override
   Widget build(BuildContext context) {
+    final scale = _scale(context);
+    final rowHeight = (_comfortable ? 112.0 : 86.0) * scale;
+    final laneStep = (_comfortable ? 24.0 : 16.0) * scale;
+    final barHeight = (_comfortable ? 24.0 : 15.0) * scale;
     final projected = tasks
         .map(
           (task) => CalendarTask(
@@ -1130,7 +1204,7 @@ class _MonthBlock extends StatelessWidget {
             ),
             for (final week in layout.weeks)
               SizedBox(
-                height: _rowHeight,
+                height: rowHeight,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final cellWidth = constraints.maxWidth / 7;
@@ -1171,6 +1245,7 @@ class _MonthBlock extends StatelessWidget {
                                               children: [
                                                 Text(
                                                   '${day.date.day}',
+                                                  semanticsLabel: day.date.iso,
                                                   style: const TextStyle(
                                                     fontSize: 11,
                                                   ),
@@ -1201,28 +1276,6 @@ class _MonthBlock extends StatelessWidget {
                                                 ],
                                               ],
                                             ),
-                                            for (
-                                              var lane = 0;
-                                              lane < MonthLayout.maxLanes;
-                                              lane++
-                                            )
-                                              if (week.bars
-                                                  .where(
-                                                    (bar) =>
-                                                        bar.lane == lane &&
-                                                        bar.startColumn <= i &&
-                                                        bar.endColumn >= i,
-                                                  )
-                                                  .isNotEmpty)
-                                                SizedBox(height: _laneStep),
-                                            if (day.overflowCount > 0)
-                                              Text(
-                                                '+${day.overflowCount}',
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  color: PandoraColors.brand,
-                                                ),
-                                              ),
                                           ],
                                         ),
                                       ),
@@ -1232,16 +1285,52 @@ class _MonthBlock extends StatelessWidget {
                               ),
                           ],
                         ),
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 18 * scale,
+                          child: Row(
+                            children: [
+                              for (final day in week.days)
+                                Expanded(
+                                  child: day.overflowCount == 0
+                                      ? const SizedBox.shrink()
+                                      : Semantics(
+                                          label:
+                                              '${day.date.iso} 还有${day.overflowCount}项任务，查看完整清单',
+                                          button: true,
+                                          child: InkWell(
+                                            key: ValueKey(
+                                              'task-overflow-${day.date.iso}',
+                                            ),
+                                            onTap: () => onDay(day.date),
+                                            child: Align(
+                                              alignment: Alignment.centerRight,
+                                              child: Text(
+                                                '+${day.overflowCount}',
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  color: PandoraColors.brand,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                ),
+                            ],
+                          ),
+                        ),
                         for (final bar in week.bars)
                           Positioned(
                             left: bar.startColumn * cellWidth + 2,
-                            top: 18 + bar.lane * _laneStep,
+                            top: 18 * scale + bar.lane * laneStep,
                             width:
                                 ((bar.endColumn - bar.startColumn + 1) *
                                             cellWidth -
                                         4)
                                     .clamp(2, double.infinity),
-                            height: _barHeight,
+                            height: barHeight,
                             child: Builder(
                               builder: (barContext) {
                                 final item = projected
@@ -1283,6 +1372,26 @@ class _MonthBlock extends StatelessWidget {
                                   selection.grabDay =
                                       week.days[bar.startColumn + offset].date;
                                   selection.pointer = position;
+                                }
+
+                                void openBarDay(TapUpDetails details) {
+                                  final box = barContext.findRenderObject();
+                                  if (box is! RenderBox) {
+                                    onDay(week.days[bar.endColumn].date);
+                                    return;
+                                  }
+                                  final localX = box
+                                      .globalToLocal(details.globalPosition)
+                                      .dx;
+                                  final offset = (localX / cellWidth)
+                                      .floor()
+                                      .clamp(
+                                        0,
+                                        bar.endColumn - bar.startColumn,
+                                      );
+                                  onDay(
+                                    week.days[bar.startColumn + offset].date,
+                                  );
                                 }
 
                                 final actions =
@@ -1387,40 +1496,7 @@ class _MonthBlock extends StatelessWidget {
                                                     key: ValueKey(
                                                       'task-bar-${bar.itemId}',
                                                     ),
-                                                    onTapUp: (details) {
-                                                      final box = barContext
-                                                          .findRenderObject();
-                                                      if (box is! RenderBox) {
-                                                        onDay(
-                                                          week
-                                                              .days[bar
-                                                                  .endColumn]
-                                                              .date,
-                                                        );
-                                                        return;
-                                                      }
-                                                      final localX = box
-                                                          .globalToLocal(
-                                                            details
-                                                                .globalPosition,
-                                                          )
-                                                          .dx;
-                                                      final offset =
-                                                          (localX / cellWidth)
-                                                              .floor()
-                                                              .clamp(
-                                                                0,
-                                                                bar.endColumn -
-                                                                    bar.startColumn,
-                                                              );
-                                                      onDay(
-                                                        week
-                                                            .days[bar
-                                                                    .startColumn +
-                                                                offset]
-                                                            .date,
-                                                      );
-                                                    },
+                                                    onTapUp: openBarDay,
                                                     child: _taskBar(
                                                       context,
                                                       bar,
@@ -1428,10 +1504,16 @@ class _MonthBlock extends StatelessWidget {
                                                     ),
                                                   ),
                                                 )
-                                              : _taskBar(
-                                                  context,
-                                                  bar,
-                                                  projected,
+                                              : GestureDetector(
+                                                  key: ValueKey(
+                                                    'task-bar-${bar.itemId}',
+                                                  ),
+                                                  onTapUp: openBarDay,
+                                                  child: _taskBar(
+                                                    context,
+                                                    bar,
+                                                    projected,
+                                                  ),
                                                 ),
                                         ),
                                       ),

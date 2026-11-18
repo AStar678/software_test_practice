@@ -79,6 +79,7 @@ class SelfProfileCard extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: _ProfileBody(
             person: result.data,
+            scrollable: false,
             actions: [
               FilledButton.tonalIcon(
                 onPressed: () => showDialog<void>(
@@ -100,15 +101,21 @@ class SelfProfileCard extends ConsumerWidget {
 }
 
 class _ProfileBody extends StatelessWidget {
-  const _ProfileBody({required this.person, required this.actions});
+  const _ProfileBody({
+    required this.person,
+    required this.actions,
+    this.scrollable = true,
+  });
 
   final EmployeeUser person;
   final List<Widget> actions;
+  final bool scrollable;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       shrinkWrap: true,
+      physics: scrollable ? null : const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: [
         Row(
@@ -146,8 +153,6 @@ class _ProfileBody extends StatelessWidget {
         _row('直属上级', person.managerName ?? '未设置'),
         _row('入职日期', person.hireDate ?? '入职日期未设置'),
         _row('入职时长', person.tenure?.label ?? '入职时长未设置'),
-        if (person.tenure?.asOfDate != null)
-          _row('统计日期', person.tenure!.asOfDate!),
         const SizedBox(height: 16),
         Wrap(spacing: 8, runSpacing: 8, children: actions),
       ],
@@ -189,6 +194,7 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
   String? _version;
   String? _avatar;
   bool _saving = false;
+  bool _picking = false;
   bool _needsReload = false;
   String? _error;
 
@@ -234,14 +240,14 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
                     ChoiceChip(
                       label: Text('${entry.value} ${_presetName(entry.key)}'),
                       selected: _avatar == entry.key,
-                      onSelected: _saving
+                      onSelected: _saving || _picking
                           ? null
                           : (_) => setState(() => _avatar = entry.key),
                     ),
                 ],
               ),
               TextButton.icon(
-                onPressed: _saving ? null : _pickImage,
+                onPressed: _saving || _picking ? null : _pickImage,
                 icon: const Icon(Icons.photo_library_outlined),
                 label: const Text('从系统相册选择'),
               ),
@@ -268,18 +274,26 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
           child: const Text('取消'),
         ),
         FilledButton(
-          onPressed: _saving ? null : (_needsReload ? _reload : _save),
-          child: Text(_saving ? '处理中…' : (_needsReload ? '重新读取' : '保存')),
+          onPressed: _saving || _picking
+              ? null
+              : (_needsReload ? _reload : _save),
+          child: Text(
+            _saving || _picking ? '处理中…' : (_needsReload ? '重新读取' : '保存'),
+          ),
         ),
       ],
     );
   }
 
   Future<void> _pickImage() async {
-    setState(() => _error = null);
+    final picker = ref.read(profileImagePickerProvider);
+    setState(() {
+      _error = null;
+      _picking = true;
+    });
     XFile? selected;
     try {
-      selected = await ImagePicker().pickImage(
+      selected = await picker.pickImage(
         source: ImageSource.gallery,
         requestFullMetadata: false,
       );
@@ -288,7 +302,13 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
       final processed = const AvatarProcessor().process(bytes);
       if (mounted) setState(() => _avatar = processed);
     } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (mounted) {
+        setState(
+          () => _error = error is AvatarException
+              ? error.message
+              : '无法选择照片，请检查系统相册权限后重试。',
+        );
+      }
     } finally {
       final path = selected?.path;
       if (path != null &&
@@ -302,6 +322,7 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
           // 系统选择器可能已经清理临时副本。
         }
       }
+      if (mounted) setState(() => _picking = false);
     }
   }
 

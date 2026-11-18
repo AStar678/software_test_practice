@@ -196,7 +196,7 @@ public class OrganizationService {
     public Map<String, Object> companyItems(Actor actor) {
         access.requireAdmin(actor);
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("items", db.list("SELECT id,title,body,sort_order,row_version,created_at FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id", actor.organizationId()));
+        result.put("items", db.list("SELECT id,body,sort_order,row_version,created_at FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id", actor.organizationId()));
         result.put("limit", COMPANY_ITEM_LIMIT);
         result.put("offWorkTime", s(db.one("SELECT off_work_time FROM organizations WHERE id=?", actor.organizationId()), "offWorkTime"));
         return result;
@@ -204,27 +204,26 @@ public class OrganizationService {
 
     public Map<String, Object> createCompanyItem(Actor actor, Map<String, Object> input) {
         access.requireCapability(actor, "manage_company_info");
-        allowed(input, Set.of("title", "body"));
-        String body = text(input.get("body"), "公司信息内容", 2000);
-        String title = input.containsKey("title") ? text(input.get("title"), "公司信息标题", 200)
-                : body.substring(0, Math.min(body.length(), 200));
+        // Company chronicles are body-only: the retired independent title is rejected with every other
+        // unknown field before any row is written, so a rejected request never partially inserts.
+        allowed(input, Set.of("body"));
+        String body = bodyText(input.get("body"), "公司信息内容", 2000);
         long existing = n(db.one("SELECT COUNT(*) AS c FROM home_items WHERE organization_id=? AND kind='company'", actor.organizationId()), "c");
         if (existing >= COMPANY_ITEM_LIMIT) throw new ApiException(409, "HOME_ITEM_LIMIT", "公司信息最多10条，请先删除后再新增");
         long next = n(db.one("SELECT COALESCE(MAX(sort_order),0)+1 AS c FROM home_items WHERE organization_id=? AND kind='company'", actor.organizationId()), "c");
         String id = Db.id();
-        db.update("INSERT INTO home_items(id,organization_id,owner_id,kind,title,body,sort_order) VALUES(?,?,NULL,'company',?,?,?)", id, actor.organizationId(), title, body, next);
+        db.update("INSERT INTO home_items(id,organization_id,owner_id,kind,body,sort_order) VALUES(?,?,NULL,'company',?,?)", id, actor.organizationId(), body, next);
         events.record(actor, null, "company_item.created", List.of(), Map.of("homeItemId", id));
         return Map.of("id", id, "rowVersion", 1, "sortOrder", next);
     }
 
     public Map<String, Object> updateCompanyItem(Actor actor, String id, String ifMatch, Map<String, Object> input) {
         access.requireCapability(actor, "manage_company_info");
-        allowed(input, Set.of("title", "body"));
+        allowed(input, Set.of("body"));
         Map<String, Object> row = db.one("SELECT * FROM home_items WHERE organization_id=? AND id=? AND kind='company' FOR UPDATE", actor.organizationId(), id);
         Writes.checkVersion(ifMatch, n(row, "rowVersion"));
-        String body = input.containsKey("body") ? text(input.get("body"), "公司信息内容", 2000) : s(row, "body");
-        String title = input.containsKey("title") ? text(input.get("title"), "公司信息标题", 200) : s(row, "title");
-        db.update("UPDATE home_items SET title=?,body=?,row_version=row_version+1 WHERE organization_id=? AND id=?", title, body, actor.organizationId(), id);
+        String body = input.containsKey("body") ? bodyText(input.get("body"), "公司信息内容", 2000) : s(row, "body");
+        db.update("UPDATE home_items SET body=?,row_version=row_version+1 WHERE organization_id=? AND id=?", body, actor.organizationId(), id);
         events.record(actor, null, "company_item.updated", List.of(), Map.of("homeItemId", id));
         return Map.of("id", id, "rowVersion", n(row, "rowVersion") + 1);
     }
@@ -334,6 +333,15 @@ public class OrganizationService {
         String text = raw.strip();
         if (text.isEmpty() || text.codePointCount(0, text.length()) > max) throw bad(label + "不能为空且不得超过" + max + "字");
         if (text.codePoints().anyMatch(Character::isISOControl)) throw bad(label + "含无效字符");
+        return text;
+    }
+
+    /** Company chronicle body: the same 1–2000 plain-text rule, but internal line breaks are kept. */
+    static String bodyText(Object value, String label, int max) {
+        if (!(value instanceof String raw)) throw bad(label + "必须为文字");
+        String text = raw.strip();
+        if (text.isEmpty() || text.codePointCount(0, text.length()) > max) throw bad(label + "不能为空且不得超过" + max + "字");
+        if (text.codePoints().anyMatch(cp -> cp != '\n' && Character.isISOControl(cp))) throw bad(label + "含无效字符");
         return text;
     }
 

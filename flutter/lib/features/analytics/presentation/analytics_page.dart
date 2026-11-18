@@ -17,7 +17,6 @@ class AnalyticsPage extends ConsumerStatefulWidget {
 }
 
 class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
-  String _scope = 'auto';
   AnalyticsSummary? _summary;
   AnalyticsReport? _report;
   Object? _summaryError;
@@ -47,18 +46,6 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
           child: ListView(
             padding: const EdgeInsets.all(12),
             children: [
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'auto', label: Text('授权范围')),
-                  ButtonSegment(value: 'self', label: Text('仅本人')),
-                ],
-                selected: {_scope},
-                onSelectionChanged: (value) {
-                  _scope = value.single;
-                  _reloadScope();
-                },
-              ),
-              const SizedBox(height: 12),
               if (_loading && _summary == null)
                 const SizedBox(
                   height: 180,
@@ -69,9 +56,9 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
               if (_summary != null) ..._summaryCards(_summary!),
               const SizedBox(height: 12),
               FilledButton.icon(
-                onPressed: _generating ? null : _generate,
+                onPressed: _generating || _loading ? null : _generate,
                 icon: const Icon(Icons.auto_graph_outlined),
-                label: Text(_generating ? '生成中…' : '生成本地规则建议'),
+                label: Text(_generating ? '正在重算…' : '刷新并重算'),
               ),
               const Padding(
                 padding: EdgeInsets.only(top: 6),
@@ -110,12 +97,12 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _metric('待办', value.todo),
+                _metric('待开始', value.todo),
                 _metric('进行中', value.doing),
                 _metric('已完成', value.done),
-                _metric('冻结', value.frozen),
-                _metric('完成待审', value.pendingComplete),
-                _metric('逾期', value.overdue),
+                _metric('全部待审冻结', value.frozen),
+                _metric('待完成审核', value.pendingComplete),
+                _metric('逾期未完成', value.overdue),
               ],
             ),
             const SizedBox(height: 12),
@@ -124,7 +111,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              '方法 ${value.method} · 生成于 ${_time(value.generatedAt)}',
+              '统计方法：${_methodLabel(value.method)} · 更新于 ${_time(value.generatedAt)}',
               style: const TextStyle(color: PandoraColors.muted),
             ),
           ],
@@ -137,7 +124,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('关键词', style: Theme.of(context).textTheme.titleSmall),
+            Text('关键词词云', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             if (value.keywords.isEmpty)
               const Text('当前授权范围没有可提取的关键词')
@@ -147,7 +134,24 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
                 runSpacing: 6,
                 children: [
                   for (final keyword in value.keywords)
-                    Chip(label: Text('${keyword.word} ${keyword.count}')),
+                    Tooltip(
+                      message: '${keyword.word}：出现 ${keyword.count} 次',
+                      child: Text(
+                        keyword.word,
+                        style: TextStyle(
+                          fontSize:
+                              12 +
+                              (8 * keyword.count / _maxKeywordCount(value))
+                                  .roundToDouble(),
+                          fontWeight: keyword.count > 1
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: keyword.count > 1
+                              ? const Color(0xFF1D4ED8)
+                              : PandoraColors.muted,
+                        ),
+                      ),
+                    ),
                 ],
               ),
           ],
@@ -169,7 +173,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             Text(
-              '方法 ${value.method} · 外部模型：${value.modelUsed ? '是' : '否'} · ${_time(value.generatedAt)}',
+              '生成于 ${_time(value.generatedAt)} · ${_methodLabel(value.method)}',
               style: const TextStyle(color: PandoraColors.muted),
             ),
             const Divider(),
@@ -177,21 +181,59 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
               const Text('当前没有需要提示的排期或紧急任务')
             else
               for (final suggestion in value.suggestions)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.lightbulb_outline),
-                  title: Text(suggestion.title),
-                  subtitle: Text(suggestion.message),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: suggestion.taskId.isEmpty
-                      ? null
-                      : () => context.push('/tasks/${suggestion.taskId}'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.lightbulb_outline),
+                      title: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_ruleLabel(suggestion.rule)),
+                          Text(suggestion.title),
+                        ],
+                      ),
+                      subtitle: Text(suggestion.message),
+                      trailing: suggestion.taskIds.length == 1
+                          ? const Icon(Icons.chevron_right)
+                          : null,
+                      onTap: suggestion.taskIds.length == 1
+                          ? () => context.push(
+                              '/tasks/${suggestion.taskIds.single}',
+                            )
+                          : null,
+                    ),
+                    if (suggestion.taskIds.length > 1)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          for (
+                            var index = 0;
+                            index < suggestion.taskIds.length;
+                            index++
+                          )
+                            OutlinedButton(
+                              onPressed: () => context.push(
+                                '/tasks/${suggestion.taskIds[index]}',
+                              ),
+                              child: Text('查看相关任务 ${index + 1}'),
+                            ),
+                        ],
+                      ),
+                  ],
                 ),
           ],
         ),
       ),
     ),
   ];
+
+  int _maxKeywordCount(AnalyticsSummary value) => value.keywords.fold(
+    1,
+    (maximum, word) => word.count > maximum ? word.count : maximum,
+  );
 
   Widget _metric(String label, int value) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -206,20 +248,25 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     _reportGeneration++;
     _report = null;
     _reportError = null;
+    _generating = false;
     _load();
   }
 
   Future<void> _load() async {
     final generation = ++_summaryGeneration;
+    _reportGeneration++;
     setState(() {
       _summary = null;
+      _report = null;
+      _reportError = null;
+      _generating = false;
       _loading = true;
       _summaryError = null;
     });
     try {
       final result = await ref
           .read(analyticsApiProvider)
-          .summary(scope: _scope);
+          .summary(scope: 'auto');
       if (!mounted || generation != _summaryGeneration) return;
       setState(() => _summary = result);
     } catch (error) {
@@ -231,11 +278,14 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
         setState(() => _loading = false);
       }
     }
+    if (mounted && generation == _summaryGeneration && _summaryError == null) {
+      await _generate();
+    }
   }
 
   Future<void> _generate() async {
     if (_generating) return;
-    final scope = _scope;
+    const scope = 'auto';
     final generation = ++_reportGeneration;
     final accountEpoch = ref.read(accountEpochProvider);
     setState(() {
@@ -245,7 +295,8 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     });
     final keys = ref.read(operationKeysProvider);
     final api = ref.read(analyticsApiProvider);
-    final operationScope = 'analytics:$scope';
+    final operationScope =
+        'analytics:$scope:${ref.read(currentUserProvider)?.authzVersion}';
     final key = keys.keyFor(
       scope: operationScope,
       method: 'POST',
@@ -254,26 +305,54 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     );
     try {
       final id = await api.createReport(scope: scope, idempotencyKey: key);
-      if (!mounted || accountEpoch != ref.read(accountEpochProvider)) return;
-      final result = await api.report(id);
+      if (!mounted ||
+          generation != _reportGeneration ||
+          accountEpoch != ref.read(accountEpochProvider)) {
+        return;
+      }
       keys.complete(operationScope);
-      if (mounted && generation == _reportGeneration) {
-        setState(() => _report = result);
+      final result = await api.report(id);
+      if (mounted &&
+          generation == _reportGeneration &&
+          accountEpoch == ref.read(accountEpochProvider)) {
+        setState(() {
+          _report = result;
+          _summary = result.summary;
+        });
       }
     } catch (error) {
       final scopeChanged =
           error is ApiException && error.code == 'ANALYSIS_SCOPE_CHANGED';
       if (scopeChanged) keys.complete(operationScope);
       if (mounted && generation == _reportGeneration) {
-        setState(() => _reportError = error);
-        if (scopeChanged) await _load();
+        setState(() {
+          _reportError = error;
+          if (scopeChanged) _summary = null;
+        });
       }
     } finally {
-      if (mounted) setState(() => _generating = false);
+      if (mounted && generation == _reportGeneration) {
+        setState(() => _generating = false);
+      }
     }
   }
 
   String _time(DateTime? value) => value == null
       ? '时间未知'
       : ref.read(companyTimeZoneProvider).formatDateTime(value);
+
+  String _methodLabel(String method) => switch (method) {
+    'current_effective_tasks' => '当前有效任务',
+    _ => '本地规则统计',
+  };
+
+  String _ruleLabel(String rule) => switch (rule) {
+    'overdue' => '已逾期',
+    'remaining_20_percent' => '剩余工期 20%',
+    'remaining_10_percent' => '剩余工期 10%',
+    'remaining_5_percent' => '剩余工期 5%',
+    'schedule_conflict' => '排期冲突',
+    'high_priority' => '高紧急程度',
+    _ => '规则建议',
+  };
 }

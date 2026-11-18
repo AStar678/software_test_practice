@@ -116,9 +116,9 @@ def witness(port: int):
                      "SELECT constraint_name,constraint_type FROM information_schema.table_constraints "
                      "WHERE table_schema=DATABASE() AND table_name='" + table + "' ORDER BY constraint_name")
                      for table in ("daily_items", "user_task_table_pins")}}
-        check("V32-V35 are applied and historical checksums never change",
+        check("V32-V36 are applied and historical checksums never change",
               all(after["checksums"].get(version) == checksum for version, checksum in before["checksums"].items())
-              and all(after["checksums"].get(version) for version in ("32", "33", "34", "35")),
+              and all(after["checksums"].get(version) for version in ("32", "33", "34", "35", "36")),
               {"before": before["checksums"], "after": after["checksums"]})
         before_row = dict(zip(["id", "organization_id", "owner_id", "item_date", "body", "completed", "row_version"], before["daily"][0]))
         row = after["daily"][0]
@@ -186,10 +186,14 @@ def witness(port: int):
         columns = {table: {row[0] for row in f.db.rows(
             "SELECT column_name FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='" + table + "'")}
             for table in ("daily_items", "user_task_table_pins", "holiday_calendar_years", "holiday_calendar_days")}
+        home_columns = {row[0] for row in f.db.rows(
+            "SELECT column_name FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='home_items'")}
         check("an empty database completes the full chain and converges on the new structures",
-              version == "35" and {"start_date", "end_date"} <= columns["daily_items"]
-              and columns["user_task_table_pins"] and columns["holiday_calendar_years"] and columns["holiday_calendar_days"],
-              {"version": version, "columns": {key: sorted(value) for key, value in columns.items()}})
+              version == "36" and {"start_date", "end_date"} <= columns["daily_items"]
+              and columns["user_task_table_pins"] and columns["holiday_calendar_years"] and columns["holiday_calendar_days"]
+              and "body" in home_columns and "title" not in home_columns,
+              {"version": version, "columns": {key: sorted(value) for key, value in columns.items()},
+               "homeColumns": sorted(home_columns)})
 
 
 def daily_items(f, ids, business_day):
@@ -298,7 +302,10 @@ def task_table(f, ids, business_day):
     head = f.login("alpha-one-head")[1]["token"]
     titles = ["阿分镜", "波分镜", "分镜10", "分镜2", "a任务", "A任务", "café", "cafe\u0301"]
     titles += ["批量条目%03d" % index for index in range(100)]
-    day = "2026-11-12"
+    day = (dt.date.fromisoformat(business_day) + dt.timedelta(days=3)).isoformat()
+    day_plus_one = (dt.date.fromisoformat(business_day) + dt.timedelta(days=4)).isoformat()
+    pin_day = (dt.date.fromisoformat(business_day) + dt.timedelta(days=5)).isoformat()
+    double_pin_day = (dt.date.fromisoformat(business_day) + dt.timedelta(days=6)).isoformat()
     created = []
     for index, title in enumerate(titles):
         result = ok(f, "POST", "/tasks", {"title": title, "description": "表单排序夹具", "priority": "medium",
@@ -308,7 +315,7 @@ def task_table(f, ids, business_day):
         created.append(result["taskId"])
     check("the isolated table fixture has more than two backend pages", len(created) > 100, len(created))
     unpublished = ok(f, "POST", "/tasks", {"title": "未发布置顶拒绝", "description": "待审", "priority": "low",
-                     "allDay": False, "startAt": "2026-11-22T09:00:00+08:00", "dueAt": "2026-11-22T10:00:00+08:00",
+                     "allDay": False, "startAt": day + "T09:00:00+08:00", "dueAt": day + "T10:00:00+08:00",
                      "assigneeIds": [ids["alpha-two-employee"]]}, employee, "unpublished-pin-" + uuid.uuid4().hex)
     status, result = call(f, "PUT", "/tasks/" + unpublished["taskId"] + "/table-pin", None, employee,
                           "unpublished-pin-attempt-" + uuid.uuid4().hex)
@@ -351,6 +358,33 @@ def task_table(f, ids, business_day):
     again = call(f, "GET", "/tasks/table?relation=assigned&sort=title&direction=asc&limit=100", token=employee)[1]
     check("the same request is deterministic", [row["id"] for row in again["items"]] == [row["id"] for row in first["items"]],
           "stable")
+    def sort_key(name, row):
+        if name == "priority":
+            return {"urgent": 0, "high": 1, "medium": 2, "low": 3}[row["priority"]]
+        if name == "state":
+            return {"todo": 0, "doing": 1, "done": 2}[row["executionState"]]
+        return row.get(name)
+    for sort_name in ("title", "createdAt", "startAt", "dueAt", "priority", "state"):
+        for direction in ("asc", "desc"):
+            page = call(f, "GET", "/tasks/table?sort=" + sort_name + "&direction=" + direction + "&limit=100&offset=0",
+                        token=employee)[1]
+            items = list(page["items"])
+            while page["nextOffset"] is not None:
+                page = call(f, "GET", "/tasks/table?sort=" + sort_name + "&direction=" + direction +
+                            "&limit=100&offset=" + str(page["nextOffset"]), token=employee)[1]
+                items.extend(page["items"])
+            total = page["total"]
+            sequence = [row["id"] for row in items]
+            check("the " + sort_name + " " + direction + " sequence keeps the complete total without duplicates",
+                  len(sequence) == total and len(set(sequence)) == len(sequence), {"total": total, "ids": len(sequence)})
+            if sort_name != "title":
+                ordered = all(
+                    (sort_key(sort_name, items[index]) < sort_key(sort_name, items[index + 1])
+                     if direction == "asc" else sort_key(sort_name, items[index]) > sort_key(sort_name, items[index + 1]))
+                    or (sort_key(sort_name, items[index]) == sort_key(sort_name, items[index + 1])
+                        and items[index]["id"] < items[index + 1]["id"])
+                    for index in range(len(items) - 1))
+                check("the " + sort_name + " " + direction + " order is monotonic with task-id tie-break", ordered, sort_name)
     later = first["items"][-1]["id"]
     total_before = first["total"]
     ok(f, "PUT", "/tasks/" + later + "/table-pin", None, employee, "table-pin-" + uuid.uuid4().hex)
@@ -371,11 +405,11 @@ def task_table(f, ids, business_day):
     check("relation and completion filters compose",
           call(f, "GET", "/tasks/table?relation=created&limit=100", token=employee)[1]["total"] == 0
           and call(f, "GET", "/tasks/table?completion=completed", token=employee)[1]["total"] == 0, "empty")
-    single = call(f, "GET", "/tasks/table?from=2026-11-12", token=employee)[1]
+    single = call(f, "GET", "/tasks/table?from=" + day, token=employee)[1]
     check("a single-ended date filter uses the company date intersection", single["total"] >= 100, single["total"])
     for query, code in (("bogus=1", "INVALID_INPUT"), ("relation=visible", "INVALID_INPUT"),
                         ("sort=title&direction=sideways", "INVALID_INPUT"), ("limit=101", "INVALID_INPUT"),
-                        ("from=2026-11-13&to=2026-11-12", "INVALID_INPUT")):
+                        ("from=" + day_plus_one + "&to=" + day, "INVALID_INPUT")):
         status, result = call(f, "GET", "/tasks/table?" + query, token=employee)
         expect(status, result, code, "invalid table parameter " + query + " is rejected")
     status, result = call(f, "GET", "/tasks/table?q=" + "x" * 201, token=employee)
@@ -386,7 +420,7 @@ def task_table(f, ids, business_day):
     # Creator-only provenance: the employee creates for a peer, the direct manager approves, and then
     # the employee may table-pin but never calendar-pin it.
     created_only = ok(f, "POST", "/tasks", {"title": "仅创建待审核", "description": "接管来源", "priority": "low",
-                        "allDay": False, "startAt": "2026-11-20T09:00:00+08:00", "dueAt": "2026-11-20T10:00:00+08:00",
+                        "allDay": False, "startAt": pin_day + "T09:00:00+08:00", "dueAt": pin_day + "T10:00:00+08:00",
                         "assigneeIds": [ids["alpha-two-employee"]]}, employee, "created-only-" + uuid.uuid4().hex)
     request = ok(f, "GET", "/approval-requests/" + created_only["requestId"], token=head)
     ok(f, "PATCH", "/approval-requests/" + created_only["requestId"], {"decision": "approve"}, head,
@@ -411,7 +445,7 @@ def task_table(f, ids, business_day):
           any(row["id"] == created_only["taskId"] for row in unfin["items"]), completed)
     # Re-login keeps both preferences independent.
     founder_task = ok(f, "POST", "/tasks", {"title": "双置顶独立", "description": "双偏好", "priority": "medium",
-                       "allDay": False, "startAt": "2026-11-21T09:00:00+08:00", "dueAt": "2026-11-21T10:00:00+08:00",
+                       "allDay": False, "startAt": double_pin_day + "T09:00:00+08:00", "dueAt": double_pin_day + "T10:00:00+08:00",
                        "assigneeIds": [ids["alpha-one-employee"]]}, founder, "double-pin-task-" + uuid.uuid4().hex)
     ok(f, "PUT", "/tasks/" + founder_task["taskId"] + "/pin", None, employee, "cal-pin-" + uuid.uuid4().hex)
     ok(f, "PUT", "/tasks/" + founder_task["taskId"] + "/table-pin", None, employee, "tab-pin-" + uuid.uuid4().hex)

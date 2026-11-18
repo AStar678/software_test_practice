@@ -190,6 +190,10 @@ final class TasksUi {
   }
 
   void taskItem(LinearLayout into, JSONObject t) {
+    taskItem(into, t, null);
+  }
+
+  void taskItem(LinearLayout into, JSONObject t, String reportId) {
     u.item(
         into,
         s(t, "title"),
@@ -200,7 +204,7 @@ final class TasksUi {
             + schedule(t)
             + (t.optBoolean("frozen") ? " · 审核中" : "")
             + (overdue(t) ? " · 已逾期" : ""),
-        () -> detail(id(t)));
+        () -> detail(id(t), reportId));
   }
 
   static String when(String value) {
@@ -215,6 +219,15 @@ final class TasksUi {
     }
   }
 
+  static String whenMinute(String value) {
+    try {
+      return java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
+          .withZone(CalendarUi.ZONE).format(Instant.parse(value));
+    } catch (java.time.format.DateTimeParseException invalid) {
+      return value;
+    }
+  }
+
   static String schedule(JSONObject t) {
     if (!t.optBoolean("allDay") && s(t, "startAt").isEmpty()) return "查看任务排期";
     return t.optBoolean("allDay")
@@ -223,48 +236,69 @@ final class TasksUi {
   }
 
   void detail(String id) {
+    detail(id, null);
+  }
+
+  void detail(String id, String reportId) {
     a.run(
-        () -> a.api.get("/tasks/" + ApiClient.q(id)),
+        () -> {
+          if (reportId != null) a.workspaceUi.requireReport(reportId);
+          return a.api.get("/tasks/" + ApiClient.q(id));
+        },
         t -> {
           a.remember(t);
           if (s(t, "currentVersionId").isEmpty()) {
+            if (reportId != null) {
+              a.error("这项任务尚未发布。");
+              return;
+            }
             String request = s(t, "pendingRequestId");
             if (request.isEmpty()) request = s(t, "latestRequestId");
             if (!request.isEmpty()) approval(request);
             else a.error("任务尚未发布。");
             return;
           }
-          showDetail(t, false);
+          showDetail(t, false, reportId);
         });
   }
 
   void showDetail(JSONObject t, boolean historical) {
+    showDetail(t, historical, null);
+  }
+
+  private void showDetail(JSONObject t, boolean historical, String reportId) {
     MainActivity.Panel p = a.panel(historical ? "历史只读详情" : s(t, "title"));
     snapshot(p.body, t);
     if (historical && !s(t, "notice").isEmpty()) u.note(p.body, s(t, "notice"));
     if (t.optBoolean("frozen")) u.note(p.body, "任务有待审核申请，当前展示有效版本；审核结束前不能修改。");
     if (!historical) {
       u.note(p.body, "创建者：" + a.person(s(t, "originalCreatorId")));
-      u.note(
-          p.body, "审核人：" + (s(t, "reviewerId").isEmpty() ? "无需审核" : a.person(s(t, "reviewerId"))));
-      route(p.body, child(t, "route"));
+      if (reportId == null) {
+        u.note(p.body, "审核人：" + (s(t, "reviewerId").isEmpty() ? "无需审核" : a.person(s(t, "reviewerId"))));
+        route(p.body, child(t, "route"));
+      }
       if (!s(t, "parentTaskId").isEmpty())
         u.button(
                 p.body,
                 "上级任务" + (t.optBoolean("parentUnavailable") ? "（当前不可查看）" : ""),
                 false,
-                () -> detail(s(t, "parentTaskId")))
+                () -> detail(s(t, "parentTaskId"), reportId))
             .setEnabled(!t.optBoolean("parentUnavailable"));
       if (arr(t, "children").length() > 0) {
         u.heading(p.body, "子任务");
-        for (JSONObject c : rows(arr(t, "children"))) taskItem(p.body, c);
+        for (JSONObject c : rows(arr(t, "children"))) taskItem(p.body, c, reportId);
         u.note(p.body, "父子任务独立推进，完成状态不会自动联动。");
       }
       if (!s(t, "parentTaskId").isEmpty())
         for (JSONObject sibling : rows(a.tasks))
           if (!id(t).equals(id(sibling)) && s(t, "parentTaskId").equals(s(sibling, "parentTaskId")))
-            taskItem(p.body, sibling);
+            taskItem(p.body, sibling, reportId);
       records(p.body, arr(t, "records"));
+      if (reportId != null) {
+        new MemberCommentsUi(a, reportId, "/tasks/" + ApiClient.q(id(t)) + "/comments")
+            .attach(p.body);
+        return;
+      }
       String taskId = id(t);
       boolean frozen = t.optBoolean("frozen") || t.optBoolean("pending"),
           creator = a.uid().equals(s(t, "originalCreatorId")),
@@ -351,7 +385,9 @@ final class TasksUi {
     }
   }
 
-  void form(JSONObject raw, boolean reopen) {
+  void form(JSONObject raw, boolean reopen) { form(raw, reopen, null); }
+
+  void form(JSONObject raw, boolean reopen, LocalDate selectedDay) {
     boolean editing = raw != null;
     JSONObject t =
         editing && s(raw, "currentVersionId").isEmpty()
@@ -437,6 +473,7 @@ final class TasksUi {
                         "上级任务：" + (choice.isEmpty() ? "无" : s(a.task(choice), "title")));
                   }));
     }
+    SharedTagsUi tags = reopen ? null : new SharedTagsUi(a, p.body, t);
     CheckBox allDay = new CheckBox(a);
     allDay.setText("全天任务");
     allDay.setChecked(t.optBoolean("allDay"));
@@ -449,7 +486,10 @@ final class TasksUi {
       } catch (Exception ignored) {
       }
     }
-    if (!editing) due = start.plusDays(1).withHour(18).withMinute(0);
+    if (!editing) {
+      if (selectedDay != null) start = selectedDay.atTime(9, 0);
+      due = selectedDay == null ? start.plusDays(1).withHour(18).withMinute(0) : selectedDay.atTime(18, 0);
+    }
     LocalDateTime[] dates = {start, due};
     u.dateTime(p.body, "开始", dates, 0);
     u.dateTime(p.body, "截止", dates, 1);
@@ -499,6 +539,7 @@ final class TasksUi {
                   new String[] {"urgent", "high", "medium", "low"}
                       [fUrgency.getSelectedItemPosition()]);
               body.put("assigneeIds", new JSONArray(owners));
+              if (tags != null && (!editing || tags.touched())) body.put("tagIds", tags.ids());
               if (!t.optBoolean("parentUnavailable") || parentChanged[0])
                 body.put("parentTaskId", parent[0].isEmpty() ? JSONObject.NULL : parent[0]);
               if (editing)
@@ -516,6 +557,7 @@ final class TasksUi {
               body,
               editing ? tag(raw) : null);
         });
+    if (tags != null) tags.load();
   }
 
   void choosePeople(String title, JSONArray candidates, List<String> selected, Runnable done) {

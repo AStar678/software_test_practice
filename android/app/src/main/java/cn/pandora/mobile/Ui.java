@@ -14,18 +14,20 @@ import java.util.function.*;
 
 /** Native Android Views styled with Material roles, shapes and 48dp minimum targets. */
 final class Ui {
-  static final int BG = 0xfff8faf8,
+  static final int BG = 0xfffff9fc,
       SURFACE = 0xffffffff,
-      INK = 0xff191c1b,
-      MUTED = 0xff5f6964,
-      PRIMARY = 0xff006b54,
-      CONTAINER = 0xffc1ecd9,
-      LINE = 0xffdbe5de,
+      INK = 0xff51495e,
+      MUTED = 0xff7d6e80,
+      PRIMARY = 0xffa34470,
+      CONTAINER = 0xfffbe5ef,
+      LINE = 0xffeadce6,
       ERROR = 0xffba1a1a;
   final MainActivity a;
+  final DateSelectionUi dates;
 
   Ui(MainActivity activity) {
     a = activity;
+    dates = new DateSelectionUi(activity, this);
   }
 
   int dp(float v) {
@@ -96,8 +98,8 @@ final class Ui {
     b.setMinHeight(dp(48));
     b.setMinimumHeight(dp(48));
     b.setPadding(dp(16), dp(8), dp(16), dp(8));
-    GradientDrawable d = shape(filled ? PRIMARY : 0xffeef3ed, 24);
-    b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22006b54), d, null));
+    GradientDrawable d = shape(filled ? PRIMARY : 0xfff6eff5, 24);
+    b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22a34470), d, null));
     LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
     lp.topMargin = dp(8);
     into.addView(b, lp);
@@ -122,7 +124,7 @@ final class Ui {
     }
     if (action != null) {
       box.setBackground(
-          new RippleDrawable(ColorStateList.valueOf(0x15006b54), shape(SURFACE, 8), null));
+          new RippleDrawable(ColorStateList.valueOf(0x15a34470), shape(SURFACE, 8), null));
       box.setClickable(true);
       box.setFocusable(true);
       box.setContentDescription(title + "，" + (detail == null ? "" : detail));
@@ -140,7 +142,9 @@ final class Ui {
   EditText field(LinearLayout into, String label, String value, int max, boolean multiline) {
     TextView l = text(label, 13, MUTED);
     l.setPadding(0, dp(12), 0, dp(6));
-    into.addView(l);
+    LinearLayout labelRow = row();
+    labelRow.addView(l, new LinearLayout.LayoutParams(0, -2, 1));
+    into.addView(labelRow);
     EditText e = new EditText(a);
     e.setTextSize(16);
     e.setTextColor(INK);
@@ -161,6 +165,22 @@ final class Ui {
     e.setContentDescription(label);
     into.addView(e, new LinearLayout.LayoutParams(-1, -2));
     l.setLabelFor(e.getId() == View.NO_ID ? generateId(e) : e.getId());
+    configureKeyboard(e, multiline);
+    if (multiline) {
+      Button done = new Button(a);
+      done.setAllCaps(false);
+      done.setText("收起键盘");
+      done.setTextSize(12);
+      done.setTextColor(PRIMARY);
+      done.setMinWidth(0);
+      done.setMinimumWidth(0);
+      done.setPadding(dp(6), 0, dp(6), 0);
+      done.setBackground(shape(CONTAINER, 9));
+      done.setVisibility(View.GONE);
+      done.setOnClickListener(v -> dismissKeyboard(e));
+      labelRow.addView(done, new LinearLayout.LayoutParams(-2, dp(40)));
+      e.setOnFocusChangeListener((view, focused) -> done.setVisibility(focused ? View.VISIBLE : View.GONE));
+    }
     return e;
   }
 
@@ -211,41 +231,40 @@ final class Ui {
     show.run();
     date.setContentDescription(label + "日期");
     time.setContentDescription(label + "时刻");
-    date.setOnClickListener(
-        v -> {
-          LocalDate d = value[index].toLocalDate();
-          new DatePickerDialog(
-                  a,
-                  (p, y, m, day) -> {
-                    value[index] =
-                        value[index]
-                            .withDayOfMonth(1)
-                            .withYear(y)
-                            .withMonth(m + 1)
-                            .withDayOfMonth(day);
-                    show.run();
-                  },
-                  d.getYear(),
-                  d.getMonthValue() - 1,
-                  d.getDayOfMonth())
-              .show();
-        });
-    time.setOnClickListener(
-        v ->
-            new TimePickerDialog(
-                    a,
-                    (p, h, m) -> {
-                      value[index] = value[index].withHour(h).withMinute(m);
-                      show.run();
-                    },
-                    value[index].getHour(),
-                    value[index].getMinute(),
-                    true)
-                .show());
+    date.setOnClickListener(v -> dates.date(label + "日期", value[index].toLocalDate(), false, selected -> {
+      value[index] = LocalDateTime.of(selected, value[index].toLocalTime());
+      show.run();
+    }));
+    time.setOnClickListener(v -> dates.time(label + "时刻", value[index].toLocalTime(), selected -> {
+      value[index] = LocalDateTime.of(value[index].toLocalDate(), selected);
+      show.run();
+    }));
     note(into, label);
     row.addView(date, new LinearLayout.LayoutParams(0, dp(56), 1));
     row.addView(time, new LinearLayout.LayoutParams(0, dp(56), 1));
     into.addView(row);
+  }
+
+  void configureKeyboard(EditText editor, boolean multiline) {
+    if (!multiline) editor.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
+    editor.setOnEditorActionListener((v, actionId, event) -> {
+      if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+          || (!multiline && event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER
+              && event.getAction() == KeyEvent.ACTION_UP)) {
+        dismissKeyboard(editor);
+        return true;
+      }
+      return false;
+    });
+  }
+
+  void dismissKeyboard(EditText editor) {
+    var keyboard = a.getSystemService(android.view.inputmethod.InputMethodManager.class);
+    if (keyboard != null) keyboard.hideSoftInputFromWindow(editor.getWindowToken(), 0);
+    View root = editor.getRootView();
+    root.setFocusableInTouchMode(true);
+    root.requestFocus();
+    editor.clearFocus();
   }
 
   static String value(EditText e) {

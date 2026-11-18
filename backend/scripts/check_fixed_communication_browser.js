@@ -43,11 +43,13 @@ async function main(){
   await ev("document.querySelector('[data-action=p-comment-edit]').click();document.querySelector('[data-comment-edit]').value='Browser edited secret';document.querySelector('[data-action=p-comment-save]').click()");
   check('comment edit preserves author controls and edited state',await waitFor(b,"Pandora.idle()&&document.querySelector('.p-comment-list').textContent.includes('Browser edited secret')&&document.querySelector('.p-comment-list').textContent.includes('已编辑')"));
   await b.screenshot(output.replace('.json','-author.png'));
-  // A second comment exercises the actual delete control without deleting the revocation fixture.
-  await ev("document.getElementById('p-comment-input').value='Delete this browser comment';document.querySelector('[data-action=p-comment-submit]').click()");
+  // A second comment proves the Web keeps the comment body: no delete control, no stale DELETE.
+  await ev("document.getElementById('p-comment-input').value='Keep this browser comment';document.querySelector('[data-action=p-comment-submit]').click()");
   check('second independent comment appears',await waitFor(b,"Pandora.idle()&&document.querySelectorAll('.p-comment').length===2"));
-  await ev("document.querySelectorAll('[data-action=p-comment-delete]')[1].click()");
-  check('comment delete removes its body from the actual detail',await waitFor(b,"Pandora.idle()&&document.querySelectorAll('.p-comment').length===1&&!document.querySelector('.p-comment-list').textContent.includes('Delete this browser comment')"));
+  check('Web compose label has no flat-thread suffix',await ev("document.querySelector('.p-comment-label').textContent==='发表评论'"));
+  check('Web renders no comment delete control',await ev("!document.querySelector('[data-action=p-comment-delete]')"));
+  const staleDeletes=await ev(`(async()=>{const original=Pandora.mutation;let calls=0;Pandora.mutation=function(...args){if(args[1]==='DELETE'&&String(args[2]).startsWith('/comments/'))calls++;return original.apply(Pandora,args)};const stale=document.createElement('button');stale.dataset.action='p-comment-delete';stale.dataset.id=${js(comment)};document.getElementById('sheetBody').appendChild(stale);runAction(stale);stale.remove();await new Promise(r=>setTimeout(r,250));Pandora.mutation=original;return calls})()`);
+  check('stale Web delete action sends no DELETE and keeps both comments',staleDeletes===0&&await ev("document.querySelectorAll('.p-comment').length===2&&document.querySelector('.p-comment-list').textContent.includes('Keep this browser comment')"),{staleDeletes});
   await close();await ev('Pandora.logout()');await login('alpha-one-employee');
   await ev("setPage('me')");check('ordinary employee has no tag maintenance entry',await ev("!document.querySelector('[data-action=p-manage-tags]')"));
   await ev(`openTaskDetail(${js(fixture.taskId)})`);

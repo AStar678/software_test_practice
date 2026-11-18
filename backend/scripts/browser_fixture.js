@@ -41,7 +41,10 @@ async function openBrowser(url,metrics={width:390,height:844,mobile:true},option
   await send("Emulation.setDeviceMetricsOverride", { width:metrics.width,height:metrics.height,deviceScaleFactor:1,mobile:!!metrics.mobile });
   const evaluate = async (expression) => {
     const result = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true, userGesture: true });
-    if (result.exceptionDetails) throw new Error(result.exceptionDetails.text + " in " + expression);
+    if (result.exceptionDetails) {
+      const detail = result.exceptionDetails.exception && (result.exceptionDetails.exception.description || result.exceptionDetails.exception.value);
+      throw new Error((detail || result.exceptionDetails.text) + " in " + expression);
+    }
     return result.result.value;
   };
   return { evaluate, errors, send, screenshot:async filename=>{const result=await send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(filename,Buffer.from(result.data,'base64'));}, viewport:async metrics=>send('Emulation.setDeviceMetricsOverride',{...metrics,deviceScaleFactor:1}), kill: () => { try { ws.close(); } catch {} proc.kill("SIGKILL"); } };

@@ -105,6 +105,7 @@ public class HolidayCalendarService {
         try {
             parsed = source.fetch(year);
         } catch (HolidaySourceException exception) {
+            logSourceFailure(year, exception);
             recordFailure(year, exception.safeCode());
             throw refreshFailure(exception.safeCode());
         }
@@ -116,6 +117,7 @@ public class HolidayCalendarService {
                 return read(year);
             });
         } catch (HolidaySourceException exception) {
+            logSourceFailure(year, exception);
             recordFailure(year, exception.safeCode());
             throw refreshFailure(exception.safeCode());
         }
@@ -160,11 +162,25 @@ public class HolidayCalendarService {
             HolidayPayload.Year parsed = source.fetch(year);
             store(parsed);
         } catch (HolidaySourceException exception) {
+            logSourceFailure(year, exception);
             recordFailure(year, exception.safeCode());
         } catch (RuntimeException exception) {
             recordFailure(year, "HOLIDAY_REFRESH_INTERNAL");
             log.warn("Holiday refresh for {} failed: {}", year, exception.getClass().getSimpleName());
         }
+    }
+
+    private void logSourceFailure(int year, HolidaySourceException exception) {
+        // Exception messages can contain source URLs or credentials. Keep only bounded type names
+        // so DNS, TLS and connection failures remain distinguishable without exposing configuration.
+        List<String> causeTypes = new ArrayList<>();
+        Throwable cause = exception;
+        while (cause != null && causeTypes.size() < 8) {
+            causeTypes.add(cause.getClass().getName());
+            cause = cause.getCause();
+        }
+        log.warn("Holiday refresh for {} failed: code={}, causeTypes={}",
+                year, exception.safeCode(), String.join(" -> ", causeTypes));
     }
 
     private boolean due(int year, boolean includeReady) {
