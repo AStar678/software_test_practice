@@ -1,0 +1,16 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.2.0, pluggy-1.7.0 -- /Users/aoxiang/Desktop/软件测试/notebooks/backend/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/aoxiang/Desktop/软件测试/notebooks/backend/方法三类用例专项
+plugins: platformdirs-4.14.7, anyio-4.16.0
+collecting ... collected 6 items
+
+runs/matrix6644-20261120-001908-614fac/M01/test_method.py::test_login_three_classes[N_employee] PASSED [ 16%]
+runs/matrix6644-20261120-001908-614fac/M01/test_method.py::test_login_three_classes[N_admin] PASSED [ 33%]
+runs/matrix6644-20261120-001908-614fac/M01/test_method.py::test_login_three_classes[B_identifier80] PASSED [ 50%]
+runs/matrix6644-20261120-001908-614fac/M01/test_method.py::test_login_three_classes[E_identifier81] PASSED [ 66%]
+runs/matrix6644-20261120-001908-614fac/M01/test_method.py::test_login_three_classes[E_phone_type] PASSED [ 83%]
+runs/matrix6644-20261120-001908-614fac/M01/test_method.py::test_login_three_classes[E_password_wrong] PASSED [100%]
+
+- generated xml file: /Users/aoxiang/Desktop/软件测试/notebooks/backend/方法三类用例专项/runs/matrix6644-20261120-001908-614fac/M01/pytest.xml -
+============================== 6 passed in 2.22s ===============================

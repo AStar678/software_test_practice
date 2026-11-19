@@ -1,0 +1,76 @@
+[
+  {
+    "caseId": "N_query",
+    "kind": "正常",
+    "input": "q长度=10，purpose=create",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；items=0，purpose=create",
+    "pytest": "passed",
+    "requestLines": [
+      1
+    ],
+    "metrics": {
+      "items": 0,
+      "purpose": "create"
+    }
+  },
+  {
+    "caseId": "B_query0",
+    "kind": "边界",
+    "input": "q长度=0，purpose=create",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；items=14，purpose=create",
+    "pytest": "passed",
+    "requestLines": [
+      2
+    ],
+    "metrics": {
+      "items": 14,
+      "purpose": "create"
+    }
+  },
+  {
+    "caseId": "B_query100",
+    "kind": "边界",
+    "input": "q长度=100，purpose=create",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；items=0，purpose=create",
+    "pytest": "passed",
+    "requestLines": [
+      3
+    ],
+    "metrics": {
+      "items": 0,
+      "purpose": "create"
+    }
+  },
+  {
+    "caseId": "E_query101",
+    "kind": "异常",
+    "input": "q长度=101，purpose=create",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      4
+    ],
+    "metrics": {}
+  },
+  {
+    "caseId": "E_purpose",
+    "kind": "异常",
+    "input": "q长度=10，purpose=invalid",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      5
+    ],
+    "metrics": {}
+  }
+]

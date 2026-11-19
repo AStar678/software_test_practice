@@ -1,0 +1,38 @@
+{
+  "ee8a48e051f745a1bf4cfe9bca7ed73b": {
+    "key": "ee8a48e051f745a1bf4cfe9bca7ed73b",
+    "actor": "A4",
+    "body": {
+      "date": "2026-11-20",
+      "body": "delete-0a923f9e679a4490ac5eeae112f391d3"
+    },
+    "status": 200
+  },
+  "c2a2cede82084c98864ac92b560e1bef": {
+    "key": "c2a2cede82084c98864ac92b560e1bef",
+    "actor": "A4",
+    "body": {
+      "date": "2026-11-20",
+      "body": "delete-a95a76f1f16443a0b3a3afba01d0555c"
+    },
+    "status": 200
+  },
+  "d3e77f43b514472db7d55cf58139bfe1": {
+    "key": "d3e77f43b514472db7d55cf58139bfe1",
+    "actor": "A4",
+    "body": {
+      "date": "2026-11-20",
+      "body": "delete-e295fe635ef84dd6a32c25713e24def9"
+    },
+    "status": 200
+  },
+  "f88720f36afc4cb6b697509dd1f84f9b": {
+    "key": "f88720f36afc4cb6b697509dd1f84f9b",
+    "actor": "A4",
+    "body": {
+      "date": "2026-11-20",
+      "body": "delete-f00a0fa59f754c8b92fbd7091bcf9723"
+    },
+    "status": 200
+  }
+}

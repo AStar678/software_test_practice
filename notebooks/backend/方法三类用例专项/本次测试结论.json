@@ -1,0 +1,89 @@
+{
+  "target": "https://8.141.96.122:6644/api/v1",
+  "status": "PASS",
+  "methods": 17,
+  "counts": {
+    "passed": 126,
+    "failed": 0,
+    "skipped": 0
+  },
+  "eachMethodHasNormalBoundaryExceptional": true,
+  "cleanup": {
+    "created": 15,
+    "unresolved": []
+  },
+  "logout": {
+    "A1": 200,
+    "A2": 200,
+    "A3": 200,
+    "A4": 200,
+    "A5": 200,
+    "A6": 200,
+    "ADMIN": 200
+  },
+  "cloudJavaCodeCoverage": "COLLECTED",
+  "localBackendExecuted": false,
+  "javaCoverage": {
+    "INSTRUCTION": {
+      "covered": 12543,
+      "missed": 34154,
+      "total": 46697,
+      "percent": 26.86
+    },
+    "BRANCH": {
+      "covered": 1088,
+      "missed": 3546,
+      "total": 4634,
+      "percent": 23.48
+    },
+    "LINE": {
+      "covered": 1561,
+      "missed": 4084,
+      "total": 5645,
+      "percent": 27.65
+    },
+    "COMPLEXITY": {
+      "covered": 596,
+      "missed": 2775,
+      "total": 3371,
+      "percent": 17.68
+    },
+    "METHOD": {
+      "covered": 317,
+      "missed": 702,
+      "total": 1019,
+      "percent": 31.11
+    },
+    "CLASS": {
+      "covered": 33,
+      "missed": 33,
+      "total": 66,
+      "percent": 50.0
+    }
+  },
+  "analysis": "本次原始记录共216次HTTP请求，状态分布为200=136次、400=57次、401=2次、404=17次、412=2次、428=2次。 pytest实际通过126项、失败0项、跳过0项，其中正常19、合法边界44、异常63项；17个方法三类均实际执行并通过。 清理记录显示创建15条事项、未决0条；共享会话退出HTTP200为7/7个。 DailyItemService.list的成功响应均为0条列表，仅证明空结果与参数校验路径，不能推断非空分页内容已验证。 JaCoCo实际行覆盖为1561/5645（27.65%），分支覆盖为1088/4634（23.48%）；因此用例全通过不等于全部业务代码或分支已覆盖。",
+  "runDirectory": "runs/matrix6644-20261120-001908-614fac",
+  "requests": 216,
+  "notebookCells": 128,
+  "categoryCounts": {
+    "正常": 19,
+    "边界": 44,
+    "异常": 63
+  },
+  "scope": "17个有明确输入边界的核心Service方法，经云端HTTP验证；不是项目全部方法/Java私有方法单元测试。",
+  "coverageProvenance": {
+    "target": "https://8.141.96.122:6644/api/v1",
+    "unit": "pandora-web-version.service",
+    "deployedJar": "/opt/pandora/releases/20261119-tested-fixes/server.jar",
+    "deployedJarSha256": "f3182ca996f6b759b6c123a299dd2badee479e1eaa3d3fe071df32bf1e07889b",
+    "jacocoVersion": "0.8.13",
+    "agentBind": "127.0.0.1:6300",
+    "source": "云端实际JVM；测试前reset，测试后dump",
+    "classDenominator": "部署JAR内所有cn.pandora应用类，不按结果过滤类",
+    "scopeLimit": "共享云端采集窗口可能包含后台任务或其他请求，无法逐探针归因于pytest；未混入本地JUnit或历史exec。",
+    "windowStartUtc": "2026-11-19T16:19:40.023528+00:00",
+    "windowEndUtc": "2026-11-19T16:20:13.029050+00:00",
+    "restoredOriginalStartup": true
+  },
+  "rawOutputDefaultCollapsed": true
+}

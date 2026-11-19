@@ -1,0 +1,21 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.2.0, pluggy-1.7.0 -- /Users/aoxiang/Desktop/软件测试/notebooks/backend/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/aoxiang/Desktop/软件测试/notebooks/backend/方法三类用例专项
+plugins: platformdirs-4.14.7, anyio-4.16.0
+collecting ... collected 11 items
+
+runs/matrix6644-20261120-001908-614fac/M07/test_method.py::test_paging_three_classes[N_limit20] PASSED [  9%]
+runs/matrix6644-20261120-001908-614fac/M07/test_method.py::test_paging_three_classes[B_limit1] PASSED [ 18%]
+runs/matrix6644-20261120-001908-614fac/M07/test_method.py::test_paging_three_classes[B_limit100] PASSED [ 27%]
+runs/matrix6644-20261120-001908-614fac/M07/test_method.py::test_paging_three_classes[E_limit0] PASSED [ 36%]
+runs/matrix6644-20261120-001908-614fac/M07/test_method.py::test_paging_three_classes[E_limit101] PASSED [ 45%]
+runs/matrix6644-20261120-001908-614fac/M07/test_method.py::test_paging_three_classes[E_limit_text] PASSED [ 54%]
+runs/matrix6644-20261120-001908-614fac/M07/test_method.py::test_paging_three_classes[B_offset_max] PASSED [ 63%]
+runs/matrix6644-20261120-001908-614fac/M07/test_method.py::test_paging_three_classes[E_offset_overflow] PASSED [ 72%]
+runs/matrix6644-20261120-001908-614fac/M07/test_method.py::test_paging_three_classes[N_admin20] PASSED [ 81%]
+runs/matrix6644-20261120-001908-614fac/M07/test_method.py::test_paging_three_classes[B_admin100] PASSED [ 90%]
+runs/matrix6644-20261120-001908-614fac/M07/test_method.py::test_paging_three_classes[E_admin101] PASSED [100%]
+
+- generated xml file: /Users/aoxiang/Desktop/软件测试/notebooks/backend/方法三类用例专项/runs/matrix6644-20261120-001908-614fac/M07/pytest.xml -
+============================== 11 passed in 1.06s ==============================

@@ -1,0 +1,621 @@
+{
+  "status": "COLLECTED",
+  "target": "https://8.141.96.122:6644/api/v1",
+  "deployedJarSha256": "f3182ca996f6b759b6c123a299dd2badee479e1eaa3d3fe071df32bf1e07889b",
+  "counters": {
+    "INSTRUCTION": {
+      "covered": 12543,
+      "missed": 34154,
+      "total": 46697,
+      "percent": 26.86
+    },
+    "BRANCH": {
+      "covered": 1088,
+      "missed": 3546,
+      "total": 4634,
+      "percent": 23.48
+    },
+    "LINE": {
+      "covered": 1561,
+      "missed": 4084,
+      "total": 5645,
+      "percent": 27.65
+    },
+    "COMPLEXITY": {
+      "covered": 596,
+      "missed": 2775,
+      "total": 3371,
+      "percent": 17.68
+    },
+    "METHOD": {
+      "covered": 317,
+      "missed": 702,
+      "total": 1019,
+      "percent": 31.11
+    },
+    "CLASS": {
+      "covered": 33,
+      "missed": 33,
+      "total": 66,
+      "percent": 50.0
+    }
+  },
+  "selectedMethods": [
+    {
+      "method": "AuthService.login",
+      "class": "cn/pandora/auth/AuthService",
+      "descriptor": "(Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 134,
+          "missed": 16,
+          "total": 150,
+          "percent": 89.33
+        },
+        "BRANCH": {
+          "covered": 22,
+          "missed": 12,
+          "total": 34,
+          "percent": 64.71
+        },
+        "LINE": {
+          "covered": 19,
+          "missed": 1,
+          "total": 20,
+          "percent": 95.0
+        },
+        "COMPLEXITY": {
+          "covered": 6,
+          "missed": 12,
+          "total": 18,
+          "percent": 33.33
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "DailyItemService.list",
+      "class": "cn/pandora/workspace/DailyItemService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 216,
+          "missed": 69,
+          "total": 285,
+          "percent": 75.79
+        },
+        "BRANCH": {
+          "covered": 13,
+          "missed": 21,
+          "total": 34,
+          "percent": 38.24
+        },
+        "LINE": {
+          "covered": 30,
+          "missed": 5,
+          "total": 35,
+          "percent": 85.71
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 17,
+          "total": 18,
+          "percent": 5.56
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "DailyItemService.summary",
+      "class": "cn/pandora/workspace/DailyItemService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 140,
+          "missed": 112,
+          "total": 252,
+          "percent": 55.56
+        },
+        "BRANCH": {
+          "covered": 7,
+          "missed": 11,
+          "total": 18,
+          "percent": 38.89
+        },
+        "LINE": {
+          "covered": 23,
+          "missed": 18,
+          "total": 41,
+          "percent": 56.1
+        },
+        "COMPLEXITY": {
+          "covered": 3,
+          "missed": 7,
+          "total": 10,
+          "percent": 30.0
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "DailyItemService.create",
+      "class": "cn/pandora/workspace/DailyItemService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 147,
+          "missed": 15,
+          "total": 162,
+          "percent": 90.74
+        },
+        "BRANCH": {
+          "covered": 4,
+          "missed": 4,
+          "total": 8,
+          "percent": 50.0
+        },
+        "LINE": {
+          "covered": 22,
+          "missed": 3,
+          "total": 25,
+          "percent": 88.0
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 4,
+          "total": 5,
+          "percent": 20.0
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "DailyItemService.change",
+      "class": "cn/pandora/workspace/DailyItemService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 202,
+          "missed": 58,
+          "total": 260,
+          "percent": 77.69
+        },
+        "BRANCH": {
+          "covered": 7,
+          "missed": 15,
+          "total": 22,
+          "percent": 31.82
+        },
+        "LINE": {
+          "covered": 31,
+          "missed": 8,
+          "total": 39,
+          "percent": 79.49
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 11,
+          "total": 12,
+          "percent": 8.33
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "DailyItemService.delete",
+      "class": "cn/pandora/workspace/DailyItemService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 66,
+          "missed": 0,
+          "total": 66,
+          "percent": 100.0
+        },
+        "LINE": {
+          "covered": 7,
+          "missed": 0,
+          "total": 7,
+          "percent": 100.0
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "WorkspaceService.users",
+      "class": "cn/pandora/workspace/WorkspaceService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;Z)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 12,
+          "missed": 0,
+          "total": 12,
+          "percent": 100.0
+        },
+        "LINE": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "WorkspaceService.logs",
+      "class": "cn/pandora/workspace/WorkspaceService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 11,
+          "missed": 0,
+          "total": 11,
+          "percent": 100.0
+        },
+        "LINE": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "WorkspaceService.notifications",
+      "class": "cn/pandora/workspace/WorkspaceService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 11,
+          "missed": 0,
+          "total": 11,
+          "percent": 100.0
+        },
+        "LINE": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "WorkspaceService.adminTeams",
+      "class": "cn/pandora/workspace/WorkspaceService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 18,
+          "missed": 0,
+          "total": 18,
+          "percent": 100.0
+        },
+        "LINE": {
+          "covered": 2,
+          "missed": 0,
+          "total": 2,
+          "percent": 100.0
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "WorkspaceService.audit",
+      "class": "cn/pandora/workspace/WorkspaceService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 31,
+          "missed": 0,
+          "total": 31,
+          "percent": 100.0
+        },
+        "LINE": {
+          "covered": 6,
+          "missed": 0,
+          "total": 6,
+          "percent": 100.0
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "WorkspaceService.adminNotifications",
+      "class": "cn/pandora/workspace/WorkspaceService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 30,
+          "missed": 0,
+          "total": 30,
+          "percent": 100.0
+        },
+        "LINE": {
+          "covered": 7,
+          "missed": 0,
+          "total": 7,
+          "percent": 100.0
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "TaskService.list",
+      "class": "cn/pandora/task/TaskService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 40,
+          "missed": 0,
+          "total": 40,
+          "percent": 100.0
+        },
+        "LINE": {
+          "covered": 4,
+          "missed": 0,
+          "total": 4,
+          "percent": 100.0
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "TaskService.table",
+      "class": "cn/pandora/task/TaskService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 138,
+          "missed": 28,
+          "total": 166,
+          "percent": 83.13
+        },
+        "BRANCH": {
+          "covered": 9,
+          "missed": 11,
+          "total": 20,
+          "percent": 45.0
+        },
+        "LINE": {
+          "covered": 20,
+          "missed": 0,
+          "total": 20,
+          "percent": 100.0
+        },
+        "COMPLEXITY": {
+          "covered": 2,
+          "missed": 9,
+          "total": 11,
+          "percent": 18.18
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "TaskService.adminTasks",
+      "class": "cn/pandora/task/TaskService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 20,
+          "missed": 0,
+          "total": 20,
+          "percent": 100.0
+        },
+        "LINE": {
+          "covered": 2,
+          "missed": 0,
+          "total": 2,
+          "percent": 100.0
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "TaskService.assigneeCandidates",
+      "class": "cn/pandora/task/TaskService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 152,
+          "missed": 8,
+          "total": 160,
+          "percent": 95.0
+        },
+        "BRANCH": {
+          "covered": 12,
+          "missed": 4,
+          "total": 16,
+          "percent": 75.0
+        },
+        "LINE": {
+          "covered": 19,
+          "missed": 1,
+          "total": 20,
+          "percent": 95.0
+        },
+        "COMPLEXITY": {
+          "covered": 5,
+          "missed": 4,
+          "total": 9,
+          "percent": 55.56
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    },
+    {
+      "method": "TaskService.approvals",
+      "class": "cn/pandora/task/TaskService",
+      "descriptor": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+      "counters": {
+        "INSTRUCTION": {
+          "covered": 56,
+          "missed": 9,
+          "total": 65,
+          "percent": 86.15
+        },
+        "BRANCH": {
+          "covered": 5,
+          "missed": 5,
+          "total": 10,
+          "percent": 50.0
+        },
+        "LINE": {
+          "covered": 9,
+          "missed": 0,
+          "total": 9,
+          "percent": 100.0
+        },
+        "COMPLEXITY": {
+          "covered": 1,
+          "missed": 5,
+          "total": 6,
+          "percent": 16.67
+        },
+        "METHOD": {
+          "covered": 1,
+          "missed": 0,
+          "total": 1,
+          "percent": 100.0
+        }
+      }
+    }
+  ],
+  "scopeLimit": "共享云端采集窗口可能包含后台任务或其他请求，无法逐探针归因于pytest；未混入本地JUnit或历史exec。"
+}

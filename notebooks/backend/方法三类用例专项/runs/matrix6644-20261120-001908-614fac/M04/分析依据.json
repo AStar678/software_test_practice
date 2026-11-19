@@ -1,0 +1,101 @@
+[
+  {
+    "caseId": "N_text20",
+    "kind": "正常",
+    "input": "正文=20码点",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；读回HTTP=200，读回正文长度=20，rowVersion=1，正文与输入一致=true",
+    "pytest": "passed",
+    "requestLines": [
+      1,
+      2
+    ],
+    "metrics": {
+      "readStatus": 200,
+      "readBodyLength": 20,
+      "rowVersion": 1,
+      "bodyMatchesInput": true,
+      "readRequestLine": 2
+    }
+  },
+  {
+    "caseId": "B_text1",
+    "kind": "边界",
+    "input": "正文=1码点",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；读回HTTP=200，读回正文长度=1，rowVersion=1，正文与输入一致=true",
+    "pytest": "passed",
+    "requestLines": [
+      3,
+      4
+    ],
+    "metrics": {
+      "readStatus": 200,
+      "readBodyLength": 1,
+      "rowVersion": 1,
+      "bodyMatchesInput": true,
+      "readRequestLine": 4
+    }
+  },
+  {
+    "caseId": "B_text2000",
+    "kind": "边界",
+    "input": "正文=2000码点",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；读回HTTP=200，读回正文长度=2000，rowVersion=1，正文与输入一致=true",
+    "pytest": "passed",
+    "requestLines": [
+      5,
+      6
+    ],
+    "metrics": {
+      "readStatus": 200,
+      "readBodyLength": 2000,
+      "rowVersion": 1,
+      "bodyMatchesInput": true,
+      "readRequestLine": 6
+    }
+  },
+  {
+    "caseId": "E_text0",
+    "kind": "异常",
+    "input": "正文=0码点",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      7
+    ],
+    "metrics": {}
+  },
+  {
+    "caseId": "E_text2001",
+    "kind": "异常",
+    "input": "正文=2001码点",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      8
+    ],
+    "metrics": {}
+  },
+  {
+    "caseId": "E_text_type",
+    "kind": "异常",
+    "input": "正文类型=int",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      9
+    ],
+    "metrics": {}
+  }
+]

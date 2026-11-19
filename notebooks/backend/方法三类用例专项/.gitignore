@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.env
+.env.*
+# 仅保存本报告对应的完整成功运行证据；重新运行的数据保留在本地。
+runs/*
+!runs/matrix6644-20261120-001908-614fac/
+runs/*/coverage/classes/
+runs/*/coverage/coverage.zip
+# 报告对外入口统一为测试报告。
+后端方法-等价类与边界值分析.ipynb
+后端方法-等价类与边界值分析-已执行.ipynb
+后端方法-等价类与边界值分析-已执行.html
+测试报告-排版预览.png
+测试报告-方法章节预览.png

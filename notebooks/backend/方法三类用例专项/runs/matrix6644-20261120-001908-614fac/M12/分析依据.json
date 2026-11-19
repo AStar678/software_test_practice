@@ -1,0 +1,122 @@
+[
+  {
+    "caseId": "N_limit20",
+    "kind": "正常",
+    "input": "limit=20，offset=0",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；items=20，total=497，nextOffset=20",
+    "pytest": "passed",
+    "requestLines": [
+      1
+    ],
+    "metrics": {
+      "items": 20,
+      "total": 497,
+      "nextOffset": 20
+    }
+  },
+  {
+    "caseId": "B_limit1",
+    "kind": "边界",
+    "input": "limit=1，offset=0",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；items=1，total=497，nextOffset=1",
+    "pytest": "passed",
+    "requestLines": [
+      2
+    ],
+    "metrics": {
+      "items": 1,
+      "total": 497,
+      "nextOffset": 1
+    }
+  },
+  {
+    "caseId": "B_limit100",
+    "kind": "边界",
+    "input": "limit=100，offset=0",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；items=100，total=497，nextOffset=100",
+    "pytest": "passed",
+    "requestLines": [
+      3
+    ],
+    "metrics": {
+      "items": 100,
+      "total": 497,
+      "nextOffset": 100
+    }
+  },
+  {
+    "caseId": "E_limit0",
+    "kind": "异常",
+    "input": "limit=0，offset=0",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      4
+    ],
+    "metrics": {}
+  },
+  {
+    "caseId": "E_limit101",
+    "kind": "异常",
+    "input": "limit=101，offset=0",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      5
+    ],
+    "metrics": {}
+  },
+  {
+    "caseId": "E_limit_text",
+    "kind": "异常",
+    "input": "limit=x，offset=0",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      6
+    ],
+    "metrics": {}
+  },
+  {
+    "caseId": "B_offset_max",
+    "kind": "边界",
+    "input": "limit=20，offset=2147483647",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；items=0，total=497，nextOffset=null",
+    "pytest": "passed",
+    "requestLines": [
+      7
+    ],
+    "metrics": {
+      "items": 0,
+      "total": 497,
+      "nextOffset": null
+    }
+  },
+  {
+    "caseId": "E_offset_overflow",
+    "kind": "异常",
+    "input": "limit=20，offset=2147483648",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      8
+    ],
+    "metrics": {}
+  }
+]
