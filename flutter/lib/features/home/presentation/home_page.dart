@@ -60,63 +60,75 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       body: SafeArea(
         top: false,
-        child: RefreshIndicator(
-          onRefresh: _refresh,
-          child: CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                sliver: SliverToBoxAdapter(
-                  child: home.when(
-                    data: (data) => _HomeCards(data: data),
-                    loading: () =>
-                        const SizedBox(height: 220, child: LoadingView()),
-                    error: (error, _) => SizedBox(
-                      height: 220,
-                      child: ErrorView(
-                        error: error,
-                        onRetry: () =>
-                            ref.read(homeDataProvider.notifier).refresh(),
+        child: LayoutBuilder(
+          builder: (context, constraints) => RefreshIndicator(
+            onRefresh: _refresh,
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: home.when(
+                      data: (data) => _HomeCards(data: data),
+                      loading: () =>
+                          const SizedBox(height: 220, child: LoadingView()),
+                      error: (error, _) => SizedBox(
+                        height: 220,
+                        child: ErrorView(
+                          error: error,
+                          onRetry: () =>
+                              ref.read(homeDataProvider.notifier).refresh(),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                sliver: SliverToBoxAdapter(
-                  child: _DailyItemsHeader(
-                    businessDate: businessDate,
-                    anchor: anchor,
-                    onPrevious: () => _setAnchor(anchor.addMonths(-1)),
-                    onNext: () => _setAnchor(anchor.addMonths(1)),
-                    onToday: () => _setAnchor(businessDate),
-                    onPick: () => _openMonthPicker(anchor),
-                    onAdd: () => context.push(
-                      '${AppRoutes.dailyItemNew}?date=${businessDate.iso}',
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: ConstrainedBox(
+                      key: const ValueKey('home-daily-items-section'),
+                      constraints: BoxConstraints(
+                        maxHeight: constraints.maxHeight / 2,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _DailyItemsHeader(
+                            businessDate: businessDate,
+                            anchor: anchor,
+                            onPrevious: () => _setAnchor(anchor.addMonths(-1)),
+                            onNext: () => _setAnchor(anchor.addMonths(1)),
+                            onToday: () => _setAnchor(businessDate),
+                            onPick: () => _openMonthPicker(anchor),
+                            onAdd: () => context.push(
+                              '${AppRoutes.dailyItemNew}?date=${businessDate.iso}',
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Flexible(
+                            child: DailyItemsCalendar(
+                              key: _calendarKey,
+                              businessDate: businessDate,
+                              onDaySelected: (day) =>
+                                  context.push(AppRoutes.dailyItemDay(day.iso)),
+                              onAnchorChanged: (day) {
+                                if (mounted && day != _visibleDate) {
+                                  setState(() => _visibleDate = day);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverToBoxAdapter(
-                  child: DailyItemsCalendar(
-                    key: _calendarKey,
-                    businessDate: businessDate,
-                    onDaySelected: (day) =>
-                        context.push(AppRoutes.dailyItemDay(day.iso)),
-                    onAnchorChanged: (day) {
-                      if (mounted && day != _visibleDate) {
-                        setState(() => _visibleDate = day);
-                      }
-                    },
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            ],
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
+            ),
           ),
         ),
       ),
@@ -313,17 +325,16 @@ class _DailyItemsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-      fontWeight: FontWeight.w600,
-    );
+    final titleStyle = Theme.of(context).textTheme.titleMedium
+        ?.copyWith(fontWeight: FontWeight.w600);
     return Wrap(
       alignment: WrapAlignment.spaceBetween,
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 12,
       runSpacing: 4,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text('每日事项', style: titleStyle),
             IconButton(
@@ -334,6 +345,14 @@ class _DailyItemsHeader extends StatelessWidget {
               onPressed: onAdd,
               icon: const Icon(Icons.add_circle_outline),
               color: PandoraColors.brand,
+            ),
+            TextButton(
+              onPressed: onToday,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(0, 36),
+              ),
+              child: const Text('今天'),
             ),
           ],
         ),
@@ -365,14 +384,6 @@ class _DailyItemsHeader extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               onPressed: onNext,
               icon: const Icon(Icons.chevron_right),
-            ),
-            TextButton(
-              onPressed: onToday,
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: const Size(0, 36),
-              ),
-              child: const Text('今天'),
             ),
           ],
         ),
