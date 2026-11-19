@@ -1,0 +1,100 @@
+PASS preparation refuses missing explicit database/marker arguments
+PASS preparation refuses missing explicit database/marker arguments
+启动演示数据准备服务，日志：/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-u8b7073v/project/backend/.runtime/demo-prepare.log
+{"database": "pandora_precheck_demo_6dae6312aca7", "manifestVersion": 3, "businessDate": "2026-11-19", "counts": {"users": 14, "admin_accounts": 1, "employee_placements": 14, "departments": 2, "teams": 4, "tasks": 62, "task_versions": 72, "approval_requests": 72, "work_logs": 12, "home_items": 10, "task_business_transfers": 1, "handover_requests": 1, "task_log_comments": 2, "notifications": 266}}
+启动演示数据准备服务，日志：/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-u8b7073v/project/backend/.runtime/demo-prepare.log
+{"database": "pandora_precheck_demo_6dae6312aca7", "manifestVersion": 3, "businessDate": "2026-11-19", "counts": {"users": 14, "admin_accounts": 1, "employee_placements": 14, "departments": 2, "teams": 4, "tasks": 62, "task_versions": 72, "approval_requests": 72, "work_logs": 12, "home_items": 10, "task_business_transfers": 1, "handover_requests": 1, "task_log_comments": 2, "notifications": 266}}
+PASS two preparations preserve all business rows, placements, stable seed keys and IDs
+PASS two preparations preserve original business date, seed completion and counts
+PASS mismatched demo marker refuses preparation without business mutation
+PASS startup seed refuses missing/mismatched explicit target without touching business data
+PASS startup seed refuses missing/mismatched explicit target without touching business data
+PASS read-only current precheck accepts the stored fixed organization
+PASS persistent demo satisfies all read-only database integrity checks
+PASS demo has two departments, four teams and complete single-position staff
+PASS every department and team has exactly one head
+PASS administrator is independent and absent from staff/placements
+PASS seed contains approved, direct, pending, rejected, withdrawn and expired applications
+PASS non-protagonists have no separately populated personal logs
+PASS upper has a same-day short ordinary actionable task
+PASS upper has ordinary unfinished overdue work
+PASS middle has a same-day short ordinary actionable task
+PASS middle has ordinary unfinished overdue work
+PASS product-head-1 has a same-day short ordinary actionable task
+PASS product-head-1 has ordinary unfinished overdue work
+PASS employee has a same-day short ordinary actionable task
+PASS employee has ordinary unfinished overdue work
+PASS historical overdue work keeps approval version and chronology consistent
+PASS seed has both completed work and a real reopened execution round
+PASS dedicated handover and formal takeover retain real separate histories
+PASS admin authenticates through its real declared account namespace after restart
+PASS colleague authenticates through its real declared account namespace after restart
+PASS employee authenticates through its real declared account namespace after restart
+PASS market authenticates through its real declared account namespace after restart
+PASS market-employee-1 authenticates through its real declared account namespace after restart
+PASS market-employee-2 authenticates through its real declared account namespace after restart
+PASS market-head-1 authenticates through its real declared account namespace after restart
+PASS market-head-2 authenticates through its real declared account namespace after restart
+PASS marketing authenticates through its real declared account namespace after restart
+PASS middle authenticates through its real declared account namespace after restart
+PASS product-employee-1 authenticates through its real declared account namespace after restart
+PASS product-employee-2 authenticates through its real declared account namespace after restart
+PASS product-head-1 authenticates through its real declared account namespace after restart
+PASS product-head-2 authenticates through its real declared account namespace after restart
+PASS upper authenticates through its real declared account namespace after restart
+PASS four demo roles open home, company/form, logs, notifications and legitimate subordinate pages
+PASS demo catalogue carries at least two shared tags with distinguishable colours
+PASS demo log log-employee-0 reads its seeded shared tag collection in order
+PASS demo log log-middle-0 reads its seeded shared tag collection in order
+PASS demo task task-doing keeps its ordered shared tags and takes the first tag colour
+PASS demo task task-employee-3 keeps its ordered shared tags and takes the first tag colour
+PASS a no-tag control task keeps an empty ordered collection
+PASS upper has the derived fixed position
+PASS middle has the derived fixed position
+PASS product-head-1 has the derived fixed position
+PASS employee has the derived fixed position
+PASS company employee directory excludes admin and all contacts
+PASS admin cannot read employee task business APIs
+PASS employee cannot read admin management APIs
+PASS the default demo no longer carries the retired 110-row pagination dump
+PASS upper has 10-20 meaningful created tasks
+PASS middle has 10-20 meaningful created tasks
+PASS product-head-1 has 10-20 meaningful created tasks
+PASS employee has 10-20 meaningful created tasks
+PASS company retains ten ordered managed items
+PASS creator-only demo retains original creator and excludes creator from effective assignees
+PASS takeover recipient can read without being rewritten as original creator
+PASS middle log directory includes indirect/direct subordinate demo authors
+PASS product-head-1 log directory includes indirect/direct subordinate demo authors
+PASS upper has own ranged/daily items, recent logs and notifications
+PASS middle has own ranged/daily items, recent logs and notifications
+PASS product-head-1 has own ranged/daily items, recent logs and notifications
+PASS employee has own ranged/daily items, recent logs and notifications
+PASS default demo keeps freeze/delete-rebuild edge samples out of the mainline
+PASS upper has one independent calendar pin and one independent table pin
+PASS middle has one independent calendar pin and one independent table pin
+PASS product-head-1 has one independent calendar pin and one independent table pin
+PASS employee has one independent calendar pin and one independent table pin
+PASS upper has a real hire date
+PASS upper has 10-20 meaningful personally assigned tasks
+PASS upper has both read and unread multi-type notifications
+PASS middle has a real hire date
+PASS middle has 10-20 meaningful personally assigned tasks
+PASS middle has both read and unread multi-type notifications
+PASS product-head-1 has a real hire date
+PASS product-head-1 has 10-20 meaningful personally assigned tasks
+PASS product-head-1 has both read and unread multi-type notifications
+PASS employee has a real hire date
+PASS employee has 10-20 meaningful personally assigned tasks
+PASS employee has both read and unread multi-type notifications
+PASS the four-role parent chain links leaf to team, department and founder tasks
+PASS dense/overlap/cross-year/zero-length extremes stay out of the default demo
+PASS the default demo keeps a small cross-month task for realistic range coverage
+PASS taken-over task edit requires operator manager
+PASS actual manager approves takeover owner edit
+PASS admin task history can trace takeover after restart
+PASS administrator can persist a real account-name edit before repeat preparation
+启动演示数据准备服务，日志：/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-u8b7073v/project/backend/.runtime/demo-prepare.log
+{"database": "pandora_precheck_demo_6dae6312aca7", "manifestVersion": 3, "businessDate": "2026-11-19", "counts": {"users": 14, "admin_accounts": 1, "employee_placements": 14, "departments": 2, "teams": 4, "tasks": 62, "task_versions": 73, "approval_requests": 73, "work_logs": 12, "home_items": 10, "task_business_transfers": 1, "handover_requests": 1, "task_log_comments": 2, "notifications": 266}}
+PASS repeat preparation preserves a real user edit instead of resetting demo data
+PASS repeat preparation preserves independent administrator account edits

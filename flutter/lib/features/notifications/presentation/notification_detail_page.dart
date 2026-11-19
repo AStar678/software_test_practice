@@ -100,7 +100,7 @@ class _NotificationDetailPageState
                   if (value.canReadRequest && value.requestId != null)
                     FilledButton.tonalIcon(
                       onPressed: () =>
-                          context.push('/approvals/${value.requestId}'),
+                          context.push('/approvals/${value.requestId}?from=notification'),
                       icon: Icon(
                         value.canReview
                             ? Icons.fact_check_outlined
@@ -109,7 +109,7 @@ class _NotificationDetailPageState
                       label: Text(
                         value.canReview
                             ? '审核原申请'
-                            : (value.canWithdrawRequest ? '查看并撤销原申请' : '查看原申请'),
+                            : '查看原申请',
                       ),
                     ),
                   if (value.canOpenTask && value.taskId != null) ...[
@@ -138,7 +138,7 @@ class _NotificationDetailPageState
                     icon: const Icon(Icons.visibility_off_outlined),
                     label: const Text('从我的通知中隐藏'),
                   ),
-                  if (value.canWithdraw) ...[
+                  if (value.canWithdraw && value.requestId == null) ...[
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
                       onPressed: _busy ? null : () => _withdraw(value),
@@ -146,14 +146,6 @@ class _NotificationDetailPageState
                       label: const Text('撤回事件（严格 180 秒内）'),
                     ),
                   ],
-                  if (value.canWithdrawRequest)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 12),
-                      child: Text(
-                        '业务申请撤销请在原申请详情办理；它与事件撤回是两个独立动作。',
-                        style: TextStyle(color: PandoraColors.muted),
-                      ),
-                    ),
                 ],
               ),
       ),

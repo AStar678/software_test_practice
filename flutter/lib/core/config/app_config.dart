@@ -14,7 +14,7 @@ class AppConfig {
 
   /// 默认值与 release 规则：
   /// - debug/课程演示使用显式 `--dart-define=API_BASE_URL=...`；
-  /// - debug 回退到本机联调地址（Android 模拟器用 10.0.2.2）；
+  /// - debug 默认连接现有服务器的 HTTPS 6644 入口；
   /// - 可选 release 使用 RELEASE_API_BASE_URL，必须为 HTTPS。
   factory AppConfig.fromEnvironment({bool? debugOverride}) {
     final isDebug = debugOverride ?? kDebugMode;
@@ -23,10 +23,10 @@ class AppConfig {
       return AppConfig(apiBaseUrl: _normalize(configured), isDebug: isDebug);
     }
     if (isDebug) {
-      final host = !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-          ? '10.0.2.2'
-          : '127.0.0.1';
-      return AppConfig(apiBaseUrl: 'http://$host:8080/api/v1', isDebug: true);
+      return const AppConfig(
+        apiBaseUrl: 'https://8.141.96.122:6644/api/v1',
+        isDebug: true,
+      );
     }
     return const AppConfig(apiBaseUrl: '', isDebug: false);
   }

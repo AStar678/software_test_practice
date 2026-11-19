@@ -2590,7 +2590,12 @@ public class TaskService {
 
     static boolean bool(Object value, String key) {
         if (value instanceof Boolean b) return b;
-        if (value instanceof Number n && (n.intValue() == 0 || n.intValue() == 1)) return n.intValue() == 1;
+        if (value instanceof Number n) {
+            try {
+                int exact = new java.math.BigDecimal(n.toString()).intValueExact();
+                if (exact == 0 || exact == 1) return exact == 1;
+            } catch (ArithmeticException | NumberFormatException ignored) { }
+        }
         throw bad(key + "须为布尔值");
     }
 

@@ -1,0 +1,109 @@
+{
+  "checks": [
+    {
+      "name": "admin login form ready",
+      "pass": true
+    },
+    {
+      "name": "same-company admin console opens",
+      "pass": true
+    },
+    {
+      "name": "management list shows the full login phone",
+      "pass": true,
+      "evidence": {
+        "cells": [
+          "alpha-one-employee",
+          "13912345678",
+          "未设置",
+          "alpha / Display title",
+          "alpha one",
+          "alpha-one-head",
+          "员工",
+          "在任",
+          "姓名/手机号/入职重置密码"
+        ],
+        "edit": true,
+        "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+      }
+    },
+    {
+      "name": "employee detail dialog opens",
+      "pass": true
+    },
+    {
+      "name": "detail form reads back the same full login phone",
+      "pass": true,
+      "evidence": {
+        "phone": "13912345678",
+        "title": "编辑姓名/登录手机号/入职日期"
+      }
+    },
+    {
+      "name": "detail copy does not claim the phone is write-only",
+      "pass": true
+    },
+    {
+      "name": "admin phone detail reachable at 320",
+      "pass": true,
+      "evidence": {
+        "value": "13912345678",
+        "input": {
+          "l": 31,
+          "r": 289,
+          "t": 437.734375,
+          "b": 485.78125
+        },
+        "dialog": {
+          "l": 12,
+          "r": 308
+        },
+        "width": 320,
+        "height": 844
+      }
+    },
+    {
+      "name": "admin phone detail reachable at 390",
+      "pass": true,
+      "evidence": {
+        "value": "13912345678",
+        "input": {
+          "l": 31,
+          "r": 359,
+          "t": 418.765625,
+          "b": 466.8125
+        },
+        "dialog": {
+          "l": 12,
+          "r": 378
+        },
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "admin phone detail reachable at 1440",
+      "pass": true,
+      "evidence": {
+        "value": "13912345678",
+        "input": {
+          "l": 445,
+          "r": 995,
+          "t": 446.765625,
+          "b": 494.8125
+        },
+        "dialog": {
+          "l": 420,
+          "r": 1020
+        },
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

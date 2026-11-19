@@ -10,6 +10,7 @@ import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../comments/presentation/comments_section.dart';
+import '../../tags/presentation/tag_badge.dart';
 import '../../home/presentation/home_providers.dart';
 import '../domain/task_record.dart';
 import 'task_providers.dart';
@@ -160,10 +161,7 @@ class _TaskDetailBody extends ConsumerWidget {
               runSpacing: 6,
               children: [
                 for (final tag in task.tags)
-                  Chip(
-                    label: Text(tag.deleted ? '${tag.name}（已删除）' : tag.name),
-                    visualDensity: VisualDensity.compact,
-                  ),
+                  TagBadge(tag: tag),
               ],
             ),
           ),

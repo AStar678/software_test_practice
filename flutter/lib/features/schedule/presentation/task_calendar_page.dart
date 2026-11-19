@@ -443,6 +443,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
               tasks: _drawerTasks,
               dayViewMode: _dayViewMode,
               onToggleView: () => setState(() => _dayViewMode = !_dayViewMode),
+              onSelectDay: (day) => unawaited(_openDay(day, dayViewMode: true)),
               readOnly: widget.readOnly,
               onOpen: _openTask,
               onPin: _togglePin,
@@ -1743,17 +1744,7 @@ class _MonthBlock extends StatelessWidget {
           elevation: 4,
           child: Icon(Icons.drag_handle, size: 20),
         ),
-        child: Center(
-          child: Container(
-            width: 5,
-            height: double.infinity,
-            margin: const EdgeInsets.symmetric(vertical: 2),
-            decoration: BoxDecoration(
-              color: PandoraColors.brand,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-        ),
+        child: const ColoredBox(color: Colors.transparent),
       ),
     );
   }
@@ -1819,6 +1810,7 @@ class _DayPanel extends StatelessWidget {
     required this.tasks,
     required this.dayViewMode,
     required this.onToggleView,
+    required this.onSelectDay,
     required this.onOpen,
     required this.onPin,
     required this.onClose,
@@ -1834,6 +1826,7 @@ class _DayPanel extends StatelessWidget {
   final List<TaskRecord> tasks;
   final bool dayViewMode;
   final VoidCallback onToggleView;
+  final ValueChanged<CompanyDate> onSelectDay;
   final ValueChanged<String> onOpen;
   final Future<void> Function(TaskRecord) onPin;
   final VoidCallback onClose;
@@ -1846,7 +1839,9 @@ class _DayPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final zone = CompanyTimeZone.fallback;
-    return SafeArea(
+    return Material(
+      color: dayViewMode ? Colors.white : PandoraColors.paper,
+      child: SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -1896,6 +1891,8 @@ class _DayPanel extends StatelessWidget {
                 ],
               ),
             ),
+            if (dayViewMode)
+              _DayWeekStrip(day: day, onSelectDay: onSelectDay),
             Wrap(
               spacing: 4,
               runSpacing: 4,
@@ -1982,6 +1979,7 @@ class _DayPanel extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -2004,6 +2002,73 @@ class _DayPanel extends StatelessWidget {
     }
     if (task.startAt == null || task.dueAt == null) return '排期未设置';
     return '${zone.formatDateTime(task.startAt!)} 至 ${zone.formatDateTime(task.dueAt!)}';
+  }
+}
+
+class _DayWeekStrip extends StatelessWidget {
+  const _DayWeekStrip({required this.day, required this.onSelectDay});
+
+  final CompanyDate day;
+  final ValueChanged<CompanyDate> onSelectDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = day.mondayOfWeek;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+      child: Row(
+        children: [
+          for (var index = 0; index < 7; index++)
+            Expanded(
+              child: Builder(builder: (context) {
+                final date = start.addDays(index);
+                final selected = date == day;
+                return Semantics(
+                  selected: selected,
+                  label: date.iso,
+                  child: InkWell(
+                    key: ValueKey('day-week-${date.iso}'),
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: () => onSelectDay(date),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          CompanyCalendarGrid.weekdayLabels[index],
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: index >= 5 ? Colors.black38 : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: selected ? const Color(0xFF18191D) : null,
+                          ),
+                          child: Text(
+                            '${date.day}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                              color: selected
+                                  ? Colors.white
+                                  : (index >= 5 ? Colors.black38 : Colors.black87),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+        ],
+      ),
+    );
   }
 }
 
@@ -2042,6 +2107,7 @@ class _DayAxisView extends StatelessWidget {
           _AllDayStrip(entries: layout.allDay, onOpen: onOpen),
         Expanded(
           child: _VerticalAxis(
+            key: ValueKey('day-axis-${day.iso}'),
             layout: layout,
             onOpen: onOpen,
             onDragStarted: onDragStarted,
@@ -2107,8 +2173,9 @@ class _AllDayStrip extends StatelessWidget {
   }
 }
 
-class _VerticalAxis extends StatelessWidget {
+class _VerticalAxis extends StatefulWidget {
   const _VerticalAxis({
+    super.key,
     required this.layout,
     required this.onOpen,
     required this.onDragStarted,
@@ -2126,83 +2193,132 @@ class _VerticalAxis extends StatelessWidget {
   final void Function(DayAxisEntry, CalendarDragMode, int) onAccessibleAdjust;
   final bool readOnly;
 
-  static const double _hourHeight = 44;
-  static const double _labelWidth = 40;
-  static const double _laneWidth = 128;
+  @override
+  State<_VerticalAxis> createState() => _VerticalAxisState();
+}
+
+class _VerticalAxisState extends State<_VerticalAxis> {
+  static const double _hourHeight = 52;
+  static const double _labelWidth = 56;
   static const double _axisHeight = 24 * _hourHeight;
+  final _scroll = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final timed = widget.layout.entries.where((entry) => !entry.allDay);
+      if (timed.isEmpty) return;
+      final first = timed.map((entry) => entry.startMinutes).reduce((a, b) => a < b ? a : b);
+      final target = ((first ~/ 60 - 1).clamp(0, 23) * _hourHeight)
+          .clamp(0.0, _scroll.position.maxScrollExtent);
+      _scroll.jumpTo(target);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final laneCount = layout.timedLanes.isEmpty ? 1 : layout.timedLanes.length;
-    final width = _labelWidth + laneCount * _laneWidth;
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SizedBox(
-        width: width,
-        child: SingleChildScrollView(
-          child: SizedBox(
-            height: _axisHeight,
-            child: Stack(
-              children: [
-                for (var hour = 0; hour <= 24; hour++)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: hour * _hourHeight,
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: _labelWidth,
-                          child: Text(
-                            '${hour.toString().padLeft(2, '0')}:00',
-                            style: const TextStyle(
-                              fontSize: 9,
-                              color: PandoraColors.muted,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            color: hour % 3 == 0
-                                ? PandoraColors.line
-                                : PandoraColors.petal,
-                          ),
-                        ),
-                      ],
+    final entries = widget.layout.entries.where((entry) => !entry.allDay).toList()
+      ..sort((a, b) {
+        final start = a.startMinutes.compareTo(b.startMinutes);
+        return start != 0 ? start : a.lane.compareTo(b.lane);
+      });
+    final sameStarts = <int, List<DayAxisEntry>>{};
+    final headerMinutes =
+        (MediaQuery.textScalerOf(context).scale(24) * 1.2 + 16) / _hourHeight * 60;
+    List<DayAxisEntry>? group;
+    for (final entry in entries) {
+      // 标题接近且任务重叠时并排，避免后一个色块盖住前一个名称。
+      if (group == null ||
+          entry.startMinutes - group.last.startMinutes >= headerMinutes ||
+          !group.any((other) =>
+              other.endMinutes > entry.startMinutes ||
+              other.startMinutes == entry.startMinutes)) {
+        group = <DayAxisEntry>[];
+      }
+      group.add(entry);
+      sameStarts[entry.startMinutes] = group;
+    }
+    final maxSameStart = sameStarts.values.fold(1, (count, group) =>
+        count > group.length ? count : group.length);
+    return LayoutBuilder(builder: (context, constraints) {
+      final minimumBlockHeight =
+          MediaQuery.textScalerOf(context).scale(13) * 1.2 + 14;
+      final minWidth = _labelWidth + maxSameStart * 96.0 + 12;
+      final width = constraints.maxWidth > minWidth ? constraints.maxWidth : minWidth;
+      final available = width - _labelWidth - 12;
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: width,
+          child: SingleChildScrollView(
+            key: const ValueKey('day-timeline-scroll'),
+            controller: _scroll,
+            child: SizedBox(
+              height: _axisHeight + 40,
+              child: Stack(
+                children: [
+                  for (var hour = 0; hour <= 24; hour++) ...[
+                    Positioned(
+                      left: 0,
+                      width: _labelWidth - 10,
+                      top: hour * _hourHeight + 2,
+                      child: Text(
+                        '${hour.toString().padLeft(2, '0')}:00',
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF90949A)),
+                      ),
                     ),
-                  ),
-                for (final entry in layout.entries.where(
-                  (entry) => !entry.allDay,
-                ))
-                  Positioned(
-                    left: _labelWidth + entry.lane * _laneWidth + 2,
-                    width: _laneWidth - 4,
-                    top: entry.startMinutes / 1440 * _axisHeight + 1,
-                    height:
-                        ((entry.endMinutes - entry.startMinutes) /
-                                1440 *
-                                _axisHeight)
-                            .clamp(22.0, _axisHeight),
-                    child: _AxisTaskBlock(
-                      entry: entry,
-                      onOpen: onOpen,
-                      compact: true,
-                      vertical: true,
-                      pixelsPerHour: _hourHeight,
-                      onDragStarted: onDragStarted,
-                      onDragUpdate: onDragUpdate,
-                      onDragEnd: onDragEnd,
-                      onAccessibleAdjust: onAccessibleAdjust,
-                      readOnly: readOnly,
+                    Positioned(
+                      left: _labelWidth,
+                      right: 8,
+                      top: hour * _hourHeight,
+                      child: const ColoredBox(
+                        color: Color(0xFFE9EBEF),
+                        child: SizedBox(height: 1),
+                      ),
                     ),
-                  ),
-              ],
+                  ],
+                  for (final entry in entries)
+                    Builder(builder: (context) {
+                      final group = sameStarts[entry.startMinutes]!;
+                      final columns = group.length;
+                      final inset = columns > 1 ? 0.0 : (entry.lane * 10.0).clamp(0.0, available * .35);
+                      final columnWidth = available / columns;
+                      return Positioned(
+                        left: _labelWidth + inset + (columns > 1 ? group.indexOf(entry) * columnWidth : 0),
+                        width: columns > 1 ? columnWidth - 4 : available - inset,
+                        top: entry.startMinutes / 60 * _hourHeight + 1,
+                        height: ((entry.endMinutes - entry.startMinutes) / 60 * _hourHeight)
+                            .clamp(minimumBlockHeight, _axisHeight),
+                        child: _AxisTaskBlock(
+                          entry: entry,
+                          onOpen: widget.onOpen,
+                          compact: true,
+                          vertical: true,
+                          pixelsPerHour: _hourHeight,
+                          onDragStarted: widget.onDragStarted,
+                          onDragUpdate: widget.onDragUpdate,
+                          onDragEnd: widget.onDragEnd,
+                          onAccessibleAdjust: widget.onAccessibleAdjust,
+                          readOnly: widget.readOnly,
+                        ),
+                      );
+                    }),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -2274,6 +2390,15 @@ class _AxisTaskBlock extends StatelessWidget {
     };
     final pending = entry.task.pending;
     final done = entry.task.done;
+    final background = _color(entry.color);
+    final tagBorder = entry.task.tags.firstOrNull?.border;
+    final accent = done
+        ? PandoraColors.completed
+        : (tagBorder == null
+              ? Color.lerp(background, Colors.black, .42)!
+              : _color(tagBorder));
+    String time(int minutes) =>
+        '${(minutes ~/ 60).toString().padLeft(2, '0')}:${(minutes % 60).toString().padLeft(2, '0')}';
     final block = Semantics(
       button: true,
       label:
@@ -2284,28 +2409,64 @@ class _AxisTaskBlock extends StatelessWidget {
         child: CustomPaint(
           key: ValueKey('axis-dash-${entry.task.id}'),
           foregroundPainter: pending ? const _DashedBorderPainter() : null,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: DecoratedBox(
+            key: ValueKey('day-task-fill-${entry.task.id}'),
             decoration: BoxDecoration(
-              color: _color(entry.color),
-              borderRadius: BorderRadius.circular(4),
-              border: canDrag
-                  ? Border.all(
-                      color: Colors.white.withValues(alpha: .5),
-                      width: .5,
-                    )
-                  : null,
+              color: Color.lerp(Colors.white, background, .78),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.white.withValues(alpha: .65)),
             ),
-            child: FadingNameText(
-              entry.task.title,
-              maxLines: compact ? 2 : 1,
-              style: TextStyle(
-                fontSize: 9,
-                height: 1.1,
-                decoration: done ? TextDecoration.lineThrough : null,
-                color: done ? PandoraColors.muted : null,
-              ),
-            ),
+            child: LayoutBuilder(builder: (context, constraints) {
+              final textScaler = MediaQuery.textScalerOf(context);
+              final titleHeight = textScaler.scale(13) * 1.2;
+              final timeHeight = textScaler.scale(11) * 1.2;
+              final showTime = constraints.maxHeight >= titleHeight + timeHeight + 16;
+              return Stack(
+                children: [
+                  Positioned(
+                    left: 4,
+                    top: 5,
+                    bottom: 5,
+                    width: 3,
+                    child: DecoratedBox(
+                      key: ValueKey('day-task-accent-${entry.task.id}'),
+                      decoration: BoxDecoration(
+                        color: accent,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 6, 7, 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FadingNameText(
+                          entry.task.title,
+                          maxLines: constraints.maxHeight >= titleHeight * 2 + timeHeight + 16 ? 2 : 1,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
+                            decoration: done ? TextDecoration.lineThrough : null,
+                            color: accent,
+                          ),
+                        ),
+                        if (showTime) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            '${time(entry.startMinutes)}–${time(entry.endMinutes)}${pending ? ' · 待审核' : ''}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 11, height: 1.2, color: accent),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }),
           ),
         ),
       ),
@@ -2392,17 +2553,7 @@ class _AxisTaskBlock extends StatelessWidget {
       onLongPressCancel: () => onDragEnd(data),
       child: MouseRegion(
         cursor: SystemMouseCursors.resizeUpDown,
-        child: Container(
-          alignment: Alignment.center,
-          child: Container(
-            width: vertical ? 24 : 4,
-            height: vertical ? 4 : 18,
-            decoration: BoxDecoration(
-              color: PandoraColors.brand,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-        ),
+        child: const ColoredBox(color: Colors.transparent),
       ),
     );
   }

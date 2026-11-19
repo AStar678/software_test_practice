@@ -1,0 +1,20 @@
+{
+  "frameworkCases": 674,
+  "frameworkPassed": 648,
+  "frameworkFailed": 26,
+  "suitePassed": 40,
+  "suiteFailed": 1,
+  "phoneChecksPassed": 16,
+  "catalogRows": 3795,
+  "failedCatalogRows": 30,
+  "findings": 9,
+  "pdfPages": 9,
+  "pdfTextContainsAllFindings": true,
+  "pdfVisualCheckPages": [
+    1,
+    4,
+    9
+  ],
+  "dashboardFilterSearchReset": "PASS",
+  "gitDiffCheck": "PASS"
+}

@@ -1,0 +1,93 @@
+
+Database pandora_precheck_final_e932964ecf59; target 26
+00:03:12.205 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_final_e932964ecf59?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+00:03:12.399 [main] WARN org.flywaydb.core.internal.database.base.Database -- Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+00:03:12.413 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Schema history table `pandora_precheck_final_e932964ecf59`.`flyway_schema_history` does not exist yet
+00:03:12.415 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 36 migrations (execution time 00:00.012s)
+00:03:12.420 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Creating Schema History table `pandora_precheck_final_e932964ecf59`.`flyway_schema_history` ...
+00:03:12.437 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema `pandora_precheck_final_e932964ecf59`: << Empty Schema >>
+00:03:12.447 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "1 - initial schema"
+00:03:12.534 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "2 - case sensitive idempotency"
+00:03:12.547 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "3 - home item versions"
+00:03:12.557 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "4 - personal profile"
+00:03:12.587 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "5 - organization roles and account gate"
+00:03:12.655 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "6 - ordered routing expiration and handover"
+00:03:12.764 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "7 - event provenance dispatch and pins"
+00:03:12.820 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "8 - lossless work log merge and unique day"
+00:03:12.832 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "9 - organization row versions"
+00:03:12.886 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "10 - retire superseded check constraints"
+00:03:12.921 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "11 - schedule snapshots reminder nodes and notification lifecycle"
+00:03:12.961 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "12 - backfill task assignments"
+00:03:12.965 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "13 - mask undelivered notification content"
+00:03:12.975 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "14 - handover presets"
+00:03:12.982 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "15 - personal avatar"
+00:03:13.008 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "16 - work log day slot"
+00:03:13.025 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "17 - tags and task tag snapshot"
+00:03:13.061 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "18 - flat comments"
+00:03:13.073 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "19 - employee phone login"
+00:03:13.122 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "20 - notification object refs"
+00:03:13.144 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "21 - fixed employee placements"
+00:03:13.189 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "22 - independent account principals"
+00:03:13.332 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "23 - task business ownership"
+00:03:13.349 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "24 - explicit blocked review routes"
+00:03:13.377 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "25 - retire legacy employee authority"
+00:03:13.482 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_e932964ecf59` to version "26 - explicit demo manifest"
+00:03:13.490 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 26 migrations to schema `pandora_precheck_final_e932964ecf59`, now at version v26 (execution time 00:00.912s)
+MIGRATED 26 -> 26
+Picked up JAVA_TOOL_OPTIONS: -javaagent:/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/jacoco-agent.jar=destfile=/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/coverage/check_final_migration.exec,append=true,includes=cn.pandora.*
+
+Database pandora_precheck_final_314e8eab1556; target 20
+00:03:14.024 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_final_314e8eab1556?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+00:03:14.236 [main] WARN org.flywaydb.core.internal.database.base.Database -- Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+00:03:14.252 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Schema history table `pandora_precheck_final_314e8eab1556`.`flyway_schema_history` does not exist yet
+00:03:14.254 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 36 migrations (execution time 00:00.013s)
+00:03:14.259 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Creating Schema History table `pandora_precheck_final_314e8eab1556`.`flyway_schema_history` ...
+00:03:14.278 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema `pandora_precheck_final_314e8eab1556`: << Empty Schema >>
+00:03:14.288 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "1 - initial schema"
+00:03:14.363 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "2 - case sensitive idempotency"
+00:03:14.374 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "3 - home item versions"
+00:03:14.384 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "4 - personal profile"
+00:03:14.412 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "5 - organization roles and account gate"
+00:03:14.479 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "6 - ordered routing expiration and handover"
+00:03:14.594 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "7 - event provenance dispatch and pins"
+00:03:14.650 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "8 - lossless work log merge and unique day"
+00:03:14.663 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "9 - organization row versions"
+00:03:14.727 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "10 - retire superseded check constraints"
+00:03:14.768 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "11 - schedule snapshots reminder nodes and notification lifecycle"
+00:03:14.809 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "12 - backfill task assignments"
+00:03:14.814 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "13 - mask undelivered notification content"
+00:03:14.822 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "14 - handover presets"
+00:03:14.830 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "15 - personal avatar"
+00:03:14.854 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "16 - work log day slot"
+00:03:14.870 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "17 - tags and task tag snapshot"
+00:03:14.904 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "18 - flat comments"
+00:03:14.914 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "19 - employee phone login"
+00:03:14.961 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "20 - notification object refs"
+00:03:14.982 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 20 migrations to schema `pandora_precheck_final_314e8eab1556`, now at version v20 (execution time 00:00.590s)
+MIGRATED 20 -> 20
+Picked up JAVA_TOOL_OPTIONS: -javaagent:/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/jacoco-agent.jar=destfile=/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/coverage/check_final_migration.exec,append=true,includes=cn.pandora.*
+
+Database pandora_precheck_final_314e8eab1556; target None
+00:03:18.778 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_final_314e8eab1556?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+00:03:18.978 [main] WARN org.flywaydb.core.internal.database.base.Database -- Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+00:03:19.001 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 36 migrations (execution time 00:00.019s)
+00:03:19.006 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema `pandora_precheck_final_314e8eab1556`: 20
+00:03:19.014 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "21 - fixed employee placements"
+00:03:19.069 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "22 - independent account principals"
+00:03:19.219 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "23 - task business ownership"
+00:03:19.236 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "24 - explicit blocked review routes"
+00:03:19.266 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "25 - retire legacy employee authority"
+00:03:19.384 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "26 - explicit demo manifest"
+00:03:19.393 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "27 - private calendar tags"
+00:03:19.417 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "28 - task version multiple tags"
+00:03:19.427 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "29 - work log multiple tags"
+00:03:19.449 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "30 - remove private tags"
+00:03:19.471 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "31 - daily items"
+00:03:19.479 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "32 - daily item date range"
+00:03:19.504 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "33 - user task table pins"
+00:03:19.511 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "34 - hire date and holiday cache"
+00:03:19.535 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "35 - holiday cache failure state"
+00:03:19.541 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `pandora_precheck_final_314e8eab1556` to version "36 - retire company item title"
+00:03:19.549 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 16 migrations to schema `pandora_precheck_final_314e8eab1556`, now at version v36 (execution time 00:00.452s)
+MIGRATED 16 -> 36
+Picked up JAVA_TOOL_OPTIONS: -javaagent:/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/jacoco-agent.jar=destfile=/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/coverage/check_final_migration.exec,append=true,includes=cn.pandora.*

@@ -8,11 +8,11 @@ class PasswordPolicy {
   static const int maxUtf8Bytes = 72;
 
   static String? validateNewPassword(String password) {
-    if (password.length < minLength) {
+    if (password.runes.length < minLength) {
       return '新密码至少 $minLength 个字符';
     }
-    final hasLetter = RegExp(r'[A-Za-z]').hasMatch(password);
-    final hasDigit = RegExp(r'\d').hasMatch(password);
+    final hasLetter = password.codeUnits.any((c) => RegExp(r'\p{L}', unicode: true).hasMatch(String.fromCharCode(c)));
+    final hasDigit = password.codeUnits.any((c) => RegExp(r'\p{Nd}', unicode: true).hasMatch(String.fromCharCode(c)));
     if (!hasLetter || !hasDigit) {
       return '新密码需同时包含字母与数字';
     }

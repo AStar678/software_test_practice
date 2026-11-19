@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pandora_employee/core/router/read_context.dart';
 import 'package:pandora_employee/core/theme/pandora_theme.dart';
 import 'package:pandora_employee/features/tasks/presentation/task_detail_page.dart';
+import 'package:pandora_employee/features/tags/presentation/tag_badge.dart';
 
 import '../support/test_harness.dart';
 
@@ -78,6 +79,26 @@ Future<void> pumpDetail(
 }
 
 void main() {
+  testWidgets('任务详情按服务端标签颜色显示，并保留删除状态', (tester) async {
+    final backend = detailBackend();
+    backend.on('GET', '/tasks/t1', (_) => FakeResponse({
+      ...pendingTask(),
+      'tags': [
+        {'id': 'blue', 'name': '分镜', 'color': '#DDEEFF', 'border': '#336699'},
+        {'id': 'green', 'name': '后期', 'color': '#DDF1E1', 'deleted': true},
+      ],
+    }, etag: '"5"'));
+    await pumpDetail(tester, backend);
+    final badges = find.byType(TagBadge);
+    expect(badges, findsNWidgets(2));
+    final box = tester.widget<Container>(find.descendant(
+      of: badges.first,
+      matching: find.byType(Container),
+    ).first);
+    expect((box.decoration as BoxDecoration).color, const Color(0xFFDDEEFF));
+    expect(find.text('后期（已删除）'), findsOneWidget);
+  });
+
   testWidgets('详情紧凑层级：有效截止与提议截止分离，待审入口指向原申请', (tester) async {
     final backend = detailBackend();
     await pumpDetail(tester, backend);

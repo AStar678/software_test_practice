@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.auth</a> &gt; <span class="el_source">AuthService.java</span></div><h1>AuthService.java</h1><pre class="source lang-java linenums">package cn.pandora.auth;
+
+import cn.pandora.admin.Credentials;
+import cn.pandora.common.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.*;
+import static cn.pandora.common.Db.*;
+
+@Service
+public class AuthService {
+    private final Db db;
+    private final Access access;
+    private final Events events;
+<span class="fc" id="L20">    public static final BCryptPasswordEncoder PASSWORDS=new BCryptPasswordEncoder(12);</span>
+<span class="fc" id="L21">    private final String dummyHash=PASSWORDS.encode(&quot;invalid-password-placeholder&quot;);</span>
+<span class="fc" id="L22">    public AuthService(Db db,Access access,Events events) {this.db=db;this.access=access;this.events=events;}</span>
+    public static String hash(String value) {
+<span class="fc" id="L24">        try { return HexFormat.of().formatHex(MessageDigest.getInstance(&quot;SHA-256&quot;).digest(value.getBytes(StandardCharsets.UTF_8))); }</span>
+<span class="nc" id="L25">        catch(NoSuchAlgorithmException e) {throw new IllegalStateException(e);}</span>
+    }
+
+    /**
+     * Full authority snapshot for a user row: explicit capabilities, per-area ranges, the current
+     * organization authorization version and the account gate flags (DEV-002, DEV-003, DEV-005).
+     */
+    public Actor actor(Map&lt;String,Object&gt; user) {
+<span class="fc" id="L33">        return access.actor(user);</span>
+    }
+
+    public static Map&lt;String,Object&gt; publicUser(Map&lt;String,Object&gt; user) {
+<span class="fc" id="L37">        Map&lt;String,Object&gt; result=new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        for(String k:List.of(&quot;id&quot;,&quot;organizationId&quot;,&quot;displayName&quot;,&quot;active&quot;,&quot;accountType&quot;)) result.put(k,user.get(k));</span>
+<span class="fc" id="L39">        return result;</span>
+    }
+
+    /** Identity plus the authority the pages need to render the correct entry points. */
+    public Map&lt;String,Object&gt; sessionUser(Map&lt;String,Object&gt; user) {
+<span class="fc" id="L44">        Actor actor=actor(user);</span>
+<span class="fc" id="L45">        Map&lt;String,Object&gt; result=new LinkedHashMap&lt;&gt;(publicUser(user));</span>
+<span class="fc" id="L46">        result.put(&quot;departmentId&quot;,actor.departmentId());</span>
+<span class="fc" id="L47">        result.put(&quot;positionId&quot;,actor.positionId());</span>
+<span class="fc" id="L48">        result.put(&quot;teamId&quot;,actor.teamId());</span>
+<span class="fc" id="L49">        result.put(&quot;managerId&quot;,actor.managerId());</span>
+<span class="fc" id="L50">        result.put(&quot;role&quot;,actor.role());</span>
+<span class="fc" id="L51">        result.put(&quot;accountType&quot;,actor.accountType());</span>
+<span class="fc" id="L52">        result.put(&quot;capabilities&quot;,new ArrayList&lt;&gt;(actor.capabilities()));</span>
+<span class="fc" id="L53">        result.put(&quot;scopes&quot;,actor.scopes());</span>
+<span class="fc" id="L54">        result.put(&quot;authzVersion&quot;,actor.authzVersion());</span>
+<span class="fc" id="L55">        result.put(&quot;mustChangePassword&quot;,actor.mustChangePassword());</span>
+<span class="fc" id="L56">        return result;</span>
+    }
+
+    /** Strict namespaces: the request selects exactly one credential store before any lookup. */
+    @Transactional
+    public Map&lt;String,Object&gt; login(Map&lt;String,Object&gt; input) {
+<span class="fc" id="L62">        Object type=input.get(&quot;accountType&quot;);</span>
+<span class="fc bfc" id="L63" title="All 4 branches covered.">        if (!(type instanceof String accountType) || !Set.of(&quot;admin&quot;,&quot;employee&quot;).contains(accountType))</span>
+<span class="fc" id="L64">            throw loginContract();</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        String identifierKey=&quot;admin&quot;.equals(accountType)?&quot;accountName&quot;:&quot;phone&quot;;</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (!input.keySet().equals(Set.of(&quot;accountType&quot;,identifierKey,&quot;password&quot;))</span>
+<span class="pc bpc" id="L67" title="1 of 4 branches missed.">                || !(input.get(identifierKey) instanceof String) || !(input.get(&quot;password&quot;) instanceof String))</span>
+<span class="fc" id="L68">            throw loginContract();</span>
+<span class="fc" id="L69">        String identifier=(String)input.get(identifierKey), password=(String)input.get(&quot;password&quot;);</span>
+<span class="pc bpc" id="L70" title="3 of 6 branches missed.">        if(identifier.isBlank() || password.isEmpty() || identifier.length()&gt;80</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                || password.getBytes(StandardCharsets.UTF_8).length&gt;72) throw badCredentials();</span>
+        Map&lt;String,Object&gt; account;
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (&quot;employee&quot;.equals(accountType)) {</span>
+<span class="fc" id="L74">            String phone=PhoneNumbers.normalize(identifier);</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">            List&lt;Map&lt;String,Object&gt;&gt; matches=phone==null?List.of():db.list(</span>
+                    &quot;SELECT u.*,'employee' AS account_type FROM users u JOIN principals p &quot;
+                    + &quot;ON p.organization_id=u.organization_id AND p.id=u.id &quot;
+                    + &quot;WHERE u.login_phone=? AND u.active=1 AND p.active=1 AND p.account_type='employee'&quot;,phone);
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            if(matches.size()&gt;1) throw new ApiException(409,&quot;LOGIN_KEY_AMBIGUOUS&quot;,&quot;该手机号在多个员工账号中重复，请管理员修复&quot;);</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">            account=matches.isEmpty()?null:matches.getFirst();</span>
+<span class="fc" id="L81">        } else {</span>
+<span class="fc" id="L82">            account=db.find(&quot;SELECT a.*,'admin' AS account_type FROM admin_accounts a JOIN principals p &quot;</span>
+                    + &quot;ON p.organization_id=a.organization_id AND p.id=a.id &quot;
+                    + &quot;WHERE a.account_name=? AND a.active=1 AND p.active=1 AND p.account_type='admin'&quot;,identifier);
+        }
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        boolean matches=PASSWORDS.matches(password,account==null?dummyHash:s(account,&quot;passwordHash&quot;));</span>
+<span class="fc bfc" id="L87" title="All 4 branches covered.">        if(account==null || !matches) throw badCredentials();</span>
+<span class="fc" id="L88">        return issue(account);</span>
+    }
+
+    private static ApiException loginContract() {
+<span class="fc" id="L92">        return new ApiException(400,&quot;INVALID_LOGIN_CONTRACT&quot;,&quot;请明确提供 employee/phone/password 或 admin/accountName/password，不接受旧登录字段&quot;);</span>
+    }
+
+<span class="fc" id="L95">    private static ApiException badCredentials() { return new ApiException(401,&quot;BAD_CREDENTIALS&quot;,&quot;账号或密码不正确&quot;); }</span>
+    private Map&lt;String,Object&gt; issue(Map&lt;String,Object&gt; u) {
+<span class="fc" id="L97">        byte[] bytes=new byte[32];new SecureRandom().nextBytes(bytes);</span>
+<span class="fc" id="L98">        String token=Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);</span>
+<span class="fc" id="L99">        Instant expires=Instant.now().plusSeconds(8*3600);</span>
+<span class="fc" id="L100">        db.update(&quot;INSERT INTO auth_sessions(id,organization_id,user_id,token_hash,expires_at) VALUES(?,?,?,?,?)&quot;,id(),s(u,&quot;organizationId&quot;),s(u,&quot;id&quot;),hash(token),Timestamp.from(expires));</span>
+<span class="fc" id="L101">        Map&lt;String,Object&gt; result=new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L102">        result.put(&quot;token&quot;,token);</span>
+<span class="fc" id="L103">        result.put(&quot;tokenType&quot;,&quot;Bearer&quot;);</span>
+<span class="fc" id="L104">        result.put(&quot;expiresAt&quot;,expires.toString());</span>
+<span class="fc" id="L105">        result.put(&quot;user&quot;,sessionUser(u));</span>
+        // A restricted session is announced up front so the client never loads the workspace first.
+<span class="fc" id="L107">        result.put(&quot;passwordChangeRequired&quot;,truthy(u.get(&quot;mustChangePassword&quot;)));</span>
+<span class="fc" id="L108">        return result;</span>
+    }
+    public Actor authenticate(String token) {
+<span class="pc bpc" id="L111" title="2 of 4 branches missed.">        if(token==null || token.length()&gt;256) throw new ApiException(401,&quot;UNAUTHENTICATED&quot;,&quot;请先登录&quot;);</span>
+<span class="fc" id="L112">        var principal=db.find(&quot;SELECT p.* FROM auth_sessions s JOIN principals p ON p.id=s.user_id AND p.organization_id=s.organization_id &quot;</span>
+<span class="fc" id="L113">                + &quot;WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at&gt;UTC_TIMESTAMP(6) AND p.active=1&quot;,hash(token));</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if(principal==null) throw new ApiException(401,&quot;UNAUTHENTICATED&quot;,&quot;登录已失效，请重新登录&quot;);</span>
+<span class="fc" id="L115">        return actor(account(s(principal,&quot;organizationId&quot;),s(principal,&quot;id&quot;),s(principal,&quot;accountType&quot;),false));</span>
+    }
+
+    /** Resolve only the principal's declared account namespace; administrators have no employee row. */
+    public Map&lt;String,Object&gt; account(Actor actor) {
+<span class="fc" id="L120">        return account(actor.organizationId(),actor.id(),actor.accountType(),false);</span>
+    }
+
+    private Map&lt;String,Object&gt; account(String organizationId,String id,String accountType,boolean lock) {
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        String table=&quot;admin&quot;.equals(accountType)?&quot;admin_accounts&quot;:&quot;users&quot;;</span>
+<span class="fc" id="L125">        var row=db.find(&quot;SELECT a.*,p.account_type FROM &quot;+table+&quot; a JOIN principals p &quot;</span>
+                + &quot;ON p.organization_id=a.organization_id AND p.id=a.id &quot;
+                + &quot;WHERE a.organization_id=? AND a.id=? AND a.active=1 AND p.active=1 AND p.account_type=?&quot;
+<span class="fc bfc" id="L128" title="All 2 branches covered.">                + (lock?&quot; FOR UPDATE&quot;:&quot;&quot;),organizationId,id,accountType);</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        if(row==null) throw new ApiException(401,&quot;UNAUTHENTICATED&quot;,&quot;账号已失效，请重新登录&quot;);</span>
+<span class="fc" id="L130">        return row;</span>
+    }
+
+    /** Identity for the restricted password screen; reads no business data. */
+    public Map&lt;String,Object&gt; session(Actor actor) {
+<span class="fc" id="L135">        return sessionUser(account(actor));</span>
+    }
+
+    @Transactional
+    public Map&lt;String,Object&gt; refresh(String token) {
+<span class="fc" id="L140">        Actor a=authenticate(token);</span>
+<span class="fc" id="L141">        int changed=db.update(&quot;UPDATE auth_sessions SET revoked_at=UTC_TIMESTAMP(6) WHERE token_hash=? AND revoked_at IS NULL&quot;,hash(token));</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        if(changed!=1) throw new ApiException(401,&quot;UNAUTHENTICATED&quot;,&quot;会话已被使用或撤销&quot;);</span>
+<span class="fc" id="L143">        return issue(account(a));</span>
+    }
+<span class="fc" id="L145">    public void logout(String token) {db.update(&quot;UPDATE auth_sessions SET revoked_at=UTC_TIMESTAMP(6) WHERE token_hash=? AND revoked_at IS NULL&quot;,hash(token));}</span>
+
+    /**
+     * First-login change and everyday change share one command (DEV-003).
+     *
+     * The current password is always verified, so a stolen restricted session alone cannot set a new
+     * password. The new password must satisfy the policy, and success revokes **every** session of the
+     * account, including the one that performed the change, so the client must sign in again.
+     */
+    @Transactional
+    public Map&lt;String,Object&gt; changePassword(Actor actor, Map&lt;String,Object&gt; input) {
+<span class="fc" id="L156">        allowed(input,Set.of(&quot;currentPassword&quot;,&quot;newPassword&quot;));</span>
+<span class="fc" id="L157">        String current=required(input.get(&quot;currentPassword&quot;),&quot;currentPassword&quot;);</span>
+<span class="fc" id="L158">        String next=required(input.get(&quot;newPassword&quot;),&quot;newPassword&quot;);</span>
+<span class="fc" id="L159">        Credentials.requirePolicy(next);</span>
+        // Serialize with organization/identity commands so disable/reset and password change cannot
+        // commit against different account states.
+<span class="fc" id="L162">        db.one(&quot;SELECT id FROM organizations WHERE id=? FOR UPDATE&quot;,actor.organizationId());</span>
+<span class="fc" id="L163">        Map&lt;String,Object&gt; user=account(actor.organizationId(),actor.id(),actor.accountType(),true);</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">        if(!PASSWORDS.matches(current,s(user,&quot;passwordHash&quot;))) throw new ApiException(400,&quot;INVALID_CURRENT_PASSWORD&quot;,&quot;当前密码不正确&quot;);</span>
+<span class="fc" id="L165">        long credentialVersion=n(user,&quot;credentialVersion&quot;)+1;</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        String table=actor.administrator()?&quot;admin_accounts&quot;:&quot;users&quot;;</span>
+<span class="fc" id="L167">        db.update(&quot;UPDATE &quot;+table+&quot; SET password_hash=?,must_change_password=FALSE,credential_version=? WHERE organization_id=? AND id=?&quot;,</span>
+<span class="fc" id="L168">                PASSWORDS.encode(next),credentialVersion,actor.organizationId(),actor.id());</span>
+<span class="fc" id="L169">        int revoked=revokeSessions(actor.organizationId(),actor.id());</span>
+        // Only the fact and the session count are audited; never the password in any form.
+<span class="fc" id="L171">        events.record(actor,null,&quot;account.password.changed&quot;,List.of(),Map.of(&quot;userId&quot;,actor.id(),&quot;sessionsRevoked&quot;,revoked));</span>
+<span class="fc" id="L172">        Map&lt;String,Object&gt; result=new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L173">        result.put(&quot;changed&quot;,true);</span>
+<span class="fc" id="L174">        result.put(&quot;credentialVersion&quot;,credentialVersion);</span>
+<span class="fc" id="L175">        result.put(&quot;sessionsRevoked&quot;,revoked);</span>
+<span class="fc" id="L176">        result.put(&quot;reLoginRequired&quot;,true);</span>
+<span class="fc" id="L177">        return result;</span>
+    }
+
+    /** Administrator reset: a new one-time password and the first-login gate again (DEV-001, DEV-003). */
+    public int revokeSessions(String organizationId,String userId) {
+<span class="fc" id="L182">        return db.update(&quot;UPDATE auth_sessions SET revoked_at=UTC_TIMESTAMP(6) WHERE organization_id=? AND user_id=? AND revoked_at IS NULL&quot;,organizationId,userId);</span>
+    }
+
+    static boolean mustChange(String value) {
+<span class="nc" id="L186">        Map&lt;String,Object&gt; row=new HashMap&lt;&gt;();</span>
+<span class="nc" id="L187">        row.put(&quot;mustChangePassword&quot;,value);</span>
+<span class="nc" id="L188">        Object raw=row.get(&quot;mustChangePassword&quot;);</span>
+<span class="nc bnc" id="L189" title="All 4 branches missed.">        return &quot;1&quot;.equals(String.valueOf(raw))||&quot;true&quot;.equalsIgnoreCase(String.valueOf(raw));</span>
+    }
+
+    static boolean truthy(Object value) {
+<span class="pc bpc" id="L193" title="3 of 6 branches missed.">        return Boolean.TRUE.equals(value) || value instanceof Number number &amp;&amp; number.intValue()==1;</span>
+    }
+
+    private static String required(Object value,String key) {
+<span class="pc bpc" id="L197" title="2 of 4 branches missed.">        if(!(value instanceof String text)||text.isEmpty()) throw new ApiException(400,&quot;INVALID_INPUT&quot;,key+&quot;不能为空&quot;);</span>
+<span class="fc" id="L198">        return text;</span>
+    }
+
+    private static void allowed(Map&lt;String,Object&gt; input,Set&lt;String&gt; keys) {
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">        if(!keys.containsAll(input.keySet())) throw new ApiException(400,&quot;INVALID_INPUT&quot;,&quot;请求含不支持的字段&quot;);</span>
+<span class="fc" id="L203">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

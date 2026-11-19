@@ -1,0 +1,6 @@
+RUN check_fixed_organization_migration.py
+PASS check_fixed_organization_migration.py assertions=51
+RUN check_legacy_mapping.py
+PASS check_legacy_mapping.py assertions=81
+RUN check_final_migration.py
+FAIL check_final_migration.py assertions=2

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/app_error.dart';
+import '../domain/phone_numbers.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
@@ -94,7 +95,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       validator: (value) {
                         final text = (value ?? '').trim();
                         if (text.isEmpty) return '请输入手机号';
-                        if (!RegExp(r'^\d{6,20}$').hasMatch(text)) return '手机号格式不正确';
+                        if (PhoneNumbers.normalize(value ?? '') == null) return '手机号格式不正确';
                         return null;
                       },
                     ),

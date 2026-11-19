@@ -1,0 +1,23 @@
+PASS visible assignee gets schedule permission
+PASS visible-only manager gets schedule permission
+PASS unrelated or admin cannot reschedule beta-one-head
+PASS unrelated or admin cannot reschedule other-founder
+PASS unrelated or admin cannot reschedule admin
+PASS schedule endpoint refuses title
+PASS schedule endpoint refuses assigneeIds
+PASS schedule endpoint refuses tagIds
+PASS schedule endpoint refuses progressNote
+PASS visible-only manager cannot edit ordinary metadata
+PASS effective owner can propose ordinary metadata
+PASS stale reschedule is rejected
+PASS viewer preview routes to operator manager
+PASS viewer creates a normal pending review
+PASS frozen schedule permission removed
+PASS viewer schedule applies after correct approval
+PASS schedule-only write preserves metadata and owners
+PASS viewer loses task visibility
+PASS approval rechecks applicant authority
+PASS failed approval keeps effective schedule
+PASS completed tasks cannot reschedule
+PASS unpublished tasks do not grant schedule permission
+TOTAL 22

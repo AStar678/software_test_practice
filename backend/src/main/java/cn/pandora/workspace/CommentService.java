@@ -100,7 +100,9 @@ public class CommentService {
         business(a);
         onlyFields(body, Set.of("body"));
         CommentedObject object = requireObject(a, objectType, objectId);
-        String text = body == null ? null : Objects.toString(body.get("body"), "").strip();
+        Object raw = body == null ? null : body.get("body");
+        if (raw != null && !(raw instanceof String)) throw bad("评论内容须为文本");
+        String text = raw == null ? null : ((String) raw).strip();
         if (text == null || text.isEmpty()) throw bad("评论内容不能为空");
         if (text.length() > MAX_BODY) throw bad("评论内容不得超过 " + MAX_BODY + " 字");
         String commentId = id();
@@ -131,7 +133,9 @@ public class CommentService {
         CommentedObject object = requireObject(a, s(row, "objectType"),
                 "task".equals(s(row, "objectType")) ? s(row, "taskId") : s(row, "logId"));
         Writes.checkVersion(ifMatch, n(row, "rowVersion"));
-        String text = body == null ? null : Objects.toString(body.get("body"), "").strip();
+        Object raw = body == null ? null : body.get("body");
+        if (raw != null && !(raw instanceof String)) throw bad("评论内容须为文本");
+        String text = raw == null ? null : ((String) raw).strip();
         if (text == null || text.isEmpty()) throw bad("评论内容不能为空");
         if (text.length() > MAX_BODY) throw bad("评论内容不得超过 " + MAX_BODY + " 字");
         // Editing keeps the publication instant and the position in the page; only the flag changes.

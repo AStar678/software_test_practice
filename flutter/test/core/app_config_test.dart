@@ -2,6 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pandora_employee/core/config/app_config.dart';
 
 void main() {
+  test('默认后端保留明确的 HTTPS 6644 端口', () {
+    final config = AppConfig.fromEnvironment(debugOverride: true);
+    final uri = Uri.parse(config.apiBaseUrl);
+    expect(uri.scheme, 'https');
+    expect(uri.host, '8.141.96.122');
+    expect(uri.port, 6644);
+    expect(uri.path, '/api/v1');
+    expect(config.isTransportAllowed, isTrue);
+  });
+
   test('课程演示接受宿主机与无证书服务器HTTP；可选release保持HTTPS', () {
     for (final url in [
       'http://10.0.2.2:8080/api/v1',

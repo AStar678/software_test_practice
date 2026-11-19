@@ -6,6 +6,31 @@ import 'package:pandora_employee/features/approvals/presentation/approvals_pages
 import '../support/test_harness.dart';
 
 void main() {
+  testWidgets('通知来源的本人待审申请不显示撤销入口', (tester) async {
+    final backend = FakeBackend();
+    backend.on('GET', '/approval-requests/r-notice', (_) => FakeResponse({
+      'requestId': 'r-notice',
+      'taskId': 't1',
+      'title': '通知中的申请',
+      'kind': 'change',
+      'status': 'pending',
+      'applicantId': 'u1',
+      'currentReviewerId': 'm1',
+      'rowVersion': 1,
+      'versionNo': 2,
+    }, etag: '"1"'));
+    final container = buildTestContainer(backend: backend, user: employeeUser());
+    addTearDown(container.dispose);
+    await tester.pumpWidget(wrapWithScope(container, const ApprovalDetailPage(
+      requestId: 'r-notice',
+      showWithdrawAction: false,
+    )));
+    await tester.pumpAndSettle();
+    expect(find.text('通知中的申请'), findsOneWidget);
+    expect(find.text('撤销申请'), findsNothing);
+    expect(find.text('版本 2'), findsNothing);
+  });
+
   testWidgets('审核人看到逐字段原上新下与有序集合变化，批准使用申请版本', (tester) async {
     tester.view.physicalSize = const Size(420, 1600);
     tester.view.devicePixelRatio = 1;
@@ -75,6 +100,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('逐字段原上新下'), findsOneWidget);
+    expect(find.text('版本 2'), findsNothing);
     expect(find.text('仅顺序变化'), findsOneWidget);
     expect(find.textContaining('原：第一幕分镜节奏'), findsOneWidget);
     expect(find.textContaining('新：第一幕分镜节奏（修订）'), findsOneWidget);

@@ -58,7 +58,9 @@ public final class ControllableClock extends Clock {
 
     @Override
     public Clock withZone(ZoneId replacement) {
-        return new ControllableClock(fixedBase, replacement);
+        ControllableClock changed = new ControllableClock(fixedBase, replacement);
+        changed.offset.set(offset.get());
+        return changed;
     }
 
     @Override

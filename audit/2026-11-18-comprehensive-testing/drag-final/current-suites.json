@@ -1,0 +1,16 @@
+{
+  "startedAt": "2026-11-18T16:35:37.349830+00:00",
+  "suites": [
+    {
+      "suite": "check_web_alignment_drag.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 37.41,
+      "passedAssertionsPrinted": 52,
+      "log": "check_web_alignment_drag.log",
+      "sourceSha256": "08485fd2315772cc6925d8f6088d146200ebd42797aab76531746160822e9882",
+      "finishedAt": "2026-11-18T16:36:14.788628+00:00"
+    }
+  ],
+  "finishedAt": "2026-11-18T16:36:14.796593+00:00"
+}

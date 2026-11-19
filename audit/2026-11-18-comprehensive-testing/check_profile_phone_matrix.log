@@ -1,0 +1,14 @@
+FAIL founder contact detail follows actual management relationship
+Traceback (most recent call last):
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_profile_phone_matrix.py", line 79, in <module>
+    if __name__=='__main__': main()
+                             ~~~~^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_profile_phone_matrix.py", line 26, in main
+    check(reader+' contact detail follows actual management relationship',
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          (status==200 and result.get('phone')==old_phone and 'email' not in result and 'username' not in result) if allowed else status in (403,404))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_profile_phone_matrix.py", line 16, in check
+    if not condition: raise AssertionError(name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: founder contact detail follows actual management relationship

@@ -1,0 +1,54 @@
+[
+  {
+    "check": "old version fields unchanged",
+    "pass": true
+  },
+  {
+    "check": "single deleted tag backfilled with snapshot",
+    "pass": true
+  },
+  {
+    "check": "null tag remains empty",
+    "pass": true
+  },
+  {
+    "check": "pending fixture created",
+    "pass": true
+  },
+  {
+    "check": "legacy reviewer rerouted without rewriting applicant",
+    "pass": true
+  },
+  {
+    "check": "legacy refresh recorded once",
+    "pass": true
+  },
+  {
+    "check": "repeat startup is idempotent",
+    "pass": true
+  },
+  {
+    "check": "old reviewer cannot decide",
+    "pass": true
+  },
+  {
+    "check": "new manager can approve migrated request",
+    "pass": true
+  },
+  {
+    "check": "non-creation pending fixture created",
+    "pass": true
+  },
+  {
+    "check": "non-creation legacy reviewer also refreshed",
+    "pass": true
+  },
+  {
+    "check": "closed historical approval is unchanged",
+    "pass": true
+  },
+  {
+    "check": "inactive original applicant remains blocked",
+    "pass": true
+  }
+]

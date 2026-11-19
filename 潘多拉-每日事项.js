@@ -595,8 +595,8 @@
     if (!blockOf(month)) {
       const anchorMonth = String((S.anchorDate || S.companyToday || "").slice(0, 7));
       const distance = Math.abs((date.getFullYear() - Number(anchorMonth.slice(0, 4))) * 12 + (date.getMonth() + 1 - Number(anchorMonth.slice(5, 7))));
-      if (distance > 3) { jumpToMonth(date.getFullYear(), date.getMonth() + 1); return; }
-      ensureMonth(month);
+      if (distance > 3) jumpToMonth(date.getFullYear(), date.getMonth() + 1);
+      else ensureMonth(month);
     }
     S.anchorDate = key;
     S.anchorOffset = 8;

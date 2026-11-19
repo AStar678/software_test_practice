@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TimeConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.common</a> &gt; <span class="el_source">TimeConfig.java</span></div><h1>TimeConfig.java</h1><pre class="source lang-java linenums">package cn.pandora.common;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+
+/** The single injectable clock used by deadlines, reminders and message retention. */
+@Configuration
+<span class="fc" id="L13">public class TimeConfig {</span>
+    @Bean
+    Clock clock(@Value(&quot;${pandora.clock.fixed-time:}&quot;) String fixedTime,
+                @Value(&quot;${pandora.clock.controllable:false}&quot;) boolean controllable) {
+<span class="pc bpc" id="L17" title="2 of 4 branches missed.">        Instant fixed = fixedTime == null || fixedTime.isBlank() ? null : Instant.parse(fixedTime.strip());</span>
+<span class="fc bfc" id="L18" title="All 2 branches covered.">        if (controllable) return new ControllableClock(fixed, ZoneOffset.UTC);</span>
+<span class="pc bpc" id="L19" title="1 of 2 branches missed.">        return fixed == null ? Clock.systemUTC() : Clock.fixed(fixed, ZoneOffset.UTC);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

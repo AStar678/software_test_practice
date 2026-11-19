@@ -1,0 +1,8 @@
+RUN check_apply_profile_pin_history.py
+PASS check_apply_profile_pin_history.py assertions=44
+RUN check_log_backfill_entry.py
+FAIL check_log_backfill_entry.py assertions=3
+RUN check_daily_items.py
+FAIL check_daily_items.py assertions=381
+RUN check_web_alignment_drag.py
+FAIL check_web_alignment_drag.py assertions=51

@@ -55,6 +55,25 @@ Future<void> pumpDetail(WidgetTester tester, Map<String, Object?> json) async {
 }
 
 void main() {
+  testWidgets('申请通知不显示事件撤回或撤销提示，保留查看原申请', (tester) async {
+    await pumpDetail(tester, {
+      ...detailJson(canWithdrawRequest: true),
+      'canWithdraw': true,
+    });
+    expect(find.widgetWithText(FilledButton, '查看原申请'), findsOneWidget);
+    expect(find.textContaining('撤回事件（'), findsNothing);
+    expect(find.text('查看并撤销原申请'), findsNothing);
+    expect(find.textContaining('业务申请撤销请'), findsNothing);
+  });
+
+  testWidgets('非申请事件通知保留原有撤回入口', (tester) async {
+    await pumpDetail(tester, {
+      ...detailJson(canReadRequest: false),
+      'canWithdraw': true,
+    });
+    expect(find.text('撤回事件（严格 180 秒内）'), findsOneWidget);
+  });
+
   testWidgets('direct 申请显示中文「创建任务 · 已生效」且不直出状态码', (tester) async {
     await pumpDetail(tester, detailJson());
     expect(find.text('申请：创建任务 · 已生效'), findsOneWidget);

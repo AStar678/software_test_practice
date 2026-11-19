@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ControllableClock.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.common</a> &gt; <span class="el_source">ControllableClock.java</span></div><h1>ControllableClock.java</h1><pre class="source lang-java linenums">package cn.pandora.common;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.concurrent.atomic.AtomicReference;
+
+/**
+ * Testable clock used by the deadline, reminder and notification rules (DEV-012, DEV-014, DEV-032).
+ *
+ * Production keeps {@link Clock#systemUTC()}. When {@code pandora.clock.controllable=true} the
+ * application exposes this clock to the administration-only test endpoint, so a verification run can
+ * advance time without changing the operating system clock. A fixed-time property is also supported
+ * for one-shot runs that never need to advance. Without a fixed base, the clock keeps following the
+ * system time and only adds the test offset.
+ */
+public final class ControllableClock extends Clock {
+    private volatile Instant fixedBase;
+    private final ZoneId zone;
+    private final AtomicReference&lt;Duration&gt; offset;
+
+<span class="fc" id="L24">    public ControllableClock(Instant fixedBase, ZoneId zone) {</span>
+<span class="fc" id="L25">        this.fixedBase = fixedBase;</span>
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">        this.zone = zone == null ? ZoneOffset.UTC : zone;</span>
+<span class="fc" id="L27">        this.offset = new AtomicReference&lt;&gt;(Duration.ZERO);</span>
+<span class="fc" id="L28">    }</span>
+
+    public ControllableClock(Instant fixedBase) {
+<span class="fc" id="L31">        this(fixedBase, ZoneOffset.UTC);</span>
+<span class="fc" id="L32">    }</span>
+
+    public ControllableClock advance(Duration duration) {
+<span class="fc bfc" id="L35" title="All 4 branches covered.">        if (duration == null || duration.isNegative()) throw new IllegalArgumentException(&quot;时钟只能向前推进&quot;);</span>
+<span class="fc" id="L36">        offset.updateAndGet(current -&gt; current.plus(duration));</span>
+<span class="fc" id="L37">        return this;</span>
+    }
+
+    public ControllableClock reset(Instant base) {
+<span class="fc" id="L41">        offset.set(Duration.ZERO);</span>
+<span class="fc" id="L42">        fixedBase = base;</span>
+<span class="fc" id="L43">        return this;</span>
+    }
+
+    public Instant base() {
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        return fixedBase == null ? Instant.now() : fixedBase;</span>
+    }
+
+    public Duration offset() {
+<span class="fc" id="L51">        return offset.get();</span>
+    }
+
+    @Override
+    public ZoneId getZone() {
+<span class="fc" id="L56">        return zone;</span>
+    }
+
+    @Override
+    public Clock withZone(ZoneId replacement) {
+<span class="fc" id="L61">        return new ControllableClock(fixedBase, replacement);</span>
+    }
+
+    @Override
+    public Instant instant() {
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        return (fixedBase == null ? Instant.now() : fixedBase).plus(offset.get());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

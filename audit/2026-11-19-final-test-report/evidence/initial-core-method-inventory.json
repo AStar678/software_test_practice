@@ -1,0 +1,1247 @@
+[
+  {
+    "class": "BusinessTakeovers",
+    "method": "inventory",
+    "line": 26
+  },
+  {
+    "class": "BusinessTakeovers",
+    "method": "transfer",
+    "line": 37
+  },
+  {
+    "class": "Credentials",
+    "method": "generate",
+    "line": 23
+  },
+  {
+    "class": "Credentials",
+    "method": "requirePolicy",
+    "line": 40
+  },
+  {
+    "class": "LoginKeyConstraints",
+    "method": "run",
+    "line": 40
+  },
+  {
+    "class": "LoginKeyConstraints",
+    "method": "tighten",
+    "line": 62
+  },
+  {
+    "class": "OrganizationConstraints",
+    "method": "status",
+    "line": 23
+  },
+  {
+    "class": "OrganizationConstraints",
+    "method": "status",
+    "line": 29
+  },
+  {
+    "class": "OrganizationConstraints",
+    "method": "formalWritesReady",
+    "line": 48
+  },
+  {
+    "class": "OrganizationConstraints",
+    "method": "formalWritesReady",
+    "line": 49
+  },
+  {
+    "class": "OrganizationConstraints",
+    "method": "tryTighten",
+    "line": 51
+  },
+  {
+    "class": "OrganizationPlans",
+    "method": "draft",
+    "line": 32
+  },
+  {
+    "class": "OrganizationPlans",
+    "method": "save",
+    "line": 45
+  },
+  {
+    "class": "OrganizationService",
+    "method": "structure",
+    "line": 32
+  },
+  {
+    "class": "OrganizationService",
+    "method": "applyOrganizationConstraints",
+    "line": 38
+  },
+  {
+    "class": "OrganizationService",
+    "method": "roles",
+    "line": 39
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateRoleScopes",
+    "line": 40
+  },
+  {
+    "class": "OrganizationService",
+    "method": "grantRoles",
+    "line": 41
+  },
+  {
+    "class": "OrganizationService",
+    "method": "createDepartment",
+    "line": 44
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateDepartment",
+    "line": 45
+  },
+  {
+    "class": "OrganizationService",
+    "method": "createTeam",
+    "line": 46
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateTeam",
+    "line": 47
+  },
+  {
+    "class": "OrganizationService",
+    "method": "transferEmployee",
+    "line": 48
+  },
+  {
+    "class": "OrganizationService",
+    "method": "teamManagement",
+    "line": 49
+  },
+  {
+    "class": "OrganizationService",
+    "method": "employees",
+    "line": 52
+  },
+  {
+    "class": "OrganizationService",
+    "method": "employee",
+    "line": 69
+  },
+  {
+    "class": "OrganizationService",
+    "method": "departmentMembers",
+    "line": 78
+  },
+  {
+    "class": "OrganizationService",
+    "method": "createEmployee",
+    "line": 84
+  },
+  {
+    "class": "OrganizationService",
+    "method": "administrator",
+    "line": 101
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateAdministrator",
+    "line": 106
+  },
+  {
+    "class": "OrganizationService",
+    "method": "createPosition",
+    "line": 119
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updatePosition",
+    "line": 131
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateEmployee",
+    "line": 144
+  },
+  {
+    "class": "OrganizationService",
+    "method": "resetPassword",
+    "line": 177
+  },
+  {
+    "class": "OrganizationService",
+    "method": "companyItems",
+    "line": 195
+  },
+  {
+    "class": "OrganizationService",
+    "method": "createCompanyItem",
+    "line": 204
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateCompanyItem",
+    "line": 219
+  },
+  {
+    "class": "OrganizationService",
+    "method": "deleteCompanyItem",
+    "line": 230
+  },
+  {
+    "class": "OrganizationService",
+    "method": "reorderCompanyItems",
+    "line": 239
+  },
+  {
+    "class": "OrganizationService",
+    "method": "setOffWorkTime",
+    "line": 257
+  },
+  {
+    "class": "Access",
+    "method": "readScope",
+    "line": 23
+  },
+  {
+    "class": "Access",
+    "method": "primeBusinessOwners",
+    "line": 41
+  },
+  {
+    "class": "Access",
+    "method": "actor",
+    "line": 57
+  },
+  {
+    "class": "Access",
+    "method": "actorFor",
+    "line": 75
+  },
+  {
+    "class": "Access",
+    "method": "requireCurrent",
+    "line": 77
+  },
+  {
+    "class": "Access",
+    "method": "employeeDirectory",
+    "line": 83
+  },
+  {
+    "class": "Access",
+    "method": "user",
+    "line": 115
+  },
+  {
+    "class": "Access",
+    "method": "activeUser",
+    "line": 118
+  },
+  {
+    "class": "Access",
+    "method": "knownUser",
+    "line": 125
+  },
+  {
+    "class": "Access",
+    "method": "canSeeTask",
+    "line": 131
+  },
+  {
+    "class": "Access",
+    "method": "businessOwner",
+    "line": 143
+  },
+  {
+    "class": "Access",
+    "method": "canDispatchTo",
+    "line": 151
+  },
+  {
+    "class": "Access",
+    "method": "requireDispatchable",
+    "line": 155
+  },
+  {
+    "class": "Access",
+    "method": "dispatchCandidates",
+    "line": 156
+  },
+  {
+    "class": "Access",
+    "method": "creationCandidates",
+    "line": 157
+  },
+  {
+    "class": "Access",
+    "method": "isCreationCandidate",
+    "line": 174
+  },
+  {
+    "class": "Access",
+    "method": "requireCreationCandidate",
+    "line": 175
+  },
+  {
+    "class": "Access",
+    "method": "isDirectReport",
+    "line": 178
+  },
+  {
+    "class": "Access",
+    "method": "canReadLogAuthor",
+    "line": 183
+  },
+  {
+    "class": "Access",
+    "method": "logAuthorIds",
+    "line": 188
+  },
+  {
+    "class": "Access",
+    "method": "canSeePerson",
+    "line": 194
+  },
+  {
+    "class": "Access",
+    "method": "canReadPhone",
+    "line": 198
+  },
+  {
+    "class": "Access",
+    "method": "canReadEmail",
+    "line": 205
+  },
+  {
+    "class": "Access",
+    "method": "isManagerOf",
+    "line": 206
+  },
+  {
+    "class": "Access",
+    "method": "visibleUserIds",
+    "line": 217
+  },
+  {
+    "class": "Access",
+    "method": "canHandover",
+    "line": 218
+  },
+  {
+    "class": "Access",
+    "method": "canSetHandoverPreset",
+    "line": 221
+  },
+  {
+    "class": "Access",
+    "method": "canBeHandoverTarget",
+    "line": 225
+  },
+  {
+    "class": "Access",
+    "method": "handoverTargets",
+    "line": 231
+  },
+  {
+    "class": "Access",
+    "method": "requireCapability",
+    "line": 234
+  },
+  {
+    "class": "Access",
+    "method": "requireAdmin",
+    "line": 238
+  },
+  {
+    "class": "Access",
+    "method": "activeMember",
+    "line": 239
+  },
+  {
+    "class": "Access",
+    "method": "enabled",
+    "line": 240
+  },
+  {
+    "class": "AuthService",
+    "method": "hash",
+    "line": 23
+  },
+  {
+    "class": "AuthService",
+    "method": "actor",
+    "line": 32
+  },
+  {
+    "class": "AuthService",
+    "method": "publicUser",
+    "line": 35
+  },
+  {
+    "class": "AuthService",
+    "method": "sessionUser",
+    "line": 43
+  },
+  {
+    "class": "AuthService",
+    "method": "login",
+    "line": 61
+  },
+  {
+    "class": "AuthService",
+    "method": "authenticate",
+    "line": 110
+  },
+  {
+    "class": "AuthService",
+    "method": "account",
+    "line": 119
+  },
+  {
+    "class": "AuthService",
+    "method": "session",
+    "line": 134
+  },
+  {
+    "class": "AuthService",
+    "method": "refresh",
+    "line": 139
+  },
+  {
+    "class": "AuthService",
+    "method": "logout",
+    "line": 145
+  },
+  {
+    "class": "AuthService",
+    "method": "changePassword",
+    "line": 155
+  },
+  {
+    "class": "AuthService",
+    "method": "revokeSessions",
+    "line": 181
+  },
+  {
+    "class": "CompanyTree",
+    "method": "Tree",
+    "line": 15
+  },
+  {
+    "class": "CompanyTree",
+    "method": "of",
+    "line": 21
+  },
+  {
+    "class": "CompanyTree",
+    "method": "validate",
+    "line": 34
+  },
+  {
+    "class": "CompanyTree",
+    "method": "founderId",
+    "line": 122
+  },
+  {
+    "class": "CompanyTree",
+    "method": "isFounder",
+    "line": 123
+  },
+  {
+    "class": "PhoneNumbers",
+    "method": "normalize",
+    "line": 20
+  },
+  {
+    "class": "PhoneNumbers",
+    "method": "isPhone",
+    "line": 34
+  },
+  {
+    "class": "HolidayCalendarScheduler",
+    "method": "afterStartup",
+    "line": 31
+  },
+  {
+    "class": "HolidayCalendarScheduler",
+    "method": "daily",
+    "line": 40
+  },
+  {
+    "class": "HolidayCalendarService",
+    "method": "parseYear",
+    "line": 71
+  },
+  {
+    "class": "HolidayCalendarService",
+    "method": "view",
+    "line": 89
+  },
+  {
+    "class": "HolidayCalendarService",
+    "method": "refreshNow",
+    "line": 97
+  },
+  {
+    "class": "HolidayCalendarService",
+    "method": "checkCurrentAndNext",
+    "line": 127
+  },
+  {
+    "class": "HolidayCalendarService",
+    "method": "scheduleIfDue",
+    "line": 134
+  },
+  {
+    "class": "HolidayPayload",
+    "method": "Day",
+    "line": 22
+  },
+  {
+    "class": "HolidayPayload",
+    "method": "Year",
+    "line": 23
+  },
+  {
+    "class": "HolidayPayload",
+    "method": "parse",
+    "line": 29
+  },
+  {
+    "class": "HolidayPayload",
+    "method": "utf8",
+    "line": 119
+  },
+  {
+    "class": "HolidaySourceException",
+    "method": "safeCode",
+    "line": 16
+  },
+  {
+    "class": "HttpHolidaySource",
+    "method": "sourceName",
+    "line": 56
+  },
+  {
+    "class": "HttpHolidaySource",
+    "method": "fetch",
+    "line": 61
+  },
+  {
+    "class": "ApiAdvice",
+    "method": "api",
+    "line": 13
+  },
+  {
+    "class": "ApiAdvice",
+    "method": "invalid",
+    "line": 21
+  },
+  {
+    "class": "ApiAdvice",
+    "method": "constraint",
+    "line": 23
+  },
+  {
+    "class": "ApiAdvice",
+    "method": "busy",
+    "line": 25
+  },
+  {
+    "class": "ControllableClock",
+    "method": "advance",
+    "line": 33
+  },
+  {
+    "class": "ControllableClock",
+    "method": "reset",
+    "line": 39
+  },
+  {
+    "class": "ControllableClock",
+    "method": "base",
+    "line": 45
+  },
+  {
+    "class": "ControllableClock",
+    "method": "offset",
+    "line": 49
+  },
+  {
+    "class": "ControllableClock",
+    "method": "getZone",
+    "line": 55
+  },
+  {
+    "class": "ControllableClock",
+    "method": "withZone",
+    "line": 60
+  },
+  {
+    "class": "ControllableClock",
+    "method": "instant",
+    "line": 65
+  },
+  {
+    "class": "Db",
+    "method": "list",
+    "line": 15
+  },
+  {
+    "class": "Db",
+    "method": "find",
+    "line": 30
+  },
+  {
+    "class": "Db",
+    "method": "one",
+    "line": 31
+  },
+  {
+    "class": "Db",
+    "method": "update",
+    "line": 32
+  },
+  {
+    "class": "Db",
+    "method": "json",
+    "line": 33
+  },
+  {
+    "class": "Db",
+    "method": "parse",
+    "line": 34
+  },
+  {
+    "class": "Db",
+    "method": "id",
+    "line": 35
+  },
+  {
+    "class": "Db",
+    "method": "s",
+    "line": 36
+  },
+  {
+    "class": "Db",
+    "method": "n",
+    "line": 37
+  },
+  {
+    "class": "Events",
+    "method": "record",
+    "line": 33
+  },
+  {
+    "class": "Events",
+    "method": "record",
+    "line": 37
+  },
+  {
+    "class": "Events",
+    "method": "recordObject",
+    "line": 49
+  },
+  {
+    "class": "Events",
+    "method": "scheduled",
+    "line": 64
+  },
+  {
+    "class": "Events",
+    "method": "systemRecord",
+    "line": 75
+  },
+  {
+    "class": "Events",
+    "method": "retentionEndsAt",
+    "line": 100
+  },
+  {
+    "class": "Events",
+    "method": "retentionEndsAt",
+    "line": 105
+  },
+  {
+    "class": "Events",
+    "method": "organizationZone",
+    "line": 108
+  },
+  {
+    "class": "Writes",
+    "method": "Outcome",
+    "line": 26
+  },
+  {
+    "class": "Writes",
+    "method": "of",
+    "line": 27
+  },
+  {
+    "class": "Writes",
+    "method": "run",
+    "line": 29
+  },
+  {
+    "class": "Writes",
+    "method": "replayIfPresent",
+    "line": 40
+  },
+  {
+    "class": "Writes",
+    "method": "runOutcome",
+    "line": 58
+  },
+  {
+    "class": "Writes",
+    "method": "checkVersion",
+    "line": 99
+  },
+  {
+    "class": "ProfileService",
+    "method": "get",
+    "line": 33
+  },
+  {
+    "class": "ProfileService",
+    "method": "update",
+    "line": 58
+  },
+  {
+    "class": "Tenure",
+    "method": "of",
+    "line": 22
+  },
+  {
+    "class": "LegacyCreationRoutes",
+    "method": "run",
+    "line": 46
+  },
+  {
+    "class": "Tags",
+    "method": "PaletteColor",
+    "line": 28
+  },
+  {
+    "class": "Tags",
+    "method": "paletteColor",
+    "line": 46
+  },
+  {
+    "class": "Tags",
+    "method": "palette",
+    "line": 55
+  },
+  {
+    "class": "Tags",
+    "method": "view",
+    "line": 67
+  },
+  {
+    "class": "Tags",
+    "method": "view",
+    "line": 73
+  },
+  {
+    "class": "Tags",
+    "method": "resolveForWrite",
+    "line": 92
+  },
+  {
+    "class": "Tags",
+    "method": "list",
+    "line": 102
+  },
+  {
+    "class": "Tags",
+    "method": "create",
+    "line": 120
+  },
+  {
+    "class": "Tags",
+    "method": "change",
+    "line": 132
+  },
+  {
+    "class": "Tags",
+    "method": "delete",
+    "line": 151
+  },
+  {
+    "class": "Tags",
+    "method": "requireFounder",
+    "line": 164
+  },
+  {
+    "class": "TaskService",
+    "method": "list",
+    "line": 91
+  },
+  {
+    "class": "TaskService",
+    "method": "table",
+    "line": 117
+  },
+  {
+    "class": "TaskService",
+    "method": "statisticsTasks",
+    "line": 234
+  },
+  {
+    "class": "TaskService",
+    "method": "readableTaskIds",
+    "line": 250
+  },
+  {
+    "class": "TaskService",
+    "method": "readableTaskIds",
+    "line": 256
+  },
+  {
+    "class": "TaskService",
+    "method": "adminTasks",
+    "line": 330
+  },
+  {
+    "class": "TaskService",
+    "method": "assigneeCandidates",
+    "line": 430
+  },
+  {
+    "class": "TaskService",
+    "method": "assigneeCandidates",
+    "line": 435
+  },
+  {
+    "class": "TaskService",
+    "method": "detail",
+    "line": 460
+  },
+  {
+    "class": "TaskService",
+    "method": "create",
+    "line": 526
+  },
+  {
+    "class": "TaskService",
+    "method": "expireBeforeSubmit",
+    "line": 553
+  },
+  {
+    "class": "TaskService",
+    "method": "change",
+    "line": 556
+  },
+  {
+    "class": "TaskService",
+    "method": "approvals",
+    "line": 670
+  },
+  {
+    "class": "TaskService",
+    "method": "approvals",
+    "line": 675
+  },
+  {
+    "class": "TaskService",
+    "method": "approval",
+    "line": 714
+  },
+  {
+    "class": "TaskService",
+    "method": "canReadRequest",
+    "line": 733
+  },
+  {
+    "class": "TaskService",
+    "method": "RequestAccess",
+    "line": 745
+  },
+  {
+    "class": "TaskService",
+    "method": "requestAccess",
+    "line": 750
+  },
+  {
+    "class": "TaskService",
+    "method": "decide",
+    "line": 863
+  },
+  {
+    "class": "TaskService",
+    "method": "reviewerPreview",
+    "line": 994
+  },
+  {
+    "class": "TaskService",
+    "method": "handoverTargets",
+    "line": 1084
+  },
+  {
+    "class": "TaskService",
+    "method": "handoverPreset",
+    "line": 1103
+  },
+  {
+    "class": "TaskService",
+    "method": "saveHandoverPreset",
+    "line": 1108
+  },
+  {
+    "class": "TaskService",
+    "method": "clearHandoverPreset",
+    "line": 1133
+  },
+  {
+    "class": "TaskService",
+    "method": "handover",
+    "line": 1187
+  },
+  {
+    "class": "TaskService",
+    "method": "taskHistory",
+    "line": 1253
+  },
+  {
+    "class": "TaskService",
+    "method": "refreshPendingRoutes",
+    "line": 1342
+  },
+  {
+    "class": "TaskService",
+    "method": "refreshLegacyCreationRoutes",
+    "line": 1381
+  },
+  {
+    "class": "TaskService",
+    "method": "setTablePinned",
+    "line": 1843
+  },
+  {
+    "class": "TaskService",
+    "method": "setPinned",
+    "line": 1861
+  },
+  {
+    "class": "TaskService",
+    "method": "route",
+    "line": 2077
+  },
+  {
+    "class": "TaskService",
+    "method": "creationRoute",
+    "line": 2085
+  },
+  {
+    "class": "TaskService",
+    "method": "Route",
+    "line": 2167
+  },
+  {
+    "class": "TaskService",
+    "method": "hasReviewer",
+    "line": 2169
+  },
+  {
+    "class": "TaskService",
+    "method": "directFor",
+    "line": 2170
+  },
+  {
+    "class": "CommentService",
+    "method": "list",
+    "line": 49
+  },
+  {
+    "class": "CommentService",
+    "method": "create",
+    "line": 98
+  },
+  {
+    "class": "CommentService",
+    "method": "change",
+    "line": 124
+  },
+  {
+    "class": "CommentService",
+    "method": "delete",
+    "line": 144
+  },
+  {
+    "class": "DailyItemService",
+    "method": "summary",
+    "line": 52
+  },
+  {
+    "class": "DailyItemService",
+    "method": "list",
+    "line": 102
+  },
+  {
+    "class": "DailyItemService",
+    "method": "detail",
+    "line": 143
+  },
+  {
+    "class": "DailyItemService",
+    "method": "create",
+    "line": 150
+  },
+  {
+    "class": "DailyItemService",
+    "method": "change",
+    "line": 182
+  },
+  {
+    "class": "DailyItemService",
+    "method": "delete",
+    "line": 228
+  },
+  {
+    "class": "EventsWorker",
+    "method": "runOnce",
+    "line": 52
+  },
+  {
+    "class": "ExpiryService",
+    "method": "expirePendingBeforeSubmit",
+    "line": 52
+  },
+  {
+    "class": "ExpiryService",
+    "method": "applicableDeadline",
+    "line": 64
+  },
+  {
+    "class": "ExpiryService",
+    "method": "scheduleChanged",
+    "line": 70
+  },
+  {
+    "class": "ExpiryService",
+    "method": "expirePending",
+    "line": 80
+  },
+  {
+    "class": "ExpiryService",
+    "method": "expirePendingForTask",
+    "line": 91
+  },
+  {
+    "class": "ExpiryService",
+    "method": "expire",
+    "line": 101
+  },
+  {
+    "class": "ExpiryService",
+    "method": "kindLabel",
+    "line": 143
+  },
+  {
+    "class": "ExpiryService",
+    "method": "instant",
+    "line": 159
+  },
+  {
+    "class": "ReminderService",
+    "method": "createReminders",
+    "line": 34
+  },
+  {
+    "class": "ReminderService",
+    "method": "ensureOverdueAfterExpiry",
+    "line": 52
+  },
+  {
+    "class": "WorkLogSlots",
+    "method": "run",
+    "line": 53
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "me",
+    "line": 52
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "users",
+    "line": 75
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "person",
+    "line": 90
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "fillSource",
+    "line": 120
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "reports",
+    "line": 181
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "logs",
+    "line": 200
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "logAuthors",
+    "line": 245
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "log",
+    "line": 350
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "createLog",
+    "line": 360
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "changeLog",
+    "line": 401
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "deleteLog",
+    "line": 429
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "notifications",
+    "line": 446
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "notification",
+    "line": 478
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "openNotification",
+    "line": 494
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "changeNotification",
+    "line": 512
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "withdrawNotification",
+    "line": 536
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "withdrawEvent",
+    "line": 541
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "adminNotifications",
+    "line": 567
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "notificationTask",
+    "line": 593
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "cleanupNotifications",
+    "line": 630
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "eventObjectDeleted",
+    "line": 951
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "canReadEventObject",
+    "line": 969
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "home",
+    "line": 1009
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "homeItem",
+    "line": 1034
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "createHomeItem",
+    "line": 1041
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "changeHomeItem",
+    "line": 1058
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "deleteHomeItem",
+    "line": 1068
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "checkHomeCreateAccess",
+    "line": 1086
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "checkHomeItemWriteAccess",
+    "line": 1095
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "statistics",
+    "line": 1102
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "createAiJob",
+    "line": 1119
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "aiJob",
+    "line": 1153
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "adminTeams",
+    "line": 1173
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "audit",
+    "line": 1178
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "canReadTaskForComments",
+    "line": 1194
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "canReadTask",
+    "line": 1201
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "notificationVersion",
+    "line": 1478
+  }
+]

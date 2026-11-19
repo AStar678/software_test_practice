@@ -1,0 +1,33 @@
+{
+  "startedAt": "2026-11-18T16:04:21.339980+00:00",
+  "suites": [
+    {
+      "suite": "check_fixed_organization_migration.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 3.678,
+      "passedAssertionsPrinted": 51,
+      "log": "check_fixed_organization_migration.log",
+      "sourceSha256": "992efe1cbcd7f57693a96ec809485ebbf50b5db9c2d56cd05cd772fdc8dc09ee"
+    },
+    {
+      "suite": "check_legacy_mapping.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 20.254,
+      "passedAssertionsPrinted": 81,
+      "log": "check_legacy_mapping.log",
+      "sourceSha256": "328aabb2765564c8a58627bb4c92f7b9e2ef66cbe5b94e43f42420d70544644f"
+    },
+    {
+      "suite": "check_final_migration.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 13.38,
+      "passedAssertionsPrinted": 2,
+      "log": "check_final_migration.log",
+      "sourceSha256": "8788fabefcd760224cc6a5f45e00f7bdb1e3a8790899c0c15a6fa546d8e4c99b"
+    }
+  ],
+  "finishedAt": "2026-11-18T16:04:58.696445+00:00"
+}

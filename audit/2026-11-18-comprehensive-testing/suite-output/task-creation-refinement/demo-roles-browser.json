@@ -1,0 +1,688 @@
+{
+  "checks": [
+    {
+      "name": "real demo login upper",
+      "pass": true
+    },
+    {
+      "name": "upper home shows the three modules with a real daily calendar",
+      "pass": true,
+      "evidence": {
+        "quads": 3,
+        "company": true,
+        "tasks": true,
+        "daily": true,
+        "dailyCells": 92
+      }
+    },
+    {
+      "name": "upper uses body-only company items, three preview rows and no retired badges",
+      "pass": true,
+      "evidence": {
+        "companyRows": 3,
+        "boardRows": 3,
+        "previewOverdue": 0,
+        "clamped": true,
+        "hint": "事件纪任务看板",
+        "companyCount": 10,
+        "noTitle": true,
+        "overdue": 1,
+        "daily": {
+          "ranged": true,
+          "days": 3
+        }
+      }
+    },
+    {
+      "name": "upper has 1–2 real overdue board tasks and the preview never tints them",
+      "pass": true,
+      "evidence": {
+        "companyRows": 3,
+        "boardRows": 3,
+        "previewOverdue": 0,
+        "clamped": true,
+        "hint": "事件纪任务看板",
+        "companyCount": 10,
+        "noTitle": true,
+        "overdue": 1,
+        "daily": {
+          "ranged": true,
+          "days": 3
+        }
+      }
+    },
+    {
+      "name": "upper has a real three-day daily item available for the drag demo",
+      "pass": true,
+      "evidence": {
+        "ranged": true,
+        "days": 3
+      }
+    },
+    {
+      "name": "upper board list keeps the server order and tints only the real overdue rows",
+      "pass": true,
+      "evidence": {
+        "count": 10,
+        "tinted": 1,
+        "server": [
+          "ac853526-39ab-4de9-bef2-a1698789a246",
+          "f142c5f0-8cda-4206-bf5d-2f802e07ae94",
+          "005aaa23-db54-4491-bbdc-fbe055d93754",
+          "5143c644-a526-4f03-881d-e66a5423a781",
+          "56914796-9799-481d-a30d-17ca8b538612",
+          "8c336d21-b802-4383-9e3b-ab1293ba5256",
+          "9ffb44f8-8b00-472b-842c-cbf5fd3bf4e6",
+          "a7e71cdf-3623-4d26-b6a9-4009542ea31c",
+          "a3457fcb-6f66-4664-85f6-6c0b7b9dc353",
+          "278625d5-6b57-4205-9df1-52aefdca3ccc"
+        ]
+      }
+    },
+    {
+      "name": "upper company chronicles clamp, expand independently and stay body-only",
+      "pass": true,
+      "evidence": {
+        "count": 10,
+        "long": 2,
+        "expanded": true
+      }
+    },
+    {
+      "name": "upper company page renders the real month calendar",
+      "pass": true
+    },
+    {
+      "name": "upper own day axis has a usable short-task drag target",
+      "pass": true
+    },
+    {
+      "name": "upper can open normal overdue work in its real detail",
+      "pass": true
+    },
+    {
+      "name": "upper task form opens its server-paged table",
+      "pass": true
+    },
+    {
+      "name": "upper form table has real rows and a total",
+      "pass": true,
+      "evidence": {
+        "rows": 16,
+        "total": 16
+      }
+    },
+    {
+      "name": "upper table form pins the second real task as one tinted band without a label",
+      "pass": true,
+      "evidence": {
+        "pinned": true,
+        "first": true,
+        "cells": 1,
+        "label": false
+      }
+    },
+    {
+      "name": "upper log page renders real authorized logs",
+      "pass": true
+    },
+    {
+      "name": "upper notification center opens with six types and real rows",
+      "pass": true,
+      "evidence": {
+        "ready": true,
+        "rows": 20
+      }
+    },
+    {
+      "name": "upper subordinate tree exposes the actual management chain",
+      "pass": true
+    },
+    {
+      "name": "upper opens the subordinate card",
+      "pass": true
+    },
+    {
+      "name": "upper opens the subordinate continuous schedule",
+      "pass": true
+    },
+    {
+      "name": "upper can switch the subordinate work page to logs",
+      "pass": true
+    },
+    {
+      "name": "real demo login middle",
+      "pass": true
+    },
+    {
+      "name": "middle home shows the three modules with a real daily calendar",
+      "pass": true,
+      "evidence": {
+        "quads": 3,
+        "company": true,
+        "tasks": true,
+        "daily": true,
+        "dailyCells": 92
+      }
+    },
+    {
+      "name": "middle uses body-only company items, three preview rows and no retired badges",
+      "pass": true,
+      "evidence": {
+        "companyRows": 3,
+        "boardRows": 3,
+        "previewOverdue": 0,
+        "clamped": true,
+        "hint": "事件纪任务看板",
+        "companyCount": 10,
+        "noTitle": true,
+        "overdue": 1,
+        "daily": {
+          "ranged": true,
+          "days": 3
+        }
+      }
+    },
+    {
+      "name": "middle has 1–2 real overdue board tasks and the preview never tints them",
+      "pass": true,
+      "evidence": {
+        "companyRows": 3,
+        "boardRows": 3,
+        "previewOverdue": 0,
+        "clamped": true,
+        "hint": "事件纪任务看板",
+        "companyCount": 10,
+        "noTitle": true,
+        "overdue": 1,
+        "daily": {
+          "ranged": true,
+          "days": 3
+        }
+      }
+    },
+    {
+      "name": "middle has a real three-day daily item available for the drag demo",
+      "pass": true,
+      "evidence": {
+        "ranged": true,
+        "days": 3
+      }
+    },
+    {
+      "name": "middle board list keeps the server order and tints only the real overdue rows",
+      "pass": true,
+      "evidence": {
+        "count": 10,
+        "tinted": 1,
+        "server": [
+          "7dea1b0b-0b92-4198-a11a-6b9876a98d35",
+          "73bd777e-2342-47e4-8aff-0ce6c75505c6",
+          "96145064-9807-491e-bde1-3564b585225a",
+          "941fef0b-dd16-4880-adbd-4360616ed878",
+          "abeebca3-e87a-4160-9804-0478a6bb1765",
+          "79f0c1dc-4ca3-4837-8ed9-3d9e76813ad6",
+          "a7e71cdf-3623-4d26-b6a9-4009542ea31c",
+          "31df3cfa-645b-4cc9-9768-2f39a17bd9d3",
+          "1b916a53-25dd-481e-b173-0f85c2b7fa91",
+          "48b46d5f-e11e-46c7-ac2e-26eff9f1dc87"
+        ]
+      }
+    },
+    {
+      "name": "middle company chronicles clamp, expand independently and stay body-only",
+      "pass": true,
+      "evidence": {
+        "count": 10,
+        "long": 2,
+        "expanded": true
+      }
+    },
+    {
+      "name": "middle company page renders the real month calendar",
+      "pass": true
+    },
+    {
+      "name": "middle own day axis has a usable short-task drag target",
+      "pass": true
+    },
+    {
+      "name": "middle can open normal overdue work in its real detail",
+      "pass": true
+    },
+    {
+      "name": "middle task form opens its server-paged table",
+      "pass": true
+    },
+    {
+      "name": "middle form table has real rows and a total",
+      "pass": true,
+      "evidence": {
+        "rows": 21,
+        "total": 21
+      }
+    },
+    {
+      "name": "middle table form pins the second real task as one tinted band without a label",
+      "pass": true,
+      "evidence": {
+        "pinned": true,
+        "first": true,
+        "cells": 1,
+        "label": false
+      }
+    },
+    {
+      "name": "middle log page renders real authorized logs",
+      "pass": true
+    },
+    {
+      "name": "middle notification center opens with six types and real rows",
+      "pass": true,
+      "evidence": {
+        "ready": true,
+        "rows": 20
+      }
+    },
+    {
+      "name": "middle subordinate tree exposes the actual management chain",
+      "pass": true
+    },
+    {
+      "name": "middle opens the subordinate card",
+      "pass": true
+    },
+    {
+      "name": "middle opens the subordinate continuous schedule",
+      "pass": true
+    },
+    {
+      "name": "middle can switch the subordinate work page to logs",
+      "pass": true
+    },
+    {
+      "name": "real demo login product-head-1",
+      "pass": true
+    },
+    {
+      "name": "product-head-1 home shows the three modules with a real daily calendar",
+      "pass": true,
+      "evidence": {
+        "quads": 3,
+        "company": true,
+        "tasks": true,
+        "daily": true,
+        "dailyCells": 92
+      }
+    },
+    {
+      "name": "product-head-1 uses body-only company items, three preview rows and no retired badges",
+      "pass": true,
+      "evidence": {
+        "companyRows": 3,
+        "boardRows": 3,
+        "previewOverdue": 0,
+        "clamped": true,
+        "hint": "事件纪任务看板",
+        "companyCount": 10,
+        "noTitle": true,
+        "overdue": 1,
+        "daily": {
+          "ranged": true,
+          "days": 3
+        }
+      }
+    },
+    {
+      "name": "product-head-1 has 1–2 real overdue board tasks and the preview never tints them",
+      "pass": true,
+      "evidence": {
+        "companyRows": 3,
+        "boardRows": 3,
+        "previewOverdue": 0,
+        "clamped": true,
+        "hint": "事件纪任务看板",
+        "companyCount": 10,
+        "noTitle": true,
+        "overdue": 1,
+        "daily": {
+          "ranged": true,
+          "days": 3
+        }
+      }
+    },
+    {
+      "name": "product-head-1 has a real three-day daily item available for the drag demo",
+      "pass": true,
+      "evidence": {
+        "ranged": true,
+        "days": 3
+      }
+    },
+    {
+      "name": "product-head-1 board list keeps the server order and tints only the real overdue rows",
+      "pass": true,
+      "evidence": {
+        "count": 10,
+        "tinted": 1,
+        "server": [
+          "2f49f9ce-d7bf-4bb2-aa41-3cac3c8dacd7",
+          "f6505894-aeff-4d26-abed-9f6162c50dae",
+          "52874867-05d0-4819-ae89-bb29f4761d0a",
+          "a5f5fe67-2b71-4f4d-a8f9-5fc9ae2fc604",
+          "5d637403-7d8c-4e76-87f6-d50d25368b88",
+          "93722ed3-4029-48f9-a24c-ceb5f1a0eac8",
+          "8d2f252c-3bc3-4365-aa20-e912f7531108",
+          "d02ae332-3f95-4760-b4d0-a8cde90fa915",
+          "31df3cfa-645b-4cc9-9768-2f39a17bd9d3",
+          "48b46d5f-e11e-46c7-ac2e-26eff9f1dc87"
+        ]
+      }
+    },
+    {
+      "name": "product-head-1 company chronicles clamp, expand independently and stay body-only",
+      "pass": true,
+      "evidence": {
+        "count": 10,
+        "long": 2,
+        "expanded": true
+      }
+    },
+    {
+      "name": "product-head-1 company page renders the real month calendar",
+      "pass": true
+    },
+    {
+      "name": "product-head-1 own day axis has a usable short-task drag target",
+      "pass": true
+    },
+    {
+      "name": "product-head-1 can open normal overdue work in its real detail",
+      "pass": true
+    },
+    {
+      "name": "product-head-1 task form opens its server-paged table",
+      "pass": true
+    },
+    {
+      "name": "product-head-1 form table has real rows and a total",
+      "pass": true,
+      "evidence": {
+        "rows": 17,
+        "total": 17
+      }
+    },
+    {
+      "name": "product-head-1 table form pins the second real task as one tinted band without a label",
+      "pass": true,
+      "evidence": {
+        "pinned": true,
+        "first": true,
+        "cells": 1,
+        "label": false
+      }
+    },
+    {
+      "name": "product-head-1 log page renders real authorized logs",
+      "pass": true
+    },
+    {
+      "name": "product-head-1 notification center opens with six types and real rows",
+      "pass": true,
+      "evidence": {
+        "ready": true,
+        "rows": 20
+      }
+    },
+    {
+      "name": "product-head-1 subordinate tree exposes the actual management chain",
+      "pass": true
+    },
+    {
+      "name": "product-head-1 opens the subordinate card",
+      "pass": true
+    },
+    {
+      "name": "product-head-1 opens the subordinate continuous schedule",
+      "pass": true
+    },
+    {
+      "name": "product-head-1 can switch the subordinate work page to logs",
+      "pass": true
+    },
+    {
+      "name": "real demo login employee",
+      "pass": true
+    },
+    {
+      "name": "employee home shows the three modules with a real daily calendar",
+      "pass": true,
+      "evidence": {
+        "quads": 3,
+        "company": true,
+        "tasks": true,
+        "daily": true,
+        "dailyCells": 92
+      }
+    },
+    {
+      "name": "employee uses body-only company items, three preview rows and no retired badges",
+      "pass": true,
+      "evidence": {
+        "companyRows": 3,
+        "boardRows": 3,
+        "previewOverdue": 0,
+        "clamped": true,
+        "hint": "事件纪任务看板",
+        "companyCount": 10,
+        "noTitle": true,
+        "overdue": 1,
+        "daily": {
+          "ranged": true,
+          "days": 3
+        }
+      }
+    },
+    {
+      "name": "employee has 1–2 real overdue board tasks and the preview never tints them",
+      "pass": true,
+      "evidence": {
+        "companyRows": 3,
+        "boardRows": 3,
+        "previewOverdue": 0,
+        "clamped": true,
+        "hint": "事件纪任务看板",
+        "companyCount": 10,
+        "noTitle": true,
+        "overdue": 1,
+        "daily": {
+          "ranged": true,
+          "days": 3
+        }
+      }
+    },
+    {
+      "name": "employee has a real three-day daily item available for the drag demo",
+      "pass": true,
+      "evidence": {
+        "ranged": true,
+        "days": 3
+      }
+    },
+    {
+      "name": "employee board list keeps the server order and tints only the real overdue rows",
+      "pass": true,
+      "evidence": {
+        "count": 10,
+        "tinted": 1,
+        "server": [
+          "4f36eb1b-6cd3-4f96-81cc-342475cfd153",
+          "8cd8ce95-e986-4d61-9636-37faf05b0ee9",
+          "3ff459ad-717f-4f97-8817-c03a66b22c4a",
+          "9118df95-08df-4569-8584-8df6c02a0bc5",
+          "6924656e-af3c-4034-8cdf-6cdab0385049",
+          "8d2f252c-3bc3-4365-aa20-e912f7531108",
+          "372a9588-aff1-4c35-8383-fae42b844b39",
+          "1e1d7aee-83a5-4d61-a19f-14135fe1f4bd",
+          "55f81d0d-5fb6-40ce-9fc2-ff4c4dcf0755",
+          "7867a8c4-2bcd-4aea-9567-c0998e7d8f4a"
+        ]
+      }
+    },
+    {
+      "name": "employee company chronicles clamp, expand independently and stay body-only",
+      "pass": true,
+      "evidence": {
+        "count": 10,
+        "long": 2,
+        "expanded": true
+      }
+    },
+    {
+      "name": "employee company page renders the real month calendar",
+      "pass": true
+    },
+    {
+      "name": "employee own day axis has a usable short-task drag target",
+      "pass": true
+    },
+    {
+      "name": "employee can open normal overdue work in its real detail",
+      "pass": true
+    },
+    {
+      "name": "employee task form opens its server-paged table",
+      "pass": true
+    },
+    {
+      "name": "employee form table has real rows and a total",
+      "pass": true,
+      "evidence": {
+        "rows": 21,
+        "total": 21
+      }
+    },
+    {
+      "name": "employee table form pins the second real task as one tinted band without a label",
+      "pass": true,
+      "evidence": {
+        "pinned": true,
+        "first": true,
+        "cells": 1,
+        "label": false
+      }
+    },
+    {
+      "name": "employee log page renders real authorized logs",
+      "pass": true
+    },
+    {
+      "name": "employee notification center opens with six types and real rows",
+      "pass": true,
+      "evidence": {
+        "ready": true,
+        "rows": 20
+      }
+    },
+    {
+      "name": "employee has the expected empty subordinate tree",
+      "pass": true
+    },
+    {
+      "name": "the four demo roles exercise every declared page without browser exceptions",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "name": "real demo login employee",
+      "pass": true
+    },
+    {
+      "name": "the demo drag item is loaded from the real seed",
+      "pass": true,
+      "evidence": {
+        "id": "36fc5167-89c4-4f66-a130-c32e94303008",
+        "startDate": "2026-11-18",
+        "endDate": "2026-11-20",
+        "completed": false
+      }
+    },
+    {
+      "name": "the demo cross-day bar exposes a settable grab point",
+      "pass": true,
+      "evidence": {
+        "x": 194.9921875,
+        "y": 553.78125
+      }
+    },
+    {
+      "name": "the demo drag shows the whole-bar preview before saving",
+      "pass": true
+    },
+    {
+      "name": "the demo drag has a real target date after activation",
+      "pass": true,
+      "evidence": {
+        "x": 145.8515625,
+        "y": 518.78125,
+        "target": "2026-11-18",
+        "delta": -1
+      }
+    },
+    {
+      "name": "releasing the demo drag asks for confirmation with both ranges",
+      "pass": true,
+      "evidence": {
+        "id": "36fc5167-89c4-4f66-a130-c32e94303008",
+        "oldStart": "2026-11-18",
+        "oldEnd": "2026-11-20",
+        "newStart": "2026-11-17",
+        "newEnd": "2026-11-19",
+        "slot": "4fc3c03b-0e69-45a8-baec-66da04137899"
+      }
+    },
+    {
+      "name": "the demo drag saves and closes the confirmation",
+      "pass": true
+    },
+    {
+      "name": "the demo drag moved the complete range by the real day difference and kept its content",
+      "pass": true,
+      "evidence": {
+        "rangedItem": {
+          "id": "36fc5167-89c4-4f66-a130-c32e94303008",
+          "startDate": "2026-11-18",
+          "endDate": "2026-11-20",
+          "completed": false
+        },
+        "movedItem": {
+          "id": "36fc5167-89c4-4f66-a130-c32e94303008",
+          "startDate": "2026-11-17",
+          "endDate": "2026-11-19",
+          "date": "2026-11-17",
+          "body": "跟完《星尘》第一幕的分镜与合成交接。",
+          "completed": false,
+          "status": "open",
+          "rowVersion": 2,
+          "createdAt": "2026-11-18T16:07:38.248044Z",
+          "updatedAt": "2026-11-18T16:08:15.588707Z"
+        },
+        "targetPoint": {
+          "x": 145.8515625,
+          "y": 518.78125,
+          "target": "2026-11-18",
+          "delta": -1
+        }
+      }
+    },
+    {
+      "name": "the reloaded demo page keeps the moved dates",
+      "pass": true,
+      "evidence": {
+        "before": "2026-11-17",
+        "after": "2026-11-17"
+      }
+    }
+  ],
+  "result": "PASS"
+}

@@ -1,0 +1,904 @@
+{
+  "checks": [
+    {
+      "name": "login form",
+      "pass": true
+    },
+    {
+      "name": "employee authenticated",
+      "pass": true
+    },
+    {
+      "name": "notification list opens",
+      "pass": true
+    },
+    {
+      "name": "compact list keeps only name, type, read state and time",
+      "pass": true,
+      "evidence": {
+        "filters": true,
+        "sticky": "sticky",
+        "summaries": 0,
+        "rows": 13,
+        "tabs": 6,
+        "reads": 3,
+        "mode": true,
+        "reset": false
+      }
+    },
+    {
+      "name": "reminder filter shows the real reminder set",
+      "pass": true
+    },
+    {
+      "name": "switching the type does not change the independent global unread count",
+      "pass": true
+    },
+    {
+      "name": "a non-default condition exposes reset",
+      "pass": true
+    },
+    {
+      "name": "full mode exposes summaries without changing the filter",
+      "pass": true
+    },
+    {
+      "name": "reset clears type and read conditions but keeps the display mode",
+      "pass": true
+    },
+    {
+      "name": "single icon toggles back to compact without re-reading",
+      "pass": true
+    },
+    {
+      "name": "unread segment filters before paging",
+      "pass": true
+    },
+    {
+      "name": "opening an unread row marks only that message read",
+      "pass": true
+    },
+    {
+      "name": "return keeps the unread condition and the opened row leaves the unread set",
+      "pass": true
+    },
+    {
+      "name": "the independent global unread count reflects the read action",
+      "pass": true,
+      "evidence": {
+        "unread": 11
+      }
+    },
+    {
+      "name": "reset restores the full list after the unread check",
+      "pass": true
+    },
+    {
+      "name": "the notification list reopens with the dedicated fixed-height state",
+      "pass": true
+    },
+    {
+      "name": "the fixed frame fills the responsive maximum and keeps the filters reachable",
+      "pass": true,
+      "evidence": {
+        "top": 14,
+        "height": 830,
+        "notice": true,
+        "filters": true,
+        "filterVisible": true,
+        "list": true,
+        "scrolls": true,
+        "rows": 13
+      }
+    },
+    {
+      "name": "the notification frame stays identical after switching to the full display mode",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "frame": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "evidence": null
+      }
+    },
+    {
+      "name": "the notification frame stays identical after filtering the type",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "frame": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": false,
+          "rows": 4
+        },
+        "evidence": null
+      }
+    },
+    {
+      "name": "the mocked loading state renders",
+      "pass": true,
+      "evidence": "全部\n需我审核\n结果告知\n提醒\n评论\n其他\n全部\n未读\n已读\n\n已显示 0 / 0 条 · 全部未读 11 条\n\n正在加载通知…\n正在加载…"
+    },
+    {
+      "name": "the notification frame stays identical while the first page is loading",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "frame": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": false,
+          "rows": 0
+        },
+        "evidence": null
+      }
+    },
+    {
+      "name": "the mocked empty state renders",
+      "pass": true,
+      "evidence": "全部\n需我审核\n结果告知\n提醒\n评论\n其他\n全部\n未读\n已读\n\n已显示 0 / 0 条 · 全部未读 9 条\n\n暂无通知"
+    },
+    {
+      "name": "the notification frame stays identical for an empty result",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "frame": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": false,
+          "rows": 0
+        },
+        "evidence": null
+      }
+    },
+    {
+      "name": "the notification frame stays identical for an empty filtered result",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "frame": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": false,
+          "rows": 0
+        },
+        "evidence": null
+      }
+    },
+    {
+      "name": "the mocked single state renders",
+      "pass": true,
+      "evidence": "全部\n需我审核\n结果告知\n提醒\n评论\n其他\n全部\n未读\n已读\n重置\n\n已显示 1 / 1 条（当前条件） · 全部未读 9 条\n\n模拟单条通知\n提醒\n2026年11月19日 00:15\n未读\n已显示全部 1 条"
+    },
+    {
+      "name": "the notification frame stays identical for a single result",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "frame": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": false,
+          "rows": 1
+        },
+        "evidence": null
+      }
+    },
+    {
+      "name": "the mocked fail state renders",
+      "pass": true,
+      "evidence": "全部\n需我审核\n结果告知\n提醒\n评论\n其他\n全部\n未读\n已读\n重置\n\n已显示 0 / 0 条（当前条件） · 全部未读 9 条\n\n通知加载失败：模拟通知读取失败\n模拟通知读取失败\n重试"
+    },
+    {
+      "name": "the notification frame stays identical while the query has failed",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "frame": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": false,
+          "rows": 0
+        },
+        "evidence": null
+      }
+    },
+    {
+      "name": "the notification frame stays identical while a page is paged in",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "frame": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 20
+        },
+        "evidence": null
+      }
+    },
+    {
+      "name": "the notification frame stays identical after appending the next page",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "frame": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 40
+        },
+        "evidence": null
+      }
+    },
+    {
+      "name": "the fixed-height frame scrolls its content instead of growing",
+      "pass": true,
+      "evidence": {
+        "scroll": 3645,
+        "client": 759
+      }
+    },
+    {
+      "name": "closing the notification list removes the fixed-height state",
+      "pass": true
+    },
+    {
+      "name": "the real list loads again once the mock is removed",
+      "pass": true
+    },
+    {
+      "name": "the notification frame stays identical after reopening the real list",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "frame": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": false,
+          "rows": 3
+        },
+        "evidence": null
+      }
+    },
+    {
+      "name": "the notification detail opens from the fixed frame",
+      "pass": true
+    },
+    {
+      "name": "the notification detail does not inherit the fixed list height",
+      "pass": true,
+      "evidence": {
+        "top": 157,
+        "height": 687,
+        "title": "通知详情"
+      }
+    },
+    {
+      "name": "returning from the detail restores the same fixed frame and conditions",
+      "pass": true
+    },
+    {
+      "name": "the notification frame stays identical after returning from a notification detail",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": true,
+          "rows": 13
+        },
+        "frame": {
+          "top": 14,
+          "height": 830,
+          "notice": true,
+          "filters": true,
+          "filterVisible": true,
+          "list": true,
+          "scrolls": false,
+          "rows": 3
+        },
+        "evidence": null
+      }
+    },
+    {
+      "name": "another sheet opened after closing the list keeps its own height",
+      "pass": true
+    },
+    {
+      "name": "the notification list adapts its fixed height at 320x740",
+      "pass": true
+    },
+    {
+      "name": "the 320x740 frame stays inside the viewport with header and filters reachable",
+      "pass": true,
+      "evidence": {
+        "top": 14,
+        "height": 726,
+        "bottom": 740,
+        "viewport": 740,
+        "notice": true,
+        "headVisible": true,
+        "filterVisible": true
+      }
+    },
+    {
+      "name": "the 320x740 frame does not change with the display mode",
+      "pass": true,
+      "evidence": {
+        "adapted": {
+          "top": 14,
+          "height": 726,
+          "bottom": 740,
+          "viewport": 740,
+          "notice": true,
+          "headVisible": true,
+          "filterVisible": true
+        },
+        "adaptedAfter": {
+          "top": 14,
+          "height": 726
+        }
+      }
+    },
+    {
+      "name": "the notification list adapts its fixed height at 390x844",
+      "pass": true
+    },
+    {
+      "name": "the 390x844 frame stays inside the viewport with header and filters reachable",
+      "pass": true,
+      "evidence": {
+        "top": 14,
+        "height": 830,
+        "bottom": 844,
+        "viewport": 844,
+        "notice": true,
+        "headVisible": true,
+        "filterVisible": true
+      }
+    },
+    {
+      "name": "the 390x844 frame does not change with the display mode",
+      "pass": true,
+      "evidence": {
+        "adapted": {
+          "top": 14,
+          "height": 830,
+          "bottom": 844,
+          "viewport": 844,
+          "notice": true,
+          "headVisible": true,
+          "filterVisible": true
+        },
+        "adaptedAfter": {
+          "top": 14,
+          "height": 830
+        }
+      }
+    },
+    {
+      "name": "the notification list adapts its fixed height at 1440x900",
+      "pass": true
+    },
+    {
+      "name": "the 1440x900 frame stays inside the viewport with header and filters reachable",
+      "pass": true,
+      "evidence": {
+        "top": 24,
+        "height": 852,
+        "bottom": 876,
+        "viewport": 900,
+        "notice": true,
+        "headVisible": true,
+        "filterVisible": true
+      }
+    },
+    {
+      "name": "the 1440x900 frame does not change with the display mode",
+      "pass": true,
+      "evidence": {
+        "adapted": {
+          "top": 24,
+          "height": 852,
+          "bottom": 876,
+          "viewport": 900,
+          "notice": true,
+          "headVisible": true,
+          "filterVisible": true
+        },
+        "adaptedAfter": {
+          "top": 24,
+          "height": 852
+        }
+      }
+    },
+    {
+      "name": "the notification list adapts its fixed height at 390x600",
+      "pass": true
+    },
+    {
+      "name": "the 390x600 frame stays inside the viewport with header and filters reachable",
+      "pass": true,
+      "evidence": {
+        "top": 14,
+        "height": 586,
+        "bottom": 600,
+        "viewport": 600,
+        "notice": true,
+        "headVisible": true,
+        "filterVisible": true
+      }
+    },
+    {
+      "name": "the 390x600 frame does not change with the display mode",
+      "pass": true,
+      "evidence": {
+        "adapted": {
+          "top": 14,
+          "height": 586,
+          "bottom": 600,
+          "viewport": 600,
+          "notice": true,
+          "headVisible": true,
+          "filterVisible": true
+        },
+        "adaptedAfter": {
+          "top": 14,
+          "height": 586
+        }
+      }
+    },
+    {
+      "name": "rapid switch keeps the newest query result only",
+      "pass": true
+    },
+    {
+      "name": "a late first-page response does not mix into the result filter",
+      "pass": true
+    },
+    {
+      "name": "a failed notification query offers retry",
+      "pass": true
+    },
+    {
+      "name": "retry loads the list without corrupting the global unread count",
+      "pass": true
+    },
+    {
+      "name": "failed query kept the previous independent unread count",
+      "pass": true
+    },
+    {
+      "name": "result notification detail opens",
+      "pass": true
+    },
+    {
+      "name": "result first and changes are in the main detail area",
+      "pass": true,
+      "evidence": {
+        "heading": "已通过并生效",
+        "changes": 2,
+        "titleCount": 1,
+        "timeCount": 1,
+        "primary": 1,
+        "primaryText": "查看原申请",
+        "more": true,
+        "moreFocusable": true
+      }
+    },
+    {
+      "name": "object name and notification time appear once",
+      "pass": true,
+      "evidence": {
+        "heading": "已通过并生效",
+        "changes": 2,
+        "titleCount": 1,
+        "timeCount": 1,
+        "primary": 1,
+        "primaryText": "查看原申请",
+        "more": true,
+        "moreFocusable": true
+      }
+    },
+    {
+      "name": "one primary action is present",
+      "pass": true,
+      "evidence": {
+        "heading": "已通过并生效",
+        "changes": 2,
+        "titleCount": 1,
+        "timeCount": 1,
+        "primary": 1,
+        "primaryText": "查看原申请",
+        "more": true,
+        "moreFocusable": true
+      }
+    },
+    {
+      "name": "more menu is present and keyboard focusable",
+      "pass": true,
+      "evidence": {
+        "heading": "已通过并生效",
+        "changes": 2,
+        "titleCount": 1,
+        "timeCount": 1,
+        "primary": 1,
+        "primaryText": "查看原申请",
+        "more": true,
+        "moreFocusable": true
+      }
+    },
+    {
+      "name": "more menu opens",
+      "pass": true
+    },
+    {
+      "name": "more menu exposes message deletion",
+      "pass": true
+    },
+    {
+      "name": "detail fits 320",
+      "pass": true
+    },
+    {
+      "name": "detail fits 390",
+      "pass": true
+    },
+    {
+      "name": "detail fits 1440",
+      "pass": true
+    },
+    {
+      "name": "applicant sees the authorized original-request action",
+      "pass": true,
+      "evidence": "查看原申请"
+    },
+    {
+      "name": "original request opens from the notification",
+      "pass": true
+    },
+    {
+      "name": "original request keeps the applicant projection without the reviewer diff",
+      "pass": true
+    },
+    {
+      "name": "returns to the same notification detail",
+      "pass": true
+    },
+    {
+      "name": "reminder detail opens for deletion",
+      "pass": true
+    },
+    {
+      "name": "reminder deletion more menu opens",
+      "pass": true
+    },
+    {
+      "name": "deleting a message returns to the filtered list",
+      "pass": true
+    },
+    {
+      "name": "deleted reminder is absent from the list",
+      "pass": true
+    },
+    {
+      "name": "withdrawable notification opens",
+      "pass": true
+    },
+    {
+      "name": "notification withdrawal menu opens",
+      "pass": true
+    },
+    {
+      "name": "more menu exposes notification withdrawal for its initiator",
+      "pass": true
+    },
+    {
+      "name": "withdrawn notification returns to the list",
+      "pass": true
+    },
+    {
+      "name": "withdrawn notification detail is read-only and has no result",
+      "pass": true,
+      "evidence": {
+        "id": "250a4eb1-7676-4bb9-83f0-306ae049b08f",
+        "eventId": "2f2f0770-3042-4327-a99b-702629afd930",
+        "eventType": "task.create.submitted",
+        "createdAt": "2026-11-18T16:15:24.344681Z",
+        "deliveredAt": "2026-11-18T16:17:05.338845Z",
+        "readAt": "2026-11-18T16:17:07.448882Z",
+        "readonly": true,
+        "relationLost": false,
+        "taskId": null,
+        "requestId": null,
+        "title": null,
+        "summary": "该通知已被撤回。",
+        "changeSummary": null,
+        "revoked": true,
+        "withdrawn": true,
+        "canReadWithdrawnDetails": false,
+        "expiresAt": "2027-02-18T16:17:05.335028Z",
+        "rowVersion": 2,
+        "canWithdraw": false,
+        "canOpenTask": false,
+        "canReview": false,
+        "canReadRequest": false,
+        "canWithdrawRequest": false,
+        "requestStatus": null,
+        "requestKind": null,
+        "objectType": null,
+        "objectId": null,
+        "focus": null,
+        "commentId": null,
+        "purpose": "待创建审核",
+        "eventResult": null,
+        "changes": [],
+        "objectName": null,
+        "category": "other"
+      }
+    },
+    {
+      "name": "pending creation notification opens",
+      "pass": true
+    },
+    {
+      "name": "pending applicant notification shows the request withdrawal action",
+      "pass": true
+    },
+    {
+      "name": "request withdrawal action is distinct from notification withdrawal",
+      "pass": true
+    },
+    {
+      "name": "request withdrawal returns to the list",
+      "pass": true
+    },
+    {
+      "name": "request withdrawal changed the business request status",
+      "pass": true,
+      "evidence": {
+        "requestId": "abf1d3ba-7e44-44f2-8d33-b88170baf2bb",
+        "taskId": "2a28e24a-3beb-408f-b755-ce843958296b",
+        "kind": "create",
+        "status": "withdrawn",
+        "comment": null,
+        "applicantId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "currentReviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "rowVersion": 2,
+        "previousState": "todo",
+        "exemptionReason": null,
+        "createdAt": "2026-11-18T16:17:05.284265Z",
+        "decidedAt": "2026-11-18T16:17:43.582479Z",
+        "applicableDeadline": "2026-11-18T20:15:23.631063Z",
+        "expiredAt": null,
+        "title": "通知撤销申请",
+        "versionNo": 1,
+        "route": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": true,
+          "participants": [
+            {
+              "displayName": "alpha-one-head",
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+            },
+            {
+              "displayName": "alpha-one-employee",
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          ]
+        },
+        "proposedVersion": {
+          "id": "b3efd84b-3fdc-48a1-bdd9-5fc1fd9afc6d",
+          "taskId": "2a28e24a-3beb-408f-b755-ce843958296b",
+          "versionNo": 1,
+          "title": "通知撤销申请",
+          "description": "待创建申请",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-11-18T16:22:03.631063Z",
+          "dueAt": "2026-11-18T20:15:23.631063Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "withdrawn",
+          "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "createdAt": "2026-11-18T16:17:05.285506Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "4ce9a359-10d8-524d-8232-c73416f398d0"
+          ],
+          "tags": [],
+          "tagIds": [],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "participants": [
+          {
+            "displayName": "alpha-one-head",
+            "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          },
+          {
+            "displayName": "alpha-one-employee",
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          }
+        ],
+        "records": []
+      }
+    },
+    {
+      "name": "logout returns to the login form",
+      "pass": true
+    },
+    {
+      "name": "second account authenticated",
+      "pass": true
+    },
+    {
+      "name": "second account notification list loads from its own session",
+      "pass": true
+    },
+    {
+      "name": "second account unread count comes from the server instead of the previous session",
+      "pass": true,
+      "evidence": 6
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "result": "PASS"
+}

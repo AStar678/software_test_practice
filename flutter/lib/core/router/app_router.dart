@@ -106,6 +106,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (phase == SessionPhase.bootstrapping ||
           phase == SessionPhase.checking) {
+        // 登录请求由表单显示等待状态，保留输入及失败后的错误提示。
+        if (phase == SessionPhase.checking && location == AppRoutes.login) {
+          return null;
+        }
         return location == AppRoutes.sessionCheck
             ? null
             : AppRoutes.sessionCheck;
@@ -237,6 +241,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => ApprovalDetailPage(
           requestId: state.pathParameters['requestId'] ?? '',
+          showWithdrawAction: state.uri.queryParameters['from'] != 'notification',
         ),
       ),
       GoRoute(

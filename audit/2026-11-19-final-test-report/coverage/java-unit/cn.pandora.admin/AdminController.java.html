@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.admin</a> &gt; <span class="el_source">AdminController.java</span></div><h1>AdminController.java</h1><pre class="source lang-java linenums">package cn.pandora.admin;
+
+import cn.pandora.auth.Access;
+import cn.pandora.auth.Actor;
+import cn.pandora.common.ApiException;
+import cn.pandora.common.ControllableClock;
+import cn.pandora.common.Writes;
+import cn.pandora.task.TaskService;
+import cn.pandora.workspace.EventsWorker;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
+import java.util.Map;
+
+/** Administration console API (DEV-001, DEV-002, DEV-015, DEV-028). */
+@RestController
+@RequestMapping(&quot;/api/v1/admin&quot;)
+public class AdminController {
+    private final OrganizationService organization;
+    private final Writes writes;
+    private final TaskService tasks;
+    private final Access access;
+    private final java.time.Clock clock;
+    private final ObjectProvider&lt;EventsWorker&gt; worker;
+    private final LoginKeyConstraints loginKeys;
+
+    public AdminController(OrganizationService organization, Writes writes, TaskService tasks, Access access,
+<span class="nc" id="L30">                           java.time.Clock clock, ObjectProvider&lt;EventsWorker&gt; worker, LoginKeyConstraints loginKeys) {</span>
+<span class="nc" id="L31">        this.organization = organization;</span>
+<span class="nc" id="L32">        this.writes = writes;</span>
+<span class="nc" id="L33">        this.tasks = tasks;</span>
+<span class="nc" id="L34">        this.access = access;</span>
+<span class="nc" id="L35">        this.clock = clock;</span>
+<span class="nc" id="L36">        this.worker = worker;</span>
+<span class="nc" id="L37">        this.loginKeys = loginKeys;</span>
+<span class="nc" id="L38">    }</span>
+
+    /**
+     * Controlled clock for deadline, reminder and retention verification. It exists only when
+     * pandora.clock.controllable=true and is restricted to an administrator, so production runs use
+     * the normal system clock and no business endpoint can move time.
+     */
+    @GetMapping(&quot;/clock&quot;)
+    public Map&lt;String,Object&gt; clock(@RequestAttribute(&quot;actor&quot;) Actor actor) {
+<span class="nc" id="L47">        access.requireAdmin(actor);</span>
+<span class="nc" id="L48">        return Map.of(&quot;now&quot;, clock.instant().toString(), &quot;controllable&quot;, clock instanceof ControllableClock);</span>
+    }
+
+    @PostMapping(&quot;/clock/advance&quot;)
+    public Map&lt;String,Object&gt; advanceClock(@RequestAttribute(&quot;actor&quot;) Actor actor, @RequestBody Map&lt;String,Object&gt; input) {
+<span class="nc" id="L53">        access.requireAdmin(actor);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (!(clock instanceof ControllableClock controllable)) {</span>
+<span class="nc" id="L55">            throw new ApiException(409, &quot;CLOCK_NOT_CONTROLLABLE&quot;, &quot;当前运行未启用受控时钟&quot;);</span>
+        }
+<span class="nc" id="L57">        Object seconds = input.get(&quot;seconds&quot;);</span>
+        long exactSeconds;
+        try {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            if (!(seconds instanceof Number)) throw new ArithmeticException();</span>
+<span class="nc" id="L61">            exactSeconds = new java.math.BigDecimal(seconds.toString()).longValueExact();</span>
+<span class="nc bnc" id="L62" title="All 4 branches missed.">            if (exactSeconds &lt; 0 || exactSeconds &gt; 86400L * 400) throw new ArithmeticException();</span>
+<span class="nc" id="L63">        } catch (ArithmeticException | NumberFormatException invalid) {</span>
+<span class="nc" id="L64">            throw new ApiException(400, &quot;INVALID_INPUT&quot;, &quot;seconds 须为 0 至 34560000 的整数&quot;);</span>
+<span class="nc" id="L65">        }</span>
+<span class="nc" id="L66">        controllable.advance(java.time.Duration.ofSeconds(exactSeconds));</span>
+<span class="nc" id="L67">        return Map.of(&quot;now&quot;, clock.instant().toString(), &quot;offsetSeconds&quot;, controllable.offset().toSeconds());</span>
+    }
+
+    /** Run one worker pass deterministically during verification (expiry → reminders → delivery → clean-up). */
+    @PostMapping(&quot;/worker/run-once&quot;)
+    public Map&lt;String,Object&gt; runWorker(@RequestAttribute(&quot;actor&quot;) Actor actor) {
+<span class="nc" id="L73">        access.requireAdmin(actor);</span>
+<span class="nc" id="L74">        EventsWorker eventsWorker = worker.getIfAvailable();</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (eventsWorker == null) throw new ApiException(409, &quot;WORKER_DISABLED&quot;, &quot;当前运行未启用事件工作器&quot;);</span>
+<span class="nc" id="L76">        eventsWorker.runOnce();</span>
+<span class="nc" id="L77">        return Map.of(&quot;ran&quot;, true, &quot;now&quot;, clock.instant().toString());</span>
+    }
+
+    /** Complete operation history of one task; the App has no equivalent entry point (DEV-016). */
+    @GetMapping(&quot;/tasks/{id}/history&quot;)
+    public Map&lt;String, Object&gt; taskHistory(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id) {
+<span class="nc" id="L83">        return tasks.taskHistory(actor, id);</span>
+    }
+
+    /**
+     * Administrator-only task locator for the formal console (chapter 9.1). A business account is
+     * rejected by the capability check inside the service, and the projection carries no contact data.
+     */
+    @GetMapping(&quot;/tasks&quot;)
+    public Map&lt;String, Object&gt; adminTasks(@RequestAttribute(&quot;actor&quot;) Actor actor, @RequestParam Map&lt;String, String&gt; filters) {
+<span class="nc" id="L92">        return tasks.adminTasks(actor, filters);</span>
+    }
+
+    @GetMapping(&quot;/organization&quot;)
+    public Map&lt;String, Object&gt; structure(@RequestAttribute(&quot;actor&quot;) Actor actor) {
+<span class="nc" id="L97">        return organization.structure(actor);</span>
+    }
+
+    @GetMapping(&quot;/account&quot;)
+    public Map&lt;String,Object&gt; administrator(@RequestAttribute(&quot;actor&quot;) Actor actor) {
+<span class="nc" id="L102">        return organization.administrator(actor);</span>
+    }
+
+    @PatchMapping(&quot;/account&quot;)
+    public Map&lt;String,Object&gt; updateAdministrator(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,
+            @RequestHeader(value=&quot;If-Match&quot;,required=false) String match,
+            @RequestBody Map&lt;String,Object&gt; input) {
+<span class="nc" id="L110">        return writes.run(actor,key,&quot;PATCH /admin/account&quot;,input,match,()-&gt;organization.updateAdministrator(actor,match,input));</span>
+    }
+
+    @GetMapping(&quot;/roles&quot;)
+    public Map&lt;String, Object&gt; roles(@RequestAttribute(&quot;actor&quot;) Actor actor) {
+<span class="nc" id="L115">        return Map.of(&quot;items&quot;, organization.roles(actor));</span>
+    }
+
+    @GetMapping(&quot;/employees&quot;)
+    public Map&lt;String, Object&gt; employees(@RequestAttribute(&quot;actor&quot;) Actor actor, @RequestParam Map&lt;String, String&gt; filters) {
+<span class="nc" id="L120">        return organization.employees(actor, filters);</span>
+    }
+
+    @GetMapping(&quot;/employees/{id}&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; employee(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id) {
+<span class="nc" id="L125">        Map&lt;String, Object&gt; result = organization.employee(actor, id);</span>
+<span class="nc" id="L126">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @PostMapping(&quot;/employees&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; createEmployee(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L133">        Map&lt;String, Object&gt; result = writes.runOutcome(actor, key, &quot;POST /admin/employees&quot;, input, null,</span>
+<span class="nc" id="L134">                () -&gt; organization.createEmployee(actor, input));</span>
+<span class="nc" id="L135">        tightenOrganizationConstraints();</span>
+<span class="nc" id="L136">        return ResponseEntity.created(URI.create(&quot;/api/v1/admin/employees/&quot; + result.get(&quot;userId&quot;)))</span>
+<span class="nc" id="L137">                .eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @PatchMapping(&quot;/employees/{id}&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; updateEmployee(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L145">        Map&lt;String, Object&gt; result = writes.run(actor, key, &quot;PATCH /admin/employees/&quot; + id, input, ifMatch,</span>
+<span class="nc" id="L146">                () -&gt; organization.updateEmployee(actor, id, ifMatch, input));</span>
+<span class="nc" id="L147">        tightenOrganizationConstraints();</span>
+<span class="nc" id="L148">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @PostMapping(&quot;/employees/{id}/transfer&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; transferEmployee(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L156">        Map&lt;String, Object&gt; result = writes.run(actor, key, &quot;POST /admin/employees/&quot; + id + &quot;/transfer&quot;, input, ifMatch,</span>
+<span class="nc" id="L157">                () -&gt; organization.transferEmployee(actor, id, ifMatch, input));</span>
+<span class="nc" id="L158">        tightenOrganizationConstraints();</span>
+<span class="nc" id="L159">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @PostMapping(&quot;/employees/{id}/roles&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; grantRoles(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L167">        Map&lt;String, Object&gt; result = writes.run(actor, key, &quot;POST /admin/employees/&quot; + id + &quot;/roles&quot;, input, ifMatch,</span>
+<span class="nc" id="L168">                () -&gt; organization.grantRoles(actor, id, ifMatch, input));</span>
+<span class="nc" id="L169">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    /** Administrator password reset: returns the new one-time password exactly once (DEV-001, DEV-003). */
+    @PostMapping(&quot;/employees/{id}/password-reset&quot;)
+    public Map&lt;String, Object&gt; resetPassword(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key) {
+<span class="nc" id="L176">        return writes.runOutcome(actor, key, &quot;POST /admin/employees/&quot; + id + &quot;/password-reset&quot;, Map.of(), null,</span>
+<span class="nc" id="L177">                () -&gt; organization.resetPassword(actor, id));</span>
+    }
+
+    @PostMapping(&quot;/departments&quot;)
+    public Map&lt;String, Object&gt; createDepartment(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L184">        return writes.run(actor, key, &quot;POST /admin/departments&quot;, input, null, () -&gt; organization.createDepartment(actor, input));</span>
+    }
+
+    @PatchMapping(&quot;/departments/{id}&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; updateDepartment(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L192">        Map&lt;String, Object&gt; result = writes.run(actor, key, &quot;PATCH /admin/departments/&quot; + id, input, ifMatch,</span>
+<span class="nc" id="L193">                () -&gt; organization.updateDepartment(actor, id, ifMatch, input));</span>
+<span class="nc" id="L194">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @PostMapping(&quot;/positions&quot;)
+    public Map&lt;String, Object&gt; createPosition(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L201">        return writes.run(actor, key, &quot;POST /admin/positions&quot;, input, null, () -&gt; organization.createPosition(actor, input));</span>
+    }
+
+    @PatchMapping(&quot;/positions/{id}&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; updatePosition(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L209">        Map&lt;String, Object&gt; result = writes.run(actor, key, &quot;PATCH /admin/positions/&quot; + id, input, ifMatch,</span>
+<span class="nc" id="L210">                () -&gt; organization.updatePosition(actor, id, ifMatch, input));</span>
+<span class="nc" id="L211">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @PostMapping(&quot;/teams&quot;)
+    public Map&lt;String, Object&gt; createTeam(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L218">        return writes.run(actor, key, &quot;POST /admin/teams&quot;, input, null, () -&gt; organization.createTeam(actor, input));</span>
+    }
+
+    /** Members of one department, offered as the team-lead selector in the console. */
+    @GetMapping(&quot;/departments/{id}/members&quot;)
+    public Map&lt;String, Object&gt; departmentMembers(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id) {
+<span class="nc" id="L224">        return Map.of(&quot;items&quot;, organization.departmentMembers(actor, id));</span>
+    }
+
+    @PatchMapping(&quot;/teams/{id}&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; updateTeam(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L232">        Map&lt;String, Object&gt; result = writes.run(actor, key, &quot;PATCH /admin/teams/&quot; + id, input, ifMatch,</span>
+<span class="nc" id="L233">                () -&gt; organization.updateTeam(actor, id, ifMatch, input));</span>
+        // Mapping every legacy team can be the final step; retighten here too so the write gate opens
+        // without requiring an unrelated employee edit or a restart (V-009).
+<span class="nc" id="L236">        tightenOrganizationConstraints();</span>
+<span class="nc" id="L237">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @GetMapping(&quot;/company&quot;)
+    public Map&lt;String, Object&gt; company(@RequestAttribute(&quot;actor&quot;) Actor actor) {
+<span class="nc" id="L242">        return organization.companyItems(actor);</span>
+    }
+
+    @PostMapping(&quot;/company/items&quot;)
+    public Map&lt;String, Object&gt; createCompanyItem(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L249">        return writes.run(actor, key, &quot;POST /admin/company/items&quot;, input, null, () -&gt; organization.createCompanyItem(actor, input));</span>
+    }
+
+    @PatchMapping(&quot;/company/items/{id}&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; updateCompanyItem(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L257">        Map&lt;String, Object&gt; result = writes.run(actor, key, &quot;PATCH /admin/company/items/&quot; + id, input, ifMatch,</span>
+<span class="nc" id="L258">                () -&gt; organization.updateCompanyItem(actor, id, ifMatch, input));</span>
+<span class="nc" id="L259">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @DeleteMapping(&quot;/company/items/{id}&quot;)
+    public Map&lt;String, Object&gt; deleteCompanyItem(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch) {
+<span class="nc" id="L266">        return writes.run(actor, key, &quot;DELETE /admin/company/items/&quot; + id, Map.of(), ifMatch,</span>
+<span class="nc" id="L267">                () -&gt; organization.deleteCompanyItem(actor, id, ifMatch));</span>
+    }
+
+    @PostMapping(&quot;/company/items/reorder&quot;)
+    public Map&lt;String, Object&gt; reorderCompanyItems(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L274">        return writes.run(actor, key, &quot;POST /admin/company/items/reorder&quot;, input, null,</span>
+<span class="nc" id="L275">                () -&gt; organization.reorderCompanyItems(actor, input));</span>
+    }
+
+    @PutMapping(&quot;/company/off-work-time&quot;)
+    public Map&lt;String, Object&gt; setOffWorkTime(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L282">        return writes.run(actor, key, &quot;PUT /admin/company/off-work-time&quot;, input, null,</span>
+<span class="nc" id="L283">                () -&gt; organization.setOffWorkTime(actor, input));</span>
+    }
+
+    /**
+     * Independently configure one role's view/dispatch (and log/profile) ranges. Written through the
+     * normal organization write contract so the authorization version advances and old pages,
+     * candidates, approvals and idempotent replays are invalidated immediately (DEV-002).
+     */
+    @PatchMapping(&quot;/roles/{code}/scopes&quot;)
+    public Map&lt;String, Object&gt; updateRoleScopes(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String code,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L295">        return writes.run(actor, key, &quot;PATCH /admin/roles/&quot; + code + &quot;/scopes&quot;, input, null,</span>
+<span class="nc" id="L296">                () -&gt; organization.updateRoleScopes(actor, code, input));</span>
+    }
+
+    /** Tighten the staged constraints once the mapping is complete; DDL must run after the command commits. */
+    private void tightenOrganizationConstraints() {
+        try {
+<span class="nc" id="L302">            organization.applyOrganizationConstraints();</span>
+<span class="nc" id="L303">        } catch (RuntimeException ignored) {</span>
+            // The mapping stays staged and reported in the administration console; never fail the write.
+<span class="nc" id="L305">        }</span>
+        try {
+            // An administrator repair of a missing/duplicate phone can now re-establish the unique
+            // login key immediately, without waiting for a restart.
+<span class="nc" id="L309">            loginKeys.tighten();</span>
+<span class="nc" id="L310">        } catch (RuntimeException ignored) {</span>
+            // The staged login key remains reported and the login path itself rejects ambiguity.
+<span class="nc" id="L312">        }</span>
+<span class="nc" id="L313">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

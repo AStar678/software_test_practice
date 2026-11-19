@@ -1,0 +1,12 @@
+{
+  "updated": "2026-11-18T16:04:11.835999+00:00",
+  "checks": [
+    {
+      "check": "founder contact detail follows actual management relationship",
+      "pass": false,
+      "evidence": null
+    }
+  ],
+  "result": "FAIL",
+  "errorType": "AssertionError"
+}

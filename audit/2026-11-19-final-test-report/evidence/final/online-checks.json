@@ -1,0 +1,24 @@
+{
+  "6644": {
+    "health": {
+      "application": "pandora-backend",
+      "database": "MySQL",
+      "status": "UP"
+    },
+    "status": 200,
+    "url": "https://8.141.96.122:6644/health",
+    "dailyJavascriptMatchesLocal": true,
+    "revision": "20261119-f3182ca9"
+  },
+  "443": {
+    "health": {
+      "application": "pandora-backend",
+      "database": "MySQL",
+      "status": "UP"
+    },
+    "status": 200,
+    "url": "https://8.141.96.122:443/health",
+    "dailyJavascriptMatchesLocal": true,
+    "revision": null
+  }
+}

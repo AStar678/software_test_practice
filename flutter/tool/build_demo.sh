@@ -2,7 +2,7 @@
 # Course APK: cached dependencies only; no TLS certificate or release key required.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-demo_api_url="${PANDORA_DEMO_API_URL:-http://10.0.2.2:8080/api/v1}"
+demo_api_url="${PANDORA_DEMO_API_URL:-https://8.141.96.122:6644/api/v1}"
 demo_defines="$(python3 - "$demo_api_url" <<'PY'
 import base64
 import sys

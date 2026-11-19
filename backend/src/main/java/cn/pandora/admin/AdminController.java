@@ -55,10 +55,15 @@ public class AdminController {
             throw new ApiException(409, "CLOCK_NOT_CONTROLLABLE", "当前运行未启用受控时钟");
         }
         Object seconds = input.get("seconds");
-        if (!(seconds instanceof Number number) || number.longValue() < 0 || number.longValue() > 86400L * 400) {
+        long exactSeconds;
+        try {
+            if (!(seconds instanceof Number)) throw new ArithmeticException();
+            exactSeconds = new java.math.BigDecimal(seconds.toString()).longValueExact();
+            if (exactSeconds < 0 || exactSeconds > 86400L * 400) throw new ArithmeticException();
+        } catch (ArithmeticException | NumberFormatException invalid) {
             throw new ApiException(400, "INVALID_INPUT", "seconds 须为 0 至 34560000 的整数");
         }
-        controllable.advance(java.time.Duration.ofSeconds(number.longValue()));
+        controllable.advance(java.time.Duration.ofSeconds(exactSeconds));
         return Map.of("now", clock.instant().toString(), "offsetSeconds", controllable.offset().toSeconds());
     }
 

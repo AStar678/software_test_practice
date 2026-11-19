@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LegacyCreationRoutes.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.task</a> &gt; <span class="el_source">LegacyCreationRoutes.java</span></div><h1>LegacyCreationRoutes.java</h1><pre class="source lang-java linenums">package cn.pandora.task;
+
+import cn.pandora.auth.Access;
+import cn.pandora.auth.Actor;
+import cn.pandora.common.ApiException;
+import cn.pandora.common.Db;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.util.Map;
+
+import static cn.pandora.common.Db.s;
+
+/**
+ * Applies operator-manager routing to requests that were already pending when this version was
+ * deployed (chapter 3.4). It only looks at requests whose stored route still carries a legacy reason,
+ * so normal restarts and freshly created requests are never recomputed.
+ *
+ * &lt;p&gt;The work is idempotent: after the first run every affected request either has a new-rule route or
+ * is blocked, and the second run finds nothing to change.
+ */
+@Component
+@Order(LegacyCreationRoutes.ORDER)
+public class LegacyCreationRoutes implements ApplicationRunner {
+    /** After the seed, the organization constraints and the log-slot backfill. */
+    public static final int ORDER = 30;
+<span class="fc" id="L31">    @Value(&quot;${pandora.startup-maintenance-enabled:true}&quot;)</span>
+    private boolean startupMaintenanceEnabled = true;
+    private final Db db;
+    private final Access access;
+    private final TaskService tasks;
+    private final TransactionTemplate tx;
+
+<span class="fc" id="L38">    public LegacyCreationRoutes(Db db, Access access, TaskService tasks, TransactionTemplate tx) {</span>
+<span class="fc" id="L39">        this.db = db;</span>
+<span class="fc" id="L40">        this.access = access;</span>
+<span class="fc" id="L41">        this.tasks = tasks;</span>
+<span class="fc" id="L42">        this.tx = tx;</span>
+<span class="fc" id="L43">    }</span>
+
+    @Override
+    public void run(ApplicationArguments args) {
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (!startupMaintenanceEnabled) return;</span>
+        // Most starts have no legacy work. Do not serialize them behind business writes or another instance.
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; organization : db.list(&quot;SELECT DISTINCT organization_id AS id FROM approval_requests WHERE &quot;</span>
+                + TaskService.LEGACY_CREATION_ROUTES + &quot; ORDER BY organization_id&quot;)) {
+<span class="fc" id="L51">            String organizationId = s(organization, &quot;id&quot;);</span>
+            // The administrator identity performs the same maintenance the console would; it grants no
+            // business authority, and only the route metadata is rewritten.
+            try {
+<span class="fc" id="L55">                tx.executeWithoutResult(status -&gt; {</span>
+<span class="fc" id="L56">                    db.one(&quot;SELECT * FROM organizations WHERE id=? FOR UPDATE&quot;,organizationId);</span>
+<span class="fc" id="L57">                    Map&lt;String,Object&gt; admin=db.find(&quot;SELECT a.*,'admin' AS account_type FROM admin_accounts a JOIN principals p ON p.organization_id=a.organization_id AND p.id=a.id AND p.account_type='admin' WHERE a.organization_id=? AND a.active=1 AND p.active=1&quot;,organizationId);</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">                    if(admin!=null) tasks.refreshLegacyCreationRoutes(access.actor(admin));</span>
+<span class="fc" id="L59">                });</span>
+<span class="nc" id="L60">            } catch (ApiException blocked) {</span>
+                // A damaged organization must not stop the application from starting; the pending
+                // requests stay blocked and the repair is recorded for the administrator.
+<span class="nc bnc" id="L63" title="All 2 branches missed.">                if (db.find(&quot;SELECT 1 FROM migration_findings WHERE organization_id=? AND migration='V28' &quot;</span>
+                        + &quot;AND category='legacy_creation_route_refresh'&quot;, organizationId) == null) {
+<span class="nc" id="L65">                    db.update(&quot;INSERT INTO migration_findings(id,organization_id,migration,category,severity,subject,detail) &quot;</span>
+                                    + &quot;VALUES(?,?,?,?,?,?,?)&quot;,
+<span class="nc" id="L67">                            Db.id(), organizationId, &quot;V28&quot;, &quot;legacy_creation_route_refresh&quot;, &quot;limitation&quot;, null,</span>
+<span class="nc" id="L68">                            &quot;存量待审申请未能按操作者直属上级重算：&quot; + blocked.getMessage() + &quot;；申请保持阻断，需管理员修复组织关系。&quot;);</span>
+                }
+<span class="fc" id="L70">            }</span>
+<span class="fc" id="L71">        }</span>
+<span class="fc" id="L72">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

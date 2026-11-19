@@ -1,0 +1,211 @@
+{
+  "checks": [
+    {
+      "name": "login form ready",
+      "pass": true
+    },
+    {
+      "name": "authenticated founder",
+      "pass": true
+    },
+    {
+      "name": "log create form exposes the shared tag picker",
+      "pass": true
+    },
+    {
+      "name": "log create form keeps its own date field",
+      "pass": true
+    },
+    {
+      "name": "cancel then re-select appends at the new position",
+      "pass": true,
+      "evidence": [
+        "8935c520-a23c-4636-a30c-300c83346b4d",
+        "f987f732-e2f3-4d8f-9ae0-aa8ac6c758c3",
+        "b25bda5d-aa0c-4f82-ac82-7d816ea6258a"
+      ]
+    },
+    {
+      "name": "log picker keeps aria-pressed in sync",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "e60b8688-76e1-4876-91bc-9bc142a5e338",
+          "pressed": "false",
+          "deleted": "",
+          "disabled": false
+        },
+        {
+          "id": "344d913e-79e5-4a65-b595-7713f63d7330",
+          "pressed": "false",
+          "deleted": "",
+          "disabled": false
+        },
+        {
+          "id": "f987f732-e2f3-4d8f-9ae0-aa8ac6c758c3",
+          "pressed": "true",
+          "deleted": "",
+          "disabled": false
+        },
+        {
+          "id": "8935c520-a23c-4636-a30c-300c83346b4d",
+          "pressed": "true",
+          "deleted": "",
+          "disabled": false
+        },
+        {
+          "id": "b25bda5d-aa0c-4f82-ac82-7d816ea6258a",
+          "pressed": "true",
+          "deleted": "",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "name": "log tag keeps keyboard toggle state",
+      "pass": true,
+      "evidence": {
+        "tags": [
+          "f987f732-e2f3-4d8f-9ae0-aa8ac6c758c3",
+          "b25bda5d-aa0c-4f82-ac82-7d816ea6258a"
+        ],
+        "focus": "8935c520-a23c-4636-a30c-300c83346b4d"
+      }
+    },
+    {
+      "name": "log tag picker fits 320",
+      "pass": true,
+      "evidence": {
+        "body": 320,
+        "scroll": 320,
+        "tagsRight": 304,
+        "width": 320
+      }
+    },
+    {
+      "name": "log tag picker fits 390",
+      "pass": true,
+      "evidence": {
+        "body": 390,
+        "scroll": 390,
+        "tagsRight": 370,
+        "width": 390
+      }
+    },
+    {
+      "name": "log tag picker fits 1440",
+      "pass": true,
+      "evidence": {
+        "body": 1440,
+        "scroll": 1440,
+        "tagsRight": 1412,
+        "width": 1440
+      }
+    },
+    {
+      "name": "nested task picker opens over the log form",
+      "pass": true
+    },
+    {
+      "name": "nested return keeps the ordered tags and body draft",
+      "pass": true,
+      "evidence": {
+        "tags": [
+          "f987f732-e2f3-4d8f-9ae0-aa8ac6c758c3",
+          "b25bda5d-aa0c-4f82-ac82-7d816ea6258a",
+          "8935c520-a23c-4636-a30c-300c83346b4d"
+        ],
+        "task": "06320ce7-0fea-468a-a76a-244659a1d2a7",
+        "body": "嵌套返回草稿"
+      }
+    },
+    {
+      "name": "failed save keeps the tag draft and the form",
+      "pass": true,
+      "evidence": {
+        "title": "写日志",
+        "error": "请填写日志内容。",
+        "tags": [
+          "f987f732-e2f3-4d8f-9ae0-aa8ac6c758c3",
+          "b25bda5d-aa0c-4f82-ac82-7d816ea6258a",
+          "8935c520-a23c-4636-a30c-300c83346b4d"
+        ]
+      }
+    },
+    {
+      "name": "log saved with the selected order",
+      "pass": true
+    },
+    {
+      "name": "saved log reads back the ordered collection",
+      "pass": true,
+      "evidence": [
+        "f987f732-e2f3-4d8f-9ae0-aa8ac6c758c3",
+        "b25bda5d-aa0c-4f82-ac82-7d816ea6258a",
+        "8935c520-a23c-4636-a30c-300c83346b4d"
+      ]
+    },
+    {
+      "name": "log detail shows every selected tag in order",
+      "pass": true,
+      "evidence": [
+        "界面丙",
+        "界面甲",
+        "界面乙"
+      ]
+    },
+    {
+      "name": "employee login form ready",
+      "pass": true
+    },
+    {
+      "name": "login form ready",
+      "pass": true
+    },
+    {
+      "name": "authenticated alpha-one-employee",
+      "pass": true
+    },
+    {
+      "name": "employee log detail keeps the deleted snapshot",
+      "pass": true
+    },
+    {
+      "name": "log edit form reuses the shared picker",
+      "pass": true
+    },
+    {
+      "name": "log edit keeps the date read-only beside the tags",
+      "pass": true
+    },
+    {
+      "name": "retained deleted tag starts selected",
+      "pass": true
+    },
+    {
+      "name": "removing the deleted reference disables re-selection",
+      "pass": true
+    },
+    {
+      "name": "log edit tag picker fits 320",
+      "pass": true,
+      "evidence": {
+        "body": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "name": "log edit tag picker fits 390",
+      "pass": true,
+      "evidence": {
+        "body": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HolidayCalendarAdminController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.calendar</a> &gt; <span class="el_source">HolidayCalendarAdminController.java</span></div><h1>HolidayCalendarAdminController.java</h1><pre class="source lang-java linenums">package cn.pandora.calendar;
+
+import cn.pandora.auth.Actor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+/** Explicit administrator maintenance for one year; the source URL is never accepted from a client. */
+@RestController
+@RequestMapping(&quot;/api/v1/admin/calendar/holidays&quot;)
+public class HolidayCalendarAdminController {
+    private final HolidayCalendarService holidays;
+
+<span class="fc" id="L14">    public HolidayCalendarAdminController(HolidayCalendarService holidays) {</span>
+<span class="fc" id="L15">        this.holidays = holidays;</span>
+<span class="fc" id="L16">    }</span>
+
+    @PostMapping(&quot;/{year}/refresh&quot;)
+    public Map&lt;String, Object&gt; refresh(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String year,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key) {
+<span class="fc" id="L21">        return holidays.refreshNow(actor, HolidayCalendarService.parseYear(year), key);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

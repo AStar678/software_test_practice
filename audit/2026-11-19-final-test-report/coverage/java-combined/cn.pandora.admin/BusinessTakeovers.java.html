@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BusinessTakeovers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.admin</a> &gt; <span class="el_source">BusinessTakeovers.java</span></div><h1>BusinessTakeovers.java</h1><pre class="source lang-java linenums">package cn.pandora.admin;
+
+import cn.pandora.auth.*;
+import cn.pandora.common.*;
+import cn.pandora.task.TaskService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.*;
+import static cn.pandora.common.Db.*;
+import static cn.pandora.admin.OrganizationService.*;
+
+/** Administrative provenance is separate from the employee who takes actual business responsibility. */
+@Service
+public class BusinessTakeovers {
+    private final Db db;
+    private final Access access;
+    private final AuthService auth;
+    private final Events events;
+    private final TaskService tasks;
+<span class="fc" id="L21">    public BusinessTakeovers(Db db,Access access,AuthService auth,Events events,TaskService tasks) {</span>
+<span class="fc" id="L22">        this.db=db;this.access=access;this.auth=auth;this.events=events;this.tasks=tasks;</span>
+<span class="fc" id="L23">    }</span>
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; inventory(Actor actor,String employeeId) {
+<span class="fc" id="L27">        access.requireAdmin(actor);access.requireCurrent(actor);</span>
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">        if(access.knownUser(actor,employeeId)==null) throw ApiException.notFound();</span>
+<span class="fc" id="L29">        var result=new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="fc" id="L30">        result.put(&quot;employeeId&quot;,employeeId);result.put(&quot;rowVersion&quot;,actor.authzVersion());</span>
+<span class="fc" id="L31">        result.put(&quot;placement&quot;,db.find(&quot;SELECT * FROM employee_placements WHERE organization_id=? AND employee_id=?&quot;,actor.organizationId(),employeeId));</span>
+<span class="fc" id="L32">        result.put(&quot;businessTasks&quot;,db.list(&quot;SELECT t.id,t.original_creator_id,t.execution_state,t.row_version,v.title,COALESCE(b.employee_id,t.original_creator_id) AS business_owner_id,COALESCE(b.row_version,1) AS owner_version FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id LEFT JOIN task_business_owners b ON b.organization_id=t.organization_id AND b.task_id=t.id WHERE t.organization_id=? AND COALESCE(b.employee_id,t.original_creator_id)=? ORDER BY t.id&quot;,actor.organizationId(),employeeId));</span>
+<span class="fc" id="L33">        result.put(&quot;unfinishedAssignments&quot;,db.list(&quot;SELECT t.id,t.row_version,v.title FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id JOIN task_version_assignees a ON a.organization_id=t.organization_id AND a.version_id=v.id WHERE t.organization_id=? AND t.execution_state&lt;&gt;'done' AND a.user_id=? ORDER BY t.id&quot;,actor.organizationId(),employeeId));</span>
+<span class="fc" id="L34">        result.put(&quot;pendingRequests&quot;,db.list(&quot;SELECT id,task_id,kind,applicant_id,current_reviewer_id,row_version,applicable_deadline FROM approval_requests WHERE organization_id=? AND status='pending' AND (applicant_id=? OR current_reviewer_id=?) ORDER BY id&quot;,actor.organizationId(),employeeId,employeeId));</span>
+<span class="fc" id="L35">        return result;</span>
+    }
+
+    public Map&lt;String,Object&gt; transfer(Actor actor,String ifMatch,Map&lt;String,Object&gt; input) {
+<span class="fc" id="L39">        access.requireAdmin(actor);allowed(input,Set.of(&quot;transfers&quot;));</span>
+<span class="fc" id="L40">        var company=db.one(&quot;SELECT authz_version FROM organizations WHERE id=?&quot;,actor.organizationId());</span>
+<span class="fc" id="L41">        Writes.checkVersion(ifMatch,n(company,&quot;authzVersion&quot;));</span>
+<span class="pc bpc" id="L42" title="2 of 4 branches missed.">        if(!(input.get(&quot;transfers&quot;) instanceof List&lt;?&gt; raw) || raw.isEmpty()) throw bad(&quot;transfers须为非空接管安排&quot;);</span>
+<span class="fc" id="L43">        var prepared=apply(actor,raw);</span>
+<span class="fc" id="L44">        db.update(&quot;UPDATE organizations SET authz_version=authz_version+1 WHERE id=?&quot;,actor.organizationId());</span>
+<span class="fc" id="L45">        int refreshed=tasks.refreshPendingRoutes(access.actor(auth.account(actor)));</span>
+<span class="fc" id="L46">        return Map.of(&quot;rowVersion&quot;,n(company,&quot;authzVersion&quot;)+1,&quot;transfers&quot;,prepared,&quot;refreshedRequests&quot;,refreshed);</span>
+    }
+
+    /** Shared by final deactivation plans; the caller owns company lock, versions and route refresh. */
+    List&lt;Map&lt;String,Object&gt;&gt; apply(Actor actor,List&lt;?&gt; raw) {
+<span class="fc" id="L51">        access.requireAdmin(actor);</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if(raw.size()&gt;1000) throw bad(&quot;接管安排最多1000项&quot;);</span>
+<span class="fc" id="L53">        Set&lt;String&gt; seen=new HashSet&lt;&gt;();List&lt;Map&lt;String,Object&gt;&gt; prepared=new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        for(Object value:raw) {</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">            if(!(value instanceof Map&lt;?,?&gt; map)) throw bad(&quot;接管安排格式无效&quot;);</span>
+<span class="fc" id="L56">            Map&lt;String,Object&gt; item=new LinkedHashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">            map.forEach((key,entry)-&gt;{if(!(key instanceof String))throw bad(&quot;接管字段无效&quot;);item.put((String)key,entry);});</span>
+<span class="fc" id="L58">            allowed(item,Set.of(&quot;taskId&quot;,&quot;taskVersion&quot;,&quot;ownerVersion&quot;,&quot;previousEmployeeId&quot;,&quot;nextEmployeeId&quot;,&quot;reason&quot;));</span>
+<span class="fc" id="L59">            String taskId=requiredUuid(item.get(&quot;taskId&quot;),&quot;taskId&quot;),target=requiredUuid(item.get(&quot;nextEmployeeId&quot;),&quot;nextEmployeeId&quot;);</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">            if(!seen.add(taskId)) throw bad(&quot;同一任务只能安排一次接管&quot;);</span>
+<span class="fc" id="L61">            String reason=text(item.get(&quot;reason&quot;),&quot;接管原因&quot;,500);</span>
+<span class="fc" id="L62">            var task=db.one(&quot;SELECT * FROM tasks WHERE organization_id=? AND id=? FOR UPDATE&quot;,actor.organizationId(),taskId);</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">            if(s(task,&quot;currentVersionId&quot;)==null) throw bad(&quot;未发布创建申请不能改写为他人的业务创建&quot;);</span>
+<span class="fc" id="L64">            String previous=access.businessOwner(task);</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">            if(!Objects.equals(previous,item.get(&quot;previousEmployeeId&quot;))) throw new ApiException(412,&quot;VERSION_CONFLICT&quot;,&quot;当前业务责任方已变化&quot;);</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">            if(previous.equals(target)) throw bad(&quot;接管人与原业务责任方不能相同&quot;);</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">            if(access.activeUser(actor,target)==null) throw bad(&quot;接管人须为本公司有效业务员工&quot;);</span>
+<span class="fc" id="L68">            var owner=db.find(&quot;SELECT row_version FROM task_business_owners WHERE organization_id=? AND task_id=?&quot;,actor.organizationId(),taskId);</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">            long ownerVersion=owner==null?1:n(owner,&quot;rowVersion&quot;);</span>
+<span class="pc bpc" id="L70" title="1 of 4 branches missed.">            if(!(item.get(&quot;taskVersion&quot;) instanceof Number taskVersion) || taskVersion.longValue()!=n(task,&quot;rowVersion&quot;)</span>
+<span class="pc bpc" id="L71" title="1 of 4 branches missed.">                    || !(item.get(&quot;ownerVersion&quot;) instanceof Number expected) || expected.longValue()!=ownerVersion)</span>
+<span class="fc" id="L72">                throw new ApiException(412,&quot;VERSION_CONFLICT&quot;,&quot;任务或业务责任版本已变化&quot;);</span>
+<span class="fc" id="L73">            prepared.add(Map.of(&quot;taskId&quot;,taskId,&quot;previousEmployeeId&quot;,previous,&quot;nextEmployeeId&quot;,target,&quot;reason&quot;,reason,&quot;ownerVersion&quot;,ownerVersion+1));</span>
+<span class="fc" id="L74">        }</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        for(var item:prepared) {</span>
+<span class="fc" id="L76">            String taskId=s(item,&quot;taskId&quot;);</span>
+<span class="fc" id="L77">            db.update(&quot;INSERT INTO task_business_owners(organization_id,task_id,employee_id,row_version) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE employee_id=VALUES(employee_id),row_version=VALUES(row_version),updated_at=UTC_TIMESTAMP(6)&quot;,</span>
+<span class="fc" id="L78">                    actor.organizationId(),taskId,s(item,&quot;nextEmployeeId&quot;),n(item,&quot;ownerVersion&quot;));</span>
+<span class="fc" id="L79">            db.update(&quot;INSERT INTO task_business_transfers(id,organization_id,task_id,previous_employee_id,next_employee_id,administrator_id,reason,owner_version) VALUES(?,?,?,?,?,?,?,?)&quot;,</span>
+<span class="fc" id="L80">                    id(),actor.organizationId(),taskId,s(item,&quot;previousEmployeeId&quot;),s(item,&quot;nextEmployeeId&quot;),actor.id(),s(item,&quot;reason&quot;),n(item,&quot;ownerVersion&quot;));</span>
+<span class="fc" id="L81">            db.update(&quot;UPDATE tasks SET row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) WHERE organization_id=? AND id=?&quot;,actor.organizationId(),taskId);</span>
+<span class="fc" id="L82">            db.update(&quot;INSERT INTO task_history_entries(id,organization_id,task_id,actor_id,entry_type,field_name,before_value,after_value,detail_json) VALUES(?,?,?,?,'business_takeover','businessOwnerId',?,?,?)&quot;,</span>
+<span class="fc" id="L83">                    id(),actor.organizationId(),taskId,actor.id(),s(item,&quot;previousEmployeeId&quot;),s(item,&quot;nextEmployeeId&quot;),db.json(Map.of(&quot;reason&quot;,s(item,&quot;reason&quot;),&quot;ownerVersion&quot;,n(item,&quot;ownerVersion&quot;))));</span>
+<span class="fc" id="L84">            events.record(actor,taskId,&quot;task.business.takeover&quot;,List.of(s(item,&quot;previousEmployeeId&quot;),s(item,&quot;nextEmployeeId&quot;)),item);</span>
+<span class="fc" id="L85">        }</span>
+<span class="fc" id="L86">        return prepared;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

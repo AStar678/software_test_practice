@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrganizationPlans.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.admin</a> &gt; <span class="el_source">OrganizationPlans.java</span></div><h1>OrganizationPlans.java</h1><pre class="source lang-java linenums">package cn.pandora.admin;
+
+import cn.pandora.auth.*;
+import cn.pandora.common.*;
+import cn.pandora.task.TaskService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.*;
+import static cn.pandora.common.Db.*;
+import static cn.pandora.admin.OrganizationService.*;
+
+/** Complete final-state organization commands. Writes owns the company lock and transaction. */
+@Service
+public class OrganizationPlans {
+    private final Db db;
+    private final Access access;
+    private final AuthService auth;
+    private final Events events;
+    private final TaskService tasks;
+    private final OrganizationConstraints constraints;
+    private final BusinessTakeovers takeovers;
+    private final EmployeeDeactivations deactivations;
+    private final java.time.Clock clock;
+    public OrganizationPlans(Db db,Access access,AuthService auth,Events events,TaskService tasks,OrganizationConstraints constraints,
+<span class="nc" id="L26">                             BusinessTakeovers takeovers,EmployeeDeactivations deactivations,java.time.Clock clock) {</span>
+<span class="nc" id="L27">        this.db=db;this.access=access;this.auth=auth;this.events=events;this.tasks=tasks;this.constraints=constraints;</span>
+<span class="nc" id="L28">        this.takeovers=takeovers;this.deactivations=deactivations;this.clock=clock;</span>
+<span class="nc" id="L29">    }</span>
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; draft(Actor actor) {
+<span class="nc" id="L33">        access.requireAdmin(actor);access.requireCurrent(actor);</span>
+<span class="nc" id="L34">        var company=db.one(&quot;SELECT id,founder_employee_id,authz_version FROM organizations WHERE id=?&quot;,actor.organizationId());</span>
+<span class="nc" id="L35">        var result=new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="nc" id="L36">        result.put(&quot;organization&quot;,company);result.put(&quot;rowVersion&quot;,company.get(&quot;authzVersion&quot;));</span>
+<span class="nc" id="L37">        result.put(&quot;departments&quot;,db.list(&quot;SELECT id,name,row_version FROM departments WHERE organization_id=? ORDER BY id&quot;,actor.organizationId()));</span>
+<span class="nc" id="L38">        result.put(&quot;teams&quot;,db.list(&quot;SELECT id,name,department_id,row_version FROM teams WHERE organization_id=? ORDER BY id&quot;,actor.organizationId()));</span>
+<span class="nc" id="L39">        result.put(&quot;positions&quot;,db.list(&quot;SELECT id,name,row_version FROM positions WHERE organization_id=? ORDER BY sort_order,name,id&quot;,actor.organizationId()));</span>
+<span class="nc" id="L40">        result.put(&quot;employees&quot;,access.employeeDirectory(actor,true));</span>
+<span class="nc" id="L41">        result.put(&quot;placements&quot;,db.list(&quot;SELECT employee_id,placement_type,department_id,team_id,position_id,row_version FROM employee_placements WHERE organization_id=? ORDER BY employee_id&quot;,actor.organizationId()));</span>
+<span class="nc" id="L42">        result.put(&quot;expectedEmployees&quot;,db.list(&quot;SELECT u.id,u.org_version AS row_version FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id AND p.account_type='employee' WHERE u.organization_id=? ORDER BY u.id&quot;,actor.organizationId()));</span>
+<span class="nc" id="L43">        result.put(&quot;constraints&quot;,constraints.status(actor.organizationId()));return result;</span>
+    }
+
+    public Writes.Outcome save(Actor actor,String ifMatch,Map&lt;String,Object&gt; input) {
+<span class="nc" id="L47">        access.requireAdmin(actor);</span>
+<span class="nc" id="L48">        allowed(input,Set.of(&quot;reason&quot;,&quot;founderEmployeeId&quot;,&quot;departments&quot;,&quot;teams&quot;,&quot;placements&quot;,&quot;expectedEmployees&quot;,&quot;newEmployees&quot;,</span>
+                &quot;deactivateEmployees&quot;,&quot;businessTransfers&quot;,&quot;cancelUnpublishedRequests&quot;));
+<span class="nc" id="L50">        String reason=text(input.get(&quot;reason&quot;),&quot;调整原因&quot;,500),org=actor.organizationId();</span>
+<span class="nc" id="L51">        var company=db.one(&quot;SELECT founder_employee_id,authz_version FROM organizations WHERE id=?&quot;,org);</span>
+<span class="nc" id="L52">        Writes.checkVersion(ifMatch,n(company,&quot;authzVersion&quot;));</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        String founder=input.containsKey(&quot;founderEmployeeId&quot;)?identifier(input.get(&quot;founderEmployeeId&quot;),&quot;founderEmployeeId&quot;):s(company,&quot;founderEmployeeId&quot;);</span>
+<span class="nc bnc" id="L54" title="All 4 branches missed.">        if(s(company,&quot;founderEmployeeId&quot;)!=null &amp;&amp; !Objects.equals(founder,s(company,&quot;founderEmployeeId&quot;)))</span>
+<span class="nc" id="L55">            throw bad(&quot;固定创始人不能交接或调任&quot;);</span>
+<span class="nc" id="L56">        var previousDepartments=db.list(&quot;SELECT * FROM departments WHERE organization_id=? ORDER BY id&quot;,org);</span>
+<span class="nc" id="L57">        var previousTeams=db.list(&quot;SELECT * FROM teams WHERE organization_id=? ORDER BY id&quot;,org);</span>
+<span class="nc" id="L58">        var previousPlacements=db.list(&quot;SELECT * FROM employee_placements WHERE organization_id=? ORDER BY employee_id&quot;,org);</span>
+<span class="nc" id="L59">        var employees=new ArrayList&lt;&gt;(db.list(&quot;SELECT u.id,u.organization_id,(u.active AND p.active) AS active,u.org_version AS row_version FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id AND p.account_type='employee' WHERE u.organization_id=? ORDER BY u.id&quot;,org));</span>
+<span class="nc" id="L60">        versions(rows(input,&quot;expectedEmployees&quot;,Set.of(&quot;id&quot;,&quot;rowVersion&quot;)),employees,&quot;id&quot;,true);</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        var disabled=input.containsKey(&quot;deactivateEmployees&quot;)?rows(input,&quot;deactivateEmployees&quot;,Set.of(&quot;employeeId&quot;,&quot;rowVersion&quot;,&quot;reason&quot;)):List.&lt;Map&lt;String,Object&gt;&gt;of();</span>
+<span class="nc" id="L62">        var disabledIds=deactivations.prepare(actor,disabled,employees,founder);</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        var cancellations=input.containsKey(&quot;cancelUnpublishedRequests&quot;)?rows(input,&quot;cancelUnpublishedRequests&quot;,Set.of(&quot;requestId&quot;,&quot;rowVersion&quot;,&quot;reason&quot;)):List.&lt;Map&lt;String,Object&gt;&gt;of();</span>
+<span class="nc bnc" id="L64" title="All 4 branches missed.">        if(!cancellations.isEmpty() &amp;&amp; disabled.isEmpty()) throw bad(&quot;管理撤销只能随完整停用计划提交&quot;);</span>
+<span class="nc" id="L65">        var departments=units(rows(input,&quot;departments&quot;,Set.of(&quot;id&quot;,&quot;name&quot;,&quot;rowVersion&quot;)),org,false);</span>
+<span class="nc" id="L66">        var teams=units(rows(input,&quot;teams&quot;,Set.of(&quot;id&quot;,&quot;name&quot;,&quot;departmentId&quot;,&quot;rowVersion&quot;)),org,true);</span>
+<span class="nc" id="L67">        var placements=rows(input,&quot;placements&quot;,Set.of(&quot;employeeId&quot;,&quot;placementType&quot;,&quot;departmentId&quot;,&quot;teamId&quot;,&quot;positionId&quot;,&quot;rowVersion&quot;));</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        for(var placement:placements) {</span>
+<span class="nc" id="L69">            placement.put(&quot;organizationId&quot;,org);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            for(String field:List.of(&quot;employeeId&quot;,&quot;positionId&quot;)) placement.put(field,identifier(placement.get(field),field));</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            for(String field:List.of(&quot;departmentId&quot;,&quot;teamId&quot;))</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                if(placement.get(field)!=null) placement.put(field,identifier(placement.get(field),field));</span>
+<span class="nc" id="L73">        }</span>
+<span class="nc" id="L74">        versions(departments,previousDepartments,&quot;id&quot;,false);versions(teams,previousTeams,&quot;id&quot;,false);</span>
+<span class="nc" id="L75">        versions(placements,previousPlacements,&quot;employeeId&quot;,false);</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        List&lt;Map&lt;String,Object&gt;&gt; additions=input.containsKey(&quot;newEmployees&quot;)?rows(input,&quot;newEmployees&quot;,Set.of(&quot;id&quot;,&quot;displayName&quot;,&quot;phone&quot;,&quot;hireDate&quot;)):List.of();</span>
+<span class="nc" id="L77">        Set&lt;String&gt; employeeIds=new HashSet&lt;&gt;();employees.forEach(person-&gt;employeeIds.add(s(person,&quot;id&quot;)));</span>
+<span class="nc" id="L78">        Set&lt;String&gt; phones=new HashSet&lt;&gt;();</span>
+<span class="nc" id="L79">        String zone=s(db.one(&quot;SELECT time_zone FROM organizations WHERE id=?&quot;,org),&quot;timeZone&quot;);</span>
+<span class="nc" id="L80">        java.time.LocalDate today=clock.instant().atZone(java.time.ZoneId.of(zone)).toLocalDate();</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        for(var person:additions) {</span>
+<span class="nc" id="L82">            String id=identifier(person.get(&quot;id&quot;),&quot;id&quot;);</span>
+<span class="nc bnc" id="L83" title="All 4 branches missed.">            if(!employeeIds.add(id) || db.find(&quot;SELECT id FROM principals WHERE id=?&quot;,id)!=null) throw bad(&quot;新员工ID已被使用&quot;);</span>
+<span class="nc" id="L84">            person.put(&quot;id&quot;,id);person.put(&quot;displayName&quot;,text(person.get(&quot;displayName&quot;),&quot;姓名&quot;,100));</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            String phone=person.get(&quot;phone&quot;) instanceof String raw?PhoneNumbers.normalize(raw):null;</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            if(phone==null) throw bad(&quot;新员工手机号为必填且须有效&quot;);</span>
+<span class="nc bnc" id="L87" title="All 4 branches missed.">            if(!phones.add(phone) || db.find(&quot;SELECT id FROM users WHERE login_phone=?&quot;,phone)!=null)</span>
+<span class="nc" id="L88">                throw new ApiException(409,&quot;PHONE_TAKEN&quot;,&quot;员工手机号已被使用&quot;);</span>
+<span class="nc" id="L89">            person.put(&quot;phone&quot;,phone);</span>
+            // Same ISO/company-today/null rule as the direct administrative creation path.
+<span class="nc" id="L91">            person.put(&quot;hireDate&quot;,parseHireDate(person.get(&quot;hireDate&quot;),today));</span>
+<span class="nc" id="L92">            employees.add(Map.of(&quot;id&quot;,id,&quot;organizationId&quot;,org,&quot;active&quot;,true));</span>
+<span class="nc" id="L93">        }</span>
+<span class="nc" id="L94">        var titles=db.list(&quot;SELECT * FROM positions WHERE organization_id=? ORDER BY id&quot;,org);</span>
+<span class="nc" id="L95">        var finalTree=CompanyTree.validate(org,founder,employees,departments,teams,titles,placements);</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if(!finalTree.valid()) throw new ApiException(409,&quot;INVALID_ORGANIZATION_PLAN&quot;,&quot;完整组织结果不合法&quot;,Map.of(&quot;blockers&quot;,finalTree.blockers()));</span>
+        // Validate first, then replace inside this single DML transaction. Unique head slots need no
+        // deferrable constraint, and readers on a consistent snapshot never see this intermediate state.
+<span class="nc" id="L99">        db.update(&quot;DELETE FROM employee_placements WHERE organization_id=?&quot;,org);</span>
+<span class="nc" id="L100">        db.update(&quot;UPDATE departments SET name=CONCAT('__plan_',id) WHERE organization_id=?&quot;,org);</span>
+<span class="nc" id="L101">        writeUnits(org,&quot;departments&quot;,departments,previousDepartments,false);</span>
+<span class="nc" id="L102">        writeUnits(org,&quot;teams&quot;,teams,previousTeams,true);</span>
+<span class="nc" id="L103">        deleteMissing(org,&quot;teams&quot;,teams,previousTeams);deleteMissing(org,&quot;departments&quot;,departments,previousDepartments);</span>
+<span class="nc" id="L104">        Map&lt;String,String&gt; passwords=new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        for(var person:additions) {</span>
+<span class="nc" id="L106">            String employeeId=s(person,&quot;id&quot;),password=Credentials.generate();</span>
+<span class="nc" id="L107">            db.update(&quot;INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'employee')&quot;,employeeId,org);</span>
+<span class="nc" id="L108">            db.update(&quot;INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,hire_date,must_change_password) VALUES(?,?,?,?,?,?,?,TRUE)&quot;,</span>
+<span class="nc" id="L109">                    employeeId,org,AuthService.PASSWORDS.encode(password),s(person,&quot;displayName&quot;),s(person,&quot;phone&quot;),s(person,&quot;phone&quot;),</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                    person.get(&quot;hireDate&quot;)==null?null:java.sql.Date.valueOf((java.time.LocalDate)person.get(&quot;hireDate&quot;)));</span>
+<span class="nc" id="L111">            passwords.put(employeeId,password);</span>
+<span class="nc" id="L112">        }</span>
+<span class="nc" id="L113">        Map&lt;String,Map&lt;String,Object&gt;&gt; oldPlaces=index(previousPlacements,&quot;employeeId&quot;);</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        for(var placement:placements) {</span>
+<span class="nc" id="L115">            var old=oldPlaces.get(s(placement,&quot;employeeId&quot;));</span>
+<span class="nc" id="L116">            db.update(&quot;INSERT INTO employee_placements(organization_id,employee_id,placement_type,department_id,team_id,position_id,row_version) VALUES(?,?,?,?,?,?,?)&quot;,</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                    org,s(placement,&quot;employeeId&quot;),s(placement,&quot;placementType&quot;),placement.get(&quot;departmentId&quot;),placement.get(&quot;teamId&quot;),s(placement,&quot;positionId&quot;),old==null?1:n(old,&quot;rowVersion&quot;)+1);</span>
+<span class="nc" id="L118">            db.update(&quot;UPDATE users SET org_version=org_version+1 WHERE organization_id=? AND id=?&quot;,org,s(placement,&quot;employeeId&quot;));</span>
+<span class="nc" id="L119">        }</span>
+<span class="nc" id="L120">        deactivations.cancelUnpublished(actor,disabledIds,cancellations);</span>
+<span class="nc" id="L121">        int sessionsRevoked=deactivations.deactivate(actor,disabled);</span>
+<span class="nc" id="L122">        db.update(&quot;UPDATE organizations SET founder_employee_id=?,authz_version=authz_version+1 WHERE id=?&quot;,founder,org);</span>
+<span class="nc" id="L123">        Actor current=access.actor(auth.account(actor));</span>
+<span class="nc" id="L124">        List&lt;Map&lt;String,Object&gt;&gt; transfers=List.of();</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if(input.containsKey(&quot;businessTransfers&quot;)) {</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">            if(!(input.get(&quot;businessTransfers&quot;) instanceof List&lt;?&gt; raw)) throw bad(&quot;businessTransfers须为接管安排数组&quot;);</span>
+<span class="nc" id="L127">            transfers=takeovers.apply(current,raw);</span>
+        }
+<span class="nc" id="L129">        int refreshed=tasks.refreshPendingRoutes(current);</span>
+<span class="nc" id="L130">        deactivations.requireSettled(current,disabledIds);</span>
+<span class="nc" id="L131">        var readiness=constraints.status(org);</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        if(Boolean.TRUE.equals(readiness.get(&quot;formalWritesReady&quot;)))</span>
+<span class="nc" id="L133">            db.update(&quot;UPDATE migration_findings SET resolved_at=UTC_TIMESTAMP(6) WHERE organization_id=? AND category IN ('fixed_organization_mapping','organization_mapping','team_department_mapping') AND resolved_at IS NULL&quot;,org);</span>
+<span class="nc" id="L134">        Map&lt;String,Object&gt; audit=new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L135">        audit.put(&quot;reason&quot;,reason);audit.put(&quot;beforeDepartments&quot;,previousDepartments);audit.put(&quot;afterDepartments&quot;,departments);</span>
+<span class="nc" id="L136">        audit.put(&quot;beforeTeams&quot;,previousTeams);audit.put(&quot;afterTeams&quot;,teams);</span>
+<span class="nc" id="L137">        audit.put(&quot;beforePlacements&quot;,previousPlacements);audit.put(&quot;afterPlacements&quot;,placements);</span>
+<span class="nc" id="L138">        audit.put(&quot;createdEmployeeIds&quot;,passwords.keySet());audit.put(&quot;founderEmployeeId&quot;,founder);audit.put(&quot;refreshedRequests&quot;,refreshed);</span>
+<span class="nc" id="L139">        audit.put(&quot;deactivatedEmployees&quot;,disabled);audit.put(&quot;businessTransfers&quot;,transfers);audit.put(&quot;cancelledUnpublishedRequests&quot;,cancellations);</span>
+<span class="nc" id="L140">        events.record(current,null,&quot;organization.plan.applied&quot;,List.of(),audit);</span>
+<span class="nc" id="L141">        var result=new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="nc" id="L142">        result.put(&quot;rowVersion&quot;,n(company,&quot;authzVersion&quot;)+1);result.put(&quot;createdEmployeeIds&quot;,List.copyOf(passwords.keySet()));</span>
+<span class="nc" id="L143">        result.put(&quot;refreshedRequests&quot;,refreshed);result.put(&quot;constraints&quot;,readiness);</span>
+<span class="nc" id="L144">        result.put(&quot;deactivatedEmployeeIds&quot;,List.copyOf(disabledIds));result.put(&quot;sessionsRevoked&quot;,sessionsRevoked);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        return new Writes.Outcome(result,passwords.isEmpty()?Map.of():Map.of(&quot;initialPasswords&quot;,passwords));</span>
+    }
+
+    private static List&lt;Map&lt;String,Object&gt;&gt; rows(Map&lt;String,Object&gt; input,String field,Set&lt;String&gt; fields) {
+<span class="nc bnc" id="L149" title="All 4 branches missed.">        if(!(input.get(field) instanceof List&lt;?&gt; list) || list.size()&gt;10000) throw bad(field+&quot;须为完整数组&quot;);</span>
+<span class="nc" id="L150">        var result=new ArrayList&lt;Map&lt;String,Object&gt;&gt;();</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        for(Object raw:list) {</span>
+<span class="nc bnc" id="L152" title="All 6 branches missed.">            if(!(raw instanceof Map&lt;?,?&gt; map) || map.keySet().stream().anyMatch(key-&gt;!(key instanceof String))) throw bad(field+&quot;格式不正确&quot;);</span>
+<span class="nc" id="L153">            Map&lt;String,Object&gt; row=new LinkedHashMap&lt;&gt;();map.forEach((key,value)-&gt;row.put((String)key,value));allowed(row,fields);result.add(row);</span>
+<span class="nc" id="L154">        }</span>
+<span class="nc" id="L155">        return result;</span>
+    }
+    private static List&lt;Map&lt;String,Object&gt;&gt; units(List&lt;Map&lt;String,Object&gt;&gt; rows,String org,boolean team) {
+<span class="nc" id="L158">        Set&lt;String&gt; names=new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        for(var row:rows) {</span>
+<span class="nc" id="L160">            row.put(&quot;id&quot;,identifier(row.get(&quot;id&quot;),&quot;id&quot;));row.put(&quot;organizationId&quot;,org);</span>
+<span class="nc" id="L161">            String name=text(row.get(&quot;name&quot;),&quot;单位名称&quot;,100);row.put(&quot;name&quot;,name);</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">            if(!names.add(name.toLowerCase(Locale.ROOT))) throw bad(&quot;单位名称重复&quot;);</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">            if(team) row.put(&quot;departmentId&quot;,identifier(row.get(&quot;departmentId&quot;),&quot;departmentId&quot;));</span>
+<span class="nc" id="L164">        }</span>
+<span class="nc" id="L165">        return rows;</span>
+    }
+    private static Map&lt;String,Map&lt;String,Object&gt;&gt; index(List&lt;Map&lt;String,Object&gt;&gt; rows,String key) {
+<span class="nc" id="L168">        Map&lt;String,Map&lt;String,Object&gt;&gt; result=new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L169" title="All 4 branches missed.">        for(var row:rows) if(result.putIfAbsent(s(row,key),row)!=null) throw bad(&quot;计划包含重复ID&quot;);</span>
+<span class="nc" id="L170">        return result;</span>
+    }
+    private static void versions(List&lt;Map&lt;String,Object&gt;&gt; desired,List&lt;Map&lt;String,Object&gt;&gt; previous,String key,boolean exact) {
+<span class="nc" id="L173">        var before=index(previous,key);var after=index(desired,key);</span>
+<span class="nc bnc" id="L174" title="All 4 branches missed.">        if(exact &amp;&amp; !before.keySet().equals(after.keySet())) throw new ApiException(412,&quot;VERSION_CONFLICT&quot;,&quot;人员清单已变化，请重新读取完整计划&quot;);</span>
+<span class="nc" id="L175">        after.forEach((id,row)-&gt;{</span>
+<span class="nc" id="L176">            var old=before.get(id);</span>
+<span class="nc bnc" id="L177" title="All 6 branches missed.">            if(old!=null &amp;&amp; (!(row.get(&quot;rowVersion&quot;) instanceof Number version) || version.longValue()!=n(old,&quot;rowVersion&quot;)))</span>
+<span class="nc" id="L178">                throw new ApiException(412,&quot;VERSION_CONFLICT&quot;,&quot;组织或人员版本已变化，请重新读取完整计划&quot;);</span>
+<span class="nc bnc" id="L179" title="All 4 branches missed.">            if(old==null &amp;&amp; row.get(&quot;rowVersion&quot;)!=null) throw bad(&quot;新记录不能携带旧版本&quot;);</span>
+<span class="nc" id="L180">        });</span>
+<span class="nc" id="L181">    }</span>
+    private void writeUnits(String org,String table,List&lt;Map&lt;String,Object&gt;&gt; desired,List&lt;Map&lt;String,Object&gt;&gt; previous,boolean team) {
+<span class="nc" id="L183">        var before=index(previous,&quot;id&quot;);</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">        for(var row:desired) {</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if(before.containsKey(s(row,&quot;id&quot;))) {</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">                if(team) db.update(&quot;UPDATE teams SET name=?,department_id=?,row_version=row_version+1 WHERE organization_id=? AND id=?&quot;,s(row,&quot;name&quot;),s(row,&quot;departmentId&quot;),org,s(row,&quot;id&quot;));</span>
+<span class="nc" id="L187">                else db.update(&quot;UPDATE departments SET name=?,row_version=row_version+1 WHERE organization_id=? AND id=?&quot;,s(row,&quot;name&quot;),org,s(row,&quot;id&quot;));</span>
+            } else {
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                if(team) db.update(&quot;INSERT INTO teams(id,organization_id,name,department_id) VALUES(?,?,?,?)&quot;,s(row,&quot;id&quot;),org,s(row,&quot;name&quot;),s(row,&quot;departmentId&quot;));</span>
+<span class="nc" id="L190">                else db.update(&quot;INSERT INTO departments(id,organization_id,name) VALUES(?,?,?)&quot;,s(row,&quot;id&quot;),org,s(row,&quot;name&quot;));</span>
+            }
+<span class="nc" id="L192">        }</span>
+<span class="nc" id="L193">    }</span>
+    private void deleteMissing(String org,String table,List&lt;Map&lt;String,Object&gt;&gt; desired,List&lt;Map&lt;String,Object&gt;&gt; previous) {
+<span class="nc" id="L195">        var after=index(desired,&quot;id&quot;);</span>
+<span class="nc bnc" id="L196" title="All 4 branches missed.">        for(var row:previous) if(!after.containsKey(s(row,&quot;id&quot;))) db.update(&quot;DELETE FROM &quot;+table+&quot; WHERE organization_id=? AND id=?&quot;,org,s(row,&quot;id&quot;));</span>
+<span class="nc" id="L197">    }</span>
+    private static String identifier(Object value,String field) {
+<span class="nc bnc" id="L199" title="All 4 branches missed.">        if(!(value instanceof String id) || !id.matches(&quot;[A-Za-z0-9_-]{1,36}&quot;)) throw bad(field+&quot;须为有效稳定ID&quot;);return id;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

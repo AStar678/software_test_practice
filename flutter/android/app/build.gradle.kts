@@ -57,7 +57,7 @@ val demoApiUrl = providers.gradleProperty("dart-defines").orNull
     ?.map { String(Base64.getDecoder().decode(it), Charsets.UTF_8) }
     ?.firstOrNull { it.startsWith("API_BASE_URL=") }
     ?.substringAfter("=")
-    ?: "http://10.0.2.2:8080/api/v1"
+    ?: "https://8.141.96.122:6644/api/v1"
 val demoApiUri = URI(demoApiUrl.trim().trimEnd('/'))
 if (demoApiUri.scheme !in listOf("http", "https") || demoApiUri.host.isNullOrBlank()
     || demoApiUri.rawUserInfo != null || demoApiUri.rawQuery != null

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventsWorker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.workspace</a> &gt; <span class="el_source">EventsWorker.java</span></div><h1>EventsWorker.java</h1><pre class="source lang-java linenums">package cn.pandora.workspace;
+
+import cn.pandora.auth.Access;
+import cn.pandora.auth.Actor;
+import cn.pandora.common.Db;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.sql.Timestamp;
+import java.time.*;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static cn.pandora.common.Db.*;
+
+/**
+ * Durable local worker. The same organization lock as Writes serializes expiry, reminders, message
+ * delivery and clean-up with approvals (DEV-012, DEV-014, DEV-030—033).
+ *
+ * Scan order is fixed: pending expiry → proportional reminders → event delivery → retention clean-up.
+ * Every stage re-reads the current state, so a decision or withdrawal that won the lock first is never
+ * overwritten by an older scan.
+ */
+@Component
+@ConditionalOnProperty(name=&quot;pandora.worker-enabled&quot;,havingValue=&quot;true&quot;,matchIfMissing=true)
+public class EventsWorker {
+<span class="fc" id="L34">    private static final Logger log=LoggerFactory.getLogger(EventsWorker.class);</span>
+    private final Db db;
+    private final WorkspaceService workspace;
+    private final ExpiryService expiry;
+    private final ReminderService reminders;
+    private final ObjectMapper mapper;
+    private final TransactionTemplate transaction;
+    private final Access access;
+    private final Clock clock;
+<span class="fc" id="L43">    private final AtomicBoolean running = new AtomicBoolean();</span>
+
+    public EventsWorker(Db db,WorkspaceService workspace,ExpiryService expiry,ReminderService reminders,
+<span class="fc" id="L46">                        ObjectMapper mapper,PlatformTransactionManager tx,Access access,Clock clock) {</span>
+<span class="fc" id="L47">        this.db=db;this.workspace=workspace;this.expiry=expiry;this.reminders=reminders;</span>
+<span class="fc" id="L48">        this.mapper=mapper;this.transaction=new TransactionTemplate(tx);this.access=access;this.clock=clock;</span>
+<span class="fc" id="L49">    }</span>
+
+    @Scheduled(fixedDelayString=&quot;${pandora.worker.delay-ms:3000}&quot;,initialDelayString=&quot;${pandora.worker.initial-delay-ms:3000}&quot;)
+    public void runOnce() {
+        // The scheduler can overlap itself after a slow scan; one local worker pass at a time is enough.
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        if (!running.compareAndSet(false, true)) return;</span>
+        try {
+<span class="fc bfc" id="L56" title="All 2 branches covered.">            for (var organization:db.list(&quot;SELECT id FROM organizations ORDER BY id&quot;)) {</span>
+<span class="fc" id="L57">                String org=s(organization,&quot;id&quot;);</span>
+                try {
+<span class="fc" id="L59">                    transaction.executeWithoutResult(status-&gt;{</span>
+<span class="fc" id="L60">                        var locked=db.one(&quot;SELECT * FROM organizations WHERE id=? FOR UPDATE&quot;,org);</span>
+<span class="fc" id="L61">                        Instant now=clock.instant();</span>
+<span class="fc" id="L62">                        ZoneId zone=ZoneId.of(s(locked,&quot;timeZone&quot;));</span>
+<span class="fc" id="L63">                        expiry.expirePending(org,now);</span>
+<span class="fc" id="L64">                        reminders.createReminders(org,now);</span>
+<span class="fc" id="L65">                        deliver(org,zone,now);</span>
+<span class="fc" id="L66">                        workspace.cleanupNotifications(org,now);</span>
+<span class="fc" id="L67">                    });</span>
+<span class="nc" id="L68">                } catch(Exception ex) {</span>
+<span class="nc" id="L69">                    log.warn(&quot;Local event worker transaction failed for organization {}: {}&quot;,org,ex.getClass().getSimpleName());</span>
+<span class="fc" id="L70">                }</span>
+<span class="fc" id="L71">            }</span>
+        } finally {
+<span class="fc" id="L73">            running.set(false);</span>
+        }
+<span class="fc" id="L75">    }</span>
+
+    /**
+     * Turn each pending event into one copy per recipient. The recipient list is only a candidate list:
+     * ordinary events that lost task authority before delivery get no restricted content and no task
+     * entry. A removal event proves the old effective-owner fact and therefore keeps the read-only
+     * historical entry (DEV-030, DEV-033).
+     */
+    private void deliver(String org,ZoneId zone,Instant now) {
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        for(var event:db.list(&quot;SELECT * FROM domain_events WHERE organization_id=? AND status='pending' ORDER BY created_at,id LIMIT 100 FOR UPDATE&quot;,org)) {</span>
+            List&lt;String&gt; recipients;
+<span class="fc" id="L86">            try {recipients=mapper.readValue(s(event,&quot;recipientsJson&quot;),new TypeReference&lt;List&lt;String&gt;&gt;(){});}</span>
+<span class="pc" id="L87">            catch(Exception ex) {throw new IllegalStateException(&quot;Invalid durable event recipient payload&quot;,ex);}</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            Map&lt;String,Object&gt; details=event.get(&quot;detailsJson&quot;)==null?Map.of():db.parse(s(event,&quot;detailsJson&quot;));</span>
+<span class="fc" id="L89">            Set&lt;String&gt; removed=new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L90" title="All 4 branches covered.">            if (details.get(&quot;removedUserIds&quot;) instanceof Collection&lt;?&gt; ids) for (Object id:ids) removed.add(String.valueOf(id));</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">            boolean revoked=event.get(&quot;revokedAt&quot;)!=null;</span>
+<span class="fc" id="L92">            String taskId=s(event,&quot;taskId&quot;);</span>
+<span class="fc" id="L93">            String objectType=s(event,&quot;objectType&quot;);</span>
+<span class="fc" id="L94">            String objectId=s(event,&quot;objectId&quot;);</span>
+<span class="pc bpc" id="L95" title="1 of 4 branches missed.">            boolean comment= s(event,&quot;eventType&quot;)!=null &amp;&amp; s(event,&quot;eventType&quot;).startsWith(&quot;comment.&quot;);</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">            String summary=s(event,&quot;changeSummary&quot;)==null?s(event,&quot;eventType&quot;):s(event,&quot;changeSummary&quot;);</span>
+<span class="fc" id="L97">            String title=s(event,&quot;title&quot;);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            for(String recipient:new LinkedHashSet&lt;&gt;(recipients)) {</span>
+<span class="fc" id="L99">                Actor actor=activeActor(org,recipient);</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">                if(actor==null) continue;</span>
+                // Non-task objects (a log comment) are re-verified at delivery through their own
+                // authority; a deleted comment must not deliver an excerpt (chapter 8.5).
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                boolean canRead=taskId!=null ? workspace.canReadTask(actor,taskId,true)</span>
+<span class="pc bpc" id="L104" title="2 of 4 branches missed.">                        : objectType==null || workspace.canReadEventObject(actor,objectType,objectId,details);</span>
+<span class="fc bfc" id="L105" title="All 4 branches covered.">                boolean relationLost=!canRead &amp;&amp; removed.contains(recipient);</span>
+<span class="fc bfc" id="L106" title="All 4 branches covered.">                boolean commentDeleted=comment &amp;&amp; workspace.eventObjectDeleted(actor,objectType,objectId,details);</span>
+<span class="pc bpc" id="L107" title="1 of 6 branches missed.">                boolean keepTask=!revoked &amp;&amp; (canRead||relationLost);</span>
+                // An ordinary candidate who lost task authority before delivery gets no restricted
+                // content and no historical entry. Only a recipient that can still read the task, or a
+                // removal event that proves the old effective-owner fact, keeps the title/summary
+                // (design §7, DEV-033).
+<span class="pc bpc" id="L112" title="1 of 6 branches missed.">                boolean contentMasked=!revoked &amp;&amp; !canRead &amp;&amp; !relationLost;</span>
+                String copySummary;
+                String copyTitle;
+                boolean readonly;
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">                if(revoked) {</span>
+<span class="nc" id="L117">                    copySummary=&quot;该通知已被撤回。&quot;;copyTitle=null;readonly=true;</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">                } else if(canRead) {</span>
+<span class="fc" id="L119">                    copySummary=truncate(summary,255);copyTitle=title;readonly=Boolean.TRUE.equals(event.get(&quot;readonly&quot;));</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">                } else if(relationLost) {</span>
+<span class="fc" id="L121">                    copySummary=&quot;你已不再是该任务负责人；此消息保留只读摘要，请查看当前有效任务。&quot;;</span>
+<span class="fc" id="L122">                    copyTitle=title;readonly=true;</span>
+                } else {
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">                    copySummary=commentDeleted?&quot;该评论已删除，正文不再展示。&quot;:&quot;你的工作关系或访问范围已变化，请查看当前工作安排。&quot;;</span>
+<span class="fc" id="L125">                    copyTitle=null;readonly=true;</span>
+                }
+<span class="fc" id="L127">                db.update(&quot;INSERT IGNORE INTO notifications(id,organization_id,event_id,recipient_id,event_type,task_id,summary,&quot;</span>
+                                + &quot;request_id,task_version_id,delivered_at,expires_at,source,readonly,title,change_summary,relation_lost,content_masked,object_type,object_id) &quot;
+                                + &quot;VALUES(?,?,?,?,?,?,?,?,?,?,?,'event',?,?,?,?,?,?,?)&quot;,
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                        id(),org,s(event,&quot;id&quot;),recipient,s(event,&quot;eventType&quot;),keepTask?taskId:null,copySummary,</span>
+<span class="fc bfc" id="L131" title="All 4 branches covered.">                        contentMasked?null:s(event,&quot;requestId&quot;),contentMasked?null:s(event,&quot;taskVersionId&quot;),Timestamp.from(now),</span>
+<span class="fc" id="L132">                        event.get(&quot;expiresAt&quot;),readonly,copyTitle,</span>
+<span class="pc bpc" id="L133" title="1 of 4 branches missed.">                        contentMasked||revoked?null:s(event,&quot;changeSummary&quot;),relationLost,contentMasked,</span>
+<span class="fc bfc" id="L134" title="All 4 branches covered.">                        contentMasked?null:objectType,contentMasked?null:objectId);</span>
+<span class="fc" id="L135">            }</span>
+<span class="fc" id="L136">            db.update(&quot;UPDATE domain_events SET status='delivered',delivered_at=? WHERE organization_id=? AND id=? AND status='pending'&quot;,</span>
+<span class="fc" id="L137">                    Timestamp.from(now),org,s(event,&quot;id&quot;));</span>
+<span class="fc" id="L138">        }</span>
+<span class="fc" id="L139">    }</span>
+
+    private Actor activeActor(String org,String userId) {
+<span class="fc" id="L142">        var user=db.find(&quot;SELECT * FROM users WHERE organization_id=? AND id=? AND active=1&quot;,org,userId);</span>
+<span class="pc bpc" id="L143" title="1 of 4 branches missed.">        if(user==null || &quot;admin&quot;.equals(s(user,&quot;role&quot;))) return null;</span>
+<span class="fc" id="L144">        return access.actor(user);</span>
+    }
+
+    private static String truncate(String value,int limit) {
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">        if(value==null) return null;</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        return value.length()&lt;=limit?value:value.substring(0,limit);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

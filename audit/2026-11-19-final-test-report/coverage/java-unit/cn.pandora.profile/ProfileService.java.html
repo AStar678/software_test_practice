@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProfileService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.profile</a> &gt; <span class="el_source">ProfileService.java</span></div><h1>ProfileService.java</h1><pre class="source lang-java linenums">package cn.pandora.profile;
+
+import cn.pandora.auth.Actor;
+import cn.pandora.common.ApiException;
+import cn.pandora.common.Db;
+import cn.pandora.common.Events;
+import cn.pandora.common.Writes;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.regex.Pattern;
+import java.io.ByteArrayInputStream;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import javax.imageio.ImageIO;
+
+import static cn.pandora.common.Db.*;
+
+@Service
+public class ProfileService {
+<span class="fc" id="L22">    private static final Set&lt;String&gt; EDITABLE = Set.of(&quot;email&quot;, &quot;avatar&quot;);</span>
+<span class="fc" id="L23">    private static final Set&lt;String&gt; AVATARS = Set.of(&quot;rabbit&quot;, &quot;cat&quot;, &quot;bear&quot;, &quot;panda&quot;);</span>
+<span class="fc" id="L24">    private static final Pattern EMAIL = Pattern.compile(&quot;^[A-Za-z0-9.!#$%&amp;'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$&quot;);</span>
+    private final Db db;
+    private final Events events;
+    private final Clock clock;
+
+<span class="fc" id="L29">    public ProfileService(Db db, Events events) { this(db, events, Clock.systemUTC()); }</span>
+
+    @org.springframework.beans.factory.annotation.Autowired
+<span class="fc" id="L32">    public ProfileService(Db db, Events events, Clock clock) { this.db = db; this.events = events; this.clock = clock; }</span>
+
+    public Map&lt;String, Object&gt; get(Actor actor) {
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if(actor.administrator()) throw new ApiException(403,&quot;BUSINESS_ROLE_REQUIRED&quot;,&quot;管理员请使用独立管理端&quot;);</span>
+<span class="nc" id="L36">        Map&lt;String, Object&gt; row = db.one(&quot;SELECT u.id,u.display_name,u.phone,u.email,u.avatar,u.profile_version,u.hire_date,&quot;</span>
+                + &quot;ep.team_id,o.name AS organization_name,o.time_zone AS organization_time_zone,d.name AS department_name,&quot;
+                + &quot;p.name AS position_name,t.name AS team_name,m.display_name AS manager_name &quot;
+                + &quot;FROM users u JOIN organizations o ON o.id=u.organization_id &quot;
+                + &quot;JOIN employee_placements ep ON ep.organization_id=u.organization_id AND ep.employee_id=u.id &quot;
+                + &quot;LEFT JOIN departments d ON d.organization_id=ep.organization_id AND d.id=ep.department_id &quot;
+                + &quot;JOIN positions p ON p.organization_id=ep.organization_id AND p.id=ep.position_id &quot;
+                + &quot;LEFT JOIN teams t ON t.organization_id=ep.organization_id AND t.id=ep.team_id &quot;
+                + &quot;LEFT JOIN users m ON m.organization_id=u.organization_id AND m.id=? &quot;
+<span class="nc" id="L45">                + &quot;WHERE u.organization_id=? AND u.id=? AND u.active=1&quot;, actor.managerId(), actor.organizationId(), actor.id());</span>
+<span class="nc" id="L46">        row.put(&quot;role&quot;,actor.role());row.put(&quot;placementType&quot;,actor.role());row.put(&quot;managerId&quot;,actor.managerId());</span>
+<span class="nc" id="L47">        row.put(&quot;rowVersion&quot;, n(row, &quot;profileVersion&quot;));</span>
+        // The same company business date drives the duration, never the device time zone.
+<span class="nc" id="L49">        ZoneId zone = ZoneId.of(Objects.toString(row.get(&quot;organizationTimeZone&quot;),&quot;UTC&quot;));</span>
+<span class="nc" id="L50">        LocalDate asOfDate = clock.instant().atZone(zone).toLocalDate();</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        LocalDate hireDate = row.get(&quot;hireDate&quot;)==null?null:LocalDate.parse(Objects.toString(row.get(&quot;hireDate&quot;)));</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        row.put(&quot;hireDate&quot;, hireDate==null?null:hireDate.toString());</span>
+<span class="nc" id="L53">        row.put(&quot;tenure&quot;, Tenure.of(hireDate, asOfDate));</span>
+<span class="nc" id="L54">        return row;</span>
+    }
+
+    /** Called exclusively inside Writes.run; client IDs and organization fields are never accepted. */
+    public Map&lt;String, Object&gt; update(Actor actor, String ifMatch, Map&lt;String, Object&gt; input) {
+<span class="fc" id="L59">        Map&lt;String, Object&gt; values = validate(input);</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if(actor.administrator()) throw new ApiException(403,&quot;BUSINESS_ROLE_REQUIRED&quot;,&quot;管理员请使用独立管理端&quot;);</span>
+<span class="fc" id="L61">        Map&lt;String, Object&gt; current = db.one(&quot;SELECT email,avatar,profile_version FROM users WHERE organization_id=? AND id=? AND active=1 FOR UPDATE&quot;, actor.organizationId(), actor.id());</span>
+<span class="fc" id="L62">        long version = n(current, &quot;profileVersion&quot;);</span>
+<span class="fc" id="L63">        Writes.checkVersion(ifMatch, version);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        String email = values.containsKey(&quot;email&quot;) ? (String) values.get(&quot;email&quot;) : s(current, &quot;email&quot;);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        String avatar = values.containsKey(&quot;avatar&quot;) ? (String) values.get(&quot;avatar&quot;) : s(current, &quot;avatar&quot;);</span>
+<span class="fc" id="L66">        int changed=db.update(&quot;UPDATE users SET email=?,avatar=?,profile_version=profile_version+1 WHERE organization_id=? AND id=? AND active=1 AND profile_version=?&quot;,</span>
+<span class="fc" id="L67">                email,avatar,actor.organizationId(),actor.id(),version);</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (changed != 1) throw new ApiException(412, &quot;VERSION_CONFLICT&quot;, &quot;个人资料已更新，请重新读取后再保存&quot;);</span>
+        // Audit only which fields changed. Contact values are not copied into audit/outbox/idempotency payloads.
+<span class="fc" id="L70">        events.record(actor, null, &quot;profile.updated&quot;, List.of(), Map.of(&quot;userId&quot;, actor.id(), &quot;fields&quot;, values.keySet()));</span>
+<span class="fc" id="L71">        return Map.of(&quot;id&quot;, actor.id(), &quot;rowVersion&quot;, version + 1, &quot;profileVersion&quot;, version + 1);</span>
+    }
+
+    static Map&lt;String, Object&gt; validate(Map&lt;String, Object&gt; input) {
+<span class="pc bpc" id="L75" title="1 of 6 branches missed.">        if (input == null || input.isEmpty() || !EDITABLE.containsAll(input.keySet())) throw bad(&quot;仅可修改邮箱和头像，请至少填写一项；姓名和手机号由管理员维护&quot;);</span>
+<span class="fc" id="L76">        Map&lt;String, Object&gt; result = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (input.containsKey(&quot;email&quot;)) {</span>
+<span class="fc" id="L78">            String email = text(input.get(&quot;email&quot;), &quot;邮箱&quot;, 254, true);</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            if (email != null) {</span>
+<span class="fc" id="L80">                int at = email.indexOf('@');</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">                String local = at &lt; 0 ? &quot;&quot; : email.substring(0, at);</span>
+<span class="pc bpc" id="L82" title="3 of 10 branches missed.">                if (!EMAIL.matcher(email).matches() || local.length() &gt; 64 || local.startsWith(&quot;.&quot;) || local.endsWith(&quot;.&quot;) || local.contains(&quot;..&quot;)) throw bad(&quot;请输入有效的邮箱地址&quot;);</span>
+            }
+<span class="fc" id="L84">            result.put(&quot;email&quot;, email);</span>
+        }
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (input.containsKey(&quot;avatar&quot;)) result.put(&quot;avatar&quot;, avatar(input.get(&quot;avatar&quot;)));</span>
+<span class="fc" id="L87">        return result;</span>
+    }
+
+    private static String avatar(Object value) {
+<span class="pc bpc" id="L91" title="1 of 4 branches missed.">        if (value == null || &quot;&quot;.equals(value)) return null;</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (!(value instanceof String string)) throw bad(&quot;请选择有效的头像&quot;);</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (AVATARS.contains(string)) return string;</span>
+<span class="pc bpc" id="L94" title="1 of 6 branches missed.">        if (string.length() &gt; 400_000 || !(string.startsWith(&quot;data:image/png;base64,&quot;) || string.startsWith(&quot;data:image/jpeg;base64,&quot;)))</span>
+<span class="fc" id="L95">            throw bad(&quot;头像须为 PNG 或 JPEG 图片，大小不超过300KB&quot;);</span>
+        try {
+<span class="fc" id="L97">            byte[] bytes = Base64.getDecoder().decode(string.substring(string.indexOf(',') + 1));</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            if (bytes.length &gt; 300_000) throw bad(&quot;头像图片过大&quot;);</span>
+<span class="fc" id="L99">            try (var stream = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {</span>
+<span class="fc" id="L100">                var readers = ImageIO.getImageReaders(stream);</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">                if (!readers.hasNext()) throw bad(&quot;无法读取头像图片&quot;);</span>
+<span class="fc" id="L102">                var reader = readers.next();</span>
+                try {
+<span class="fc" id="L104">                    reader.setInput(stream);</span>
+<span class="fc" id="L105">                    String format = reader.getFormatName().toLowerCase(Locale.ROOT);</span>
+<span class="pc bpc" id="L106" title="2 of 4 branches missed.">                    if (!Set.of(&quot;png&quot;, &quot;jpeg&quot;).contains(format) || !string.startsWith(&quot;data:image/&quot; + format + &quot;;base64,&quot;)</span>
+<span class="pc bpc" id="L107" title="3 of 8 branches missed.">                        || reader.getWidth(0) &lt; 1 || reader.getHeight(0) &lt; 1 || reader.getWidth(0) &gt; 512 || reader.getHeight(0) &gt; 512</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">                        || reader.read(0) == null) throw bad(&quot;头像图片须不超过512×512像素&quot;);</span>
+<span class="fc" id="L109">                } finally { reader.dispose(); }</span>
+            }
+<span class="fc" id="L111">            return string;</span>
+<span class="fc" id="L112">        } catch (ApiException error) { throw error; }</span>
+<span class="nc" id="L113">        catch (Exception error) { throw bad(&quot;无法读取头像图片，请重新选择 PNG 或 JPEG 图片&quot;); }</span>
+    }
+
+    private static String text(Object value, String label, int max, boolean optional) {
+<span class="pc bpc" id="L117" title="3 of 4 branches missed.">        if (value == null &amp;&amp; optional) return null;</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        if (!(value instanceof String string)) throw bad(label + &quot;必须为文字&quot;);</span>
+<span class="fc" id="L119">        String text = string.strip();</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (text.isEmpty()) {</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">            if (optional) return null;</span>
+<span class="nc" id="L122">            throw bad(&quot;姓名不能为空&quot;);</span>
+        }
+<span class="pc bpc" id="L124" title="1 of 4 branches missed.">        if (text.codePointCount(0, text.length()) &gt; max || text.codePoints().anyMatch(Character::isISOControl)) throw bad(label + &quot;格式不正确或超过&quot; + max + &quot;字&quot;);</span>
+<span class="fc" id="L125">        return text;</span>
+    }
+
+<span class="fc" id="L128">    private static ApiException bad(String message) { return new ApiException(400, &quot;INVALID_INPUT&quot;, message); }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

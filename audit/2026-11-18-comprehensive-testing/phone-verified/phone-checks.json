@@ -1,0 +1,12 @@
+[
+  {
+    "check": "dedicated device forwarding port is unused",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "original installed Flutter app remains byte-identical",
+    "pass": true,
+    "detail": null
+  }
+]

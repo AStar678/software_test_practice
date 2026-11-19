@@ -1,0 +1,610 @@
+{
+  "updated": "2026-11-18T16:58:55.648070+00:00",
+  "database": "pandora_precheck_demo_6dae6312aca7",
+  "checks": [
+    {
+      "check": "preparation refuses missing explicit database/marker arguments",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "preparation refuses missing explicit database/marker arguments",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "two preparations preserve all business rows, placements, stable seed keys and IDs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "two preparations preserve original business date, seed completion and counts",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "mismatched demo marker refuses preparation without business mutation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "startup seed refuses missing/mismatched explicit target without touching business data",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "startup seed refuses missing/mismatched explicit target without touching business data",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "read-only current precheck accepts the stored fixed organization",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "persistent demo satisfies all read-only database integrity checks",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "demo has two departments, four teams and complete single-position staff",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "every department and team has exactly one head",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator is independent and absent from staff/placements",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "seed contains approved, direct, pending, rejected, withdrawn and expired applications",
+      "pass": true,
+      "evidence": [
+        "approved",
+        "direct",
+        "expired",
+        "pending",
+        "rejected",
+        "withdrawn"
+      ]
+    },
+    {
+      "check": "non-protagonists have no separately populated personal logs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upper has a same-day short ordinary actionable task",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upper has ordinary unfinished overdue work",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "middle has a same-day short ordinary actionable task",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "middle has ordinary unfinished overdue work",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-1 has a same-day short ordinary actionable task",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-1 has ordinary unfinished overdue work",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee has a same-day short ordinary actionable task",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee has ordinary unfinished overdue work",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "historical overdue work keeps approval version and chronology consistent",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "seed has both completed work and a real reopened execution round",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "dedicated handover and formal takeover retain real separate histories",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "colleague authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "market authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "market-employee-1 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "market-employee-2 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "market-head-1 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "market-head-2 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "marketing authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "middle authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-employee-1 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-employee-2 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-1 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-2 authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upper authenticates through its real declared account namespace after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "four demo roles open home, company/form, logs, notifications and legitimate subordinate pages",
+      "pass": true,
+      "evidence": "eal authorized logs\nPASS product-head-1 notification center opens with six types and real rows\nPASS product-head-1 subordinate tree exposes the actual management chain\nPASS product-head-1 opens the subordinate card\nPASS product-head-1 opens the subordinate continuous schedule\nPASS product-head-1 can switch the subordinate work page to logs\nPASS real demo login employee\nPASS employee home shows the three modules with a real daily calendar\nPASS employee uses body-only company items, three preview rows and no retired badges\nPASS employee has 1–2 real overdue board tasks and the preview never tints them\nPASS employee has a real three-day daily item available for the drag demo\nPASS employee board list keeps the server order and tints only the real overdue rows\nPASS employee company chronicles clamp, expand independently and stay body-only\nPASS employee company page renders the real month calendar\nPASS employee own day axis has a usable short-task drag target\nPASS employee can open normal overdue work in its real detail\nPASS employee task form opens its server-paged table\nPASS employee form table has real rows and a total\nPASS employee table form pins the second real task as one tinted band without a label\nPASS employee log page renders real authorized logs\nPASS employee notification center opens with six types and real rows\nPASS employee has the expected empty subordinate tree\nPASS the four demo roles exercise every declared page without browser exceptions\nPASS real demo login employee\nPASS the demo drag item is loaded from the real seed\nPASS the demo cross-day bar exposes a settable grab point\nPASS the demo drag shows the whole-bar preview before saving\nPASS the demo drag has a real target date after activation\nPASS releasing the demo drag asks for confirmation with both ranges\nPASS the demo drag saves and closes the confirmation\nPASS the demo drag moved the complete range by the real day difference and kept its content\nPASS the reloaded demo page keeps the moved dates\n"
+    },
+    {
+      "check": "demo catalogue carries at least two shared tags with distinguishable colours",
+      "pass": true,
+      "evidence": [
+        "#D8EAF4",
+        "#F6D5D2"
+      ]
+    },
+    {
+      "check": "demo log log-employee-0 reads its seeded shared tag collection in order",
+      "pass": true,
+      "evidence": [
+        "39d0d3ff-b9b3-3cf7-914c-8c083f3f0e70",
+        "f63a48a9-e5f6-33d1-a641-6dd8b9e16ce7"
+      ]
+    },
+    {
+      "check": "demo log log-middle-0 reads its seeded shared tag collection in order",
+      "pass": true,
+      "evidence": [
+        "f63a48a9-e5f6-33d1-a641-6dd8b9e16ce7",
+        "39d0d3ff-b9b3-3cf7-914c-8c083f3f0e70"
+      ]
+    },
+    {
+      "check": "demo task task-doing keeps its ordered shared tags and takes the first tag colour",
+      "pass": true,
+      "evidence": {
+        "tagIds": [
+          "39d0d3ff-b9b3-3cf7-914c-8c083f3f0e70",
+          "f63a48a9-e5f6-33d1-a641-6dd8b9e16ce7"
+        ],
+        "colors": [
+          "#F6D5D2",
+          "#D8EAF4"
+        ]
+      }
+    },
+    {
+      "check": "demo task task-employee-3 keeps its ordered shared tags and takes the first tag colour",
+      "pass": true,
+      "evidence": {
+        "tagIds": [
+          "f63a48a9-e5f6-33d1-a641-6dd8b9e16ce7",
+          "39d0d3ff-b9b3-3cf7-914c-8c083f3f0e70"
+        ],
+        "colors": [
+          "#D8EAF4",
+          "#F6D5D2"
+        ]
+      }
+    },
+    {
+      "check": "a no-tag control task keeps an empty ordered collection",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "upper has the derived fixed position",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "middle has the derived fixed position",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-1 has the derived fixed position",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee has the derived fixed position",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "company employee directory excludes admin and all contacts",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin cannot read employee task business APIs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee cannot read admin management APIs",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the default demo no longer carries the retired 110-row pagination dump",
+      "pass": true,
+      "evidence": 21
+    },
+    {
+      "check": "upper has 10-20 meaningful created tasks",
+      "pass": true,
+      "evidence": 16
+    },
+    {
+      "check": "middle has 10-20 meaningful created tasks",
+      "pass": true,
+      "evidence": 17
+    },
+    {
+      "check": "product-head-1 has 10-20 meaningful created tasks",
+      "pass": true,
+      "evidence": 13
+    },
+    {
+      "check": "employee has 10-20 meaningful created tasks",
+      "pass": true,
+      "evidence": 12
+    },
+    {
+      "check": "company retains ten ordered managed items",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "creator-only demo retains original creator and excludes creator from effective assignees",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "takeover recipient can read without being rewritten as original creator",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "middle log directory includes indirect/direct subordinate demo authors",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-1 log directory includes indirect/direct subordinate demo authors",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upper has own ranged/daily items, recent logs and notifications",
+      "pass": true,
+      "evidence": {
+        "items": 3,
+        "logs": 3,
+        "notes": 55
+      }
+    },
+    {
+      "check": "middle has own ranged/daily items, recent logs and notifications",
+      "pass": true,
+      "evidence": {
+        "items": 3,
+        "logs": 3,
+        "notes": 68
+      }
+    },
+    {
+      "check": "product-head-1 has own ranged/daily items, recent logs and notifications",
+      "pass": true,
+      "evidence": {
+        "items": 3,
+        "logs": 3,
+        "notes": 77
+      }
+    },
+    {
+      "check": "employee has own ranged/daily items, recent logs and notifications",
+      "pass": true,
+      "evidence": {
+        "items": 3,
+        "logs": 3,
+        "notes": 54
+      }
+    },
+    {
+      "check": "default demo keeps freeze/delete-rebuild edge samples out of the mainline",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upper has one independent calendar pin and one independent table pin",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "middle has one independent calendar pin and one independent table pin",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-1 has one independent calendar pin and one independent table pin",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee has one independent calendar pin and one independent table pin",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upper has a real hire date",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upper has 10-20 meaningful personally assigned tasks",
+      "pass": true,
+      "evidence": 12
+    },
+    {
+      "check": "upper has both read and unread multi-type notifications",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "middle has a real hire date",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "middle has 10-20 meaningful personally assigned tasks",
+      "pass": true,
+      "evidence": 16
+    },
+    {
+      "check": "middle has both read and unread multi-type notifications",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-1 has a real hire date",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "product-head-1 has 10-20 meaningful personally assigned tasks",
+      "pass": true,
+      "evidence": 16
+    },
+    {
+      "check": "product-head-1 has both read and unread multi-type notifications",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee has a real hire date",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee has 10-20 meaningful personally assigned tasks",
+      "pass": true,
+      "evidence": 20
+    },
+    {
+      "check": "employee has both read and unread multi-type notifications",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the four-role parent chain links leaf to team, department and founder tasks",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "dense/overlap/cross-year/zero-length extremes stay out of the default demo",
+      "pass": true,
+      "evidence": [
+        "task-chain-leaf",
+        "task-chain-middle",
+        "task-chain-parent",
+        "task-chain-team",
+        "task-comment-revoked",
+        "task-completed",
+        "task-creation-expired",
+        "task-creation-pending",
+        "task-creation-rejected",
+        "task-creation-withdrawn",
+        "task-creator-only",
+        "task-cross-department",
+        "task-cross-month",
+        "task-doing",
+        "task-employee-1",
+        "task-employee-2",
+        "task-employee-3",
+        "task-employee-4",
+        "task-employee-5",
+        "task-employee-6",
+        "task-employee-7",
+        "task-employee-8",
+        "task-handover",
+        "task-middle-1",
+        "task-middle-10",
+        "task-middle-11",
+        "task-middle-12",
+        "task-middle-2",
+        "task-middle-3",
+        "task-middle-4",
+        "task-middle-5",
+        "task-middle-6",
+        "task-middle-7",
+        "task-middle-8",
+        "task-middle-9",
+        "task-pending-complete",
+        "task-product-head-1-1",
+        "task-product-head-1-10",
+        "task-product-head-1-11",
+        "task-product-head-1-12",
+        "task-product-head-1-2",
+        "task-product-head-1-3",
+        "task-product-head-1-4",
+        "task-product-head-1-5",
+        "task-product-head-1-6",
+        "task-product-head-1-7",
+        "task-product-head-1-8",
+        "task-product-head-1-9",
+        "task-reopened",
+        "task-takeover",
+        "task-upper-1",
+        "task-upper-10",
+        "task-upper-11",
+        "task-upper-12",
+        "task-upper-2",
+        "task-upper-3",
+        "task-upper-4",
+        "task-upper-5",
+        "task-upper-6",
+        "task-upper-7",
+        "task-upper-8",
+        "task-upper-9"
+      ]
+    },
+    {
+      "check": "the default demo keeps a small cross-month task for realistic range coverage",
+      "pass": true,
+      "evidence": {
+        "id": "1a77134c-2b4d-4289-b62d-277ad109b31c",
+        "type": "task"
+      }
+    },
+    {
+      "check": "taken-over task edit requires operator manager",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "actual manager approves takeover owner edit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "admin task history can trace takeover after restart",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator can persist a real account-name edit before repeat preparation",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "repeat preparation preserves a real user edit instead of resetting demo data",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "repeat preparation preserves independent administrator account edits",
+      "pass": true,
+      "evidence": null
+    }
+  ],
+  "businessDate": "2026-11-19",
+  "counts": {
+    "users": 14,
+    "admin_accounts": 1,
+    "employee_placements": 14,
+    "departments": 2,
+    "teams": 4,
+    "tasks": 62,
+    "task_versions": 72,
+    "approval_requests": 72,
+    "work_logs": 12,
+    "home_items": 10,
+    "task_business_transfers": 1,
+    "handover_requests": 1,
+    "task_log_comments": 2,
+    "notifications": 266
+  },
+  "result": "PASS"
+}

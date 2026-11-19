@@ -5,7 +5,7 @@ const f=JSON.parse(process.env.PANDORA_DRAG_FIXTURE),q=JSON.stringify;
 const out=path.resolve(__dirname,'../../output/web-alignment-drag');
 fs.mkdirSync(out,{recursive:true});
 const report={checks:[]};
-function check(name,pass,evidence){report.checks.push({name,pass:!!pass,evidence});console.log((pass?'PASS ':'FAIL ')+name+(pass?'':' '+JSON.stringify(evidence)));if(!pass)throw Error(name+' '+JSON.stringify(evidence));}
+function check(name,pass,evidence){report.checks.push({name,pass:!!pass,evidence});console.log((pass?'PASS ':'FAIL ')+name+(pass?'':' '+JSON.stringify(evidence)));if(!pass&&!name.startsWith('holding the bottom edge'))throw Error(name+' '+JSON.stringify(evidence));}
 async function main(){
  const b=await openBrowser(f.base+'/'+encodeURIComponent('潘多拉-交互原型.html'),{width:390,height:844,mobile:true}),ev=b.evaluate;
  await b.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
@@ -147,10 +147,12 @@ async function main(){
 
   /* 8.4 上下边缘自动滚动并补载月份；来源捕获不丢任务，取消不提交。 */
   await view('month',f.monthDay);
-  const edgeBefore=await ev("({top:document.querySelector('.p-month-scroll').scrollTop,months:Pandora.calendar.currentStream().length})");
-  const scrollRect=await ev("(()=>{const r=document.querySelector('.p-month-scroll').getBoundingClientRect();return {bottom:r.bottom,left:r.left,width:r.width}})()");
   const edgePoint=await point(`[data-schedule-move="${f.edge}"][data-resize-mode=month]`);
   await mouseDown(edgePoint);
+  // point() calls scrollIntoView. Measure only after that setup and long-press activation,
+  // otherwise its own scroll is wrongly attributed to the drag's edge auto-scrolling.
+  const edgeBefore=await ev("({top:document.querySelector('.p-month-scroll').scrollTop,months:Pandora.calendar.currentStream().length})");
+  const scrollRect=await ev("(()=>{const r=document.querySelector('.p-month-scroll').getBoundingClientRect();return {bottom:r.bottom,left:r.left,width:r.width}})()");
   await b.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:scrollRect.left+scrollRect.width/2,y:scrollRect.bottom-6,button:'left',buttons:1});
   await sleep(1200);
   const edgeAfter=await ev("({top:document.querySelector('.p-month-scroll').scrollTop,months:Pandora.calendar.currentStream().length,preview:!!document.querySelector('.p-drag-preview')})");
@@ -190,6 +192,7 @@ async function main(){
   await ev('closeSheet()');
 
   check('no browser exceptions',b.errors.length===0,b.errors);
+  if(report.checks.some(row=>!row.pass))throw Error('Recorded edge-scroll regression; see browser-report.json');
   report.result='PASS';
  }catch(error){report.result='FAIL';report.error=error.message;throw error;}
  finally{fs.writeFileSync(path.join(out,'browser-report.json'),JSON.stringify(report,null,2));await b.kill();}

@@ -1,0 +1,21 @@
+{
+  "updated": "2026-11-18T16:03:11.436928+00:00",
+  "serverVersion": "9.3.0",
+  "checks": [
+    {
+      "check": "empty database completes the full Flyway chain",
+      "pass": true
+    },
+    {
+      "check": "backup restores an independent V20 database with identical row fingerprints",
+      "pass": true
+    },
+    {
+      "check": "fresh and upgraded columns, FK, indexes, unique keys and CHECK constraints are identical",
+      "pass": false
+    }
+  ],
+  "backupSha256": "70703d61a89b5ccaa3119b2866d7ba9448ef1e1266e70e9af245901d8e99b8ec",
+  "result": "FAIL",
+  "errorType": "AssertionError"
+}

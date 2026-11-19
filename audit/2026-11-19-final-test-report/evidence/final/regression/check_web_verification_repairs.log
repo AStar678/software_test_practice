@@ -1,0 +1,100 @@
+PASS real founder logs in
+PASS editable log opens
+PASS legal edit fill appends while preserving existing content
+PASS fill response is held after its real read
+PASS isolated service clock advances
+PASS in-flight fill becomes read-only after server freeze
+PASS late fill preserves unsaved text
+PASS direct fill action cannot bypass read-only
+PASS expired save stays rejected with draft preserved
+PASS opening a frozen log has no edit entry
+PASS authorized staff months load
+PASS transient staff failure offers retry /me/reports/0
+PASS staff log retry recovers /me/reports/0
+PASS authorized month window survives /me/reports/0
+PASS authorized staff months load
+PASS transient staff failure offers retry /me/reports/500
+PASS staff log retry recovers /me/reports/500
+PASS authorized month window survives /me/reports/500
+PASS authorized staff months load
+PASS transient staff failure offers retry /users/4ce9a359-10d8-524d-8232-c73416f398d0/0
+PASS staff log retry recovers /users/4ce9a359-10d8-524d-8232-c73416f398d0/0
+PASS authorized month window survives /users/4ce9a359-10d8-524d-8232-c73416f398d0/0
+PASS authorized staff months load
+PASS transient staff failure offers retry /users/4ce9a359-10d8-524d-8232-c73416f398d0/500
+PASS staff log retry recovers /users/4ce9a359-10d8-524d-8232-c73416f398d0/500
+PASS authorized month window survives /users/4ce9a359-10d8-524d-8232-c73416f398d0/500
+PASS authorized staff months load
+PASS transient staff failure offers retry /work-logs?scope=visible&authorId=/0
+PASS staff log retry recovers /work-logs?scope=visible&authorId=/0
+PASS authorized month window survives /work-logs?scope=visible&authorId=/0
+PASS authorized staff months load
+PASS transient staff failure offers retry /work-logs?scope=visible&authorId=/500
+PASS staff log retry recovers /work-logs?scope=visible&authorId=/500
+PASS authorized month window survives /work-logs?scope=visible&authorId=/500
+PASS authorized staff months load
+PASS confirmed staff access loss clears content /me/reports
+PASS revoked staff months cannot be restored /me/reports
+PASS authorized staff months load
+PASS confirmed staff access loss clears content /users/4ce9a359-10d8-524d-8232-c73416f398d0
+PASS revoked staff months cannot be restored /users/4ce9a359-10d8-524d-8232-c73416f398d0
+PASS authorized staff months load
+PASS confirmed staff access loss clears content /work-logs?scope=visible&authorId=
+PASS revoked staff months cannot be restored /work-logs?scope=visible&authorId=
+PASS authorized staff months load
+PASS directory removal is confirmed access loss
+PASS notification first page loads
+PASS combined inbox filter is ready
+PASS notification page reaches 40
+PASS notification page reaches 60
+PASS notification page reaches 80
+PASS notification page reaches 100
+PASS notification page reaches 120
+PASS deep notification opens
+PASS deep notification return preserves populated list all/compact
+PASS refresh uses legal server pages
+PASS query and position survive detail
+PASS notification first page loads
+PASS combined inbox filter is ready
+PASS notification page reaches 40
+PASS notification page reaches 60
+PASS notification page reaches 80
+PASS notification page reaches 100
+PASS notification page reaches 120
+PASS deep notification opens
+PASS deep notification return preserves populated list all/full
+PASS refresh uses legal server pages
+PASS query and position survive detail
+PASS notification first page loads
+PASS combined inbox filter is ready
+PASS notification page reaches 40
+PASS notification page reaches 60
+PASS notification page reaches 80
+PASS notification page reaches 100
+PASS notification page reaches 120
+PASS deep notification opens
+PASS deep notification return preserves populated list unread/compact
+PASS refresh uses legal server pages
+PASS query and position survive detail
+PASS notification first page loads
+PASS combined inbox filter is ready
+PASS notification page reaches 40
+PASS notification page reaches 60
+PASS notification page reaches 80
+PASS notification page reaches 100
+PASS notification page reaches 120
+PASS deep notification opens
+PASS deep notification return preserves populated list unread/full
+PASS refresh uses legal server pages
+PASS query and position survive detail
+PASS notification first page loads
+PASS unfiltered retry fixture is ready
+PASS notification page reaches 40
+PASS notification page reaches 60
+PASS notification page reaches 80
+PASS notification page reaches 100
+PASS notification page reaches 120
+PASS partial refresh failure retains 120 valid rows
+PASS refresh retry replaces range and can continue loading
+PASS page after restored range remains reachable without duplicates
+PASS browser has no unexpected exceptions

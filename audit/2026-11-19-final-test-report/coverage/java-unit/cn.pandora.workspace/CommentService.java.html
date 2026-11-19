@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommentService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.workspace</a> &gt; <span class="el_source">CommentService.java</span></div><h1>CommentService.java</h1><pre class="source lang-java linenums">package cn.pandora.workspace;
+
+import cn.pandora.auth.Access;
+import cn.pandora.auth.Actor;
+import cn.pandora.common.ApiException;
+import cn.pandora.common.Db;
+import cn.pandora.common.Events;
+import cn.pandora.common.Writes;
+import org.springframework.stereotype.Service;
+
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.*;
+
+import static cn.pandora.common.Db.*;
+
+/**
+ * Flat comments on tasks and logs (chapters 8.4—8.6).
+ *
+ * A comment belongs to exactly one task or one log; there is no reply level, no parent field and no
+ * separate review. Every read and write re-runs the object's own current authority, and the author
+ * must still hold that authority to edit or delete. A comment never changes a task version, a log body
+ * or a freeze instant, so a frozen log or a task pending review does not lock its comment area.
+ *
+ * Publication order is (created_at, id), which is stable across paging and never changes on edit.
+ */
+@Service
+public class CommentService {
+    public static final int MAX_BODY = 10000;
+<span class="nc" id="L31">    private static final Set&lt;String&gt; OBJECT_TYPES = Set.of(&quot;task&quot;, &quot;log&quot;);</span>
+    private final Db db;
+    private final Access access;
+    private final WorkspaceService workspace;
+    private final Events events;
+    private final Clock clock;
+
+<span class="nc" id="L38">    public CommentService(Db db, Access access, WorkspaceService workspace, Events events, Clock clock) {</span>
+<span class="nc" id="L39">        this.db = db; this.access = access; this.workspace = workspace; this.events = events; this.clock = clock;</span>
+<span class="nc" id="L40">    }</span>
+
+    /**
+     * Publication-ordered paging. The initial page keeps the historical offset contract, while
+     * {@code cursor} continues after the last returned comment by its immutable (created_at, id) key.
+     * A comment deleted between two loads therefore cannot shift the continuation past unseen rows;
+     * deleted bodies are never selected. The client uses the returned cursor, so a saved offset is no
+     * longer the continuation contract.
+     */
+    public Map&lt;String, Object&gt; list(Actor a, String objectType, String objectId, Map&lt;String, String&gt; filters) {
+<span class="nc" id="L50">        business(a);</span>
+<span class="nc" id="L51">        CommentedObject object = requireObject(a, objectType, objectId);</span>
+<span class="nc" id="L52">        int limit = number(filters, &quot;limit&quot;, 20, 1, 100);</span>
+<span class="nc" id="L53">        int offset = number(filters, &quot;offset&quot;, 0, 0, Integer.MAX_VALUE);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        String objectCondition = &quot;task&quot;.equals(object.type()) ? &quot;c.task_id=?&quot; : &quot;c.log_id=?&quot;;</span>
+<span class="nc" id="L55">        String select = &quot;SELECT c.*,u.display_name AS author_name FROM task_log_comments c &quot;</span>
+                + &quot;JOIN users u ON u.organization_id=c.organization_id AND u.id=c.author_id &quot;
+                + &quot;WHERE c.organization_id=? AND c.object_type=? AND c.deleted_at IS NULL AND &quot; + objectCondition;
+<span class="nc" id="L58">        long total = n(db.one(&quot;SELECT COUNT(*) AS c FROM task_log_comments c &quot;</span>
+                + &quot;WHERE c.organization_id=? AND c.object_type=? AND c.deleted_at IS NULL AND &quot; + objectCondition,
+<span class="nc" id="L60">                a.organizationId(), object.type(), object.id()), &quot;c&quot;);</span>
+<span class="nc" id="L61">        String cursor = filters.get(&quot;cursor&quot;);</span>
+        List&lt;Map&lt;String, Object&gt;&gt; items;
+<span class="nc" id="L63">        Integer nextOffset = null;</span>
+<span class="nc" id="L64">        String nextCursor = null;</span>
+<span class="nc bnc" id="L65" title="All 4 branches missed.">        if (cursor != null &amp;&amp; !cursor.isBlank()) {</span>
+<span class="nc" id="L66">            String trimmed = cursor.trim();</span>
+<span class="nc" id="L67">            Map&lt;String, Object&gt; anchor = db.find(&quot;SELECT created_at FROM task_log_comments &quot;</span>
+<span class="nc" id="L68">                    + &quot;WHERE organization_id=? AND object_type=? AND id=? AND &quot; + objectCondition.replace(&quot;c.&quot;, &quot;&quot;),</span>
+<span class="nc" id="L69">                    a.organizationId(), object.type(), trimmed, object.id());</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (anchor == null) throw bad(&quot;评论分页游标无效，请重新加载&quot;);</span>
+<span class="nc" id="L71">            Timestamp anchorAt = Timestamp.from(Instant.parse(s(anchor, &quot;createdAt&quot;)));</span>
+<span class="nc" id="L72">            List&lt;Map&lt;String, Object&gt;&gt; rows = db.list(select</span>
+                    + &quot; AND (c.created_at&gt;? OR (c.created_at=? AND c.id&gt;?)) ORDER BY c.created_at,c.id LIMIT ?&quot;,
+<span class="nc" id="L74">                    a.organizationId(), object.type(), object.id(), anchorAt, anchorAt, trimmed, limit + 1);</span>
+<span class="nc" id="L75">            int end = Math.min(limit, rows.size());</span>
+<span class="nc" id="L76">            items = rows.subList(0, end).stream().map(row -&gt; view(a, row, object)).toList();</span>
+<span class="nc bnc" id="L77" title="All 4 branches missed.">            if (rows.size() &gt; limit &amp;&amp; end &gt; 0) nextCursor = s(rows.get(end - 1), &quot;id&quot;);</span>
+<span class="nc" id="L78">        } else {</span>
+<span class="nc" id="L79">            List&lt;Map&lt;String, Object&gt;&gt; rows = db.list(select + &quot; ORDER BY c.created_at,c.id&quot;,</span>
+<span class="nc" id="L80">                    a.organizationId(), object.type(), object.id());</span>
+<span class="nc" id="L81">            int start = Math.min(offset, rows.size());</span>
+<span class="nc" id="L82">            int end = (int) Math.min((long) start + limit, rows.size());</span>
+<span class="nc" id="L83">            items = rows.subList(start, end).stream().map(row -&gt; view(a, row, object)).toList();</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            if (end &lt; rows.size()) {</span>
+<span class="nc" id="L85">                nextOffset = end;</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                if (end &gt; 0) nextCursor = s(rows.get(end - 1), &quot;id&quot;);</span>
+            }
+        }
+<span class="nc" id="L89">        Map&lt;String, Object&gt; result = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L90">        result.put(&quot;items&quot;, items);</span>
+<span class="nc" id="L91">        result.put(&quot;total&quot;, total);</span>
+<span class="nc" id="L92">        result.put(&quot;nextOffset&quot;, nextOffset);</span>
+<span class="nc" id="L93">        result.put(&quot;nextCursor&quot;, nextCursor);</span>
+<span class="nc" id="L94">        result.put(&quot;objectType&quot;, object.type());</span>
+<span class="nc" id="L95">        result.put(&quot;objectId&quot;, object.id());</span>
+<span class="nc" id="L96">        return result;</span>
+    }
+
+    public Map&lt;String, Object&gt; create(Actor a, String objectType, String objectId, Map&lt;String, Object&gt; body) {
+<span class="nc" id="L100">        business(a);</span>
+<span class="nc" id="L101">        onlyFields(body, Set.of(&quot;body&quot;));</span>
+<span class="nc" id="L102">        CommentedObject object = requireObject(a, objectType, objectId);</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        Object raw = body == null ? null : body.get(&quot;body&quot;);</span>
+<span class="nc bnc" id="L104" title="All 4 branches missed.">        if (raw != null &amp;&amp; !(raw instanceof String)) throw bad(&quot;评论内容须为文本&quot;);</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        String text = raw == null ? null : ((String) raw).strip();</span>
+<span class="nc bnc" id="L106" title="All 4 branches missed.">        if (text == null || text.isEmpty()) throw bad(&quot;评论内容不能为空&quot;);</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (text.length() &gt; MAX_BODY) throw bad(&quot;评论内容不得超过 &quot; + MAX_BODY + &quot; 字&quot;);</span>
+<span class="nc" id="L108">        String commentId = id();</span>
+<span class="nc" id="L109">        db.update(&quot;INSERT INTO task_log_comments(id,organization_id,object_type,task_id,log_id,author_id,body) VALUES(?,?,?,?,?,?,?)&quot;,</span>
+<span class="nc" id="L110">                commentId, a.organizationId(), object.type(),</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                &quot;task&quot;.equals(object.type()) ? object.id() : null,</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                &quot;log&quot;.equals(object.type()) ? object.id() : null, a.id(), text);</span>
+<span class="nc" id="L113">        Set&lt;String&gt; recipients = new LinkedHashSet&lt;&gt;(object.recipients());</span>
+<span class="nc" id="L114">        recipients.remove(a.id());</span>
+<span class="nc" id="L115">        Map&lt;String, Object&gt; details = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L116">        details.put(&quot;commentId&quot;, commentId);</span>
+<span class="nc" id="L117">        details.put(&quot;objectType&quot;, object.type());</span>
+<span class="nc" id="L118">        details.put(&quot;objectId&quot;, object.id());</span>
+<span class="nc" id="L119">        details.put(&quot;authorId&quot;, a.id());</span>
+        // The excerpt is stored once in the durable event; a later deletion replaces it with a
+        // placeholder at read time instead of trying to edit history (chapter 8.5).
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        events.recordObject(a, &quot;task&quot;.equals(object.type()) ? object.id() : null, &quot;comment.created&quot;, recipients,</span>
+<span class="nc" id="L123">                details, null, null, object.name(), eventSummary(object, text), object.type(), object.id());</span>
+<span class="nc" id="L124">        return Map.of(&quot;commentId&quot;, commentId, &quot;rowVersion&quot;, 1, &quot;objectType&quot;, object.type(), &quot;objectId&quot;, object.id());</span>
+    }
+
+    public Map&lt;String, Object&gt; change(Actor a, String commentId, String ifMatch, Map&lt;String, Object&gt; body) {
+<span class="nc" id="L128">        business(a);</span>
+<span class="nc" id="L129">        onlyFields(body, Set.of(&quot;body&quot;));</span>
+<span class="nc" id="L130">        Map&lt;String, Object&gt; row = db.one(&quot;SELECT * FROM task_log_comments WHERE organization_id=? AND id=? FOR UPDATE&quot;,</span>
+<span class="nc" id="L131">                a.organizationId(), commentId);</span>
+<span class="nc" id="L132">        requireAuthor(a, row);</span>
+<span class="nc" id="L133">        CommentedObject object = requireObject(a, s(row, &quot;objectType&quot;),</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">                &quot;task&quot;.equals(s(row, &quot;objectType&quot;)) ? s(row, &quot;taskId&quot;) : s(row, &quot;logId&quot;));</span>
+<span class="nc" id="L135">        Writes.checkVersion(ifMatch, n(row, &quot;rowVersion&quot;));</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        Object raw = body == null ? null : body.get(&quot;body&quot;);</span>
+<span class="nc bnc" id="L137" title="All 4 branches missed.">        if (raw != null &amp;&amp; !(raw instanceof String)) throw bad(&quot;评论内容须为文本&quot;);</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        String text = raw == null ? null : ((String) raw).strip();</span>
+<span class="nc bnc" id="L139" title="All 4 branches missed.">        if (text == null || text.isEmpty()) throw bad(&quot;评论内容不能为空&quot;);</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        if (text.length() &gt; MAX_BODY) throw bad(&quot;评论内容不得超过 &quot; + MAX_BODY + &quot; 字&quot;);</span>
+        // Editing keeps the publication instant and the position in the page; only the flag changes.
+        // It deliberately creates no new notification.
+<span class="nc" id="L143">        db.update(&quot;UPDATE task_log_comments SET body=?,edited_at=COALESCE(edited_at,UTC_TIMESTAMP(6)),row_version=row_version+1 &quot;</span>
+<span class="nc" id="L144">                + &quot;WHERE organization_id=? AND id=?&quot;, text, a.organizationId(), commentId);</span>
+<span class="nc" id="L145">        return Map.of(&quot;commentId&quot;, commentId, &quot;rowVersion&quot;, n(row, &quot;rowVersion&quot;) + 1, &quot;edited&quot;, true,</span>
+<span class="nc" id="L146">                &quot;objectType&quot;, object.type(), &quot;objectId&quot;, object.id());</span>
+    }
+
+    public Map&lt;String, Object&gt; delete(Actor a, String commentId, String ifMatch) {
+<span class="nc" id="L150">        business(a);</span>
+<span class="nc" id="L151">        Map&lt;String, Object&gt; row = db.one(&quot;SELECT * FROM task_log_comments WHERE organization_id=? AND id=? FOR UPDATE&quot;,</span>
+<span class="nc" id="L152">                a.organizationId(), commentId);</span>
+<span class="nc" id="L153">        requireAuthor(a, row);</span>
+<span class="nc" id="L154">        CommentedObject object = requireObject(a, s(row, &quot;objectType&quot;),</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                &quot;task&quot;.equals(s(row, &quot;objectType&quot;)) ? s(row, &quot;taskId&quot;) : s(row, &quot;logId&quot;));</span>
+<span class="nc" id="L156">        Writes.checkVersion(ifMatch, n(row, &quot;rowVersion&quot;));</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        if (row.get(&quot;deletedAt&quot;) == null) {</span>
+<span class="nc" id="L158">            db.update(&quot;UPDATE task_log_comments SET deleted_at=UTC_TIMESTAMP(6),row_version=row_version+1 WHERE organization_id=? AND id=?&quot;,</span>
+<span class="nc" id="L159">                    a.organizationId(), commentId);</span>
+        }
+<span class="nc" id="L161">        return Map.of(&quot;commentId&quot;, commentId, &quot;deleted&quot;, true, &quot;rowVersion&quot;, n(row, &quot;rowVersion&quot;) + 1,</span>
+<span class="nc" id="L162">                &quot;objectType&quot;, object.type(), &quot;objectId&quot;, object.id());</span>
+    }
+
+    /** The object, its current authority and the notification recipients for one comment write. */
+<span class="nc" id="L166">    private record CommentedObject(String type, String id, String name, Set&lt;String&gt; recipients) {}</span>
+
+    private CommentedObject requireObject(Actor a, String objectType, String objectId) {
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        String type = objectType == null ? &quot;&quot; : objectType;</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        if (!OBJECT_TYPES.contains(type)) throw bad(&quot;objectType 只能为 task 或 log&quot;);</span>
+<span class="nc bnc" id="L171" title="All 4 branches missed.">        if (objectId == null || objectId.isBlank()) throw bad(&quot;缺少对象标识&quot;);</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">        if (&quot;task&quot;.equals(type)) {</span>
+<span class="nc" id="L173">            var task = db.find(&quot;SELECT * FROM tasks WHERE organization_id=? AND id=?&quot;, a.organizationId(), objectId);</span>
+<span class="nc bnc" id="L174" title="All 4 branches missed.">            if (task == null || !workspace.canReadTaskForComments(a, objectId)) throw ApiException.notFound();</span>
+<span class="nc" id="L175">            String title = null;</span>
+<span class="nc" id="L176">            Set&lt;String&gt; recipients = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (s(task, &quot;currentVersionId&quot;) != null) {</span>
+<span class="nc" id="L178">                var version = db.find(&quot;SELECT title FROM task_versions WHERE organization_id=? AND id=?&quot;, a.organizationId(), s(task, &quot;currentVersionId&quot;));</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">                title = version == null ? null : s(version, &quot;title&quot;);</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                for (var owner : db.list(&quot;SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=? ORDER BY ordinal,user_id&quot;,</span>
+<span class="nc" id="L181">                        a.organizationId(), s(task, &quot;currentVersionId&quot;))) recipients.add(s(owner, &quot;userId&quot;));</span>
+<span class="nc" id="L182">            } else {</span>
+                // An unpublished creation has no effective assignee set, so a new comment has no
+                // notification recipient. Applicant/reviewer may still comment (the object permission
+                // check above allows participants), but that role alone must not add a message
+                // recipient (chapter 8.5). Only the title is read for the event object name.
+<span class="nc" id="L187">                var request = db.find(&quot;SELECT * FROM approval_requests WHERE organization_id=? AND task_id=? ORDER BY created_at DESC,id DESC LIMIT 1&quot;,</span>
+<span class="nc" id="L188">                        a.organizationId(), objectId);</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                if (request != null) {</span>
+<span class="nc" id="L190">                    var proposed = db.find(&quot;SELECT title FROM task_versions WHERE organization_id=? AND id=?&quot;, a.organizationId(), s(request, &quot;proposedVersionId&quot;));</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">                    title = proposed == null ? null : s(proposed, &quot;title&quot;);</span>
+                }
+            }
+<span class="nc" id="L194">            recipients.remove(null);</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">            return new CommentedObject(&quot;task&quot;, objectId, title == null ? &quot;任务&quot; : title, recipients);</span>
+        }
+<span class="nc" id="L197">        var log = db.find(&quot;SELECT * FROM work_logs WHERE organization_id=? AND id=? AND deleted_at IS NULL&quot;, a.organizationId(), objectId);</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        if (log == null) throw ApiException.notFound();</span>
+<span class="nc" id="L199">        String authorId = s(log, &quot;authorId&quot;);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (!access.canReadLogAuthor(a, authorId)) throw ApiException.notFound();</span>
+<span class="nc" id="L201">        Set&lt;String&gt; recipients = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc" id="L202">        recipients.add(authorId);</span>
+<span class="nc" id="L203">        return new CommentedObject(&quot;log&quot;, objectId, &quot;日志 · &quot; + s(log, &quot;businessDate&quot;), recipients);</span>
+    }
+
+    private void requireAuthor(Actor a, Map&lt;String, Object&gt; row) {
+<span class="nc bnc" id="L207" title="All 2 branches missed.">        if (row.get(&quot;deletedAt&quot;) != null) throw ApiException.notFound();</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (!a.id().equals(s(row, &quot;authorId&quot;))) {</span>
+<span class="nc" id="L209">            throw new ApiException(403, &quot;COMMENT_AUTHOR_ONLY&quot;, &quot;只有评论作者可以修改或删除自己的评论&quot;);</span>
+        }
+<span class="nc" id="L211">    }</span>
+
+    private Map&lt;String, Object&gt; view(Actor a, Map&lt;String, Object&gt; row, CommentedObject object) {
+<span class="nc" id="L214">        Map&lt;String, Object&gt; item = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L215">        item.put(&quot;id&quot;, s(row, &quot;id&quot;));</span>
+<span class="nc" id="L216">        item.put(&quot;objectType&quot;, object.type());</span>
+<span class="nc" id="L217">        item.put(&quot;objectId&quot;, object.id());</span>
+<span class="nc" id="L218">        item.put(&quot;authorId&quot;, s(row, &quot;authorId&quot;));</span>
+<span class="nc" id="L219">        item.put(&quot;authorName&quot;, s(row, &quot;authorName&quot;));</span>
+<span class="nc" id="L220">        item.put(&quot;body&quot;, s(row, &quot;body&quot;));</span>
+<span class="nc" id="L221">        item.put(&quot;createdAt&quot;, row.get(&quot;createdAt&quot;));</span>
+<span class="nc" id="L222">        item.put(&quot;editedAt&quot;, row.get(&quot;editedAt&quot;));</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        item.put(&quot;edited&quot;, row.get(&quot;editedAt&quot;) != null);</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        item.put(&quot;deleted&quot;, row.get(&quot;deletedAt&quot;) != null);</span>
+<span class="nc" id="L225">        item.put(&quot;rowVersion&quot;, n(row, &quot;rowVersion&quot;));</span>
+<span class="nc" id="L226">        item.put(&quot;canManage&quot;, a.id().equals(s(row, &quot;authorId&quot;)));</span>
+<span class="nc" id="L227">        return item;</span>
+    }
+
+    private String eventSummary(CommentedObject object, String text) {
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        String excerpt = text.length() &lt;= 120 ? text : text.substring(0, 120) + &quot;…&quot;;</span>
+<span class="nc" id="L232">        return object.name() + &quot;有新评论：&quot; + excerpt;</span>
+    }
+
+    private static void onlyFields(Map&lt;String, Object&gt; body, Set&lt;String&gt; allowed) {
+<span class="nc bnc" id="L236" title="All 2 branches missed.">        if (body == null) return;</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        if (!allowed.containsAll(body.keySet())) throw bad(&quot;请求含不支持的字段（评论不支持回复层级）&quot;);</span>
+<span class="nc" id="L238">    }</span>
+
+    private static int number(Map&lt;String, String&gt; filters, String key, int fallback, int min, int max) {
+        try {
+<span class="nc" id="L242">            int value = Integer.parseInt(filters.getOrDefault(key, Integer.toString(fallback)));</span>
+<span class="nc bnc" id="L243" title="All 4 branches missed.">            if (value &lt; min || value &gt; max) throw new NumberFormatException();</span>
+<span class="nc" id="L244">            return value;</span>
+<span class="nc" id="L245">        } catch (Exception e) {</span>
+<span class="nc" id="L246">            throw bad(key + &quot; 超出允许范围&quot;);</span>
+        }
+    }
+
+    static void business(Actor a) {
+<span class="nc bnc" id="L251" title="All 2 branches missed.">        if (&quot;admin&quot;.equals(a.role())) throw new ApiException(403, &quot;BUSINESS_ROLE_REQUIRED&quot;, &quot;管理员请使用管理端接口&quot;);</span>
+<span class="nc" id="L252">    }</span>
+
+<span class="nc" id="L254">    static ApiException bad(String message) { return new ApiException(400, &quot;INVALID_INPUT&quot;, message); }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

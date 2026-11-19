@@ -1,0 +1,52 @@
+PASS effective owner gets the personal pin action
+PASS visible manager without ownership gets no pin action
+PASS non-owner pin write is rejected
+PASS owner pin is private to that owner
+PASS pin and unpin do not change the task schedule
+PASS completed effective task remains pin-eligible
+PASS completed task can be pinned without changing state
+PASS unpublished task has no pin action
+PASS unpublished pin write is rejected
+PASS employee detail exposes only the current progress and no records timeline
+PASS employee cannot query the administrator history endpoint
+PASS administrator retains the complete operation history
+PASS authenticated
+PASS create picker searches refreshed name and shows current identity position department and team
+PASS create picker preserves ordered legal selections
+PASS create cache no longer contains a deactivated candidate
+PASS create picker no longer matches the old name
+PASS edit picker searches refreshed name and shows current identity position department and team
+PASS edit picker preserves ordered legal selections
+PASS edit cache no longer contains a deactivated candidate
+PASS edit picker no longer matches the old name
+PASS cached candidate IDs resolve current safe person data
+PASS candidate response is deliberately held after its authenticated read
+PASS late candidate response cannot overwrite personnel after a newer reload
+PASS reopening after a discarded response fetches current candidates
+PASS candidate response is deliberately held after its authenticated read
+PASS late candidate response after logout cannot repopulate personnel
+PASS authenticated
+PASS late candidate response cannot restore an old account form or scope
+PASS authenticated
+PASS name-only summary keeps existing organization fields
+PASS complete person data updates known identity, department, team and position
+PASS general person cache never keeps phone or email
+PASS later summary does not roll back a complete organization update
+PASS explicit null clears revoked organization fields
+FAIL position names never determine the identity label
+Error: position names never determine the identity label "alpha ▸ one ▸ 部门负责人"
+    at check (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_apply_profile_pin_history_browser.js:8:140)
+    at main (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_apply_profile_pin_history_browser.js:38:3)
+Traceback (most recent call last):
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_apply_profile_pin_history.py", line 143, in <module>
+    main()
+    ~~~~^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_apply_profile_pin_history.py", line 131, in main
+    subprocess.run(['node', str(BASE / 'scripts/check_apply_profile_pin_history_browser.js')],
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                   env={**os.environ, 'PANDORA_PROFILE_FIXTURE': json.dumps(manifest)}, check=True)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['node', '/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_apply_profile_pin_history_browser.js']' returned non-zero exit status 1.

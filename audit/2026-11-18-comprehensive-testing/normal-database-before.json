@@ -1,0 +1,90 @@
+{
+  "database": "pandora",
+  "tables": {
+    "ai_jobs": {
+      "rows": 4,
+      "sha256": "d84fb3b3dc8da29e163a9e63293c5d659df05f0303f0fa5d67c6a7aaf14c2660"
+    },
+    "approval_requests": {
+      "rows": 82,
+      "sha256": "5920685cb532c54ca3e7c79b2b6fe2691a5cb2ed40ddb7283263b3d58e1cb9b0"
+    },
+    "audit_logs": {
+      "rows": 222,
+      "sha256": "84a3883b3ba622ca10d542ac85290aa2a1a3352c663226ed77101c37ade8df4e"
+    },
+    "auth_sessions": {
+      "rows": 75,
+      "sha256": "75bae666ba9ec5d4e959263acd6b4e51a64e5478c64c9c0a7cd6388c83264d09"
+    },
+    "departments": {
+      "rows": 3,
+      "sha256": "52b29bb5ac5d7291e4c2a025ec600c6a3266f443f8dc85a69cae8510f12841ed"
+    },
+    "domain_events": {
+      "rows": 420,
+      "sha256": "b3665ec126a437395cc9fe003203b43d01932270c35eabb51f878e0c1d84bcd3"
+    },
+    "flyway_schema_history": {
+      "rows": 8,
+      "sha256": "b4f9173264f043ca7745246c2c8a497e39901997dac78c08e91a2f9c22add26c"
+    },
+    "home_items": {
+      "rows": 9,
+      "sha256": "9dcc534bc839b40c30bf54ea1d3fb53a09c6eda8181d59ebc7695b6b50c9c532"
+    },
+    "idempotency_keys": {
+      "rows": 186,
+      "sha256": "a927ff2a37d2e53ea099df18af5557e6b8f6969efaebc5adcd9c5b7618b1e1b0"
+    },
+    "notifications": {
+      "rows": 497,
+      "sha256": "1a838db4554ef04d76c4a4bb294a45a61b957e9e3a1347c0c04962db086f78d6"
+    },
+    "organizations": {
+      "rows": 1,
+      "sha256": "3ea742438dd49a063734d9d677cc854bc27c34d504acfa0fd55155c6dbfe203e"
+    },
+    "reminder_receipts": {
+      "rows": 198,
+      "sha256": "690abd7a78d7a6de9422a73ddf33720fc6a2e25795969241882df8809947cf62"
+    },
+    "role_permissions": {
+      "rows": 4,
+      "sha256": "debf4aa9716d7df7e75f00ae4940c5aba598de4e6b9105e3d9a695110a855157"
+    },
+    "task_pins": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "task_records": {
+      "rows": 38,
+      "sha256": "bfff385b7406073745f62420f3d3912ebd61e7d84894b3c410de505fcc4173ca"
+    },
+    "task_version_assignees": {
+      "rows": 89,
+      "sha256": "52063aa38258da7fd4edfeea8b8041514ea4f36188909f6505cd2b79383dd1a4"
+    },
+    "task_versions": {
+      "rows": 85,
+      "sha256": "f01869838e8ef54c7ef6675426f73a0f65ac4af2a1a59bd690cd201adea6d7b4"
+    },
+    "tasks": {
+      "rows": 44,
+      "sha256": "cae0a481e84fb1e7787f7d4e1df8de1e9f8b45b948958e44869a7629b7671f51"
+    },
+    "teams": {
+      "rows": 3,
+      "sha256": "26b20fa857acfac2c8486e247ac700c1bb7c904b734a8aaad5223a6b98ef1041"
+    },
+    "users": {
+      "rows": 7,
+      "sha256": "053c6df396f0495e98106c0f020f74a3dd5a8eac2d35afc38ad00483e560a8a1"
+    },
+    "work_logs": {
+      "rows": 22,
+      "sha256": "c12ba0d484612770c0844c168ac25e67eabda9cc3ff804f0ea2a8c7e59bd7611"
+    }
+  },
+  "digest": "a308541bf2adc23d457340f523e01536352667d156e55e1a26d76682dbc2bf69"
+}

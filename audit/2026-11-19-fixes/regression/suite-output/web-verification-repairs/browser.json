@@ -1,0 +1,410 @@
+{
+  "checks": [
+    {
+      "name": "real founder logs in",
+      "pass": true
+    },
+    {
+      "name": "editable log opens",
+      "pass": true
+    },
+    {
+      "name": "legal edit fill appends while preserving existing content",
+      "pass": true
+    },
+    {
+      "name": "fill response is held after its real read",
+      "pass": true
+    },
+    {
+      "name": "isolated service clock advances",
+      "pass": true
+    },
+    {
+      "name": "in-flight fill becomes read-only after server freeze",
+      "pass": true
+    },
+    {
+      "name": "late fill preserves unsaved text",
+      "pass": true
+    },
+    {
+      "name": "direct fill action cannot bypass read-only",
+      "pass": true
+    },
+    {
+      "name": "expired save stays rejected with draft preserved",
+      "pass": true
+    },
+    {
+      "name": "opening a frozen log has no edit entry",
+      "pass": true
+    },
+    {
+      "name": "authorized staff months load",
+      "pass": true
+    },
+    {
+      "name": "transient staff failure offers retry /me/reports/0",
+      "pass": true
+    },
+    {
+      "name": "staff log retry recovers /me/reports/0",
+      "pass": true
+    },
+    {
+      "name": "authorized month window survives /me/reports/0",
+      "pass": true
+    },
+    {
+      "name": "authorized staff months load",
+      "pass": true
+    },
+    {
+      "name": "transient staff failure offers retry /me/reports/500",
+      "pass": true
+    },
+    {
+      "name": "staff log retry recovers /me/reports/500",
+      "pass": true
+    },
+    {
+      "name": "authorized month window survives /me/reports/500",
+      "pass": true
+    },
+    {
+      "name": "authorized staff months load",
+      "pass": true
+    },
+    {
+      "name": "transient staff failure offers retry /users/4ce9a359-10d8-524d-8232-c73416f398d0/0",
+      "pass": true
+    },
+    {
+      "name": "staff log retry recovers /users/4ce9a359-10d8-524d-8232-c73416f398d0/0",
+      "pass": true
+    },
+    {
+      "name": "authorized month window survives /users/4ce9a359-10d8-524d-8232-c73416f398d0/0",
+      "pass": true
+    },
+    {
+      "name": "authorized staff months load",
+      "pass": true
+    },
+    {
+      "name": "transient staff failure offers retry /users/4ce9a359-10d8-524d-8232-c73416f398d0/500",
+      "pass": true
+    },
+    {
+      "name": "staff log retry recovers /users/4ce9a359-10d8-524d-8232-c73416f398d0/500",
+      "pass": true
+    },
+    {
+      "name": "authorized month window survives /users/4ce9a359-10d8-524d-8232-c73416f398d0/500",
+      "pass": true
+    },
+    {
+      "name": "authorized staff months load",
+      "pass": true
+    },
+    {
+      "name": "transient staff failure offers retry /work-logs?scope=visible&authorId=/0",
+      "pass": true
+    },
+    {
+      "name": "staff log retry recovers /work-logs?scope=visible&authorId=/0",
+      "pass": true
+    },
+    {
+      "name": "authorized month window survives /work-logs?scope=visible&authorId=/0",
+      "pass": true
+    },
+    {
+      "name": "authorized staff months load",
+      "pass": true
+    },
+    {
+      "name": "transient staff failure offers retry /work-logs?scope=visible&authorId=/500",
+      "pass": true
+    },
+    {
+      "name": "staff log retry recovers /work-logs?scope=visible&authorId=/500",
+      "pass": true
+    },
+    {
+      "name": "authorized month window survives /work-logs?scope=visible&authorId=/500",
+      "pass": true
+    },
+    {
+      "name": "authorized staff months load",
+      "pass": true
+    },
+    {
+      "name": "confirmed staff access loss clears content /me/reports",
+      "pass": true
+    },
+    {
+      "name": "revoked staff months cannot be restored /me/reports",
+      "pass": true
+    },
+    {
+      "name": "authorized staff months load",
+      "pass": true
+    },
+    {
+      "name": "confirmed staff access loss clears content /users/4ce9a359-10d8-524d-8232-c73416f398d0",
+      "pass": true
+    },
+    {
+      "name": "revoked staff months cannot be restored /users/4ce9a359-10d8-524d-8232-c73416f398d0",
+      "pass": true
+    },
+    {
+      "name": "authorized staff months load",
+      "pass": true
+    },
+    {
+      "name": "confirmed staff access loss clears content /work-logs?scope=visible&authorId=",
+      "pass": true
+    },
+    {
+      "name": "revoked staff months cannot be restored /work-logs?scope=visible&authorId=",
+      "pass": true
+    },
+    {
+      "name": "authorized staff months load",
+      "pass": true
+    },
+    {
+      "name": "directory removal is confirmed access loss",
+      "pass": true
+    },
+    {
+      "name": "notification first page loads",
+      "pass": true
+    },
+    {
+      "name": "combined inbox filter is ready",
+      "pass": true,
+      "evidence": "全部需我审核结果告知提醒评论其他全部未读已读重置已显示 20 / 125 条（当前条件） · 全部未读 125 条无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读加载更多（已显示 20 / 125）"
+    },
+    {
+      "name": "notification page reaches 40",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 60",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 80",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 100",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 120",
+      "pass": true
+    },
+    {
+      "name": "deep notification opens",
+      "pass": true
+    },
+    {
+      "name": "deep notification return preserves populated list all/compact",
+      "pass": true
+    },
+    {
+      "name": "refresh uses legal server pages",
+      "pass": true
+    },
+    {
+      "name": "query and position survive detail",
+      "pass": true
+    },
+    {
+      "name": "notification first page loads",
+      "pass": true
+    },
+    {
+      "name": "combined inbox filter is ready",
+      "pass": true,
+      "evidence": "全部需我审核结果告知提醒评论其他全部未读已读重置已显示 20 / 125 条（当前条件） · 全部未读 124 条无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读加载更多（已显示 20 / 125）"
+    },
+    {
+      "name": "notification page reaches 40",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 60",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 80",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 100",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 120",
+      "pass": true
+    },
+    {
+      "name": "deep notification opens",
+      "pass": true
+    },
+    {
+      "name": "deep notification return preserves populated list all/full",
+      "pass": true
+    },
+    {
+      "name": "refresh uses legal server pages",
+      "pass": true
+    },
+    {
+      "name": "query and position survive detail",
+      "pass": true
+    },
+    {
+      "name": "notification first page loads",
+      "pass": true
+    },
+    {
+      "name": "combined inbox filter is ready",
+      "pass": true,
+      "evidence": "全部需我审核结果告知提醒评论其他全部未读已读重置已显示 20 / 124 条（当前条件） · 全部未读 124 条无关联任务其他工作通知 · Inbox record 1242026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1232026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1222026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1212026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1202026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1192026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1182026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1172026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1162026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1152026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1142026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1132026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1122026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1112026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1102026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1092026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1082026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1072026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1062026年11月19日 01:35未读无关联任务其他工作通知 · Inbox record 1052026年11月19日 01:35未读加载更多（已显示 20 / 124）"
+    },
+    {
+      "name": "notification page reaches 40",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 60",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 80",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 100",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 120",
+      "pass": true
+    },
+    {
+      "name": "deep notification opens",
+      "pass": true
+    },
+    {
+      "name": "deep notification return preserves populated list unread/compact",
+      "pass": true
+    },
+    {
+      "name": "refresh uses legal server pages",
+      "pass": true
+    },
+    {
+      "name": "query and position survive detail",
+      "pass": true
+    },
+    {
+      "name": "notification first page loads",
+      "pass": true
+    },
+    {
+      "name": "combined inbox filter is ready",
+      "pass": true,
+      "evidence": "全部需我审核结果告知提醒评论其他全部未读已读重置已显示 20 / 123 条（当前条件） · 全部未读 123 条无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读无关联任务其他2026年11月19日 01:35未读加载更多（已显示 20 / 123）"
+    },
+    {
+      "name": "notification page reaches 40",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 60",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 80",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 100",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 120",
+      "pass": true
+    },
+    {
+      "name": "deep notification opens",
+      "pass": true
+    },
+    {
+      "name": "deep notification return preserves populated list unread/full",
+      "pass": true
+    },
+    {
+      "name": "refresh uses legal server pages",
+      "pass": true
+    },
+    {
+      "name": "query and position survive detail",
+      "pass": true
+    },
+    {
+      "name": "notification first page loads",
+      "pass": true
+    },
+    {
+      "name": "unfiltered retry fixture is ready",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 40",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 60",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 80",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 100",
+      "pass": true
+    },
+    {
+      "name": "notification page reaches 120",
+      "pass": true
+    },
+    {
+      "name": "partial refresh failure retains 120 valid rows",
+      "pass": true
+    },
+    {
+      "name": "refresh retry replaces range and can continue loading",
+      "pass": true
+    },
+    {
+      "name": "page after restored range remains reachable without duplicates",
+      "pass": true
+    },
+    {
+      "name": "browser has no unexpected exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "result": "PASS"
+}

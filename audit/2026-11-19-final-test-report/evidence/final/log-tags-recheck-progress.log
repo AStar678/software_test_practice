@@ -1,0 +1,2 @@
+RUN check_apply_log_tags.py
+PASS check_apply_log_tags.py assertions=45

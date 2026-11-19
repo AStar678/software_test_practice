@@ -1,0 +1,7 @@
+{
+  "updated": "2026-11-18T16:06:38.026753+00:00",
+  "serverVersion": "9.3.0",
+  "checks": [],
+  "result": "FAIL",
+  "errorType": "CalledProcessError"
+}

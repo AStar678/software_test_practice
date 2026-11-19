@@ -1,0 +1,113 @@
+PASS real worker emits 20/10/5/overdue reminder notifications
+PASS reminder list, total, purpose and result agree
+PASS combined reminder filters are applied before total and keep global unread
+PASS opening a filtered reminder marks only that message read
+PASS reminder scans do not redeliver completed nodes
+PASS reminder detail uses the same purpose and result
+PASS current reviewer receives the submitted request notification
+PASS submitted notification exposes request access and review ability
+PASS applicant result keeps original request access without review ability
+PASS reviewer result keeps original request access after terminal decision
+PASS ordinary result recipient cannot read the original request
+PASS structured result carries only legal changed fields
+PASS result change values are the actual event values
+PASS old notification stays bound to its original request
+PASS removed owner result has no request access
+PASS missing-request fixture exists
+PASS mismatched original request hides its entry and reveals no request payload
+PASS redaction fixture has a delivered event
+PASS withdrawal removes result, changes, object name and request access
+PASS applicant pending creation notification exists for request withdrawal
+PASS applicant pending creation notification exists for notification withdrawal
+PASS login form
+PASS employee authenticated
+PASS notification list opens
+PASS compact list keeps only name, type, read state and time
+PASS reminder filter shows the real reminder set
+PASS switching the type does not change the independent global unread count
+PASS a non-default condition exposes reset
+PASS full mode exposes summaries without changing the filter
+PASS reset clears type and read conditions but keeps the display mode
+PASS single icon toggles back to compact without re-reading
+PASS unread segment filters before paging
+PASS opening an unread row marks only that message read
+PASS return keeps the unread condition and the opened row leaves the unread set
+PASS the independent global unread count reflects the read action
+PASS reset restores the full list after the unread check
+PASS the notification list reopens with the dedicated fixed-height state
+PASS the fixed frame fills the responsive maximum and keeps the filters reachable
+PASS the notification frame stays identical after switching to the full display mode
+PASS the notification frame stays identical after filtering the type
+PASS the mocked loading state renders
+PASS the notification frame stays identical while the first page is loading
+PASS the mocked empty state renders
+PASS the notification frame stays identical for an empty result
+PASS the notification frame stays identical for an empty filtered result
+PASS the mocked single state renders
+PASS the notification frame stays identical for a single result
+PASS the mocked fail state renders
+PASS the notification frame stays identical while the query has failed
+PASS the notification frame stays identical while a page is paged in
+PASS the notification frame stays identical after appending the next page
+PASS the fixed-height frame scrolls its content instead of growing
+PASS closing the notification list removes the fixed-height state
+PASS the real list loads again once the mock is removed
+PASS the notification frame stays identical after reopening the real list
+PASS the notification detail opens from the fixed frame
+PASS the notification detail does not inherit the fixed list height
+PASS returning from the detail restores the same fixed frame and conditions
+PASS the notification frame stays identical after returning from a notification detail
+PASS another sheet opened after closing the list keeps its own height
+PASS the notification list adapts its fixed height at 320x740
+PASS the 320x740 frame stays inside the viewport with header and filters reachable
+PASS the 320x740 frame does not change with the display mode
+PASS the notification list adapts its fixed height at 390x844
+PASS the 390x844 frame stays inside the viewport with header and filters reachable
+PASS the 390x844 frame does not change with the display mode
+PASS the notification list adapts its fixed height at 1440x900
+PASS the 1440x900 frame stays inside the viewport with header and filters reachable
+PASS the 1440x900 frame does not change with the display mode
+PASS the notification list adapts its fixed height at 390x600
+PASS the 390x600 frame stays inside the viewport with header and filters reachable
+PASS the 390x600 frame does not change with the display mode
+PASS rapid switch keeps the newest query result only
+PASS a late first-page response does not mix into the result filter
+PASS a failed notification query offers retry
+PASS retry loads the list without corrupting the global unread count
+PASS failed query kept the previous independent unread count
+PASS result notification detail opens
+PASS result first and changes are in the main detail area
+PASS object name and notification time appear once
+PASS one primary action is present
+PASS more menu is present and keyboard focusable
+PASS more menu opens
+PASS more menu exposes message deletion
+PASS detail fits 320
+PASS detail fits 390
+PASS detail fits 1440
+PASS applicant sees the authorized original-request action
+PASS original request opens from the notification
+PASS original request keeps the applicant projection without the reviewer diff
+PASS returns to the same notification detail
+PASS reminder detail opens for deletion
+PASS reminder deletion more menu opens
+PASS deleting a message returns to the filtered list
+PASS deleted reminder is absent from the list
+PASS withdrawable notification opens
+PASS notification withdrawal menu opens
+PASS more menu exposes notification withdrawal for its initiator
+PASS withdrawn notification returns to the list
+PASS withdrawn notification detail is read-only and has no result
+PASS pending creation notification opens
+PASS pending applicant notification shows the request withdrawal action
+PASS request withdrawal action is distinct from notification withdrawal
+PASS request withdrawal returns to the list
+PASS request withdrawal changed the business request status
+PASS logout returns to the login form
+PASS second account authenticated
+PASS second account notification list loads from its own session
+PASS second account unread count comes from the server instead of the previous session
+PASS no browser exceptions
+PASS notification more action withdrew the applicant request
+PASS deleted notification is gone from the recipient inbox
+PASS redaction leaves business request history intact

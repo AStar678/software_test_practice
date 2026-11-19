@@ -1,0 +1,340 @@
+{
+  "checks": [
+    {
+      "name": "authenticated",
+      "pass": true
+    },
+    {
+      "name": "create picker searches refreshed name and shows current identity position department and team",
+      "pass": true,
+      "evidence": {
+        "name": "Refreshed selector employee",
+        "meta": "团队负责人 · Refreshed selector position · beta · beta one"
+      }
+    },
+    {
+      "name": "create picker preserves ordered legal selections",
+      "pass": true
+    },
+    {
+      "name": "create cache no longer contains a deactivated candidate",
+      "pass": true
+    },
+    {
+      "name": "create picker no longer matches the old name",
+      "pass": true
+    },
+    {
+      "name": "edit picker searches refreshed name and shows current identity position department and team",
+      "pass": true,
+      "evidence": {
+        "name": "Refreshed selector employee",
+        "meta": "团队负责人 · Refreshed selector position · beta · beta one"
+      }
+    },
+    {
+      "name": "edit picker preserves ordered legal selections",
+      "pass": true
+    },
+    {
+      "name": "edit cache no longer contains a deactivated candidate",
+      "pass": true
+    },
+    {
+      "name": "edit picker no longer matches the old name",
+      "pass": true
+    },
+    {
+      "name": "cached candidate IDs resolve current safe person data",
+      "pass": true
+    },
+    {
+      "name": "candidate response is deliberately held after its authenticated read",
+      "pass": true
+    },
+    {
+      "name": "late candidate response cannot overwrite personnel after a newer reload",
+      "pass": true
+    },
+    {
+      "name": "reopening after a discarded response fetches current candidates",
+      "pass": true
+    },
+    {
+      "name": "candidate response is deliberately held after its authenticated read",
+      "pass": true
+    },
+    {
+      "name": "late candidate response after logout cannot repopulate personnel",
+      "pass": true
+    },
+    {
+      "name": "authenticated",
+      "pass": true
+    },
+    {
+      "name": "late candidate response cannot restore an old account form or scope",
+      "pass": true
+    },
+    {
+      "name": "authenticated",
+      "pass": true
+    },
+    {
+      "name": "name-only summary keeps existing organization fields",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "displayName": "Newest selector employee",
+          "accountType": "employee",
+          "role": "team_head",
+          "placementType": "team_head",
+          "departmentId": "fixture-company-beta",
+          "departmentName": "beta",
+          "positionId": "3cf102fd-ea70-4b4a-9f3f-e675d0a3b7b2",
+          "positionName": "Refreshed selector position",
+          "teamId": "fixture-company-beta-one",
+          "teamName": "beta one",
+          "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+          "managerName": "beta-head",
+          "rankLevel": 3,
+          "active": 1,
+          "avatar": null
+        },
+        "summary": {
+          "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "displayName": "缓存摘要姓名",
+          "accountType": "employee",
+          "role": "team_head",
+          "placementType": "team_head",
+          "departmentId": "fixture-company-beta",
+          "departmentName": "beta",
+          "positionId": "3cf102fd-ea70-4b4a-9f3f-e675d0a3b7b2",
+          "positionName": "Refreshed selector position",
+          "teamId": "fixture-company-beta-one",
+          "teamName": "beta one",
+          "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+          "managerName": "beta-head",
+          "rankLevel": 3,
+          "active": 1,
+          "avatar": null
+        },
+        "updated": {
+          "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "displayName": "缓存完整姓名",
+          "accountType": "employee",
+          "role": "team_head",
+          "placementType": "team_head",
+          "departmentId": "fixture-company-beta",
+          "departmentName": "缓存部门",
+          "positionId": "3cf102fd-ea70-4b4a-9f3f-e675d0a3b7b2",
+          "positionName": "缓存职位",
+          "teamId": "fixture-company-beta-one",
+          "teamName": "缓存团队",
+          "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+          "managerName": "beta-head",
+          "rankLevel": 3,
+          "active": 1,
+          "avatar": null
+        },
+        "newest": {
+          "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "displayName": "完整更新",
+          "accountType": "employee",
+          "role": "team_head",
+          "placementType": "employee",
+          "departmentId": "fixture-company-beta",
+          "departmentName": "新部门",
+          "positionId": "3cf102fd-ea70-4b4a-9f3f-e675d0a3b7b2",
+          "positionName": "新职位",
+          "teamId": "fixture-company-beta-one",
+          "teamName": "新团队",
+          "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+          "managerName": "beta-head",
+          "rankLevel": 3,
+          "active": 1,
+          "avatar": null
+        },
+        "summaryAfter": {
+          "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "displayName": "摘要后姓名",
+          "accountType": "employee",
+          "role": "team_head",
+          "placementType": "employee",
+          "departmentId": "fixture-company-beta",
+          "departmentName": "新部门",
+          "positionId": "3cf102fd-ea70-4b4a-9f3f-e675d0a3b7b2",
+          "positionName": "新职位",
+          "teamId": "fixture-company-beta-one",
+          "teamName": "新团队",
+          "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+          "managerName": "beta-head",
+          "rankLevel": 3,
+          "active": 1,
+          "avatar": null
+        },
+        "cleared": {
+          "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "displayName": "清除部门",
+          "accountType": "employee",
+          "role": "team_head",
+          "placementType": "team_head",
+          "departmentId": "fixture-company-beta",
+          "departmentName": null,
+          "positionId": "3cf102fd-ea70-4b4a-9f3f-e675d0a3b7b2",
+          "positionName": "Refreshed selector position",
+          "teamId": "fixture-company-beta-one",
+          "teamName": null,
+          "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+          "managerName": "beta-head",
+          "rankLevel": 3,
+          "active": 1,
+          "avatar": null
+        },
+        "line": "alpha ▸ one ▸ 部门负责人"
+      }
+    },
+    {
+      "name": "complete person data updates known identity, department, team and position",
+      "pass": true,
+      "evidence": {
+        "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "displayName": "缓存完整姓名",
+        "accountType": "employee",
+        "role": "team_head",
+        "placementType": "team_head",
+        "departmentId": "fixture-company-beta",
+        "departmentName": "缓存部门",
+        "positionId": "3cf102fd-ea70-4b4a-9f3f-e675d0a3b7b2",
+        "positionName": "缓存职位",
+        "teamId": "fixture-company-beta-one",
+        "teamName": "缓存团队",
+        "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+        "managerName": "beta-head",
+        "rankLevel": 3,
+        "active": 1,
+        "avatar": null
+      }
+    },
+    {
+      "name": "general person cache never keeps phone or email",
+      "pass": true,
+      "evidence": {
+        "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "displayName": "缓存完整姓名",
+        "accountType": "employee",
+        "role": "team_head",
+        "placementType": "team_head",
+        "departmentId": "fixture-company-beta",
+        "departmentName": "缓存部门",
+        "positionId": "3cf102fd-ea70-4b4a-9f3f-e675d0a3b7b2",
+        "positionName": "缓存职位",
+        "teamId": "fixture-company-beta-one",
+        "teamName": "缓存团队",
+        "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+        "managerName": "beta-head",
+        "rankLevel": 3,
+        "active": 1,
+        "avatar": null
+      }
+    },
+    {
+      "name": "later summary does not roll back a complete organization update",
+      "pass": true,
+      "evidence": {
+        "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "displayName": "摘要后姓名",
+        "accountType": "employee",
+        "role": "team_head",
+        "placementType": "employee",
+        "departmentId": "fixture-company-beta",
+        "departmentName": "新部门",
+        "positionId": "3cf102fd-ea70-4b4a-9f3f-e675d0a3b7b2",
+        "positionName": "新职位",
+        "teamId": "fixture-company-beta-one",
+        "teamName": "新团队",
+        "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+        "managerName": "beta-head",
+        "rankLevel": 3,
+        "active": 1,
+        "avatar": null
+      }
+    },
+    {
+      "name": "explicit null clears revoked organization fields",
+      "pass": true,
+      "evidence": {
+        "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "displayName": "清除部门",
+        "accountType": "employee",
+        "role": "team_head",
+        "placementType": "team_head",
+        "departmentId": "fixture-company-beta",
+        "departmentName": null,
+        "positionId": "3cf102fd-ea70-4b4a-9f3f-e675d0a3b7b2",
+        "positionName": "Refreshed selector position",
+        "teamId": "fixture-company-beta-one",
+        "teamName": null,
+        "managerId": "96c7f86e-2b28-5ee2-b8b9-87071a9c974b",
+        "managerName": "beta-head",
+        "rankLevel": 3,
+        "active": 1,
+        "avatar": null
+      }
+    },
+    {
+      "name": "position names never determine the identity label",
+      "pass": true,
+      "evidence": "alpha ▸ one ▸ 部门负责人"
+    },
+    {
+      "name": "own profile has no company data row",
+      "pass": true,
+      "evidence": {
+        "text": "组织信息由管理员维护⌄部门公司层职位Display title直属上级无",
+        "labels": [
+          "部门",
+          "职位",
+          "直属上级"
+        ],
+        "hasCompany": false
+      }
+    },
+    {
+      "name": "subordinate tree does not fabricate a company row",
+      "pass": true,
+      "evidence": {
+        "exists": true,
+        "companyLine": false
+      }
+    },
+    {
+      "name": "logout clears the general person cache",
+      "pass": true
+    },
+    {
+      "name": "authenticated",
+      "pass": true
+    },
+    {
+      "name": "owner pin task opens",
+      "pass": true
+    },
+    {
+      "name": "completed owner task keeps the pin action",
+      "pass": true
+    },
+    {
+      "name": "employee detail shows current progress without a history timeline",
+      "pass": true,
+      "evidence": "已完成中👤我负责任务名称员工历史投影创建者founder创建时间2026年11月19日 01:28任务排期11月19日 01:34 → 11月19日 06:28截止2026年11月19日 06:28负责人Newest selector employee任务说明原说明当前进展第二轮进展评论共 0 条还没有评论，欢迎发表第一条。加载更多发表评论发表"
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "result": "PASS"
+}

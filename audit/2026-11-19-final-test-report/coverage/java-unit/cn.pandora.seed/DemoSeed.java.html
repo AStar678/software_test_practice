@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DemoSeed.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.seed</a> &gt; <span class="el_source">DemoSeed.java</span></div><h1>DemoSeed.java</h1><pre class="source lang-java linenums">package cn.pandora.seed;
+
+import cn.pandora.admin.BusinessTakeovers;
+import cn.pandora.admin.OrganizationService;
+import org.springframework.beans.factory.ObjectProvider;
+import cn.pandora.auth.*;
+import cn.pandora.common.*;
+import cn.pandora.task.TaskService;
+import cn.pandora.workspace.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
+import java.nio.charset.StandardCharsets;
+import java.time.*;
+import java.util.*;
+import static cn.pandora.common.Db.*;
+
+/** Explicit, marker-guarded, transactional preparation. Never deletes or resets existing data. */
+@Component
+@Order(0)
+@ConditionalOnProperty(name=&quot;pandora.seed&quot;,havingValue=&quot;true&quot;)
+public class DemoSeed implements ApplicationRunner {
+    public static final int ORDER=0;
+    private static final String ORG=&quot;10000000-0000-0000-0000-000000000001&quot;;
+    private static final int MANIFEST=3;
+    private final Db db;
+    private final TaskService tasks;
+    private final WorkspaceService workspace;
+    private final DailyItemService dailyItems;
+    private final CommentService comments;
+    private final BusinessTakeovers takeovers;
+    private final Access access;
+    private final OrganizationService organization;
+    private final ObjectProvider&lt;EventsWorker&gt; worker;
+    private final TransactionTemplate tx;
+    private final Clock clock;
+    private final String password,target,marker;
+    private final boolean initialize;
+    private LocalDate today;
+<span class="nc" id="L43">    private final Map&lt;String,Actor&gt; actors=new LinkedHashMap&lt;&gt;();</span>
+    public DemoSeed(Db db,TaskService tasks,WorkspaceService workspace,DailyItemService dailyItems,CommentService comments,
+                    BusinessTakeovers takeovers,Access access,OrganizationService organization,ObjectProvider&lt;EventsWorker&gt; worker,TransactionTemplate tx,Clock clock,
+                    @Value(&quot;${pandora.demo-password}&quot;) String password,
+                    @Value(&quot;${pandora.demo-target:}&quot;) String target,
+                    @Value(&quot;${pandora.demo-marker:}&quot;) String marker,
+<span class="nc" id="L49">                    @Value(&quot;${pandora.demo-initialize:false}&quot;) boolean initialize) {</span>
+<span class="nc" id="L50">        this.db=db;this.tasks=tasks;this.workspace=workspace;this.dailyItems=dailyItems;this.comments=comments;</span>
+<span class="nc" id="L51">        this.takeovers=takeovers;this.access=access;this.organization=organization;this.worker=worker;this.tx=tx;this.clock=clock;</span>
+<span class="nc" id="L52">        this.password=password;this.target=target;this.marker=marker;this.initialize=initialize;</span>
+<span class="nc" id="L53">    }</span>
+    @Override public void run(ApplicationArguments args) {
+<span class="nc" id="L55">        tx.executeWithoutResult(status-&gt;{</span>
+<span class="nc" id="L56">            String actual=s(db.one(&quot;SELECT DATABASE() AS name&quot;),&quot;name&quot;);</span>
+<span class="nc bnc" id="L57" title="All 6 branches missed.">            if(target.isBlank() || marker.isBlank() || !target.equals(actual))</span>
+<span class="nc" id="L58">                throw new IllegalStateException(&quot;Demo preparation requires an explicit matching database and demo marker&quot;);</span>
+<span class="nc" id="L59">            var identity=db.find(&quot;SELECT * FROM demo_database_identity WHERE singleton=1 FOR UPDATE&quot;);</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            if(identity==null) {</span>
+<span class="nc bnc" id="L61" title="All 4 branches missed.">                if(!initialize || n(db.one(&quot;SELECT COUNT(*) AS c FROM organizations&quot;),&quot;c&quot;)!=0)</span>
+<span class="nc" id="L62">                    throw new IllegalStateException(&quot;Refusing to initialize a demo marker on an existing business database&quot;);</span>
+<span class="nc" id="L63">                today=LocalDate.now(clock.withZone(ZoneId.of(&quot;Asia/Shanghai&quot;)));</span>
+<span class="nc" id="L64">                db.update(&quot;INSERT INTO demo_database_identity(singleton,database_name,marker,manifest_version,business_date) VALUES(1,?,?,?,?)&quot;,target,marker,MANIFEST,today);</span>
+            } else {
+<span class="nc bnc" id="L66" title="All 6 branches missed.">                if(!target.equals(s(identity,&quot;databaseName&quot;)) || !marker.equals(s(identity,&quot;marker&quot;)) || n(identity,&quot;manifestVersion&quot;)!=MANIFEST)</span>
+<span class="nc" id="L67">                    throw new IllegalStateException(&quot;Demo database identity or manifest does not match&quot;);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">                if(identity.get(&quot;preparedAt&quot;)!=null) return;</span>
+<span class="nc" id="L69">                today=LocalDate.parse(s(identity,&quot;businessDate&quot;));</span>
+            }
+<span class="nc" id="L71">            db.update(&quot;INSERT INTO organizations(id,name,time_zone) VALUES(?,?,'Asia/Shanghai')&quot;,ORG,&quot;光屿动画&quot;);</span>
+<span class="nc" id="L72">            db.one(&quot;SELECT id FROM organizations WHERE id=? FOR UPDATE&quot;,ORG);</span>
+<span class="nc" id="L73">            prepareOrganization();</span>
+<span class="nc" id="L74">            prepareBusiness();</span>
+<span class="nc" id="L75">            db.update(&quot;UPDATE demo_database_identity SET prepared_at=UTC_TIMESTAMP(6) WHERE singleton=1&quot;);</span>
+<span class="nc" id="L76">        });</span>
+<span class="nc" id="L77">    }</span>
+    private static String stable(String key) {
+<span class="nc" id="L79">        return UUID.nameUUIDFromBytes((&quot;pandora.demo.v2/&quot;+key).getBytes(StandardCharsets.UTF_8)).toString();</span>
+    }
+    private void remember(String key,String type,String value) {
+<span class="nc" id="L82">        db.update(&quot;INSERT INTO demo_seed_keys(seed_key,organization_id,object_type,object_id) VALUES(?,?,?,?)&quot;,key,ORG,type,value);</span>
+<span class="nc" id="L83">    }</span>
+    private String unit(String table,String key,String name,String department) {
+<span class="nc" id="L85">        String value=stable(key);</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if(table.equals(&quot;teams&quot;)) db.update(&quot;INSERT INTO teams(id,organization_id,name,department_id) VALUES(?,?,?,?)&quot;,value,ORG,name,department);</span>
+<span class="nc" id="L87">        else db.update(&quot;INSERT INTO &quot;+table+&quot;(id,organization_id,name) VALUES(?,?,?)&quot;,value,ORG,name);</span>
+<span class="nc" id="L88">        remember(key,table,value);return value;</span>
+    }
+    private void prepareOrganization() {
+<span class="nc" id="L91">        String founderTitle=unit(&quot;positions&quot;,&quot;title-founder&quot;,&quot;总导演&quot;,null);</span>
+<span class="nc" id="L92">        String departmentTitle=unit(&quot;positions&quot;,&quot;title-department&quot;,&quot;部门总监&quot;,null);</span>
+<span class="nc" id="L93">        String headTitle=unit(&quot;positions&quot;,&quot;title-team&quot;,&quot;组长&quot;,null);</span>
+<span class="nc" id="L94">        String employeeTitle=unit(&quot;positions&quot;,&quot;title-employee&quot;,&quot;动画师&quot;,null);</span>
+<span class="nc" id="L95">        String producerTitle=unit(&quot;positions&quot;,&quot;title-producer&quot;,&quot;制片&quot;,null);</span>
+<span class="nc" id="L96">        String writerTitle=unit(&quot;positions&quot;,&quot;title-writer&quot;,&quot;编剧&quot;,null);</span>
+<span class="nc" id="L97">        String hash=AuthService.PASSWORDS.encode(password);</span>
+<span class="nc" id="L98">        employee(&quot;upper&quot;,&quot;苏景昕&quot;,&quot;13800000001&quot;,&quot;founder&quot;,null,null,founderTitle,hash,&quot;2019-03-04&quot;);</span>
+<span class="nc" id="L99">        String story=unit(&quot;departments&quot;,&quot;department-story&quot;,&quot;故事部&quot;,null);</span>
+<span class="nc" id="L100">        String production=unit(&quot;departments&quot;,&quot;department-production&quot;,&quot;制作部&quot;,null);</span>
+<span class="nc" id="L101">        employee(&quot;middle&quot;,&quot;苏格拉底&quot;,&quot;13800000002&quot;,&quot;department_head&quot;,story,null,departmentTitle,hash,&quot;2020-07-16&quot;);</span>
+<span class="nc" id="L102">        employee(&quot;market&quot;,&quot;毕达哥拉斯&quot;,&quot;13800000003&quot;,&quot;department_head&quot;,production,null,departmentTitle,hash,&quot;2020-09-21&quot;);</span>
+<span class="nc" id="L103">        String storyBoard=unit(&quot;teams&quot;,&quot;team-story-board&quot;,&quot;分镜组&quot;,story);</span>
+<span class="nc" id="L104">        String script=unit(&quot;teams&quot;,&quot;team-script&quot;,&quot;剧本组&quot;,story);</span>
+<span class="nc" id="L105">        String keyArt=unit(&quot;teams&quot;,&quot;team-key-art&quot;,&quot;原画组&quot;,production);</span>
+<span class="nc" id="L106">        String compositing=unit(&quot;teams&quot;,&quot;team-compositing&quot;,&quot;合成组&quot;,production);</span>
+<span class="nc" id="L107">        employee(&quot;product-head-1&quot;,&quot;柏拉图&quot;,&quot;13800000011&quot;,&quot;team_head&quot;,story,storyBoard,headTitle,hash,&quot;2021-11-02&quot;);</span>
+<span class="nc" id="L108">        employee(&quot;product-head-2&quot;,&quot;芝诺&quot;,&quot;13800000012&quot;,&quot;team_head&quot;,story,script,headTitle,hash,&quot;2022-01-10&quot;);</span>
+<span class="nc" id="L109">        employee(&quot;market-head-1&quot;,&quot;泰勒斯&quot;,&quot;13800000021&quot;,&quot;team_head&quot;,production,keyArt,headTitle,hash,&quot;2021-06-14&quot;);</span>
+<span class="nc" id="L110">        employee(&quot;market-head-2&quot;,&quot;赫拉克利特&quot;,&quot;13800000022&quot;,&quot;team_head&quot;,production,compositing,headTitle,hash,&quot;2022-04-25&quot;);</span>
+<span class="nc" id="L111">        employee(&quot;employee&quot;,&quot;亚里士多德&quot;,&quot;13800000004&quot;,&quot;employee&quot;,story,storyBoard,employeeTitle,hash,&quot;2023-05-18&quot;);</span>
+<span class="nc" id="L112">        employee(&quot;colleague&quot;,&quot;欧几里得&quot;,&quot;13800000005&quot;,&quot;employee&quot;,story,storyBoard,employeeTitle,hash,&quot;2023-08-07&quot;);</span>
+<span class="nc" id="L113">        employee(&quot;marketing&quot;,&quot;阿基米德&quot;,&quot;13800000006&quot;,&quot;employee&quot;,production,keyArt,employeeTitle,hash,&quot;2022-12-12&quot;);</span>
+<span class="nc" id="L114">        employee(&quot;product-employee-1&quot;,&quot;巴门尼德&quot;,&quot;13800000031&quot;,&quot;employee&quot;,story,script,writerTitle,hash,&quot;2023-02-20&quot;);</span>
+<span class="nc" id="L115">        employee(&quot;product-employee-2&quot;,&quot;德谟克利特&quot;,&quot;13800000032&quot;,&quot;employee&quot;,story,script,writerTitle,hash,&quot;2024-03-11&quot;);</span>
+<span class="nc" id="L116">        employee(&quot;market-employee-1&quot;,&quot;普罗泰戈拉&quot;,&quot;13800000041&quot;,&quot;employee&quot;,production,compositing,producerTitle,hash,&quot;2023-10-09&quot;);</span>
+<span class="nc" id="L117">        employee(&quot;market-employee-2&quot;,&quot;高尔吉亚&quot;,&quot;13800000042&quot;,&quot;employee&quot;,production,compositing,producerTitle,hash,&quot;2024-06-03&quot;);</span>
+<span class="nc" id="L118">        db.update(&quot;UPDATE organizations SET founder_employee_id=? WHERE id=?&quot;,stable(&quot;upper&quot;),ORG);</span>
+<span class="nc" id="L119">        String adminId=stable(&quot;admin&quot;);</span>
+<span class="nc" id="L120">        db.update(&quot;INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'admin')&quot;,adminId,ORG);</span>
+<span class="nc" id="L121">        db.update(&quot;INSERT INTO admin_accounts(id,organization_id,account_name,password_hash,display_name) VALUES(?,?,'admin',?,'系统管理员')&quot;,adminId,ORG,hash);</span>
+<span class="nc" id="L122">        remember(&quot;admin&quot;,&quot;admin&quot;,adminId);</span>
+<span class="nc" id="L123">        refreshActors();</span>
+<span class="nc" id="L124">    }</span>
+    private void employee(String key,String name,String phone,String kind,String dep,String team,String title,String hash,String hireDate) {
+<span class="nc" id="L126">        String employeeId=stable(key);</span>
+<span class="nc" id="L127">        db.update(&quot;INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'employee')&quot;,employeeId,ORG);</span>
+<span class="nc" id="L128">        db.update(&quot;INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,email,hire_date) VALUES(?,?,?,?,?,?,?,?)&quot;,employeeId,ORG,hash,name,phone,phone,key+&quot;@demo.example.test&quot;,hireDate);</span>
+<span class="nc" id="L129">        db.update(&quot;INSERT INTO employee_placements(organization_id,employee_id,placement_type,department_id,team_id,position_id) VALUES(?,?,?,?,?,?)&quot;,ORG,employeeId,kind,dep,team,title);</span>
+<span class="nc" id="L130">        remember(key,&quot;employee&quot;,employeeId);</span>
+<span class="nc" id="L131">    }</span>
+    private void refreshActors() {
+<span class="nc" id="L133">        actors.clear();</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        for(var row:db.list(&quot;SELECT u.*,'employee' AS account_type,k.seed_key FROM users u JOIN demo_seed_keys k ON k.object_id=u.id AND k.object_type='employee' WHERE u.organization_id=?&quot;,ORG))</span>
+<span class="nc" id="L135">            actors.put(s(row,&quot;seedKey&quot;),access.actor(row));</span>
+<span class="nc" id="L136">        actors.put(&quot;admin&quot;,access.actor(db.one(&quot;SELECT a.*,'admin' AS account_type FROM admin_accounts a WHERE a.organization_id=?&quot;,ORG)));</span>
+<span class="nc" id="L137">    }</span>
+    private void prepareBusiness() {
+        /* 公司事件纪只保留正文；这里仍是十条有序公司事项，任务/通知标题不受影响。 */
+        /* 其中两条为自然的分段长正文，供首页两行省略与清单独立展开的真实演示；
+           其余保持短正文对照，不增加第十一条。 */
+<span class="nc" id="L142">        String[] companyBodies = {</span>
+                &quot;故事部与制作部共同确认十二分钟动画短片《星尘》的创作目标与交付节点。\n&quot; +
+                        &quot;本周先锁定成片结构与第一幕镜头节奏，再由分镜组按场次标注转场方式；&quot; +
+                        &quot;制作部同步排定原画、合成与配音的交付窗口。\n&quot; +
+                        &quot;所有变更在每日评审记录中留痕，跨部门调整提前一个工作日同步。&quot;,
+                &quot;分镜组提交第一幕完整分镜，汇总镜头节奏与转场意见。&quot;,
+                &quot;确定星尘、旅人和守灯人的比例、服装与表情设定。&quot;,
+                &quot;原画组交付第一幕关键帧，进入动画中间画制作。&quot;,
+                &quot;完成三位主要角色的试音并确认声音方向。&quot;,
+                &quot;作曲提交主题旋律小样，确认情绪曲线与片尾留白。&quot;,
+                &quot;检查第一幕合成层、光效与景深一致性。&quot;,
+                &quot;校对片名、主创名单和多语言字幕。&quot;,
+                &quot;从成片素材剪出四十五秒预告并完成调色。\n&quot; +
+                        &quot;预告以旅人抬头看见星尘的镜头开场，中段保留三处动作高点，片尾回到守灯人的静帧；&quot; +
+                        &quot;声音先沿用配乐小样的主旋律。\n&quot; +
+                        &quot;待成片交付后再统一调整响度与字幕位置，剪辑版本按日期归档。&quot;,
+                &quot;输出母版、字幕和工程归档，完成交付清单。&quot;
+        };
+<span class="nc bnc" id="L160" title="All 2 branches missed.">        for (int i = 0; i &lt; companyBodies.length; i++) {</span>
+<span class="nc" id="L161">            var item = organization.createCompanyItem(actors.get(&quot;admin&quot;), Map.of(&quot;body&quot;, companyBodies[i]));</span>
+<span class="nc" id="L162">            remember(&quot;company-item-&quot; + (i + 1), &quot;home-item&quot;, s(item, &quot;id&quot;));</span>
+        }
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        for (String key : List.of(&quot;upper&quot;, &quot;middle&quot;, &quot;product-head-1&quot;, &quot;employee&quot;)) {</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">            for (int offset = 0; offset &lt; 3; offset++) {</span>
+<span class="nc" id="L166">                var log = workspace.createLog(actors.get(key), Map.of(&quot;businessDate&quot;, today.minusDays(offset).toString(),</span>
+<span class="nc" id="L167">                        &quot;body&quot;, &quot;《星尘》制作日志：&quot; + displayName(key) + &quot; 同步第 &quot; + (3 - offset) + &quot; 天的分镜与合成进展。&quot;));</span>
+<span class="nc" id="L168">                remember(&quot;log-&quot; + key + &quot;-&quot; + offset, &quot;log&quot;, s(log, &quot;logId&quot;));</span>
+            }
+<span class="nc" id="L170">        }</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        for (String key : List.of(&quot;upper&quot;, &quot;middle&quot;, &quot;product-head-1&quot;, &quot;employee&quot;)) {</span>
+<span class="nc" id="L172">            dailyItems.create(actors.get(key), Map.of(&quot;startDate&quot;, today.minusDays(1).toString(),</span>
+<span class="nc" id="L173">                    &quot;endDate&quot;, today.plusDays(1).toString(), &quot;body&quot;, &quot;跟完《星尘》第一幕的分镜与合成交接。&quot;));</span>
+<span class="nc" id="L174">            dailyItems.create(actors.get(key), Map.of(&quot;startDate&quot;, today.toString(), &quot;endDate&quot;, today.toString(),</span>
+                    &quot;body&quot;, &quot;确认交付清单与明日排期。&quot;));
+<span class="nc" id="L176">            var finished = dailyItems.create(actors.get(key), Map.of(&quot;startDate&quot;, today.toString(), &quot;endDate&quot;, today.toString(),</span>
+                    &quot;body&quot;, &quot;整理昨日评审意见。&quot;));
+<span class="nc" id="L178">            dailyItems.change(actors.get(key), s(finished, &quot;id&quot;), &quot;\&quot;1\&quot;&quot;, Map.of(&quot;completed&quot;, true));</span>
+<span class="nc" id="L179">            dailyItems.create(actors.get(key), Map.of(&quot;startDate&quot;, today.minusDays(3).toString(),</span>
+<span class="nc" id="L180">                    &quot;endDate&quot;, today.minusDays(3).toString(), &quot;body&quot;, &quot;补齐上周的镜头备注。&quot;));</span>
+<span class="nc" id="L181">        }</span>
+<span class="nc" id="L182">        String[][] leadTitles = {</span>
+                {&quot;第一幕分镜节奏&quot;, &quot;第二幕转场设计&quot;, &quot;第三幕高潮分镜&quot;, &quot;角色表情走查&quot;, &quot;镜头运动复盘&quot;, &quot;分镜交接清单&quot;,
+                        &quot;第一幕粗剪反馈&quot;, &quot;第二幕光影方向&quot;, &quot;第三幕情绪曲线&quot;, &quot;片头分镜&quot;, &quot;片尾留白&quot;, &quot;全片分镜归档&quot;},
+                {&quot;剧本结构评审&quot;, &quot;角色动机梳理&quot;, &quot;对白节奏调整&quot;, &quot;第二幕冲突升级&quot;, &quot;结尾伏笔确认&quot;, &quot;分镜脚本联审&quot;,
+                        &quot;台词终稿&quot;, &quot;场景表更新&quot;, &quot;配音稿标注&quot;, &quot;字幕初稿&quot;, &quot;剧本文档归档&quot;, &quot;创作会纪要&quot;},
+                {&quot;原画风格校准&quot;, &quot;关键帧线稿&quot;, &quot;动画中间画检查&quot;, &quot;角色比例统一&quot;, &quot;动作节奏走查&quot;, &quot;原画交付清单&quot;,
+                        &quot;第一幕原画&quot;, &quot;第二幕原画&quot;, &quot;第三幕原画&quot;, &quot;表情库整理&quot;, &quot;原画归档&quot;, &quot;作画会议纪要&quot;},
+                {&quot;镜头合成检查&quot;, &quot;光效层次调整&quot;, &quot;景深一致性&quot;, &quot;合成层整理&quot;, &quot;渲染队列确认&quot;, &quot;素材命名规范&quot;,
+                        &quot;第一幕合成&quot;, &quot;第二幕合成&quot;, &quot;第三幕合成&quot;, &quot;输出前检查&quot;, &quot;母版导出&quot;, &quot;交付文件归档&quot;}
+        };
+<span class="nc" id="L192">        String[] leads = {&quot;upper&quot;, &quot;middle&quot;, &quot;product-head-1&quot;, &quot;employee&quot;};</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        for (int leadIndex = 0; leadIndex &lt; leads.length; leadIndex++) {</span>
+<span class="nc" id="L194">            String lead = leads[leadIndex];</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">            int count = &quot;employee&quot;.equals(lead) ? 8 : 12;</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            for (int i = 1; i &lt;= count; i++) {</span>
+                /* 每个主角既是创建者也是当前负责人，不能只用创建量证明本人工作；
+                   少量跨部门/带同组协作的任务保留真实共享关系。 */
+<span class="nc bnc" id="L199" title="All 4 branches missed.">                List&lt;String&gt; owners = switch (lead) {</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">                    case &quot;upper&quot; -&gt; i % 4 == 0 ? List.of(&quot;upper&quot;, &quot;middle&quot;) : List.of(&quot;upper&quot;);</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                    case &quot;middle&quot; -&gt; i % 4 == 0 ? List.of(&quot;middle&quot;, &quot;product-head-1&quot;) : List.of(&quot;middle&quot;);</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">                    case &quot;product-head-1&quot; -&gt; i % 4 == 0 ? List.of(&quot;product-head-1&quot;, &quot;employee&quot;) : List.of(&quot;product-head-1&quot;);</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">                    default -&gt; i % 4 == 0 ? List.of(&quot;employee&quot;, &quot;colleague&quot;) : List.of(&quot;employee&quot;);</span>
+                };
+<span class="nc bnc" id="L205" title="All 2 branches missed.">                var timing = i == 1 ? shortSchedule() :</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">                        input(today.plusDays(1 + i % 5), 9 + i % 3, today.plusDays(1 + i % 5 + (i % 5 == 0 ? 1 : 0)), 17);</span>
+<span class="nc" id="L207">                String task = create(lead + &quot;-&quot; + i, lead, leadTitles[leadIndex][i - 1], owners, timing, true);</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                if (i == 2) seedHistoricalSchedule(task, input(today.minusDays(2), 10, today.minusDays(1), 16));</span>
+            }
+        }
+        /* 两种相互独立的个人置顶：日历置顶与表单置顶分别落在不同任务上，互不覆盖。 */
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        for (String lead : leads) {</span>
+<span class="nc" id="L213">            String calendarPin = s(db.one(&quot;SELECT object_id FROM demo_seed_keys WHERE seed_key=?&quot;, &quot;task-&quot; + lead + &quot;-1&quot;), &quot;objectId&quot;);</span>
+<span class="nc" id="L214">            String tablePin = s(db.one(&quot;SELECT object_id FROM demo_seed_keys WHERE seed_key=?&quot;, &quot;task-&quot; + lead + &quot;-2&quot;), &quot;objectId&quot;);</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">            if (calendarPin != null) tasks.setPinned(actors.get(lead), calendarPin, true);</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">            if (tablePin != null) tasks.setTablePinned(actors.get(lead), tablePin, true);</span>
+        }
+        /* 真实父子拆解链：创始人 → 部门负责人 → 团队负责人 → 员工，逐级创建并由直属上级审核。 */
+<span class="nc" id="L219">        String chainParent = create(&quot;chain-parent&quot;, &quot;upper&quot;, &quot;《星尘》第一幕总交付&quot;, List.of(&quot;middle&quot;), schedule(), true);</span>
+<span class="nc" id="L220">        String chainMiddle = create(&quot;chain-middle&quot;, &quot;middle&quot;, &quot;第一幕分镜与配音拆解&quot;, List.of(&quot;product-head-1&quot;), schedule(), true, chainParent);</span>
+<span class="nc" id="L221">        String chainTeam = create(&quot;chain-team&quot;, &quot;product-head-1&quot;, &quot;分镜组镜头交付清单&quot;, List.of(&quot;employee&quot;), schedule(), true, chainMiddle);</span>
+<span class="nc" id="L222">        create(&quot;chain-leaf&quot;, &quot;employee&quot;, &quot;第一幕镜头台词标注&quot;, List.of(&quot;employee&quot;), schedule(), true, chainTeam);</span>
+<span class="nc" id="L223">        String doing = create(&quot;doing&quot;, &quot;middle&quot;, &quot;第一幕合成镜头校对&quot;, List.of(&quot;employee&quot;, &quot;colleague&quot;), schedule(), true);</span>
+<span class="nc" id="L224">        command(&quot;employee&quot;, doing, Map.of(&quot;command&quot;, &quot;progress&quot;, &quot;progressNote&quot;, &quot;第一轮校对完成，等待组长确认。&quot;), true);</span>
+<span class="nc" id="L225">        String pending = create(&quot;pending-complete&quot;, &quot;middle&quot;, &quot;第二幕原画验收&quot;, List.of(&quot;employee&quot;), schedule(), true);</span>
+<span class="nc" id="L226">        command(&quot;employee&quot;, pending, Map.of(&quot;command&quot;, &quot;complete&quot;, &quot;completionNote&quot;, &quot;原画清单已核对，请审核。&quot;), false);</span>
+<span class="nc" id="L227">        String complete = create(&quot;completed&quot;, &quot;employee&quot;, &quot;片头字幕校对&quot;, List.of(&quot;employee&quot;), schedule(), true);</span>
+<span class="nc" id="L228">        command(&quot;employee&quot;, complete, Map.of(&quot;command&quot;, &quot;complete&quot;, &quot;completionNote&quot;, &quot;字幕已按终稿完成。&quot;), true);</span>
+<span class="nc" id="L229">        String reopen = create(&quot;reopened&quot;, &quot;employee&quot;, &quot;预告片剪辑返工&quot;, List.of(&quot;employee&quot;), schedule(), true);</span>
+<span class="nc" id="L230">        command(&quot;employee&quot;, reopen, Map.of(&quot;command&quot;, &quot;complete&quot;, &quot;completionNote&quot;, &quot;首轮剪辑完成。&quot;), true);</span>
+<span class="nc" id="L231">        var reopenBody = schedule(); reopenBody.put(&quot;command&quot;, &quot;reopen&quot;); reopenBody.put(&quot;reason&quot;, &quot;补充片尾镜头，重新执行。&quot;);</span>
+<span class="nc" id="L232">        command(&quot;employee&quot;, reopen, reopenBody, true);</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">        for (String outcome : List.of(&quot;pending&quot;, &quot;rejected&quot;, &quot;withdrawn&quot;, &quot;expired&quot;)) {</span>
+<span class="nc bnc" id="L234" title="All 4 branches missed.">            String task = create(&quot;creation-&quot; + outcome, &quot;employee&quot;, switch (outcome) {</span>
+<span class="nc" id="L235">                case &quot;pending&quot; -&gt; &quot;第一幕新增航拍镜头申请&quot;;</span>
+<span class="nc" id="L236">                case &quot;rejected&quot; -&gt; &quot;第二幕补拍镜头申请&quot;;</span>
+<span class="nc" id="L237">                case &quot;withdrawn&quot; -&gt; &quot;片尾彩蛋镜头申请&quot;;</span>
+<span class="nc" id="L238">                default -&gt; &quot;第三幕特效镜头申请&quot;;</span>
+<span class="nc" id="L239">            }, List.of(&quot;employee&quot;), schedule(), false);</span>
+<span class="nc" id="L240">            var request = db.one(&quot;SELECT * FROM approval_requests WHERE task_id=?&quot;, task);</span>
+<span class="nc bnc" id="L241" title="All 2 branches missed.">            if (outcome.equals(&quot;rejected&quot;)) decide(request, &quot;reject&quot;, &quot;product-head-1&quot;);</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">            if (outcome.equals(&quot;withdrawn&quot;)) decide(request, &quot;withdraw&quot;, &quot;employee&quot;);</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">            if (outcome.equals(&quot;expired&quot;)) {</span>
+<span class="nc" id="L244">                db.update(&quot;UPDATE approval_requests SET applicable_deadline=UTC_TIMESTAMP(6)-INTERVAL 1 SECOND WHERE id=?&quot;, s(request, &quot;id&quot;));</span>
+<span class="nc" id="L245">                tasks.refreshPendingRoutes(actors.get(&quot;admin&quot;));</span>
+            }
+<span class="nc" id="L247">        }</span>
+<span class="nc" id="L248">        String handover = create(&quot;handover&quot;, &quot;upper&quot;, &quot;分镜交接保留创作来源&quot;, List.of(&quot;employee&quot;), schedule(), true);</span>
+<span class="nc" id="L249">        approve(tasks.handover(actors.get(&quot;employee&quot;), handover, etag(handover),</span>
+<span class="nc" id="L250">                Map.of(&quot;sourceUserId&quot;, stable(&quot;employee&quot;), &quot;targetUserId&quot;, stable(&quot;colleague&quot;), &quot;reason&quot;, &quot;同组分镜协作交接&quot;)));</span>
+<span class="nc" id="L251">        String takeover = create(&quot;takeover&quot;, &quot;middle&quot;, &quot;第二幕业务责任接管&quot;, List.of(&quot;employee&quot;), schedule(), true);</span>
+<span class="nc" id="L252">        takeovers.transfer(actors.get(&quot;admin&quot;), &quot;\&quot;1\&quot;&quot;, Map.of(&quot;transfers&quot;, List.of(Map.of(&quot;taskId&quot;, takeover,</span>
+<span class="nc" id="L253">                &quot;taskVersion&quot;, version(takeover), &quot;ownerVersion&quot;, 1, &quot;previousEmployeeId&quot;, stable(&quot;middle&quot;),</span>
+<span class="nc" id="L254">                &quot;nextEmployeeId&quot;, stable(&quot;colleague&quot;), &quot;reason&quot;, &quot;业务责任正式接管演示&quot;))));</span>
+<span class="nc" id="L255">        refreshActors();</span>
+<span class="nc" id="L256">        command(&quot;colleague&quot;, takeover, Map.of(&quot;command&quot;, &quot;change&quot;, &quot;title&quot;, &quot;接管后由新责任方维护第二幕&quot;, &quot;reason&quot;, &quot;接管后直接生效&quot;), true);</span>
+<span class="nc" id="L257">        create(&quot;cross-department&quot;, &quot;middle&quot;, &quot;故事部与制作部联合评审&quot;, List.of(&quot;employee&quot;, &quot;marketing&quot;), schedule(), true);</span>
+<span class="nc" id="L258">        create(&quot;creator-only&quot;, &quot;employee&quot;, &quot;片尾镜头由制作部负责&quot;, List.of(&quot;marketing&quot;), schedule(), true);</span>
+<span class="nc" id="L259">        LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">        if (!monthEnd.isAfter(today)) monthEnd = today.plusMonths(1).withDayOfMonth(today.plusMonths(1).lengthOfMonth());</span>
+<span class="nc" id="L261">        create(&quot;cross-month&quot;, &quot;upper&quot;, &quot;跨月镜头排期&quot;, List.of(&quot;employee&quot;), input(monthEnd.minusDays(1), 20, monthEnd.plusDays(1), 10), true);</span>
+<span class="nc" id="L262">        String revoked = create(&quot;comment-revoked&quot;, &quot;upper&quot;, &quot;第一幕评论协作镜头&quot;, List.of(&quot;employee&quot;), schedule(), true);</span>
+
+<span class="nc" id="L264">        String tag = stable(&quot;tag-focus&quot;);</span>
+<span class="nc" id="L265">        String linkedTag = stable(&quot;tag-animation&quot;);</span>
+<span class="nc" id="L266">        db.update(&quot;INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,'重点镜头','#F6D5D2')&quot;, tag, ORG);</span>
+<span class="nc" id="L267">        db.update(&quot;INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,'动画联动','#D8EAF4')&quot;, linkedTag, ORG);</span>
+<span class="nc" id="L268">        remember(&quot;tag-focus&quot;, &quot;tag&quot;, tag);</span>
+<span class="nc" id="L269">        remember(&quot;tag-animation&quot;, &quot;tag&quot;, linkedTag);</span>
+        /* 两种颜色的公司共用标签，供任务和日志的有序引用：两条正常任务与两篇近期日志各带两个
+           标签，首标签决定任务取色；其余任务和日志保留单标签/无标签对照，不增加主线任务数量。 */
+<span class="nc" id="L272">        var employeeLog = db.one(&quot;SELECT id,row_version FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?&quot;,</span>
+<span class="nc" id="L273">                ORG, stable(&quot;employee&quot;), today);</span>
+<span class="nc" id="L274">        workspace.changeLog(actors.get(&quot;employee&quot;), s(employeeLog, &quot;id&quot;), &quot;\&quot;&quot; + n(employeeLog, &quot;rowVersion&quot;) + &quot;\&quot;&quot;,</span>
+<span class="nc" id="L275">                Map.of(&quot;tagIds&quot;, List.of(tag, linkedTag)));</span>
+<span class="nc" id="L276">        var middleLog = db.one(&quot;SELECT id,row_version FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?&quot;,</span>
+<span class="nc" id="L277">                ORG, stable(&quot;middle&quot;), today);</span>
+<span class="nc" id="L278">        workspace.changeLog(actors.get(&quot;middle&quot;), s(middleLog, &quot;id&quot;), &quot;\&quot;&quot; + n(middleLog, &quot;rowVersion&quot;) + &quot;\&quot;&quot;,</span>
+<span class="nc" id="L279">                Map.of(&quot;tagIds&quot;, List.of(linkedTag, tag)));</span>
+<span class="nc" id="L280">        String compositing = s(db.one(&quot;SELECT object_id FROM demo_seed_keys WHERE seed_key=?&quot;, &quot;task-employee-3&quot;), &quot;objectId&quot;);</span>
+<span class="nc" id="L281">        command(&quot;middle&quot;, doing, Map.of(&quot;command&quot;, &quot;change&quot;, &quot;tagIds&quot;, List.of(tag, linkedTag), &quot;reason&quot;, &quot;重点镜头跟进&quot;), true);</span>
+<span class="nc" id="L282">        command(&quot;employee&quot;, compositing, Map.of(&quot;command&quot;, &quot;change&quot;, &quot;tagIds&quot;, List.of(linkedTag, tag), &quot;reason&quot;, &quot;合成与镜头联动&quot;), true);</span>
+<span class="nc" id="L283">        comments.create(actors.get(&quot;middle&quot;), &quot;task&quot;, doing, Map.of(&quot;body&quot;, &quot;合成检查请保留逐镜头记录，审核时对照原画。&quot;));</span>
+<span class="nc" id="L284">        comments.create(actors.get(&quot;upper&quot;), &quot;task&quot;, revoked, Map.of(&quot;body&quot;, &quot;请按最新分镜意见继续协作，旧评论通知不应再提供正文。&quot;));</span>
+<span class="nc" id="L285">        var delivery = worker.getIfAvailable();</span>
+<span class="nc bnc" id="L286" title="All 6 branches missed.">        if (delivery != null) for (int i = 0; i &lt; 10 &amp;&amp; n(db.one(&quot;SELECT COUNT(*) AS c FROM domain_events WHERE status='pending'&quot;), &quot;c&quot;) &gt; 0; i++) delivery.runOnce();</span>
+<span class="nc" id="L287">        command(&quot;upper&quot;, revoked, Map.of(&quot;command&quot;, &quot;change&quot;, &quot;assigneeIds&quot;, List.of(stable(&quot;marketing&quot;)), &quot;reason&quot;, &quot;转交制作部，保留普通历史消息例外&quot;), true);</span>
+        /* 四人各有已读/未读的多类型通知，打开详情才标读的规则仍由真实接口决定。 */
+<span class="nc bnc" id="L289" title="All 2 branches missed.">        for (String key : List.of(&quot;upper&quot;, &quot;middle&quot;, &quot;product-head-1&quot;, &quot;employee&quot;)) {</span>
+<span class="nc" id="L290">            var messages = db.list(&quot;SELECT id FROM notifications WHERE organization_id=? AND recipient_id=? ORDER BY created_at DESC,id&quot;, ORG, stable(key));</span>
+<span class="nc bnc" id="L291" title="All 4 branches missed.">            for (int i = 0; i &lt; messages.size(); i++) if (i % 4 == 1)</span>
+<span class="nc" id="L292">                db.update(&quot;UPDATE notifications SET read_at=UTC_TIMESTAMP(6) WHERE id=?&quot;, s(messages.get(i), &quot;id&quot;));</span>
+<span class="nc" id="L293">        }</span>
+<span class="nc" id="L294">    }</span>
+    private String displayName(String key) {
+<span class="nc bnc" id="L296" title="All 7 branches missed.">        return switch (key) {</span>
+<span class="nc" id="L297">            case &quot;upper&quot; -&gt; &quot;苏景昕&quot;; case &quot;middle&quot; -&gt; &quot;苏格拉底&quot;;</span>
+<span class="nc" id="L298">            case &quot;product-head-1&quot; -&gt; &quot;柏拉图&quot;; case &quot;employee&quot; -&gt; &quot;亚里士多德&quot;;</span>
+<span class="nc" id="L299">            case &quot;colleague&quot; -&gt; &quot;欧几里得&quot;; case &quot;marketing&quot; -&gt; &quot;阿基米德&quot;;</span>
+<span class="nc" id="L300">            default -&gt; &quot;光屿动画成员&quot;;</span>
+        };
+    }
+    /** A short, still actionable same-business-day interval, including preparation late at night. */
+    private Map&lt;String,Object&gt; shortSchedule() {
+<span class="nc" id="L305">        ZoneId zone = ZoneId.of(&quot;Asia/Shanghai&quot;);</span>
+<span class="nc" id="L306">        ZonedDateTime end = ZonedDateTime.now(clock.withZone(zone)).plusMinutes(90);</span>
+<span class="nc" id="L307">        ZonedDateTime last = today.atTime(23,59,59).atZone(zone);</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">        if (end.isAfter(last)) end = last;</span>
+<span class="nc" id="L309">        return new LinkedHashMap&lt;&gt;(Map.of(&quot;allDay&quot;, false, &quot;startAt&quot;, end.minusMinutes(90).toOffsetDateTime().toString(),</span>
+<span class="nc" id="L310">                &quot;dueAt&quot;, end.toOffsetDateTime().toString()));</span>
+    }
+    /** Initial historical seed only: normal submissions correctly reject already elapsed deadlines.
+        Keep the approved business record and its version/approval deadline consistent; never runs
+        for an already prepared target, so repeat preparation cannot reschedule edited work. */
+    private void seedHistoricalSchedule(String task, Map&lt;String,Object&gt; timing) {
+<span class="nc" id="L316">        Instant start = OffsetDateTime.parse((String)timing.get(&quot;startAt&quot;)).toInstant();</span>
+<span class="nc" id="L317">        Instant due = OffsetDateTime.parse((String)timing.get(&quot;dueAt&quot;)).toInstant();</span>
+<span class="nc" id="L318">        db.update(&quot;UPDATE task_versions SET start_at=?,due_at=? WHERE organization_id=? AND task_id=?&quot;,</span>
+<span class="nc" id="L319">                java.sql.Timestamp.from(start),java.sql.Timestamp.from(due),ORG,task);</span>
+<span class="nc" id="L320">        db.update(&quot;UPDATE approval_requests SET applicable_deadline=? WHERE organization_id=? AND task_id=?&quot;,java.sql.Timestamp.from(due),ORG,task);</span>
+        // This is pre-existing unfinished work, with submission/decision before its historical due.
+<span class="nc" id="L322">        db.update(&quot;UPDATE tasks SET created_at=created_at-INTERVAL 3 DAY,updated_at=updated_at-INTERVAL 3 DAY WHERE organization_id=? AND id=?&quot;,ORG,task);</span>
+<span class="nc" id="L323">        db.update(&quot;UPDATE task_versions SET created_at=created_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?&quot;,ORG,task);</span>
+<span class="nc" id="L324">        db.update(&quot;UPDATE approval_requests SET created_at=created_at-INTERVAL 3 DAY,decided_at=decided_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?&quot;,ORG,task);</span>
+<span class="nc" id="L325">        db.update(&quot;UPDATE task_history_entries SET occurred_at=occurred_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?&quot;,ORG,task);</span>
+<span class="nc" id="L326">        db.update(&quot;UPDATE task_assignments SET assigned_at=assigned_at-INTERVAL 3 DAY,created_at=created_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?&quot;,ORG,task);</span>
+<span class="nc" id="L327">        db.update(&quot;UPDATE task_business_owners SET updated_at=updated_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?&quot;,ORG,task);</span>
+<span class="nc" id="L328">        db.update(&quot;UPDATE audit_logs SET created_at=created_at-INTERVAL 3 DAY WHERE organization_id=? AND object_id=?&quot;,ORG,task);</span>
+<span class="nc" id="L329">        db.update(&quot;UPDATE domain_events SET created_at=created_at-INTERVAL 3 DAY,expires_at=DATE_ADD(occurred_at-INTERVAL 3 DAY,INTERVAL 3 MONTH),occurred_at=occurred_at-INTERVAL 3 DAY WHERE organization_id=? AND task_id=?&quot;,ORG,task);</span>
+<span class="nc" id="L330">    }</span>
+<span class="nc" id="L331">    private Map&lt;String,Object&gt; schedule() {return input(today,9,today.plusDays(7),18);}</span>
+    private Map&lt;String,Object&gt; input(LocalDate start,int hour,LocalDate due,int dueHour) {
+<span class="nc" id="L333">        var result=new LinkedHashMap&lt;String,Object&gt;();result.put(&quot;allDay&quot;,false);</span>
+<span class="nc" id="L334">        result.put(&quot;startAt&quot;,start.atTime(hour,0).atZone(ZoneId.of(&quot;Asia/Shanghai&quot;)).toOffsetDateTime().toString());</span>
+<span class="nc" id="L335">        result.put(&quot;dueAt&quot;,due.atTime(dueHour,0).atZone(ZoneId.of(&quot;Asia/Shanghai&quot;)).toOffsetDateTime().toString());return result;</span>
+    }
+    private String create(String key,String creator,String title,List&lt;String&gt; owners,Map&lt;String,Object&gt; schedule,boolean approve) {
+<span class="nc" id="L338">        return create(key,creator,title,owners,schedule,approve,null);</span>
+    }
+    private String create(String key,String creator,String title,List&lt;String&gt; owners,Map&lt;String,Object&gt; schedule,boolean approve,String parentTaskId) {
+<span class="nc" id="L341">        var body=new LinkedHashMap&lt;&gt;(schedule);body.put(&quot;title&quot;,title);body.put(&quot;description&quot;,&quot;光屿动画业务数据：&quot;+title);</span>
+<span class="nc bnc" id="L342" title="All 2 branches missed.">        if (parentTaskId != null) body.put(&quot;parentTaskId&quot;, parentTaskId);</span>
+<span class="nc" id="L343">        body.put(&quot;priority&quot;,List.of(&quot;urgent&quot;,&quot;high&quot;,&quot;medium&quot;,&quot;low&quot;).get(Math.floorMod(key.hashCode(),4)));</span>
+<span class="nc" id="L344">        body.put(&quot;assigneeIds&quot;,owners.stream().map(DemoSeed::stable).toList());</span>
+<span class="nc bnc" id="L345" title="All 2 branches missed.">        var result=tasks.create(actors.get(creator),body);if(approve) approve(result);</span>
+<span class="nc" id="L346">        remember(&quot;task-&quot;+key,&quot;task&quot;,s(result,&quot;taskId&quot;));return s(result,&quot;taskId&quot;);</span>
+    }
+<span class="nc" id="L348">    private long version(String task) {return n(db.one(&quot;SELECT row_version FROM tasks WHERE id=?&quot;,task),&quot;rowVersion&quot;);}</span>
+<span class="nc" id="L349">    private String etag(String task) {return &quot;\&quot;&quot;+version(task)+&quot;\&quot;&quot;;}</span>
+    private void command(String who,String task,Map&lt;String,Object&gt; body,boolean approve) {
+<span class="nc bnc" id="L351" title="All 2 branches missed.">        var result=tasks.change(actors.get(who),task,etag(task),body);if(approve) approve(result);</span>
+<span class="nc" id="L352">    }</span>
+    private void decide(Map&lt;String,Object&gt; request,String decision,String who) {
+<span class="nc" id="L354">        tasks.decide(actors.get(who),s(request,&quot;id&quot;),&quot;\&quot;&quot;+n(request,&quot;rowVersion&quot;)+&quot;\&quot;&quot;,Map.of(&quot;decision&quot;,decision,&quot;comment&quot;,&quot;演示业务决定：&quot;+decision));</span>
+<span class="nc" id="L355">    }</span>
+    private void approve(Map&lt;String,Object&gt; result) {
+<span class="nc bnc" id="L357" title="All 2 branches missed.">        String rid=s(result,&quot;requestId&quot;);if(rid==null)return;</span>
+<span class="nc" id="L358">        var request=db.one(&quot;SELECT * FROM approval_requests WHERE id=?&quot;,rid);</span>
+<span class="nc bnc" id="L359" title="All 2 branches missed.">        if(!&quot;pending&quot;.equals(s(request,&quot;status&quot;)))return;</span>
+<span class="nc" id="L360">        String reviewer=actors.entrySet().stream().filter(e-&gt;e.getValue().id().equals(s(request,&quot;currentReviewerId&quot;))).findFirst().orElseThrow().getKey();</span>
+<span class="nc" id="L361">        decide(request,&quot;approve&quot;,reviewer);</span>
+<span class="nc" id="L362">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

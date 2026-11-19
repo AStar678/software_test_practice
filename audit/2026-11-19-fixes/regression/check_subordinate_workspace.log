@@ -1,0 +1,100 @@
+PASS login founder
+PASS tree initially only direct reports
+PASS expand shows actual team heads without opening detail
+PASS grandchild appears within actual parent branch
+PASS tree keeps the real department ▸ team ▸ position path without identity
+PASS organization line covers the four real department/team/position combinations without identity
+PASS tree fits 320
+PASS tree fits 390
+PASS tree fits 1440
+PASS person opens profile card before work with contacts and tenure rows
+PASS the subordinate card keeps its own hire date, tenure and contact rows after the own-profile de-duplication
+PASS person opens independent workspace
+PASS no own calendar or log reuse
+PASS default month view present
+PASS month jump loads
+PASS month navigation crosses year
+PASS selected month ready
+PASS quiet month ready
+PASS completed task is marked in the month view
+PASS selected month restored
+PASS month has full weekday grid and spanning segments
+PASS staff month bars cover the occupied company days
+PASS staff month captions stay inside their bars with no nested labeled buttons
+PASS zero duration task keeps the day frame and an explicit point flag
+PASS full business day covers exactly one day
+PASS month fits 320x740
+PASS a long month title is clipped inside its own bar at 320px
+PASS month fits 390x844
+PASS month fits 1440x900
+PASS month fits 390x600
+PASS the sparse month block is mounted with four to six week rows
+PASS sparse month keeps the date, track and overflow bands apart
+PASS the sparse month starts with blank columns before its first real date
+PASS only the Thursday and Sunday above three tasks show overflow, each counted once
+PASS the sparse Thursday overflow opens its own complete day list, not a shifted date
+PASS the quiet month block is mounted for the layout audit
+PASS the three visible tracks stay inside the reserved band for every week
+PASS a task under review keeps its dashed frame without leaving the track band
+PASS staff month exposes no drag or resize entry
+PASS staff month remains keyboard accessible
+PASS keyboard day list returns to staff month
+PASS month task opens actual date list
+PASS month list return preserves month mode
+PASS overflow opens complete date list
+PASS complete date list enters day axis
+PASS day has full axis overlapping columns and independent all-day area
+PASS completed task is marked in the axis and the all-day area
+PASS timed task captions start at their actual bar top
+PASS staff day axis exposes no drag or resize entry
+PASS staff day bar opens the normal task detail
+PASS day detail back restores staff axis
+PASS day axis fits 320
+PASS day axis fits 390
+PASS day axis fits 1440
+PASS only actual selected person day coverage
+PASS completed task is marked in the day list
+PASS day navigation advances one day
+PASS day jump restored
+PASS cross-day and point labels identifiable
+PASS schedule fits 320
+PASS schedule fits 390
+PASS schedule fits 1440
+PASS schedule task detail opens
+PASS task return preserves selected date and focus
+PASS Escape returns from a staff child detail to the work page
+PASS header close pops only the staff child detail
+PASS overlay dismiss pops only the staff child detail
+PASS logs tab ready
+PASS logs first page and more
+PASS all log pages reachable
+PASS logs fit 320
+PASS logs fit 390
+PASS logs fit 1440
+PASS staff log opens full detail and comments
+PASS log return preserves person tab
+PASS schedule tab is ready before the slow request
+PASS slow request can be held
+PASS rapid tab switch loads latest content
+PASS old response cannot overwrite selected tab
+PASS lost relationship clears prior content
+PASS personal log page remains personal
+PASS self list matches staff reading font 320
+PASS self list matches staff reading font 390
+PASS self list matches staff reading font 1440
+PASS self log detail reading ready
+PASS self detail uses same reading size
+PASS login alpha-one-head
+PASS team head only sees direct employee
+PASS cannot open non-report through UI action
+PASS login alpha-one-employee
+PASS ordinary employee empty tree
+PASS login alpha-one-head
+PASS head opens the subordinate card
+PASS head opens the subordinate work page
+PASS unpublished application cannot open an approval detail from subordinate navigation
+PASS overlapping business owner remains comment-only in subordinate detail
+PASS old business action cannot send a write from subordinate navigation
+PASS comment write remains available in subordinate navigation
+PASS other subordinate task remains comment-only
+PASS no browser exceptions

@@ -1,0 +1,156 @@
+{
+  "checks": [
+    {
+      "check": "fixture seeds a same-name employee in another team",
+      "pass": true
+    },
+    {
+      "check": "employee creation pending",
+      "pass": true
+    },
+    {
+      "check": "reviewer alpha-one-head",
+      "pass": true
+    },
+    {
+      "check": "multiple tags persisted in order",
+      "pass": true
+    },
+    {
+      "check": "legacy scalar cannot truncate tags",
+      "pass": true
+    },
+    {
+      "check": "creator still requires manager review",
+      "pass": true
+    },
+    {
+      "check": "reviewer alpha-one-head",
+      "pass": true
+    },
+    {
+      "check": "omitted tags preserve full collection",
+      "pass": true
+    },
+    {
+      "check": "progress uses operator manager",
+      "pass": true
+    },
+    {
+      "check": "creator cannot decide assignee request",
+      "pass": true
+    },
+    {
+      "check": "review filter and pagination",
+      "pass": true
+    },
+    {
+      "check": "read filter after opening",
+      "pass": true
+    },
+    {
+      "check": "reviewer beta-one-head",
+      "pass": true
+    },
+    {
+      "check": "completed request leaves review filter",
+      "pass": true
+    },
+    {
+      "check": "complete uses operator manager",
+      "pass": true
+    },
+    {
+      "check": "creator cannot decide assignee request",
+      "pass": true
+    },
+    {
+      "check": "review filter and pagination",
+      "pass": true
+    },
+    {
+      "check": "read filter after opening",
+      "pass": true
+    },
+    {
+      "check": "reviewer beta-one-head",
+      "pass": true
+    },
+    {
+      "check": "completed request leaves review filter",
+      "pass": true
+    },
+    {
+      "check": "reviewer alpha-one-head",
+      "pass": true
+    },
+    {
+      "check": "reviewer beta-head",
+      "pass": true
+    },
+    {
+      "check": "handover keeps tags",
+      "pass": true
+    },
+    {
+      "check": "candidate tree has true parents and no contacts",
+      "pass": true
+    },
+    {
+      "check": "invalid notification filters rejected",
+      "pass": true
+    },
+    {
+      "check": "result filter counts beyond first page",
+      "pass": true
+    },
+    {
+      "check": "founder remains exempt",
+      "pass": true
+    },
+    {
+      "check": "personal tag creation rejected",
+      "pass": true
+    },
+    {
+      "check": "duplicate foreign private and conflicting tags rejected",
+      "pass": true
+    },
+    {
+      "check": "deleted tag preserves other tags and snapshot",
+      "pass": true
+    },
+    {
+      "check": "deleted tag cannot be newly attached",
+      "pass": true
+    },
+    {
+      "check": "omitted deleted reference retained",
+      "pass": true
+    },
+    {
+      "check": "empty collection clears legacy projection too",
+      "pass": true
+    },
+    {
+      "check": "unapproved tags stay out of effective task",
+      "pass": true
+    },
+    {
+      "check": "tag collection included in review diff",
+      "pass": true
+    },
+    {
+      "check": "rejection preserves entire collection",
+      "pass": true
+    },
+    {
+      "check": "personal tag route is removed",
+      "pass": true
+    },
+    {
+      "check": "private tag leaves shared collection intact",
+      "pass": true
+    }
+  ]
+}

@@ -1,0 +1,242 @@
+[
+  {
+    "id": "TC-01",
+    "title": "登录与手机号的类型 / 格式划分",
+    "method": "认证、等价类、边界、跨端一致性",
+    "precondition": "启动当前后端的独立角色夹具；准备员工与独立管理员。组件测试使用独立网关与内存会话存储。",
+    "input": "正常：纯数字、+123、+86 (138) 0000.0004；边界：3 / 20 位；异常：2 / 21 位、全角数字、手机号数组、密码数字、身份类型 root、缺 accountType、混入管理员身份键。",
+    "steps": "① 直接验证服务端号码规范化值。② 用 Flutter 表单输入相同合法格式并提交。③ 向 /auth/sessions 发送异常结构。④ 分别核对格式规则与认证结果，避免把错误凭据当作格式错误。",
+    "expected": "合法显示分隔符被移除，单个前导 + 保留；非法结构 400；空凭据按认证契约 401。组件能提交合法格式并保留认证失败错误提示。",
+    "evidence": "PhoneBoundaryMatrixTest；login_page_test.dart；test_login_rejects_invalid_equivalence_classes"
+  },
+  {
+    "id": "TC-02",
+    "title": "密码的码点、字母范围和字节上限",
+    "method": "边界、等价类、跨端对照",
+    "precondition": "使用服务端 Credentials.requirePolicy 与 Flutter PasswordPolicy 的独立测试，不需要真实用户密码。",
+    "input": "Abcdefghi1；a×71 + 1（72 字节）；a×72 + 1（73 字节）；汉×9 + 1（10 码点）；a1 + 😀×7（9 码点但 16 UTF-16 单元）。",
+    "steps": "① 计算每个样本的码点与 UTF-8 长度。② 对正常与上界值分别调用两端策略。③ 对首次越界、缺字母 / 数字输入调用策略。④ 对比两端接受 / 拒绝结论。",
+    "expected": "72 字节且符合最小码点规则的密码接受；73 字节、9 码点、缺类别均拒绝；中文样本两端一致接受。",
+    "evidence": "CredentialBoundaryMatrixTest；acceptance_boundary_test.dart"
+  },
+  {
+    "id": "TC-03",
+    "title": "ETag 前置条件与乐观锁",
+    "method": "单元、边界、异常语义",
+    "precondition": "准备 rowVersion=1；纯方法测试无需 HTTP。",
+    "input": "正确强 ETag \"1\"；缺失 / 空白；W/\"1\"、*、\"01\"、\"0\"、\"2\"、负数；另测正确的 0、Long.MAX_VALUE。",
+    "steps": "① 传入精确版本并断言不抛异常。② 对缺失头捕获 ApiException。③ 对每种格式 / 陈旧值捕获异常并检查错误码。",
+    "expected": "正确值接受；缺头 428 / PRECONDITION_REQUIRED；错误或陈旧值 412 / VERSION_CONFLICT。不能只断言“有异常”。",
+    "evidence": "CoreBoundaryMatrixTest；API 对照见 test_daily_update_version_fence"
+  },
+  {
+    "id": "TC-04",
+    "title": "同键重试与不同正文冲突",
+    "method": "幂等、数据库副作用",
+    "precondition": "创建唯一键和合法每日事项正文，记录首次返回 ID。",
+    "input": "相同 Idempotency-Key + 相同正文；随后相同键 + 不同 body。",
+    "steps": "① POST /daily-items。② 原样重放。③ 改正文重放。④ SQL 查询首次 ID 的行数。",
+    "expected": "重放 ID 相同；改正文为 409；对象仅 1 行。HTTP 成功但返回新 ID 或产生两行均判失败。",
+    "evidence": "test_same_idempotency_key_replays_once_and_rejects_changed_body"
+  },
+  {
+    "id": "TC-05",
+    "title": "8 路相同请求只产生一份对象和事件",
+    "method": "有限并发、一致性、幂等",
+    "precondition": "同一员工令牌、唯一键和正文；当前服务及隔离 MySQL 可用。",
+    "input": "8 个工作线程发送相同创建请求。",
+    "steps": "① 用线程池提交并等待所有请求。② 收集状态及返回 ID。③ SQL 查询返回对象对应的 daily_item.created 事件。",
+    "expected": "全部为 200 / 201；ID 集合只有 1 个；创建事件仅 1 个。此检查不用于声明容量或延迟指标。",
+    "evidence": "test_eight_concurrent_identical_writes_have_one_effect"
+  },
+  {
+    "id": "TC-06",
+    "title": "两个旧版本更新只能成功一次",
+    "method": "有限并发、乐观锁",
+    "precondition": "新建事项，初始 rowVersion=1。",
+    "input": "两个不同正文、不同键，均携带 If-Match: \"1\"。",
+    "steps": "① 并发 PATCH 同一 ID。② 等待两结果并排序状态。③ GET 读回最终版本。",
+    "expected": "状态恰为 [200,412]，版本为 2，不允许两次成功或静默覆盖。",
+    "evidence": "test_two_stale_concurrent_updates_do_not_silently_overwrite"
+  },
+  {
+    "id": "TC-07",
+    "title": "任务标题的精确 80 码点上界",
+    "method": "边界、Unicode、读回一致性",
+    "precondition": "准备未来合法档期、当前负责人及唯一任务标题。",
+    "input": "😀×0、×1、×79、×80、×81；单元另测空白、NUL、数字和数组。",
+    "steps": "① 仅替换 task_body 的 title。② POST /tasks。③ 对成功任务 GET /tasks/{id}。④ 比较返回标题与原始 emoji 字符串。",
+    "expected": "1、79、80 接受并完整读回；0、81 拒绝为 400。正文不截断、不把代理对当作两字。",
+    "evidence": "test_task_title_unicode_code_point_boundaries；TaskGuardBoundaryMatrixTest"
+  },
+  {
+    "id": "TC-08",
+    "title": "每日事项正文边界及跨年保存",
+    "method": "边界、数据完整性",
+    "precondition": "本人有创建权限，起止日为 2026-12-31 至 2027-01-01。",
+    "input": "汉×0、×1、×1999、×2000、×2001。",
+    "steps": "① POST /daily-items。② 对成功项按返回 ID 读回。③ 核对 body 原值和结束日。",
+    "expected": "1–2000 接受，正文和跨年日期完整；空和 2001 拒绝为 400。",
+    "evidence": "test_daily_item_text_exact_boundaries"
+  },
+  {
+    "id": "TC-09",
+    "title": "闰日、倒序和 93 天区间",
+    "method": "日期等价类、含首尾边界",
+    "precondition": "不依赖本机当前日期，使用明确日期参数。",
+    "input": "2000 / 2024 年 2 月 29 日；1900-02-29、2026-04-31；跨年；结束早于开始。汇总从 2024-02-01 起，长度 1、92、93、94 天。",
+    "steps": "① 创建各日期样本。② 将汇总结束日设为 start + days −1。③ 分别 GET /daily-items/summary。",
+    "expected": "有效闰日和跨年接受；非法 / 倒序 400；含首尾 93 天接受而 94 天 400。",
+    "evidence": "test_daily_date_equivalence_partitions；test_daily_summary_inclusive_range_boundary"
+  },
+  {
+    "id": "TC-10",
+    "title": "分页上界和版本错误不改原文",
+    "method": "边界、负例、状态读回",
+    "precondition": "列表请求必须带 date；版本测试每个样本新建一条正文为“修改前”的事项。",
+    "input": "limit=0、1、100、101、2147483647；If-Match 缺失、0、1、Long.MAX_VALUE。",
+    "steps": "① 请求指定日期列表。② 对版本样本 PATCH 为“修改后”。③ 无论成功与否均 GET 读回。",
+    "expected": "分页 1 / 100 接受，其余范围外 400；版本缺失 428、旧 / 极值 412，正文保持“修改前”；精确 1 成功且正文改变。",
+    "evidence": "test_daily_list_page_limit；test_daily_update_version_fence"
+  },
+  {
+    "id": "TC-11",
+    "title": "私有事项的对象级权限",
+    "method": "角色矩阵、跨公司隔离",
+    "precondition": "由主组织创始人创建“本人私有事项”，确认返回 ID 存在。",
+    "input": "同一 ID 分别使用 owner、同级员工、异公司创始人和独立管理员。",
+    "steps": "① 不更换对象，只更换令牌。② GET /daily-items/{id}。③ 核对各身份的差异语义。",
+    "expected": "本人 200；其他员工和异公司 404；独立管理员作为非业务账号 403。身份地位高不意味着可读别人的私有事项。",
+    "evidence": "test_daily_item_is_private_even_from_managers"
+  },
+  {
+    "id": "TC-12",
+    "title": "日志 UTF-16 长度与三日补填",
+    "method": "边界、生命周期、并发冲突",
+    "precondition": "长度样本分配给不同员工，避免同一天唯一约束遮住长度校验；浏览器夹具有已授权关联任务与标签。",
+    "input": "ASCII 1 / 9999 / 10000 / 10001；emoji 5000 / 5001；空串。补填为今天、昨天、前天。",
+    "steps": "① 分别创建长度样本。② 浏览器先写今天，再两次新增补填。③ 三日齐全后再次新增。④ 显式编辑已有日志；另会话抢先创建时保存草稿。",
+    "expected": "UTF-16 10000 接受，10001 / 10002 和空串拒绝；三天各一条；已写全有提示；编辑保留原 ID、日期和首次创建时刻；重复新增不覆盖另一会话。",
+    "evidence": "test_work_log_utf16_contract；check_log_backfill_entry.py"
+  },
+  {
+    "id": "TC-13",
+    "title": "评论新增 / 编辑拒绝非文本 JSON",
+    "method": "类型等价类、缺陷复测",
+    "precondition": "创建本人有权评论的任务；编辑样本先写入 original 评论并取得版本 1。",
+    "input": "body=42、true、[\"text\"]、{\"text\":\"comment\"}；新增和编辑各四组。",
+    "steps": "① POST /tasks/{id}/comments。② 对编辑样本 PATCH /comments/{id} 并带版本。③ 分别断言状态。",
+    "expected": "8 个错误类型均返回 400；正常文本由独立正例验证可用。修复前这些请求实际为 200，修复后通过拒绝断言。",
+    "evidence": "test_comment_rejects_non_text_json；test_comment_change_rejects_non_text_json"
+  },
+  {
+    "id": "TC-14",
+    "title": "评论最小、最大和纯空白",
+    "method": "边界、文本类别",
+    "precondition": "每组创建独立任务，编辑样本先准备 original 评论。",
+    "input": "x、x×10000、x×10001、空串、三个空格、😀×5000、😀×5001；分别测试新增与编辑。",
+    "steps": "① 按 editing 参数选择 POST 或 PATCH。② 提交同一长度口径的样本。③ 对照每组预期状态。",
+    "expected": "1 / 10000 UTF-16 接受；10001 / 10002、空串、纯空白拒绝。14 个参数组合分别记录，不用新增通过替代编辑通过。",
+    "evidence": "test_comment_create_and_change_length_boundaries"
+  },
+  {
+    "id": "TC-15",
+    "title": "头像真实 PNG 解码与独立宽高边界",
+    "method": "二进制边界、真实依赖",
+    "precondition": "读取本人 profile 的 rowVersion；生成带 IHDR / IDAT / IEND 和 CRC 的 PNG。",
+    "input": "1×1、512×1、512×512、513×1、1×513、0×1。",
+    "steps": "① 构造并压缩实际像素。② 编码为 PNG data URL。③ PATCH /me/profile 并携带当前版本。",
+    "expected": "范围内三个样本接受；宽或高 513 及 0 像素声明均 400。验证不只依赖 MIME 名称。",
+    "evidence": "test_avatar_actual_decode_and_dimension_boundaries"
+  },
+  {
+    "id": "TC-16",
+    "title": "邮箱有效类与本地部分精确上界",
+    "method": "语法等价类、边界",
+    "precondition": "每组读取最新 profile 版本，避免陈旧版本掩盖格式检查。",
+    "input": "person+pdl@example.test；a×64 / ×65 + @example.test；前导点、连续点、缺域名层级、无 @、空串。",
+    "steps": "① PATCH 邮箱。② 按参数预期判断 200 / 400。③ 空串按允许清空的现行契约判断。",
+    "expected": "普通 / plus / 64 接受；65 和非法语法拒绝；空串允许。未发送邮件，不宣称已验证收信。",
+    "evidence": "test_email_equivalence_and_local_part_boundary"
+  },
+  {
+    "id": "TC-17",
+    "title": "公司信息删除的版本与后置条件",
+    "method": "事务前置、状态读回",
+    "precondition": "独立管理员创建一条 owned delete witness 公司信息，版本为 1。",
+    "input": "If-Match=1、缺失、2。",
+    "steps": "① DELETE /admin/company/items/{id}。② 再用业务角色 GET /home/items/{id}。③ finally 清理仍存在的样本。",
+    "expected": "正确版本 200 后读 404；缺头 428 / 错版本 412 后仍读 200。失败删除不能把数据删掉。",
+    "evidence": "test_company_delete_preconditions"
+  },
+  {
+    "id": "TC-18",
+    "title": "下班时间边界与独立管理员权限",
+    "method": "时间格式、边界、角色矩阵",
+    "precondition": "管理员可维护公司设置；每组 finally 恢复 18:00，避免影响后续用例。",
+    "input": "18:00、00:00、23:59:59；24:00、23:60、1:00、12:00:60、空串；创始人 / 部门负责人 / 员工操作正常值。",
+    "steps": "① PUT /admin/company/off-work-time。② 对有效 / 无效格式分别核对状态。③ 用三种业务身份提交合法值。④ 恢复基准值。",
+    "expected": "正常和精确首尾时刻接受；格式 / 范围异常 400；业务身份均 403，不能从创始人身份推导管理后台权限。",
+    "evidence": "test_off_work_time_exact_endpoints_and_malformed_values；test_company_clock_is_admin_only"
+  },
+  {
+    "id": "TC-19",
+    "title": "小组与审计分页及越权读取",
+    "method": "缺陷复测、边界、权限",
+    "precondition": "以当前 V36 结构运行；管理员令牌有效，准备相同公司的业务角色。",
+    "input": "/admin/teams 与 /admin/audit-logs；limit=1、100、0、101、-1、x；业务角色各三种。",
+    "steps": "① 逐路径和 limit 发 GET。② 成功时检查 items 数量不超过 limit。③ 用创始人、部门负责人和员工请求两个接口。",
+    "expected": "正常 / 上界 200，非法分页 400；业务身份 403。原小组接口因 parent_id 被删除而 500 的 6 个失败输入现已通过。",
+    "evidence": "test_admin_directory_and_audit_pagination；test_admin_audit_and_team_reads_reject_business_roles"
+  },
+  {
+    "id": "TC-20",
+    "title": "受控时钟的数值与时区一致性",
+    "method": "精确数值、溢出、单元 / API 对照",
+    "precondition": "仅隔离服务启用受控时钟；管理接口每组取得管理员有效令牌。纯方法使用固定基准瞬时。",
+    "input": "0、0.5、-0.5、-1、34560000、34560001、18446744073709551616；另推进 0 / 1 / 86400 秒再换时区。",
+    "steps": "① 调推进接口并核对状态。② 直接推进 ControllableClock 再 withZone(Asia/Shanghai)。③ 对比 instant、zone；另验证 reset 清零 offset。",
+    "expected": "0 至 400 天整数可用；小数、负数、超界 / 溢出 400；换时区瞬时不变。默认生产系统时钟不开放此测试操作。",
+    "evidence": "test_admin_clock_seconds_are_bounded_integers；CoreBoundaryMatrixTest"
+  },
+  {
+    "id": "TC-21",
+    "title": "通知投递、撤回窗口和安全摘要",
+    "method": "状态迁移、权限、时间边界",
+    "precondition": "隔离夹具创建任务 / 评论事件，确定性执行 worker，再读取通知副本。",
+    "input": "创建、修改、进展、完成、评论；撤回 180 秒窗口前后；评论删除 / 对象失权；多页刷新部分失败。",
+    "steps": "① 触发事件、投递并检查分类。② 标记已读并返回过滤列表。③ 在不同窗口撤回。④ 删除关联评论或移出权限后再次读。⑤ 注入部分刷新失败再重试。",
+    "expected": "有权用户看到正确分类 / 对象；撤回和删除后不暴露原敏感内容；窗口外拒绝；刷新失败保留已有效范围，重试无重复接续。",
+    "evidence": "check_fixed_notifications、check_admin_contract、check_web_verification_repairs"
+  },
+  {
+    "id": "TC-22",
+    "title": "远月份回今天与拖拽取消",
+    "method": "响应式、时序、真实输入",
+    "precondition": "真实员工浏览器会话；业务今天固定为夹具日期。",
+    "input": "2040-01 → 离页 / 返回 → 今天；390 / 1440 宽，0 / 10ms 时序，延迟 650ms 复查。另测 500ms 长按与 Esc。",
+    "steps": "① 跳到远月份并离页。② 返回立即 / 延后点击今天。③ 记录立即与稳定锚点、可见日期。④ 用实际鼠标 / 触摸拖拽，Esc 后检查无确认及无写入。",
+    "expected": "四组合都定位具体今天而不是 1 日；迟到布局不覆盖；取消拖动不提交变更。修复后每日事项独立套件 385 条检查通过。",
+    "evidence": "check_daily_items；check_daily_items_refresh_browser.js；check_web_alignment_drag"
+  },
+  {
+    "id": "TC-23",
+    "title": "真机会话与断网恢复",
+    "method": "端到端、故障注入、进程恢复",
+    "precondition": "手机已授权；独立测试包和隔离演示库；确认原包指纹及专用转发端口可用。",
+    "input": "员工、组长、部门负责人、创始人；五个页签、日视图；结束进程；移除 / 恢复转发。",
+    "steps": "① 四角色依次登录；员工检查页签和日视图。② 强制结束再打开。③ 断开专用转发并冷启动。④ 恢复转发点击可点击重试。⑤ 清理测试包 / 转发，核对原包。",
+    "expected": "页面正常、会话恢复；离线不显示未经验证旧正文，提供重试；网络恢复后同一会话验证成功；16 项均通过。",
+    "evidence": "flutter-real/phone-checks.json；phone-screenshots；正式安装另见 phone-production-checks.json"
+  },
+  {
+    "id": "TC-24",
+    "title": "发布迁移、线上版本和重启后自启",
+    "method": "数据迁移、配置、运维验收",
+    "precondition": "两套线上实例各自停服备份；保留旧库 / 旧版本；候选端口空闲。",
+    "input": "443 原正式库与 6644 原演示库各自复制；V35→V36；用户随后重启服务器。",
+    "steps": "① SQL 导出后恢复新库。② 候选服务升级，逐表比较关键业务行数。③ 切换对应服务。④ 严格 HTTPS 检查及脚本 SHA 比较。⑤ 安装 APK 比较指纹并观察线上看板。⑥ 重启后检查 active / enabled 与版本路径。",
+    "expected": "两套数据不串用，关键表数量一致；443 / 6644 健康 200 / UP，网页脚本一致，手机看板恢复；数据库与两服务自启且仍为修复版。",
+    "evidence": "deployment.json；deployment-6644.json；online-checks.json；phone-production-checks.json；重启后会话只读核验"
+  }
+]

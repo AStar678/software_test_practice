@@ -1,0 +1,12 @@
+{
+  "checks": [
+    {
+      "name": "login form ready",
+      "pass": true
+    },
+    {
+      "name": "authenticated founder",
+      "pass": false
+    }
+  ]
+}

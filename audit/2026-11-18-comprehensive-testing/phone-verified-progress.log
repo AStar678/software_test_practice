@@ -1,0 +1,14 @@
+启动演示数据准备服务，日志：/Users/aoxiang/Desktop/软件测试/backend/.runtime/demo-prepare.log
+PASS dedicated device forwarding port is unused
+PASS original installed Flutter app remains byte-identical
+Traceback (most recent call last):
+  File "/Users/aoxiang/Desktop/软件测试/backend/scripts/check_flutter_phone.py", line 205, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/aoxiang/Desktop/软件测试/backend/scripts/check_flutter_phone.py", line 171, in main
+    check('real phone employee login: ' + role, login(phone, env['PANDORA_DEMO_PASSWORD']))
+                                                ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/aoxiang/Desktop/软件测试/backend/scripts/check_flutter_phone.py", line 106, in login
+    raise RuntimeError('Phone input was not delivered exactly; refusing a misleading login assertion')
+RuntimeError: Phone input was not delivered exactly; refusing a misleading login assertion
+{"database": "pandora_precheck_flutter_0c66d21271f34088", "manifestVersion": 3, "businessDate": "2026-11-19", "counts": {"users": 14, "admin_accounts": 1, "employee_placements": 14, "departments": 2, "teams": 4, "tasks": 62, "task_versions": 72, "approval_requests": 72, "work_logs": 12, "home_items": 10, "task_business_transfers": 1, "handover_requests": 1, "task_log_comments": 2, "notifications": 266}}

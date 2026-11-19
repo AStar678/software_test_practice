@@ -13,7 +13,7 @@ cd flutter
 ./tool/build_demo.sh
 ```
 
-输出 `build/app/outputs/flutter-apk/app-debug.apk`，默认连 `http://10.0.2.2:8080/api/v1`，ARM64 Android 运行库。默认参数 `PANDORA_DEMO_TARGET_PLATFORMS=android-arm64`；其他架构须先由使用者在合适网络准备依赖。本次只验收已有的 `employee_api36` ARM64 模拟器，不用为其他版本下载镜像。
+输出 `build/app/outputs/flutter-apk/app-debug.apk`，默认连 `https://8.141.96.122:6644/api/v1`，显式使用 6644 端口，ARM64 Android 运行库。默认参数 `PANDORA_DEMO_TARGET_PLATFORMS=android-arm64`；其他架构须先由使用者在合适网络准备依赖。本次只验收已有的 `employee_api36` ARM64 模拟器，不用为其他版本下载镜像。
 
 如果离线构建提示缺依赖，保存报错，交给使用者切换网络单独准备；不要自动改成联网构建，也不要清除现有缓存。首次其他机器准备 Flutter、pub、Android/Gradle依赖需自行下载，按锁文件使用，不计入热点操作。
 
@@ -26,6 +26,8 @@ cd flutter
 ```
 
 连接本机 MySQL 13306 的 `pandora_demo`，保留已有修改。**不要省略 `--keep`，裸命令会重建演示数据。** 无需重编译已有 JAR 时可设置 `PANDORA_SKIP_BUILD=1`。宿主机 API 是 `http://127.0.0.1:8080/api/v1`。账号见 [backend README](../backend/README.md)，演示密码由服务配置，未内置客户端。
+
+使用本机后端联调时需显式覆盖地址：模拟器构建设置 `PANDORA_DEMO_API_URL=http://10.0.2.2:8080/api/v1`；真机需使用手机可访问的本机地址。未覆盖时仍连接上述 6644 服务器。
 
 启动已有 AVD 后安装（`adb` 不在 PATH 时使用 SDK/platform-tools/adb）：
 

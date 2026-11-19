@@ -1,0 +1,390 @@
+PASS  V30 fixture writes a real task and log before the migration
+PASS  baseline is V30 and still holds the old personal item
+PASS  V31–V36 create daily_items, range columns and record the current migration head
+PASS  the V30 fixture really stored a title different from its body
+PASS  V36 retires company-item titles and keeps each existing body, id, order, version and timestamp
+PASS  V31 removes only the old personal home items
+PASS  V31 leaves tasks and logs byte-identical
+PASS  a valid leap-day item with internal newlines is created
+PASS  detail returns the exact leap date and plain text with rowVersion
+PASS  create rejects invalid leap date
+PASS  create rejects impossible month
+PASS  create rejects non-padded date
+PASS  create rejects blank body
+PASS  create rejects whitespace only
+PASS  create rejects unknown owner injection
+PASS  create rejects unknown task injection
+PASS  2000-character body boundary is accepted
+PASS  2001-character body is rejected without partial save
+PASS  completed must be an explicit boolean
+PASS  update without If-Match is rejected with 428
+PASS  stale version is rejected with 412 instead of silent overwrite
+PASS  date, body and completed are saved atomically with a new version
+PASS  completion is explicitly reversible
+PASS  one page is capped at 100 and reports the complete total
+PASS  the second page returns the remaining items without duplicates
+PASS  paging order is created_at then id, independent of completion
+PASS  items with identical bodies keep distinct real ids
+PASS  summary omits a truly zero day, so absence means zero
+PASS  summary counts 1 open item(s) on day 11
+PASS  summary counts 2 open item(s) on day 12
+PASS  summary counts 3 open item(s) on day 13
+PASS  summary counts 4 open item(s) on day 14
+PASS  summary counts 5 open item(s) on day 15
+PASS  summary counts 7 open item(s) on day 16
+PASS  summary keeps 105 items independent of the 100-row list page
+PASS  summary reports mixed open/completed counts
+PASS  summary reports an all-completed day as zero open
+PASS  summary rejects a range longer than 93 closed days
+PASS  summary rejects an inverted range
+PASS  same-team peer cannot read another person's daily list
+PASS  same-team peer cannot read another person's detail
+PASS  same-team peer cannot modify another person's item
+PASS  same-team peer cannot delete another person's item
+PASS  same-team peer summary does not expose another person's count
+PASS  department head cannot read another person's daily list
+PASS  department head cannot read another person's detail
+PASS  department head cannot modify another person's item
+PASS  department head cannot delete another person's item
+PASS  department head summary does not expose another person's count
+PASS  founder cannot read another person's daily list
+PASS  founder cannot read another person's detail
+PASS  founder cannot modify another person's item
+PASS  founder cannot delete another person's item
+PASS  founder summary does not expose another person's count
+PASS  other company cannot read another person's daily list
+PASS  other company cannot read another person's detail
+PASS  other company cannot modify another person's item
+PASS  other company cannot delete another person's item
+PASS  other company summary does not expose another person's count
+PASS  an independent administrator cannot use the employee daily-item API
+PASS  an invalid session is rejected
+PASS  the retired personal home-item create path is rejected
+PASS  daily-item maintenance writes no notification and leaves tasks/logs untouched
+PASS  the audit event carries the item identity but never its body and has no recipients
+PASS  the same create request replays without a duplicate item
+PASS  deleting and replaying the same idempotent request returns the cached result
+PASS  the deleted item is gone after the replayed delete
+PASS  one idempotency key cannot be reused for a different request
+PASS  the home board includes self-created tasks the actor currently owns
+PASS  the home board excludes completed, removed and not-created tasks
+PASS  the home board is capped at ten and ordered by effective due, urgency then id
+PASS  every board row projects a canonical due instant and execution state
+PASS  the complete authorized set is due-ordered before the ten-item limit
+PASS  same-instant rows fall back to urgent/high/medium/low and then id; all-day uses the real cut-off
+PASS  a pending proposal never replaces the effective deadline used by the board
+PASS  the home response no longer carries personalItems or recentLogs
+PASS  another employee's board shows tasks assigned by someone else
+PASS  an unpublished creation never enters the board
+PASS  the administrator company-information limit still rejects the eleventh item
+PASS login form is ready
+PASS employee login loads the home page
+PASS after a preserved-session refresh at 320x740 the vertical calendar already has scroll range in both directions
+PASS a real vertical gesture at 320x740 browses forward and back without opening a day list
+PASS after a preserved-session refresh at 390x844 the vertical calendar already has scroll range in both directions
+PASS a real vertical gesture at 390x844 browses forward and back without opening a day list
+PASS after a preserved-session refresh at 1440x900 the vertical calendar already has scroll range in both directions
+PASS a real vertical gesture at 1440x900 browses forward and back without opening a day list
+PASS after a preserved-session refresh at 390x600 the vertical calendar already has scroll range in both directions
+PASS a real vertical gesture at 390x600 browses forward and back without opening a day list
+PASS page return at 390px + 0ms keeps daily-next after delayed layouts settle
+PASS page return at 390px + 0ms keeps daily-prev after delayed layouts settle
+PASS page return at 390px + 0ms keeps daily-locate after delayed layouts settle
+PASS page return at 390px + 0ms keeps daily-today after delayed layouts settle
+PASS page return at 390px + 10ms keeps daily-next after delayed layouts settle
+PASS page return at 390px + 10ms keeps daily-prev after delayed layouts settle
+PASS page return at 390px + 10ms keeps daily-locate after delayed layouts settle
+PASS page return at 390px + 10ms keeps daily-today after delayed layouts settle
+PASS ordinary page return at 390px preserves the saved date and pixel offset
+PASS page return at 1440px + 0ms keeps daily-next after delayed layouts settle
+PASS page return at 1440px + 0ms keeps daily-prev after delayed layouts settle
+PASS page return at 1440px + 0ms keeps daily-locate after delayed layouts settle
+PASS page return at 1440px + 0ms keeps daily-today after delayed layouts settle
+PASS page return at 1440px + 10ms keeps daily-next after delayed layouts settle
+PASS page return at 1440px + 10ms keeps daily-prev after delayed layouts settle
+PASS page return at 1440px + 10ms keeps daily-locate after delayed layouts settle
+PASS page return at 1440px + 10ms keeps daily-today after delayed layouts settle
+PASS ordinary page return at 1440px preserves the saved date and pixel offset
+PASS the reloaded session is still the same real employee
+PASS the daily calendar is a vertical Monday-to-Sunday week grid
+PASS every month block holds only its own consecutive real dates with seven interactive columns
+PASS each stacked month heading shows its full year and month without overflow
+PASS the company today is initially visible inside the vertical viewport
+PASS ranged bars are drawn with readable names and completed/open/overdue status
+PASS date cells report complete open/completed/overdue counts to assistive technology
+PASS ordinary vertical scrolling browses months without opening a day list
+PASS return to company today brings the real today cell back into view
+PASS arrow keys move focus onto a real date cell rather than a blank slot
+PASS Enter opens the day list for the keyboard-focused date
+PASS the day list shows that date, its real items and a create action
+PASS 待做/完成/逾期三种事项条共用一套类名并分别呈现蓝、灰、红边线
+PASS 月份标题不再显示重复的状态颜色图例
+PASS 日期清单按同一映射标记三态且不重复可见状态文字
+PASS 清单正文不被改写且仍以辅助技术可读名称暴露真实状态
+PASS 完成项在清单中呈现完成灰与删除线，日期仍完整可读
+PASS 详情不重复状态徽标，改用三态配色和隐藏文字表达状态
+PASS 表单保留实际起止日期和正文，不再显示跨日解释
+PASS 从覆盖日清单完成跨日事项后该行立即变为完成灰
+PASS 完成的跨日事项条覆盖全部已加载覆盖日并统一变灰
+PASS 完成状态同步到覆盖日 2026-11-18 的清单
+PASS 完成状态同步到覆盖日 2026-11-19 的清单
+PASS 完成状态同步到覆盖日 2026-11-20 的清单
+PASS 从另一覆盖日取消完成后该行恢复未完成
+PASS 取消完成后跨日事项条恢复待做蓝且仍覆盖同一范围
+PASS 取消完成同步到覆盖日 2026-11-18 的清单
+PASS 取消完成同步到覆盖日 2026-11-19 的清单
+PASS 取消完成同步到覆盖日 2026-11-20 的清单
+PASS 刷新后跨日事项的完成色与覆盖范围保持一致
+PASS 刷新后覆盖日清单仍读取同一条完成记录
+PASS the vertical calendar fits 320x740 without horizontal overflow and remains scrollable
+PASS the vertical calendar fits 390x844 without horizontal overflow and remains scrollable
+PASS the vertical calendar fits 1440x900 without horizontal overflow and remains scrollable
+PASS the vertical calendar fits 390x600 without horizontal overflow and remains scrollable
+PASS header create at 320px has only the necessary form controls and no explanation
+PASS header create cancellation at 320px restores the add control focus
+PASS header create saves at 320px and restores focus
+PASS header create at 320px persisted the selected date and content
+PASS empty date list at 320px is ready
+PASS empty-day create at 320px omits the explanation and keeps the date
+PASS empty-day create cancellation at 320px restores visible date focus
+PASS edit at 320px also omits the explanation and keeps usable controls
+PASS edit cancellation at 320px returns to detail
+PASS edit saves at 320px and returns to the list with visible focus
+PASS header create at 390px has only the necessary form controls and no explanation
+PASS header create cancellation at 390px restores the add control focus
+PASS blank content still produces the original error without discarding the form
+PASS invalid date still produces the original error without discarding the form
+PASS overlong content still produces the original error without discarding the form
+PASS header create saves at 390px and restores focus
+PASS header create at 390px persisted the selected date and content
+PASS empty date list at 390px is ready
+PASS empty-day create at 390px omits the explanation and keeps the date
+PASS empty-day create cancellation at 390px restores visible date focus
+PASS edit at 390px also omits the explanation and keeps usable controls
+PASS edit cancellation at 390px returns to detail
+PASS edit saves at 390px and returns to the list with visible focus
+PASS header create at 1440px has only the necessary form controls and no explanation
+PASS header create cancellation at 1440px restores the add control focus
+PASS header create saves at 1440px and restores focus
+PASS header create at 1440px persisted the selected date and content
+PASS empty date list at 1440px is ready
+PASS empty-day create at 1440px omits the explanation and keeps the date
+PASS empty-day create cancellation at 1440px restores visible date focus
+PASS edit at 1440px also omits the explanation and keeps usable controls
+PASS edit cancellation at 1440px returns to detail
+PASS edit saves at 1440px and returns to the list with visible focus
+PASS V-001 2026-01 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-01 daily-prev moves exactly one month including year boundaries
+PASS V-001 2026-02 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-02 daily-prev moves exactly one month including year boundaries
+PASS V-001 2026-03 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-03 daily-prev moves exactly one month including year boundaries
+PASS V-001 2026-04 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-04 daily-prev moves exactly one month including year boundaries
+PASS V-001 2026-05 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-05 daily-prev moves exactly one month including year boundaries
+PASS V-001 2026-06 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-06 daily-prev moves exactly one month including year boundaries
+PASS V-001 2026-07 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-07 daily-prev moves exactly one month including year boundaries
+PASS V-001 2026-08 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-08 daily-prev moves exactly one month including year boundaries
+PASS V-001 2026-09 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-09 daily-prev moves exactly one month including year boundaries
+PASS V-001 2026-10 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-10 daily-prev moves exactly one month including year boundaries
+PASS V-001 2026-11 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-11 daily-prev moves exactly one month including year boundaries
+PASS V-001 2026-12 daily-next moves exactly one month including year boundaries
+PASS V-001 2026-12 daily-prev moves exactly one month including year boundaries
+PASS V-001 vertical browsing keeps every month internally continuous and in date order
+PASS V-001 return to company today remains visible
+PASS V-003 ArrowDown keeps every focused date visible across viewport and loaded-range boundaries
+PASS V-003 ArrowUp keeps every focused date visible across viewport and loaded-range boundaries
+PASS V-003 ArrowRight keeps every focused date visible across viewport and loaded-range boundaries
+PASS V-003 ArrowLeft keeps every focused date visible across viewport and loaded-range boundaries
+PASS V-003 Home mounts company today and keeps its focus visible
+PASS V-003 Enter opens the visible focused day
+PASS V-003 closing a keyboard-opened list restores visible date focus
+PASS V-003 Space opens the visible focused day
+PASS V-003 closing a keyboard-opened list restores visible date focus
+PASS V-001 320x740 month navigation aligns the target even in a wide viewport
+PASS V-002 320x740 first detail has a visible return button
+PASS V-002 320x740 button return restores nonzero scroll and row focus
+PASS V-002 320x740 closing list restores calendar position and focus
+PASS V-001 390x844 month navigation aligns the target even in a wide viewport
+PASS V-002 390x844 first detail has a visible return button
+PASS V-002 390x844 button return restores nonzero scroll and row focus
+PASS V-002 390x844 closing list restores calendar position and focus
+PASS V-001 1440x900 month navigation aligns the target even in a wide viewport
+PASS V-002 1440x900 first detail has a visible return button
+PASS V-002 1440x900 button return restores nonzero scroll and row focus
+PASS V-002 1440x900 closing list restores calendar position and focus
+PASS V-001 390x600 month navigation aligns the target even in a wide viewport
+PASS V-002 390x600 first detail has a visible return button
+PASS V-002 390x600 button return restores nonzero scroll and row focus
+PASS V-002 390x600 closing list restores calendar position and focus
+PASS V-004 private daily caches exist before logout
+PASS V-004 logout immediately clears daily caches, selection, anchor and sheet stack
+PASS V-005 Escape discards the old detail result and preserves the current layer
+PASS V-005 Escape restores the calendar date focus while detail is loading
+PASS V-005 close-button discards the old detail result and preserves the current layer
+PASS V-005 close-button restores the calendar date focus while detail is loading
+PASS V-005 backdrop discards the old detail result and preserves the current layer
+PASS V-005 backdrop restores the calendar date focus while detail is loading
+PASS V-005 back discards the old detail result and preserves the current layer
+PASS V-005 switch-page discards the old detail result and preserves the current layer
+PASS V-005 other-date discards the old detail result and preserves the current layer
+PASS V-005 new-form discards the old detail result and preserves the current layer
+PASS V-005 returning from a replacement form keeps its source list
+PASS V-005 an uncancelled detail still opens and returns to its source list
+PASS V-006 60/first starts with a real partial list
+PASS V-006 60/first preserves list scroll after reconciliation
+PASS V-006 60/first preserves a visible list focus target
+PASS V-006 60/first finishes with the current server IDs in stable order
+PASS V-006 60/middle starts with a real partial list
+PASS V-006 60/middle preserves list scroll after reconciliation
+PASS V-006 60/middle preserves a visible list focus target
+PASS V-006 60/middle finishes with the current server IDs in stable order
+PASS V-006 60/boundary starts with a real partial list
+PASS V-006 60/boundary preserves list scroll after reconciliation
+PASS V-006 60/boundary preserves a visible list focus target
+PASS V-006 60/boundary finishes with the current server IDs in stable order
+PASS V-006 60/add starts with a real partial list
+PASS V-006 60/add preserves list scroll after reconciliation
+PASS V-006 60/add preserves a visible list focus target
+PASS V-006 60/add finishes with the current server IDs in stable order
+PASS V-006 60/replace starts with a real partial list
+PASS V-006 60/replace preserves list scroll after reconciliation
+PASS V-006 60/replace preserves a visible list focus target
+PASS V-006 60/replace finishes with the current server IDs in stable order
+PASS V-006 105/first starts with a real partial list
+PASS V-006 105/first preserves list scroll after reconciliation
+PASS V-006 105/first preserves a visible list focus target
+PASS V-006 105/first finishes with the current server IDs in stable order
+PASS V-006 105/middle starts with a real partial list
+PASS V-006 105/middle preserves list scroll after reconciliation
+PASS V-006 105/middle preserves a visible list focus target
+PASS V-006 105/middle finishes with the current server IDs in stable order
+PASS V-006 105/boundary starts with a real partial list
+PASS V-006 105/boundary preserves list scroll after reconciliation
+PASS V-006 105/boundary preserves a visible list focus target
+PASS V-006 105/boundary finishes with the current server IDs in stable order
+PASS V-006 105/add starts with a real partial list
+PASS V-006 105/add preserves list scroll after reconciliation
+PASS V-006 105/add preserves a visible list focus target
+PASS V-006 105/add finishes with the current server IDs in stable order
+PASS V-006 105/replace starts with a real partial list
+PASS V-006 105/replace preserves list scroll after reconciliation
+PASS V-006 105/replace preserves a visible list focus target
+PASS V-006 105/replace finishes with the current server IDs in stable order
+PASS V-006 105/second-boundary starts with a real partial list
+PASS V-006 105/second-boundary preserves list scroll after reconciliation
+PASS V-006 105/second-boundary preserves a visible list focus target
+PASS V-006 105/second-boundary finishes with the current server IDs in stable order
+PASS V-006 completion=true retains every loaded row in its position
+PASS V-006 completion=false retains every loaded row in its position
+PASS V-006 a same-count mutation during a multi-request read triggers reconciliation
+PASS V-006 a late page read cannot replace the new date or reopen its source
+PASS both upper cards preview exactly three normal rows
+PASS the retired 统一发布 and n/10 badges are gone from the cards
+PASS the company preview clamps its long body to two lines without rewriting the text
+PASS event-chronicle and board body copy share one type scale in the cards
+PASS the board preview never paints the overdue tint
+PASS the preview consumes the server order without re-sorting
+PASS clicking the board card opens the complete list first
+PASS the list shows the same globally sorted rows the server returned
+PASS exactly the truly overdue list row carries the pale glass-red band and an accessible label
+PASS a list row opens the original authorized task detail
+PASS returning from the detail restores the same sorted list and its scroll position
+PASS clicking the chronicle card opens the complete list first
+PASS every chronicle row starts collapsed with its full text preserved and two-line clamp
+PASS both long chronicles really overflow two lines on a narrow screen
+PASS one click expands only that chronicle and reveals the complete body
+PASS expanding or collapsing a row does not reset the sheet scroll position
+PASS keyboard Enter toggles the focused chronicle and exposes aria-expanded
+PASS reopening the chronicle list restores the default collapsed state
+PASS the daily calendar keeps a two-week viewport instead of three complete weeks on every viewport
+PASS every visible lane bar is taller than the former 18px and keeps three lanes with a usable date row
+PASS the +n button for sunday sits in its real weekday column and counts the hidden rows
+PASS the +n button for monday sits in its real weekday column and counts the hidden rows
+PASS the +n button for friday sits in its real weekday column and counts the hidden rows
+PASS the +n button for month sits in its real weekday column and counts the hidden rows
+PASS only Sunday overflows in its isolated week and sparse overflow keeps two distinct columns
+PASS clicking the Sunday +n opens that day list with the complete collection
+PASS the ranged demo item is present in the calendar
+PASS a short press still opens the hit day list instead of dragging
+PASS no drag ghost exists before the long-press threshold
+PASS holding the whole bar for about half a second activates the drag without an endpoint handle
+PASS the active drag paints a whole-bar ghost and a target day
+PASS a zero-movement long press saves nothing and opens no confirmation
+PASS outside-drop fixture uses a complete seven-day week (left)
+PASS releasing left of the scroller cancels without confirmation, PATCH or range/version change
+PASS outside-drop fixture uses a complete seven-day week (right)
+PASS releasing right of the scroller cancels without confirmation, PATCH or range/version change
+PASS outside-drop fixture uses a complete seven-day week (above)
+PASS releasing above of the scroller cancels without confirmation, PATCH or range/version change
+PASS outside-drop fixture uses a complete seven-day week (below)
+PASS releasing below of the scroller cancels without confirmation, PATCH or range/version change
+PASS a valid drag precedes cancellation in header
+PASS header cancels the drag without confirmation, PATCH or range/version change
+PASS a valid drag precedes cancellation in between-weeks
+PASS between-weeks cancels the drag without confirmation, PATCH or range/version change
+PASS a valid drag precedes cancellation in month-gap
+PASS month-gap cancels the drag without confirmation, PATCH or range/version change
+PASS a valid drag precedes cancellation in release-only
+PASS release-only cancels the drag without confirmation, PATCH or range/version change
+PASS a valid drag precedes cancellation in pointercancel
+PASS pointercancel cancels the drag without confirmation, PATCH or range/version change
+PASS a valid drag precedes cancellation in blur
+PASS blur cancels the drag without confirmation, PATCH or range/version change
+PASS moving or scrolling before the threshold never activates a drag or changes a date
+PASS a 3-day ranged item exposes a middle-segment grab and a same-week target
+PASS the two-dimensional target is a real date and the whole range previews the shift
+PASS releasing shows the old and new ranges and asks for confirmation before writing
+PASS confirming saves the shifted range and returns to the calendar
+PASS the complete range moves by the Gregorian day difference and keeps its span, body and completion
+PASS a successful drag keeps the browse anchor instead of jumping to the target day
+PASS the reloaded page still shows the moved range
+PASS cancelling the confirmation restores the calendar without a write
+PASS Escape cancels the temporary drag state with no ghost, confirmation or write
+PASS a network failure keeps the confirmation open with a visible retry message
+PASS the failed attempt did not change the stored range
+PASS retrying the same operation saves exactly one shift
+PASS the retry reused the same idempotency key and applied the target once
+PASS response loss shows the recoverable error instead of silently succeeding
+PASS the server had already applied the move exactly once
+PASS retrying after response loss closes the sheet without a second shift
+PASS the replayed request kept the same key and the same absolute target range
+PASS a concurrent owner write is accepted by the real API
+PASS a version conflict is reported and the sheet keeps the draft visible
+PASS the conflict did not overwrite the newer version or shift the range
+PASS a synthetic vertical long touch hits the following week
+PASS the touch drag asks for the same confirmation without writing yet
+PASS a drag is active before the account switch
+PASS logging out clears the temporary drag, ghost and confirmation without a write
+PASS the same real employee can sign back in after the drag was cancelled
+PASS a real save response is held after the server commits
+PASS the held save committed once to the old account
+PASS another employee loads while the old save response remains pending
+PASS the late save response cannot close the new sheet, change identity/token/epoch or seed old records
+PASS the original employee returns after the late-response check
+PASS a cross-month record is created through the real API
+PASS the cross-month record is completed through the versioned API
+PASS the middle continuation of the completed record loads
+PASS the completed middle segment hits the next week in two dimensions
+PASS the whole completed cross-month range moves once while preserving ID, body, completion and span
+PASS loaded old and new months contain the updated range without stale copies
+PASS the completed cross-month move persists after reload
+PASS holding at the visible bottom edge scrolls and loads a later month
+PASS edge loading keeps the source record mounted during dragging
+PASS edge scrolling leaves a visible valid release target
+PASS a valid drop after edge month loading still asks for confirmation
+PASS cancelling the edge move preserves the stored range and version
+PASS a second account logs in after the first logs out
+PASS switching accounts clears the previous daily state and never shows its counts
+
+306 browser checks executed
+
+
+79 checks passed; wrote /private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-lsnsvzq7/project/audit/refine-home-daily-items-layout-and-scrolling/daily-items-run.json

@@ -1,0 +1,8 @@
+{
+  "installedApkMatchesBuild": true,
+  "foreground": true,
+  "loginFormVisible": false,
+  "dashboardVisible": true,
+  "connectionErrorVisible": false,
+  "baseUrl": "https://8.141.96.122:6644/api/v1"
+}

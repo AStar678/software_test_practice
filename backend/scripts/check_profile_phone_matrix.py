@@ -20,11 +20,14 @@ def main():
             tokens={key:f.login(key)[1]['token'] for key in f.identities}
             ids={key:value['id'] for key,value in f.identities.items()}
             target=ids['alpha-one-employee'];old_phone=f.identities['alpha-one-employee']['identifier']
+            # V6 permits contact details, including email, to the actual management chain.
+            target_email='employee@private.example.test'
+            f.db.server_side('UPDATE users SET email='+quote(target_email)+' WHERE id='+quote(target))
             for reader,allowed in (('founder',True),('alpha-head',True),('alpha-one-head',True),('alpha-one-employee',True),
                     ('alpha-two-employee',False),('alpha-two-head',False),('beta-head',False),('other-founder',False),('admin',False)):
                 status,result=f.call('GET','/users/'+target,token=tokens[reader])
                 check(reader+' contact detail follows actual management relationship',
-                      (status==200 and result.get('phone')==old_phone and 'email' not in result and 'username' not in result) if allowed else status in (403,404))
+                      (status==200 and result.get('phone')==old_phone and result.get('email')==target_email and 'username' not in result) if allowed else status in (403,404))
             for who,path in (('founder','/users?limit=100'),('alpha-head','/work-log-authors'),('alpha-one-employee','/assignee-candidates?purpose=create'),
                     ('alpha-one-employee','/assignee-candidates?purpose=edit'),('admin','/admin/organization-plans')):
                 status,result=f.call('GET',path,token=tokens[who])
@@ -54,7 +57,8 @@ def main():
                 check('self identity or mixed payload is rejected: '+','.join(body),status==400)
             status,_=f.call('PATCH','/me/profile',{'avatar':'cat','email':'self@private.example.test'},token,'self-'+uuid.uuid4().hex,profile['rowVersion'])
             check('self avatar and email remain editable',status==200)
-            check('even actual manager cannot read another employee email','email' not in f.call('GET','/users/'+target,token=tokens['alpha-head'])[1])
+            check('actual manager reads the current subordinate email only in authorized detail',
+                  f.call('GET','/users/'+target,token=tokens['alpha-head'])[1].get('email')=='self@private.example.test')
             check('administrator cannot edit employee email',f.call('PATCH','/admin/employees/'+target,{'email':'forged@example.test'},tokens['admin'],'deny-email-'+uuid.uuid4().hex,1)[0]==400)
             for phone in (None,'','invalid',f.identities['beta-one-employee']['identifier']):
                 status,_=f.call('PATCH','/admin/employees/'+target,{'phone':phone},tokens['admin'],'deny-phone-'+uuid.uuid4().hex,1)

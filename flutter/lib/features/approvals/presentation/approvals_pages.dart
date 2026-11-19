@@ -225,10 +225,12 @@ class ApprovalDetailPage extends ConsumerStatefulWidget {
     super.key,
     required this.requestId,
     this.readContext = const NormalReadContext(),
+    this.showWithdrawAction = true,
   });
 
   final String requestId;
   final ReadContext readContext;
+  final bool showWithdrawAction;
 
   @override
   ConsumerState<ApprovalDetailPage> createState() => _ApprovalDetailPageState();
@@ -385,8 +387,6 @@ class _ApprovalDetailPageState extends ConsumerState<ApprovalDetailPage> {
                                       ? PandoraColors.overdue
                                       : PandoraColors.completed),
                             ),
-                            if (request.versionNo != null)
-                              StatusBadge(label: '版本 ${request.versionNo}', color: PandoraColors.muted),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -509,7 +509,7 @@ class _ApprovalDetailPageState extends ConsumerState<ApprovalDetailPage> {
                               ),
                             ],
                           ),
-                        if (widget.readContext.businessWritesAllowed && request.isPending && request.applicantId == me?.id)
+                        if (widget.showWithdrawAction && widget.readContext.businessWritesAllowed && request.isPending && request.applicantId == me?.id)
                           OutlinedButton(
                             onPressed: _deciding ? null : () => _decide('withdraw'),
                             child: const Text('撤销申请'),

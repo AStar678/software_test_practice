@@ -1,0 +1,18 @@
+PASS same-company admin list and detail read full login phone
+PASS employee and founder cannot read admin phone route
+PASS cross-company admin cannot read target detail
+PASS business directory omits management login phone
+PASS admin readback reflects changed login key
+PASS new phone authenticates the original employee
+PASS old phone stops authenticating
+PASS old employee session is revoked
+PASS admin login form ready
+PASS same-company admin console opens
+PASS management list shows the full login phone
+PASS employee detail dialog opens
+PASS detail form reads back the same full login phone
+PASS detail copy does not claim the phone is write-only
+PASS admin phone detail reachable at 320
+PASS admin phone detail reachable at 390
+PASS admin phone detail reachable at 1440
+PASS no browser exceptions

@@ -167,6 +167,13 @@ void main() {
     expect(find.widgetWithText(OutlinedButton, '日视图'), findsNothing);
     expect(find.text('00:00'), findsWidgets);
     expect(find.text('全天'), findsOneWidget);
+    expect(find.byKey(const ValueKey('day-week-2026-11-10')), findsOneWidget);
+    expect(find.text('10:00–11:00'), findsOneWidget);
+    expect(find.byKey(const ValueKey('day-task-accent-timed')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('day-task-fill-timed'))).width,
+      greaterThan(250),
+    );
     expect(find.text('新建'), findsNothing);
 
     await tester.tap(find.byTooltip('关闭'));

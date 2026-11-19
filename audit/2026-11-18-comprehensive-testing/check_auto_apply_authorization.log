@@ -1,0 +1,18 @@
+PASS fixed founder creates directly without a pending request
+PASS self change applies directly with a documented reason
+PASS direct request stores applicant decision and exemption reason
+PASS direct change records no self-review entry
+PASS direct change history is durable
+PASS detail exposes no re-approval entry for the direct change
+PASS direct apply cannot bypass the task version
+PASS direct apply requires If-Match
+PASS direct apply refuses an empty effective owner list
+PASS direct apply refuses a cross-company owner
+PASS direct apply rechecks the parent-task relationship
+PASS direct change succeeds with an idempotency key
+PASS same-key replay returns the cached direct result without a new version
+PASS different applicant and reviewer stays pending without direct publication
+PASS pending request leaves the old effective progress
+PASS direct apply cannot bypass the unique pending freeze
+PASS direct self change cannot bypass the applicable deadline
+PASS a second operation cannot bypass an existing pending freeze

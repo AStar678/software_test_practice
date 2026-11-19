@@ -1,0 +1,13 @@
+PASS old version fields unchanged
+PASS single deleted tag backfilled with snapshot
+PASS null tag remains empty
+PASS pending fixture created
+PASS legacy reviewer rerouted without rewriting applicant
+PASS legacy refresh recorded once
+PASS repeat startup is idempotent
+PASS old reviewer cannot decide
+PASS new manager can approve migrated request
+PASS non-creation pending fixture created
+PASS non-creation legacy reviewer also refreshed
+PASS closed historical approval is unchanged
+PASS inactive original applicant remains blocked

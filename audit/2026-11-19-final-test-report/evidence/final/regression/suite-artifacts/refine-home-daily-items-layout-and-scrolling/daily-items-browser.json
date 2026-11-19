@@ -1,0 +1,1858 @@
+{
+  "updated": "2026-11-18T17:05:49.667Z",
+  "checks": [
+    {
+      "check": "login form is ready",
+      "pass": true
+    },
+    {
+      "check": "employee login loads the home page",
+      "pass": true
+    },
+    {
+      "check": "after a preserved-session refresh at 320x740 the vertical calendar already has scroll range in both directions",
+      "pass": true,
+      "evidence": {
+        "viewport": "320x740",
+        "ready": true,
+        "initial": {
+          "months": [
+            "2026-10",
+            "2026-11",
+            "2026-12"
+          ],
+          "clientHeight": 384,
+          "scrollHeight": 2694,
+          "scrollTop": 1359,
+          "maxTop": 2310,
+          "todayVisible": true
+        },
+        "canSlideBack": true,
+        "canSlideForward": true,
+        "forward": {
+          "top": 1800,
+          "open": false
+        },
+        "backward": {
+          "top": 1356,
+          "open": false
+        },
+        "movedForward": true,
+        "movedBackward": true
+      }
+    },
+    {
+      "check": "a real vertical gesture at 320x740 browses forward and back without opening a day list",
+      "pass": true,
+      "evidence": {
+        "viewport": "320x740",
+        "ready": true,
+        "initial": {
+          "months": [
+            "2026-10",
+            "2026-11",
+            "2026-12"
+          ],
+          "clientHeight": 384,
+          "scrollHeight": 2694,
+          "scrollTop": 1359,
+          "maxTop": 2310,
+          "todayVisible": true
+        },
+        "canSlideBack": true,
+        "canSlideForward": true,
+        "forward": {
+          "top": 1800,
+          "open": false
+        },
+        "backward": {
+          "top": 1356,
+          "open": false
+        },
+        "movedForward": true,
+        "movedBackward": true
+      }
+    },
+    {
+      "check": "after a preserved-session refresh at 390x844 the vertical calendar already has scroll range in both directions",
+      "pass": true,
+      "evidence": {
+        "viewport": "390x844",
+        "ready": true,
+        "initial": {
+          "months": [
+            "2026-10",
+            "2026-11",
+            "2026-12"
+          ],
+          "clientHeight": 384,
+          "scrollHeight": 2694,
+          "scrollTop": 1359,
+          "maxTop": 2310,
+          "todayVisible": true
+        },
+        "canSlideBack": true,
+        "canSlideForward": true,
+        "forward": {
+          "top": 1801,
+          "open": false
+        },
+        "backward": {
+          "top": 1358,
+          "open": false
+        },
+        "movedForward": true,
+        "movedBackward": true
+      }
+    },
+    {
+      "check": "a real vertical gesture at 390x844 browses forward and back without opening a day list",
+      "pass": true,
+      "evidence": {
+        "viewport": "390x844",
+        "ready": true,
+        "initial": {
+          "months": [
+            "2026-10",
+            "2026-11",
+            "2026-12"
+          ],
+          "clientHeight": 384,
+          "scrollHeight": 2694,
+          "scrollTop": 1359,
+          "maxTop": 2310,
+          "todayVisible": true
+        },
+        "canSlideBack": true,
+        "canSlideForward": true,
+        "forward": {
+          "top": 1801,
+          "open": false
+        },
+        "backward": {
+          "top": 1358,
+          "open": false
+        },
+        "movedForward": true,
+        "movedBackward": true
+      }
+    },
+    {
+      "check": "after a preserved-session refresh at 1440x900 the vertical calendar already has scroll range in both directions",
+      "pass": true,
+      "evidence": {
+        "viewport": "1440x900",
+        "ready": true,
+        "initial": {
+          "months": [
+            "2026-10",
+            "2026-11",
+            "2026-12"
+          ],
+          "clientHeight": 384,
+          "scrollHeight": 2694,
+          "scrollTop": 1359,
+          "maxTop": 2310,
+          "todayVisible": true
+        },
+        "canSlideBack": true,
+        "canSlideForward": true,
+        "forward": {
+          "top": 1802,
+          "open": false
+        },
+        "backward": {
+          "top": 1359,
+          "open": false
+        },
+        "movedForward": true,
+        "movedBackward": true
+      }
+    },
+    {
+      "check": "a real vertical gesture at 1440x900 browses forward and back without opening a day list",
+      "pass": true,
+      "evidence": {
+        "viewport": "1440x900",
+        "ready": true,
+        "initial": {
+          "months": [
+            "2026-10",
+            "2026-11",
+            "2026-12"
+          ],
+          "clientHeight": 384,
+          "scrollHeight": 2694,
+          "scrollTop": 1359,
+          "maxTop": 2310,
+          "todayVisible": true
+        },
+        "canSlideBack": true,
+        "canSlideForward": true,
+        "forward": {
+          "top": 1802,
+          "open": false
+        },
+        "backward": {
+          "top": 1359,
+          "open": false
+        },
+        "movedForward": true,
+        "movedBackward": true
+      }
+    },
+    {
+      "check": "after a preserved-session refresh at 390x600 the vertical calendar already has scroll range in both directions",
+      "pass": true,
+      "evidence": {
+        "viewport": "390x600",
+        "ready": true,
+        "initial": {
+          "months": [
+            "2026-10",
+            "2026-11",
+            "2026-12"
+          ],
+          "clientHeight": 384,
+          "scrollHeight": 2694,
+          "scrollTop": 1359,
+          "maxTop": 2310,
+          "todayVisible": true
+        },
+        "canSlideBack": true,
+        "canSlideForward": true,
+        "forward": {
+          "top": 1802,
+          "open": false
+        },
+        "backward": {
+          "top": 1362,
+          "open": false
+        },
+        "movedForward": true,
+        "movedBackward": true
+      }
+    },
+    {
+      "check": "a real vertical gesture at 390x600 browses forward and back without opening a day list",
+      "pass": true,
+      "evidence": {
+        "viewport": "390x600",
+        "ready": true,
+        "initial": {
+          "months": [
+            "2026-10",
+            "2026-11",
+            "2026-12"
+          ],
+          "clientHeight": 384,
+          "scrollHeight": 2694,
+          "scrollTop": 1359,
+          "maxTop": 2310,
+          "todayVisible": true
+        },
+        "canSlideBack": true,
+        "canSlideForward": true,
+        "forward": {
+          "top": 1802,
+          "open": false
+        },
+        "backward": {
+          "top": 1362,
+          "open": false
+        },
+        "movedForward": true,
+        "movedBackward": true
+      }
+    },
+    {
+      "check": "page return at 390px + 0ms keeps daily-next after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 390,
+        "delay": 0,
+        "action": "daily-next",
+        "expected": "2040-02",
+        "immediate": {
+          "anchor": "2040-02",
+          "date": "2040-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2040-02-01",
+            "2040-02-02",
+            "2040-02-03",
+            "2040-02-04",
+            "2040-02-05",
+            "2040-02-06",
+            "2040-02-07",
+            "2040-02-08",
+            "2040-02-09",
+            "2040-02-10",
+            "2040-02-11",
+            "2040-02-12",
+            "2040-02-13",
+            "2040-02-14",
+            "2040-02-15",
+            "2040-02-16",
+            "2040-02-17",
+            "2040-02-18",
+            "2040-02-19"
+          ]
+        },
+        "settled": {
+          "anchor": "2040-02",
+          "date": "2040-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2040-02-01",
+            "2040-02-02",
+            "2040-02-03",
+            "2040-02-04",
+            "2040-02-05",
+            "2040-02-06",
+            "2040-02-07",
+            "2040-02-08",
+            "2040-02-09",
+            "2040-02-10",
+            "2040-02-11",
+            "2040-02-12",
+            "2040-02-13",
+            "2040-02-14",
+            "2040-02-15",
+            "2040-02-16",
+            "2040-02-17",
+            "2040-02-18",
+            "2040-02-19"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 390px + 0ms keeps daily-prev after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 390,
+        "delay": 0,
+        "action": "daily-prev",
+        "expected": "2039-12",
+        "immediate": {
+          "anchor": "2039-12",
+          "date": "2039-12-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2039-12-01",
+            "2039-12-02",
+            "2039-12-03",
+            "2039-12-04",
+            "2039-12-05",
+            "2039-12-06",
+            "2039-12-07",
+            "2039-12-08",
+            "2039-12-09",
+            "2039-12-10",
+            "2039-12-11",
+            "2039-12-12",
+            "2039-12-13",
+            "2039-12-14",
+            "2039-12-15",
+            "2039-12-16",
+            "2039-12-17",
+            "2039-12-18"
+          ]
+        },
+        "settled": {
+          "anchor": "2039-12",
+          "date": "2039-12-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2039-12-01",
+            "2039-12-02",
+            "2039-12-03",
+            "2039-12-04",
+            "2039-12-05",
+            "2039-12-06",
+            "2039-12-07",
+            "2039-12-08",
+            "2039-12-09",
+            "2039-12-10",
+            "2039-12-11",
+            "2039-12-12",
+            "2039-12-13",
+            "2039-12-14",
+            "2039-12-15",
+            "2039-12-16",
+            "2039-12-17",
+            "2039-12-18"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 390px + 0ms keeps daily-locate after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 390,
+        "delay": 0,
+        "action": "daily-locate",
+        "expected": "2044-02",
+        "immediate": {
+          "anchor": "2044-02",
+          "date": "2044-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2044-02-01",
+            "2044-02-02",
+            "2044-02-03",
+            "2044-02-04",
+            "2044-02-05",
+            "2044-02-06",
+            "2044-02-07",
+            "2044-02-08",
+            "2044-02-09",
+            "2044-02-10",
+            "2044-02-11",
+            "2044-02-12",
+            "2044-02-13",
+            "2044-02-14",
+            "2044-02-15",
+            "2044-02-16",
+            "2044-02-17",
+            "2044-02-18",
+            "2044-02-19",
+            "2044-02-20",
+            "2044-02-21"
+          ]
+        },
+        "settled": {
+          "anchor": "2044-02",
+          "date": "2044-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2044-02-01",
+            "2044-02-02",
+            "2044-02-03",
+            "2044-02-04",
+            "2044-02-05",
+            "2044-02-06",
+            "2044-02-07",
+            "2044-02-08",
+            "2044-02-09",
+            "2044-02-10",
+            "2044-02-11",
+            "2044-02-12",
+            "2044-02-13",
+            "2044-02-14",
+            "2044-02-15",
+            "2044-02-16",
+            "2044-02-17",
+            "2044-02-18",
+            "2044-02-19",
+            "2044-02-20",
+            "2044-02-21"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 390px + 0ms keeps daily-today after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 390,
+        "delay": 0,
+        "action": "daily-today",
+        "expected": "2026-11",
+        "immediate": {
+          "anchor": "2026-11",
+          "date": "2026-11-19",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        },
+        "settled": {
+          "anchor": "2026-11",
+          "date": "2026-11-16",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 390px + 10ms keeps daily-next after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 390,
+        "delay": 10,
+        "action": "daily-next",
+        "expected": "2040-02",
+        "immediate": {
+          "anchor": "2040-02",
+          "date": "2040-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2040-02-01",
+            "2040-02-02",
+            "2040-02-03",
+            "2040-02-04",
+            "2040-02-05",
+            "2040-02-06",
+            "2040-02-07",
+            "2040-02-08",
+            "2040-02-09",
+            "2040-02-10",
+            "2040-02-11",
+            "2040-02-12",
+            "2040-02-13",
+            "2040-02-14",
+            "2040-02-15",
+            "2040-02-16",
+            "2040-02-17",
+            "2040-02-18",
+            "2040-02-19"
+          ]
+        },
+        "settled": {
+          "anchor": "2040-02",
+          "date": "2040-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2040-02-01",
+            "2040-02-02",
+            "2040-02-03",
+            "2040-02-04",
+            "2040-02-05",
+            "2040-02-06",
+            "2040-02-07",
+            "2040-02-08",
+            "2040-02-09",
+            "2040-02-10",
+            "2040-02-11",
+            "2040-02-12",
+            "2040-02-13",
+            "2040-02-14",
+            "2040-02-15",
+            "2040-02-16",
+            "2040-02-17",
+            "2040-02-18",
+            "2040-02-19"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 390px + 10ms keeps daily-prev after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 390,
+        "delay": 10,
+        "action": "daily-prev",
+        "expected": "2039-12",
+        "immediate": {
+          "anchor": "2039-12",
+          "date": "2039-12-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2039-12-01",
+            "2039-12-02",
+            "2039-12-03",
+            "2039-12-04",
+            "2039-12-05",
+            "2039-12-06",
+            "2039-12-07",
+            "2039-12-08",
+            "2039-12-09",
+            "2039-12-10",
+            "2039-12-11",
+            "2039-12-12",
+            "2039-12-13",
+            "2039-12-14",
+            "2039-12-15",
+            "2039-12-16",
+            "2039-12-17",
+            "2039-12-18"
+          ]
+        },
+        "settled": {
+          "anchor": "2039-12",
+          "date": "2039-12-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2039-12-01",
+            "2039-12-02",
+            "2039-12-03",
+            "2039-12-04",
+            "2039-12-05",
+            "2039-12-06",
+            "2039-12-07",
+            "2039-12-08",
+            "2039-12-09",
+            "2039-12-10",
+            "2039-12-11",
+            "2039-12-12",
+            "2039-12-13",
+            "2039-12-14",
+            "2039-12-15",
+            "2039-12-16",
+            "2039-12-17",
+            "2039-12-18"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 390px + 10ms keeps daily-locate after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 390,
+        "delay": 10,
+        "action": "daily-locate",
+        "expected": "2044-02",
+        "immediate": {
+          "anchor": "2044-02",
+          "date": "2044-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2044-02-01",
+            "2044-02-02",
+            "2044-02-03",
+            "2044-02-04",
+            "2044-02-05",
+            "2044-02-06",
+            "2044-02-07",
+            "2044-02-08",
+            "2044-02-09",
+            "2044-02-10",
+            "2044-02-11",
+            "2044-02-12",
+            "2044-02-13",
+            "2044-02-14",
+            "2044-02-15",
+            "2044-02-16",
+            "2044-02-17",
+            "2044-02-18",
+            "2044-02-19",
+            "2044-02-20",
+            "2044-02-21"
+          ]
+        },
+        "settled": {
+          "anchor": "2044-02",
+          "date": "2044-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2044-02-01",
+            "2044-02-02",
+            "2044-02-03",
+            "2044-02-04",
+            "2044-02-05",
+            "2044-02-06",
+            "2044-02-07",
+            "2044-02-08",
+            "2044-02-09",
+            "2044-02-10",
+            "2044-02-11",
+            "2044-02-12",
+            "2044-02-13",
+            "2044-02-14",
+            "2044-02-15",
+            "2044-02-16",
+            "2044-02-17",
+            "2044-02-18",
+            "2044-02-19",
+            "2044-02-20",
+            "2044-02-21"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 390px + 10ms keeps daily-today after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 390,
+        "delay": 10,
+        "action": "daily-today",
+        "expected": "2026-11",
+        "immediate": {
+          "anchor": "2026-11",
+          "date": "2026-11-19",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        },
+        "settled": {
+          "anchor": "2026-11",
+          "date": "2026-11-16",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        }
+      }
+    },
+    {
+      "check": "ordinary page return at 390px preserves the saved date and pixel offset",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "anchor": "2026-11",
+          "date": "2026-11-16",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        },
+        "after": {
+          "anchor": "2026-11",
+          "date": "2026-11-16",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 1440px + 0ms keeps daily-next after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 1440,
+        "delay": 0,
+        "action": "daily-next",
+        "expected": "2040-02",
+        "immediate": {
+          "anchor": "2040-02",
+          "date": "2040-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2040-02-01",
+            "2040-02-02",
+            "2040-02-03",
+            "2040-02-04",
+            "2040-02-05",
+            "2040-02-06",
+            "2040-02-07",
+            "2040-02-08",
+            "2040-02-09",
+            "2040-02-10",
+            "2040-02-11",
+            "2040-02-12",
+            "2040-02-13",
+            "2040-02-14",
+            "2040-02-15",
+            "2040-02-16",
+            "2040-02-17",
+            "2040-02-18",
+            "2040-02-19"
+          ]
+        },
+        "settled": {
+          "anchor": "2040-02",
+          "date": "2040-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2040-02-01",
+            "2040-02-02",
+            "2040-02-03",
+            "2040-02-04",
+            "2040-02-05",
+            "2040-02-06",
+            "2040-02-07",
+            "2040-02-08",
+            "2040-02-09",
+            "2040-02-10",
+            "2040-02-11",
+            "2040-02-12",
+            "2040-02-13",
+            "2040-02-14",
+            "2040-02-15",
+            "2040-02-16",
+            "2040-02-17",
+            "2040-02-18",
+            "2040-02-19"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 1440px + 0ms keeps daily-prev after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 1440,
+        "delay": 0,
+        "action": "daily-prev",
+        "expected": "2039-12",
+        "immediate": {
+          "anchor": "2039-12",
+          "date": "2039-12-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2039-12-01",
+            "2039-12-02",
+            "2039-12-03",
+            "2039-12-04",
+            "2039-12-05",
+            "2039-12-06",
+            "2039-12-07",
+            "2039-12-08",
+            "2039-12-09",
+            "2039-12-10",
+            "2039-12-11",
+            "2039-12-12",
+            "2039-12-13",
+            "2039-12-14",
+            "2039-12-15",
+            "2039-12-16",
+            "2039-12-17",
+            "2039-12-18"
+          ]
+        },
+        "settled": {
+          "anchor": "2039-12",
+          "date": "2039-12-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2039-12-01",
+            "2039-12-02",
+            "2039-12-03",
+            "2039-12-04",
+            "2039-12-05",
+            "2039-12-06",
+            "2039-12-07",
+            "2039-12-08",
+            "2039-12-09",
+            "2039-12-10",
+            "2039-12-11",
+            "2039-12-12",
+            "2039-12-13",
+            "2039-12-14",
+            "2039-12-15",
+            "2039-12-16",
+            "2039-12-17",
+            "2039-12-18"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 1440px + 0ms keeps daily-locate after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 1440,
+        "delay": 0,
+        "action": "daily-locate",
+        "expected": "2044-02",
+        "immediate": {
+          "anchor": "2044-02",
+          "date": "2044-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2044-02-01",
+            "2044-02-02",
+            "2044-02-03",
+            "2044-02-04",
+            "2044-02-05",
+            "2044-02-06",
+            "2044-02-07",
+            "2044-02-08",
+            "2044-02-09",
+            "2044-02-10",
+            "2044-02-11",
+            "2044-02-12",
+            "2044-02-13",
+            "2044-02-14",
+            "2044-02-15",
+            "2044-02-16",
+            "2044-02-17",
+            "2044-02-18",
+            "2044-02-19",
+            "2044-02-20",
+            "2044-02-21"
+          ]
+        },
+        "settled": {
+          "anchor": "2044-02",
+          "date": "2044-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2044-02-01",
+            "2044-02-02",
+            "2044-02-03",
+            "2044-02-04",
+            "2044-02-05",
+            "2044-02-06",
+            "2044-02-07",
+            "2044-02-08",
+            "2044-02-09",
+            "2044-02-10",
+            "2044-02-11",
+            "2044-02-12",
+            "2044-02-13",
+            "2044-02-14",
+            "2044-02-15",
+            "2044-02-16",
+            "2044-02-17",
+            "2044-02-18",
+            "2044-02-19",
+            "2044-02-20",
+            "2044-02-21"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 1440px + 0ms keeps daily-today after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 1440,
+        "delay": 0,
+        "action": "daily-today",
+        "expected": "2026-11",
+        "immediate": {
+          "anchor": "2026-11",
+          "date": "2026-11-16",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        },
+        "settled": {
+          "anchor": "2026-11",
+          "date": "2026-11-16",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 1440px + 10ms keeps daily-next after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 1440,
+        "delay": 10,
+        "action": "daily-next",
+        "expected": "2040-02",
+        "immediate": {
+          "anchor": "2040-02",
+          "date": "2040-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2040-02-01",
+            "2040-02-02",
+            "2040-02-03",
+            "2040-02-04",
+            "2040-02-05",
+            "2040-02-06",
+            "2040-02-07",
+            "2040-02-08",
+            "2040-02-09",
+            "2040-02-10",
+            "2040-02-11",
+            "2040-02-12",
+            "2040-02-13",
+            "2040-02-14",
+            "2040-02-15",
+            "2040-02-16",
+            "2040-02-17",
+            "2040-02-18",
+            "2040-02-19"
+          ]
+        },
+        "settled": {
+          "anchor": "2040-02",
+          "date": "2040-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2040-02-01",
+            "2040-02-02",
+            "2040-02-03",
+            "2040-02-04",
+            "2040-02-05",
+            "2040-02-06",
+            "2040-02-07",
+            "2040-02-08",
+            "2040-02-09",
+            "2040-02-10",
+            "2040-02-11",
+            "2040-02-12",
+            "2040-02-13",
+            "2040-02-14",
+            "2040-02-15",
+            "2040-02-16",
+            "2040-02-17",
+            "2040-02-18",
+            "2040-02-19"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 1440px + 10ms keeps daily-prev after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 1440,
+        "delay": 10,
+        "action": "daily-prev",
+        "expected": "2039-12",
+        "immediate": {
+          "anchor": "2039-12",
+          "date": "2039-12-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2039-12-01",
+            "2039-12-02",
+            "2039-12-03",
+            "2039-12-04",
+            "2039-12-05",
+            "2039-12-06",
+            "2039-12-07",
+            "2039-12-08",
+            "2039-12-09",
+            "2039-12-10",
+            "2039-12-11",
+            "2039-12-12",
+            "2039-12-13",
+            "2039-12-14",
+            "2039-12-15",
+            "2039-12-16",
+            "2039-12-17",
+            "2039-12-18"
+          ]
+        },
+        "settled": {
+          "anchor": "2039-12",
+          "date": "2039-12-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2039-12-01",
+            "2039-12-02",
+            "2039-12-03",
+            "2039-12-04",
+            "2039-12-05",
+            "2039-12-06",
+            "2039-12-07",
+            "2039-12-08",
+            "2039-12-09",
+            "2039-12-10",
+            "2039-12-11",
+            "2039-12-12",
+            "2039-12-13",
+            "2039-12-14",
+            "2039-12-15",
+            "2039-12-16",
+            "2039-12-17",
+            "2039-12-18"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 1440px + 10ms keeps daily-locate after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 1440,
+        "delay": 10,
+        "action": "daily-locate",
+        "expected": "2044-02",
+        "immediate": {
+          "anchor": "2044-02",
+          "date": "2044-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2044-02-01",
+            "2044-02-02",
+            "2044-02-03",
+            "2044-02-04",
+            "2044-02-05",
+            "2044-02-06",
+            "2044-02-07",
+            "2044-02-08",
+            "2044-02-09",
+            "2044-02-10",
+            "2044-02-11",
+            "2044-02-12",
+            "2044-02-13",
+            "2044-02-14",
+            "2044-02-15",
+            "2044-02-16",
+            "2044-02-17",
+            "2044-02-18",
+            "2044-02-19",
+            "2044-02-20",
+            "2044-02-21"
+          ]
+        },
+        "settled": {
+          "anchor": "2044-02",
+          "date": "2044-02-01",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2044-02-01",
+            "2044-02-02",
+            "2044-02-03",
+            "2044-02-04",
+            "2044-02-05",
+            "2044-02-06",
+            "2044-02-07",
+            "2044-02-08",
+            "2044-02-09",
+            "2044-02-10",
+            "2044-02-11",
+            "2044-02-12",
+            "2044-02-13",
+            "2044-02-14",
+            "2044-02-15",
+            "2044-02-16",
+            "2044-02-17",
+            "2044-02-18",
+            "2044-02-19",
+            "2044-02-20",
+            "2044-02-21"
+          ]
+        }
+      }
+    },
+    {
+      "check": "page return at 1440px + 10ms keeps daily-today after delayed layouts settle",
+      "pass": true,
+      "evidence": {
+        "width": 1440,
+        "delay": 10,
+        "action": "daily-today",
+        "expected": "2026-11",
+        "immediate": {
+          "anchor": "2026-11",
+          "date": "2026-11-19",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        },
+        "settled": {
+          "anchor": "2026-11",
+          "date": "2026-11-16",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        }
+      }
+    },
+    {
+      "check": "ordinary page return at 1440px preserves the saved date and pixel offset",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "anchor": "2026-11",
+          "date": "2026-11-16",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        },
+        "after": {
+          "anchor": "2026-11",
+          "date": "2026-11-16",
+          "offset": 8,
+          "months": 3,
+          "visible": [
+            "2026-11-16",
+            "2026-11-17",
+            "2026-11-18",
+            "2026-11-19",
+            "2026-11-20",
+            "2026-11-21",
+            "2026-11-22",
+            "2026-11-23",
+            "2026-11-24",
+            "2026-11-25",
+            "2026-11-26",
+            "2026-11-27",
+            "2026-11-28",
+            "2026-11-29",
+            "2026-11-30"
+          ]
+        }
+      }
+    },
+    {
+      "check": "the reloaded session is still the same real employee",
+      "pass": true
+    },
+    {
+      "check": "the daily calendar is a vertical Monday-to-Sunday week grid",
+      "pass": true,
+      "evidence": {
+        "weekdayCount": 7,
+        "weekdays": [
+          "周一",
+          "周二",
+          "周三",
+          "周四",
+          "周五",
+          "周六",
+          "周日"
+        ],
+        "cells": 92,
+        "blocks": 3,
+        "problems": [],
+        "uniqueAll": true,
+        "stacked": true,
+        "overflowY": "auto",
+        "scrollHeight": 2694,
+        "clientHeight": 384,
+        "todayVisible": true,
+        "labels": [
+          "2026年10月",
+          "2026年11月",
+          "2026年12月"
+        ],
+        "labelOverflow": false,
+        "lunar": false,
+        "fab": false
+      }
+    },
+    {
+      "check": "every month block holds only its own consecutive real dates with seven interactive columns",
+      "pass": true,
+      "evidence": {
+        "weekdayCount": 7,
+        "weekdays": [
+          "周一",
+          "周二",
+          "周三",
+          "周四",
+          "周五",
+          "周六",
+          "周日"
+        ],
+        "cells": 92,
+        "blocks": 3,
+        "problems": [],
+        "uniqueAll": true,
+        "stacked": true,
+        "overflowY": "auto",
+        "scrollHeight": 2694,
+        "clientHeight": 384,
+        "todayVisible": true,
+        "labels": [
+          "2026年10月",
+          "2026年11月",
+          "2026年12月"
+        ],
+        "labelOverflow": false,
+        "lunar": false,
+        "fab": false
+      }
+    },
+    {
+      "check": "each stacked month heading shows its full year and month without overflow",
+      "pass": true,
+      "evidence": [
+        "2026年10月",
+        "2026年11月",
+        "2026年12月"
+      ]
+    },
+    {
+      "check": "the company today is initially visible inside the vertical viewport",
+      "pass": true,
+      "evidence": {
+        "weekdayCount": 7,
+        "weekdays": [
+          "周一",
+          "周二",
+          "周三",
+          "周四",
+          "周五",
+          "周六",
+          "周日"
+        ],
+        "cells": 92,
+        "blocks": 3,
+        "problems": [],
+        "uniqueAll": true,
+        "stacked": true,
+        "overflowY": "auto",
+        "scrollHeight": 2694,
+        "clientHeight": 384,
+        "todayVisible": true,
+        "labels": [
+          "2026年10月",
+          "2026年11月",
+          "2026年12月"
+        ],
+        "labelOverflow": false,
+        "lunar": false,
+        "fab": false
+      }
+    },
+    {
+      "check": "ranged bars are drawn with readable names and completed/open/overdue status",
+      "pass": true,
+      "evidence": {
+        "count": 144,
+        "open": 133,
+        "completed": 9,
+        "overdue": 2,
+        "names": [
+          "逾期镜头备注未完成",
+          "整体拖动演示事项",
+          "跨日三色同步事项",
+          "跨日已完成：正文里的同词不应被改写",
+          "Seeded item 0-0",
+          "Seeded item 1-1",
+          "Seeded item 1-0",
+          "Seeded item 2-1"
+        ],
+        "todayAria": "2026年11月19日，未完成3条，已完成0条，逾期0条"
+      }
+    },
+    {
+      "check": "date cells report complete open/completed/overdue counts to assistive technology",
+      "pass": true,
+      "evidence": "2026年11月19日，未完成3条，已完成0条，逾期0条"
+    },
+    {
+      "check": "ordinary vertical scrolling browses months without opening a day list",
+      "pass": true,
+      "evidence": {
+        "before": 1359,
+        "afterScroll": {
+          "top": 1539,
+          "open": false
+        }
+      }
+    },
+    {
+      "check": "return to company today brings the real today cell back into view",
+      "pass": true
+    },
+    {
+      "check": "arrow keys move focus onto a real date cell rather than a blank slot",
+      "pass": true,
+      "evidence": "2026-11-20"
+    },
+    {
+      "check": "Enter opens the day list for the keyboard-focused date",
+      "pass": true
+    },
+    {
+      "check": "the day list shows that date, its real items and a create action",
+      "pass": true,
+      "evidence": {
+        "title": "11月20日 · 每日事项",
+        "rows": 3,
+        "foot": 1
+      }
+    },
+    {
+      "check": "待做/完成/逾期三种事项条共用一套类名并分别呈现蓝、灰、红边线",
+      "pass": true,
+      "evidence": {
+        "open": {
+          "border": "rgb(59, 111, 216)",
+          "background": "rgb(233, 241, 253)"
+        },
+        "completed": {
+          "border": "rgb(139, 143, 152)",
+          "background": "rgb(242, 243, 245)"
+        },
+        "overdue": {
+          "border": "rgb(192, 70, 58)",
+          "background": "rgb(253, 236, 234)"
+        },
+        "stale": 0,
+        "legend": 0
+      }
+    },
+    {
+      "check": "月份标题不再显示重复的状态颜色图例",
+      "pass": true,
+      "evidence": {
+        "open": {
+          "border": "rgb(59, 111, 216)",
+          "background": "rgb(233, 241, 253)"
+        },
+        "completed": {
+          "border": "rgb(139, 143, 152)",
+          "background": "rgb(242, 243, 245)"
+        },
+        "overdue": {
+          "border": "rgb(192, 70, 58)",
+          "background": "rgb(253, 236, 234)"
+        },
+        "stale": 0,
+        "legend": 0
+      }
+    },
+    {
+      "check": "日期清单按同一映射标记三态且不重复可见状态文字",
+      "pass": true,
+      "evidence": {
+        "states": [
+          "open",
+          "open",
+          "open"
+        ],
+        "metaStatusWords": [
+          false,
+          false,
+          false
+        ],
+        "toggleLabels": [
+          "标记完成：Seeded item 0-0（当前状态：未完成）",
+          "标记完成：跨日已完成：正文里的同词不应被改写（当前状态：未完成）",
+          "标记完成：跨日三色同步事项（当前状态：未完成）"
+        ],
+        "openLabels": [
+          "Seeded item 0-0，2026年11月19日，未完成，打开事项详情",
+          "跨日已完成：正文里的同词不应被改写，2026年11月19日，未完成，打开事项详情",
+          "跨日三色同步事项，2026年11月18日 至 2026年11月20日，未完成，打开事项详情"
+        ],
+        "bodies": [
+          "Seeded item 0-0",
+          "跨日已完成：正文里的同词不应被改写",
+          "跨日三色同步事项"
+        ]
+      }
+    },
+    {
+      "check": "清单正文不被改写且仍以辅助技术可读名称暴露真实状态",
+      "pass": true,
+      "evidence": {
+        "states": [
+          "open",
+          "open",
+          "open"
+        ],
+        "metaStatusWords": [
+          false,
+          false,
+          false
+        ],
+        "toggleLabels": [
+          "标记完成：Seeded item 0-0（当前状态：未完成）",
+          "标记完成：跨日已完成：正文里的同词不应被改写（当前状态：未完成）",
+          "标记完成：跨日三色同步事项（当前状态：未完成）"
+        ],
+        "openLabels": [
+          "Seeded item 0-0，2026年11月19日，未完成，打开事项详情",
+          "跨日已完成：正文里的同词不应被改写，2026年11月19日，未完成，打开事项详情",
+          "跨日三色同步事项，2026年11月18日 至 2026年11月20日，未完成，打开事项详情"
+        ],
+        "bodies": [
+          "Seeded item 0-0",
+          "跨日已完成：正文里的同词不应被改写",
+          "跨日三色同步事项"
+        ]
+      }
+    },
+    {
+      "check": "完成项在清单中呈现完成灰与删除线，日期仍完整可读",
+      "pass": true,
+      "evidence": {
+        "total": 5,
+        "completed": true,
+        "text": "Seeded item 6-1",
+        "strike": "line-through",
+        "meta": [
+          "2026年11月25日",
+          "2026年11月25日",
+          "2026年11月25日",
+          "2026年11月25日",
+          "2026年11月25日"
+        ]
+      }
+    },
+    {
+      "check": "详情不重复状态徽标，改用三态配色和隐藏文字表达状态",
+      "pass": true,
+      "evidence": {
+        "classes": "daily-detail-head is-open",
+        "badges": 0,
+        "hidden": "当前状态：未完成",
+        "date": "2026年11月25日",
+        "toggle": "标记完成"
+      }
+    },
+    {
+      "check": "表单保留实际起止日期和正文，不再显示跨日解释",
+      "pass": true,
+      "evidence": {
+        "text": "开始日期\n结束日期\n内容",
+        "start": true,
+        "end": true,
+        "field": true
+      }
+    },
+    {
+      "check": "从覆盖日清单完成跨日事项后该行立即变为完成灰",
+      "pass": true,
+      "evidence": {
+        "completed": true,
+        "checked": "true",
+        "label": "取消完成：跨日三色同步事项（当前状态：已完成）",
+        "meta": "2026年11月18日 至 2026年11月20日",
+        "text": "跨日三色同步事项"
+      }
+    },
+    {
+      "check": "完成的跨日事项条覆盖全部已加载覆盖日并统一变灰",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "bars": [
+          {
+            "state": "completed",
+            "edge": "rgb(139, 143, 152)",
+            "name": "跨日三色同步事项",
+            "first": "2026-11-18",
+            "last": "2026-11-20"
+          }
+        ]
+      }
+    },
+    {
+      "check": "完成状态同步到覆盖日 2026-11-18 的清单",
+      "pass": true,
+      "evidence": {
+        "completed": true,
+        "checked": "true",
+        "label": "取消完成：跨日三色同步事项（当前状态：已完成）",
+        "meta": "2026年11月18日 至 2026年11月20日",
+        "text": "跨日三色同步事项"
+      }
+    },
+    {
+      "check": "完成状态同步到覆盖日 2026-11-19 的清单",
+      "pass": true,
+      "evidence": {
+        "completed": true,
+        "checked": "true",
+        "label": "取消完成：跨日三色同步事项（当前状态：已完成）",
+        "meta": "2026年11月18日 至 2026年11月20日",
+        "text": "跨日三色同步事项"
+      }
+    },
+    {
+      "check": "完成状态同步到覆盖日 2026-11-20 的清单",
+      "pass": true,
+      "evidence": {
+        "completed": true,
+        "checked": "true",
+        "label": "取消完成：跨日三色同步事项（当前状态：已完成）",
+        "meta": "2026年11月18日 至 2026年11月20日",
+        "text": "跨日三色同步事项"
+      }
+    },
+    {
+      "check": "从另一覆盖日取消完成后该行恢复未完成",
+      "pass": true,
+      "evidence": {
+        "completed": false,
+        "checked": "false",
+        "label": "标记完成：跨日三色同步事项（当前状态：未完成）",
+        "meta": "2026年11月18日 至 2026年11月20日",
+        "text": "跨日三色同步事项"
+      }
+    },
+    {
+      "check": "取消完成后跨日事项条恢复待做蓝且仍覆盖同一范围",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "bars": [
+          {
+            "state": "open",
+            "edge": "rgb(59, 111, 216)",
+            "name": "跨日三色同步事项",
+            "first": "2026-11-18",
+            "last": "2026-11-20"
+          }
+        ]
+      }
+    },
+    {
+      "check": "取消完成同步到覆盖日 2026-11-18 的清单",
+      "pass": true,
+      "evidence": {
+        "completed": false,
+        "checked": "false",
+        "label": "标记完成：跨日三色同步事项（当前状态：未完成）",
+        "meta": "2026年11月18日 至 2026年11月20日",
+        "text": "跨日三色同步事项"
+      }
+    },
+    {
+      "check": "取消完成同步到覆盖日 2026-11-19 的清单",
+      "pass": true,
+      "evidence": {
+        "completed": false,
+        "checked": "false",
+        "label": "标记完成：跨日三色同步事项（当前状态：未完成）",
+        "meta": "2026年11月18日 至 2026年11月20日",
+        "text": "跨日三色同步事项"
+      }
+    },
+    {
+      "check": "取消完成同步到覆盖日 2026-11-20 的清单",
+      "pass": true,
+      "evidence": {
+        "completed": false,
+        "checked": "false",
+        "label": "标记完成：跨日三色同步事项（当前状态：未完成）",
+        "meta": "2026年11月18日 至 2026年11月20日",
+        "text": "跨日三色同步事项"
+      }
+    },
+    {
+      "check": "刷新后跨日事项的完成色与覆盖范围保持一致",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "bars": [
+          {
+            "state": "completed",
+            "edge": "rgb(139, 143, 152)",
+            "name": "跨日三色同步事项",
+            "first": "2026-11-18",
+            "last": "2026-11-20"
+          }
+        ]
+      }
+    },
+    {
+      "check": "刷新后覆盖日清单仍读取同一条完成记录",
+      "pass": true,
+      "evidence": {
+        "completed": true,
+        "checked": "true",
+        "label": "取消完成：跨日三色同步事项（当前状态：已完成）",
+        "meta": "2026年11月18日 至 2026年11月20日",
+        "text": "跨日三色同步事项"
+      }
+    },
+    {
+      "check": "the vertical calendar fits 320x740 without horizontal overflow and remains scrollable",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "weekdays": 7,
+        "scrollable": true
+      }
+    },
+    {
+      "check": "the vertical calendar fits 390x844 without horizontal overflow and remains scrollable",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "weekdays": 7,
+        "scrollable": true
+      }
+    },
+    {
+      "check": "the vertical calendar fits 1440x900 without horizontal overflow and remains scrollable",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "weekdays": 7,
+        "scrollable": true
+      }
+    }
+  ]
+}

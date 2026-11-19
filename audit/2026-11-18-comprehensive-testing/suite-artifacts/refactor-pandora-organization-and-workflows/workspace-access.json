@@ -1,0 +1,92 @@
+{
+  "updated": "2026-11-18T16:04:21.014418+00:00",
+  "checks": [
+    {
+      "check": "founder reports include exactly all actual descendants",
+      "pass": true
+    },
+    {
+      "check": "founder log author directory includes self and actual descendants",
+      "pass": true
+    },
+    {
+      "check": "founder log author directory contains no private fields or username",
+      "pass": true
+    },
+    {
+      "check": "founder visible log list uses the same full descendant range",
+      "pass": true
+    },
+    {
+      "check": "founder self profile derives fixed identity and retains only own contacts",
+      "pass": true
+    },
+    {
+      "check": "alpha-head reports include exactly all actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-head log author directory includes self and actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-head log author directory contains no private fields or username",
+      "pass": true
+    },
+    {
+      "check": "alpha-head visible log list uses the same full descendant range",
+      "pass": true
+    },
+    {
+      "check": "alpha-head self profile derives fixed identity and retains only own contacts",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head reports include exactly all actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head log author directory includes self and actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head log author directory contains no private fields or username",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head visible log list uses the same full descendant range",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-head self profile derives fixed identity and retains only own contacts",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee reports include exactly all actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee log author directory includes self and actual descendants",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee log author directory contains no private fields or username",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee visible log list uses the same full descendant range",
+      "pass": true
+    },
+    {
+      "check": "alpha-one-employee self profile derives fixed identity and retains only own contacts",
+      "pass": true
+    },
+    {
+      "check": "alpha-head profile access to alpha-one-employee matches current chain",
+      "pass": false
+    }
+  ],
+  "database": "pandora_precheck_model_1bb03b0b8c784ba4",
+  "result": "FAIL",
+  "errorType": "AssertionError"
+}

@@ -1,0 +1,332 @@
+PASS  the witness runs on a disposable random database, never the normal business database
+PASS  POST /tasks succeeds
+PASS  POST /tags succeeds
+PASS  POST /work-logs succeeds
+PASS  PUT /tasks/0aa87471-6bc0-480f-94a6-41fbc77bd671/pin succeeds
+PASS  witness fixture starts at V31 with a real task, tag, log, calendar pin and single-day item
+PASS  V32-V36 are applied and historical checksums never change
+PASS  the single-day witness maps losslessly to start=end=original date
+PASS  task, version, log, shared tag and calendar pin rows stay byte-identical
+PASS  new structures start empty and hire_date stays null rather than derived from created_at
+PASS  a real backup restores the upgraded witness database with identical business rows
+PASS  the database rejects an inverted item range
+PASS  the independent table-pin structure has a composite uniqueness key and the holiday header stores source/refresh state
+PASS  the witness artefact is written for independent review
+PASS  an empty database completes the full chain and converges on the new structures
+PASS  POST /daily-items succeeds
+PASS  creation returns the explicit date pair and a legacy start projection
+PASS  detail exposes completed/open/overdue and keeps the complete body
+PASS  mixed legacy and pair dates are rejected
+PASS  an inverted range is rejected without partial save
+PASS  POST /daily-items succeeds
+PASS  a legacy date still saves a single-day record
+PASS  the day list returns a ranged record once and the legacy record only on its own day
+PASS  range mode returns intersecting records with the original full pair
+PASS  range mode pagination metadata and company date are explicit
+PASS  a query window above 93 days is rejected, not an empty success
+PASS  date and from/to cannot be mixed
+PASS  a missing range endpoint is rejected
+PASS  POST /daily-items succeeds
+PASS  a record longer than the window is returned, never dropped for its own span
+PASS  a ranged item rejects an old single-date reschedule
+PASS  the rejected legacy change writes nothing
+PASS  PATCH /daily-items/ff5451b0-ced5-4c09-8dc2-3d990f266e0a succeeds
+PASS  the pair update changes only the selected record and returns the new range
+PASS  an old row version is rejected
+PASS  PATCH /daily-items/ff5451b0-ced5-4c09-8dc2-3d990f266e0a succeeds
+PASS  completing from one covered day keeps the full range
+PASS  the same completed record is visible on 2026-10-31
+PASS  the same completed record is visible on 2026-11-01
+PASS  the same completed record is visible on 2026-11-04
+PASS  the summary counts the ranged record once on every covered day
+PASS  PATCH /daily-items/ff5451b0-ced5-4c09-8dc2-3d990f266e0a succeeds
+PASS  reopening keeps the range and returns the same record
+PASS  DELETE /daily-items/ff5451b0-ced5-4c09-8dc2-3d990f266e0a succeeds
+PASS  delete removes only the selected record
+PASS  all old covered days lose the deleted count
+PASS  peer cannot read another person's items
+PASS  peer cannot write another person's item
+PASS  head cannot read another person's items
+PASS  head cannot write another person's item
+PASS  other company cannot read another person's items
+PASS  other company cannot write another person's item
+PASS  the independent administrator cannot use the item API
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  the same payload and idempotency key never creates a duplicate record
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  the isolated table fixture has more than two backend pages
+PASS  POST /tasks succeeds
+PASS  an unpublished task cannot be table-pinned
+PASS  the unpublished task is absent from the personal table
+PASS  the table reports the full de-duplicated total before paging
+PASS  all pages concatenate to one complete global sequence
+PASS  the simplified-Chinese collator puts 阿 before 波 and 分镜10 before 分镜2
+PASS  descending reverses the title comparison without changing the total
+PASS  the multi-page table query is batched rather than N+1 and returns only the current page
+PASS  the same request is deterministic
+PASS  the title asc sequence keeps the complete total without duplicates
+PASS  the title desc sequence keeps the complete total without duplicates
+PASS  the createdAt asc sequence keeps the complete total without duplicates
+PASS  the createdAt asc order is monotonic with task-id tie-break
+PASS  the createdAt desc sequence keeps the complete total without duplicates
+PASS  the createdAt desc order is monotonic with task-id tie-break
+PASS  the startAt asc sequence keeps the complete total without duplicates
+PASS  the startAt asc order is monotonic with task-id tie-break
+PASS  the startAt desc sequence keeps the complete total without duplicates
+PASS  the startAt desc order is monotonic with task-id tie-break
+PASS  the dueAt asc sequence keeps the complete total without duplicates
+PASS  the dueAt asc order is monotonic with task-id tie-break
+PASS  the dueAt desc sequence keeps the complete total without duplicates
+PASS  the dueAt desc order is monotonic with task-id tie-break
+PASS  the priority asc sequence keeps the complete total without duplicates
+PASS  the priority asc order is monotonic with task-id tie-break
+PASS  the priority desc sequence keeps the complete total without duplicates
+PASS  the priority desc order is monotonic with task-id tie-break
+PASS  the state asc sequence keeps the complete total without duplicates
+PASS  the state asc order is monotonic with task-id tie-break
+PASS  the state desc sequence keeps the complete total without duplicates
+PASS  the state desc order is monotonic with task-id tie-break
+PASS  PUT /tasks/877b2ae3-632c-427b-9981-50c9c0f9667e/table-pin succeeds
+PASS  a task pinned from a later page moves to the first page and total is unchanged
+PASS  a pin does not change the task version or schedule
+PASS  DELETE /tasks/877b2ae3-632c-427b-9981-50c9c0f9667e/table-pin succeeds
+PASS  search trims whitespace and matches all four scripted titles
+PASS  search reaches a matching task on a later page
+PASS  relation and completion filters compose
+PASS  a single-ended date filter uses the company date intersection
+PASS  invalid table parameter bogus=1 is rejected
+PASS  invalid table parameter relation=visible is rejected
+PASS  invalid table parameter sort=title&direction=sideways is rejected
+PASS  invalid table parameter limit=101 is rejected
+PASS  invalid table parameter from=2026-11-23&to=2026-11-22 is rejected
+PASS  a query longer than 200 characters is rejected
+PASS  the general /tasks list keeps its nextCursor shape and visibility
+PASS  POST /tasks succeeds
+PASS  GET /approval-requests/78d428bf-c988-4358-98a7-0ea81ae0818a succeeds
+PASS  PATCH /approval-requests/78d428bf-c988-4358-98a7-0ea81ae0818a succeeds
+PASS  the published created-but-not-owned task is in the creator relation
+PASS  a created-but-unassigned task accepts the independent table pin
+PASS  the same task cannot be calendar-pinned without being a current owner
+PASS  normal detail carries both independent pin capabilities
+PASS  PATCH /tasks/f5b08ffe-3515-4a9f-910e-63f608066685 succeeds
+PASS  a completion pending review still counts as unfinished
+PASS  POST /tasks succeeds
+PASS  PUT /tasks/89331afe-922f-4bfe-9e7a-f30044bd171e/pin succeeds
+PASS  PUT /tasks/89331afe-922f-4bfe-9e7a-f30044bd171e/table-pin succeeds
+PASS  both pin preferences survive a new session independently
+PASS  DELETE /tasks/89331afe-922f-4bfe-9e7a-f30044bd171e/table-pin succeeds
+PASS  clearing the table pin leaves the calendar pin untouched
+PASS  PUT /tasks/877b2ae3-632c-427b-9981-50c9c0f9667e/table-pin succeeds
+PASS  a task removed from the current relationship cannot be restored by a stale pin
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  POST /daily-items succeeds
+PASS  the fill-source fixture has more personal items than one list page
+PASS  POST /daily-items succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  POST /tasks succeeds
+PASS  the fill source returns both complete groups without pagination truncation
+PASS  one item spanning the day is included once and long multi-line text is complete
+PASS  the complete name source can exceed the log body's 10000 UTF-16 code-unit ceiling
+PASS  task coverage includes the timed, midnight and all-day tasks but excludes the zero-length next-day task
+PASS  a midnight due task does not spill into the next day and the all-day task covers it
+PASS  items keep creation order with stable identifiers and the spanning item appears once
+PASS  an invalid business date is rejected
+PASS  the fill source never accepts another person's userId
+PASS  the administrator cannot read employee fill sources
+PASS  the fill source is a pure read
+PASS  POST /work-logs succeeds
+PASS  the existing 10000 code-unit log limit still rejects 10001
+PASS  a backfilled still-editable log day can still read its source
+PASS  existing employees start with an unset real hire date and no fabricated tenure
+PASS  PATCH /admin/employees/4ce9a359-10d8-524d-8232-c73416f398d0 succeeds
+PASS  the administrator can set a leap-day hire date
+PASS  a future hire date is rejected
+PASS  omitting hireDate preserves the stored value and still saves the name
+PASS  self /me and /me/profile share the same company-date tenure
+PASS  an actual chain manager receives the same hire date and tenure in the authorized detail
+PASS  a same-level peer receives neither hire projection nor e-mail
+PASS  ordinary directory summaries never carry phone, e-mail, hire date or tenure
+PASS  PATCH /me/profile succeeds
+PASS  the authorized management-chain ancestor can read the e-mail in the detail
+PASS  a peer still cannot read that e-mail
+PASS  a direct employee cannot maintain hireDate through the administrator route
+PASS  PATCH /admin/employees/4ce9a359-10d8-524d-8232-c73416f398d0 succeeds
+PASS  an explicit null clears the date without fabricating a duration
+PASS  POST /admin/employees succeeds
+PASS  direct creation persists the submitted hire date and returns the one-time password
+PASS  POST /admin/employees succeeds
+PASS  an idempotent replay never returns the initial password twice
+PASS  a future hire date on direct creation rejects the whole account
+PASS  the rejected direct creation wrote no account
+PASS  POST /admin/organization-plans succeeds
+PASS  an invalid planned hire date rejects the whole plan
+PASS  the rejected plan creates no partial account
+PASS  the organization plan creates the employee with the submitted hire date in one transaction
+PASS  POST /admin/organization-plans succeeds
+PASS  subordinate summaries and the reports tree carry no private fields
+PASS  after reassignment the old chain manager loses the detail
+PASS  the new actual chain manager reads the current e-mail and hire projection
+{"total": 344, "failed": 0, "report": "/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/audit/prepare-employee-client-contracts-and-business-upgrade/employee-contracts-check.json"}

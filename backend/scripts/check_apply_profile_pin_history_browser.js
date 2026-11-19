@@ -35,7 +35,7 @@ async function main(){
   check('general person cache never keeps phone or email',!('phone' in cache.updated)&&!('email' in cache.updated),cache.updated);
   check('later summary does not roll back a complete organization update',cache.summaryAfter.departmentName==='新部门'&&cache.summaryAfter.teamName==='新团队'&&cache.summaryAfter.displayName==='摘要后姓名',cache.summaryAfter);
   check('explicit null clears revoked organization fields',cache.cleared.departmentName===null&&cache.cleared.teamName===null,cache.cleared);
-  check('position names never determine the identity label',cache.line==='员工 · 部门负责人 · alpha · one',cache.line);
+  check('position names never determine the identity label',cache.line==='alpha ▸ one ▸ 部门负责人',cache.line);
   await ev('Pandora.reload()');await idle();await ev("setPage('me')");await idle();
   const profile=await ev("(()=>{const fold=document.querySelector('[data-profile-fold=organization]');return {text:fold.textContent,labels:Array.from(fold.querySelectorAll('.profile-row .k')).map(x=>x.textContent),hasCompany:Array.from(fold.querySelectorAll('.profile-row .k')).some(x=>x.textContent==='公司')}})()");
   check('own profile has no company data row',profile.labels.includes('部门')&&!profile.hasCompany,profile);

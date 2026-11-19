@@ -1,0 +1,4 @@
+RUN check_log_backfill_entry.py
+PASS check_log_backfill_entry.py assertions=50
+RUN check_task_creation_refinement.py
+FAIL check_task_creation_refinement.py assertions=73

@@ -1,0 +1,158 @@
+PASS login form
+PASS authenticated founder
+PASS day full and legacy have no hour drag entry
+PASS normal and point tasks retain hour handles
+PASS drag source exists [data-resize-task="d8638db8-db2d-47f1-a06a-342cc7d1e98d"][data-resize=end][data-resize-mode=day]
+PASS drag preview
+PASS escape cancels unchanged
+PASS drag source exists [data-resize-task="d8638db8-db2d-47f1-a06a-342cc7d1e98d"][data-resize=end][data-resize-mode=day]
+PASS drag preview
+PASS pointercancel cancels unchanged
+PASS drag source exists [data-resize-task="d8638db8-db2d-47f1-a06a-342cc7d1e98d"][data-resize=end][data-resize-mode=day]
+PASS drag preview
+PASS drag calls confirmation
+PASS lightweight confirmation opens
+PASS full task editor absent
+PASS confirmation shows old and exact new time
+PASS preview is uncommitted
+PASS schedule submitted
+PASS precise hour persisted
+PASS drag source exists [data-resize-task="d8638db8-db2d-47f1-a06a-342cc7d1e98d"][data-resize=end][data-resize-mode=month]
+PASS month long press creates no drag preview before the threshold
+PASS drag preview
+PASS lightweight confirmation opens
+PASS full task editor absent
+PASS month drag crosses year and preserves minute
+PASS schedule submitted
+PASS cross year persisted
+PASS cross day continuation has no hour drag
+PASS drag source exists [data-schedule-move="d8638db8-db2d-47f1-a06a-342cc7d1e98d"][data-resize-mode=month]
+PASS month long press creates no drag preview before the threshold
+PASS drag preview
+PASS lightweight confirmation opens
+PASS full task editor absent
+PASS whole month move preserves duration
+PASS drag source exists [data-resize-task="cc62922a-5f8b-4f6e-9cc4-3a2d400aea0c"][data-resize=start][data-resize-mode=day]
+PASS drag preview
+PASS inverse point range rejected
+PASS drag source exists [data-resize-task="cc62922a-5f8b-4f6e-9cc4-3a2d400aea0c"][data-resize=end][data-resize-mode=day]
+PASS drag preview
+PASS lightweight confirmation opens
+PASS full task editor absent
+PASS point expands by an hour
+PASS cross-day first segment has no hour drag
+PASS cross-day covered middle day has no hour drag
+PASS cross-day tail segment has no hour drag
+PASS vertical first segment has no move or endpoint handle
+PASS cross-day segment arrow key opens no time edit
+PASS cross-day segment ordinary click still opens its detail
+PASS cross-day full coverage stays in the all-day area without handles
+PASS all-day ordinary click still opens its detail
+PASS midnight end renders once on its start day
+PASS midnight end creates no next-day duplicate
+PASS drag source exists [data-resize-task="3084be1f-b261-4437-be91-325eb15e0237"][data-resize=end][data-resize-mode=day]
+PASS drag preview
+PASS a day-axis midnight endpoint cannot cross into the next day
+PASS the rejected midnight endpoint reports the day boundary
+PASS drag source exists [data-schedule-move="3084be1f-b261-4437-be91-325eb15e0237"][data-resize-mode=day]
+PASS drag preview
+PASS lightweight confirmation opens
+PASS full task editor absent
+PASS a legal whole-task move keeps the 24:00 deadline inside one day
+PASS handle exists [data-resize-task="67c80ec0-a290-4cb4-8001-0d0b48db70c0"][data-resize=end][data-resize-mode=day]
+PASS endpoint press without movement opens no confirmation or detail
+PASS short press target exists [data-resize-task="67c80ec0-a290-4cb4-8001-0d0b48db70c0"][data-resize=end][data-resize-mode=month]
+PASS real mouse short press on month tail endpoint opens the hit day list without drag or schedule write
+PASS short press target exists [data-schedule-move="67c80ec0-a290-4cb4-8001-0d0b48db70c0"][data-resize-mode=month]
+PASS real mouse short press on month task bar body opens the hit day list without drag or schedule write
+PASS short press target exists [data-action="schedule-month-date"][data-date="2031-01-10"]
+PASS real mouse short press on month date digit opens the hit day list without drag or schedule write
+PASS an empty date cell is available for the blank-area short press
+PASS short press target exists [data-action="schedule-month-date"][data-date="2030-11-01"]
+PASS real mouse short press on month empty date cell opens the hit day list without drag or schedule write
+PASS the cross-day task renders a multi-column segment to press
+PASS short press target exists [data-task="cbb2ceba-a442-450d-8762-8b05a03d8794"]
+PASS real mouse short press on month cross-day middle date opens the hit day list without drag or schedule write
+PASS the cross-day bar opens the hit day instead of always using its start date
+PASS a real overflow entry appears once the month tracks are collapsed
+PASS the overflow entry opens its own date through a real short press and never starts a drag
+PASS a synthetic short touch opens the hit day list without a drag or schedule write
+PASS holding a month bar for about half a second activates the touch drag
+PASS an activated touch drag asks for the lightweight confirmation instead of the day list
+PASS the touch draft wrote nothing before confirmation
+PASS drag source exists [data-resize-task="67c80ec0-a290-4cb4-8001-0d0b48db70c0"][data-resize=end][data-resize-mode=day]
+PASS drag preview
+PASS lost pointer capture cancels unchanged
+PASS drag source exists [data-schedule-move="1c489580-4a85-430e-b71f-a26b1168ed94"][data-resize-mode=month]
+PASS month long press creates no drag preview before the threshold
+PASS drag preview
+PASS lightweight confirmation opens
+PASS full task editor absent
+PASS all-day confirmation shows complete dates without invented times
+PASS day axis fits viewport 320
+PASS day axis fits viewport 390
+PASS day axis fits viewport 1440
+PASS month view fits 390x600
+PASS vertical ordinary handles present
+PASS vertical full day handles absent
+PASS login form is ready for the applicant
+PASS login form
+PASS authenticated alpha-one-employee
+PASS retry task exposes an hour handle
+PASS drag source exists [data-resize-task="273f8f15-639d-4f6f-a63d-ced248c99372"][data-resize=end][data-resize-mode=day]
+PASS drag preview
+PASS lightweight confirmation opens
+PASS full task editor absent
+PASS response loss keeps the lightweight draft and reason
+PASS retry succeeds after the lost response
+PASS retry reuses one idempotency key
+PASS one pending schedule is saved without publishing it
+PASS drag source exists [data-schedule-move="ffd3dfd6-409b-47c2-baab-6add72f6be38"][data-resize-mode=month]
+PASS month long press creates no drag preview before the threshold
+PASS drag preview
+PASS lightweight confirmation opens
+PASS full task editor absent
+PASS schedule submitted
+PASS pending proposal is drawn once at the proposed date
+PASS pending proposal keeps the exact proposed times
+PASS pending proposal keeps the shared first-tag colour
+PASS effective task still holds its old schedule
+PASS ordinary detail opens on the effective schedule
+PASS applicant withdraws the pending schedule proposal
+PASS withdrawn proposal restores the effective calendar position
+PASS drag source exists [data-schedule-move="ffd3dfd6-409b-47c2-baab-6add72f6be38"][data-resize-mode=month]
+PASS month long press creates no drag preview before the threshold
+PASS drag preview
+PASS lightweight confirmation opens
+PASS full task editor absent
+PASS schedule submitted
+PASS re-reviewed proposal is drawn at the new proposed date
+PASS reviewer rejects the schedule proposal
+PASS rejection returns the calendar to the effective date
+PASS drag source exists [data-schedule-move="ffd3dfd6-409b-47c2-baab-6add72f6be38"][data-resize-mode=month]
+PASS month long press creates no drag preview before the threshold
+PASS drag preview
+PASS lightweight confirmation opens
+PASS full task editor absent
+PASS schedule submitted
+PASS approved candidate projects as pending before the decision
+PASS reviewer approves the schedule proposal
+PASS approval publishes the proposed date without a dashed frame
+PASS approval publishes the exact effective times
+PASS drag source exists [data-schedule-move="f0beb492-b294-4724-9221-a249a1aa796d"][data-resize-mode=month]
+PASS month long press creates no drag preview before the threshold
+PASS drag preview
+PASS lightweight confirmation opens
+PASS full task editor absent
+PASS schedule submitted
+PASS expiry fixture is pending at its proposed date
+PASS no browser exceptions
+PASS response-loss retry created exactly one change request
+PASS login form
+PASS authenticated alpha-one-employee
+PASS expired proposal still projects at its proposed date while pending
+PASS review after the applicable deadline expires the request
+PASS expired proposal returns the calendar to the effective date
+PASS expired proposal is unpublished and the task is unfrozen
+PASS no browser exceptions
+PASS expired schedule proposal stayed unpublished

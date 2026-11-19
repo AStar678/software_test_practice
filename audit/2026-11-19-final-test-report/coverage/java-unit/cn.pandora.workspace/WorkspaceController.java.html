@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WorkspaceController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.workspace</a> &gt; <span class="el_source">WorkspaceController.java</span></div><h1>WorkspaceController.java</h1><pre class="source lang-java linenums">package cn.pandora.workspace;
+
+import cn.pandora.auth.Actor;
+import cn.pandora.common.Writes;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/api/v1&quot;)
+public class WorkspaceController {
+    private final WorkspaceService workspace;
+    private final CommentService comments;
+    private final DailyItemService dailyItems;
+    private final Writes writes;
+    /** Test seam kept for controller-only unit tests; production injects the dependency explicitly. */
+    public WorkspaceController(WorkspaceService workspace,Writes writes) {
+<span class="fc" id="L18">        this(workspace,null,null,writes);</span>
+<span class="fc" id="L19">    }</span>
+
+    @org.springframework.beans.factory.annotation.Autowired
+<span class="fc" id="L22">    public WorkspaceController(WorkspaceService workspace,CommentService comments,DailyItemService dailyItems,Writes writes) {</span>
+<span class="fc" id="L23">        this.workspace=workspace;this.comments=comments;this.dailyItems=dailyItems;this.writes=writes;</span>
+<span class="fc" id="L24">    }</span>
+
+<span class="nc" id="L26">    @GetMapping(&quot;/me&quot;) public Map&lt;String,Object&gt; me(@RequestAttribute(&quot;actor&quot;) Actor a) {return workspace.me(a);}</span>
+    /** Subordinates inside both the current profile scope and the actual management chain. */
+<span class="nc" id="L28">    @GetMapping(&quot;/me/reports&quot;) public Map&lt;String,Object&gt; reports(@RequestAttribute(&quot;actor&quot;) Actor a) {return workspace.reports(a);}</span>
+<span class="nc" id="L29">    @GetMapping(&quot;/users&quot;) public Map&lt;String,Object&gt; users(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return workspace.users(a,filters,false);}</span>
+<span class="nc" id="L30">    @GetMapping(&quot;/users/{id}&quot;) public Map&lt;String,Object&gt; person(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id) {return workspace.person(a,id);}</span>
+<span class="nc" id="L31">    @GetMapping(&quot;/home&quot;) public Map&lt;String,Object&gt; home(@RequestAttribute(&quot;actor&quot;) Actor a) {return workspace.home(a);}</span>
+    @GetMapping(&quot;/home/items/{id}&quot;) public ResponseEntity&lt;Map&lt;String,Object&gt;&gt; homeItem(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id) {
+<span class="nc" id="L33">        var result=workspace.homeItem(a,id);return ResponseEntity.ok().eTag(&quot;\&quot;&quot;+result.get(&quot;rowVersion&quot;)+&quot;\&quot;&quot;).body(result);</span>
+    }
+    @PostMapping(&quot;/home/items&quot;) public Map&lt;String,Object&gt; createHomeItem(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestBody Map&lt;String,Object&gt; body) {
+<span class="nc" id="L36">        workspace.checkHomeCreateAccess(a,body);</span>
+<span class="nc" id="L37">        return writes.run(a,key,&quot;POST /home/items&quot;,body,null,()-&gt;workspace.createHomeItem(a,body));</span>
+    }
+    @PatchMapping(&quot;/home/items/{id}&quot;) public Map&lt;String,Object&gt; changeHomeItem(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestHeader(value=&quot;If-Match&quot;,required=false) String match,@RequestBody Map&lt;String,Object&gt; body) {
+<span class="nc" id="L40">        workspace.checkHomeItemWriteAccess(a,id);</span>
+<span class="nc" id="L41">        return writes.run(a,key,&quot;PATCH /home/items/&quot;+id,body,match,()-&gt;workspace.changeHomeItem(a,id,match,body));</span>
+    }
+    @DeleteMapping(&quot;/home/items/{id}&quot;) public Map&lt;String,Object&gt; deleteHomeItem(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestHeader(value=&quot;If-Match&quot;,required=false) String match) {
+<span class="nc" id="L44">        workspace.checkHomeItemWriteAccess(a,id);</span>
+<span class="nc" id="L45">        return writes.run(a,key,&quot;DELETE /home/items/&quot;+id,Map.of(),match,()-&gt;workspace.deleteHomeItem(a,id,match));</span>
+    }
+    /* Daily items: private to the actor; every route filters by organization and owner. */
+<span class="nc" id="L48">    @GetMapping(&quot;/daily-items/summary&quot;) public Map&lt;String,Object&gt; dailySummary(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return dailyItems.summary(a,filters);}</span>
+<span class="nc" id="L49">    @GetMapping(&quot;/daily-items&quot;) public Map&lt;String,Object&gt; dailyList(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return dailyItems.list(a,filters);}</span>
+    @GetMapping(&quot;/daily-items/{id}&quot;) public ResponseEntity&lt;Map&lt;String,Object&gt;&gt; dailyDetail(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id) {
+<span class="nc" id="L51">        var result=dailyItems.detail(a,id);return ResponseEntity.ok().eTag(&quot;\&quot;&quot;+result.get(&quot;rowVersion&quot;)+&quot;\&quot;&quot;).body(result);</span>
+    }
+    @PostMapping(&quot;/daily-items&quot;) public Map&lt;String,Object&gt; createDailyItem(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestBody Map&lt;String,Object&gt; body) {
+<span class="nc" id="L54">        return writes.run(a,key,&quot;POST /daily-items&quot;,body,null,()-&gt;dailyItems.create(a,body));</span>
+    }
+    @PatchMapping(&quot;/daily-items/{id}&quot;) public Map&lt;String,Object&gt; changeDailyItem(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestHeader(value=&quot;If-Match&quot;,required=false) String match,@RequestBody Map&lt;String,Object&gt; body) {
+<span class="nc" id="L57">        return writes.run(a,key,&quot;PATCH /daily-items/&quot;+id,body,match,()-&gt;dailyItems.change(a,id,match,body));</span>
+    }
+    @DeleteMapping(&quot;/daily-items/{id}&quot;) public Map&lt;String,Object&gt; deleteDailyItem(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestHeader(value=&quot;If-Match&quot;,required=false) String match) {
+<span class="nc" id="L60">        return writes.run(a,key,&quot;DELETE /daily-items/&quot;+id,Map.of(),match,()-&gt;dailyItems.delete(a,id,match));</span>
+    }
+<span class="nc" id="L62">    @GetMapping(&quot;/work-logs&quot;) public Map&lt;String,Object&gt; logs(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return workspace.logs(a,filters);}</span>
+    /** Read-only complete name source for one log business date; never a log write. */
+<span class="nc" id="L64">    @GetMapping(&quot;/work-logs/fill-source&quot;) public Map&lt;String,Object&gt; fillSource(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return workspace.fillSource(a,filters);}</span>
+    /** Author filter (list + tree) for the log page, limited to the reader's log range. */
+<span class="nc" id="L66">    @GetMapping(&quot;/work-log-authors&quot;) public Map&lt;String,Object&gt; logAuthors(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return workspace.logAuthors(a,filters);}</span>
+    @GetMapping(&quot;/work-logs/{id}&quot;) public ResponseEntity&lt;Map&lt;String,Object&gt;&gt; log(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id) {
+<span class="nc" id="L68">        var result=workspace.log(a,id);return ResponseEntity.ok().eTag(&quot;\&quot;&quot;+result.get(&quot;rowVersion&quot;)+&quot;\&quot;&quot;).body(result);</span>
+    }
+    @PostMapping(&quot;/work-logs&quot;) public Map&lt;String,Object&gt; createLog(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestBody Map&lt;String,Object&gt; body) {
+<span class="nc" id="L71">        return writes.run(a,key,&quot;POST /work-logs&quot;,body,null,()-&gt;workspace.createLog(a,body));</span>
+    }
+    @PatchMapping(&quot;/work-logs/{id}&quot;) public Map&lt;String,Object&gt; changeLog(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestHeader(value=&quot;If-Match&quot;,required=false) String match,@RequestBody Map&lt;String,Object&gt; body) {
+<span class="nc" id="L74">        return writes.run(a,key,&quot;PATCH /work-logs/&quot;+id,body,match,()-&gt;workspace.changeLog(a,id,match,body));</span>
+    }
+    @DeleteMapping(&quot;/work-logs/{id}&quot;) public Map&lt;String,Object&gt; deleteLog(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestHeader(value=&quot;If-Match&quot;,required=false) String match) {
+<span class="nc" id="L77">        return writes.run(a,key,&quot;DELETE /work-logs/&quot;+id,Map.of(),match,()-&gt;workspace.deleteLog(a,id,match));</span>
+    }
+    /** Flat comments on a task or a log; one publication-ordered, stably paged list. */
+    @GetMapping(&quot;/tasks/{id}/comments&quot;) public Map&lt;String,Object&gt; taskComments(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestParam Map&lt;String,String&gt; filters) {
+<span class="nc" id="L81">        return comments.list(a,&quot;task&quot;,id,filters);</span>
+    }
+    @PostMapping(&quot;/tasks/{id}/comments&quot;) public Map&lt;String,Object&gt; createTaskComment(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestBody Map&lt;String,Object&gt; body) {
+<span class="nc" id="L84">        return writes.run(a,key,&quot;POST /tasks/&quot;+id+&quot;/comments&quot;,body,null,()-&gt;comments.create(a,&quot;task&quot;,id,body));</span>
+    }
+    @GetMapping(&quot;/work-logs/{id}/comments&quot;) public Map&lt;String,Object&gt; logComments(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestParam Map&lt;String,String&gt; filters) {
+<span class="nc" id="L87">        return comments.list(a,&quot;log&quot;,id,filters);</span>
+    }
+    @PostMapping(&quot;/work-logs/{id}/comments&quot;) public Map&lt;String,Object&gt; createLogComment(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestBody Map&lt;String,Object&gt; body) {
+<span class="nc" id="L90">        return writes.run(a,key,&quot;POST /work-logs/&quot;+id+&quot;/comments&quot;,body,null,()-&gt;comments.create(a,&quot;log&quot;,id,body));</span>
+    }
+    @PatchMapping(&quot;/comments/{id}&quot;) public Map&lt;String,Object&gt; changeComment(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestHeader(value=&quot;If-Match&quot;,required=false) String match,@RequestBody Map&lt;String,Object&gt; body) {
+<span class="nc" id="L93">        return writes.run(a,key,&quot;PATCH /comments/&quot;+id,body,match,()-&gt;comments.change(a,id,match,body));</span>
+    }
+    @DeleteMapping(&quot;/comments/{id}&quot;) public Map&lt;String,Object&gt; deleteComment(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestHeader(value=&quot;If-Match&quot;,required=false) String match) {
+<span class="nc" id="L96">        return writes.run(a,key,&quot;DELETE /comments/&quot;+id,Map.of(),match,()-&gt;comments.delete(a,id,match));</span>
+    }
+<span class="nc" id="L98">    @GetMapping(&quot;/notifications&quot;) public Map&lt;String,Object&gt; notifications(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return workspace.notifications(a,filters);}</span>
+    @GetMapping(&quot;/notifications/{id}&quot;) public ResponseEntity&lt;Map&lt;String,Object&gt;&gt; notification(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id) {
+<span class="nc" id="L100">        var result=workspace.notification(a,id);return ResponseEntity.ok().eTag(&quot;\&quot;&quot;+result.get(&quot;rowVersion&quot;)+&quot;\&quot;&quot;).body(result);</span>
+    }
+    /** Opening a message marks it read and returns the authoritative view plus the refreshed unread count. */
+    @PostMapping(&quot;/notifications/{id}/open&quot;) public Map&lt;String,Object&gt; openNotification(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key) {
+<span class="nc" id="L104">        return writes.run(a,key,&quot;POST /notifications/&quot;+id+&quot;/open&quot;,Map.of(),null,()-&gt;workspace.openNotification(a,id));</span>
+    }
+    @PatchMapping(&quot;/notifications/{id}&quot;) public Map&lt;String,Object&gt; changeNotification(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestHeader(value=&quot;If-Match&quot;,required=false) String match,@RequestBody Map&lt;String,Object&gt; body) {
+<span class="nc" id="L107">        return writes.run(a,key,&quot;PATCH /notifications/&quot;+id,body,match,()-&gt;workspace.changeNotification(a,id,match,body));</span>
+    }
+    /** Event-level withdrawal: business initiator or notification manager, strictly under 180 seconds. */
+    @PostMapping(&quot;/notifications/{id}/withdraw&quot;) public Map&lt;String,Object&gt; withdrawNotification(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestBody(required=false) Map&lt;String,Object&gt; body) {
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        var input=body==null?Map.&lt;String,Object&gt;of():body;</span>
+<span class="nc" id="L112">        return writes.run(a,key,&quot;POST /notifications/&quot;+id+&quot;/withdraw&quot;,input,null,()-&gt;workspace.withdrawNotification(a,id,input));</span>
+    }
+    /** Dedicated read-only current-task summary for a delivered message. */
+<span class="nc" id="L115">    @GetMapping(&quot;/notifications/{id}/task&quot;) public Map&lt;String,Object&gt; notificationTask(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id) {return workspace.notificationTask(a,id);}</span>
+<span class="nc" id="L116">    @GetMapping(&quot;/analytics/task-summary&quot;) public Map&lt;String,Object&gt; stats(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return workspace.statistics(a,filters);}</span>
+    @PostMapping(&quot;/ai-jobs&quot;) public Map&lt;String,Object&gt; createAi(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestBody(required=false) Map&lt;String,Object&gt; body) {
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        var input=body==null?Map.&lt;String,Object&gt;of():body;return writes.run(a,key,&quot;POST /ai-jobs&quot;,input,null,()-&gt;workspace.createAiJob(a,input));</span>
+    }
+<span class="nc" id="L120">    @GetMapping(&quot;/ai-jobs/{id}&quot;) public Map&lt;String,Object&gt; ai(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String id) {return workspace.aiJob(a,id);}</span>
+<span class="nc" id="L121">    @GetMapping(&quot;/admin/users&quot;) public Map&lt;String,Object&gt; adminUsers(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return workspace.users(a,filters,true);}</span>
+<span class="nc" id="L122">    @GetMapping(&quot;/admin/teams&quot;) public Map&lt;String,Object&gt; adminTeams(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return workspace.adminTeams(a,filters);}</span>
+<span class="nc" id="L123">    @GetMapping(&quot;/admin/audit-logs&quot;) public Map&lt;String,Object&gt; audit(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return workspace.audit(a,filters);}</span>
+<span class="nc" id="L124">    @GetMapping(&quot;/admin/notifications&quot;) public Map&lt;String,Object&gt; adminNotifications(@RequestAttribute(&quot;actor&quot;) Actor a,@RequestParam Map&lt;String,String&gt; filters) {return workspace.adminNotifications(a,filters);}</span>
+    @PostMapping(&quot;/admin/notifications/{eventId}/withdraw&quot;) public Map&lt;String,Object&gt; adminWithdraw(@RequestAttribute(&quot;actor&quot;) Actor a,@PathVariable String eventId,@RequestHeader(value=&quot;Idempotency-Key&quot;,required=false) String key,@RequestBody(required=false) Map&lt;String,Object&gt; body) {
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        var input=body==null?Map.&lt;String,Object&gt;of():body;</span>
+<span class="nc" id="L127">        return writes.run(a,key,&quot;POST /admin/notifications/&quot;+eventId+&quot;/withdraw&quot;,input,null,()-&gt;workspace.withdrawEvent(a,eventId,input));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

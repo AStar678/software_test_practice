@@ -1,0 +1,22 @@
+{
+  "pdfPages": 27,
+  "methodsSections": 11,
+  "detailedCards": 24,
+  "catalogRows": 3795,
+  "frameworkExecuted": 674,
+  "separateSkippedDuplicates": 32,
+  "businessSuites": 41,
+  "phoneChecks": 16,
+  "methodCoverageRows": 1019,
+  "allEvidencePathsExist": true,
+  "visualCheckPages": [
+    1,
+    8,
+    16,
+    21,
+    23,
+    27
+  ],
+  "pdfTextAndNumbers": "PASS",
+  "interactiveFilters": "PASS"
+}

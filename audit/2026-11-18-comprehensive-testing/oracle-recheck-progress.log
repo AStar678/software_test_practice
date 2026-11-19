@@ -1,0 +1,6 @@
+RUN check_final_migration.py
+FAIL check_final_migration.py assertions=0
+RUN check_profile_phone_matrix.py
+PASS check_profile_phone_matrix.py assertions=41
+RUN check_fixed_workspace_access.py
+PASS check_fixed_workspace_access.py assertions=62

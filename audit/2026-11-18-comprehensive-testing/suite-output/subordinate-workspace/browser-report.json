@@ -1,0 +1,659 @@
+{
+  "checks": [
+    {
+      "name": "login founder",
+      "pass": true
+    },
+    {
+      "name": "tree initially only direct reports",
+      "pass": true
+    },
+    {
+      "name": "expand shows actual team heads without opening detail",
+      "pass": true
+    },
+    {
+      "name": "grandchild appears within actual parent branch",
+      "pass": true
+    },
+    {
+      "name": "tree keeps the real department ▸ team ▸ position path without identity",
+      "pass": true
+    },
+    {
+      "name": "organization line covers the four real department/team/position combinations without identity",
+      "pass": true
+    },
+    {
+      "name": "tree fits 320",
+      "pass": true
+    },
+    {
+      "name": "tree fits 390",
+      "pass": true
+    },
+    {
+      "name": "tree fits 1440",
+      "pass": true
+    },
+    {
+      "name": "person opens profile card before work with contacts and tenure rows",
+      "pass": true
+    },
+    {
+      "name": "the subordinate card keeps its own hire date, tenure and contact rows after the own-profile de-duplication",
+      "pass": true,
+      "evidence": {
+        "hire": 1,
+        "tenure": 1,
+        "org": 1,
+        "phone": 1,
+        "email": 1,
+        "text": "组织职务alpha ▸ alpha one ▸ Display title直属上级alpha-one-head联系电话13900000004邮箱未填写入职日期入职日期未设置已入职入职日期未设置"
+      }
+    },
+    {
+      "name": "person opens independent workspace",
+      "pass": true
+    },
+    {
+      "name": "no own calendar or log reuse",
+      "pass": true
+    },
+    {
+      "name": "default month view present",
+      "pass": true
+    },
+    {
+      "name": "month jump loads",
+      "pass": true
+    },
+    {
+      "name": "month navigation crosses year",
+      "pass": true
+    },
+    {
+      "name": "selected month ready",
+      "pass": true
+    },
+    {
+      "name": "quiet month ready",
+      "pass": true
+    },
+    {
+      "name": "completed task is marked in the month view",
+      "pass": true,
+      "evidence": {
+        "found": true,
+        "cls": "staff-month-event is-done",
+        "text": "月历完成状态01月01日 10:00 至 01月01日 11:00 · 已完成",
+        "monthState": "staff-month-section is-ready",
+        "monthText": "",
+        "staffDate": "2027-01-01",
+        "api": {
+          "total": 6,
+          "ids": [
+            "debcdc1a-f98e-44c3-8cba-c2725a4066bb",
+            "b8b8b36a-c7c5-4c93-b486-80b78aca7197",
+            "4d909e20-e892-4e07-ad4a-113998855cb2",
+            "8fafdae0-292a-49f8-8625-d40ec5b97b2d",
+            "45cff95a-c007-4cb5-8e33-d78868281e2f",
+            "929f6eb8-5303-41dd-bff1-60410037582a"
+          ],
+          "states": [
+            "todo",
+            "todo",
+            "todo",
+            "todo",
+            "todo",
+            "done"
+          ]
+        }
+      }
+    },
+    {
+      "name": "selected month restored",
+      "pass": true
+    },
+    {
+      "name": "month has full weekday grid and spanning segments",
+      "pass": true
+    },
+    {
+      "name": "staff month bars cover the occupied company days",
+      "pass": true,
+      "evidence": {
+        "startCol": 5,
+        "endCol": 7,
+        "left": 5.0249585176991145,
+        "width": 1.9647169985250736
+      }
+    },
+    {
+      "name": "staff month captions stay inside their bars with no nested labeled buttons",
+      "pass": true
+    },
+    {
+      "name": "zero duration task keeps the day frame and an explicit point flag",
+      "pass": true,
+      "evidence": {
+        "task": {
+          "id": "3bcc4a1c-9675-4cbf-8370-7b0bd4a173a2",
+          "parentId": null,
+          "title": "零时长时点",
+          "desc": "独立人员工作页",
+          "creatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "businessOwnerId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "assigneeIds": [
+            "4ce9a359-10d8-524d-8232-c73416f398d0"
+          ],
+          "selfCreated": false,
+          "createdAt": {},
+          "allDay": false,
+          "start": {},
+          "due": {},
+          "urgency": "中",
+          "status": "todo",
+          "progressNote": "",
+          "reviewNote": "",
+          "frozen": false,
+          "pinned": false,
+          "assignedAt": null,
+          "pendingKind": null,
+          "tag": null,
+          "tagId": null,
+          "tablePinned": false,
+          "canTablePin": true,
+          "rowVersion": 2,
+          "acceptanceCriteria": "",
+          "raw": {
+            "id": "3bcc4a1c-9675-4cbf-8370-7b0bd4a173a2",
+            "taskId": "3bcc4a1c-9675-4cbf-8370-7b0bd4a173a2",
+            "versionNo": 1,
+            "title": "零时长时点",
+            "description": "独立人员工作页",
+            "acceptanceCriteria": "",
+            "priority": "medium",
+            "allDay": false,
+            "startAt": "2026-11-22T04:00:00Z",
+            "dueAt": "2026-11-22T04:00:00Z",
+            "startDate": null,
+            "dueDate": null,
+            "executionState": "todo",
+            "progressNote": "",
+            "status": "applied",
+            "createdBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "createdAt": "2026-11-18T16:18:45.099105Z",
+            "allDayCutoffTime": null,
+            "assigneeIds": [
+              "4ce9a359-10d8-524d-8232-c73416f398d0"
+            ],
+            "tags": [],
+            "tagIds": [],
+            "tagId": null,
+            "tag": null,
+            "parentTaskId": null,
+            "parentUnavailable": false,
+            "versionId": "bf59ff65-adca-4fa9-ae3d-25e9335ce7ea",
+            "currentVersionId": "bf59ff65-adca-4fa9-ae3d-25e9335ce7ea",
+            "originalCreatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "businessOwnerId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "rowVersion": 2,
+            "executionRound": 1,
+            "scheduleVersion": 1,
+            "dueVersion": 1,
+            "published": true,
+            "updatedAt": "2026-11-18T16:18:45.103181Z",
+            "pending": false,
+            "frozen": false,
+            "pendingKind": null,
+            "canReschedule": true,
+            "canPin": false,
+            "canTablePin": true,
+            "tablePinned": false,
+            "editableFields": [
+              "allDay",
+              "startAt",
+              "dueAt",
+              "startDate",
+              "dueDate",
+              "title",
+              "description",
+              "acceptanceCriteria",
+              "priority",
+              "tagIds",
+              "parentTaskId",
+              "assigneeIds"
+            ],
+            "route": {
+              "reviewerId": null,
+              "basisAssigneeId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+              "path": [],
+              "reason": "founder-exempt",
+              "reasonText": "固定创始人操作，记录原因后直接生效",
+              "authzVersion": 1,
+              "reviewerAvailable": false,
+              "blocked": false,
+              "creation": false,
+              "participants": [
+                {
+                  "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+                  "displayName": "founder"
+                }
+              ]
+            },
+            "reviewerId": null,
+            "participants": [
+              {
+                "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+                "displayName": "alpha-one-employee"
+              },
+              {
+                "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+                "displayName": "founder"
+              }
+            ],
+            "pinned": false,
+            "pendingRoute": {},
+            "canHandover": false,
+            "handoverSources": [],
+            "handoverPresets": {},
+            "children": []
+          }
+        },
+        "start": 0,
+        "end": 1,
+        "lane": 0,
+        "left": 0,
+        "width": 100,
+        "before": false,
+        "after": false,
+        "point": true
+      }
+    },
+    {
+      "name": "full business day covers exactly one day",
+      "pass": true
+    },
+    {
+      "name": "month fits 320x740",
+      "pass": true
+    },
+    {
+      "name": "a long month title is clipped inside its own bar at 320px",
+      "pass": true,
+      "evidence": {
+        "title": "溢出日任务 2027-01-07 0",
+        "ellipsis": "ellipsis",
+        "scrollWidth": 114,
+        "clientWidth": 28,
+        "inside": true
+      }
+    },
+    {
+      "name": "month fits 390x844",
+      "pass": true
+    },
+    {
+      "name": "month fits 1440x900",
+      "pass": true
+    },
+    {
+      "name": "month fits 390x600",
+      "pass": true
+    },
+    {
+      "name": "the sparse month block is mounted with four to six week rows",
+      "pass": true,
+      "evidence": 5
+    },
+    {
+      "name": "sparse month keeps the date, track and overflow bands apart",
+      "pass": true,
+      "evidence": {
+        "problems": [],
+        "weeks": 5
+      }
+    },
+    {
+      "name": "the sparse month starts with blank columns before its first real date",
+      "pass": true,
+      "evidence": 6
+    },
+    {
+      "name": "only the Thursday and Sunday above three tasks show overflow, each counted once",
+      "pass": true,
+      "evidence": {
+        "2027-01-07": {
+          "count": "+1",
+          "column": "4"
+        },
+        "2027-01-31": {
+          "count": "+1",
+          "column": "7"
+        }
+      }
+    },
+    {
+      "name": "the sparse Thursday overflow opens its own complete day list, not a shifted date",
+      "pass": true
+    },
+    {
+      "name": "the quiet month block is mounted for the layout audit",
+      "pass": true,
+      "evidence": 5
+    },
+    {
+      "name": "the three visible tracks stay inside the reserved band for every week",
+      "pass": true,
+      "evidence": {
+        "problems": [],
+        "weeks": 5
+      }
+    },
+    {
+      "name": "a task under review keeps its dashed frame without leaving the track band",
+      "pass": true,
+      "evidence": {
+        "pending": true,
+        "outline": "dashed",
+        "border": "0px"
+      }
+    },
+    {
+      "name": "staff month exposes no drag or resize entry",
+      "pass": true
+    },
+    {
+      "name": "staff month remains keyboard accessible",
+      "pass": true
+    },
+    {
+      "name": "keyboard day list returns to staff month",
+      "pass": true
+    },
+    {
+      "name": "month task opens actual date list",
+      "pass": true
+    },
+    {
+      "name": "month list return preserves month mode",
+      "pass": true
+    },
+    {
+      "name": "overflow opens complete date list",
+      "pass": true
+    },
+    {
+      "name": "complete date list enters day axis",
+      "pass": true
+    },
+    {
+      "name": "day has full axis overlapping columns and independent all-day area",
+      "pass": true
+    },
+    {
+      "name": "completed task is marked in the axis and the all-day area",
+      "pass": true
+    },
+    {
+      "name": "timed task captions start at their actual bar top",
+      "pass": true
+    },
+    {
+      "name": "staff day axis exposes no drag or resize entry",
+      "pass": true
+    },
+    {
+      "name": "staff day bar opens the normal task detail",
+      "pass": true
+    },
+    {
+      "name": "day detail back restores staff axis",
+      "pass": true
+    },
+    {
+      "name": "day axis fits 320",
+      "pass": true
+    },
+    {
+      "name": "day axis fits 390",
+      "pass": true
+    },
+    {
+      "name": "day axis fits 1440",
+      "pass": true
+    },
+    {
+      "name": "only actual selected person day coverage",
+      "pass": true,
+      "evidence": [
+        "8e5df435-3be2-41ab-8a88-3a9f3b0c2b76",
+        "64933eeb-59b9-40ed-9a69-90503d9409a6",
+        "20f82ba9-a327-40ef-9184-71ed640a93f6",
+        "37a7f51d-8e27-4a58-bea5-ef7b7a9636be",
+        "3a8ce2fd-ff60-4996-ba97-ee28cac985fb",
+        "e8394c4a-6ac1-4053-acb0-261076a9c72f",
+        "8206edc0-fd9d-45ee-a0b2-a479bfd41fa2",
+        "664e85e1-f423-452b-8f63-84b408b9da09",
+        "c81386c3-9a09-4fa1-b1c3-509ecff50899",
+        "67660374-a4f2-4240-a89e-08d81ec4bc48",
+        "5fe65853-487a-4eac-9de9-5b1c187dbc5d",
+        "3bcc4a1c-9675-4cbf-8370-7b0bd4a173a2",
+        "46755b00-54f6-4857-985e-a6fd318987f9"
+      ]
+    },
+    {
+      "name": "completed task is marked in the day list",
+      "pass": true
+    },
+    {
+      "name": "day navigation advances one day",
+      "pass": true
+    },
+    {
+      "name": "day jump restored",
+      "pass": true
+    },
+    {
+      "name": "cross-day and point labels identifiable",
+      "pass": true
+    },
+    {
+      "name": "schedule fits 320",
+      "pass": true,
+      "evidence": {
+        "w": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "name": "schedule fits 390",
+      "pass": true,
+      "evidence": {
+        "w": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "schedule fits 1440",
+      "pass": true,
+      "evidence": {
+        "w": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "name": "schedule task detail opens",
+      "pass": true
+    },
+    {
+      "name": "task return preserves selected date and focus",
+      "pass": true
+    },
+    {
+      "name": "Escape returns from a staff child detail to the work page",
+      "pass": true
+    },
+    {
+      "name": "header close pops only the staff child detail",
+      "pass": true
+    },
+    {
+      "name": "overlay dismiss pops only the staff child detail",
+      "pass": true
+    },
+    {
+      "name": "logs tab ready",
+      "pass": true
+    },
+    {
+      "name": "logs first page and more",
+      "pass": true
+    },
+    {
+      "name": "all log pages reachable",
+      "pass": true
+    },
+    {
+      "name": "logs fit 320",
+      "pass": true
+    },
+    {
+      "name": "logs fit 390",
+      "pass": true
+    },
+    {
+      "name": "logs fit 1440",
+      "pass": true
+    },
+    {
+      "name": "staff log opens full detail and comments",
+      "pass": true
+    },
+    {
+      "name": "log return preserves person tab",
+      "pass": true
+    },
+    {
+      "name": "schedule tab is ready before the slow request",
+      "pass": true
+    },
+    {
+      "name": "slow request can be held",
+      "pass": true
+    },
+    {
+      "name": "rapid tab switch loads latest content",
+      "pass": true
+    },
+    {
+      "name": "old response cannot overwrite selected tab",
+      "pass": true
+    },
+    {
+      "name": "lost relationship clears prior content",
+      "pass": true
+    },
+    {
+      "name": "personal log page remains personal",
+      "pass": true
+    },
+    {
+      "name": "self list matches staff reading font 320",
+      "pass": true,
+      "evidence": {
+        "size": "15px",
+        "line": "23.25px",
+        "overflow": false
+      }
+    },
+    {
+      "name": "self list matches staff reading font 390",
+      "pass": true,
+      "evidence": {
+        "size": "15px",
+        "line": "23.25px",
+        "overflow": false
+      }
+    },
+    {
+      "name": "self list matches staff reading font 1440",
+      "pass": true,
+      "evidence": {
+        "size": "15px",
+        "line": "23.25px",
+        "overflow": false
+      }
+    },
+    {
+      "name": "self log detail reading ready",
+      "pass": true
+    },
+    {
+      "name": "self detail uses same reading size",
+      "pass": true
+    },
+    {
+      "name": "login alpha-one-head",
+      "pass": true
+    },
+    {
+      "name": "team head only sees direct employee",
+      "pass": true
+    },
+    {
+      "name": "cannot open non-report through UI action",
+      "pass": true
+    },
+    {
+      "name": "login alpha-one-employee",
+      "pass": true
+    },
+    {
+      "name": "ordinary employee empty tree",
+      "pass": true
+    },
+    {
+      "name": "login alpha-one-head",
+      "pass": true
+    },
+    {
+      "name": "head opens the subordinate card",
+      "pass": true
+    },
+    {
+      "name": "head opens the subordinate work page",
+      "pass": true
+    },
+    {
+      "name": "unpublished application cannot open an approval detail from subordinate navigation",
+      "pass": true
+    },
+    {
+      "name": "overlapping business owner remains comment-only in subordinate detail",
+      "pass": true
+    },
+    {
+      "name": "old business action cannot send a write from subordinate navigation",
+      "pass": true,
+      "evidence": {
+        "denied": true,
+        "sent": 0
+      }
+    },
+    {
+      "name": "comment write remains available in subordinate navigation",
+      "pass": true
+    },
+    {
+      "name": "other subordinate task remains comment-only",
+      "pass": true
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

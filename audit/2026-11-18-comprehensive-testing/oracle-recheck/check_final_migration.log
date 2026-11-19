@@ -1,0 +1,14 @@
+usage: flyway_migrate.py [-h] --database DATABASE
+                         [--target {20,21,22,23,24,25,26}] [--log LOG]
+flyway_migrate.py: error: argument --target: invalid choice: '36' (choose from '20', '21', '22', '23', '24', '25', '26')
+Traceback (most recent call last):
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-8uzue4lo/project/backend/scripts/check_final_migration.py", line 97, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-8uzue4lo/project/backend/scripts/check_final_migration.py", line 50, in main
+    subprocess.run([sys.executable,str(BASE/'scripts/flyway_migrate.py'),'--database',fresh.database,'--target',str(latest),'--log',str(OUTPUT.with_suffix('.log'))],check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/opt/homebrew/opt/python@3.14/bin/python3.14', '/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-8uzue4lo/project/backend/scripts/flyway_migrate.py', '--database', 'pandora_precheck_final_6380a5b27866', '--target', '36', '--log', '/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-8uzue4lo/project/audit/refactor-pandora-organization-and-workflows/final-migration.log']' returned non-zero exit status 2.

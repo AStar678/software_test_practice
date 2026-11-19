@@ -1,0 +1,1144 @@
+{
+  "updated": "2026-11-18T17:07:14.700Z",
+  "checks": [
+    {
+      "check": "login form is ready",
+      "pass": true
+    },
+    {
+      "check": "employee login loads the workspace",
+      "pass": true
+    },
+    {
+      "check": "task table queries the real server and loads 50 rows",
+      "pass": true
+    },
+    {
+      "check": "the table uses the server total and exact current-page order",
+      "pass": true,
+      "evidence": {
+        "total": 55,
+        "path": "/tasks/table?relation=all&completion=all&sort=startAt&direction=asc&limit=50&offset=0",
+        "serverItems": [
+          "动画交付任务 039",
+          "动画交付任务 028",
+          "动画交付任务 024",
+          "动画交付任务 015",
+          "动画交付任务 035",
+          "动画交付任务 014",
+          "动画交付任务 025",
+          "a lower",
+          "动画交付任务 021",
+          "动画交付任务 045",
+          "分镜10",
+          "动画交付任务 046",
+          "动画交付任务 020",
+          "动画交付任务 043",
+          "动画交付任务 042",
+          "动画交付任务 038",
+          "动画交付任务 044",
+          "动画交付任务 049",
+          "动画交付任务 048",
+          "动画交付任务 053",
+          "动画交付任务 018",
+          "动画交付任务 012",
+          "动画交付任务 009",
+          "动画交付任务 047",
+          "动画交付任务 010",
+          "动画交付任务 033",
+          "动画交付任务 051",
+          "动画交付任务 013",
+          "动画交付任务 022",
+          "分镜2",
+          "动画交付任务 029",
+          "波塞冬分镜",
+          "动画交付任务 026",
+          "动画交付任务 008",
+          "动画交付任务 007",
+          "动画交付任务 016",
+          "A upper",
+          "动画交付任务 032",
+          "动画交付任务 011",
+          "动画交付任务 031",
+          "动画交付任务 041",
+          "动画交付任务 036",
+          "动画交付任务 030",
+          "动画交付任务 050",
+          "动画交付任务 054",
+          "动画交付任务 052",
+          "动画交付任务 027",
+          "动画交付任务 034",
+          "动画交付任务 040",
+          "动画交付任务 006"
+        ],
+        "shown": [
+          "07b2bf3d-00b0-41c6-b118-9d63f5d27dae",
+          "082e7952-ef98-4797-a21b-c0273e6da1f9",
+          "0e3936f7-e8e4-48e1-96f8-d347ad80f942",
+          "12b9fe07-14e7-4761-a228-5cc40bc2d09a",
+          "15419780-d80d-4705-86bf-96c018552d54",
+          "16a5a850-8bf1-4456-80d1-ddb16c0e89a4",
+          "181a0e41-9524-4fc9-a71f-69b6fd997c92",
+          "1ba7387f-c23f-43f9-adb5-480ce640cd74",
+          "2b5cd441-2a86-4b75-98a0-2720d5f81d53",
+          "355d3bb4-d396-4e93-ad22-c9e5df127f21",
+          "3d5385c6-8ef3-4150-91ec-3fa4635d3e57",
+          "3d7091d0-f00f-4b71-80b8-4325216bd610",
+          "3d7f8cdc-5260-46fe-a68f-c1f6f519b635",
+          "3ec263e3-3a85-4824-b92e-0e6be35ea123",
+          "4234937d-c96b-4ff5-9852-c98b059d227e",
+          "443bb0c1-5f96-4328-83f1-95618bd0426c",
+          "45d55e06-d9ae-46a8-99fe-1bffdfb2df8e",
+          "4a3d4938-b90b-41cc-a1ac-0d443d8ffa3b",
+          "4f7159ce-c4a0-4715-beec-29f77179fdeb",
+          "52f9d007-8d6d-48cd-ab52-abf39860787a",
+          "5d436464-5d20-48f4-8f86-72746021b1e6",
+          "6087f625-004c-439f-bd9d-318281b634fa",
+          "6bd209ee-e534-41d3-a4c7-fee7e95d98aa",
+          "70df6c7e-c8c1-4b2a-bf4d-15d74d4fee03",
+          "72e9468b-4a7a-4aa3-a518-01bfb3d9fcb8",
+          "78fef481-939c-4319-b631-536302a816c3",
+          "7917b3f5-1e44-4c81-bed4-fbc9ade84e18",
+          "7a9a35b2-9ccd-4266-a39c-8d07d57e447c",
+          "873dd1c2-b0cd-4854-a69e-3a571e591a92",
+          "8a15376d-50b3-4082-974c-fb39da2ac0e6",
+          "8f9bb0fd-f35e-4164-86cc-ba3abb60df4c",
+          "8fb7c906-33fa-4826-88af-4a85ae68ccb1",
+          "935c2456-eaab-48b7-b0a2-8d9080e4fd6a",
+          "a3d5e800-67e6-4c02-bbe9-599f2a32ea25",
+          "a3ede4d0-add3-44ff-9858-cd310037d65d",
+          "a61d18b3-86a3-4fa2-b311-31dfe631583f",
+          "ad353eb2-6703-43b9-abb1-0a57d07e9399",
+          "aeb2ee56-1ef3-441c-9267-67394d76ca2e",
+          "b0672681-82d3-4e90-9861-6b86c8052e94",
+          "b31463f3-39bd-4fee-b8da-ee441d45478f",
+          "b73f81d4-9fe5-48a3-9904-7cba642727b8",
+          "b90619ee-3499-4911-bdcd-5b5d1b441ebb",
+          "bf240c4b-0767-4cc8-8b21-38290fc01b75",
+          "c649263a-5dba-46a4-9294-ef6fad513a23",
+          "d47d3e9f-f083-4ffe-bd39-abc071fe2c64",
+          "d90de983-06e6-4720-8858-2d30f923595c",
+          "d9ef4c9f-bfed-46a3-bdc6-3f1c9cfc0e81",
+          "da55fe00-84d3-420a-8d05-175f26c19f95",
+          "db50d068-43e0-43d2-84d4-aaf0fb683e7f",
+          "e2d5579f-bac9-4e88-8227-3b88d6220921"
+        ],
+        "ids": [
+          "07b2bf3d-00b0-41c6-b118-9d63f5d27dae",
+          "082e7952-ef98-4797-a21b-c0273e6da1f9",
+          "0e3936f7-e8e4-48e1-96f8-d347ad80f942",
+          "12b9fe07-14e7-4761-a228-5cc40bc2d09a",
+          "15419780-d80d-4705-86bf-96c018552d54",
+          "16a5a850-8bf1-4456-80d1-ddb16c0e89a4",
+          "181a0e41-9524-4fc9-a71f-69b6fd997c92",
+          "1ba7387f-c23f-43f9-adb5-480ce640cd74",
+          "2b5cd441-2a86-4b75-98a0-2720d5f81d53",
+          "355d3bb4-d396-4e93-ad22-c9e5df127f21",
+          "3d5385c6-8ef3-4150-91ec-3fa4635d3e57",
+          "3d7091d0-f00f-4b71-80b8-4325216bd610",
+          "3d7f8cdc-5260-46fe-a68f-c1f6f519b635",
+          "3ec263e3-3a85-4824-b92e-0e6be35ea123",
+          "4234937d-c96b-4ff5-9852-c98b059d227e",
+          "443bb0c1-5f96-4328-83f1-95618bd0426c",
+          "45d55e06-d9ae-46a8-99fe-1bffdfb2df8e",
+          "4a3d4938-b90b-41cc-a1ac-0d443d8ffa3b",
+          "4f7159ce-c4a0-4715-beec-29f77179fdeb",
+          "52f9d007-8d6d-48cd-ab52-abf39860787a",
+          "5d436464-5d20-48f4-8f86-72746021b1e6",
+          "6087f625-004c-439f-bd9d-318281b634fa",
+          "6bd209ee-e534-41d3-a4c7-fee7e95d98aa",
+          "70df6c7e-c8c1-4b2a-bf4d-15d74d4fee03",
+          "72e9468b-4a7a-4aa3-a518-01bfb3d9fcb8",
+          "78fef481-939c-4319-b631-536302a816c3",
+          "7917b3f5-1e44-4c81-bed4-fbc9ade84e18",
+          "7a9a35b2-9ccd-4266-a39c-8d07d57e447c",
+          "873dd1c2-b0cd-4854-a69e-3a571e591a92",
+          "8a15376d-50b3-4082-974c-fb39da2ac0e6",
+          "8f9bb0fd-f35e-4164-86cc-ba3abb60df4c",
+          "8fb7c906-33fa-4826-88af-4a85ae68ccb1",
+          "935c2456-eaab-48b7-b0a2-8d9080e4fd6a",
+          "a3d5e800-67e6-4c02-bbe9-599f2a32ea25",
+          "a3ede4d0-add3-44ff-9858-cd310037d65d",
+          "a61d18b3-86a3-4fa2-b311-31dfe631583f",
+          "ad353eb2-6703-43b9-abb1-0a57d07e9399",
+          "aeb2ee56-1ef3-441c-9267-67394d76ca2e",
+          "b0672681-82d3-4e90-9861-6b86c8052e94",
+          "b31463f3-39bd-4fee-b8da-ee441d45478f",
+          "b73f81d4-9fe5-48a3-9904-7cba642727b8",
+          "b90619ee-3499-4911-bdcd-5b5d1b441ebb",
+          "bf240c4b-0767-4cc8-8b21-38290fc01b75",
+          "c649263a-5dba-46a4-9294-ef6fad513a23",
+          "d47d3e9f-f083-4ffe-bd39-abc071fe2c64",
+          "d90de983-06e6-4720-8858-2d30f923595c",
+          "d9ef4c9f-bfed-46a3-bdc6-3f1c9cfc0e81",
+          "da55fe00-84d3-420a-8d05-175f26c19f95",
+          "db50d068-43e0-43d2-84d4-aaf0fb683e7f",
+          "e2d5579f-bac9-4e88-8227-3b88d6220921"
+        ],
+        "offset": 0
+      }
+    },
+    {
+      "check": "relation=own maps to the server assigned relation and keeps the full total",
+      "pass": true
+    },
+    {
+      "check": "relation=created returns no invented rows for an assigned-only employee",
+      "pass": true
+    },
+    {
+      "check": "a title sort asks the server for title/asc and resets the page",
+      "pass": true
+    },
+    {
+      "check": "the visible page follows the server order without a local re-sort",
+      "pass": true,
+      "evidence": {
+        "titles": [
+          "a lower",
+          "A upper",
+          "阿波罗分镜",
+          "波塞冬分镜",
+          "动画交付任务 006",
+          "动画交付任务 007",
+          "动画交付任务 008",
+          "动画交付任务 009",
+          "动画交付任务 010",
+          "动画交付任务 011",
+          "动画交付任务 012",
+          "动画交付任务 013",
+          "动画交付任务 014",
+          "动画交付任务 015",
+          "动画交付任务 016",
+          "动画交付任务 017",
+          "动画交付任务 018",
+          "动画交付任务 019",
+          "动画交付任务 020",
+          "动画交付任务 021",
+          "动画交付任务 022",
+          "动画交付任务 023",
+          "动画交付任务 024",
+          "动画交付任务 025",
+          "动画交付任务 026",
+          "动画交付任务 027",
+          "动画交付任务 028",
+          "动画交付任务 029",
+          "动画交付任务 030",
+          "动画交付任务 031",
+          "动画交付任务 032",
+          "动画交付任务 033",
+          "动画交付任务 034",
+          "动画交付任务 035",
+          "动画交付任务 036",
+          "动画交付任务 037",
+          "动画交付任务 038",
+          "动画交付任务 039",
+          "动画交付任务 040",
+          "动画交付任务 041",
+          "动画交付任务 042",
+          "动画交付任务 043",
+          "动画交付任务 044",
+          "动画交付任务 045",
+          "动画交付任务 046",
+          "动画交付任务 047",
+          "动画交付任务 048",
+          "动画交付任务 049",
+          "动画交付任务 050",
+          "动画交付任务 051"
+        ],
+        "server": [
+          "a lower",
+          "A upper",
+          "阿波罗分镜",
+          "波塞冬分镜",
+          "动画交付任务 006",
+          "动画交付任务 007",
+          "动画交付任务 008",
+          "动画交付任务 009",
+          "动画交付任务 010",
+          "动画交付任务 011",
+          "动画交付任务 012",
+          "动画交付任务 013",
+          "动画交付任务 014",
+          "动画交付任务 015",
+          "动画交付任务 016",
+          "动画交付任务 017",
+          "动画交付任务 018",
+          "动画交付任务 019",
+          "动画交付任务 020",
+          "动画交付任务 021",
+          "动画交付任务 022",
+          "动画交付任务 023",
+          "动画交付任务 024",
+          "动画交付任务 025",
+          "动画交付任务 026",
+          "动画交付任务 027",
+          "动画交付任务 028",
+          "动画交付任务 029",
+          "动画交付任务 030",
+          "动画交付任务 031",
+          "动画交付任务 032",
+          "动画交付任务 033",
+          "动画交付任务 034",
+          "动画交付任务 035",
+          "动画交付任务 036",
+          "动画交付任务 037",
+          "动画交付任务 038",
+          "动画交付任务 039",
+          "动画交付任务 040",
+          "动画交付任务 041",
+          "动画交付任务 042",
+          "动画交付任务 043",
+          "动画交付任务 044",
+          "动画交付任务 045",
+          "动画交付任务 046",
+          "动画交付任务 047",
+          "动画交付任务 048",
+          "动画交付任务 049",
+          "动画交付任务 050",
+          "动画交付任务 051"
+        ]
+      }
+    },
+    {
+      "check": "the second page queries offset=50 and keeps the full total",
+      "pass": true
+    },
+    {
+      "check": "the second page contains the remaining five rows",
+      "pass": true,
+      "evidence": {
+        "rows": 5,
+        "ids": [
+          "d90de983-06e6-4720-8858-2d30f923595c",
+          "52f9d007-8d6d-48cd-ab52-abf39860787a",
+          "d47d3e9f-f083-4ffe-bd39-abc071fe2c64",
+          "3d5385c6-8ef3-4150-91ec-3fa4635d3e57",
+          "8a15376d-50b3-4082-974c-fb39da2ac0e6"
+        ]
+      }
+    },
+    {
+      "check": "the selected task detail opens",
+      "pass": true
+    },
+    {
+      "check": "the normal detail exposes the independent table-pin action",
+      "pass": true
+    },
+    {
+      "check": "the later-page task is table-pinned and the table reloads",
+      "pass": true
+    },
+    {
+      "check": "the pinned later-page task appears first after the server re-query",
+      "pass": true,
+      "evidence": {
+        "pinId": "d90de983-06e6-4720-8858-2d30f923595c",
+        "pinState": {
+          "page": 0,
+          "loaded": true,
+          "loading": false,
+          "error": null,
+          "total": 55,
+          "path": "/tasks/table?relation=all&completion=all&sort=title&direction=asc&limit=50&offset=0",
+          "ids": [
+            "d90de983-06e6-4720-8858-2d30f923595c",
+            "1ba7387f-c23f-43f9-adb5-480ce640cd74",
+            "ad353eb2-6703-43b9-abb1-0a57d07e9399",
+            "fa489f5a-b182-469c-b393-134416a9f3fe",
+            "8fb7c906-33fa-4826-88af-4a85ae68ccb1",
+            "e2d5579f-bac9-4e88-8227-3b88d6220921",
+            "a3ede4d0-add3-44ff-9858-cd310037d65d",
+            "a3d5e800-67e6-4c02-bbe9-599f2a32ea25",
+            "6bd209ee-e534-41d3-a4c7-fee7e95d98aa",
+            "72e9468b-4a7a-4aa3-a518-01bfb3d9fcb8",
+            "b0672681-82d3-4e90-9861-6b86c8052e94",
+            "6087f625-004c-439f-bd9d-318281b634fa",
+            "7a9a35b2-9ccd-4266-a39c-8d07d57e447c",
+            "16a5a850-8bf1-4456-80d1-ddb16c0e89a4",
+            "12b9fe07-14e7-4761-a228-5cc40bc2d09a",
+            "a61d18b3-86a3-4fa2-b311-31dfe631583f",
+            "ec8bfb06-a9d6-4fba-ad57-8bb00abcd22a",
+            "5d436464-5d20-48f4-8f86-72746021b1e6",
+            "e5926781-2d00-4635-9539-09d58e201414",
+            "3d7f8cdc-5260-46fe-a68f-c1f6f519b635",
+            "2b5cd441-2a86-4b75-98a0-2720d5f81d53",
+            "873dd1c2-b0cd-4854-a69e-3a571e591a92",
+            "feb31a3f-da81-405e-8d37-eb2b14083954",
+            "0e3936f7-e8e4-48e1-96f8-d347ad80f942",
+            "181a0e41-9524-4fc9-a71f-69b6fd997c92",
+            "935c2456-eaab-48b7-b0a2-8d9080e4fd6a",
+            "d9ef4c9f-bfed-46a3-bdc6-3f1c9cfc0e81",
+            "082e7952-ef98-4797-a21b-c0273e6da1f9",
+            "8f9bb0fd-f35e-4164-86cc-ba3abb60df4c",
+            "bf240c4b-0767-4cc8-8b21-38290fc01b75",
+            "b31463f3-39bd-4fee-b8da-ee441d45478f",
+            "aeb2ee56-1ef3-441c-9267-67394d76ca2e",
+            "78fef481-939c-4319-b631-536302a816c3",
+            "da55fe00-84d3-420a-8d05-175f26c19f95",
+            "15419780-d80d-4705-86bf-96c018552d54",
+            "b90619ee-3499-4911-bdcd-5b5d1b441ebb",
+            "e75c61ae-76e7-4ed5-b5f9-e93a176ff001",
+            "443bb0c1-5f96-4328-83f1-95618bd0426c",
+            "07b2bf3d-00b0-41c6-b118-9d63f5d27dae",
+            "db50d068-43e0-43d2-84d4-aaf0fb683e7f",
+            "b73f81d4-9fe5-48a3-9904-7cba642727b8",
+            "4234937d-c96b-4ff5-9852-c98b059d227e",
+            "3ec263e3-3a85-4824-b92e-0e6be35ea123",
+            "45d55e06-d9ae-46a8-99fe-1bffdfb2df8e",
+            "355d3bb4-d396-4e93-ad22-c9e5df127f21",
+            "3d7091d0-f00f-4b71-80b8-4325216bd610",
+            "70df6c7e-c8c1-4b2a-bf4d-15d74d4fee03",
+            "4f7159ce-c4a0-4715-beec-29f77179fdeb",
+            "4a3d4938-b90b-41cc-a1ac-0d443d8ffa3b",
+            "c649263a-5dba-46a4-9294-ef6fad513a23"
+          ],
+          "pinned": [
+            {
+              "id": "d90de983-06e6-4720-8858-2d30f923595c",
+              "pin": true
+            },
+            {
+              "id": "1ba7387f-c23f-43f9-adb5-480ce640cd74",
+              "pin": false
+            },
+            {
+              "id": "ad353eb2-6703-43b9-abb1-0a57d07e9399",
+              "pin": false
+            },
+            {
+              "id": "fa489f5a-b182-469c-b393-134416a9f3fe",
+              "pin": false
+            },
+            {
+              "id": "8fb7c906-33fa-4826-88af-4a85ae68ccb1",
+              "pin": false
+            },
+            {
+              "id": "e2d5579f-bac9-4e88-8227-3b88d6220921",
+              "pin": false
+            },
+            {
+              "id": "a3ede4d0-add3-44ff-9858-cd310037d65d",
+              "pin": false
+            },
+            {
+              "id": "a3d5e800-67e6-4c02-bbe9-599f2a32ea25",
+              "pin": false
+            },
+            {
+              "id": "6bd209ee-e534-41d3-a4c7-fee7e95d98aa",
+              "pin": false
+            },
+            {
+              "id": "72e9468b-4a7a-4aa3-a518-01bfb3d9fcb8",
+              "pin": false
+            },
+            {
+              "id": "b0672681-82d3-4e90-9861-6b86c8052e94",
+              "pin": false
+            },
+            {
+              "id": "6087f625-004c-439f-bd9d-318281b634fa",
+              "pin": false
+            },
+            {
+              "id": "7a9a35b2-9ccd-4266-a39c-8d07d57e447c",
+              "pin": false
+            },
+            {
+              "id": "16a5a850-8bf1-4456-80d1-ddb16c0e89a4",
+              "pin": false
+            },
+            {
+              "id": "12b9fe07-14e7-4761-a228-5cc40bc2d09a",
+              "pin": false
+            },
+            {
+              "id": "a61d18b3-86a3-4fa2-b311-31dfe631583f",
+              "pin": false
+            },
+            {
+              "id": "ec8bfb06-a9d6-4fba-ad57-8bb00abcd22a",
+              "pin": false
+            },
+            {
+              "id": "5d436464-5d20-48f4-8f86-72746021b1e6",
+              "pin": false
+            },
+            {
+              "id": "e5926781-2d00-4635-9539-09d58e201414",
+              "pin": false
+            },
+            {
+              "id": "3d7f8cdc-5260-46fe-a68f-c1f6f519b635",
+              "pin": false
+            },
+            {
+              "id": "2b5cd441-2a86-4b75-98a0-2720d5f81d53",
+              "pin": false
+            },
+            {
+              "id": "873dd1c2-b0cd-4854-a69e-3a571e591a92",
+              "pin": false
+            },
+            {
+              "id": "feb31a3f-da81-405e-8d37-eb2b14083954",
+              "pin": false
+            },
+            {
+              "id": "0e3936f7-e8e4-48e1-96f8-d347ad80f942",
+              "pin": false
+            },
+            {
+              "id": "181a0e41-9524-4fc9-a71f-69b6fd997c92",
+              "pin": false
+            },
+            {
+              "id": "935c2456-eaab-48b7-b0a2-8d9080e4fd6a",
+              "pin": false
+            },
+            {
+              "id": "d9ef4c9f-bfed-46a3-bdc6-3f1c9cfc0e81",
+              "pin": false
+            },
+            {
+              "id": "082e7952-ef98-4797-a21b-c0273e6da1f9",
+              "pin": false
+            },
+            {
+              "id": "8f9bb0fd-f35e-4164-86cc-ba3abb60df4c",
+              "pin": false
+            },
+            {
+              "id": "bf240c4b-0767-4cc8-8b21-38290fc01b75",
+              "pin": false
+            },
+            {
+              "id": "b31463f3-39bd-4fee-b8da-ee441d45478f",
+              "pin": false
+            },
+            {
+              "id": "aeb2ee56-1ef3-441c-9267-67394d76ca2e",
+              "pin": false
+            },
+            {
+              "id": "78fef481-939c-4319-b631-536302a816c3",
+              "pin": false
+            },
+            {
+              "id": "da55fe00-84d3-420a-8d05-175f26c19f95",
+              "pin": false
+            },
+            {
+              "id": "15419780-d80d-4705-86bf-96c018552d54",
+              "pin": false
+            },
+            {
+              "id": "b90619ee-3499-4911-bdcd-5b5d1b441ebb",
+              "pin": false
+            },
+            {
+              "id": "e75c61ae-76e7-4ed5-b5f9-e93a176ff001",
+              "pin": false
+            },
+            {
+              "id": "443bb0c1-5f96-4328-83f1-95618bd0426c",
+              "pin": false
+            },
+            {
+              "id": "07b2bf3d-00b0-41c6-b118-9d63f5d27dae",
+              "pin": false
+            },
+            {
+              "id": "db50d068-43e0-43d2-84d4-aaf0fb683e7f",
+              "pin": false
+            },
+            {
+              "id": "b73f81d4-9fe5-48a3-9904-7cba642727b8",
+              "pin": false
+            },
+            {
+              "id": "4234937d-c96b-4ff5-9852-c98b059d227e",
+              "pin": false
+            },
+            {
+              "id": "3ec263e3-3a85-4824-b92e-0e6be35ea123",
+              "pin": false
+            },
+            {
+              "id": "45d55e06-d9ae-46a8-99fe-1bffdfb2df8e",
+              "pin": false
+            },
+            {
+              "id": "355d3bb4-d396-4e93-ad22-c9e5df127f21",
+              "pin": false
+            },
+            {
+              "id": "3d7091d0-f00f-4b71-80b8-4325216bd610",
+              "pin": false
+            },
+            {
+              "id": "70df6c7e-c8c1-4b2a-bf4d-15d74d4fee03",
+              "pin": false
+            },
+            {
+              "id": "4f7159ce-c4a0-4715-beec-29f77179fdeb",
+              "pin": false
+            },
+            {
+              "id": "4a3d4938-b90b-41cc-a1ac-0d443d8ffa3b",
+              "pin": false
+            },
+            {
+              "id": "c649263a-5dba-46a4-9294-ef6fad513a23",
+              "pin": false
+            }
+          ],
+          "dom": [
+            "d90de983-06e6-4720-8858-2d30f923595c",
+            "1ba7387f-c23f-43f9-adb5-480ce640cd74",
+            "ad353eb2-6703-43b9-abb1-0a57d07e9399",
+            "fa489f5a-b182-469c-b393-134416a9f3fe",
+            "8fb7c906-33fa-4826-88af-4a85ae68ccb1",
+            "e2d5579f-bac9-4e88-8227-3b88d6220921",
+            "a3ede4d0-add3-44ff-9858-cd310037d65d",
+            "a3d5e800-67e6-4c02-bbe9-599f2a32ea25",
+            "6bd209ee-e534-41d3-a4c7-fee7e95d98aa",
+            "72e9468b-4a7a-4aa3-a518-01bfb3d9fcb8",
+            "b0672681-82d3-4e90-9861-6b86c8052e94",
+            "6087f625-004c-439f-bd9d-318281b634fa",
+            "7a9a35b2-9ccd-4266-a39c-8d07d57e447c",
+            "16a5a850-8bf1-4456-80d1-ddb16c0e89a4",
+            "12b9fe07-14e7-4761-a228-5cc40bc2d09a",
+            "a61d18b3-86a3-4fa2-b311-31dfe631583f",
+            "ec8bfb06-a9d6-4fba-ad57-8bb00abcd22a",
+            "5d436464-5d20-48f4-8f86-72746021b1e6",
+            "e5926781-2d00-4635-9539-09d58e201414",
+            "3d7f8cdc-5260-46fe-a68f-c1f6f519b635",
+            "2b5cd441-2a86-4b75-98a0-2720d5f81d53",
+            "873dd1c2-b0cd-4854-a69e-3a571e591a92",
+            "feb31a3f-da81-405e-8d37-eb2b14083954",
+            "0e3936f7-e8e4-48e1-96f8-d347ad80f942",
+            "181a0e41-9524-4fc9-a71f-69b6fd997c92",
+            "935c2456-eaab-48b7-b0a2-8d9080e4fd6a",
+            "d9ef4c9f-bfed-46a3-bdc6-3f1c9cfc0e81",
+            "082e7952-ef98-4797-a21b-c0273e6da1f9",
+            "8f9bb0fd-f35e-4164-86cc-ba3abb60df4c",
+            "bf240c4b-0767-4cc8-8b21-38290fc01b75",
+            "b31463f3-39bd-4fee-b8da-ee441d45478f",
+            "aeb2ee56-1ef3-441c-9267-67394d76ca2e",
+            "78fef481-939c-4319-b631-536302a816c3",
+            "da55fe00-84d3-420a-8d05-175f26c19f95",
+            "15419780-d80d-4705-86bf-96c018552d54",
+            "b90619ee-3499-4911-bdcd-5b5d1b441ebb",
+            "e75c61ae-76e7-4ed5-b5f9-e93a176ff001",
+            "443bb0c1-5f96-4328-83f1-95618bd0426c",
+            "07b2bf3d-00b0-41c6-b118-9d63f5d27dae",
+            "db50d068-43e0-43d2-84d4-aaf0fb683e7f",
+            "b73f81d4-9fe5-48a3-9904-7cba642727b8",
+            "4234937d-c96b-4ff5-9852-c98b059d227e",
+            "3ec263e3-3a85-4824-b92e-0e6be35ea123",
+            "45d55e06-d9ae-46a8-99fe-1bffdfb2df8e",
+            "355d3bb4-d396-4e93-ad22-c9e5df127f21",
+            "3d7091d0-f00f-4b71-80b8-4325216bd610",
+            "70df6c7e-c8c1-4b2a-bf4d-15d74d4fee03",
+            "4f7159ce-c4a0-4715-beec-29f77179fdeb",
+            "4a3d4938-b90b-41cc-a1ac-0d443d8ffa3b",
+            "c649263a-5dba-46a4-9294-ef6fad513a23"
+          ],
+          "notice": "已置顶到任务表单。",
+          "sheet": "动画交付任务 052"
+        }
+      }
+    },
+    {
+      "check": "the pin did not change the task total or version",
+      "pass": true
+    },
+    {
+      "check": "the pinned row paints all of its cells, including the sticky name column, as one glass-blue band",
+      "pass": true,
+      "evidence": {
+        "cells": 5,
+        "rowClass": "is-table-pinned",
+        "uniform": true,
+        "colors": [
+          "linear-gradient(rgba(255, 255, 255, 0.62), rgba(241, 247, 255, 0.72) 55%, rgba(226, 238, 252, 0.62)), none|rgba(186, 214, 245, 0.34)",
+          "linear-gradient(rgba(255, 255, 255, 0.62), rgba(241, 247, 255, 0.72) 55%, rgba(226, 238, 252, 0.62)), none|rgba(186, 214, 245, 0.34)",
+          "linear-gradient(rgba(255, 255, 255, 0.62), rgba(241, 247, 255, 0.72) 55%, rgba(226, 238, 252, 0.62)), none|rgba(186, 214, 245, 0.34)",
+          "linear-gradient(rgba(255, 255, 255, 0.62), rgba(241, 247, 255, 0.72) 55%, rgba(226, 238, 252, 0.62)), none|rgba(186, 214, 245, 0.34)",
+          "linear-gradient(rgba(255, 255, 255, 0.62), rgba(241, 247, 255, 0.72) 55%, rgba(226, 238, 252, 0.62)), none|rgba(186, 214, 245, 0.34)"
+        ],
+        "pinnedVsNormal": true,
+        "pinnedVsEven": true,
+        "normalEvenDiffer": true,
+        "labelText": [
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责"
+        ],
+        "gradient": true
+      }
+    },
+    {
+      "check": "non-pinned rows keep their zebra striping and no in-table form-pin label is rendered",
+      "pass": true,
+      "evidence": {
+        "cells": 5,
+        "rowClass": "is-table-pinned",
+        "uniform": true,
+        "colors": [
+          "linear-gradient(rgba(255, 255, 255, 0.62), rgba(241, 247, 255, 0.72) 55%, rgba(226, 238, 252, 0.62)), none|rgba(186, 214, 245, 0.34)",
+          "linear-gradient(rgba(255, 255, 255, 0.62), rgba(241, 247, 255, 0.72) 55%, rgba(226, 238, 252, 0.62)), none|rgba(186, 214, 245, 0.34)",
+          "linear-gradient(rgba(255, 255, 255, 0.62), rgba(241, 247, 255, 0.72) 55%, rgba(226, 238, 252, 0.62)), none|rgba(186, 214, 245, 0.34)",
+          "linear-gradient(rgba(255, 255, 255, 0.62), rgba(241, 247, 255, 0.72) 55%, rgba(226, 238, 252, 0.62)), none|rgba(186, 214, 245, 0.34)",
+          "linear-gradient(rgba(255, 255, 255, 0.62), rgba(241, 247, 255, 0.72) 55%, rgba(226, 238, 252, 0.62)), none|rgba(186, 214, 245, 0.34)"
+        ],
+        "pinnedVsNormal": true,
+        "pinnedVsEven": true,
+        "normalEvenDiffer": true,
+        "labelText": [
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责",
+          "负责"
+        ],
+        "gradient": true
+      }
+    },
+    {
+      "check": "real hover and the active row keep a recognizable blue glass background on the pinned row",
+      "pass": true,
+      "evidence": {
+        "hovered": "linear-gradient(rgba(255, 255, 255, 0.7), rgba(236, 245, 255, 0.8) 55%, rgba(216, 233, 251, 0.72)), none",
+        "active": "linear-gradient(rgba(255, 255, 255, 0.7), rgba(236, 245, 255, 0.8) 55%, rgba(216, 233, 251, 0.72)), none"
+      }
+    },
+    {
+      "check": "horizontal scrolling keeps the sticky pinned name column painted with the same band",
+      "pass": true,
+      "evidence": {
+        "uniform": true,
+        "left": 9,
+        "boxLeft": 9,
+        "scrolled": 260
+      }
+    },
+    {
+      "check": "switching column views keeps the pinned row class on the same task",
+      "pass": true
+    },
+    {
+      "check": "the pinned row class survives switching back and the table renders no form-pin label",
+      "pass": true
+    },
+    {
+      "check": "the refreshed page returns to the same signed-in employee",
+      "pass": true
+    },
+    {
+      "check": "the table pin survives a real refresh with the pinned row still first and blue",
+      "pass": true
+    },
+    {
+      "check": "the daily calendar reaches January 2027",
+      "pass": true
+    },
+    {
+      "check": "the daily item form offers start and end dates",
+      "pass": true
+    },
+    {
+      "check": "the ranged item saves and the sheet closes",
+      "pass": true
+    },
+    {
+      "check": "the covered day opens its list",
+      "pass": true
+    },
+    {
+      "check": "the list shows the complete range and keeps one row for the ranged record",
+      "pass": true,
+      "evidence": {
+        "rows": [
+          "跨日事项：整理三天的动画分镜2027年1月8日 至 2027年1月10日",
+          "浏览器跨日事项：三天动画交付2027年1月8日 至 2027年1月10日"
+        ],
+        "meta": "2027年1月8日 至 2027年1月10日"
+      }
+    },
+    {
+      "check": "the detail shows the complete range with a non-repeated accessible status",
+      "pass": true
+    },
+    {
+      "check": "completing from the detail keeps the same range and updates the status",
+      "pass": true
+    },
+    {
+      "check": "the edit form is prefilled with the same pair",
+      "pass": true
+    },
+    {
+      "check": "the shortened pair returns to the original date list with updated range",
+      "pass": true
+    },
+    {
+      "check": "the detail after editing keeps the new range and the same record",
+      "pass": true
+    },
+    {
+      "check": "the self profile shows hire date, tenure and the authorized e-mail",
+      "pass": true
+    },
+    {
+      "check": "the missing/real tenure is a real projection, not an account-created date",
+      "pass": true,
+      "evidence": "aMY WORKSPACEalpha-one-employeeDisplay title联系电话13900000004邮箱employee@example.test入职日期2024-02-29已入职时长2年8个月22天组织信息由管理员维护⌄部门alpha职位Display title团队alpha one直属上级alpha-one-head下属资料0 人⌄暂无下属"
+    },
+    {
+      "check": "the self tenure shows only the real duration without an as-of suffix",
+      "pass": true,
+      "evidence": [
+        "已入职时长2年8个月22天组织信息由管理员维护⌄部门alpha职位Display title团队alpha one直属上级alph"
+      ]
+    },
+    {
+      "check": "own hire date and tenure appear once in the personal card and never in the organization fold",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "aMY WORKSPACEalpha-one-employeeDisplay title联系电话13900000004邮箱employee@example.test入职日期2024-02-29已入职时长2年8个月22天",
+        "orgText": "部门alpha职位Display title团队alpha one直属上级alpha-one-head"
+      }
+    },
+    {
+      "check": "administrator can locate the signed-in employee record",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "organizationId": "fixture-company",
+          "displayName": "alpha-one-employee",
+          "active": 1,
+          "avatar": null,
+          "rowVersion": 2,
+          "placementType": "employee",
+          "departmentId": "fixture-company-alpha",
+          "teamId": "fixture-company-alpha-one",
+          "positionId": "fixture-company-title",
+          "departmentName": "alpha",
+          "teamName": "alpha one",
+          "positionName": "Display title",
+          "organizationName": "fixture-company",
+          "organizationTimeZone": "Asia/Shanghai",
+          "role": "employee",
+          "rankLevel": 4,
+          "managerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "managerName": "alpha-one-head",
+          "accountType": "employee",
+          "loginPhone": "13900000004",
+          "hireDate": "2024-02-29"
+        }
+      }
+    },
+    {
+      "check": "administrator can clear the hire date for the empty-state check",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "rowVersion": 3,
+          "phoneUpdated": false,
+          "hireDate": null,
+          "sessionsRevoked": 0
+        }
+      }
+    },
+    {
+      "check": "reload after clearing the hire date keeps the same account",
+      "pass": true
+    },
+    {
+      "check": "an unset hire date shows the original empty state once in the card and not in the organization fold",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "aMY WORKSPACEalpha-one-employeeDisplay title联系电话13900000004邮箱employee@example.test入职日期入职日期未设置已入职时长入职日期未设置",
+        "orgText": "部门alpha职位Display title团队alpha one直属上级alpha-one-head"
+      }
+    },
+    {
+      "check": "administrator restores the hire date after the empty-state check",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "userId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "rowVersion": 4,
+          "phoneUpdated": false,
+          "hireDate": "2024-02-29",
+          "sessionsRevoked": 0
+        }
+      }
+    },
+    {
+      "check": "the restored hire date comes back to the personal card",
+      "pass": true
+    },
+    {
+      "check": "the restored hire date shows once in the card and the organization fold stays clean",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "aMY WORKSPACEalpha-one-employeeDisplay title联系电话13900000004邮箱employee@example.test入职日期2024-02-29已入职时长2年8个月22天",
+        "orgText": "部门alpha职位Display title团队alpha one直属上级alpha-one-head"
+      }
+    },
+    {
+      "check": "five main navigations and three home modules remain intact",
+      "pass": true,
+      "evidence": {
+        "tabs": 5,
+        "modules": 3,
+        "daily": true
+      }
+    },
+    {
+      "check": "logout clears the task table and returns to the login form",
+      "pass": true
+    },
+    {
+      "check": "a different account loads only its own current authorization",
+      "pass": true
+    },
+    {
+      "check": "an authorized manager sees the subordinate tenure without an as-of suffix",
+      "pass": true,
+      "evidence": {
+        "title": "alpha-one-employee的资料",
+        "text": "组织职务alpha ▸ alpha one ▸ Display title直属上级alpha-one-head联系电话13900000004邮箱employee@example.test入职日期2024-02-29已入职2年8个月22天查看日程查看日志",
+        "open": true
+      }
+    },
+    {
+      "check": "a subordinate without a hire date keeps the original empty state and no invented suffix",
+      "pass": true,
+      "evidence": {
+        "text": "组织职务alpha ▸ alpha two ▸ Display title直属上级alpha-two-head联系电话13900000006邮箱未填写入职日期入职日期未设置已入职入职日期未设置查看日程查看日志",
+        "open": true
+      }
+    },
+    {
+      "check": "the employee page has no horizontal document overflow at 320x740",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "w": 320,
+        "h": 740
+      }
+    },
+    {
+      "check": "the own employment rows stay de-duplicated at 320x740",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "fMY WORKSPACEfounderDisplay title联系电话13900000001邮箱未填写入职日期入职日期未设置已入职时长入职日期未设置",
+        "orgText": "部门公司层职位Display title直属上级无"
+      }
+    },
+    {
+      "check": "the employee page has no horizontal document overflow at 390x844",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "w": 390,
+        "h": 844
+      }
+    },
+    {
+      "check": "the own employment rows stay de-duplicated at 390x844",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "fMY WORKSPACEfounderDisplay title联系电话13900000001邮箱未填写入职日期入职日期未设置已入职时长入职日期未设置",
+        "orgText": "部门公司层职位Display title直属上级无"
+      }
+    },
+    {
+      "check": "the employee page has no horizontal document overflow at 1440x900",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "w": 1440,
+        "h": 900
+      }
+    },
+    {
+      "check": "the own employment rows stay de-duplicated at 1440x900",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "fMY WORKSPACEfounderDisplay title联系电话13900000001邮箱未填写入职日期入职日期未设置已入职时长入职日期未设置",
+        "orgText": "部门公司层职位Display title直属上级无"
+      }
+    },
+    {
+      "check": "the employee page has no horizontal document overflow at 390x600",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "w": 390,
+        "h": 600
+      }
+    },
+    {
+      "check": "the own employment rows stay de-duplicated at 390x600",
+      "pass": true,
+      "evidence": {
+        "cardHire": 1,
+        "cardTenure": 1,
+        "orgHire": 0,
+        "orgTenure": 0,
+        "orgDepartment": 1,
+        "orgPosition": 1,
+        "orgManager": 1,
+        "cardText": "fMY WORKSPACEfounderDisplay title联系电话13900000001邮箱未填写入职日期入职日期未设置已入职时长入职日期未设置",
+        "orgText": "部门公司层职位Display title直属上级无"
+      }
+    }
+  ]
+}

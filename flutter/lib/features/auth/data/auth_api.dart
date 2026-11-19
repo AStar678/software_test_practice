@@ -1,3 +1,4 @@
+import '../domain/phone_numbers.dart';
 // ignore_for_file: prefer_initializing_formals
 import 'dart:convert';
 
@@ -38,7 +39,7 @@ class AuthApi implements AuthGateway {
     final data = await _run(
       () => _dio.post<Object?>(
         '$_baseUrl/auth/sessions',
-        data: {'accountType': 'employee', 'phone': phone.trim(), 'password': password},
+        data: {'accountType': 'employee', 'phone': PhoneNumbers.normalize(phone) ?? phone.trim(), 'password': password},
       ),
       fallbackStatus: 401,
     );

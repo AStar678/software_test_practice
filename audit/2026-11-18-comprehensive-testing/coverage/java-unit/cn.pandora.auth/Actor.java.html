@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Actor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.auth</a> &gt; <span class="el_source">Actor.java</span></div><h1>Actor.java</h1><pre class="source lang-java linenums">package cn.pandora.auth;
+
+import java.util.Map;
+import java.util.Set;
+
+/** Current principal identity. Employee role/rank/scopes are derived from the fixed placement.
+ * authzVersion fences stale requests; administrators have no employee placement.
+ */
+<span class="fc" id="L9">public record Actor(</span>
+        String id,
+        String organizationId,
+        String role,
+        String teamId,
+        String managerId,
+        int rank,
+        String departmentId,
+        String positionId,
+        Set&lt;String&gt; capabilities,
+        Map&lt;String, String&gt; scopes,
+        long authzVersion,
+        boolean reviewerAvailable,
+        boolean mustChangePassword,
+        long credentialVersion,
+        String accountType) {
+
+    public Actor(String id, String organizationId, String role, String teamId, String managerId, int rank,
+                 String departmentId, String positionId, Set&lt;String&gt; capabilities, Map&lt;String,String&gt; scopes,
+                 long authzVersion, boolean reviewerAvailable, boolean mustChangePassword, long credentialVersion) {
+<span class="fc" id="L29">        this(id, organizationId, role, teamId, managerId, rank, departmentId, positionId, capabilities,</span>
+                scopes, authzVersion, reviewerAvailable, mustChangePassword, credentialVersion,
+<span class="fc bfc" id="L31" title="All 2 branches covered.">                &quot;admin&quot;.equals(role) ? &quot;admin&quot; : &quot;employee&quot;);</span>
+<span class="fc" id="L32">    }</span>
+
+    /** Convenience constructor for fixed-identity unit tests. */
+    public Actor(String id, String organizationId, String role, String teamId, String managerId, int rank) {
+<span class="fc" id="L36">        this(id, organizationId, role, teamId, managerId, rank, null, null,</span>
+<span class="fc" id="L37">                Set.of(), Map.of(), 1L, true, false, 1L);</span>
+<span class="fc" id="L38">    }</span>
+
+<span class="fc" id="L40">    public boolean administrator() { return &quot;admin&quot;.equals(accountType); }</span>
+
+<span class="fc bfc" id="L42" title="All 2 branches covered.">    public boolean business() { return !administrator(); }</span>
+
+    public boolean can(String capability) {
+<span class="pc bpc" id="L45" title="2 of 4 branches missed.">        return capabilities != null &amp;&amp; capabilities.contains(capability);</span>
+    }
+
+    /** Derived range for one authority area; defaults to the narrowest range. */
+    public String scope(String area) {
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        return scopes == null ? &quot;self&quot; : scopes.getOrDefault(area, &quot;self&quot;);</span>
+    }
+
+    /** Same identity and authority, but with the legacy role label replaced (used by the seed/tests). */
+    public Actor withRole(String replacement) {
+<span class="nc" id="L55">        return new Actor(id, organizationId, replacement, teamId, managerId, rank, departmentId, positionId,</span>
+                capabilities, scopes, authzVersion, reviewerAvailable, mustChangePassword, credentialVersion, accountType);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,162 @@
+[
+  {
+    "file": "backend/target/jacoco.exec",
+    "sha256": "0843ba8860628e306bdd4343590900e8a8f2386faee18677319183236c75503a"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_admin_contract.exec",
+    "sha256": "3093faed17c4e98851d23fbdaa232912544ef1729a72e0e7ed984d4c15ee3ae3"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_apply_admin_login_phone.exec",
+    "sha256": "2efad47b8dfa52275f4d39d199903c4b5154819d6023482377783809adaede6b"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_apply_copy_audit.exec",
+    "sha256": "07c221c2a9ab59380e32b30852897ecbd5c33de678aa5ef176be2baa2b3bc98f"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_apply_log_tags.exec",
+    "sha256": "0fb043242eb42631ead64b788b770c94b64684d4d30564001bd2cddf640f7907"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_apply_mixed_edit.exec",
+    "sha256": "456e4a63a4c3af20ce8fb3e95bb44316384b2c9d9f09a27257acc02051baf337"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_apply_notifications.exec",
+    "sha256": "ca27eb7e10df30442201ebda75692c803ad0ff2522c0b496f1f0684314797e27"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_apply_private_migration_guard.exec",
+    "sha256": "944d8085014d04e99a27e80a120999abc4952aca9d1ec97ea04d32b433cd0893"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_apply_profile_pin_history.exec",
+    "sha256": "c21dfaced30d9a7bf6907c1298d8eb5a0bf626e683235ab13a68ecb52e3b5624"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_auto_apply_authorization.exec",
+    "sha256": "18d10c9873e646af37f664357ed75ae8b787b55bc21258001438a8af581453fc"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_business_takeover.exec",
+    "sha256": "5dd186e722debba94b441c620fc4dfd84ebf5becd5faea7a9bd995370d1cf436"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_calendar_drawer.exec",
+    "sha256": "e93da38e817b5124ee847636fdd5752429d4f94bc0e7cb69ff22f0f286d13a87"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_calendar_tags.exec",
+    "sha256": "e1deaddedbdb4ed973da3fa243ea5a065c0b0db26c86957cc33b37a90e9ecebc"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_chapter8_web.exec",
+    "sha256": "3141a21db4d6e783cda05ca6084e24c48c49afee334e6195955931afa8dca108"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_daily_items.exec",
+    "sha256": "d75a475f5ddddddd06b00361d4713c2b20770ab3f02605346c9a58ad9550c1ce"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_demo_extremes.exec",
+    "sha256": "6102da9e8612240fa015e992b38a12184fea55f4fb727b79c5709a371d8bfaf3"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_employee_contracts_upgrade.exec",
+    "sha256": "9fa49ad1b1ba7d75d9febc23a79b5c962ea80c0d7d08ce900ec10b0d037b5508"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_final_demo.exec",
+    "sha256": "07cf588585682d91fdffda6136f50cbe3872ef553f3bcfdc7203427ec27b96fc"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_final_migration.exec",
+    "sha256": "49a5a736820522181dce458525eea80aa6a3a0d2014e32afaadcdf4bfd2c6e75"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_fixed_communication_web.exec",
+    "sha256": "16a09384ad25e8d704c145438a9d0b25b8269c115f7fc08710852daf24fe65f9"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_fixed_late_response.exec",
+    "sha256": "6d5c027cd9b4e29ef5cd9d40733a853449297f7e89efe98beda11924cad0f6e2"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_fixed_notifications.exec",
+    "sha256": "df8014f95f3ead9bec1ba0736af8f206cecbf59c5f15ff1bb6d2add451537046"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_fixed_web.exec",
+    "sha256": "c13f52b69959fda62f4357010203a8d70f784e77c606ec4451db3e3fb09e017b"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_fixed_workspace_access.exec",
+    "sha256": "f1a1a3cbe83b42320da3019101575b366b6f81a7a811a605a2611bc5604db22a"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_founder_setup.exec",
+    "sha256": "f67e140ffd8ac7bd317ecceaa26eb0a3f06071e5064f883e1be20a05ccc89513"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_handover_chain.exec",
+    "sha256": "0f7b0212eceb0c7a2ae91c154297cf6368902a456a9ec6b2d3e90393c85fc004"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_holidays.exec",
+    "sha256": "e33a2ce38adbbe4149ced2a1e37998f4d0029e0cceafbcd737e74d8dd2bda217"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_log_backfill_entry.exec",
+    "sha256": "98c0ae8430d2b2fea74af35915d39ea6c5ad6e929d4b47e5c9c1ff907582a39d"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_login_identity_collision.exec",
+    "sha256": "4cc85d1a5c2efb0cfe8c494bc227a6d019a68dce78f9cf8fe5ac184bb2f4a811"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_organization_plans.exec",
+    "sha256": "cd4d18d26076eca1ae90bcb763b701635e46c166412a84e7e1521d592ada4867"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_profile_phone_matrix.exec",
+    "sha256": "c4dcb0f0f55c2cf2aae1eb56ccb9a128d058cd56300438c2db1d163c159497e3"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_request_id_compat.exec",
+    "sha256": "f41c415356dd8da85114823d6930482fc4071a6df52ff67f3e704a007438090b"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_review_routing.exec",
+    "sha256": "fa242530ccfa518ec0c3b0a267c7c0c1a97657e93624a238c6399f8c8ee128d6"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_schedule_drag.exec",
+    "sha256": "1e67e955b221d96bc86c16f86e987e779655f159377b5a998596cfde6a39cecb"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_subordinate_workspace.exec",
+    "sha256": "a1e183227d95a219e2b8a18e53003b6992b46aac12f1b915bbf434439bbfafa8"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_task_creation_refinement.exec",
+    "sha256": "8d64a644062c12cb56e537c48592b7706f9e70bf96381c3fe70f8972d0b06122"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_task_refinement_upgrade.exec",
+    "sha256": "488bfeb06ae3dd7ae9201ff92231bf7ac085552c44b74dc4857e87a8d74dcbb3"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_visible_schedule_permissions.exec",
+    "sha256": "37a102dcf500e2e07bde9f2f90d2c35c922b1adb19ea77b2dc118cb822d997a2"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_web_alignment_drag.exec",
+    "sha256": "79cad63e7cf4e8ae151deda8c82e9ab13aafd01f067cce98326274b8cce279ce"
+  },
+  {
+    "file": "audit/2026-11-19-fixes/regression/integration-coverage/check_web_verification_repairs.exec",
+    "sha256": "f57f136acf546f6e7ed2cce1b0806c9e768a5cec0e2b3d56d03bf46581e5c5f2"
+  }
+]

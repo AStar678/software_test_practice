@@ -1173,7 +1173,7 @@ public class WorkspaceService {
 
     public Map<String,Object> adminTeams(Actor a,Map<String,String> filters) {
         access.requireAdmin(a);
-        return page(db.list("SELECT id,name,parent_id FROM teams WHERE organization_id=? ORDER BY name,id",a.organizationId()),filters);
+        return page(db.list("SELECT id,name,department_id FROM teams WHERE organization_id=? ORDER BY name,id",a.organizationId()),filters);
     }
 
     public Map<String,Object> audit(Actor a, Map<String,String> filters) {

@@ -1,0 +1,122 @@
+{
+  "JUnit": {
+    "PASS": 220,
+    "FAIL": 5
+  },
+  "Android JVM": {
+    "PASS": 25
+  },
+  "Android lint": {
+    "Warning": 38
+  },
+  "Flutter unit/widget": {
+    "PASS": 244,
+    "FAIL": 4
+  },
+  "Flutter managed real API": {
+    "PASS": 5
+  },
+  "Flutter demo real API": {
+    "PASS": 32
+  },
+  "pytest real API": {
+    "PASS": 122,
+    "FAIL": 17
+  },
+  "API/browser/migration suites": {
+    "PASS": 40,
+    "FAIL": 1,
+    "total": 41
+  },
+  "Printed assertions (lower bound)": {
+    "PASS": 3101,
+    "FAIL": 4
+  },
+  "Phone recorded checks": {
+    "PASS": 16
+  },
+  "Phone evidence": "phone-complete/phone-checks.json",
+  "Java coverage": {
+    "INSTRUCTION": {
+      "covered": 42407,
+      "missed": 4238,
+      "total": 46645,
+      "percent": 90.91
+    },
+    "BRANCH": {
+      "covered": 3518,
+      "missed": 1104,
+      "total": 4622,
+      "percent": 76.11
+    },
+    "LINE": {
+      "covered": 5228,
+      "missed": 404,
+      "total": 5632,
+      "percent": 92.83
+    },
+    "COMPLEXITY": {
+      "covered": 2335,
+      "missed": 1030,
+      "total": 3365,
+      "percent": 69.39
+    },
+    "METHOD": {
+      "covered": 952,
+      "missed": 67,
+      "total": 1019,
+      "percent": 93.42
+    },
+    "CLASS": {
+      "covered": 65,
+      "missed": 1,
+      "total": 66,
+      "percent": 98.48
+    }
+  },
+  "Java unit-only coverage": {
+    "INSTRUCTION": {
+      "covered": 14956,
+      "missed": 31689,
+      "total": 46645,
+      "percent": 32.06
+    },
+    "BRANCH": {
+      "covered": 1541,
+      "missed": 3081,
+      "total": 4622,
+      "percent": 33.34
+    },
+    "LINE": {
+      "covered": 1875,
+      "missed": 3757,
+      "total": 5632,
+      "percent": 33.29
+    },
+    "COMPLEXITY": {
+      "covered": 910,
+      "missed": 2455,
+      "total": 3365,
+      "percent": 27.04
+    },
+    "METHOD": {
+      "covered": 382,
+      "missed": 637,
+      "total": 1019,
+      "percent": 37.49
+    },
+    "CLASS": {
+      "covered": 37,
+      "missed": 29,
+      "total": 66,
+      "percent": 56.06
+    }
+  },
+  "Flutter unit/widget line coverage": {
+    "covered": 7161,
+    "total": 9476,
+    "percent": 75.57,
+    "files": 98
+  },
+  "generatedAt": "2026-11-19T00:45:52.568050+08:00"
+}

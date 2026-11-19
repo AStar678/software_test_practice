@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Access.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.auth</a> &gt; <span class="el_source">Access.java</span></div><h1>Access.java</h1><pre class="source lang-java linenums">package cn.pandora.auth;
+
+import cn.pandora.common.ApiException;
+import cn.pandora.common.Db;
+import org.springframework.stereotype.Component;
+import java.util.*;
+import java.util.function.Supplier;
+import static cn.pandora.common.Db.*;
+
+/** Fixed organization positions and current object relationships are the only business authority. */
+@Component
+public class Access {
+    private final Db db;
+<span class="fc" id="L14">    public Access(Db db) {this.db=db;}</span>
+    /** A single read operation owns these snapshots; no authorization is retained between calls. */
+<span class="fc" id="L16">    private final ThreadLocal&lt;ReadScope&gt; reads = new ThreadLocal&lt;&gt;();</span>
+    private static final class ReadScope {
+        final String organizationId;
+        CompanyTree.Tree tree;
+<span class="fc" id="L20">        final Map&lt;String,String&gt; businessOwners = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L21">        ReadScope(String organizationId) { this.organizationId=organizationId; }</span>
+    }
+    public &lt;T&gt; T readScope(String organizationId,Supplier&lt;T&gt; work) {
+<span class="fc" id="L24">        ReadScope previous=reads.get();</span>
+<span class="pc bpc" id="L25" title="1 of 4 branches missed.">        if(previous!=null &amp;&amp; previous.organizationId.equals(organizationId)) return work.get();</span>
+<span class="fc" id="L26">        reads.set(new ReadScope(organizationId));</span>
+<span class="fc" id="L27">        try { return work.get(); }</span>
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">        finally { if(previous==null) reads.remove(); else reads.set(previous); }</span>
+    }
+    private ReadScope currentRead(String org) {
+<span class="fc" id="L31">        ReadScope scope=reads.get();</span>
+<span class="pc bpc" id="L32" title="1 of 4 branches missed.">        return scope!=null &amp;&amp; scope.organizationId.equals(org)?scope:null;</span>
+    }
+    private CompanyTree.Tree tree(String org) {
+<span class="fc" id="L35">        ReadScope scope=currentRead(org);</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if(scope==null) return new CompanyTree(db).of(org);</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if(scope.tree==null) scope.tree=new CompanyTree(db).of(org);</span>
+<span class="fc" id="L38">        return scope.tree;</span>
+    }
+    /** Preload only task identities required by this read, including absent ownership rows. */
+    public void primeBusinessOwners(String org,Collection&lt;String&gt; taskIds) {
+<span class="pc bpc" id="L42" title="2 of 4 branches missed.">        ReadScope scope=currentRead(org);if(scope==null || taskIds==null) return;</span>
+<span class="fc" id="L43">        List&lt;String&gt; missing=taskIds.stream().filter(Objects::nonNull).distinct()</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">                .filter(id-&gt;!scope.businessOwners.containsKey(id)).toList();</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        for(int start=0;start&lt;missing.size();start+=500) {</span>
+<span class="fc" id="L46">            List&lt;String&gt; part=missing.subList(start,Math.min(start+500,missing.size()));</span>
+<span class="fc" id="L47">            List&lt;Object&gt; args=new ArrayList&lt;&gt;();args.add(org);args.addAll(part);</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">            for(String id:part) scope.businessOwners.put(id,null);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            for(var row:db.list(&quot;SELECT task_id,employee_id FROM task_business_owners WHERE organization_id=? AND task_id IN (&quot;</span>
+<span class="fc" id="L50">                    +String.join(&quot;,&quot;,Collections.nCopies(part.size(),&quot;?&quot;))+&quot;)&quot;,args.toArray()))</span>
+<span class="fc" id="L51">                scope.businessOwners.put(s(row,&quot;taskId&quot;),s(row,&quot;employeeId&quot;));</span>
+        }
+<span class="fc" id="L53">    }</span>
+<span class="fc" id="L54">    private static final Set&lt;String&gt; MANAGEMENT=Set.of(&quot;manage_organization&quot;,&quot;manage_accounts&quot;,&quot;manage_company_info&quot;,&quot;manage_notifications&quot;,&quot;view_task_history&quot;);</span>
+<span class="fc" id="L55">    private static boolean manager(Actor a) {return Set.of(&quot;founder&quot;,&quot;department_head&quot;,&quot;team_head&quot;).contains(a.role());}</span>
+<span class="fc bfc" id="L56" title="All 4 branches covered.">    private static boolean placed(Actor a) {return a.business() &amp;&amp; Set.of(&quot;founder&quot;,&quot;department_head&quot;,&quot;team_head&quot;,&quot;employee&quot;).contains(a.role());}</span>
+
+    public Actor actor(Map&lt;String,Object&gt; account) {
+<span class="fc" id="L59">        String org=s(account,&quot;organizationId&quot;),id=s(account,&quot;id&quot;);</span>
+<span class="fc" id="L60">        long version=n(db.one(&quot;SELECT authz_version FROM organizations WHERE id=?&quot;,org),&quot;authzVersion&quot;);</span>
+<span class="fc" id="L61">        boolean admin=&quot;admin&quot;.equals(s(account,&quot;accountType&quot;));</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        long credential=account.get(&quot;credentialVersion&quot;)==null?1:n(account,&quot;credentialVersion&quot;);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if(admin) return new Actor(id,org,&quot;admin&quot;,null,null,0,null,null,MANAGEMENT,Map.of(),version,</span>
+<span class="fc" id="L64">                false,enabledValue(account.get(&quot;mustChangePassword&quot;)),credential,&quot;admin&quot;);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        var snapshot=tree(org);var node=snapshot.valid()?snapshot.nodes().get(id):null;</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        String role=node==null?&quot;unplaced&quot;:s(node,&quot;placementType&quot;);</span>
+<span class="fc bfc" id="L67" title="All 4 branches covered.">        String range=switch(role) {case &quot;founder&quot;-&gt;&quot;company&quot;;case &quot;department_head&quot;-&gt;&quot;department&quot;;case &quot;team_head&quot;-&gt;&quot;team&quot;;default-&gt;&quot;self&quot;;};</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        Set&lt;String&gt; capabilities=node==null?Set.of():Set.of(&quot;create_task&quot;,&quot;handover_own&quot;);</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        if(Set.of(&quot;founder&quot;,&quot;department_head&quot;,&quot;team_head&quot;).contains(role)) capabilities=Set.of(&quot;create_task&quot;,&quot;handover_own&quot;,&quot;handover_reports&quot;);</span>
+<span class="fc bfc" id="L70" title="All 4 branches covered.">        return new Actor(id,org,role,node==null?null:s(node,&quot;teamId&quot;),node==null?null:s(node,&quot;managerId&quot;),</span>
+<span class="fc bfc" id="L71" title="All 6 branches covered.">                node==null?0:(int)n(node,&quot;rankLevel&quot;),node==null?null:s(node,&quot;departmentId&quot;),node==null?null:s(node,&quot;positionId&quot;),</span>
+<span class="fc bfc" id="L72" title="All 4 branches covered.">                capabilities,Map.of(&quot;task_view&quot;,range,&quot;task_dispatch&quot;,node==null?&quot;none&quot;:&quot;company&quot;,&quot;log_read&quot;,range,&quot;profile_read&quot;,range),version,</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">                node!=null &amp;&amp; enabledValue(account.get(&quot;reviewerAvailable&quot;)),enabledValue(account.get(&quot;mustChangePassword&quot;)),credential,&quot;employee&quot;);</span>
+    }
+<span class="nc" id="L75">    public Actor actorFor(Actor context,String id) {return actor(user(context,id));}</span>
+    /** Call inside the read transaction, before using the actor captured by the HTTP filter. */
+    public void requireCurrent(Actor a) {
+<span class="fc" id="L78">        var company=db.one(&quot;SELECT authz_version FROM organizations WHERE id=?&quot;,a.organizationId());</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if(n(company,&quot;authzVersion&quot;)!=a.authzVersion())</span>
+<span class="fc" id="L80">            throw new ApiException(409,&quot;AUTHORIZATION_CHANGED&quot;,&quot;权限已更新，请重新读取后操作&quot;);</span>
+<span class="fc" id="L81">    }</span>
+    /** Public employee summaries never carry credentials, phone, email or legacy authorization. */
+    public List&lt;Map&lt;String,Object&gt;&gt; employeeDirectory(Actor a,boolean includeInactive) {
+<span class="fc" id="L84">        var snapshot=tree(a.organizationId());</span>
+<span class="pc bpc" id="L85" title="1 of 4 branches missed.">        if(!a.administrator() &amp;&amp; !snapshot.valid())</span>
+<span class="nc" id="L86">            throw new ApiException(409,&quot;ORGANIZATION_MAPPING_INCOMPLETE&quot;,&quot;组织位置尚未完成，请管理员修复&quot;);</span>
+<span class="fc" id="L87">        var rows=db.list(&quot;SELECT u.id,u.organization_id,u.display_name,(u.active AND pr.active) AS active,u.avatar,u.org_version AS row_version,&quot;</span>
+                + &quot;ep.placement_type,ep.department_id,ep.team_id,ep.position_id,&quot;
+                + &quot;d.name AS department_name,t.name AS team_name,p.name AS position_name,&quot;
+                + &quot;o.name AS organization_name,o.time_zone AS organization_time_zone &quot;
+                + &quot;FROM users u JOIN principals pr ON pr.organization_id=u.organization_id AND pr.id=u.id AND pr.account_type='employee' &quot;
+                + &quot;JOIN organizations o ON o.id=u.organization_id &quot;
+                + &quot;LEFT JOIN employee_placements ep ON ep.organization_id=u.organization_id AND ep.employee_id=u.id &quot;
+                + &quot;LEFT JOIN departments d ON d.organization_id=ep.organization_id AND d.id=ep.department_id &quot;
+                + &quot;LEFT JOIN teams t ON t.organization_id=ep.organization_id AND t.id=ep.team_id &quot;
+                + &quot;LEFT JOIN positions p ON p.organization_id=ep.organization_id AND p.id=ep.position_id &quot;
+<span class="fc" id="L97">                + &quot;WHERE u.organization_id=? ORDER BY u.display_name,u.id&quot;,a.organizationId());</span>
+<span class="fc" id="L98">        Map&lt;String,String&gt; names=new HashMap&lt;&gt;();</span>
+<span class="fc" id="L99">        rows.forEach(row-&gt;names.put(s(row,&quot;id&quot;),s(row,&quot;displayName&quot;)));</span>
+<span class="fc" id="L100">        List&lt;Map&lt;String,Object&gt;&gt; result=new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        for(var row:rows) {</span>
+<span class="fc bfc" id="L102" title="All 4 branches covered.">            if(!includeInactive &amp;&amp; !enabled(row)) continue;</span>
+<span class="fc" id="L103">            var node=snapshot.nodes().get(s(row,&quot;id&quot;));</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            for(String key:List.of(&quot;role&quot;,&quot;placementType&quot;,&quot;rankLevel&quot;,&quot;managerId&quot;,&quot;departmentId&quot;,&quot;teamId&quot;,&quot;positionId&quot;))</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">                row.put(key,node==null?null:node.get(key));</span>
+<span class="fc" id="L106">            row.put(&quot;managerName&quot;,names.get(s(row,&quot;managerId&quot;)));</span>
+<span class="fc" id="L107">            row.put(&quot;accountType&quot;,&quot;employee&quot;);</span>
+<span class="fc" id="L108">            result.add(row);</span>
+<span class="fc" id="L109">        }</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        result.sort(Comparator.comparingLong((Map&lt;String,Object&gt; row)-&gt;row.get(&quot;rankLevel&quot;)==null?5:n(row,&quot;rankLevel&quot;))</span>
+<span class="fc" id="L111">                .thenComparing(row-&gt;Objects.toString(row.get(&quot;displayName&quot;),&quot;&quot;))</span>
+<span class="fc" id="L112">                .thenComparing(row-&gt;s(row,&quot;id&quot;)));</span>
+<span class="fc" id="L113">        return result;</span>
+    }
+    public Map&lt;String,Object&gt; user(Actor a,String id) {
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        var row=activeUser(a,id);if(row==null) throw ApiException.notFound();return row;</span>
+    }
+    public Map&lt;String,Object&gt; activeUser(Actor a,String id) {
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        var snapshot=tree(a.organizationId());if(!snapshot.valid()) return null;</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        var node=snapshot.nodes().get(id);if(node==null) return null;</span>
+<span class="fc" id="L121">        var row=db.find(&quot;SELECT * FROM users WHERE id=? AND organization_id=? AND active=1&quot;,id,a.organizationId());</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        if(row==null) return null;</span>
+<span class="fc" id="L123">        Map&lt;String,Object&gt; result=new LinkedHashMap&lt;&gt;(row);result.putAll(node);return result;</span>
+    }
+    public Map&lt;String,Object&gt; knownUser(Actor a,String id) {
+<span class="fc" id="L126">        var row=db.find(&quot;SELECT u.* FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id &quot;</span>
+<span class="fc" id="L127">                + &quot;WHERE u.id=? AND u.organization_id=? AND p.account_type='employee'&quot;,id,a.organizationId());</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">        if(row==null) return null;</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        var node=tree(a.organizationId()).nodes().get(id);if(node!=null) row.putAll(node);return row;</span>
+    }
+    public boolean canSeeTask(Actor a,Map&lt;String,Object&gt; task,Map&lt;String,Object&gt; version,List&lt;String&gt; assignees) {
+<span class="pc bpc" id="L132" title="1 of 8 branches missed.">        if(!placed(a) || version==null || !a.organizationId().equals(s(task,&quot;organizationId&quot;)) || s(task,&quot;currentVersionId&quot;)==null) return false;</span>
+<span class="fc bfc" id="L133" title="All 6 branches covered.">        if(a.id().equals(s(task,&quot;originalCreatorId&quot;)) || assignees.contains(a.id()) || a.id().equals(businessOwner(task))) return true;</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if(&quot;founder&quot;.equals(a.role())) return true;</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        var snapshot=tree(a.organizationId());if(!snapshot.valid()) return false;</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        for(String id:assignees) {</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">            var node=snapshot.nodes().get(id);if(node==null) continue;</span>
+<span class="fc bfc" id="L138" title="All 4 branches covered.">            if(&quot;department_head&quot;.equals(a.role()) &amp;&amp; Objects.equals(a.departmentId(),s(node,&quot;departmentId&quot;))) return true;</span>
+<span class="fc bfc" id="L139" title="All 4 branches covered.">            if(&quot;team_head&quot;.equals(a.role()) &amp;&amp; Objects.equals(a.teamId(),s(node,&quot;teamId&quot;))) return true;</span>
+<span class="fc" id="L140">        }</span>
+<span class="fc" id="L141">        return false;</span>
+    }
+    public String businessOwner(Map&lt;String,Object&gt; task) {
+<span class="fc" id="L144">        String org=s(task,&quot;organizationId&quot;),id=s(task,&quot;id&quot;);ReadScope scope=currentRead(org);</span>
+<span class="fc bfc" id="L145" title="All 4 branches covered.">        if(scope!=null &amp;&amp; scope.businessOwners.containsKey(id))</span>
+<span class="fc" id="L146">            return Objects.requireNonNullElse(scope.businessOwners.get(id),s(task,&quot;originalCreatorId&quot;));</span>
+<span class="fc" id="L147">        var owner=db.find(&quot;SELECT employee_id FROM task_business_owners WHERE organization_id=? AND task_id=?&quot;,org,id);</span>
+<span class="pc bpc" id="L148" title="1 of 4 branches missed.">        if(scope!=null) scope.businessOwners.put(id,owner==null?null:s(owner,&quot;employeeId&quot;));</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        return owner==null?s(task,&quot;originalCreatorId&quot;):s(owner,&quot;employeeId&quot;);</span>
+    }
+    public boolean canDispatchTo(Actor a,Map&lt;String,Object&gt; target) {
+<span class="pc bpc" id="L152" title="2 of 8 branches missed.">        return placed(a) &amp;&amp; target!=null &amp;&amp; enabled(target) &amp;&amp; a.organizationId().equals(s(target,&quot;organizationId&quot;))</span>
+<span class="pc bpc" id="L153" title="2 of 4 branches missed.">                &amp;&amp; &quot;employee&quot;.equals(s(target,&quot;accountType&quot;)) &amp;&amp; s(target,&quot;placementType&quot;)!=null;</span>
+    }
+<span class="fc" id="L155">    public void requireDispatchable(Actor a,String id) {requireCreationCandidate(a,id);}</span>
+<span class="fc" id="L156">    public List&lt;Map&lt;String,Object&gt;&gt; dispatchCandidates(Actor a,String query) {return creationCandidates(a,query);}</span>
+    public List&lt;Map&lt;String,Object&gt;&gt; creationCandidates(Actor a,String query) {
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">        if(!placed(a)) return List.of();</span>
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">        var snapshot=tree(a.organizationId());if(!snapshot.valid()) return List.of();</span>
+<span class="fc" id="L160">        String like=Objects.toString(query,&quot;&quot;).strip().toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L161">        return db.list(&quot;SELECT u.id,u.organization_id,u.display_name,u.active,p.placement_type,p.department_id,p.team_id,p.position_id,&quot;</span>
+                + &quot;d.name AS department_name,t.name AS team_name,pos.name AS position_name FROM users u &quot;
+                + &quot;JOIN employee_placements p ON p.organization_id=u.organization_id AND p.employee_id=u.id &quot;
+                + &quot;LEFT JOIN departments d ON d.organization_id=p.organization_id AND d.id=p.department_id &quot;
+                + &quot;LEFT JOIN teams t ON t.organization_id=p.organization_id AND t.id=p.team_id &quot;
+                + &quot;JOIN positions pos ON pos.organization_id=p.organization_id AND pos.id=p.position_id &quot;
+<span class="fc" id="L167">                + &quot;WHERE u.organization_id=? AND u.active=1 ORDER BY u.display_name,u.id&quot;,a.organizationId()).stream()</span>
+<span class="fc" id="L168">                .filter(row-&gt;snapshot.nodes().containsKey(s(row,&quot;id&quot;)))</span>
+<span class="pc bpc" id="L169" title="3 of 4 branches missed.">                .filter(row-&gt;like.isEmpty() || s(row,&quot;displayName&quot;).toLowerCase(Locale.ROOT).contains(like)</span>
+<span class="pc bnc" id="L170" title="All 2 branches missed.">                        || Objects.toString(s(row,&quot;departmentName&quot;),&quot;&quot;).toLowerCase(Locale.ROOT).contains(like))</span>
+<span class="fc" id="L171">                .map(row-&gt;{var result=new LinkedHashMap&lt;String,Object&gt;(row);result.put(&quot;managerId&quot;,s(snapshot.nodes().get(s(row,&quot;id&quot;)),&quot;managerId&quot;));</span>
+<span class="fc" id="L172">                    result.put(&quot;accountType&quot;,&quot;employee&quot;);result.put(&quot;role&quot;,s(row,&quot;placementType&quot;));return (Map&lt;String,Object&gt;)result;}).toList();</span>
+    }
+<span class="fc" id="L174">    public boolean isCreationCandidate(Actor a,String id) {return canDispatchTo(a,activeUser(a,id));}</span>
+    public void requireCreationCandidate(Actor a,String id) {
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        if(!isCreationCandidate(a,id)) throw new ApiException(400,&quot;INVALID_INPUT&quot;,&quot;负责人须为本公司有效业务员工&quot;);</span>
+<span class="fc" id="L177">    }</span>
+    public boolean isDirectReport(Actor a,String id) {
+<span class="pc bpc" id="L179" title="2 of 6 branches missed.">        if(!placed(a) || !manager(a) || id==null) return false;</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">        var snapshot=tree(a.organizationId());var node=snapshot.valid()?snapshot.nodes().get(id):null;</span>
+<span class="pc bpc" id="L181" title="1 of 4 branches missed.">        return node!=null &amp;&amp; a.id().equals(s(node,&quot;managerId&quot;));</span>
+    }
+    public boolean canReadLogAuthor(Actor a,String id) {
+<span class="pc bpc" id="L184" title="1 of 4 branches missed.">        if(!placed(a) || id==null) return false;</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        if(a.id().equals(id)) return true;</span>
+<span class="fc" id="L186">        return isManagerOf(a,id);</span>
+    }
+    public List&lt;String&gt; logAuthorIds(Actor a) {
+<span class="fc" id="L189">        return readScope(a.organizationId(),()-&gt; {</span>
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">            var snapshot=tree(a.organizationId());if(!snapshot.valid()) return List.of();</span>
+<span class="fc" id="L191">            return snapshot.nodes().keySet().stream().filter(id-&gt;canReadLogAuthor(a,id)).toList();</span>
+        });
+    }
+    public boolean canSeePerson(Actor a,Map&lt;String,Object&gt; person) {
+<span class="pc bpc" id="L195" title="3 of 8 branches missed.">        if(!placed(a) || person==null || !a.organizationId().equals(s(person,&quot;organizationId&quot;)) || !enabled(person)) return false;</span>
+<span class="fc bfc" id="L196" title="All 4 branches covered.">        return a.id().equals(s(person,&quot;id&quot;)) || isManagerOf(a,s(person,&quot;id&quot;));</span>
+    }
+<span class="fc" id="L198">    public boolean canReadPhone(Actor a,Map&lt;String,Object&gt; person) {return canSeePerson(a,person);}</span>
+    /**
+     * E-mail in an authorized person detail follows the same current relationship test as the phone
+     * number: self, or a real current management-chain ancestor that still passes the profile scope.
+     * It is never part of a directory, candidate or summary projection and administrators do not gain
+     * it through a business route.
+     */
+<span class="fc" id="L205">    public boolean canReadEmail(Actor a,Map&lt;String,Object&gt; person) {return canSeePerson(a,person);}</span>
+    public boolean isManagerOf(Actor a,String id) {
+<span class="pc bpc" id="L207" title="2 of 8 branches missed.">        if(!placed(a) || !manager(a) || id==null || a.id().equals(id)) return false;</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        var snapshot=tree(a.organizationId());if(!snapshot.valid()) return false;</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">        var node=snapshot.nodes().get(id);if(node==null) return false;</span>
+<span class="fc" id="L210">        String cursor=s(node,&quot;managerId&quot;);</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        while(cursor!=null) {</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">            if(a.id().equals(cursor)) return true;</span>
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">            node=snapshot.nodes().get(cursor);if(node==null) return false;cursor=s(node,&quot;managerId&quot;);</span>
+        }
+<span class="fc" id="L215">        return false;</span>
+    }
+<span class="nc" id="L217">    public List&lt;String&gt; visibleUserIds(Actor a) {return logAuthorIds(a);}</span>
+    public boolean canHandover(Actor a,String source,Collection&lt;String&gt; assignees) {
+<span class="pc bpc" id="L219" title="3 of 10 branches missed.">        return placed(a) &amp;&amp; assignees!=null &amp;&amp; assignees.contains(source) &amp;&amp; (a.id().equals(source) || isDirectReport(a,source));</span>
+    }
+    public boolean canSetHandoverPreset(Actor a,Map&lt;String,Object&gt; subject) {
+<span class="pc bpc" id="L222" title="4 of 8 branches missed.">        return placed(a) &amp;&amp; subject!=null &amp;&amp; enabled(subject) &amp;&amp; a.organizationId().equals(s(subject,&quot;organizationId&quot;))</span>
+<span class="pc bpc" id="L223" title="1 of 6 branches missed.">                &amp;&amp; &quot;employee&quot;.equals(s(subject,&quot;accountType&quot;)) &amp;&amp; (a.id().equals(s(subject,&quot;id&quot;)) || isDirectReport(a,s(subject,&quot;id&quot;)));</span>
+    }
+    public boolean canBeHandoverTarget(Actor subject,Map&lt;String,Object&gt; target) {
+<span class="pc bpc" id="L226" title="1 of 4 branches missed.">        if(!canDispatchTo(subject,target) || subject.id().equals(s(target,&quot;id&quot;))) return false;</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">        if(&quot;founder&quot;.equals(subject.role())) return true;</span>
+<span class="pc bpc" id="L228" title="1 of 4 branches missed.">        return subject.departmentId()!=null &amp;&amp; subject.departmentId().equals(s(target,&quot;departmentId&quot;))</span>
+<span class="pc bpc" id="L229" title="2 of 4 branches missed.">                || Objects.equals(subject.managerId(),s(target,&quot;id&quot;)) || subject.id().equals(s(target,&quot;managerId&quot;));</span>
+    }
+    public List&lt;Map&lt;String,Object&gt;&gt; handoverTargets(Actor subject,String query) {
+<span class="fc" id="L232">        return creationCandidates(subject,query).stream().filter(row-&gt;canBeHandoverTarget(subject,row)).toList();</span>
+    }
+    public void requireCapability(Actor a,String capability) {
+<span class="pc bpc" id="L235" title="1 of 2 branches missed.">        if(MANAGEMENT.contains(capability)) {requireAdmin(a);return;}</span>
+<span class="nc bnc" id="L236" title="All 4 branches missed.">        if(!placed(a) || !a.can(capability)) throw new ApiException(403,&quot;FORBIDDEN&quot;,&quot;当前账号无此操作权&quot;);</span>
+<span class="nc" id="L237">    }</span>
+<span class="fc bfc" id="L238" title="All 2 branches covered.">    public void requireAdmin(Actor a) {if(!a.administrator()) throw new ApiException(403,&quot;FORBIDDEN&quot;,&quot;需要独立管理员身份&quot;);}</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">    public boolean activeMember(Actor a,String id) {return activeUser(a,id)!=null;}</span>
+<span class="pc bpc" id="L240" title="1 of 4 branches missed.">    public static boolean enabled(Map&lt;String,Object&gt; row) {return row!=null &amp;&amp; enabledValue(row.get(&quot;active&quot;));}</span>
+<span class="fc bfc" id="L241" title="All 6 branches covered.">    private static boolean enabledValue(Object value) {return Boolean.TRUE.equals(value) || value instanceof Number n &amp;&amp; n.intValue()==1;}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

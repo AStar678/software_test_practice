@@ -46,8 +46,9 @@ def main():
             admin.server_side(f'CREATE DATABASE `{name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci')
             for host in ('localhost','127.0.0.1'):
                 admin.server_side(f'GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,ALTER,INDEX,REFERENCES,DROP ON `{name}`.* TO '+quote(values['PANDORA_DB_USER'])+'@'+quote(host))
-        subprocess.run([sys.executable,str(BASE/'scripts/flyway_migrate.py'),'--database',fresh.database,'--target','26','--log',str(OUTPUT.with_suffix('.log'))],check=True)
-        check('empty database completes the full Flyway chain',fresh.rows('SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history')[0][0]=='26')
+        latest=max(int(path.name.split('__')[0][1:]) for path in (BASE/'src/main/resources/db/migration').glob('V*__*.sql'))
+        subprocess.run([sys.executable,str(BASE/'scripts/flyway_migrate.py'),'--database',fresh.database,'--log',str(OUTPUT.with_suffix('.log'))],check=True)
+        check('empty database completes the full Flyway chain',fresh.rows('SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history')[0][0]==str(latest))
         migrate(upgrade,20);legacy(upgrade)
         before={table:upgrade.rows(query) for table,query in {
             'employee':"SELECT id,password_hash,created_at FROM users WHERE id='employee'",

@@ -1,0 +1,21 @@
+PASS V20 legacy fields are recognised and produce a plan
+PASS V20 plan has no placement row versions and keeps the legacy founder unset
+PASS V20 administrator mapping uses the unique legacy admin without a fake employee placement
+PASS V20 plan excludes the legacy administrator from the post-V22 employee directory
+PASS V20 mapping command is read-only
+Traceback (most recent call last):
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_legacy_mapping.py", line 808, in <module>
+    run(arguments.output, arguments.keep)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_legacy_mapping.py", line 466, in run
+    check('V1-V20 files still match Git HEAD', all(
+                                               ^^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_legacy_mapping.py", line 467, in <genexpr>
+    subprocess.run(['git', 'show', 'HEAD:backend/src/main/resources/db/migration/' + path.name],
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                   cwd=BASE, capture_output=True, check=True).stdout == path.read_bytes()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['git', 'show', 'HEAD:backend/src/main/resources/db/migration/V1__initial_schema.sql']' returned non-zero exit status 128.

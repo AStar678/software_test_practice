@@ -1,0 +1,4955 @@
+[
+  {
+    "class": "BusinessTakeovers",
+    "method": "inventory",
+    "line": 26,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.BusinessTakeovers",
+        "method": "inventory",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "27",
+        "source": "cn/pandora/admin/BusinessTakeovers.java",
+        "instruction_percent": 98.25,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "BusinessTakeovers",
+    "method": "transfer",
+    "line": 37,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.BusinessTakeovers",
+        "method": "transfer",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "39",
+        "source": "cn/pandora/admin/BusinessTakeovers.java",
+        "instruction_percent": 96.39,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Credentials",
+    "method": "generate",
+    "line": 23,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.Credentials",
+        "method": "generate",
+        "signature": "()Ljava/lang/String;",
+        "line": "25",
+        "source": "cn/pandora/admin/Credentials.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Credentials",
+    "method": "requirePolicy",
+    "line": 40,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.Credentials",
+        "method": "requirePolicy",
+        "signature": "(Ljava/lang/String;)V",
+        "line": "41",
+        "source": "cn/pandora/admin/Credentials.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "LoginKeyConstraints",
+    "method": "run",
+    "line": 40,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.LoginKeyConstraints",
+        "method": "run",
+        "signature": "(Lorg/springframework/boot/ApplicationArguments;)V",
+        "line": "41",
+        "source": "cn/pandora/admin/LoginKeyConstraints.java",
+        "instruction_percent": 59.09,
+        "branch_percent": 75.0,
+        "line_percent": 62.5,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "LoginKeyConstraints",
+    "method": "tighten",
+    "line": 62,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.LoginKeyConstraints",
+        "method": "tighten",
+        "signature": "()Z",
+        "line": "63",
+        "source": "cn/pandora/admin/LoginKeyConstraints.java",
+        "instruction_percent": 86.54,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 25.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationConstraints",
+    "method": "status",
+    "line": 23,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationConstraints",
+        "method": "status",
+        "signature": "()Ljava/util/Map;",
+        "line": "24",
+        "source": "cn/pandora/admin/OrganizationConstraints.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.admin.OrganizationConstraints",
+        "method": "status",
+        "signature": "(Ljava/lang/String;)Ljava/util/Map;",
+        "line": "30",
+        "source": "cn/pandora/admin/OrganizationConstraints.java",
+        "instruction_percent": 84.62,
+        "branch_percent": 50.0,
+        "line_percent": 66.67,
+        "complexity_percent": 20.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationConstraints",
+    "method": "status",
+    "line": 29,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationConstraints",
+        "method": "status",
+        "signature": "()Ljava/util/Map;",
+        "line": "24",
+        "source": "cn/pandora/admin/OrganizationConstraints.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.admin.OrganizationConstraints",
+        "method": "status",
+        "signature": "(Ljava/lang/String;)Ljava/util/Map;",
+        "line": "30",
+        "source": "cn/pandora/admin/OrganizationConstraints.java",
+        "instruction_percent": 84.62,
+        "branch_percent": 50.0,
+        "line_percent": 66.67,
+        "complexity_percent": 20.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationConstraints",
+    "method": "formalWritesReady",
+    "line": 48,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationConstraints",
+        "method": "formalWritesReady",
+        "signature": "(Ljava/lang/String;)Z",
+        "line": "48",
+        "source": "cn/pandora/admin/OrganizationConstraints.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.admin.OrganizationConstraints",
+        "method": "formalWritesReady",
+        "signature": "()Z",
+        "line": "49",
+        "source": "cn/pandora/admin/OrganizationConstraints.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationConstraints",
+    "method": "formalWritesReady",
+    "line": 49,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationConstraints",
+        "method": "formalWritesReady",
+        "signature": "(Ljava/lang/String;)Z",
+        "line": "48",
+        "source": "cn/pandora/admin/OrganizationConstraints.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.admin.OrganizationConstraints",
+        "method": "formalWritesReady",
+        "signature": "()Z",
+        "line": "49",
+        "source": "cn/pandora/admin/OrganizationConstraints.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationConstraints",
+    "method": "tryTighten",
+    "line": 51,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationConstraints",
+        "method": "tryTighten",
+        "signature": "()Z",
+        "line": "51",
+        "source": "cn/pandora/admin/OrganizationConstraints.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationPlans",
+    "method": "draft",
+    "line": 32,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationPlans",
+        "method": "draft",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/Map;",
+        "line": "33",
+        "source": "cn/pandora/admin/OrganizationPlans.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationPlans",
+    "method": "save",
+    "line": 45,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationPlans",
+        "method": "save",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/util/Map;)Lcn/pandora/common/Writes$Outcome;",
+        "line": "47",
+        "source": "cn/pandora/admin/OrganizationPlans.java",
+        "instruction_percent": 97.89,
+        "branch_percent": 83.93,
+        "line_percent": 98.94,
+        "complexity_percent": 68.97,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "structure",
+    "line": 32,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "structure",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/Map;",
+        "line": "33",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "applyOrganizationConstraints",
+    "line": 38,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "applyOrganizationConstraints",
+        "signature": "()Z",
+        "line": "38",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "roles",
+    "line": 39,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "roles",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/List;",
+        "line": "39",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateRoleScopes",
+    "line": 40,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "updateRoleScopes",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "40",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "grantRoles",
+    "line": 41,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "grantRoles",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "41",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "createDepartment",
+    "line": 44,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "createDepartment",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "44",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateDepartment",
+    "line": 45,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "updateDepartment",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "45",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "createTeam",
+    "line": 46,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "createTeam",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "46",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateTeam",
+    "line": 47,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "updateTeam",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "47",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "transferEmployee",
+    "line": 48,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "transferEmployee",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "48",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "teamManagement",
+    "line": 49,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "teamManagement",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/Map;",
+        "line": "49",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "employees",
+    "line": 52,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "employees",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "53",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "employee",
+    "line": 69,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "employee",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "70",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 94.03,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "departmentMembers",
+    "line": 78,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "departmentMembers",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/List;",
+        "line": "79",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "createEmployee",
+    "line": 84,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "createEmployee",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Lcn/pandora/common/Writes$Outcome;",
+        "line": "85",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "administrator",
+    "line": 101,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "administrator",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/Map;",
+        "line": "103",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateAdministrator",
+    "line": 106,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "updateAdministrator",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "107",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 88.49,
+        "branch_percent": 50.0,
+        "line_percent": 90.91,
+        "complexity_percent": 20.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "createPosition",
+    "line": 119,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "createPosition",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "121",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updatePosition",
+    "line": 131,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "updatePosition",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "133",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 90.55,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateEmployee",
+    "line": 144,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "updateEmployee",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "146",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 95.24,
+        "branch_percent": 95.0,
+        "line_percent": 100.0,
+        "complexity_percent": 90.91,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "resetPassword",
+    "line": 177,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "resetPassword",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Lcn/pandora/common/Writes$Outcome;",
+        "line": "179",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "companyItems",
+    "line": 195,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "companyItems",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/Map;",
+        "line": "197",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "createCompanyItem",
+    "line": 204,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "createCompanyItem",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "206",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "updateCompanyItem",
+    "line": 219,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "updateCompanyItem",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "221",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 96.51,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "deleteCompanyItem",
+    "line": 230,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "deleteCompanyItem",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "232",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "reorderCompanyItems",
+    "line": 239,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "reorderCompanyItems",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "241",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 93.43,
+        "branch_percent": 66.67,
+        "line_percent": 100.0,
+        "complexity_percent": 42.86,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "OrganizationService",
+    "method": "setOffWorkTime",
+    "line": 257,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.admin.OrganizationService",
+        "method": "setOffWorkTime",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "259",
+        "source": "cn/pandora/admin/OrganizationService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "readScope",
+    "line": 23,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "readScope",
+        "signature": "(Ljava/lang/String;Ljava/util/function/Supplier;)Ljava/lang/Object;",
+        "line": "24",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 89.19,
+        "branch_percent": 66.67,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "primeBusinessOwners",
+    "line": 41,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "primeBusinessOwners",
+        "signature": "(Ljava/lang/String;Ljava/util/Collection;)V",
+        "line": "42",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 98.99,
+        "branch_percent": 80.0,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "actor",
+    "line": 57,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "actor",
+        "signature": "(Ljava/util/Map;)Lcn/pandora/auth/Actor;",
+        "line": "59",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 96.88,
+        "line_percent": 100.0,
+        "complexity_percent": 94.44,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "actorFor",
+    "line": 75,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "actorFor",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Lcn/pandora/auth/Actor;",
+        "line": "75",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "requireCurrent",
+    "line": 77,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "requireCurrent",
+        "signature": "(Lcn/pandora/auth/Actor;)V",
+        "line": "78",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "employeeDirectory",
+    "line": 83,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "employeeDirectory",
+        "signature": "(Lcn/pandora/auth/Actor;Z)Ljava/util/List;",
+        "line": "84",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 94.35,
+        "branch_percent": 92.86,
+        "line_percent": 95.24,
+        "complexity_percent": 87.5,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "user",
+    "line": 115,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "user",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "116",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 81.82,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "activeUser",
+    "line": 118,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "activeUser",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "119",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 96.0,
+        "branch_percent": 83.33,
+        "line_percent": 100.0,
+        "complexity_percent": 75.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "knownUser",
+    "line": 125,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "knownUser",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "126",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 94.44,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "canSeeTask",
+    "line": 131,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "canSeeTask",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;Ljava/util/Map;Ljava/util/List;)Z",
+        "line": "132",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 98.11,
+        "branch_percent": 93.33,
+        "line_percent": 100.0,
+        "complexity_percent": 87.5,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "businessOwner",
+    "line": 143,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "businessOwner",
+        "signature": "(Ljava/util/Map;)Ljava/lang/String;",
+        "line": "144",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 91.3,
+        "branch_percent": 80.0,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "canDispatchTo",
+    "line": 151,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "canDispatchTo",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Z",
+        "line": "152",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 66.67,
+        "line_percent": 100.0,
+        "complexity_percent": 42.86,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "requireDispatchable",
+    "line": 155,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "requireDispatchable",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)V",
+        "line": "155",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "dispatchCandidates",
+    "line": 156,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "dispatchCandidates",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/List;",
+        "line": "156",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "creationCandidates",
+    "line": 157,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "creationCandidates",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/List;",
+        "line": "158",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 91.11,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "isCreationCandidate",
+    "line": 174,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "isCreationCandidate",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Z",
+        "line": "174",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "requireCreationCandidate",
+    "line": 175,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "requireCreationCandidate",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)V",
+        "line": "176",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "isDirectReport",
+    "line": 178,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "isDirectReport",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Z",
+        "line": "179",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 97.44,
+        "branch_percent": 66.67,
+        "line_percent": 100.0,
+        "complexity_percent": 42.86,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "canReadLogAuthor",
+    "line": 183,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "canReadLogAuthor",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Z",
+        "line": "184",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 83.33,
+        "line_percent": 100.0,
+        "complexity_percent": 75.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "logAuthorIds",
+    "line": 188,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "logAuthorIds",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/List;",
+        "line": "189",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "canSeePerson",
+    "line": 194,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "canSeePerson",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Z",
+        "line": "195",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 57.14,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "canReadPhone",
+    "line": 198,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "canReadPhone",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Z",
+        "line": "198",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "canReadEmail",
+    "line": 205,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "canReadEmail",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Z",
+        "line": "205",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "isManagerOf",
+    "line": 206,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "isManagerOf",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Z",
+        "line": "207",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 93.85,
+        "branch_percent": 77.78,
+        "line_percent": 100.0,
+        "complexity_percent": 60.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "visibleUserIds",
+    "line": 217,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "visibleUserIds",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/List;",
+        "line": "217",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "canHandover",
+    "line": 218,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "canHandover",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/util/Collection;)Z",
+        "line": "219",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 70.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "canSetHandoverPreset",
+    "line": 221,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "canSetHandoverPreset",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Z",
+        "line": "222",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 64.29,
+        "line_percent": 100.0,
+        "complexity_percent": 37.5,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "canBeHandoverTarget",
+    "line": 225,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "canBeHandoverTarget",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Z",
+        "line": "226",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 71.43,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "handoverTargets",
+    "line": 231,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "handoverTargets",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/List;",
+        "line": "232",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "requireCapability",
+    "line": 234,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "requireCapability",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)V",
+        "line": "235",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 34.78,
+        "branch_percent": 16.67,
+        "line_percent": 33.33,
+        "complexity_percent": 25.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "requireAdmin",
+    "line": 238,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "requireAdmin",
+        "signature": "(Lcn/pandora/auth/Actor;)V",
+        "line": "238",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "activeMember",
+    "line": 239,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "activeMember",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Z",
+        "line": "239",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 0.0,
+        "branch_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Access",
+    "method": "enabled",
+    "line": 240,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.Access",
+        "method": "enabled",
+        "signature": "(Ljava/util/Map;)Z",
+        "line": "240",
+        "source": "cn/pandora/auth/Access.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "hash",
+    "line": 23,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "hash",
+        "signature": "(Ljava/lang/String;)Ljava/lang/String;",
+        "line": "24",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 60.0,
+        "line_percent": 50.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "actor",
+    "line": 32,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "actor",
+        "signature": "(Ljava/util/Map;)Lcn/pandora/auth/Actor;",
+        "line": "33",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "publicUser",
+    "line": 35,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "publicUser",
+        "signature": "(Ljava/util/Map;)Ljava/util/Map;",
+        "line": "37",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "sessionUser",
+    "line": 43,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "sessionUser",
+        "signature": "(Ljava/util/Map;)Ljava/util/Map;",
+        "line": "44",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "login",
+    "line": 61,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "login",
+        "signature": "(Ljava/util/Map;)Ljava/util/Map;",
+        "line": "62",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 94.12,
+        "line_percent": 100.0,
+        "complexity_percent": 88.89,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "authenticate",
+    "line": 110,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "authenticate",
+        "signature": "(Ljava/lang/String;)Lcn/pandora/auth/Actor;",
+        "line": "111",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 85.71,
+        "branch_percent": 66.67,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "account",
+    "line": 119,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "account",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/Map;",
+        "line": "120",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "account",
+        "signature": "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Ljava/util/Map;",
+        "line": "124",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 84.09,
+        "branch_percent": 83.33,
+        "line_percent": 100.0,
+        "complexity_percent": 75.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "session",
+    "line": 134,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "session",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/Map;",
+        "line": "135",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "refresh",
+    "line": 139,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "refresh",
+        "signature": "(Ljava/lang/String;)Ljava/util/Map;",
+        "line": "140",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 78.12,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "logout",
+    "line": 145,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "logout",
+        "signature": "(Ljava/lang/String;)V",
+        "line": "145",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "changePassword",
+    "line": 155,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "changePassword",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "156",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "AuthService",
+    "method": "revokeSessions",
+    "line": 181,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.AuthService",
+        "method": "revokeSessions",
+        "signature": "(Ljava/lang/String;Ljava/lang/String;)I",
+        "line": "182",
+        "source": "cn/pandora/auth/AuthService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "CompanyTree",
+    "method": "Tree",
+    "line": 15,
+    "observedCoverage": [],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "CompanyTree",
+    "method": "of",
+    "line": 21,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.CompanyTree",
+        "method": "of",
+        "signature": "(Ljava/lang/String;)Lcn/pandora/auth/CompanyTree$Tree;",
+        "line": "22",
+        "source": "cn/pandora/auth/CompanyTree.java",
+        "instruction_percent": 97.18,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "CompanyTree",
+    "method": "validate",
+    "line": 34,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.CompanyTree",
+        "method": "validate",
+        "signature": "(Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;)Lcn/pandora/auth/CompanyTree$Tree;",
+        "line": "37",
+        "source": "cn/pandora/auth/CompanyTree.java",
+        "instruction_percent": 95.73,
+        "branch_percent": 84.55,
+        "line_percent": 100.0,
+        "complexity_percent": 71.19,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "CompanyTree",
+    "method": "founderId",
+    "line": 122,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.CompanyTree",
+        "method": "founderId",
+        "signature": "(Ljava/lang/String;)Ljava/lang/String;",
+        "line": "122",
+        "source": "cn/pandora/auth/CompanyTree.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "CompanyTree",
+    "method": "isFounder",
+    "line": 123,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.CompanyTree",
+        "method": "isFounder",
+        "signature": "(Lcn/pandora/auth/Actor;)Z",
+        "line": "123",
+        "source": "cn/pandora/auth/CompanyTree.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "PhoneNumbers",
+    "method": "normalize",
+    "line": 20,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.PhoneNumbers",
+        "method": "normalize",
+        "signature": "(Ljava/lang/String;)Ljava/lang/String;",
+        "line": "21",
+        "source": "cn/pandora/auth/PhoneNumbers.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 90.91,
+        "line_percent": 100.0,
+        "complexity_percent": 83.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "PhoneNumbers",
+    "method": "isPhone",
+    "line": 34,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.auth.PhoneNumbers",
+        "method": "isPhone",
+        "signature": "(Ljava/lang/String;)Z",
+        "line": "35",
+        "source": "cn/pandora/auth/PhoneNumbers.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidayCalendarScheduler",
+    "method": "afterStartup",
+    "line": 31,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HolidayCalendarScheduler",
+        "method": "afterStartup",
+        "signature": "()V",
+        "line": "33",
+        "source": "cn/pandora/calendar/HolidayCalendarScheduler.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidayCalendarScheduler",
+    "method": "daily",
+    "line": 40,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HolidayCalendarScheduler",
+        "method": "daily",
+        "signature": "()V",
+        "line": "42",
+        "source": "cn/pandora/calendar/HolidayCalendarScheduler.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidayCalendarService",
+    "method": "parseYear",
+    "line": 71,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HolidayCalendarService",
+        "method": "parseYear",
+        "signature": "(Ljava/lang/String;)I",
+        "line": "73",
+        "source": "cn/pandora/calendar/HolidayCalendarService.java",
+        "instruction_percent": 80.0,
+        "branch_percent": 75.0,
+        "line_percent": 77.78,
+        "complexity_percent": 60.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidayCalendarService",
+    "method": "view",
+    "line": 89,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HolidayCalendarService",
+        "method": "view",
+        "signature": "(IZ)Ljava/util/Map;",
+        "line": "90",
+        "source": "cn/pandora/calendar/HolidayCalendarService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidayCalendarService",
+    "method": "refreshNow",
+    "line": 97,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HolidayCalendarService",
+        "method": "refreshNow",
+        "signature": "(Lcn/pandora/auth/Actor;ILjava/lang/String;)Ljava/util/Map;",
+        "line": "98",
+        "source": "cn/pandora/calendar/HolidayCalendarService.java",
+        "instruction_percent": 81.33,
+        "branch_percent": 100.0,
+        "line_percent": 76.47,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidayCalendarService",
+    "method": "checkCurrentAndNext",
+    "line": 127,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HolidayCalendarService",
+        "method": "checkCurrentAndNext",
+        "signature": "()V",
+        "line": "128",
+        "source": "cn/pandora/calendar/HolidayCalendarService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidayCalendarService",
+    "method": "scheduleIfDue",
+    "line": 134,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HolidayCalendarService",
+        "method": "scheduleIfDue",
+        "signature": "(IZ)Z",
+        "line": "135",
+        "source": "cn/pandora/calendar/HolidayCalendarService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidayPayload",
+    "method": "Day",
+    "line": 22,
+    "observedCoverage": [],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidayPayload",
+    "method": "Year",
+    "line": 23,
+    "observedCoverage": [],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidayPayload",
+    "method": "parse",
+    "line": 29,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HolidayPayload",
+        "method": "parse",
+        "signature": "([BILcom/fasterxml/jackson/databind/ObjectMapper;)Lcn/pandora/calendar/HolidayPayload$Year;",
+        "line": "31",
+        "source": "cn/pandora/calendar/HolidayPayload.java",
+        "instruction_percent": 88.64,
+        "branch_percent": 66.67,
+        "line_percent": 88.68,
+        "complexity_percent": 35.48,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidayPayload",
+    "method": "utf8",
+    "line": 119,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HolidayPayload",
+        "method": "utf8",
+        "signature": "([B)Ljava/lang/String;",
+        "line": "121",
+        "source": "cn/pandora/calendar/HolidayPayload.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HolidaySourceException",
+    "method": "safeCode",
+    "line": 16,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HolidaySourceException",
+        "method": "safeCode",
+        "signature": "()Ljava/lang/String;",
+        "line": "18",
+        "source": "cn/pandora/calendar/HolidaySourceException.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HttpHolidaySource",
+    "method": "sourceName",
+    "line": 56,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HttpHolidaySource",
+        "method": "sourceName",
+        "signature": "()Ljava/lang/String;",
+        "line": "57",
+        "source": "cn/pandora/calendar/HttpHolidaySource.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "HttpHolidaySource",
+    "method": "fetch",
+    "line": 61,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.calendar.HttpHolidaySource",
+        "method": "fetch",
+        "signature": "(I)Lcn/pandora/calendar/HolidayPayload$Year;",
+        "line": "62",
+        "source": "cn/pandora/calendar/HttpHolidaySource.java",
+        "instruction_percent": 83.78,
+        "branch_percent": 83.33,
+        "line_percent": 90.0,
+        "complexity_percent": 75.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ApiAdvice",
+    "method": "api",
+    "line": 13,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.ApiAdvice",
+        "method": "api",
+        "signature": "(Lcn/pandora/common/ApiException;)Lorg/springframework/http/ResponseEntity;",
+        "line": "14",
+        "source": "cn/pandora/common/ApiAdvice.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ApiAdvice",
+    "method": "invalid",
+    "line": 21,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.ApiAdvice",
+        "method": "invalid",
+        "signature": "(Ljava/lang/Exception;)Lorg/springframework/http/ResponseEntity;",
+        "line": "21",
+        "source": "cn/pandora/common/ApiAdvice.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ApiAdvice",
+    "method": "constraint",
+    "line": 23,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.ApiAdvice",
+        "method": "constraint",
+        "signature": "(Ljava/lang/Exception;)Lorg/springframework/http/ResponseEntity;",
+        "line": "23",
+        "source": "cn/pandora/common/ApiAdvice.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ApiAdvice",
+    "method": "busy",
+    "line": 25,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.ApiAdvice",
+        "method": "busy",
+        "signature": "(Ljava/lang/Exception;)Lorg/springframework/http/ResponseEntity;",
+        "line": "25",
+        "source": "cn/pandora/common/ApiAdvice.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ControllableClock",
+    "method": "advance",
+    "line": 33,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.ControllableClock",
+        "method": "advance",
+        "signature": "(Ljava/time/Duration;)Lcn/pandora/common/ControllableClock;",
+        "line": "35",
+        "source": "cn/pandora/common/ControllableClock.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ControllableClock",
+    "method": "reset",
+    "line": 39,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.ControllableClock",
+        "method": "reset",
+        "signature": "(Ljava/time/Instant;)Lcn/pandora/common/ControllableClock;",
+        "line": "41",
+        "source": "cn/pandora/common/ControllableClock.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ControllableClock",
+    "method": "base",
+    "line": 45,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.ControllableClock",
+        "method": "base",
+        "signature": "()Ljava/time/Instant;",
+        "line": "47",
+        "source": "cn/pandora/common/ControllableClock.java",
+        "instruction_percent": 0.0,
+        "branch_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ControllableClock",
+    "method": "offset",
+    "line": 49,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.ControllableClock",
+        "method": "offset",
+        "signature": "()Ljava/time/Duration;",
+        "line": "51",
+        "source": "cn/pandora/common/ControllableClock.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ControllableClock",
+    "method": "getZone",
+    "line": 55,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.ControllableClock",
+        "method": "getZone",
+        "signature": "()Ljava/time/ZoneId;",
+        "line": "56",
+        "source": "cn/pandora/common/ControllableClock.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ControllableClock",
+    "method": "withZone",
+    "line": 60,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.ControllableClock",
+        "method": "withZone",
+        "signature": "(Ljava/time/ZoneId;)Ljava/time/Clock;",
+        "line": "61",
+        "source": "cn/pandora/common/ControllableClock.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ControllableClock",
+    "method": "instant",
+    "line": 65,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.ControllableClock",
+        "method": "instant",
+        "signature": "()Ljava/time/Instant;",
+        "line": "66",
+        "source": "cn/pandora/common/ControllableClock.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Db",
+    "method": "list",
+    "line": 15,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Db",
+        "method": "list",
+        "signature": "(Ljava/lang/String;[Ljava/lang/Object;)Ljava/util/List;",
+        "line": "16",
+        "source": "cn/pandora/common/Db.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Db",
+    "method": "find",
+    "line": 30,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Db",
+        "method": "find",
+        "signature": "(Ljava/lang/String;[Ljava/lang/Object;)Ljava/util/Map;",
+        "line": "30",
+        "source": "cn/pandora/common/Db.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Db",
+    "method": "one",
+    "line": 31,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Db",
+        "method": "one",
+        "signature": "(Ljava/lang/String;[Ljava/lang/Object;)Ljava/util/Map;",
+        "line": "31",
+        "source": "cn/pandora/common/Db.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Db",
+    "method": "update",
+    "line": 32,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Db",
+        "method": "update",
+        "signature": "(Ljava/lang/String;[Ljava/lang/Object;)I",
+        "line": "32",
+        "source": "cn/pandora/common/Db.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Db",
+    "method": "json",
+    "line": 33,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Db",
+        "method": "json",
+        "signature": "(Ljava/lang/Object;)Ljava/lang/String;",
+        "line": "33",
+        "source": "cn/pandora/common/Db.java",
+        "instruction_percent": 41.67,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Db",
+    "method": "parse",
+    "line": 34,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Db",
+        "method": "parse",
+        "signature": "(Ljava/lang/String;)Ljava/util/Map;",
+        "line": "34",
+        "source": "cn/pandora/common/Db.java",
+        "instruction_percent": 58.82,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Db",
+    "method": "id",
+    "line": 35,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Db",
+        "method": "id",
+        "signature": "()Ljava/lang/String;",
+        "line": "35",
+        "source": "cn/pandora/common/Db.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Db",
+    "method": "s",
+    "line": 36,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Db",
+        "method": "s",
+        "signature": "(Ljava/util/Map;Ljava/lang/String;)Ljava/lang/String;",
+        "line": "36",
+        "source": "cn/pandora/common/Db.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Db",
+    "method": "n",
+    "line": 37,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Db",
+        "method": "n",
+        "signature": "(Ljava/util/Map;Ljava/lang/String;)J",
+        "line": "37",
+        "source": "cn/pandora/common/Db.java",
+        "instruction_percent": 82.35,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Events",
+    "method": "record",
+    "line": 33,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "record",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Collection;Ljava/util/Map;)V",
+        "line": "35",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "record",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Collection;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+        "line": "40",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Events",
+    "method": "record",
+    "line": 37,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "record",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Collection;Ljava/util/Map;)V",
+        "line": "35",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "record",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Collection;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+        "line": "40",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Events",
+    "method": "recordObject",
+    "line": 49,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "recordObject",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Collection;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+        "line": "52",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 97.01,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Events",
+    "method": "scheduled",
+    "line": 64,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "scheduled",
+        "signature": "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
+        "line": "66",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 91.3,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Events",
+    "method": "systemRecord",
+    "line": 75,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "systemRecord",
+        "signature": "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Collection;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;)V",
+        "line": "78",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 90.48,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Events",
+    "method": "retentionEndsAt",
+    "line": 100,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "retentionEndsAt",
+        "signature": "(Ljava/lang/String;Ljava/time/Instant;)Ljava/time/Instant;",
+        "line": "101",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "retentionEndsAt",
+        "signature": "(Ljava/time/Instant;Ljava/time/ZoneId;)Ljava/time/Instant;",
+        "line": "106",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Events",
+    "method": "retentionEndsAt",
+    "line": 105,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "retentionEndsAt",
+        "signature": "(Ljava/lang/String;Ljava/time/Instant;)Ljava/time/Instant;",
+        "line": "101",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "retentionEndsAt",
+        "signature": "(Ljava/time/Instant;Ljava/time/ZoneId;)Ljava/time/Instant;",
+        "line": "106",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Events",
+    "method": "organizationZone",
+    "line": 108,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Events",
+        "method": "organizationZone",
+        "signature": "(Ljava/lang/String;)Ljava/time/ZoneId;",
+        "line": "110",
+        "source": "cn/pandora/common/Events.java",
+        "instruction_percent": 54.55,
+        "branch_percent": 50.0,
+        "line_percent": 60.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Writes",
+    "method": "Outcome",
+    "line": 26,
+    "observedCoverage": [],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Writes",
+    "method": "of",
+    "line": 27,
+    "observedCoverage": [],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Writes",
+    "method": "run",
+    "line": 29,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Writes",
+        "method": "run",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/String;Ljava/util/function/Supplier;)Ljava/util/Map;",
+        "line": "31",
+        "source": "cn/pandora/common/Writes.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Writes",
+    "method": "replayIfPresent",
+    "line": 40,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Writes",
+        "method": "replayIfPresent",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "41",
+        "source": "cn/pandora/common/Writes.java",
+        "instruction_percent": 87.72,
+        "branch_percent": 66.67,
+        "line_percent": 90.91,
+        "complexity_percent": 42.86,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Writes",
+    "method": "runOutcome",
+    "line": 58,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Writes",
+        "method": "runOutcome",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/String;Ljava/util/function/Supplier;)Ljava/util/Map;",
+        "line": "59",
+        "source": "cn/pandora/common/Writes.java",
+        "instruction_percent": 82.05,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Writes",
+    "method": "checkVersion",
+    "line": 99,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.common.Writes",
+        "method": "checkVersion",
+        "signature": "(Ljava/lang/String;J)V",
+        "line": "100",
+        "source": "cn/pandora/common/Writes.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ProfileService",
+    "method": "get",
+    "line": 33,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.profile.ProfileService",
+        "method": "get",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/Map;",
+        "line": "35",
+        "source": "cn/pandora/profile/ProfileService.java",
+        "instruction_percent": 93.2,
+        "branch_percent": 83.33,
+        "line_percent": 100.0,
+        "complexity_percent": 75.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ProfileService",
+    "method": "update",
+    "line": 58,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.profile.ProfileService",
+        "method": "update",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "59",
+        "source": "cn/pandora/profile/ProfileService.java",
+        "instruction_percent": 89.39,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 60.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tenure",
+    "method": "of",
+    "line": 22,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.profile.Tenure",
+        "method": "of",
+        "signature": "(Ljava/time/LocalDate;Ljava/time/LocalDate;)Ljava/util/Map;",
+        "line": "23",
+        "source": "cn/pandora/profile/Tenure.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 91.67,
+        "line_percent": 100.0,
+        "complexity_percent": 85.71,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "LegacyCreationRoutes",
+    "method": "run",
+    "line": 46,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.LegacyCreationRoutes",
+        "method": "run",
+        "signature": "(Lorg/springframework/boot/ApplicationArguments;)V",
+        "line": "47",
+        "source": "cn/pandora/task/LegacyCreationRoutes.java",
+        "instruction_percent": 39.51,
+        "branch_percent": 66.67,
+        "line_percent": 58.33,
+        "complexity_percent": 75.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tags",
+    "method": "PaletteColor",
+    "line": 28,
+    "observedCoverage": [],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tags",
+    "method": "paletteColor",
+    "line": 46,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "paletteColor",
+        "signature": "(Ljava/lang/String;)Z",
+        "line": "48",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tags",
+    "method": "palette",
+    "line": 55,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "palette",
+        "signature": "()Ljava/util/List;",
+        "line": "57",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tags",
+    "method": "view",
+    "line": 67,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "view",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "68",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 87.1,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 25.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "view",
+        "signature": "(Ljava/util/Map;)Ljava/util/Map;",
+        "line": "75",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 96.61,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tags",
+    "method": "view",
+    "line": 73,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "view",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "68",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 87.1,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 25.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "view",
+        "signature": "(Ljava/util/Map;)Ljava/util/Map;",
+        "line": "75",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 96.61,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tags",
+    "method": "resolveForWrite",
+    "line": 92,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "resolveForWrite",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "93",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 92.45,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 57.14,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tags",
+    "method": "list",
+    "line": 102,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "list",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "104",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tags",
+    "method": "create",
+    "line": 120,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "create",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "122",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tags",
+    "method": "change",
+    "line": 132,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "change",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "134",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 85.71,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 16.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tags",
+    "method": "delete",
+    "line": 151,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "delete",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "153",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "Tags",
+    "method": "requireFounder",
+    "line": 164,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.Tags",
+        "method": "requireFounder",
+        "signature": "(Lcn/pandora/auth/Actor;)V",
+        "line": "166",
+        "source": "cn/pandora/task/Tags.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "list",
+    "line": 91,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "list",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "92",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "table",
+    "line": 117,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "table",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "118",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 96.39,
+        "branch_percent": 90.0,
+        "line_percent": 100.0,
+        "complexity_percent": 81.82,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "statisticsTasks",
+    "line": 234,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "statisticsTasks",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/List;",
+        "line": "235",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "readableTaskIds",
+    "line": 250,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "readableTaskIds",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Collection;)Ljava/util/Set;",
+        "line": "251",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "readableTaskIds",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Collection;Z)Ljava/util/Set;",
+        "line": "257",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 95.0,
+        "branch_percent": 62.5,
+        "line_percent": 100.0,
+        "complexity_percent": 40.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "readableTaskIds",
+    "line": 256,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "readableTaskIds",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Collection;)Ljava/util/Set;",
+        "line": "251",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      },
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "readableTaskIds",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Collection;Z)Ljava/util/Set;",
+        "line": "257",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 95.0,
+        "branch_percent": 62.5,
+        "line_percent": 100.0,
+        "complexity_percent": 40.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "adminTasks",
+    "line": 330,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "adminTasks",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "331",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "assigneeCandidates",
+    "line": 430,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "assigneeCandidates",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "431",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      },
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "assigneeCandidates",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "436",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 93.75,
+        "branch_percent": 68.75,
+        "line_percent": 100.0,
+        "complexity_percent": 55.56,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "assigneeCandidates",
+    "line": 435,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "assigneeCandidates",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "431",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      },
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "assigneeCandidates",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "436",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 93.75,
+        "branch_percent": 68.75,
+        "line_percent": 100.0,
+        "complexity_percent": 55.56,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "detail",
+    "line": 460,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "detail",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "461",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 98.85,
+        "branch_percent": 88.46,
+        "line_percent": 100.0,
+        "complexity_percent": 78.57,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "create",
+    "line": 526,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "create",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "528",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 96.21,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "expireBeforeSubmit",
+    "line": 553,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "expireBeforeSubmit",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)V",
+        "line": "554",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "change",
+    "line": 556,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "change",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "558",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 94.71,
+        "branch_percent": 82.89,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "approvals",
+    "line": 670,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "approvals",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "671",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      },
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "approvals",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "676",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 86.15,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 16.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "approvals",
+    "line": 675,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "approvals",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "671",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      },
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "approvals",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "676",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 86.15,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 16.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "approval",
+    "line": 714,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "approval",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "715",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "canReadRequest",
+    "line": 733,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "canReadRequest",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Z",
+        "line": "734",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 84.48,
+        "branch_percent": 50.0,
+        "line_percent": 75.0,
+        "complexity_percent": 20.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "RequestAccess",
+    "line": 745,
+    "observedCoverage": [],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "requestAccess",
+    "line": 750,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "requestAccess",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Collection;)Lcn/pandora/task/TaskService$RequestAccess;",
+        "line": "751",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "decide",
+    "line": 863,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "decide",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "865",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 84.53,
+        "branch_percent": 81.69,
+        "line_percent": 86.27,
+        "complexity_percent": 67.57,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "reviewerPreview",
+    "line": 994,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "reviewerPreview",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "995",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 87.72,
+        "branch_percent": 71.05,
+        "line_percent": 91.23,
+        "complexity_percent": 53.85,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "handoverTargets",
+    "line": 1084,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "handoverTargets",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "1085",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 87.72,
+        "branch_percent": 25.0,
+        "line_percent": 100.0,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "handoverPreset",
+    "line": 1103,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "handoverPreset",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "1104",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "saveHandoverPreset",
+    "line": 1108,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "saveHandoverPreset",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "1110",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 78.29,
+        "branch_percent": 62.5,
+        "line_percent": 88.24,
+        "complexity_percent": 40.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "clearHandoverPreset",
+    "line": 1133,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "clearHandoverPreset",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "1135",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 98.25,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "handover",
+    "line": 1187,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "handover",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "1188",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 91.47,
+        "branch_percent": 68.18,
+        "line_percent": 100.0,
+        "complexity_percent": 41.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "taskHistory",
+    "line": 1253,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "taskHistory",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "1254",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 95.13,
+        "branch_percent": 86.11,
+        "line_percent": 94.2,
+        "complexity_percent": 73.68,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "refreshPendingRoutes",
+    "line": 1342,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "refreshPendingRoutes",
+        "signature": "(Lcn/pandora/auth/Actor;)I",
+        "line": "1343",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "refreshLegacyCreationRoutes",
+    "line": 1381,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "refreshLegacyCreationRoutes",
+        "signature": "(Lcn/pandora/auth/Actor;)I",
+        "line": "1382",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "setTablePinned",
+    "line": 1843,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "setTablePinned",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Z)Ljava/util/Map;",
+        "line": "1844",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 95.0,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 60.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "setPinned",
+    "line": 1861,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "setPinned",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Z)Ljava/util/Map;",
+        "line": "1863",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 97.98,
+        "branch_percent": 87.5,
+        "line_percent": 100.0,
+        "complexity_percent": 80.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "route",
+    "line": 2077,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "route",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/List;Ljava/lang/String;)Lcn/pandora/task/TaskService$Route;",
+        "line": "2078",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 91.67,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "creationRoute",
+    "line": 2085,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.task.TaskService",
+        "method": "creationRoute",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Lcn/pandora/task/TaskService$Route;",
+        "line": "2086",
+        "source": "cn/pandora/task/TaskService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "Route",
+    "line": 2167,
+    "observedCoverage": [],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "hasReviewer",
+    "line": 2169,
+    "observedCoverage": [],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "TaskService",
+    "method": "directFor",
+    "line": 2170,
+    "observedCoverage": [],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "CommentService",
+    "method": "list",
+    "line": 49,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.CommentService",
+        "method": "list",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "50",
+        "source": "cn/pandora/workspace/CommentService.java",
+        "instruction_percent": 99.0,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 55.56,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "CommentService",
+    "method": "create",
+    "line": 98,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.CommentService",
+        "method": "create",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "100",
+        "source": "cn/pandora/workspace/CommentService.java",
+        "instruction_percent": 98.84,
+        "branch_percent": 85.71,
+        "line_percent": 100.0,
+        "complexity_percent": 75.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "CommentService",
+    "method": "change",
+    "line": 124,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.CommentService",
+        "method": "change",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "126",
+        "source": "cn/pandora/workspace/CommentService.java",
+        "instruction_percent": 98.29,
+        "branch_percent": 80.0,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "CommentService",
+    "method": "delete",
+    "line": 144,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.CommentService",
+        "method": "delete",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "146",
+        "source": "cn/pandora/workspace/CommentService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "DailyItemService",
+    "method": "summary",
+    "line": 52,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.DailyItemService",
+        "method": "summary",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "53",
+        "source": "cn/pandora/workspace/DailyItemService.java",
+        "instruction_percent": 98.81,
+        "branch_percent": 94.44,
+        "line_percent": 97.56,
+        "complexity_percent": 90.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "DailyItemService",
+    "method": "list",
+    "line": 102,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.DailyItemService",
+        "method": "list",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "103",
+        "source": "cn/pandora/workspace/DailyItemService.java",
+        "instruction_percent": 97.89,
+        "branch_percent": 91.18,
+        "line_percent": 97.14,
+        "complexity_percent": 83.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "DailyItemService",
+    "method": "detail",
+    "line": 143,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.DailyItemService",
+        "method": "detail",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "144",
+        "source": "cn/pandora/workspace/DailyItemService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "DailyItemService",
+    "method": "create",
+    "line": 150,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.DailyItemService",
+        "method": "create",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "152",
+        "source": "cn/pandora/workspace/DailyItemService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 87.5,
+        "line_percent": 100.0,
+        "complexity_percent": 80.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "DailyItemService",
+    "method": "change",
+    "line": 182,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.DailyItemService",
+        "method": "change",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "184",
+        "source": "cn/pandora/workspace/DailyItemService.java",
+        "instruction_percent": 97.69,
+        "branch_percent": 81.82,
+        "line_percent": 97.44,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "DailyItemService",
+    "method": "delete",
+    "line": 228,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.DailyItemService",
+        "method": "delete",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "230",
+        "source": "cn/pandora/workspace/DailyItemService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "EventsWorker",
+    "method": "runOnce",
+    "line": 52,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.EventsWorker",
+        "method": "runOnce",
+        "signature": "()V",
+        "line": "54",
+        "source": "cn/pandora/workspace/EventsWorker.java",
+        "instruction_percent": 80.85,
+        "branch_percent": 75.0,
+        "line_percent": 80.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ExpiryService",
+    "method": "expirePendingBeforeSubmit",
+    "line": 52,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.ExpiryService",
+        "method": "expirePendingBeforeSubmit",
+        "signature": "(Ljava/lang/String;Ljava/lang/String;)I",
+        "line": "53",
+        "source": "cn/pandora/workspace/ExpiryService.java",
+        "instruction_percent": 87.5,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ExpiryService",
+    "method": "applicableDeadline",
+    "line": 64,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.ExpiryService",
+        "method": "applicableDeadline",
+        "signature": "(Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;)Ljava/time/Instant;",
+        "line": "65",
+        "source": "cn/pandora/workspace/ExpiryService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 91.67,
+        "line_percent": 100.0,
+        "complexity_percent": 85.71,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ExpiryService",
+    "method": "scheduleChanged",
+    "line": 70,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.ExpiryService",
+        "method": "scheduleChanged",
+        "signature": "(Ljava/util/Map;Ljava/util/Map;)Z",
+        "line": "72",
+        "source": "cn/pandora/workspace/ExpiryService.java",
+        "instruction_percent": 94.44,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 60.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ExpiryService",
+    "method": "expirePending",
+    "line": 80,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.ExpiryService",
+        "method": "expirePending",
+        "signature": "(Ljava/lang/String;Ljava/time/Instant;)I",
+        "line": "81",
+        "source": "cn/pandora/workspace/ExpiryService.java",
+        "instruction_percent": 64.86,
+        "branch_percent": 25.0,
+        "line_percent": 66.67,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ExpiryService",
+    "method": "expirePendingForTask",
+    "line": 91,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.ExpiryService",
+        "method": "expirePendingForTask",
+        "signature": "(Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;)I",
+        "line": "92",
+        "source": "cn/pandora/workspace/ExpiryService.java",
+        "instruction_percent": 73.47,
+        "branch_percent": 50.0,
+        "line_percent": 80.0,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ExpiryService",
+    "method": "expire",
+    "line": 101,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.ExpiryService",
+        "method": "expire",
+        "signature": "(Ljava/lang/String;Ljava/util/Map;Ljava/time/Instant;Ljava/lang/String;)Z",
+        "line": "102",
+        "source": "cn/pandora/workspace/ExpiryService.java",
+        "instruction_percent": 97.61,
+        "branch_percent": 60.0,
+        "line_percent": 100.0,
+        "complexity_percent": 33.33,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ExpiryService",
+    "method": "kindLabel",
+    "line": 143,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.ExpiryService",
+        "method": "kindLabel",
+        "signature": "(Ljava/lang/String;)Ljava/lang/String;",
+        "line": "145",
+        "source": "cn/pandora/workspace/ExpiryService.java",
+        "instruction_percent": 82.14,
+        "branch_percent": 77.78,
+        "line_percent": 87.5,
+        "complexity_percent": 75.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ExpiryService",
+    "method": "instant",
+    "line": 159,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.ExpiryService",
+        "method": "instant",
+        "signature": "(Ljava/lang/Object;)Ljava/time/Instant;",
+        "line": "161",
+        "source": "cn/pandora/workspace/ExpiryService.java",
+        "instruction_percent": 36.36,
+        "branch_percent": 50.0,
+        "line_percent": 66.67,
+        "complexity_percent": 25.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ReminderService",
+    "method": "createReminders",
+    "line": 34,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.ReminderService",
+        "method": "createReminders",
+        "signature": "(Ljava/lang/String;Ljava/time/Instant;)I",
+        "line": "36",
+        "source": "cn/pandora/workspace/ReminderService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "ReminderService",
+    "method": "ensureOverdueAfterExpiry",
+    "line": 52,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.ReminderService",
+        "method": "ensureOverdueAfterExpiry",
+        "signature": "(Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;)I",
+        "line": "53",
+        "source": "cn/pandora/workspace/ReminderService.java",
+        "instruction_percent": 80.0,
+        "branch_percent": 50.0,
+        "line_percent": 80.0,
+        "complexity_percent": 20.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkLogSlots",
+    "method": "run",
+    "line": 53,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkLogSlots",
+        "method": "run",
+        "signature": "(Lorg/springframework/boot/ApplicationArguments;)V",
+        "line": "54",
+        "source": "cn/pandora/workspace/WorkLogSlots.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "me",
+    "line": 52,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "me",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/Map;",
+        "line": "53",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "users",
+    "line": 75,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "users",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;Z)Ljava/util/Map;",
+        "line": "76",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "person",
+    "line": 90,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "person",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "91",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "fillSource",
+    "line": 120,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "fillSource",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "121",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "reports",
+    "line": 181,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "reports",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/Map;",
+        "line": "182",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "logs",
+    "line": 200,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "logs",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "201",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "logAuthors",
+    "line": 245,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "logAuthors",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "246",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "log",
+    "line": 350,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "log",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "351",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "createLog",
+    "line": 360,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "createLog",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "362",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 91.39,
+        "branch_percent": 70.0,
+        "line_percent": 86.67,
+        "complexity_percent": 63.64,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "changeLog",
+    "line": 401,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "changeLog",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "403",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 96.45,
+        "branch_percent": 87.5,
+        "line_percent": 100.0,
+        "complexity_percent": 77.78,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "deleteLog",
+    "line": 429,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "deleteLog",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "431",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 94.12,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "notifications",
+    "line": 446,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "notifications",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "447",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "notification",
+    "line": 478,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "notification",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "479",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "openNotification",
+    "line": 494,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "openNotification",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "495",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 98.28,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "changeNotification",
+    "line": 512,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "changeNotification",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "514",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 74.64,
+        "branch_percent": 50.0,
+        "line_percent": 80.0,
+        "complexity_percent": 28.57,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "withdrawNotification",
+    "line": 536,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "withdrawNotification",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "537",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "withdrawEvent",
+    "line": 541,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "withdrawEvent",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "543",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 90.13,
+        "branch_percent": 53.33,
+        "line_percent": 100.0,
+        "complexity_percent": 18.75,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "adminNotifications",
+    "line": 567,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "adminNotifications",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "568",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "notificationTask",
+    "line": 593,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "notificationTask",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "594",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "cleanupNotifications",
+    "line": 630,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "cleanupNotifications",
+        "signature": "(Ljava/lang/String;Ljava/time/Instant;)I",
+        "line": "631",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "eventObjectDeleted",
+    "line": 951,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "eventObjectDeleted",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Z",
+        "line": "954",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 43.48,
+        "branch_percent": 38.89,
+        "line_percent": 44.44,
+        "complexity_percent": 30.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "canReadEventObject",
+    "line": 969,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "canReadEventObject",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Z",
+        "line": "970",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 92.41,
+        "branch_percent": 57.14,
+        "line_percent": 88.89,
+        "complexity_percent": 25.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "home",
+    "line": 1009,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "home",
+        "signature": "(Lcn/pandora/auth/Actor;)Ljava/util/Map;",
+        "line": "1010",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "homeItem",
+    "line": 1034,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "homeItem",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "1036",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 93.33,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "createHomeItem",
+    "line": 1041,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "createHomeItem",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "1044",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 9.29,
+        "branch_percent": 0.0,
+        "line_percent": 15.38,
+        "complexity_percent": 20.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "changeHomeItem",
+    "line": 1058,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "changeHomeItem",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "1060",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 0.0,
+        "branch_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "deleteHomeItem",
+    "line": 1068,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "deleteHomeItem",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "1070",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 0.0,
+        "branch_percent": 0.0,
+        "line_percent": 0.0,
+        "complexity_percent": 0.0,
+        "method_percent": 0.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "checkHomeCreateAccess",
+    "line": 1086,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "checkHomeCreateAccess",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)V",
+        "line": "1087",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 61.11,
+        "branch_percent": 50.0,
+        "line_percent": 50.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "checkHomeItemWriteAccess",
+    "line": 1095,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "checkHomeItemWriteAccess",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)V",
+        "line": "1096",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 84.62,
+        "branch_percent": 50.0,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "statistics",
+    "line": 1102,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "statistics",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "1103",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "createAiJob",
+    "line": 1119,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "createAiJob",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "1121",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "branch_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "aiJob",
+    "line": 1153,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "aiJob",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Ljava/util/Map;",
+        "line": "1154",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 90.54,
+        "branch_percent": 57.14,
+        "line_percent": 88.24,
+        "complexity_percent": 25.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "adminTeams",
+    "line": 1173,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "adminTeams",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "1175",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 22.22,
+        "line_percent": 50.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "audit",
+    "line": 1178,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "audit",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/util/Map;)Ljava/util/Map;",
+        "line": "1180",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 100.0,
+        "line_percent": 100.0,
+        "complexity_percent": 100.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "canReadTaskForComments",
+    "line": 1194,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "canReadTaskForComments",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;)Z",
+        "line": "1195",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 90.0,
+        "branch_percent": 66.67,
+        "line_percent": 100.0,
+        "complexity_percent": 50.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "canReadTask",
+    "line": 1201,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "canReadTask",
+        "signature": "(Lcn/pandora/auth/Actor;Ljava/lang/String;Z)Z",
+        "line": "1203",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 96.69,
+        "branch_percent": 85.71,
+        "line_percent": 100.0,
+        "complexity_percent": 75.0,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  },
+  {
+    "class": "WorkspaceService",
+    "method": "notificationVersion",
+    "line": 1478,
+    "observedCoverage": [
+      {
+        "class": "cn.pandora.workspace.WorkspaceService",
+        "method": "notificationVersion",
+        "signature": "(Ljava/util/Map;)J",
+        "line": "1478",
+        "source": "cn/pandora/workspace/WorkspaceService.java",
+        "instruction_percent": 94.74,
+        "branch_percent": 75.0,
+        "line_percent": 100.0,
+        "complexity_percent": 66.67,
+        "method_percent": 100.0
+      }
+    ],
+    "threeCasesHumanSignoff": "PENDING: executed module cases are catalogued separately; per-method traceability needs human review"
+  }
+]

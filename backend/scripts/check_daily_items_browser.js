@@ -17,7 +17,7 @@ function evidence(name, rows) {
 function check(name, pass, evidence) {
   report.checks.push({ check: name, pass: !!pass, evidence });
   console.log((pass ? 'PASS ' : 'FAIL ') + name);
-  if (!pass) throw new Error(name + ' ' + JSON.stringify(evidence));
+  if (!pass && !name.includes('keeps daily-today after delayed layouts settle')) throw new Error(name + ' ' + JSON.stringify(evidence));
 }
 const js = value => JSON.stringify(value);
 function dayKey(offset) {
@@ -294,8 +294,10 @@ async function main() {
       switched.account === switched.expected && switched.aria && switched.aria.includes('无事项'), switched);
 
     fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n');
-    console.log('\n' + report.checks.length + ' browser checks passed');
+    console.log('\n' + report.checks.length + ' browser checks executed');
+    if (report.checks.some(row => !row.pass)) throw new Error('Recorded calendar regression failures; see daily-items-browser.json');
   } finally {
+    fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n');
     b.kill();
   }
 }

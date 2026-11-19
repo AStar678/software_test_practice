@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Db.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.common</a> &gt; <span class="el_source">Db.java</span></div><h1>Db.java</h1><pre class="source lang-java linenums">package cn.pandora.common;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+import java.sql.*;
+import java.util.*;
+
+@Component
+public class Db {
+    public final JdbcTemplate jdbc;
+    private final ObjectMapper mapper;
+<span class="fc" id="L14">    public Db(JdbcTemplate jdbc,ObjectMapper mapper) { this.jdbc=jdbc; this.mapper=mapper; }</span>
+    public List&lt;Map&lt;String,Object&gt;&gt; list(String sql,Object...args) {
+<span class="nc" id="L16">        return jdbc.query(sql,(rs,n)-&gt; {</span>
+<span class="nc" id="L17">            Map&lt;String,Object&gt; row=new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L18">            ResultSetMetaData meta=rs.getMetaData();</span>
+<span class="nc bnc" id="L19" title="All 2 branches missed.">            for(int i=1;i&lt;=meta.getColumnCount();i++) {</span>
+<span class="nc" id="L20">                Object v=rs.getObject(i);</span>
+<span class="nc bnc" id="L21" title="All 2 branches missed.">                if(v instanceof Timestamp t) v=t.toInstant().toString();</span>
+<span class="nc bnc" id="L22" title="All 2 branches missed.">                else if(v instanceof java.time.LocalDateTime t) v=t.toInstant(java.time.ZoneOffset.UTC).toString();</span>
+<span class="nc bnc" id="L23" title="All 2 branches missed.">                else if(v instanceof java.sql.Date d) v=d.toLocalDate().toString();</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">                else if(v instanceof byte[] b) v=new String(b,java.nio.charset.StandardCharsets.UTF_8);</span>
+<span class="nc" id="L25">                row.put(camel(meta.getColumnLabel(i)),v);</span>
+            }
+<span class="nc" id="L27">            return row;</span>
+        },args);
+    }
+<span class="fc bfc" id="L30" title="All 2 branches covered.">    public Map&lt;String,Object&gt; find(String sql,Object...args) { var rows=list(sql,args); return rows.isEmpty()?null:rows.getFirst(); }</span>
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">    public Map&lt;String,Object&gt; one(String sql,Object...args) { var r=find(sql,args); if(r==null) throw ApiException.notFound(); return r; }</span>
+<span class="nc" id="L32">    public int update(String sql,Object...args) { return jdbc.update(sql,args); }</span>
+<span class="pc" id="L33">    public String json(Object value) { try { return mapper.writeValueAsString(value); } catch(Exception e) { throw new IllegalArgumentException(&quot;无法编码JSON&quot;,e); } }</span>
+<span class="pc" id="L34">    public Map&lt;String,Object&gt; parse(String json) { try { return mapper.readValue(json,new TypeReference&lt;&gt;(){}); } catch(Exception e) { throw new IllegalArgumentException(&quot;无法读取JSON&quot;,e); } }</span>
+<span class="fc" id="L35">    public static String id() { return UUID.randomUUID().toString(); }</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">    public static String s(Map&lt;String,?&gt; r,String k) { Object v=r.get(k); return v==null?null:v.toString(); }</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">    public static long n(Map&lt;String,?&gt; r,String k) { Object v=r.get(k); return v instanceof Number num?num.longValue():Long.parseLong(v.toString()); }</span>
+    private static String camel(String raw) {
+<span class="nc" id="L39">        StringBuilder s=new StringBuilder(); boolean upper=false;</span>
+<span class="nc bnc" id="L40" title="All 6 branches missed.">        for(char c:raw.toCharArray()) { if(c=='_') upper=true; else { s.append(upper?Character.toUpperCase(c):c); upper=false; } }</span>
+<span class="nc" id="L41">        return s.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
