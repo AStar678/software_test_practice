@@ -1,0 +1,120 @@
+{
+  "id": "M03",
+  "method": "DailyItemService.summary",
+  "endpoint": "GET /daily-items/summary",
+  "status": "PASS",
+  "counts": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  "categoryCoverage": {
+    "正常": {
+      "designed": 1,
+      "executed": 1,
+      "passed": 1
+    },
+    "边界": {
+      "designed": 2,
+      "executed": 2,
+      "passed": 2
+    },
+    "异常": {
+      "designed": 3,
+      "executed": 3,
+      "passed": 3
+    }
+  },
+  "threeCategoriesSatisfied": true,
+  "cleanup": {
+    "created": 0,
+    "unresolved": []
+  },
+  "analysis": "正常输入：N_days30（from=2024-02-01，to=2024-03-01）实际HTTP 200；from=2024-02-01，to=2024-03-01，maxDays=93，days记录数=0。\n\n边界输入：B_days1（from=2024-02-01，to=2024-02-01）实际HTTP 200；from=2024-02-01，to=2024-02-01，maxDays=93，days记录数=0；B_days93（from=2024-02-01，to=2024-05-03）实际HTTP 200；from=2024-02-01，to=2024-05-03，maxDays=93，days记录数=0。\n\n异常输入：E_days0（from=2024-02-01，to=2024-01-31）实际HTTP 400；code=INVALID_INPUT；E_days94（from=2024-02-01，to=2024-05-04）实际HTTP 400；code=INVALID_INPUT；E_invalid_date（from=1900-02-29，to=1900-03-01）实际HTTP 400；code=INVALID_INPUT。\n\n以上实际状态均与各用例预期吻合，且pytest业务后置条件全部通过，因此本轮所列三类用例通过。 成功响应days记录数均为0，验证了日期范围及空汇总行为，尚未验证非零事项的逐日计数。",
+  "actualEvidence": [
+    {
+      "caseId": "N_days30",
+      "kind": "正常",
+      "input": "from=2024-02-01，to=2024-03-01",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；from=2024-02-01，to=2024-03-01，maxDays=93，days记录数=0",
+      "pytest": "passed",
+      "requestLines": [
+        1
+      ],
+      "metrics": {
+        "dayRows": 0
+      }
+    },
+    {
+      "caseId": "B_days1",
+      "kind": "边界",
+      "input": "from=2024-02-01，to=2024-02-01",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；from=2024-02-01，to=2024-02-01，maxDays=93，days记录数=0",
+      "pytest": "passed",
+      "requestLines": [
+        2
+      ],
+      "metrics": {
+        "dayRows": 0
+      }
+    },
+    {
+      "caseId": "B_days93",
+      "kind": "边界",
+      "input": "from=2024-02-01，to=2024-05-03",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；from=2024-02-01，to=2024-05-03，maxDays=93，days记录数=0",
+      "pytest": "passed",
+      "requestLines": [
+        3
+      ],
+      "metrics": {
+        "dayRows": 0
+      }
+    },
+    {
+      "caseId": "E_days0",
+      "kind": "异常",
+      "input": "from=2024-02-01，to=2024-01-31",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT",
+      "pytest": "passed",
+      "requestLines": [
+        4
+      ],
+      "metrics": {}
+    },
+    {
+      "caseId": "E_days94",
+      "kind": "异常",
+      "input": "from=2024-02-01，to=2024-05-04",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT",
+      "pytest": "passed",
+      "requestLines": [
+        5
+      ],
+      "metrics": {}
+    },
+    {
+      "caseId": "E_invalid_date",
+      "kind": "异常",
+      "input": "from=1900-02-29，to=1900-03-01",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT",
+      "pytest": "passed",
+      "requestLines": [
+        6
+      ],
+      "metrics": {}
+    }
+  ]
+}

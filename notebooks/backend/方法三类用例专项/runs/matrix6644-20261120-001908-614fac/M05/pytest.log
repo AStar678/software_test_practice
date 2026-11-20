@@ -1,0 +1,18 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.2.0, pluggy-1.7.0 -- /Users/aoxiang/Desktop/软件测试/notebooks/backend/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/aoxiang/Desktop/软件测试/notebooks/backend/方法三类用例专项
+plugins: platformdirs-4.14.7, anyio-4.16.0
+collecting ... collected 8 items
+
+runs/matrix6644-20261120-001908-614fac/M05/test_method.py::test_change_three_classes[N_text20] PASSED [ 12%]
+runs/matrix6644-20261120-001908-614fac/M05/test_method.py::test_change_three_classes[B_text1] PASSED [ 25%]
+runs/matrix6644-20261120-001908-614fac/M05/test_method.py::test_change_three_classes[B_text2000] PASSED [ 37%]
+runs/matrix6644-20261120-001908-614fac/M05/test_method.py::test_change_three_classes[E_text0] PASSED [ 50%]
+runs/matrix6644-20261120-001908-614fac/M05/test_method.py::test_change_three_classes[E_text2001] PASSED [ 62%]
+runs/matrix6644-20261120-001908-614fac/M05/test_method.py::test_change_three_classes[E_text_type] PASSED [ 75%]
+runs/matrix6644-20261120-001908-614fac/M05/test_method.py::test_change_three_classes[E_version_missing] PASSED [ 87%]
+runs/matrix6644-20261120-001908-614fac/M05/test_method.py::test_change_three_classes[E_version_stale] PASSED [100%]
+
+- generated xml file: /Users/aoxiang/Desktop/软件测试/notebooks/backend/方法三类用例专项/runs/matrix6644-20261120-001908-614fac/M05/pytest.xml -
+============================== 8 passed in 4.13s ===============================

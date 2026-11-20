@@ -4,10 +4,12 @@ import 'package:pandora_employee/features/tasks/presentation/task_detail_page.da
 import 'package:pandora_employee/features/tasks/presentation/task_form_page.dart';
 
 import '../support/test_harness.dart';
+import '../support/time_picker_checks.dart';
 
 void main() {
   mainEditTests();
   testWidgets('新建任务：普通员工默认本人、提交体不含完成标准、真实审核人回读', (tester) async {
+    use24HourPicker(tester);
     tester.view.physicalSize = const Size(420, 2600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -89,6 +91,8 @@ void main() {
 
     await tester.enterText(find.byType(TextFormField).at(0), '联调任务');
     await tester.enterText(find.byType(TextFormField).at(1), '用于检查提交体的说明');
+    await exerciseFormTime(tester, '开始', '10', '35');
+    await exerciseFormTime(tester, '结束', '19', '45');
     await tester.ensureVisible(find.text('提交任务'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('提交任务'));
@@ -104,8 +108,8 @@ void main() {
     expect(payload.containsKey('acceptanceCriteria'), isFalse);
     expect(payload['assigneeIds'], ['u1']);
     expect(payload['allDay'], isFalse);
-    expect(payload['startAt'], isNotNull);
-    expect(payload['dueAt'], isNotNull);
+    expect(payload['startAt'], '2026-11-10T02:35:00.000Z');
+    expect(payload['dueAt'], '2026-11-10T11:45:00.000Z');
     expect(posts.single.headers['Idempotency-Key'], isNotNull);
 
     await tester.tap(find.text('知道了'));
@@ -255,6 +259,7 @@ void _fakesForEditForm(FakeBackend backend) {
 
 void mainEditTests() {
   testWidgets('编辑不显示也不提交完成标准，移除最后标签发送空数组', (tester) async {
+    use24HourPicker(tester);
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -271,6 +276,8 @@ void mainEditTests() {
 
     await tester.enterText(find.byType(TextFormField).first, '改名后的任务');
     await tester.pumpAndSettle();
+    await exerciseFormTime(tester, '开始', '10', '35');
+    await exerciseFormTime(tester, '结束', '19', '45');
 
     // 展开较长的负责人树后，表单后续字段仍随外层滚动到达。
     final scrollable = find.byType(Scrollable).first;
@@ -311,6 +318,8 @@ void mainEditTests() {
     expect(payload['command'], 'change');
     expect(payload['title'], '改名后的任务');
     expect(payload['reason'], '测试修改');
+    expect(payload['startAt'], '2026-11-10T02:35:00.000Z');
+    expect(payload['dueAt'], '2026-11-10T11:45:00.000Z');
     expect(payload['tagIds'], isEmpty, reason: '移除最后一个标签仍显式传空数组');
     expect(payload.containsKey('acceptanceCriteria'), isFalse);
     expect(patches.single.headers['If-Match'], '"3"');

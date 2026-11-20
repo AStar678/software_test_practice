@@ -206,6 +206,7 @@ class _TaskReopenPageState extends ConsumerState<TaskReopenPage> {
     final time = await showTimePicker(
       context: context,
       initialTime: isStart ? _startTime : _dueTime,
+      initialEntryMode: TimePickerEntryMode.inputOnly,
       cancelText: '取消',
       confirmText: '确定',
     );

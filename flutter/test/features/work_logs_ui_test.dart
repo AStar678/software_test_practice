@@ -6,6 +6,7 @@ import 'package:pandora_employee/features/work_logs/presentation/work_logs_page.
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/test_harness.dart';
+import 'comments_keyboard_test.dart' show commentJson;
 
 Map<String, Object?> logJson(
   String id,
@@ -296,13 +297,14 @@ void main() {
       wrapWithScope(container, const WorkLogsPage()),
     );
     await tester.pumpAndSettle();
-    expect(find.text('已冻结（已不能编辑）'), findsOneWidget);
+    expect(find.text('已不能编辑'), findsOneWidget);
+    expect(find.textContaining('已冻结'), findsNothing);
 
     await tester.pumpWidget(
       wrapWithScope(container, const WorkLogDetailPage(logId: 'log1')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('已冻结（已不能编辑）'), findsOneWidget);
+    expect(find.text('已不能编辑'), findsOneWidget);
     expect(find.byTooltip('编辑日志'), findsNothing);
     expect(find.byTooltip('删除日志'), findsNothing);
     expect(backend.requestsFor('DELETE', '/work-logs/log1'), isEmpty);
@@ -439,6 +441,7 @@ void main() {
         }),
       );
     }
+    backend.on('POST', '/work-logs/frozen/comments', (_) => FakeResponse(commentJson(1)));
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
@@ -458,7 +461,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('已冻结（已不能编辑）'), findsOneWidget);
+    expect(find.text('已不能编辑'), findsOneWidget);
+    expect(find.textContaining('已冻结'), findsNothing);
 
     await tester.pumpWidget(
       wrapWithScope(
@@ -471,7 +475,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('已冻结（已不能编辑）'), findsNothing, reason: '只读不等于冻结');
+    expect(find.text('已不能编辑'), findsNothing, reason: '只读不等于冻结');
     expect(find.byTooltip('编辑日志'), findsNothing);
     expect(find.text('日志 readonly'), findsOneWidget);
 
@@ -486,7 +490,15 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('已冻结（已不能编辑）'), findsOneWidget);
+    expect(find.text('已不能编辑'), findsOneWidget);
+    expect(find.byTooltip('编辑日志'), findsNothing);
+    final input = find.widgetWithText(TextField, '发表评论');
+    await tester.ensureVisible(input);
+    await tester.enterText(input, '冻结下属日志仍可评论');
+    await tester.ensureVisible(find.byTooltip('发送评论'));
+    await tester.tap(find.byTooltip('发送评论'));
+    await tester.pumpAndSettle();
+    expect(backend.requestsFor('POST', '/work-logs/frozen/comments').single.jsonBody['body'], '冻结下属日志仍可评论');
     expect(tester.takeException(), isNull);
   });
 

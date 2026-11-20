@@ -97,6 +97,47 @@ class MonthLayoutCalculator {
     final monthStart = month.firstDayOfMonth;
     final monthEnd = month.lastDayOfMonth;
     final gridStart = CompanyCalendarGrid.gridStart(monthStart);
+    final weekCount = fixedWeeks
+        ? MonthLayout.fixedWeekCount
+        : monthEnd.mondayOfWeek.differenceInDays(gridStart) ~/ 7 + 1;
+    return MonthLayout(
+      month: monthStart,
+      weeks: _computeWeeks(
+        monthStart,
+        monthEnd,
+        gridStart,
+        weekCount,
+        items,
+        maxLanes,
+        leadingIds,
+      ),
+    );
+  }
+
+  static WeekLayout computeFullWeek({
+    required CompanyDate weekStart,
+    required Iterable<DailyItem> items,
+    required int maxLanes,
+    Set<String> leadingIds = const {},
+  }) => _computeWeeks(
+    weekStart,
+    weekStart.addDays(6),
+    weekStart,
+    1,
+    items,
+    maxLanes,
+    leadingIds,
+  ).single;
+
+  static List<WeekLayout> _computeWeeks(
+    CompanyDate monthStart,
+    CompanyDate monthEnd,
+    CompanyDate gridStart,
+    int weekCount,
+    Iterable<DailyItem> items,
+    int maxLanes,
+    Set<String> leadingIds,
+  ) {
     final itemList = items.toList();
 
     final coveredByDay = <CompanyDate, List<DailyItem>>{};
@@ -112,9 +153,6 @@ class MonthLayoutCalculator {
     }
 
     final weeks = <WeekLayout>[];
-    final weekCount = fixedWeeks
-        ? MonthLayout.fixedWeekCount
-        : monthEnd.mondayOfWeek.differenceInDays(gridStart) ~/ 7 + 1;
     for (var weekIndex = 0; weekIndex < weekCount; weekIndex++) {
       final weekStart = gridStart.addDays(weekIndex * 7);
       final lanes = List<List<bool>>.generate(
@@ -219,7 +257,7 @@ class MonthLayoutCalculator {
       weeks.add(WeekLayout(weekStart: weekStart, days: days, bars: bars));
     }
 
-    return MonthLayout(month: monthStart, weeks: weeks);
+    return weeks;
   }
 
   static CompanyDate _maxDate(CompanyDate a, CompanyDate b) =>

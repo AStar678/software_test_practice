@@ -10,6 +10,7 @@ import 'package:pandora_employee/features/tasks/presentation/task_detail_page.da
 import 'package:pandora_employee/features/tasks/presentation/task_review.dart';
 
 import '../support/test_harness.dart';
+import '../support/time_picker_checks.dart';
 
 Map<String, Object?> taskJson({List<String> sources = const ['s1'], bool done = false}) => {
   'id': 'task1',
@@ -313,6 +314,7 @@ void main() {
   });
 
   testWidgets('重开到期旧排期从公司今天09点/明天18点开始，保留有序旧负责人并预览', (tester) async {
+    use24HourPicker(tester);
     tester.view.physicalSize = const Size(390, 1800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -340,11 +342,25 @@ void main() {
       'taskId': 'task1',
       'assigneeIds': ['s1', 's2', 'u1'],
     });
+    for (final (date, initial, hour, minute) in [
+      ('开始 2026-11-10', '09:00', '10', '35'),
+      ('截止 2026-11-11', '18:00', '19', '45'),
+    ]) {
+      await tapPickerControl(tester, find.widgetWithText(OutlinedButton, date));
+      await confirmPickerDate(tester);
+      final time = find.widgetWithText(OutlinedButton, initial);
+      await tapPickerControl(tester, time);
+      await typePickerTime(tester, hour: hour, minute: minute, cancel: true);
+      expect(time, findsOneWidget);
+      await tapPickerControl(tester, time);
+      await typePickerTime(tester, hour: hour, minute: minute);
+      expect(find.widgetWithText(OutlinedButton, '$hour:$minute'), findsOneWidget);
+    }
     await tester.enterText(find.widgetWithText(TextField, '重开原因（必填）'), '新的轮次');
     await tapVisible(tester, find.text('提交重开申请'));
     final saved = backend.requestsFor('PATCH', '/tasks/task1').single;
-    expect(saved.jsonBody['startAt'], '2026-11-10T01:00:00.000Z');
-    expect(saved.jsonBody['dueAt'], '2026-11-11T10:00:00.000Z');
+    expect(saved.jsonBody['startAt'], '2026-11-10T02:35:00.000Z');
+    expect(saved.jsonBody['dueAt'], '2026-11-11T11:45:00.000Z');
     expect(saved.jsonBody['assigneeIds'], ['s1', 's2', 'u1']);
     expect(saved.headers['If-Match'], '"7"');
     expect(find.text('已直接生效'), findsOneWidget);

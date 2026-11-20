@@ -1,0 +1,86 @@
+[
+  {
+    "caseId": "N_days30",
+    "kind": "正常",
+    "input": "from=2024-02-01，to=2024-03-01",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；from=2024-02-01，to=2024-03-01，maxDays=93，days记录数=0",
+    "pytest": "passed",
+    "requestLines": [
+      1
+    ],
+    "metrics": {
+      "dayRows": 0
+    }
+  },
+  {
+    "caseId": "B_days1",
+    "kind": "边界",
+    "input": "from=2024-02-01，to=2024-02-01",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；from=2024-02-01，to=2024-02-01，maxDays=93，days记录数=0",
+    "pytest": "passed",
+    "requestLines": [
+      2
+    ],
+    "metrics": {
+      "dayRows": 0
+    }
+  },
+  {
+    "caseId": "B_days93",
+    "kind": "边界",
+    "input": "from=2024-02-01，to=2024-05-03",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；from=2024-02-01，to=2024-05-03，maxDays=93，days记录数=0",
+    "pytest": "passed",
+    "requestLines": [
+      3
+    ],
+    "metrics": {
+      "dayRows": 0
+    }
+  },
+  {
+    "caseId": "E_days0",
+    "kind": "异常",
+    "input": "from=2024-02-01，to=2024-01-31",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      4
+    ],
+    "metrics": {}
+  },
+  {
+    "caseId": "E_days94",
+    "kind": "异常",
+    "input": "from=2024-02-01，to=2024-05-04",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      5
+    ],
+    "metrics": {}
+  },
+  {
+    "caseId": "E_invalid_date",
+    "kind": "异常",
+    "input": "from=1900-02-29，to=1900-03-01",
+    "expected": 400,
+    "actualStatus": 400,
+    "observed": "HTTP 400；code=INVALID_INPUT",
+    "pytest": "passed",
+    "requestLines": [
+      6
+    ],
+    "metrics": {}
+  }
+]

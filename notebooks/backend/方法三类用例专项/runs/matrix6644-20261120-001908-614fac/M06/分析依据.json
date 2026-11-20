@@ -1,0 +1,74 @@
+[
+  {
+    "caseId": "N_version2",
+    "kind": "正常",
+    "input": "If-Match=\"2\"",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；读回HTTP=404，deleted=true",
+    "pytest": "passed",
+    "requestLines": [
+      3,
+      4
+    ],
+    "metrics": {
+      "readStatus": 404,
+      "readRequestLine": 4
+    }
+  },
+  {
+    "caseId": "B_version1",
+    "kind": "边界",
+    "input": "If-Match=\"1\"",
+    "expected": 200,
+    "actualStatus": 200,
+    "observed": "HTTP 200；读回HTTP=404，deleted=true",
+    "pytest": "passed",
+    "requestLines": [
+      6,
+      7
+    ],
+    "metrics": {
+      "readStatus": 404,
+      "readRequestLine": 7
+    }
+  },
+  {
+    "caseId": "E_version0",
+    "kind": "异常",
+    "input": "If-Match=\"0\"",
+    "expected": 412,
+    "actualStatus": 412,
+    "observed": "HTTP 412；code=VERSION_CONFLICT，读回HTTP=200，读回正文长度=39，rowVersion=1",
+    "pytest": "passed",
+    "requestLines": [
+      9,
+      10
+    ],
+    "metrics": {
+      "readStatus": 200,
+      "readBodyLength": 39,
+      "rowVersion": 1,
+      "readRequestLine": 10
+    }
+  },
+  {
+    "caseId": "E_version_missing",
+    "kind": "异常",
+    "input": "If-Match=null",
+    "expected": 428,
+    "actualStatus": 428,
+    "observed": "HTTP 428；code=PRECONDITION_REQUIRED，读回HTTP=200，读回正文长度=39，rowVersion=1",
+    "pytest": "passed",
+    "requestLines": [
+      12,
+      13
+    ],
+    "metrics": {
+      "readStatus": 200,
+      "readBodyLength": 39,
+      "rowVersion": 1,
+      "readRequestLine": 13
+    }
+  }
+]
