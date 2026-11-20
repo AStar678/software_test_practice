@@ -594,6 +594,19 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     _loadWeek(start);
   }
 
+  void _shiftExpandedWeek(int days) {
+    final week = _expandedWeek;
+    if (!_current || week == null || _gestureSuppressed || _weekHold != null) {
+      return;
+    }
+    final start = week.$2.addDays(days);
+    setState(() {
+      _dayReturnControl = null;
+      _expandedWeek = (start.firstDayOfMonth, start);
+    });
+    _loadWeek(start);
+  }
+
   void _loadWeek(CompanyDate start) {
     for (final month in _weekMonths(start)) {
       final key = _key(month);
@@ -646,6 +659,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
         weekHeight: _weekHeight,
         dayKey: _dayKey,
         expandedWeek: start,
+        onShiftWeek: _shiftExpandedWeek,
         onCollapseWeek: _collapseWeek,
         onWeekTaskDown: (selection) => _weekHold = selection,
         onWeekTaskHold: (taskId) {
@@ -1230,6 +1244,9 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
       _dayReturnControl = null;
       _expandedWeek = null;
       _weekReturn = null;
+      if (!_months.contains(visibleDay.firstDayOfMonth)) {
+        _resetMonths(visibleDay);
+      }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!_current || generation != _queryGeneration) return;
@@ -1453,6 +1470,7 @@ class _MonthBlock extends StatelessWidget {
     this.dragTarget,
     this.onExpandWeek,
     this.expandedWeek,
+    this.onShiftWeek,
     this.onCollapseWeek,
     this.onWeekTaskDown,
     this.onWeekTaskHold,
@@ -1480,6 +1498,7 @@ class _MonthBlock extends StatelessWidget {
   final bool readOnly;
   final ValueChanged<CompanyDate>? onExpandWeek;
   final CompanyDate? expandedWeek;
+  final ValueChanged<int>? onShiftWeek;
   final VoidCallback? onCollapseWeek;
   final ValueChanged<TaskCalendarSelection>? onWeekTaskDown;
   final ValueChanged<String>? onWeekTaskHold;
@@ -1497,6 +1516,70 @@ class _MonthBlock extends StatelessWidget {
         focusNode: key == null ? null : dayFocusNode(key),
         child: child,
       );
+
+  Widget _expandedWeekHeader(
+    BuildContext context,
+    CompanyDate start,
+    String? holidayStatus,
+  ) {
+    final end = start.addDays(6);
+    return SizedBox(
+      height: 40,
+      child: Row(
+        children: [
+          Expanded(
+            child: Tooltip(
+              message: '${start.iso} 至 ${end.iso}',
+              child: Text(
+                '${start.year}/${start.month}/${start.day}–${end.month}/${end.day}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+          if (error != null)
+            _weekHeaderButton('重试', Icons.refresh, onRetry)
+          else if (loading)
+            const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else if (holidayStatus != null)
+            Tooltip(
+              message: holidayStatus,
+              child: const Icon(Icons.info_outline, size: 16),
+            ),
+          _weekHeaderButton(
+            '上一周',
+            Icons.chevron_left,
+            () => onShiftWeek?.call(-7),
+          ),
+          _weekHeaderButton(
+            '下一周',
+            Icons.chevron_right,
+            () => onShiftWeek?.call(7),
+          ),
+          _weekHeaderButton('收起周', Icons.unfold_less, onCollapseWeek),
+        ],
+      ),
+    );
+  }
+
+  Widget _weekHeaderButton(
+    String tooltip,
+    IconData icon,
+    VoidCallback? action,
+  ) => SizedBox.square(
+    dimension: 40,
+    child: IconButton(
+      padding: EdgeInsets.zero,
+      tooltip: tooltip,
+      icon: Icon(icon, size: 18),
+      onPressed: action,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -1535,7 +1618,9 @@ class _MonthBlock extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
         child: Column(
           children: [
-            Stack(
+            if (expandedWeek case final start?)
+              _expandedWeekHeader(context, start, holidayStatus)
+            else Stack(
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 8, right: 48),
@@ -1579,14 +1664,7 @@ class _MonthBlock extends StatelessWidget {
                   bottom: 0,
                   right: 0,
                   width: 48,
-                  child: expanded
-                    ? IconButton(
-                      padding: EdgeInsets.zero,
-                      tooltip: '收起周',
-                      icon: const Icon(Icons.unfold_less, size: 18),
-                      onPressed: onCollapseWeek,
-                    )
-                    : PopupMenuButton<CompanyDate>(
+                  child: PopupMenuButton<CompanyDate>(
                       padding: EdgeInsets.zero,
                       tooltip: '选择周 ${month.year}年${month.month}月',
                       icon: Icon(Icons.view_week_outlined, size: 16 * scale),
@@ -2335,9 +2413,9 @@ class _DayWeekStrip extends StatelessWidget {
                       children: [
                         Text(
                           CompanyCalendarGrid.weekdayLabels[index],
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
-                            color: index >= 5 ? Colors.black38 : Colors.black87,
+                            color: Colors.black87,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -2354,9 +2432,7 @@ class _DayWeekStrip extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                              color: selected
-                                  ? Colors.white
-                                  : (index >= 5 ? Colors.black38 : Colors.black87),
+                              color: selected ? Colors.white : Colors.black87,
                             ),
                           ),
                         ),

@@ -157,6 +157,41 @@ void main() {
     );
   });
 
+  testWidgets('切到月历未加载的周后，长按拖动定位到当前那周', (tester) async {
+    final task = {
+      ...taskJson(),
+      'startAt': '2027-01-11T01:00:00Z',
+      'dueAt': '2027-01-11T02:00:00Z',
+    };
+    final backend = FakeBackend()
+      ..on(
+        'GET',
+        '/tasks',
+        (_) => FakeResponse({'items': [task], 'nextCursor': null}),
+      );
+    await pumpCalendar(tester, backend, atMonthStart: true);
+    await chooseWeek(tester, '2026年11月', '2026-11-09 至 2026-11-15');
+    for (var week = 0; week < 9; week++) {
+      await tester.tap(find.byTooltip('下一周'));
+      await tester.pumpAndSettle();
+    }
+    expect(find.byTooltip('2027-01-11 至 2027-01-17'), findsOneWidget);
+    final taskBar = find.byKey(const ValueKey('task-bar-t1'));
+    final moving = await tester.startGesture(tester.getCenter(taskBar));
+    await tester.pump(const Duration(milliseconds: 600));
+    await moving.moveBy(const Offset(16, 0));
+    await pumpHandoff(tester);
+    expect(weekGrid, findsNothing);
+    expect(realCellHeader('2027-01-11'), findsOneWidget);
+    await moving.moveTo(tester.getCenter(realCellHeader('2027-01-14')));
+    await tester.pump();
+    expect(dropOutline('2027-01-14'), findsOneWidget);
+    await moving.cancel();
+    await tester.pumpAndSettle();
+    expect(dropOutline(), findsNothing);
+    expect(backend.requestsFor('PATCH', '/tasks/t1'), isEmpty);
+  });
+
   for (final interrupt in ['取消', '后台中断', '布局前释放']) {
     testWidgets('接续拖动$interrupt时不写入', (tester) async {
       final backend = FakeBackend()

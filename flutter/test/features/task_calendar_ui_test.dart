@@ -176,6 +176,16 @@ void main() {
     );
     expect(find.text('新建'), findsNothing);
 
+    final futureWeekday = find.byKey(const ValueKey('day-week-2026-11-13'));
+    final futureWeekend = find.byKey(const ValueKey('day-week-2026-11-14'));
+    Iterable<Color?> dayTextColors(Finder day) => tester
+        .widgetList<Text>(find.descendant(of: day, matching: find.byType(Text)))
+        .map((text) => text.style?.color);
+    expect(dayTextColors(futureWeekend), orderedEquals(dayTextColors(futureWeekday)));
+    await tester.tap(futureWeekend);
+    await tester.pumpAndSettle();
+    expect(find.text('2026-11-14 日视图'), findsOneWidget);
+
     await tester.tap(find.byTooltip('关闭'));
     await tester.pumpAndSettle();
     expect(find.byType(Drawer), findsNothing);

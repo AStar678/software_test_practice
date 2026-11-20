@@ -238,6 +238,27 @@ void main() {
       expect(find.text('2027-01-03 完整清单'), findsOneWidget);
       await tester.tap(find.byTooltip('关闭'));
       await tester.pumpAndSettle();
+
+      final nextWeek = find.byTooltip('下一周');
+      final previousWeek = find.byTooltip('上一周');
+      expect(tester.getRect(nextWeek).overlaps(grid), isFalse);
+      expect(tester.getRect(previousWeek).overlaps(grid), isFalse);
+      await tester.tap(nextWeek);
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('2027-01-04 至 2027-01-10'), findsOneWidget);
+      expect(dateHeader('2027-01-03'), findsNothing);
+      expect(tester.getRect(weekGrid), grid);
+      await tester.tap(dateHeader('2027-01-10'));
+      await tester.pumpAndSettle();
+      expect(find.text('2027-01-10 完整清单'), findsOneWidget);
+      await tester.tap(find.byTooltip('关闭'));
+      await tester.pumpAndSettle();
+      await tester.tap(previousWeek);
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('2026-12-28 至 2027-01-03'), findsOneWidget);
+      expect(sundayOverflow.hitTestable(), findsOneWidget);
+      await tester.tap(nextWeek);
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('收起周'));
       await tester.pumpAndSettle();
       expect(tester.getRect(monthCell), before);
