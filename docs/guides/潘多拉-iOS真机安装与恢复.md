@@ -1,13 +1,13 @@
 # 潘多拉 iOS 真机安装与恢复
 
-适用场景：用 Xcode 把仓库里的 Flutter 员工端装到自己的 iPhone，后端运行在同一局域网的 Mac 上。不经过 App Store 或 TestFlight。本文使用本次跑通的方式：由 Flutter 生成配置，再由 Xcode 构建、签名和安装。
+适用场景：用 Xcode 把仓库里的 Flutter 员工端装到自己的 iPhone，后端运行在同一局域网的 Mac 上。不经过 App Store 或 TestFlight。推荐走本次跑通的路线：由 Flutter 生成配置，再由 Xcode 构建、签名和安装。签名配置完成后，也可改用文末的 `flutter run`，两条路线不用都跑。
 
 ## 第一次安装
 
 ### 1. 在 Mac 上准备工具
 
 1. 从 Mac App Store 或 [Apple Developer](https://developer.apple.com/xcode/) 安装与 Mac 和 iPhone 系统兼容的完整版 Xcode。本次使用的是 Xcode 27.2、iOS 27.2 和 Flutter 3.47.9。打开 Xcode，完成首次初始化和 iOS 平台支持的安装。只装真机，不需要另外下载模拟器运行时。
-2. 在 Mac 终端选择完整版 Xcode，并确认 iOS SDK 可用：
+2. 在 Mac 终端选择完整版 Xcode，并确认 iOS SDK 可用。如果首次打开 Xcode 时还没有接受许可，运行 `sudo xcodebuild -license`，按屏幕提示阅读并接受。
 
    ```bash
    sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
@@ -16,15 +16,24 @@
    ```
 
 3. 使用 [项目锁定的 Flutter 版本](../../flutter/.fvmrc)。这台 Mac 已经装好 Flutter、Java 21、Maven 和 MySQL；在另一台 Mac 从头准备时，按 [Flutter 安装指南](https://docs.flutter.dev/platform-integration/ios/setup) 和 [项目后端说明](../../backend/README.md#启动与演示) 准备。本项目的 iOS 依赖由 Swift Package Manager 处理，这条流程不用安装 CocoaPods。
+4. 确认 Flutter 版本和 Xcode 工具链。首次准备 Flutter 缓存时，可先执行 `flutter precache --ios` 下载 iOS 构建产物。
+
+   ```bash
+   flutter --version
+   flutter doctor -v
+   ```
+
+   看 `flutter doctor -v` 是否识别到刚装好的 Xcode；本流程不要求安装模拟器运行时。
 
 ### 2. 启动 Mac 上的演示后端
 
-1. 让 iPhone 和 Mac 连同一个可信 Wi‑Fi。在 Mac 的「系统设置 → 网络 → Wi‑Fi → 详细信息」查看局域网 IP。下文用 `192.168.1.23` 举例，每次都换成 Mac 的实际地址。
+1. 让 iPhone 和 Mac 连同一个可信 Wi‑Fi。在 Mac 的「系统设置 → 网络 → Wi‑Fi → 详细信息」查看局域网 IP，也可在终端用 `networksetup -getinfo "Wi-Fi"` 查看。下文用 `192.168.1.23` 举例，每次都换成 Mac 的实际地址。
 2. 从仓库根目录运行以下命令。`--keep` 复用本机已有演示库，保留已有编辑；不要省略。全新环境尚无演示库时，先按[后端说明](../../backend/README.md#启动与演示)准备演示数据。
 
    ```bash
    cd backend
    PANDORA_BIND_ADDRESS=0.0.0.0 ./scripts/start-demo.sh --keep
+   curl -fsS http://127.0.0.1:8080/health
    ```
 
 3. 在 iPhone 的 Safari 打开 `http://192.168.1.23:8080/health`，确认能看到后端返回的健康状态。iPhone 通过 Wi‑Fi 访问 API；USB 用于配对和安装。只在可信局域网使用演示数据，不把 HTTP 端口转发到公网。
@@ -34,6 +43,12 @@
 1. 用 USB 数据线连接 Mac 和 iPhone，解锁 iPhone。Mac 的 Finder 或 Xcode 提示时点「信任」；在 iPhone 点「信任此电脑」并输入锁屏密码。这一步授权的是 **Mac**，不是 App 的签名开发者。
 2. 让 Xcode 识别手机。然后在 iPhone 打开「设置 → 隐私与安全性 → 开发者模式」，打开开关并按提示重启。重启解锁后，再点「打开」确认。
 3. 保持手机亮屏、解锁和 USB 连接，等 Xcode 完成设备准备。
+4. 用以下命令确认设备可见。`flutter devices` 的 iPhone 那一行会显示设备 ID；走命令行运行时会用到。
+
+   ```bash
+   xcrun devicectl list devices
+   flutter devices
+   ```
 
 ### 4. 生成配置、签名并安装
 
@@ -41,6 +56,7 @@
 
    ```bash
    cd flutter
+   flutter pub get
    flutter build ios --debug --config-only \
      --dart-define=API_BASE_URL=http://192.168.1.23:8080/api/v1
    open ios/Runner.xcworkspace
@@ -62,9 +78,44 @@
 
 ### 重新装回去
 
-1. 不用重装 Xcode、Flutter 或后端，也不用删除 Mac 上的签名证书。让 Mac 后端继续运行或用 `start-demo.sh --keep` 启动，确认 iPhone 能访问 `/health`。
+1. 不用重装 Xcode、Flutter 或后端，也不用删除 Mac 上的签名证书。如果局域网后端还在运行，直接用 Safari 验证。否则从仓库根目录启动后端，再在 iPhone 的 Safari 打开 `http://192.168.1.23:8080/health`，使用 Mac 当前的 IP。
+
+   ```bash
+   cd backend
+   PANDORA_BIND_ADDRESS=0.0.0.0 ./scripts/start-demo.sh --keep
+   curl -fsS http://127.0.0.1:8080/health
+   ```
+
 2. 用 USB 重新连接 iPhone。若之前还原过位置与隐私，重新点「信任此电脑」。重新开启开发者模式，按提示重启，并在重启后确认开启。
-3. 重新执行上面的 `flutter build ios --debug --config-only`，使用 Mac 当前的 IP。打开 `Runner.xcworkspace`，用原来的 **Personal Team** 和 Bundle ID，选中 iPhone 后按 `⌘R` 重装。
+3. 从仓库根目录打开另一个终端，生成配置并打开工作区。换成 Mac 当前的 IP。Xcode 里沿用原来的 **Personal Team** 和 Bundle ID，选中 iPhone 后按 `⌘R` 重装。
+
+   ```bash
+   cd flutter
+   flutter devices
+   flutter build ios --debug --config-only \
+     --dart-define=API_BASE_URL=http://192.168.1.23:8080/api/v1
+   open ios/Runner.xcworkspace
+   ```
+
 4. 手机上如再次要求信任开发者，去「VPN 与设备管理」信任自己的签名账号，再从 Xcode 启动。按提示允许局域网访问，用演示员工账号登录并确认首页有数据。
 
 免费 **Personal Team** 的开发描述文件有效期为 7 天；到期后用 Xcode 重新构建和安装即可，不用先卸载 App 或重置手机信任。参见 [Apple 会员类型对比](https://developer.apple.com/support/compare-memberships/)。
+
+## 备选：直接从 Flutter 命令行运行
+
+完成设备配对、开发者模式和 Xcode 自动签名设置后，也可以用 Flutter 构建、安装并启动 App，适合需要热重载时使用。先停止 Xcode 中正在进行的运行，再从仓库根目录执行：
+
+```bash
+cd flutter
+flutter pub get
+flutter devices
+```
+
+在同一个终端运行下列命令，用上一步显示的 iPhone 设备 ID 和 Mac 实际 IP 替换示例：
+
+```bash
+flutter run --debug -d '你的 iPhone 设备 ID' \
+  --dart-define=API_BASE_URL=http://192.168.1.23:8080/api/v1
+```
+
+macOS 首次询问是否允许终端控制 Xcode 时选「允许」。结束调试可按 `q`。日后切回用 Xcode 的 `⌘R` 时，先重新执行第 4 步的 `flutter build ios --debug --config-only`，再打开工作区运行。Flutter 命令的通用说明见 [Flutter CLI 参考](https://docs.flutter.dev/reference/flutter-cli)。
