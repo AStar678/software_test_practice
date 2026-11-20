@@ -536,6 +536,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: initial.hour, minute: initial.minute),
+      initialEntryMode: TimePickerEntryMode.inputOnly,
       cancelText: '取消',
       confirmText: '确定',
     );

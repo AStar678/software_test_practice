@@ -92,4 +92,5 @@ class TaskCalendarSelection {
   CompanyDate grabDay;
   final CalendarDragMode mode;
   Offset? pointer;
+  int? pointerId;
 }

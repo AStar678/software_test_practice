@@ -416,7 +416,7 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
                         ),
                         if (log.frozen)
                           const StatusBadge(
-                            label: '已冻结（已不能编辑）',
+                            label: '已不能编辑',
                             color: PandoraColors.muted,
                           ),
                         if (_relative(
@@ -1145,7 +1145,7 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
                   const Align(
                     alignment: Alignment.centerLeft,
                     child: StatusBadge(
-                      label: '已冻结（已不能编辑）',
+                      label: '已不能编辑',
                       color: PandoraColors.muted,
                     ),
                   ),

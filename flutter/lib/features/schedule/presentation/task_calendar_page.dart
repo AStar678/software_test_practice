@@ -57,7 +57,7 @@ class TaskCalendarPage extends ConsumerStatefulWidget {
   final String? personName;
   final ReadContext readContext;
 
-  bool get readOnly => !readContext.businessWritesAllowed;
+  bool get readOnly => assigneeId != null || !readContext.businessWritesAllowed;
 
   @override
   ConsumerState<TaskCalendarPage> createState() => _TaskCalendarPageState();
@@ -89,6 +89,11 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   List<TaskRecord> _drawerTasks = const [];
   bool _dayViewMode = true;
   (CompanyDate, double)? _monthReturn;
+  Key? _focusedDayControl;
+  Key? _dayReturnControl;
+  final _dayReturnFocus = FocusNode();
+  (CompanyDate, CompanyDate)? _expandedWeek;
+  (CompanyDate, double)? _weekReturn;
   double _weekHeight = 86;
   final Map<int, Offset> _pointers = {};
   bool _pinching = false;
@@ -102,6 +107,10 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   CompanyDate? _dragTarget;
   CalendarDragPreview? _dragPreview;
   Offset? _dragLastGlobal;
+  bool _dragGeometryPending = false;
+  bool _dragMoved = false;
+  TaskCalendarSelection? _weekHold;
+  bool _weekHoldReady = false;
   Timer? _dragTimer;
   OverlayEntry? _dragOverlay;
   _AxisDragData? _axisDrag;
@@ -117,6 +126,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     _resetMonths(_anchor);
     WidgetsBinding.instance.addObserver(this);
     _scroll.addListener(_loadVisibleMonths);
+    _scroll.addListener(_invalidateMonthTarget);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_current) unawaited(_restorePreferences());
     });
@@ -163,6 +173,10 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     _drawerDay = null;
     _drawerTasks = const [];
     _monthReturn = null;
+    _focusedDayControl = null;
+    _dayReturnControl = null;
+    _expandedWeek = null;
+    _weekReturn = null;
     _pointers.clear();
     _pinching = false;
     _pinchAnchor = null;
@@ -183,8 +197,10 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     _preferenceTimer?.cancel();
     _dragTimer?.cancel();
     _dragOverlay?.remove();
+    _dayReturnFocus.dispose();
     _scroll
       ..removeListener(_loadVisibleMonths)
+      ..removeListener(_invalidateMonthTarget)
       ..dispose();
     super.dispose();
   }
@@ -194,7 +210,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) return;
-    if (_dragSelection == null && _axisDrag == null) return;
+    if (_dragSelection == null && _axisDrag == null && _weekHold == null) return;
     _cancelActiveDrag();
   }
 
@@ -207,6 +223,10 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     _dragTarget = null;
     _dragPreview = null;
     _dragLastGlobal = null;
+    _dragGeometryPending = false;
+    _dragMoved = false;
+    _weekHold = null;
+    _weekHoldReady = false;
     _axisDrag = null;
     _axisDragStart = null;
     if (mounted) setState(() {});
@@ -273,8 +293,12 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     try {
       final index = _months.indexWhere((month) => _key(month) == _key(date));
       if (index < 0) return;
+      final gridStart = CompanyCalendarGrid.gridStart(date.firstDayOfMonth);
+      final weekIndex = date.differenceInDays(gridStart) ~/ 7;
       _scroll.jumpTo(
-        (index * _monthExtent).clamp(0, _scroll.position.maxScrollExtent),
+        (index * _monthExtent + weekIndex * _weekExtent - offset).clamp(
+          0, _scroll.position.maxScrollExtent,
+        ),
       );
       await WidgetsBinding.instance.endOfFrame;
       if (!_current ||
@@ -374,6 +398,9 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     final today = ref.read(businessDateProvider);
     setState(() {
       _anchor = today;
+      _dayReturnControl = null;
+      _expandedWeek = null;
+      _weekReturn = null;
       _resetMonths(today);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -383,19 +410,30 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
 
   @override
   Widget build(BuildContext context) {
-    final months = _months;
     final selectedDay = _drawerDay;
-    return Scaffold(
+    final expandedWeek = _expandedWeek;
+    final canCreate = !widget.readOnly;
+    final browsingWeek = expandedWeek != null && selectedDay == null;
+    final VoidCallback? close = selectedDay != null
+        ? _closeDay
+        : expandedWeek != null
+        ? _collapseWeek
+        : null;
+    final page = Scaffold(
       appBar: AppBar(
         title: widget.personName == null
             ? const PandoraPageMark(pageName: '日程')
             : Text('${widget.personName}的日程'),
         actions: [
           IconButton(
-            tooltip: selectedDay == null ? '日视图' : '返回月历',
+            tooltip: selectedDay == null
+                ? '日视图'
+                : expandedWeek == null
+                ? '返回月历'
+                : '返回展开周',
             onPressed: selectedDay == null
                 ? () => unawaited(
-                    _openDay(_visibleAnchorDate(), dayViewMode: true),
+                    _openDay(ref.read(businessDateProvider), dayViewMode: true),
                   )
                 : _closeDay,
             icon: Icon(
@@ -427,90 +465,201 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
               onPressed: () => _openAndRefresh('/approvals'),
               icon: const Icon(Icons.assignment_outlined),
             ),
+          if (canCreate && browsingWeek)
+            IconButton(
+              tooltip: '新建任务',
+              onPressed: _openCreateTask,
+              icon: const Icon(Icons.add),
+            ),
         ],
       ),
-      floatingActionButton: widget.readOnly
+      floatingActionButton:
+          !canCreate || browsingWeek
           ? null
           : FloatingActionButton(
               tooltip: '新建任务',
-              onPressed: () => _openAndRefresh('/tasks/new'),
+              onPressed: _openCreateTask,
               child: const Icon(Icons.add),
             ),
-      body: selectedDay != null
-          ? _DayPanel(
-              day: selectedDay,
-              holiday: _holidayOn(selectedDay),
-              tasks: _drawerTasks,
-              dayViewMode: _dayViewMode,
-              onToggleView: () => setState(() => _dayViewMode = !_dayViewMode),
-              onSelectDay: (day) => unawaited(_openDay(day, dayViewMode: true)),
-              readOnly: widget.readOnly,
-              onOpen: _openTask,
-              onPin: _togglePin,
-              onClose: _closeDay,
-              onAxisDragStarted: _startAxisDrag,
-              onAxisDragUpdate: _updateAxisDrag,
-              onAxisDragEnd: _endAxisDrag,
-              onAccessibleAdjust: _accessibleAxisAdjust,
-            )
-          : SafeArea(
-              child: Listener(
-                onPointerDown: _onMonthPointerDown,
-                onPointerMove: _onMonthPointerMove,
-                onPointerUp: _onMonthPointerUp,
-                onPointerCancel: _onMonthPointerCancel,
-                child: RefreshIndicator(
-                  onRefresh: _refreshCalendar,
-                  child: AbsorbPointer(
-                    absorbing: _pinching,
-                    child: ListView.builder(
-                      key: _viewportKey,
-                      controller: _scroll,
-                      physics: _pinching
-                          ? const NeverScrollableScrollPhysics()
-                          : null,
-                      itemExtent: _monthExtent,
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
-                      itemCount: months.length,
-                  itemBuilder: (context, index) {
-                    final month = months[index];
-                    final current =
-                        month.year == _anchor.year &&
-                        month.month == _anchor.month;
-                    return KeyedSubtree(
-                      key: current ? _currentMonthKey : null,
-                      child: _MonthBlock(
-                        month: month,
-                        tasks: _tasks[_key(month)] ?? const [],
-                        businessDate: ref.watch(businessDateProvider),
-                        loading: _loading.contains(_key(month)),
-                        error: _errors[_key(month)],
-                        onRetry: () => _loadMonth(month),
-                        onDay: (day) => _openDay(day),
-                        holidays: _holidays,
-                        holidayUnavailable: _holidayErrors.contains(month.year),
-                        onPin: _togglePin,
-                        onOpenTask: _openTask,
-                        readOnly: widget.readOnly,
-                        weekHeight: _weekHeight,
-                        dayKey: _dayKey,
-                        onDragStarted: _startMonthDrag,
-                        onDragUpdate: _updateMonthDrag,
-                        onDragEnd: _endMonthDrag,
-                        onAccessibleAdjust: _accessibleMonthAdjust,
-                      ),
-                    );
-                  },
-                    ),
-                  ),
-                ),
+      body: Listener(
+        onPointerDown: _onMonthPointerDown,
+        onPointerMove: _onMonthPointerMove,
+        onPointerUp: _onMonthPointerUp,
+        onPointerCancel: _onMonthPointerCancel,
+        child: selectedDay != null
+            ? _DayPanel(
+                day: selectedDay,
+                holiday: _holidayOn(selectedDay),
+                tasks: _drawerTasks,
+                loading: !_tasks.containsKey(_key(selectedDay)),
+                error: _errors[_key(selectedDay)],
+                onRetry: () => unawaited(_loadMonth(selectedDay)),
+                dayViewMode: _dayViewMode,
+                onToggleView: () => setState(() => _dayViewMode = !_dayViewMode),
+                onSelectDay: (day) => unawaited(_openDay(day, dayViewMode: true)),
+                readOnly: widget.readOnly,
+                onOpen: _openTask,
+                onPin: _togglePin,
+                onClose: _closeDay,
+                onAxisDragStarted: _startAxisDrag,
+                onAxisDragUpdate: _updateAxisDrag,
+                onAxisDragEnd: _endAxisDrag,
+                onAccessibleAdjust: _accessibleAxisAdjust,
+              )
+            : SafeArea(
+                child: expandedWeek == null
+                    ? _buildMonthList()
+                    : _buildExpandedWeek(expandedWeek.$1, expandedWeek.$2),
               ),
-            ),
+      ),
+    );
+    return PopScope(
+      canPop: close == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) close?.call();
+      },
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.escape): ?close,
+        },
+        child: FocusScope(child: page),
+      ),
+    );
+  }
+
+  Widget _buildMonthList() {
+    final businessDate = ref.watch(businessDateProvider);
+    return RefreshIndicator(
+      onRefresh: _refreshCalendar,
+      child: AbsorbPointer(
+        absorbing: _pinching,
+        child: ListView.builder(
+          key: _viewportKey,
+          controller: _scroll,
+          physics: _pinching ? const NeverScrollableScrollPhysics() : null,
+          itemExtent: _monthExtent,
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
+          itemCount: _months.length,
+          itemBuilder: (context, index) {
+            final month = _months[index];
+            final key = _key(month);
+            return KeyedSubtree(
+              key: key == _key(_anchor) ? _currentMonthKey : null,
+              child: _MonthBlock(
+                month: month,
+                tasks: _tasks[key] ?? const [],
+                businessDate: businessDate,
+                loading: _loading.contains(key),
+                error: _errors[key],
+                onRetry: () => _loadMonth(month),
+                onDay: _openDay,
+                onDayFocusChange: _onDayFocusChange,
+                dayFocusNode: _dayFocusNode,
+                holidays: _holidays,
+                holidayUnavailable: _holidayErrors.contains(month.year),
+                onPin: _togglePin,
+                onOpenTask: _openTask,
+                readOnly: widget.readOnly,
+                weekHeight: _weekHeight,
+                dayKey: _dayKey,
+                onExpandWeek: (start) => _expandWeek(month, start),
+                onDragStarted: _startMonthDrag,
+                dragTarget: _dragPreview == null ? null : _dragTarget,
+                onAccessibleAdjust: _accessibleMonthAdjust,
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
   static String _key(CompanyDate month) =>
       '${month.year.toString().padLeft(4, '0')}-${month.month.toString().padLeft(2, '0')}';
+
+  Set<CompanyDate> _weekMonths(CompanyDate start) => {
+    start.firstDayOfMonth,
+    start.addDays(6).firstDayOfMonth,
+  };
+
+  void _expandWeek(CompanyDate month, CompanyDate start) {
+    if (!_current || _gestureSuppressed) return;
+    _saveCurrentPosition();
+    final position = _position();
+    setState(() {
+      _dayReturnControl = null;
+      _weekReturn = position;
+      _expandedWeek = (month, start);
+    });
+    _loadWeek(start);
+  }
+
+  void _loadWeek(CompanyDate start) {
+    for (final month in _weekMonths(start)) {
+      final key = _key(month);
+      if (!_tasks.containsKey(key) || _errors.containsKey(key)) {
+        unawaited(_loadMonth(month));
+      }
+    }
+  }
+
+  void _collapseWeek() {
+    final restore = _weekReturn;
+    _weekHold = null;
+    _weekHoldReady = false;
+    setState(() {
+      _dayReturnControl = null;
+      _expandedWeek = null;
+      _weekReturn = null;
+    });
+    if (restore == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_current) unawaited(_restorePosition(restore.$1, restore.$2));
+    });
+  }
+
+  Widget _buildExpandedWeek(CompanyDate month, CompanyDate start) {
+    final monthKeys = _weekMonths(start).map(_key);
+    final error = monthKeys.map((key) => _errors[key]).nonNulls.firstOrNull;
+    final loading = monthKeys.any((key) => !_tasks.containsKey(key));
+    final tasks = <String, TaskRecord>{
+      for (final key in monthKeys)
+        for (final task in _tasks[key] ?? <TaskRecord>[]) task.id: task,
+    };
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: _MonthBlock(
+        month: month,
+        tasks: error == null && !loading ? tasks.values.toList() : const [],
+        businessDate: ref.watch(businessDateProvider),
+        loading: loading && error == null,
+        error: error,
+        onRetry: () => _loadWeek(start),
+        onDay: _openDay,
+        onDayFocusChange: _onDayFocusChange,
+        dayFocusNode: _dayFocusNode,
+        holidays: _holidays,
+        holidayUnavailable: _holidayErrors.contains(month.year),
+        onPin: _togglePin,
+        onOpenTask: _openTask,
+        readOnly: widget.readOnly,
+        weekHeight: _weekHeight,
+        dayKey: _dayKey,
+        expandedWeek: start,
+        onCollapseWeek: _collapseWeek,
+        onWeekTaskDown: (selection) => _weekHold = selection,
+        onWeekTaskHold: (taskId) {
+          if (_current && !widget.readOnly && _weekHold?.taskId == taskId &&
+              _pointers.length == 1 && _pointers.containsKey(_weekHold?.pointerId)) {
+            _weekHoldReady = true;
+            unawaited(HapticFeedback.selectionClick());
+          }
+        },
+        onDragStarted: _startMonthDrag,
+        onAccessibleAdjust: _accessibleMonthAdjust,
+      ),
+    );
+  }
 
   Future<void> _refreshCalendar() async {
     final years = {_anchor.year, ..._holidays.keys, ..._holidayErrors};
@@ -551,7 +700,11 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     }
     final generation = _queryGeneration;
     final months = force
-        ? List<CompanyDate>.from(_months)
+        ? <CompanyDate>{
+            ..._months,
+            if (_drawerDay case final day?) day.firstDayOfMonth,
+            if (_expandedWeek case (_, final start)) ..._weekMonths(start),
+          }
         : CompanyCalendarGrid.continuousMonths(
             anchor,
             monthsBefore: 1,
@@ -595,14 +748,11 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
               (widget.assigneeId ?? ref.read(currentUserProvider)?.id ?? '')) {
         return;
       }
-      if (!_months.any((month) => _key(month) == key)) {
-        _loading.remove(key);
-        return;
-      }
       setState(() {
         _tasks[key] = rows;
         _loading.remove(key);
       });
+      if (_drawerDay case final day? when _key(day) == key) _refreshDrawer();
     } catch (error) {
       if (!_current || generation != _queryGeneration) return;
       setState(() {
@@ -616,16 +766,19 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
       _dayKeys.putIfAbsent(day.iso, () => GlobalKey());
 
   CompanyDate? _dayAtGlobal(Offset? global) {
-    if (global == null) return null;
+    if (global == null || _dragGeometryPending || _changingWindow) return null;
+    final viewport = _viewportKey.currentContext?.findRenderObject();
+    if (viewport is! RenderBox ||
+        !viewport.attached ||
+        !(Offset.zero & viewport.size).contains(viewport.globalToLocal(global))) {
+      return null;
+    }
     for (final entry in _dayKeys.entries) {
       final context = entry.value.currentContext;
       final box = context?.findRenderObject();
       if (box is! RenderBox || !box.attached) continue;
       final local = box.globalToLocal(global);
-      if (local.dx >= 0 &&
-          local.dy >= 0 &&
-          local.dx <= box.size.width &&
-          local.dy <= box.size.height) {
+      if ((Offset.zero & box.size).contains(local)) {
         return CompanyDate.tryParse(entry.key);
       }
     }
@@ -668,15 +821,21 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   }
 
   void _startMonthDrag(TaskCalendarSelection selection) {
-    if (_gestureSuppressed) return;
-    final task = _taskById(selection.taskId);
+    if (!_current || widget.readOnly || _gestureSuppressed ||
+        _dragSelection != null || _pointers.length != 1 ||
+        !_pointers.containsKey(selection.pointerId)) {
+      return;
+    }
+    final task = _tasks[_key(selection.grabDay)]?.where((task) => task.id == selection.taskId).firstOrNull
+        ?? _taskById(selection.taskId);
     if (task == null || !CalendarDragCalculator.canReschedule(task)) return;
     _dragTimer?.cancel();
     _dragSelection = selection;
     _dragTask = task;
-    _dragTarget = selection.grabDay;
-    _dragLastGlobal = selection.pointer;
+    _dragLastGlobal = _pointers[selection.pointerId];
+    _dragMoved = _dragLastGlobal != selection.pointer;
     _dragPreview = null;
+    _updateMonthTarget(_dragLastGlobal);
     _showDragOverlay();
     _dragTimer = Timer.periodic(
       const Duration(milliseconds: 90),
@@ -684,10 +843,21 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     );
   }
 
-  void _updateMonthDrag(TaskCalendarSelection selection, Offset global) {
-    if (_dragSelection?.taskId != selection.taskId) return;
-    _dragLastGlobal = global;
-    _updateMonthTarget(global);
+  void _invalidateMonthTarget() {
+    final selection = _dragSelection;
+    if (selection == null || _dragGeometryPending) return;
+    _dragGeometryPending = true;
+    _updateMonthTarget(null);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_current || _dragSelection != selection) return;
+      _dragGeometryPending = false;
+      if (_changingWindow) {
+        _invalidateMonthTarget();
+      } else {
+        _updateMonthTarget(_dragLastGlobal);
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   void _updateMonthTarget(Offset? global) {
@@ -695,6 +865,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     final selection = _dragSelection;
     if (task == null || selection == null) return;
     final target = _dayAtGlobal(global);
+    if (target == _dragTarget) return;
     if (target == null) {
       if (mounted) {
         setState(() {
@@ -716,46 +887,30 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   }
 
   void _tickAutoScroll() {
-    if (_dragLastGlobal == null || !_scroll.hasClients) return;
-    final screenHeight = MediaQuery.sizeOf(context).height;
+    if (!_dragMoved || _dragLastGlobal == null || _dragGeometryPending || _changingWindow || !_scroll.hasClients) return;
+    final viewport = _viewportKey.currentContext?.findRenderObject();
+    if (viewport is! RenderBox || !viewport.attached) return;
+    final local = viewport.globalToLocal(_dragLastGlobal!);
+    if (!(Offset.zero & viewport.size).contains(local)) return;
+    final height = viewport.size.height;
     var delta = 0.0;
-    if (_dragLastGlobal!.dy < 180) delta = -28;
-    if (_dragLastGlobal!.dy > screenHeight - 220) delta = 28;
+    if (local.dy < (height * .18).clamp(24, 124)) delta = -28;
+    if (height - local.dy < (height * .25).clamp(24, 220)) delta = 28;
     if (delta == 0) return;
     final max = _scroll.position.maxScrollExtent;
     final min = _scroll.position.minScrollExtent;
     final next = (_scroll.offset + delta).clamp(min, max);
     if (next == _scroll.offset) return;
     _scroll.jumpTo(next);
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _updateMonthTarget(_dragLastGlobal),
-    );
   }
 
-  void _endMonthDrag(TaskCalendarSelection selection) {
-    if (_dragSelection?.taskId != selection.taskId) return;
-    _dragTimer?.cancel();
-    _updateMonthTarget(_dragLastGlobal);
+  void _endMonthDrag(Offset global) {
+    _updateMonthTarget(global);
     final task = _dragTask;
-    final target = _dayAtGlobal(_dragLastGlobal);
-    final preview = task == null || target == null
-        ? null
-        : _monthPreview(task, selection.mode, target);
-    _dragOverlay?.remove();
-    _dragOverlay = null;
-    final pendingTask = task;
-    final pendingPreview = preview;
-    if (mounted) {
-      setState(() {
-        _dragSelection = null;
-        _dragTask = null;
-        _dragTarget = null;
-        _dragPreview = null;
-        _dragLastGlobal = null;
-      });
-    }
-    if (pendingTask != null && pendingPreview != null) {
-      unawaited(_confirmAndSubmit(pendingTask, pendingPreview));
+    final preview = _dragMoved ? _dragPreview : null;
+    _cancelActiveDrag();
+    if (task != null && preview != null) {
+      unawaited(_confirmAndSubmit(task, preview));
     }
   }
 
@@ -822,7 +977,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   }
 
   void _startAxisDrag(_AxisDragData data, Offset global) {
-    if (_gestureSuppressed) return;
+    if (!_current || widget.readOnly || _gestureSuppressed) return;
     if (!data.entry.canDrag) return;
     _dragTimer?.cancel();
     _dragSelection = null;
@@ -881,6 +1036,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     CalendarDragMode mode,
     int hours,
   ) {
+    if (!_current || widget.readOnly) return;
     final day = _drawerDay;
     if (day == null) return;
     final preview = switch (mode) {
@@ -907,7 +1063,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     TaskRecord task,
     CalendarDragPreview preview,
   ) async {
-    if (widget.readOnly) return;
+    if (!_current || widget.readOnly) return;
     final epoch = ref.read(accountEpochProvider);
     final message = await showDialog<String>(
       context: context,
@@ -931,6 +1087,7 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     CalendarDragMode mode,
     int days,
   ) {
+    if (!_current || widget.readOnly || !CalendarDragCalculator.canReschedule(task)) return;
     final zone = CompanyTimeZone.fallback;
     final startDay =
         task.allDayStart ??
@@ -970,13 +1127,30 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
       (_suppressTapUntil != null && _suppressTapUntil!.isAfter(DateTime.now()));
 
   void _onMonthPointerDown(PointerDownEvent event) {
+    if (_drawerDay != null) return;
     _pointers[event.pointer] = event.position;
+    if (_expandedWeek != null) {
+      if (_pointers.length > 1) _cancelActiveDrag();
+      return;
+    }
     if (_pointers.length >= 2 && !_pinching) _beginPinch();
   }
 
   void _onMonthPointerMove(PointerMoveEvent event) {
     if (!_pointers.containsKey(event.pointer)) return;
     _pointers[event.pointer] = event.position;
+    final hold = _weekHold;
+    if (_weekHoldReady && hold != null && hold.pointerId == event.pointer &&
+        (event.position - hold.pointer!).distance >= 12) {
+      _continueWeekDrag(hold);
+      return;
+    }
+    if (_dragSelection?.pointerId == event.pointer) {
+      _dragMoved = true;
+      _dragLastGlobal = event.position;
+      _updateMonthTarget(event.position);
+      return;
+    }
     if (!_pinching || _pointers.length < 2) return;
     final distance = _pointerDistance;
     if (_pinchStartDistance <= 0 || distance <= 0) return;
@@ -1022,12 +1196,54 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
 
   void _onMonthPointerUp(PointerUpEvent event) {
     _pointers.remove(event.pointer);
+    if (_weekHold?.pointerId == event.pointer) {
+      _weekHold = null;
+      _weekHoldReady = false;
+    }
+    if (_dragSelection?.pointerId == event.pointer) _endMonthDrag(event.position);
     if (_pinching && _pointers.length < 2) _endPinch();
   }
 
   void _onMonthPointerCancel(PointerCancelEvent event) {
     _pointers.remove(event.pointer);
+    if (_dragSelection?.pointerId == event.pointer || _weekHold?.pointerId == event.pointer) {
+      _cancelActiveDrag();
+    }
     if (_pinching && _pointers.length < 2) _endPinch();
+  }
+
+  void _continueWeekDrag(TaskCalendarSelection hold) {
+    final week = _expandedWeek;
+    if (week == null) return;
+    _weekHold = null;
+    _weekHoldReady = false;
+    _dragGeometryPending = true;
+    _startMonthDrag(hold);
+    if (_dragSelection != hold) {
+      _dragGeometryPending = false;
+      return;
+    }
+    final first = week.$1.firstDayOfMonth;
+    final visibleDay = week.$2.isBefore(first) ? first : week.$2;
+    final generation = _queryGeneration;
+    setState(() {
+      _dayReturnControl = null;
+      _expandedWeek = null;
+      _weekReturn = null;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!_current || generation != _queryGeneration) return;
+      await _restorePosition(visibleDay, 24 * _scale);
+      WidgetsBinding.instance.ensureVisualUpdate();
+      await WidgetsBinding.instance.endOfFrame;
+      if (!_current || _dragSelection != hold) return;
+      _dragGeometryPending = false;
+      if (_changingWindow) {
+        _invalidateMonthTarget();
+      } else {
+        _updateMonthTarget(_dragLastGlobal);
+      }
+    });
   }
 
   void _endPinch() {
@@ -1057,11 +1273,6 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     );
   }
 
-  CompanyDate _visibleAnchorDate() {
-    final position = _position();
-    return position?.$1 ?? ref.read(businessDateProvider);
-  }
-
   /// 与月历一致：只在既有年度接口确有该日记录时返回标签，不推断周末调休。
   HolidayDay? _holidayOn(CompanyDate day) {
     for (final year in [day.year - 1, day.year, day.year + 1]) {
@@ -1071,59 +1282,70 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     return null;
   }
 
+  void _onDayFocusChange(Key control, bool focused) {
+    if (focused) {
+      _focusedDayControl = control;
+    } else if (_focusedDayControl == control) {
+      _focusedDayControl = null;
+    }
+  }
+
+  FocusNode? _dayFocusNode(Key control) =>
+      _dayReturnControl == control ? _dayReturnFocus : null;
+
   Future<void> _openDay(
     CompanyDate day, {
     bool dayViewMode = false,
+    Key? trigger,
   }) async {
     if (_gestureSuppressed) return;
     // 访问某天不应改写月历滚动位置；返回月历时恢复到进入前的可见锚点。
-    if (_drawerDay == null) _monthReturn = _position();
-    unawaited(_loadHolidays(day.year));
-    final all = <String, TaskRecord>{};
-    for (final rows in _tasks.values) {
-      for (final task in rows) {
-        all[task.id] = task;
-      }
+    if (_drawerDay == null) {
+      if (_expandedWeek == null) _monthReturn = _position();
+      _dayReturnControl = trigger == _focusedDayControl ? trigger : null;
     }
-    final zone = CompanyTimeZone.fallback;
-    final tasks =
-        all.values
-            .where(
-              (task) => CalendarTask(
-                task: task,
-                pendingProjection: task.pending && task.pendingSchedule != null,
-              ).covers(day),
-            )
-            .toList()
-          ..sort((a, b) {
-            final ap = a.pinned ? 0 : 1;
-            final bp = b.pinned ? 0 : 1;
-            if (ap != bp) return ap.compareTo(bp);
-            final as = a.startAt ?? zone.dayStart(day);
-            final bs = b.startAt ?? zone.dayStart(day);
-            final c = as.compareTo(bs);
-            return c != 0 ? c : a.id.compareTo(b.id);
-          });
+    unawaited(_loadHolidays(day.year));
     setState(() {
       _drawerDay = day;
-      _drawerTasks = tasks;
       _dayViewMode = dayViewMode;
     });
+    _refreshDrawer();
+    if (!_tasks.containsKey(_key(day)) && !_errors.containsKey(_key(day))) {
+      unawaited(_loadMonth(day));
+    }
   }
 
   void _closeDay() {
     if (_drawerDay == null) return;
     final restore = _monthReturn;
+    final control = _dayReturnControl;
+    final generation = _queryGeneration;
     setState(() {
       _drawerDay = null;
       _drawerTasks = const [];
       _monthReturn = null;
     });
-    if (restore == null) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_current) unawaited(_restorePosition(restore.$1, restore.$2));
+    if (restore == null && control == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!_current || _drawerDay != null || generation != _queryGeneration) {
+        return;
+      }
+      if (restore != null) {
+        await _restorePosition(restore.$1, restore.$2);
+        if (control != null) await WidgetsBinding.instance.endOfFrame;
+      }
+      if (control != null &&
+          _current &&
+          _drawerDay == null &&
+          generation == _queryGeneration &&
+          _dayReturnControl == control &&
+          _dayReturnFocus.context != null) {
+        _dayReturnFocus.requestFocus();
+      }
     });
   }
+
+  void _openCreateTask() => unawaited(_openAndRefresh('/tasks/new'));
 
   Future<void> _openAndRefresh(String location) async {
     await context.push(location);
@@ -1136,22 +1358,20 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
   }
 
   Future<void> _openTaskAndRefresh(String id) async {
+    final generation = _queryGeneration;
     await context.push(NavigationTargets.task(widget.readContext, id));
-    if (mounted) await _loadAround(_anchor, force: true);
+    if (_current && generation == _queryGeneration) {
+      await _loadAround(_anchor, force: true);
+    }
   }
 
   void _refreshDrawer() {
     final day = _drawerDay;
     if (day == null) return;
-    final all = <String, TaskRecord>{};
-    for (final rows in _tasks.values) {
-      for (final task in rows) {
-        all[task.id] = task;
-      }
-    }
     final zone = CompanyTimeZone.fallback;
     final tasks =
-        all.values
+        {for (final task in _tasks[_key(day)] ?? <TaskRecord>[]) task.id: task}
+            .values
             .where(
               (task) => CalendarTask(
                 task: task,
@@ -1222,14 +1442,20 @@ class _MonthBlock extends StatelessWidget {
     required this.holidays,
     required this.holidayUnavailable,
     required this.onDay,
+    required this.onDayFocusChange,
+    required this.dayFocusNode,
     required this.onPin,
     required this.onOpenTask,
     required this.weekHeight,
     required this.dayKey,
     required this.onDragStarted,
-    required this.onDragUpdate,
-    required this.onDragEnd,
     required this.onAccessibleAdjust,
+    this.dragTarget,
+    this.onExpandWeek,
+    this.expandedWeek,
+    this.onCollapseWeek,
+    this.onWeekTaskDown,
+    this.onWeekTaskHold,
     this.readOnly = false,
   });
 
@@ -1241,25 +1467,41 @@ class _MonthBlock extends StatelessWidget {
   final VoidCallback onRetry;
   final Map<int, HolidayYear> holidays;
   final bool holidayUnavailable;
-  final ValueChanged<CompanyDate> onDay;
+  final void Function(CompanyDate, {Key? trigger}) onDay;
+  final void Function(Key, bool) onDayFocusChange;
+  final FocusNode? Function(Key) dayFocusNode;
   final Future<void> Function(TaskRecord) onPin;
   final ValueChanged<String> onOpenTask;
   final double weekHeight;
   final GlobalKey Function(CompanyDate) dayKey;
   final void Function(TaskCalendarSelection) onDragStarted;
-  final void Function(TaskCalendarSelection, Offset) onDragUpdate;
-  final void Function(TaskCalendarSelection) onDragEnd;
   final void Function(TaskRecord, CalendarDragMode, int) onAccessibleAdjust;
+  final CompanyDate? dragTarget;
   final bool readOnly;
+  final ValueChanged<CompanyDate>? onExpandWeek;
+  final CompanyDate? expandedWeek;
+  final VoidCallback? onCollapseWeek;
+  final ValueChanged<TaskCalendarSelection>? onWeekTaskDown;
+  final ValueChanged<String>? onWeekTaskHold;
 
   double _scale(BuildContext context) =>
       MediaQuery.textScalerOf(context).scale(10) / 10;
 
+  InkWell _dayControl(CompanyDate date, {Key? key, required Widget child}) =>
+      InkWell(
+        key: key,
+        onTap: key == null ? null : () => onDay(date, trigger: key),
+        onFocusChange: key == null
+            ? null
+            : (focused) => onDayFocusChange(key, focused),
+        focusNode: key == null ? null : dayFocusNode(key),
+        child: child,
+      );
+
   @override
   Widget build(BuildContext context) {
     final scale = _scale(context);
-    final laneStep = _weekLaneStep(weekHeight) * scale;
-    final barHeight = _weekBarHeight(weekHeight) * scale;
+    final expanded = expandedWeek != null;
     final projected = tasks
         .map(
           (task) => CalendarTask(
@@ -1272,12 +1514,12 @@ class _MonthBlock extends StatelessWidget {
       for (final task in tasks)
         if (task.pinned) task.id,
     };
-    final layout = MonthLayoutCalculator.compute(
+    final monthWeeks = expanded ? const <WeekLayout>[] : MonthLayoutCalculator.compute(
       month: month,
       items: projected.map(pseudoItem).toList(),
       leadingIds: leadingIds,
       maxLanes: _weekLaneCount(weekHeight),
-    );
+    ).weeks;
     final holidaysByDate = {
       for (final year in [month.year - 1, month.year, month.year + 1])
         ...?holidays[year]?.byDate,
@@ -1290,11 +1532,15 @@ class _MonthBlock extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
         child: Column(
           children: [
-            Row(
+            Stack(
               children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, right: 48),
+                  child: Row(
+                    children: [
                 Text(
                   '${month.year}年${month.month}月',
                   style: Theme.of(context).textTheme.titleSmall
@@ -1325,6 +1571,36 @@ class _MonthBlock extends StatelessWidget {
                   ),
                 if (error != null)
                   TextButton(onPressed: onRetry, child: const Text('重试')),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  bottom: 0,
+                  right: 0,
+                  width: 48,
+                  child: expanded
+                    ? IconButton(
+                      padding: EdgeInsets.zero,
+                      tooltip: '收起周',
+                      icon: const Icon(Icons.unfold_less, size: 18),
+                      onPressed: onCollapseWeek,
+                    )
+                    : PopupMenuButton<CompanyDate>(
+                      padding: EdgeInsets.zero,
+                      tooltip: '选择周 ${month.year}年${month.month}月',
+                      icon: Icon(Icons.view_week_outlined, size: 16 * scale),
+                      onSelected: onExpandWeek,
+                      itemBuilder: (context) => [
+                        for (final week in monthWeeks)
+                          if (week.days.any((day) => day.inMonth))
+                            PopupMenuItem(
+                              value: week.weekStart,
+                              child: Text('${week.weekStart.iso} 至 ${week.weekStart.addDays(6).iso}'),
+                            ),
+                      ],
+                    ),
+                ),
               ],
             ),
             Row(
@@ -1341,13 +1617,23 @@ class _MonthBlock extends StatelessWidget {
                   ),
               ],
             ),
-            for (final week in layout.weeks)
+            for (final monthWeek in expanded ? const <WeekLayout?>[null] : monthWeeks)
               Expanded(
                 child: ClipRect(
                   child: LayoutBuilder(
                   builder: (context, constraints) {
+                    final height = expanded ? constraints.maxHeight / scale : weekHeight;
+                    final barHeight = _weekBarHeight(height) * scale;
+                    final laneStep = _weekLaneStep(height) * scale;
+                    final week = monthWeek ?? MonthLayoutCalculator.computeFullWeek(
+                      weekStart: expandedWeek!,
+                      items: projected.map(pseudoItem),
+                      leadingIds: leadingIds,
+                      maxLanes: (((height - 36 - _weekBarHeight(height)) / _weekLaneStep(height)).floor() + 1).clamp(0, tasks.length),
+                    );
                     final cellWidth = constraints.maxWidth / 7;
                     return Stack(
+                      key: expanded ? const ValueKey('expanded-calendar-week') : null,
                       children: [
                         Row(
                           children: [
@@ -1359,28 +1645,26 @@ class _MonthBlock extends StatelessWidget {
                                     final isToday = day.date == businessDate;
                                     final holiday =
                                         holidaysByDate[day.date.iso];
-                                    return InkWell(
-                                      key: day.inMonth
-                                          ? dayKey(day.date)
-                                          : null,
-                                      onTap: day.inMonth
-                                          ? () => onDay(day.date)
-                                          : null,
+                                    return _dayControl(
+                                      day.date,
+                                      key: !day.inMonth
+                                          ? null
+                                          : expanded
+                                          ? ValueKey('week-date-${day.date.iso}')
+                                          : dayKey(day.date),
                                       child: Container(
                                         margin: const EdgeInsets.all(1),
-                                        decoration: BoxDecoration(
-                                          color: isToday
-                                              ? PandoraColors.petal
-                                              : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.stretch,
                                           children: [
-                                            Row(
+                                            DecoratedBox(
+                                              key: ValueKey('task-date-header-${day.date.iso}'),
+                                              decoration: BoxDecoration(
+                                                color: isToday ? PandoraColors.petal : null,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
                                               children: [
                                                 Text(
                                                   '${day.date.day}',
@@ -1414,6 +1698,7 @@ class _MonthBlock extends StatelessWidget {
                                                   ),
                                                 ],
                                               ],
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -1439,11 +1724,11 @@ class _MonthBlock extends StatelessWidget {
                                           label:
                                               '${day.date.iso} 还有${day.overflowCount}项任务，查看完整清单',
                                           button: true,
-                                          child: InkWell(
+                                          child: _dayControl(
+                                            day.date,
                                             key: ValueKey(
                                               'task-overflow-${day.date.iso}',
                                             ),
-                                            onTap: () => onDay(day.date),
                                             child: Align(
                                               alignment: Alignment.centerRight,
                                               child: Text(
@@ -1497,12 +1782,12 @@ class _MonthBlock extends StatelessWidget {
                                 );
                                 void trackPointer(
                                   TaskCalendarSelection selection,
-                                  Offset position,
+                                  PointerDownEvent event,
                                 ) {
                                   final box = barContext.findRenderObject();
                                   if (box is! RenderBox) return;
-                                  final localX = box.globalToLocal(position).dx;
-                                  final offset = (localX / cellWidth)
+                                  final localX = box.globalToLocal(event.position).dx;
+                                  final offset = ((localX + 2) / cellWidth)
                                       .floor()
                                       .clamp(
                                         0,
@@ -1510,7 +1795,8 @@ class _MonthBlock extends StatelessWidget {
                                       );
                                   selection.grabDay =
                                       week.days[bar.startColumn + offset].date;
-                                  selection.pointer = position;
+                                  selection.pointer = event.position;
+                                  selection.pointerId = event.pointer;
                                 }
 
                                 void openBarDay(TapUpDetails details) {
@@ -1522,7 +1808,7 @@ class _MonthBlock extends StatelessWidget {
                                   final localX = box
                                       .globalToLocal(details.globalPosition)
                                       .dx;
-                                  final offset = (localX / cellWidth)
+                                  final offset = ((localX + 2) / cellWidth)
                                       .floor()
                                       .clamp(
                                         0,
@@ -1587,7 +1873,7 @@ class _MonthBlock extends StatelessWidget {
                                 return Semantics(
                                   button: true,
                                   label: bar.name,
-                                  customSemanticsActions: canDrag
+                                  customSemanticsActions: canDrag && !expanded
                                       ? actions
                                       : null,
                                   child: Stack(
@@ -1595,12 +1881,11 @@ class _MonthBlock extends StatelessWidget {
                                     children: [
                                       Positioned.fill(
                                         child: Listener(
-                                          onPointerDown: (event) =>
-                                              trackPointer(
-                                                moveSelection,
-                                                event.position,
-                                              ),
-                                          child: canDrag
+                                          onPointerDown: canDrag ? (event) {
+                                            trackPointer(moveSelection, event);
+                                            if (expanded) onWeekTaskDown?.call(moveSelection);
+                                          } : null,
+                                          child: canDrag && !expanded
                                               ? LongPressDraggable<
                                                   TaskCalendarSelection
                                                 >(
@@ -1613,13 +1898,6 @@ class _MonthBlock extends StatelessWidget {
                                                       onDragStarted(
                                                         moveSelection,
                                                       ),
-                                                  onDragUpdate: (details) =>
-                                                      onDragUpdate(
-                                                        moveSelection,
-                                                        details.globalPosition,
-                                                      ),
-                                                  onDragEnd: (_) =>
-                                                      onDragEnd(moveSelection),
                                                   feedback: _dragFeedback(
                                                     bar.name,
                                                   ),
@@ -1648,6 +1926,9 @@ class _MonthBlock extends StatelessWidget {
                                                     'task-bar-${bar.itemId}',
                                                   ),
                                                   onTapUp: openBarDay,
+                                                  onLongPressStart: canDrag && expanded
+                                                      ? (_) => onWeekTaskHold?.call(bar.itemId)
+                                                      : null,
                                                   child: _taskBar(
                                                     context,
                                                     bar,
@@ -1656,7 +1937,7 @@ class _MonthBlock extends StatelessWidget {
                                                 ),
                                         ),
                                       ),
-                                      if (canDrag && bar.isRealStart)
+                                      if (canDrag && !expanded && bar.isRealStart)
                                         Positioned(
                                           left: -3,
                                           top: 0,
@@ -1669,11 +1950,9 @@ class _MonthBlock extends StatelessWidget {
                                             selection: startSelection,
                                             onPointerDown: trackPointer,
                                             onDragStarted: onDragStarted,
-                                            onDragUpdate: onDragUpdate,
-                                            onDragEnd: onDragEnd,
                                           ),
                                         ),
-                                      if (canDrag && bar.isRealEnd)
+                                      if (canDrag && !expanded && bar.isRealEnd)
                                         Positioned(
                                           right: -3,
                                           top: 0,
@@ -1686,8 +1965,6 @@ class _MonthBlock extends StatelessWidget {
                                             selection: endSelection,
                                             onPointerDown: trackPointer,
                                             onDragStarted: onDragStarted,
-                                            onDragUpdate: onDragUpdate,
-                                            onDragEnd: onDragEnd,
                                           ),
                                         ),
                                     ],
@@ -1696,6 +1973,24 @@ class _MonthBlock extends StatelessWidget {
                               },
                             ),
                           ),
+                        if (!expanded && dragTarget != null)
+                          for (final (index, day) in week.days.indexed)
+                            if (day.inMonth && day.date == dragTarget)
+                              Positioned(
+                                left: index * cellWidth + 1,
+                                width: cellWidth - 2,
+                                top: 1,
+                                bottom: 1,
+                                child: IgnorePointer(
+                                  child: DecoratedBox(
+                                    key: ValueKey('task-drop-${day.date.iso}'),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ),
                       ],
                     );
                   },
@@ -1724,22 +2019,17 @@ class _MonthBlock extends StatelessWidget {
   Widget _resizeHandle({
     Key? key,
     required TaskCalendarSelection selection,
-    required void Function(TaskCalendarSelection, Offset) onPointerDown,
+    required void Function(TaskCalendarSelection, PointerDownEvent) onPointerDown,
     required void Function(TaskCalendarSelection) onDragStarted,
-    required void Function(TaskCalendarSelection, Offset) onDragUpdate,
-    required void Function(TaskCalendarSelection) onDragEnd,
   }) {
     return Listener(
       key: key,
-      onPointerDown: (event) => onPointerDown(selection, event.position),
+      onPointerDown: (event) => onPointerDown(selection, event),
       child: LongPressDraggable<TaskCalendarSelection>(
         delay: const Duration(milliseconds: 500),
         hapticFeedbackOnStart: true,
         data: selection,
         onDragStarted: () => onDragStarted(selection),
-        onDragUpdate: (details) =>
-            onDragUpdate(selection, details.globalPosition),
-        onDragEnd: (_) => onDragEnd(selection),
         feedback: const Material(
           elevation: 4,
           child: Icon(Icons.drag_handle, size: 20),
@@ -1808,6 +2098,9 @@ class _DayPanel extends StatelessWidget {
     required this.day,
     this.holiday,
     required this.tasks,
+    required this.loading,
+    required this.error,
+    required this.onRetry,
     required this.dayViewMode,
     required this.onToggleView,
     required this.onSelectDay,
@@ -1824,6 +2117,9 @@ class _DayPanel extends StatelessWidget {
   final CompanyDate day;
   final HolidayDay? holiday;
   final List<TaskRecord> tasks;
+  final bool loading;
+  final Object? error;
+  final VoidCallback onRetry;
   final bool dayViewMode;
   final VoidCallback onToggleView;
   final ValueChanged<CompanyDate> onSelectDay;
@@ -1909,7 +2205,11 @@ class _DayPanel extends StatelessWidget {
             ),
             const Divider(height: 12),
             Expanded(
-              child: tasks.isEmpty
+              child: error != null
+                  ? ErrorView(error: error!, onRetry: onRetry)
+                  : loading
+                  ? const LoadingView()
+                  : tasks.isEmpty
                   ? const EmptyView(message: '这一天暂无负责的任务')
                   : dayViewMode
                   ? _DayAxisView(
