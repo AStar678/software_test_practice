@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/company/company_date.dart';
+import '../../../core/navigation/tab_refresh.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/pandora_theme.dart';
@@ -43,6 +46,13 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listenTabRefresh(AppTab.home, () async {
+      try {
+        await _refresh();
+      } catch (error) {
+        if (context.mounted) showErrorSnack(context, error);
+      }
+    });
     final home = ref.watch(homeDataProvider);
     final businessDate = ref.watch(businessDateProvider);
     final anchor = _visibleDate ?? businessDate;
@@ -171,6 +181,7 @@ class _HomeCards extends StatelessWidget {
               for (var i = 0; i < data.companyItems.take(3).length; i++) ...[
                 if (i > 0) const Divider(height: 1),
                 _PreviewRow(
+                  number: i + 1,
                   title: data.companyItems[i].body,
                   onTap: () => context.push(AppRoutes.homeEvents),
                 ),
@@ -188,6 +199,7 @@ class _HomeCards extends StatelessWidget {
               for (var i = 0; i < data.assignedTasks.take(3).length; i++) ...[
                 if (i > 0) const Divider(height: 1),
                 _PreviewRow(
+                  number: i + 1,
                   title: data.assignedTasks[i].title,
                   fadeName: true,
                   trailing: Text(
@@ -265,12 +277,14 @@ class _PreviewCard extends StatelessWidget {
 
 class _PreviewRow extends StatelessWidget {
   const _PreviewRow({
+    required this.number,
     required this.title,
     this.trailing,
     required this.onTap,
     this.fadeName = false,
   });
 
+  final int number;
   final String title;
   final Widget? trailing;
   final VoidCallback onTap;
@@ -286,6 +300,7 @@ class _PreviewRow extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 48),
         child: Row(
           children: [
+            ListOrdinal(number),
             Expanded(
               child: fadeName
                   ? FadingNameText(title, maxLines: 2, style: homeCopyStyle)

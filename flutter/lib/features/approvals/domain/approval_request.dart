@@ -28,6 +28,7 @@ class ApprovalRequest {
     this.participants = const [],
     this.records = const [],
     this.deadlineExpired = false,
+    this.taskDeleted = false,
     this.message,
     this.canDecide = false,
     this.canWithdraw = false,
@@ -57,6 +58,7 @@ class ApprovalRequest {
   final List<TaskParticipant> participants;
   final List<ApprovalRecord> records;
   final bool deadlineExpired;
+  final bool taskDeleted;
   final String? message;
 
   /// 页面按钮仅作提示，服务端每次重验；这里结合状态与审核人身份保守判断。
@@ -129,6 +131,7 @@ class ApprovalRequest {
           if (raw is Map) ApprovalRecord.fromJson(Map<String, Object?>.from(raw)),
       ],
       deadlineExpired: json['deadlineExpired'] == true,
+      taskDeleted: json['taskDeleted'] == true,
       message: json['message']?.toString(),
     );
   }

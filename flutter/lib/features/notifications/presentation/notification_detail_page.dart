@@ -112,7 +112,14 @@ class _NotificationDetailPageState
                             : '查看原申请',
                       ),
                     ),
-                  if (value.canOpenTask && value.taskId != null) ...[
+                  if (value.taskDeleted) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: null,
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('任务已删除'),
+                    ),
+                  ] else if (value.canOpenTask && value.taskId != null) ...[
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
                       onPressed: () => context.push(

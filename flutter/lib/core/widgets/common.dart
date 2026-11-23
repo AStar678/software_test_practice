@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../errors/app_error.dart';
+
 /// 品牌标记：自有资产，仅装饰；提供语义名称。
 class BrandMark extends StatelessWidget {
   const BrandMark({super.key, this.size = 52});
@@ -143,10 +145,50 @@ class FormHint extends StatelessWidget {
   }
 }
 
+/// 首页清单的纯展示序号：独立左列，不参与渐隐、不冒充业务标识。
+class ListOrdinal extends StatelessWidget {
+  const ListOrdinal(this.number, {super.key, this.width = 28});
+
+  final int number;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '第 $number 条',
+      child: SizedBox(
+        width: width,
+        child: Text(
+          '$number',
+          textAlign: TextAlign.start,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: const Color(0xFF8A7F8E),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 void showSnack(BuildContext context, String message) {
   ScaffoldMessenger.of(context)
     ..clearSnackBars()
     ..showSnackBar(SnackBar(content: Text(message)));
+}
+
+/// 统一错误出口：只展示中文可操作提示，技术细节不进入界面。
+void showErrorSnack(BuildContext context, Object error, {VoidCallback? onRetry}) {
+  final message = userMessageFor(error);
+  ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: onRetry == null
+            ? null
+            : SnackBarAction(label: '重试', onPressed: onRetry),
+      ),
+    );
 }
 
 void lightHaptic() {

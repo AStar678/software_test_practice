@@ -20,8 +20,12 @@ class NameFadeLayout {
   final String fadeText;
   final Rect? fadeRect;
 
-  String prefixOf(String text) =>
-      visibleEnd == null ? text : text.substring(0, visibleEnd!);
+  /// 前缀不包含被渐隐的末字：末字只在遮罩层绘制一次，避免重影。
+  String prefixOf(String text) {
+    if (visibleEnd == null) return text;
+    final end = visibleEnd! - fadeText.length;
+    return end <= 0 ? '' : text.substring(0, end);
+  }
 }
 
 /// 按真实文本布局判断名称是否在 [maxLines] 内被截断。

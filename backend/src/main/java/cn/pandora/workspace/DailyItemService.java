@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Date;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -52,11 +53,11 @@ public class DailyItemService {
     public Map<String, Object> summary(Actor a, Map<String, String> filters) {
         business(a);
         if (!Set.of("from", "to").containsAll(filters.keySet()))
-            throw bad("汇总接口当前仅支持 from、to");
-        LocalDate from = date(filters.get("from"), "from");
-        LocalDate to = date(filters.get("to"), "to");
+            throw bad("汇总查询只支持开始日期与截止日期");
+        LocalDate from = date(filters.get("from"), "开始日期");
+        LocalDate to = date(filters.get("to"), "截止日期");
         long days = ChronoUnit.DAYS.between(from, to) + 1;
-        if (days < 1) throw bad("from 不能晚于 to");
+        if (days < 1) throw bad("开始日期不能晚于截止日期");
         if (days > MAX_SUMMARY_DAYS) throw bad("汇总范围最多 " + MAX_SUMMARY_DAYS + " 天");
         ZoneId zone = zone(a);
         LocalDate businessDate = businessDate(zone);
@@ -102,19 +103,19 @@ public class DailyItemService {
     public Map<String, Object> list(Actor a, Map<String, String> filters) {
         business(a);
         if (!Set.of("date", "from", "to", "limit", "offset").containsAll(filters.keySet()))
-            throw bad("清单接口当前仅支持 date、from、to、limit、offset");
-        LocalDate day = filters.containsKey("date") ? date(filters.get("date"), "date") : null;
-        LocalDate from = filters.containsKey("from") ? date(filters.get("from"), "from") : null;
-        LocalDate to = filters.containsKey("to") ? date(filters.get("to"), "to") : null;
-        if (day != null && (from != null || to != null)) throw bad("date 与 from/to 不能混用");
-        if (day == null && (from == null || to == null)) throw bad("必须提供 date，或同时提供 from、to");
+            throw bad("事项清单只支持日期、范围与分页参数");
+        LocalDate day = filters.containsKey("date") ? date(filters.get("date"), "日期") : null;
+        LocalDate from = filters.containsKey("from") ? date(filters.get("from"), "开始日期") : null;
+        LocalDate to = filters.containsKey("to") ? date(filters.get("to"), "截止日期") : null;
+        if (day != null && (from != null || to != null)) throw bad("单日查询与范围查询不能混用");
+        if (day == null && (from == null || to == null)) throw bad("请提供日期，或同时提供开始日期与截止日期");
         if (from != null) {
             long days = ChronoUnit.DAYS.between(from, to) + 1;
-            if (days < 1) throw bad("from 不能晚于 to");
+            if (days < 1) throw bad("开始日期不能晚于截止日期");
             if (days > MAX_SUMMARY_DAYS) throw bad("范围查询最多 " + MAX_SUMMARY_DAYS + " 天");
         }
-        int limit = number(filters, "limit", 50, 1, MAX_LIST_PAGE);
-        int offset = number(filters, "offset", 0, 0, Integer.MAX_VALUE);
+        int limit = number(filters, "limit", 50, 1, MAX_LIST_PAGE, "每页条数");
+        int offset = number(filters, "offset", 0, 0, Integer.MAX_VALUE, "翻页位置");
         ZoneId zone = zone(a);
         LocalDate businessDate = businessDate(zone);
         String predicate = "organization_id=? AND owner_id=? AND start_date<=? AND end_date>=?";
@@ -122,10 +123,10 @@ public class DailyItemService {
         Object searchTo = Date.valueOf(day == null ? to : day);
         long total = n(db.one("SELECT COUNT(*) AS c FROM daily_items WHERE " + predicate,
                 a.organizationId(), a.id(), searchTo, searchFrom), "c");
-        var rows = db.list("SELECT id,start_date,end_date,body,completed,row_version,created_at,updated_at FROM daily_items "
+        var rows = db.list("SELECT id,start_date,end_date,all_day,start_time,end_time,body,completed,row_version,created_at,updated_at FROM daily_items "
                         + "WHERE " + predicate + " ORDER BY created_at,id LIMIT ? OFFSET ?",
                 a.organizationId(), a.id(), searchTo, searchFrom, limit, offset);
-        List<Map<String, Object>> items = rows.stream().map(row -> view(row, businessDate)).toList();
+        List<Map<String, Object>> items = rows.stream().map(row -> view(row, zone, clock.instant())).toList();
         var response = new LinkedHashMap<String, Object>();
         if (day != null) response.put("date", day.toString());
         else { response.put("from", from.toString()); response.put("to", to.toString()); }
@@ -143,86 +144,97 @@ public class DailyItemService {
     public Map<String, Object> detail(Actor a, String itemId) {
         business(a);
         ZoneId zone = zone(a);
-        return view(read(a, itemId, false), businessDate(zone));
+        return view(read(a, itemId, false), zone, clock.instant());
     }
 
     /* --------------------------------------------------------------- writes */
 
     public Map<String, Object> create(Actor a, Map<String, Object> body) {
         business(a);
-        allowed(body, Set.of("startDate", "endDate", "date", "body"));
+        allowed(body, Set.of("startDate", "endDate", "date", "body", "allDay", "startTime", "endTime"));
         boolean legacy = body.containsKey("date");
         if (legacy && (body.containsKey("startDate") || body.containsKey("endDate")))
-            throw bad("date 与 startDate/endDate 不能混用");
+            throw bad("单日日期与起止日期不能混用");
         LocalDate start;
         LocalDate end;
         if (legacy) {
-            start = date(body.get("date"), "date");
+            start = date(body.get("date"), "日期");
             end = start;
         } else {
-            start = date(body.get("startDate"), "startDate");
-            end = date(body.get("endDate"), "endDate");
+            start = date(body.get("startDate"), "开始日期");
+            end = date(body.get("endDate"), "截止日期");
         }
         requireRange(start, end);
+        // Old clients submit dates only; that remains a whole-day item. A timed item must explicitly
+        // set allDay=false and provide both company-local times.
+        boolean allDay = body.containsKey("allDay")
+                ? bool(body.get("allDay"))
+                : !body.containsKey("startTime") && !body.containsKey("endTime");
+        LocalTime startTime = allDay ? null : time(body.get("startTime"), "开始时刻");
+        LocalTime endTime = allDay ? null : time(body.get("endTime"), "截止时刻");
+        requireTimedRange(start, startTime, end, endTime, allDay);
         String content = required(body, "body", MAX_BODY);
         String itemId = id();
-        db.update("INSERT INTO daily_items(id,organization_id,owner_id,start_date,end_date,body,completed,row_version) VALUES(?,?,?,?,?,?,FALSE,1)",
-                itemId, a.organizationId(), a.id(), Date.valueOf(start), Date.valueOf(end), content);
-        events.recordObject(a, null, "daily_item.created", List.of(),
-                Map.of("dailyItemId", itemId, "startDate", start.toString(), "endDate", end.toString()), null, null, null, null, "daily_item", itemId);
-        var result = new LinkedHashMap<String, Object>();
-        result.put("id", itemId);
-        result.put("startDate", start.toString());
-        result.put("endDate", end.toString());
-        result.put("date", start.toString());
-        result.put("rowVersion", 1);
-        result.put("businessDate", businessDate(zone(a)).toString());
+        db.update("INSERT INTO daily_items(id,organization_id,owner_id,start_date,end_date,all_day,start_time,end_time,body,completed,row_version) VALUES(?,?,?,?,?,?,?,?,?,FALSE,1)",
+                itemId, a.organizationId(), a.id(), Date.valueOf(start), Date.valueOf(end), allDay,
+                sqlTime(startTime), sqlTime(endTime), content);
+        var details = eventDetails(itemId, start, end, allDay, startTime, endTime);
+        events.recordObject(a, null, "daily_item.created", List.of(), details, null, null, null, null, "daily_item", itemId);
+        ZoneId zone = zone(a);
+        var result = new LinkedHashMap<>(view(read(a, itemId, false), zone, clock.instant()));
+        result.put("businessDate", businessDate(zone).toString());
         return result;
     }
 
     public Map<String, Object> change(Actor a, String itemId, String ifMatch, Map<String, Object> body) {
         business(a);
-        allowed(body, Set.of("startDate", "endDate", "date", "body", "completed"));
+        allowed(body, Set.of("startDate", "endDate", "date", "body", "completed", "allDay", "startTime", "endTime"));
         var item = read(a, itemId, true);
         Writes.checkVersion(ifMatch, n(item, "rowVersion"));
         LocalDate currentStart = LocalDate.parse(s(item, "startDate"));
         LocalDate currentEnd = LocalDate.parse(s(item, "endDate"));
+        boolean currentAllDay = item.get("allDay") == null || flag(item.get("allDay"));
+        LocalTime currentStartTime = timeValue(item.get("startTime"));
+        LocalTime currentEndTime = timeValue(item.get("endTime"));
         boolean hasPair = body.containsKey("startDate") || body.containsKey("endDate");
         boolean hasLegacyDate = body.containsKey("date");
-        if (hasLegacyDate && hasPair) throw bad("date 与 startDate/endDate 不能混用");
+        if (hasLegacyDate && hasPair) throw bad("单日日期与起止日期不能混用");
         LocalDate start = currentStart;
         LocalDate end = currentEnd;
         if (hasLegacyDate) {
             // Old clients may still address a genuine single-day record. A ranged record is never
             // silently compressed, even when the supplied date equals its start date.
             if (!currentStart.equals(currentEnd))
-                throw new ApiException(409, "DAILY_ITEM_RANGE_REQUIRED", "该事项已跨日，请使用 startDate 与 endDate 更新");
-            start = date(body.get("date"), "date");
+                throw new ApiException(409, "DAILY_ITEM_RANGE_REQUIRED", "该事项已跨日，请使用开始日期与截止日期更新");
+            start = date(body.get("date"), "日期");
             end = start;
         } else if (hasPair) {
             if (!body.containsKey("startDate") || !body.containsKey("endDate"))
-                throw bad("startDate 与 endDate 必须同时提供");
-            start = date(body.get("startDate"), "startDate");
-            end = date(body.get("endDate"), "endDate");
+                throw bad("开始日期与截止日期必须同时提供");
+            start = date(body.get("startDate"), "开始日期");
+            end = date(body.get("endDate"), "截止日期");
         }
         requireRange(start, end);
+        // Omitting the mode keeps the current one, so a legacy date-only edit of a timed single-day
+        // item does not silently drop its times.
+        boolean allDay = body.containsKey("allDay") ? bool(body.get("allDay")) : currentAllDay;
+        LocalTime startTime = allDay ? null : (body.containsKey("startTime")
+                ? time(body.get("startTime"), "开始时刻") : currentStartTime);
+        LocalTime endTime = allDay ? null : (body.containsKey("endTime")
+                ? time(body.get("endTime"), "截止时刻") : currentEndTime);
+        requireTimedRange(start, startTime, end, endTime, allDay);
         String content = body.containsKey("body") ? required(body, "body", MAX_BODY) : s(item, "body");
         boolean completed = body.containsKey("completed") ? bool(body.get("completed")) : flag(item.get("completed"));
         long next = n(item, "rowVersion") + 1;
-        db.update("UPDATE daily_items SET start_date=?,end_date=?,body=?,completed=?,row_version=?,updated_at=CURRENT_TIMESTAMP(6) "
+        db.update("UPDATE daily_items SET start_date=?,end_date=?,all_day=?,start_time=?,end_time=?,body=?,completed=?,row_version=?,updated_at=CURRENT_TIMESTAMP(6) "
                         + "WHERE organization_id=? AND owner_id=? AND id=?",
-                Date.valueOf(start), Date.valueOf(end), content, completed, next,
-                a.organizationId(), a.id(), itemId);
-        events.recordObject(a, null, "daily_item.updated", List.of(),
-                Map.of("dailyItemId", itemId, "startDate", start.toString(), "endDate", end.toString()), null, null, null, null, "daily_item", itemId);
-        var result = new LinkedHashMap<String, Object>();
-        result.put("id", itemId);
-        result.put("startDate", start.toString());
-        result.put("endDate", end.toString());
-        result.put("date", start.toString());
-        result.put("completed", completed);
-        result.put("rowVersion", next);
-        result.put("businessDate", businessDate(zone(a)).toString());
+                Date.valueOf(start), Date.valueOf(end), allDay, sqlTime(startTime), sqlTime(endTime),
+                content, completed, next, a.organizationId(), a.id(), itemId);
+        var details = eventDetails(itemId, start, end, allDay, startTime, endTime);
+        events.recordObject(a, null, "daily_item.updated", List.of(), details, null, null, null, null, "daily_item", itemId);
+        ZoneId zone = zone(a);
+        var result = new LinkedHashMap<>(view(read(a, itemId, false), zone, clock.instant()));
+        result.put("businessDate", businessDate(zone).toString());
         return result;
     }
 
@@ -249,14 +261,17 @@ public class DailyItemService {
 
     private Map<String, Object> read(Actor a, String itemId, boolean lock) {
         if (itemId == null || itemId.isBlank()) throw ApiException.notFound();
-        return db.one("SELECT id,start_date,end_date,body,completed,row_version,created_at,updated_at FROM daily_items "
+        return db.one("SELECT id,start_date,end_date,all_day,start_time,end_time,body,completed,row_version,created_at,updated_at FROM daily_items "
                         + "WHERE organization_id=? AND owner_id=? AND id=?" + (lock ? " FOR UPDATE" : ""),
                 a.organizationId(), a.id(), itemId);
     }
 
-    private Map<String, Object> view(Map<String, Object> row, LocalDate businessDate) {
+    private Map<String, Object> view(Map<String, Object> row, ZoneId zone, java.time.Instant now) {
         LocalDate start = LocalDate.parse(s(row, "startDate"));
         LocalDate end = LocalDate.parse(s(row, "endDate"));
+        boolean allDay = row.get("allDay") == null || flag(row.get("allDay"));
+        LocalTime startTime = allDay ? null : timeValue(row.get("startTime"));
+        LocalTime endTime = allDay ? null : timeValue(row.get("endTime"));
         boolean completed = flag(row.get("completed"));
         var out = new LinkedHashMap<String, Object>();
         out.put("id", s(row, "id"));
@@ -265,17 +280,93 @@ public class DailyItemService {
         // Legacy response projection only: the effective range is startDate/endDate. New clients must
         // never treat this single date as the whole record.
         out.put("date", start.toString());
+        out.put("allDay", allDay);
+        out.put("startTime", startTime == null ? null : formatTime(startTime));
+        out.put("endTime", endTime == null ? null : formatTime(endTime));
         out.put("body", s(row, "body"));
         out.put("completed", completed);
-        out.put("status", completed ? "completed" : businessDate.isAfter(end) ? "overdue" : "open");
+        out.put("status", status(completed, allDay, end, endTime, zone, now));
         out.put("rowVersion", n(row, "rowVersion"));
         out.put("createdAt", s(row, "createdAt"));
         out.put("updatedAt", s(row, "updatedAt"));
         return out;
     }
 
+    /**
+     * Completed wins; a whole-day item is overdue after the inclusive end date, while a timed item is
+     * overdue only strictly after its company-local end instant (the exact deadline is still open).
+     */
+    private static String status(boolean completed, boolean allDay, LocalDate end, LocalTime endTime,
+                                 ZoneId zone, java.time.Instant now) {
+        if (completed) return "completed";
+        if (allDay) return businessDate(now, zone).isAfter(end) ? "overdue" : "open";
+        if (endTime == null) return "open";
+        return now.isAfter(java.time.ZonedDateTime.of(end, endTime, zone).toInstant()) ? "overdue" : "open";
+    }
+
+    private static LocalDate businessDate(java.time.Instant now, ZoneId zone) {
+        return now.atZone(zone).toLocalDate();
+    }
+
+    private void requireTimedRange(LocalDate start, LocalTime startTime, LocalDate end, LocalTime endTime, boolean allDay) {
+        if (allDay) return;
+        if (startTime == null) throw bad("定时事项必须填写开始时刻");
+        if (endTime == null) throw bad("定时事项必须填写截止时刻");
+        if (java.time.LocalDateTime.of(end, endTime).isBefore(java.time.LocalDateTime.of(start, startTime)))
+            throw bad("截止时间不能早于开始时间");
+    }
+
+    /** Strict company-local HH:mm; the wire format never carries a device time zone. */
+    private static LocalTime time(Object value, String label) {
+        if (!(value instanceof String text) || text.isBlank())
+            throw bad(label + "必须为 HH:mm 有效时刻");
+        String trimmed = text.trim();
+        LocalTime parsed;
+        try {
+            parsed = LocalTime.parse(trimmed, java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+                    .withResolverStyle(java.time.format.ResolverStyle.STRICT));
+        } catch (DateTimeParseException error) {
+            throw bad(label + "必须为 HH:mm 有效时刻");
+        }
+        return parsed;
+    }
+
+    private static LocalTime timeValue(Object value) {
+        if (value instanceof java.sql.Time time) return time.toLocalTime();
+        if (value instanceof LocalTime time) return time;
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return LocalTime.parse(text.length() > 5 ? text.substring(0, 5) : text,
+                        java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+            } catch (DateTimeParseException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private static java.sql.Time sqlTime(LocalTime value) {
+        return value == null ? null : java.sql.Time.valueOf(value);
+    }
+
+    private static String formatTime(LocalTime value) {
+        return String.format(java.util.Locale.ROOT, "%02d:%02d", value.getHour(), value.getMinute());
+    }
+
+    private static Map<String, Object> eventDetails(String itemId, LocalDate start, LocalDate end,
+                                                    boolean allDay, LocalTime startTime, LocalTime endTime) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("dailyItemId", itemId);
+        details.put("startDate", start.toString());
+        details.put("endDate", end.toString());
+        details.put("allDay", allDay);
+        if (startTime != null) details.put("startTime", formatTime(startTime));
+        if (endTime != null) details.put("endTime", formatTime(endTime));
+        return details;
+    }
+
     private static void requireRange(LocalDate start, LocalDate end) {
-        if (end.isBefore(start)) throw bad("endDate 不能早于 startDate");
+        if (end.isBefore(start)) throw bad("截止日期不能早于开始日期");
     }
 
     /** Company business date; never a device-local date. */
@@ -293,20 +384,20 @@ public class DailyItemService {
     }
 
     /** Strict ISO calendar date; never a UTC midnight timestamp that can drift with the device zone. */
-    private static LocalDate date(Object value, String field) {
+    private static LocalDate date(Object value, String label) {
         if (!(value instanceof String text) || text.isBlank())
-            throw bad(field + " 必须为 YYYY-MM-DD 有效日期");
+            throw bad(label + "必须为 YYYY-MM-DD 有效日期");
         try {
             LocalDate parsed = LocalDate.parse(text.trim());
             if (!parsed.toString().equals(text.trim())) throw new DateTimeParseException("非规范日期", text, 0);
             return parsed;
         } catch (DateTimeParseException error) {
-            throw bad(field + " 必须为 YYYY-MM-DD 有效日期");
+            throw bad(label + "必须为 YYYY-MM-DD 有效日期");
         }
     }
 
     private static boolean bool(Object value) {
-        if (!(value instanceof Boolean)) throw bad("completed 必须为布尔值");
+        if (!(value instanceof Boolean)) throw bad("完成状态必须为布尔值");
         return (Boolean) value;
     }
 
@@ -319,21 +410,21 @@ public class DailyItemService {
     }
 
     private static String required(Map<String, Object> body, String key, int max) {
-        if (!(body.get(key) instanceof String)) throw bad(key + " 必须为文字");
+        if (!(body.get(key) instanceof String)) throw bad("正文必须为文字");
         String value = s(body, key);
         value = value == null ? null : value.trim();
         if (value == null || value.isEmpty() || value.length() > max)
-            throw bad(key + " 不能为空且不得超过 " + max + " 字");
+            throw bad("正文不能为空且不得超过 " + max + " 字");
         return value;
     }
 
-    private static int number(Map<String, String> filters, String key, int fallback, int min, int max) {
+    private static int number(Map<String, String> filters, String key, int fallback, int min, int max, String label) {
         try {
             int value = Integer.parseInt(filters.getOrDefault(key, Integer.toString(fallback)));
             if (value < min || value > max) throw new NumberFormatException();
             return value;
         } catch (Exception error) {
-            throw bad(key + " 超出允许范围");
+            throw bad(label + "超出允许范围");
         }
     }
 

@@ -136,7 +136,7 @@ public class ExpiryService {
                 "任务《" + title + "》的" + kindLabel(kind) + "申请已到期失效，请调整后重提。", now);
         // A published, unfinished task that was frozen past its effective deadline gets its one
         // overdue notice now; an unpublished creation gets only the expiry/resubmit message.
-        Map<String, Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?", organizationId, taskId);
+        Map<String, Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=? AND deleted_at IS NULL", organizationId, taskId);
         if (task != null && s(task, "currentVersionId") != null) reminders.ensureOverdueAfterExpiry(organizationId, taskId, now);
         return true;
     }

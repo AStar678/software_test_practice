@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/navigation/tab_refresh.dart';
 import '../../core/theme/pandora_theme.dart';
 
 /// 五分支主导航：首页、公司、日志、统计、我的。通知与任务表单不占主导航。
-class PandoraShell extends StatelessWidget {
+///
+/// 每次点击（包括当前入口）先递增目标刷新代次，再切换分支；分支状态不重建，
+/// 因此滚动、筛选、分页、日期、人员和草稿都保留。
+class PandoraShell extends ConsumerWidget {
   const PandoraShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
@@ -18,15 +23,15 @@ class PandoraShell extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (index) => navigationShell.goBranch(
-          index,
-          initialLocation: index == navigationShell.currentIndex,
-        ),
+        onDestinationSelected: (index) {
+          ref.read(tabRefreshProvider.notifier).bump(AppTab.values[index]);
+          navigationShell.goBranch(index, initialLocation: false);
+        },
         destinations: [
           for (final destination in destinations)
             NavigationDestination(

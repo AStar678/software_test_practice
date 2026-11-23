@@ -110,6 +110,14 @@ ApiException mapHttpError(int statusCode, Object? data) {
         code: code,
         retryable: true,
       );
+    case 410:
+      return ApiException(
+        kind: ApiErrorKind.deleted,
+        message: message ?? '任务已删除',
+        statusCode: statusCode,
+        code: code ?? 'TASK_DELETED',
+        details: body.isEmpty ? null : body,
+      );
     default:
       if (statusCode >= 500) {
         return ApiException(

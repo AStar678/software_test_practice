@@ -13,8 +13,10 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/fading_name_text.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../auth/domain/employee_user.dart';
+import '../../home/presentation/home_providers.dart';
 import '../../people/domain/person_summary.dart';
 import '../../tags/presentation/tag_selector.dart';
+import '../../tags/presentation/tags_providers.dart';
 import '../domain/task_record.dart';
 import 'assignee_picker.dart';
 import 'task_providers.dart';
@@ -27,6 +29,19 @@ const Set<String> _scheduleFields = {
   'startDate',
   'dueDate',
 };
+
+const List<({String color, String label})> _inlineTagPalette = [
+  (color: '#F6D5D2', label: '珊瑚红'),
+  (color: '#FBE3CB', label: '蜜杏'),
+  (color: '#F8EFC8', label: '麦黄'),
+  (color: '#DCEEE0', label: '青瓷'),
+  (color: '#D8EAF4', label: '湖蓝'),
+  (color: '#E4DEF3', label: '雾紫'),
+  (color: '#F2DFE9', label: '藕粉'),
+  (color: '#E4E7EC', label: '石灰'),
+];
+
+Color _tagColor(String hex) => Color(int.parse('FF${hex.substring(1)}', radix: 16));
 
 class TaskCreatePage extends StatelessWidget {
   const TaskCreatePage({super.key, this.parentId});
@@ -296,6 +311,177 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       return '新建任务不能选择今天之前的日期';
     }
     return null;
+  }
+
+  Future<void> _createInlineTag() async {
+    if (ref.read(currentUserProvider)?.isFounder != true) return;
+    final name = TextEditingController();
+    var selectedColor = _inlineTagPalette.first.color;
+    var validation = '';
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('新建公司标签'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: name,
+                maxLength: 40,
+                decoration: const InputDecoration(labelText: '名称'),
+              ),
+              const SizedBox(height: 8),
+              const Text('颜色'),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final entry in _inlineTagPalette)
+                    ChoiceChip(
+                      label: Text(entry.label),
+                      avatar: CircleAvatar(
+                        backgroundColor: _tagColor(entry.color),
+                        radius: 7,
+                      ),
+                      selected: selectedColor == entry.color,
+                      onSelected: (_) => setDialogState(
+                        () => selectedColor = entry.color,
+                      ),
+                    ),
+                ],
+              ),
+              if (validation.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    validation,
+                    style: const TextStyle(color: PandoraColors.overdue),
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final value = name.text.trim();
+                if (value.isEmpty) {
+                  setDialogState(() => validation = '名称不能为空');
+                  return;
+                }
+                if (value.runes.length > 40) {
+                  setDialogState(() => validation = '名称最多40字');
+                  return;
+                }
+                if (_tagCatalog.any((tag) => tag.name == value)) {
+                  setDialogState(() => validation = '同名标签已存在');
+                  return;
+                }
+                Navigator.of(dialogContext).pop(true);
+              },
+              child: const Text('创建并选中'),
+            ),
+          ],
+        ),
+      ),
+    );
+    final value = name.text.trim();
+    Future<void>.delayed(const Duration(milliseconds: 300), name.dispose);
+    if (accepted != true || !mounted) return;
+    final keys = ref.read(operationKeysProvider);
+    final body = {'name': value, 'color': selectedColor};
+    final key = keys.keyFor(
+      scope: 'tag:new',
+      method: 'POST',
+      path: '/tags',
+      body: body,
+    );
+    try {
+      final tag = await ref
+          .read(tagsApiProvider)
+          .create(
+            name: value,
+            color: selectedColor,
+            idempotencyKey: key,
+          );
+      keys.complete('tag:new');
+      if (!mounted) return;
+      setState(() {
+        _tagCatalog = [..._tagCatalog, tag];
+        _selectedTags = [..._selectedTags, tag];
+        _dirty = true;
+        _error = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = userMessageFor(error));
+    }
+  }
+
+  bool get _canDeleteTask {
+    final task = _existing;
+    final me = ref.read(currentUserProvider);
+    return task != null &&
+        task.published &&
+        me != null &&
+        (me.id == task.businessOwnerId || me.id == task.originalCreatorId);
+  }
+
+  Future<void> _deleteTask() async {
+    final task = _existing;
+    if (task == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('删除任务？'),
+        content: const Text('任务会从日历、看板和候选中消失；通知、申请、评论和日志仍会保留。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: PandoraColors.overdue,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final keys = ref.read(operationKeysProvider);
+    final scope = 'task-delete:${task.id}';
+    final key = keys.keyFor(
+      scope: scope,
+      method: 'DELETE',
+      path: '/tasks/${task.id}',
+      body: const {},
+    );
+    try {
+      await ref
+          .read(tasksApiProvider)
+          .delete(
+            id: task.id,
+            rowVersion: task.rowVersion,
+            idempotencyKey: key,
+          );
+      keys.complete(scope);
+      if (!mounted) return;
+      ref.invalidate(taskDetailProvider(task.id));
+      ref.invalidate(homeDataProvider);
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = userMessageFor(error));
+    }
   }
 
   Future<void> _save() async {
@@ -921,6 +1107,15 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                           _dirty = true;
                         }),
                       ),
+                      if (ref.read(currentUserProvider)?.isFounder == true)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: _saving ? null : _createInlineTag,
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text('新建公司标签'),
+                          ),
+                        ),
                     ],
                     if (_can('parentTaskId')) ...[
                       const SizedBox(height: 16),
@@ -1023,6 +1218,17 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                             )
                           : Text(_isCreate ? '提交任务' : '保存修改'),
                     ),
+                    if (_canDeleteTask) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: PandoraColors.overdue,
+                        ),
+                        onPressed: _saving ? null : _deleteTask,
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('删除任务'),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                   ],
                 ),

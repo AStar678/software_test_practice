@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/navigation/tab_refresh.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/common.dart';
 import '../analytics/presentation/analytics_page.dart';
 import '../auth/presentation/password_change_page.dart';
 import '../profile/presentation/profile_pages.dart';
+import '../profile/presentation/profile_providers.dart';
 import '../schedule/presentation/task_calendar_page.dart';
 import '../work_logs/presentation/work_logs_page.dart';
 
@@ -40,6 +42,9 @@ class MePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listenTabRefresh(AppTab.me, () {
+      ref.invalidate(selfProfileProvider);
+    });
     final user = ref.watch(currentUserProvider);
     if (user == null) {
       return const Scaffold(body: Center(child: Text('未登录')));

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_error.dart';
+import '../../../core/navigation/tab_refresh.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
@@ -35,6 +36,9 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listenTabRefresh(AppTab.stats, () {
+      _load();
+    });
     ref.listen(
       currentUserProvider.select((user) => (user?.id, user?.authzVersion)),
       (_, _) => _reloadScope(),

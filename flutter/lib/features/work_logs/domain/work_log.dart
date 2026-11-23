@@ -16,6 +16,7 @@ class WorkLog {
     this.tags = const [],
     this.tagIds = const [],
     this.taskId,
+    this.taskDeleted = false,
   });
 
   final String id;
@@ -31,6 +32,7 @@ class WorkLog {
   final List<TaskTag> tags;
   final List<String> tagIds;
   final String? taskId;
+  final bool taskDeleted;
 
   factory WorkLog.fromJson(Map<String, Object?> json) {
     final date = CompanyDate.tryParse(json['businessDate']?.toString());
@@ -53,6 +55,7 @@ class WorkLog {
       tags: tags,
       tagIds: [for (final raw in (json['tagIds'] as List? ?? const [])) raw.toString()],
       taskId: json['taskId']?.toString(),
+      taskDeleted: json['taskDeleted'] == true,
     );
   }
 }

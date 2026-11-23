@@ -10,6 +10,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/company/company_date.dart';
 import '../../../core/company/company_time.dart';
+import '../../../core/errors/app_error.dart';
+import '../../../core/navigation/tab_refresh.dart';
 import '../../../core/preferences/app_preferences.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/read_context.dart';
@@ -21,6 +23,7 @@ import '../../daily_items/domain/month_layout.dart';
 import '../../holidays/domain/holiday_calendar.dart';
 import '../../holidays/presentation/holiday_providers.dart';
 import '../../tasks/domain/task_record.dart';
+import '../../tasks/presentation/task_providers.dart';
 import '../../../core/router/navigation_targets.dart';
 import '../data/schedule_api.dart';
 import '../domain/calendar_drag.dart';
@@ -410,6 +413,9 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
 
   @override
   Widget build(BuildContext context) {
+    ref.listenTabRefresh(AppTab.company, () {
+      unawaited(_refreshCalendar());
+    });
     final selectedDay = _drawerDay;
     final expandedWeek = _expandedWeek;
     final canCreate = !widget.readOnly;
@@ -500,6 +506,8 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
                 readOnly: widget.readOnly,
                 onOpen: _openTask,
                 onPin: _togglePin,
+                onDelete: _deleteTask,
+                canDelete: _canDeleteTask,
                 onClose: _closeDay,
                 onAxisDragStarted: _startAxisDrag,
                 onAxisDragUpdate: _updateAxisDrag,
@@ -1433,7 +1441,66 @@ class _TaskCalendarPageState extends ConsumerState<TaskCalendarPage>
     } catch (error) {
       if (!mounted || !_current) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+          .showSnackBar(SnackBar(content: Text(userMessageFor(error))));
+    }
+  }
+
+  bool _canDeleteTask(TaskRecord task) {
+    final me = ref.read(currentUserProvider);
+    return _current &&
+        !widget.readOnly &&
+        me != null &&
+        task.published &&
+        (me.id == task.businessOwnerId || me.id == task.originalCreatorId);
+  }
+
+  Future<void> _deleteTask(TaskRecord task) async {
+    if (!_canDeleteTask(task)) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('删除任务？'),
+        content: const Text('任务会从日历、看板和候选中消失；通知、申请、评论和日志仍会保留。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: PandoraColors.overdue,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || !_current) return;
+    final keys = ref.read(operationKeysProvider);
+    final scope = 'task-delete:${task.id}';
+    final key = keys.keyFor(
+      scope: scope,
+      method: 'DELETE',
+      path: '/tasks/${task.id}',
+      body: const {},
+    );
+    try {
+      await ref
+          .read(tasksApiProvider)
+          .delete(
+            id: task.id,
+            rowVersion: task.rowVersion,
+            idempotencyKey: key,
+          );
+      keys.complete(scope);
+      if (!_current) return;
+      await _loadAround(_anchor, force: true);
+      _refreshDrawer();
+      if (mounted) showSnack(context, '任务已删除');
+    } catch (error) {
+      if (!mounted || !_current) return;
+      showErrorSnack(context, error);
     }
   }
 }
@@ -2184,6 +2251,8 @@ class _DayPanel extends StatelessWidget {
     required this.onSelectDay,
     required this.onOpen,
     required this.onPin,
+    required this.onDelete,
+    required this.canDelete,
     required this.onClose,
     required this.onAxisDragStarted,
     required this.onAxisDragUpdate,
@@ -2203,6 +2272,8 @@ class _DayPanel extends StatelessWidget {
   final ValueChanged<CompanyDate> onSelectDay;
   final ValueChanged<String> onOpen;
   final Future<void> Function(TaskRecord) onPin;
+  final Future<void> Function(TaskRecord) onDelete;
+  final bool Function(TaskRecord) canDelete;
   final VoidCallback onClose;
   final void Function(_AxisDragData, Offset) onAxisDragStarted;
   final void Function(Offset) onAxisDragUpdate;
@@ -2337,15 +2408,32 @@ class _DayPanel extends StatelessWidget {
                             subtitle: Text(
                               '${task.done ? '已完成 · ' : ''}${task.pending ? '审核中 · ' : ''}$when',
                             ),
-                          trailing: !readOnly && task.canPin
-                              ? IconButton(
-                                  tooltip: task.pinned ? '取消日历置顶' : '置顶到我的月视图',
-                                  onPressed: () => onPin(task),
-                                  icon: Icon(
-                                    task.pinned
-                                        ? Icons.push_pin
-                                        : Icons.push_pin_outlined,
-                                  ),
+                          trailing: (!readOnly && task.canPin) || canDelete(task)
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (!readOnly && task.canPin)
+                                      IconButton(
+                                        tooltip: task.pinned
+                                            ? '取消日历置顶'
+                                            : '置顶到我的月视图',
+                                        onPressed: () => onPin(task),
+                                        icon: Icon(
+                                          task.pinned
+                                              ? Icons.push_pin
+                                              : Icons.push_pin_outlined,
+                                        ),
+                                      ),
+                                    if (canDelete(task))
+                                      IconButton(
+                                        tooltip: '删除任务',
+                                        onPressed: () => onDelete(task),
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          color: PandoraColors.overdue,
+                                        ),
+                                      ),
+                                  ],
                                 )
                               : null,
                             onTap: () => onOpen(task.id),
