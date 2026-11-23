@@ -1,0 +1,196 @@
+{
+  "id": "M05",
+  "method": "DailyItemService.change",
+  "endpoint": "PATCH /daily-items/{id}",
+  "status": "PASS",
+  "counts": {
+    "passed": 8,
+    "failed": 0,
+    "skipped": 0
+  },
+  "categoryCoverage": {
+    "正常": {
+      "designed": 1,
+      "executed": 1,
+      "passed": 1
+    },
+    "边界": {
+      "designed": 2,
+      "executed": 2,
+      "passed": 2
+    },
+    "异常": {
+      "designed": 5,
+      "executed": 5,
+      "passed": 5
+    }
+  },
+  "threeCategoriesSatisfied": true,
+  "cleanup": {
+    "created": 8,
+    "unresolved": []
+  },
+  "analysis": "正常输入：N_text20（正文=20码点，If-Match=\"1\"）实际HTTP 200；读回HTTP=200，读回正文长度=20，rowVersion=2，正文与输入一致=true。\n\n边界输入：B_text1（正文=1码点，If-Match=\"1\"）实际HTTP 200；读回HTTP=200，读回正文长度=1，rowVersion=2，正文与输入一致=true；B_text2000（正文=2000码点，If-Match=\"1\"）实际HTTP 200；读回HTTP=200，读回正文长度=2000，rowVersion=2，正文与输入一致=true。\n\n异常输入：E_text0（正文=0码点，If-Match=\"1\"）实际HTTP 400；code=INVALID_INPUT，读回HTTP=200，读回正文长度=39，rowVersion=1，拒绝后原文未变=true；E_text2001（正文=2001码点，If-Match=\"1\"）实际HTTP 400；code=INVALID_INPUT，读回HTTP=200，读回正文长度=39，rowVersion=1，拒绝后原文未变=true；E_text_type（正文类型=int，If-Match=\"1\"）实际HTTP 400；code=INVALID_INPUT，读回HTTP=200，读回正文长度=39，rowVersion=1，拒绝后原文未变=true；E_version_missing（正文=20码点，If-Match=null）实际HTTP 428；code=PRECONDITION_REQUIRED，读回HTTP=200，读回正文长度=39，rowVersion=1，拒绝后原文未变=true；E_version_stale（正文=20码点，If-Match=\"0\"）实际HTTP 412；code=VERSION_CONFLICT，读回HTTP=200，读回正文长度=39，rowVersion=1，拒绝后原文未变=true。\n\n以上实际状态均与各用例预期吻合，且pytest业务后置条件全部通过，因此本轮所列三类用例通过。",
+  "actualEvidence": [
+    {
+      "caseId": "N_text20",
+      "kind": "正常",
+      "input": "正文=20码点，If-Match=\"1\"",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；读回HTTP=200，读回正文长度=20，rowVersion=2，正文与输入一致=true",
+      "pytest": "passed",
+      "requestLines": [
+        2,
+        3
+      ],
+      "metrics": {
+        "readStatus": 200,
+        "readBodyLength": 20,
+        "rowVersion": 2,
+        "bodyMatchesInput": true,
+        "readRequestLine": 3
+      }
+    },
+    {
+      "caseId": "B_text1",
+      "kind": "边界",
+      "input": "正文=1码点，If-Match=\"1\"",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；读回HTTP=200，读回正文长度=1，rowVersion=2，正文与输入一致=true",
+      "pytest": "passed",
+      "requestLines": [
+        5,
+        6
+      ],
+      "metrics": {
+        "readStatus": 200,
+        "readBodyLength": 1,
+        "rowVersion": 2,
+        "bodyMatchesInput": true,
+        "readRequestLine": 6
+      }
+    },
+    {
+      "caseId": "B_text2000",
+      "kind": "边界",
+      "input": "正文=2000码点，If-Match=\"1\"",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；读回HTTP=200，读回正文长度=2000，rowVersion=2，正文与输入一致=true",
+      "pytest": "passed",
+      "requestLines": [
+        8,
+        9
+      ],
+      "metrics": {
+        "readStatus": 200,
+        "readBodyLength": 2000,
+        "rowVersion": 2,
+        "bodyMatchesInput": true,
+        "readRequestLine": 9
+      }
+    },
+    {
+      "caseId": "E_text0",
+      "kind": "异常",
+      "input": "正文=0码点，If-Match=\"1\"",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT，读回HTTP=200，读回正文长度=39，rowVersion=1，拒绝后原文未变=true",
+      "pytest": "passed",
+      "requestLines": [
+        11,
+        12
+      ],
+      "metrics": {
+        "readStatus": 200,
+        "readBodyLength": 39,
+        "rowVersion": 1,
+        "unchanged": true,
+        "readRequestLine": 12
+      }
+    },
+    {
+      "caseId": "E_text2001",
+      "kind": "异常",
+      "input": "正文=2001码点，If-Match=\"1\"",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT，读回HTTP=200，读回正文长度=39，rowVersion=1，拒绝后原文未变=true",
+      "pytest": "passed",
+      "requestLines": [
+        14,
+        15
+      ],
+      "metrics": {
+        "readStatus": 200,
+        "readBodyLength": 39,
+        "rowVersion": 1,
+        "unchanged": true,
+        "readRequestLine": 15
+      }
+    },
+    {
+      "caseId": "E_text_type",
+      "kind": "异常",
+      "input": "正文类型=int，If-Match=\"1\"",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT，读回HTTP=200，读回正文长度=39，rowVersion=1，拒绝后原文未变=true",
+      "pytest": "passed",
+      "requestLines": [
+        17,
+        18
+      ],
+      "metrics": {
+        "readStatus": 200,
+        "readBodyLength": 39,
+        "rowVersion": 1,
+        "unchanged": true,
+        "readRequestLine": 18
+      }
+    },
+    {
+      "caseId": "E_version_missing",
+      "kind": "异常",
+      "input": "正文=20码点，If-Match=null",
+      "expected": 428,
+      "actualStatus": 428,
+      "observed": "HTTP 428；code=PRECONDITION_REQUIRED，读回HTTP=200，读回正文长度=39，rowVersion=1，拒绝后原文未变=true",
+      "pytest": "passed",
+      "requestLines": [
+        20,
+        21
+      ],
+      "metrics": {
+        "readStatus": 200,
+        "readBodyLength": 39,
+        "rowVersion": 1,
+        "unchanged": true,
+        "readRequestLine": 21
+      }
+    },
+    {
+      "caseId": "E_version_stale",
+      "kind": "异常",
+      "input": "正文=20码点，If-Match=\"0\"",
+      "expected": 412,
+      "actualStatus": 412,
+      "observed": "HTTP 412；code=VERSION_CONFLICT，读回HTTP=200，读回正文长度=39，rowVersion=1，拒绝后原文未变=true",
+      "pytest": "passed",
+      "requestLines": [
+        23,
+        24
+      ],
+      "metrics": {
+        "readStatus": 200,
+        "readBodyLength": 39,
+        "rowVersion": 1,
+        "unchanged": true,
+        "readRequestLine": 24
+      }
+    }
+  ]
+}

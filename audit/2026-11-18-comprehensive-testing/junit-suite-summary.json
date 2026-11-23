@@ -1,0 +1,205 @@
+[
+  {
+    "name": "cn.pandora.workspace.WorkspaceLogLengthTest",
+    "tests": "1",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.workspace.WorkspaceAnalysisTest",
+    "tests": "5",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.common.CoreBoundaryMatrixTest",
+    "tests": "23",
+    "failures": "2",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.workspace.FillSourceCoverageTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.auth.HealthReadinessTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.auth.AuthServiceLoginTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.task.TaskServiceTest",
+    "tests": "12",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.common.EventsRetentionTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.task.TaskBatchReadTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.calendar.HttpHolidaySourceTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.auth.CompanyTreeTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.task.StartupMaintenanceTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.workspace.ReminderNodeTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.auth.AccessTest",
+    "tests": "10",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.workspace.NotificationCommentAccessTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.workspace.WithdrawnNotificationTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.calendar.HolidayPayloadTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.workspace.WorkspaceBatchReadTest",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.profile.TenureTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.task.TaskTableCollationTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.task.TaskGuardBoundaryMatrixTest",
+    "tests": "40",
+    "failures": "3",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.profile.ProfileServiceTest",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.workspace.ProfilePrivacyAndCompanyTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.task.TaskParticipantSummaryTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.auth.PhoneBoundaryMatrixTest",
+    "tests": "17",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.auth.PhoneNumbersTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.admin.CredentialsTest",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.admin.CredentialBoundaryMatrixTest",
+    "tests": "16",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "cn.pandora.workspace.WorkspaceLogAndReportsTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  }
+]

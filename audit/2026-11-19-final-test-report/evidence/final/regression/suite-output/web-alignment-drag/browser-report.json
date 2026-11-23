@@ -1,0 +1,447 @@
+{
+  "checks": [
+    {
+      "name": "login form",
+      "pass": true
+    },
+    {
+      "name": "founder authenticated",
+      "pass": true
+    },
+    {
+      "name": "long-press capability is reported",
+      "pass": true,
+      "evidence": {
+        "longPressMs": 500,
+        "touch": false,
+        "vibrate": true,
+        "haptic": "not-called"
+      }
+    },
+    {
+      "name": "touch source exists [data-schedule-move=\"fd705401-610f-4bbc-887a-ed7ff724e55d\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 139.28125,
+        "y": 419.75,
+        "mode": "month",
+        "unit": 55.714285714285715,
+        "vertical": false
+      }
+    },
+    {
+      "name": "movement beyond tolerance cancels the press candidate",
+      "pass": true
+    },
+    {
+      "name": "cancelled candidate writes nothing and opens nothing",
+      "pass": true
+    },
+    {
+      "name": "touch source exists [data-schedule-move=\"fd705401-610f-4bbc-887a-ed7ff724e55d\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 139.28125,
+        "y": 419.75,
+        "mode": "month",
+        "unit": 55.714285714285715,
+        "vertical": false
+      }
+    },
+    {
+      "name": "a scroll before activation keeps ordinary scrolling",
+      "pass": true
+    },
+    {
+      "name": "touch source exists [data-schedule-move=\"fd705401-610f-4bbc-887a-ed7ff724e55d\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 139.28125,
+        "y": 419.75,
+        "mode": "month",
+        "unit": 55.714285714285715,
+        "vertical": false
+      }
+    },
+    {
+      "name": "a long press activates the floating drag state",
+      "pass": true,
+      "evidence": {
+        "gesture": {
+          "pressing": false,
+          "dragging": true,
+          "haptic": "called",
+          "steps": 0,
+          "lastX": 139.28125,
+          "lastY": 419.75,
+          "target": "2032-04-14"
+        },
+        "idle": true,
+        "preview": true,
+        "ghost": true,
+        "dragging": true,
+        "source": true,
+        "haptic": "called"
+      }
+    },
+    {
+      "name": "haptic support result is recorded honestly",
+      "pass": true,
+      "evidence": "called"
+    },
+    {
+      "name": "long press without movement writes nothing and opens nothing",
+      "pass": true
+    },
+    {
+      "name": "touch source exists [data-schedule-move=\"fd705401-610f-4bbc-887a-ed7ff724e55d\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 139.28125,
+        "y": 419.75,
+        "mode": "month",
+        "unit": 55.714285714285715,
+        "vertical": false
+      }
+    },
+    {
+      "name": "target date cell exists in view for the touch drop",
+      "pass": true,
+      "evidence": {
+        "x": 139.28125,
+        "y": 634.75
+      }
+    },
+    {
+      "name": "the floating preview names the actual target date and kept times",
+      "pass": true,
+      "evidence": "2032-04-21 09:00 → 2032-04-21 11:00 · 松开后确认（1天/步）"
+    },
+    {
+      "name": "long-press drop opens the lightweight confirmation",
+      "pass": true
+    },
+    {
+      "name": "confirmation shows the 2D target date and original duration",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-schedule-move=\"fd705401-610f-4bbc-887a-ed7ff724e55d\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 139.28125,
+        "y": 419.75,
+        "mode": "month",
+        "unit": 55.714285714285715,
+        "vertical": false
+      }
+    },
+    {
+      "name": "target date cell is visible for the mouse drop",
+      "pass": true,
+      "evidence": {
+        "x": 139.28125,
+        "y": 634.75
+      }
+    },
+    {
+      "name": "month mouse press waits without a drag preview before the threshold",
+      "pass": true,
+      "evidence": {
+        "gesture": {
+          "pressing": true,
+          "dragging": false,
+          "haptic": "called",
+          "steps": null,
+          "lastX": null,
+          "lastY": null,
+          "target": null
+        },
+        "preview": false,
+        "ghost": false
+      }
+    },
+    {
+      "name": "month mouse long press activates before movement",
+      "pass": true,
+      "evidence": {
+        "gesture": {
+          "pressing": false,
+          "dragging": true,
+          "haptic": "called",
+          "steps": 0,
+          "lastX": 139.28125,
+          "lastY": 419.75,
+          "target": "2032-04-14"
+        },
+        "preview": true,
+        "ghost": true
+      }
+    },
+    {
+      "name": "drag preview follows the pointer",
+      "pass": true
+    },
+    {
+      "name": "mouse 2D drop opens confirmation at the target date",
+      "pass": true
+    },
+    {
+      "name": "mouse confirmation keeps the cross-week target",
+      "pass": true
+    },
+    {
+      "name": "a continued month segment exposes whole-task movement but no fake endpoint",
+      "pass": true,
+      "evidence": {
+        "x": 195,
+        "y": 363.25,
+        "tx": 195,
+        "ty": 598.25,
+        "handles": 0,
+        "text": "跨周续接移动延续 · 4月5日 09:00 → 4月26日 11:00",
+        "classes": "p-month-event continues-before continues-after"
+      }
+    },
+    {
+      "name": "month mouse press waits without a drag preview before the threshold",
+      "pass": true,
+      "evidence": {
+        "gesture": {
+          "pressing": true,
+          "dragging": false,
+          "haptic": "called",
+          "steps": null,
+          "lastX": null,
+          "lastY": null,
+          "target": null
+        },
+        "preview": false,
+        "ghost": false
+      }
+    },
+    {
+      "name": "month mouse long press activates before movement",
+      "pass": true,
+      "evidence": {
+        "gesture": {
+          "pressing": false,
+          "dragging": true,
+          "haptic": "called",
+          "steps": 0,
+          "lastX": 195,
+          "lastY": 363.25,
+          "target": "2032-04-15"
+        },
+        "preview": true,
+        "ghost": true
+      }
+    },
+    {
+      "name": "dragging a continued segment opens the lightweight confirmation",
+      "pass": true
+    },
+    {
+      "name": "the continued segment moves the full task by the grabbed-day delta with times kept",
+      "pass": true
+    },
+    {
+      "name": "month mouse press waits without a drag preview before the threshold",
+      "pass": true,
+      "evidence": {
+        "gesture": {
+          "pressing": true,
+          "dragging": false,
+          "haptic": "called",
+          "steps": null,
+          "lastX": null,
+          "lastY": null,
+          "target": null
+        },
+        "preview": false,
+        "ghost": false
+      }
+    },
+    {
+      "name": "month mouse long press activates before movement",
+      "pass": true,
+      "evidence": {
+        "gesture": {
+          "pressing": false,
+          "dragging": true,
+          "haptic": "called",
+          "steps": 0,
+          "lastX": 250.703125,
+          "lastY": 419.75,
+          "target": "2032-04-02"
+        },
+        "preview": true,
+        "ghost": true
+      }
+    },
+    {
+      "name": "holding the bottom edge auto-scrolls and can append a month",
+      "pass": true,
+      "evidence": {
+        "edgeBefore": {
+          "top": 2099,
+          "months": 5
+        },
+        "edgeAfter": {
+          "top": 2913,
+          "months": 5,
+          "preview": true
+        }
+      }
+    },
+    {
+      "name": "cancelling an edge drag keeps the task and opens no confirmation",
+      "pass": true,
+      "evidence": {
+        "afterEscape": {
+          "gesture": {
+            "pressing": false,
+            "dragging": false,
+            "haptic": "called",
+            "steps": null,
+            "lastX": null,
+            "lastY": null,
+            "target": null
+          },
+          "overlay": true,
+          "sc": true,
+          "preview": false
+        },
+        "edgeCancel": {
+          "gesture": {
+            "pressing": false,
+            "dragging": false,
+            "haptic": "called",
+            "steps": null,
+            "lastX": null,
+            "lastY": null,
+            "target": null
+          },
+          "overlay": true,
+          "sc": true,
+          "preview": false,
+          "notice": "请使用真实账号登录。"
+        }
+      }
+    },
+    {
+      "name": "late task exposes its end handle",
+      "pass": true,
+      "evidence": {
+        "x": 298.25,
+        "y": 701.46875,
+        "mode": "vertical",
+        "unit": 60,
+        "vertical": true
+      }
+    },
+    {
+      "name": "drag source exists [data-resize-task=\"1eb3ecbf-d5b8-4685-9f56-29cbf87bc058\"][data-resize=end][data-resize-mode=vertical]",
+      "pass": true,
+      "evidence": {
+        "x": 298.25,
+        "y": 701.46875,
+        "mode": "vertical",
+        "unit": 60,
+        "vertical": true
+      }
+    },
+    {
+      "name": "day-axis mouse drag activates immediately",
+      "pass": true
+    },
+    {
+      "name": "drag preview follows the pointer",
+      "pass": true
+    },
+    {
+      "name": "a day-axis move past midnight opens no confirmation",
+      "pass": true
+    },
+    {
+      "name": "the rejected move keeps the saved schedule",
+      "pass": true
+    },
+    {
+      "name": "the rejection explains the day boundary",
+      "pass": true,
+      "evidence": "调整后的排期超出当天 00:00–24:00，本次调整未保存。"
+    },
+    {
+      "name": "the day-axis keyboard also rejects the boundary",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-schedule-move=\"1eb3ecbf-d5b8-4685-9f56-29cbf87bc058\"][data-resize-mode=vertical]",
+      "pass": true,
+      "evidence": {
+        "x": 298.25,
+        "y": 676.46875,
+        "mode": "vertical",
+        "unit": 60,
+        "vertical": true
+      }
+    },
+    {
+      "name": "day-axis mouse drag activates immediately",
+      "pass": true
+    },
+    {
+      "name": "drag preview follows the pointer",
+      "pass": true
+    },
+    {
+      "name": "moving the whole task into the next day is rejected",
+      "pass": true
+    },
+    {
+      "name": "midnight-due task exposes a whole-task handle",
+      "pass": true,
+      "evidence": {
+        "x": 306,
+        "y": 471.21875,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "drag source exists [data-schedule-move=\"ddc78a98-c16e-42e4-afa4-c20d649a55f9\"][data-resize-mode=day]",
+      "pass": true,
+      "evidence": {
+        "x": 306,
+        "y": 471.21875,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "day-axis mouse drag activates immediately",
+      "pass": true
+    },
+    {
+      "name": "drag preview follows the pointer",
+      "pass": true
+    },
+    {
+      "name": "a legal earlier move with a 24:00 deadline still opens confirmation",
+      "pass": true
+    },
+    {
+      "name": "the legal move keeps duration and the 24:00 deadline mapping",
+      "pass": true
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "result": "PASS"
+}

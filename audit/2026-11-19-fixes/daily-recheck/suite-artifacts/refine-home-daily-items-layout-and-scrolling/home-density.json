@@ -1,0 +1,69 @@
+{
+  "updated": "2026-11-18T17:10:06.923Z",
+  "viewports": [
+    {
+      "viewport": "320x740",
+      "ready": true,
+      "clientHeight": 384,
+      "weekHeight": 156,
+      "fraction": 2.38,
+      "full": 2,
+      "row": 32,
+      "barMin": 32,
+      "barMax": 32,
+      "cellMin": 36,
+      "add": 32,
+      "rows": 16,
+      "lanes": 3,
+      "todayVisible": true
+    },
+    {
+      "viewport": "390x844",
+      "ready": true,
+      "clientHeight": 384,
+      "weekHeight": 156,
+      "fraction": 2.38,
+      "full": 2,
+      "row": 32,
+      "barMin": 32,
+      "barMax": 32,
+      "cellMin": 36,
+      "add": 34,
+      "rows": 16,
+      "lanes": 3,
+      "todayVisible": true
+    },
+    {
+      "viewport": "1440x900",
+      "ready": true,
+      "clientHeight": 384,
+      "weekHeight": 156,
+      "fraction": 2.38,
+      "full": 2,
+      "row": 32,
+      "barMin": 32,
+      "barMax": 32,
+      "cellMin": 36,
+      "add": 34,
+      "rows": 16,
+      "lanes": 3,
+      "todayVisible": true
+    },
+    {
+      "viewport": "390x600",
+      "ready": true,
+      "clientHeight": 384,
+      "weekHeight": 156,
+      "fraction": 2.38,
+      "full": 2,
+      "row": 32,
+      "barMin": 32,
+      "barMax": 32,
+      "cellMin": 36,
+      "add": 34,
+      "rows": 16,
+      "lanes": 3,
+      "todayVisible": true
+    }
+  ]
+}

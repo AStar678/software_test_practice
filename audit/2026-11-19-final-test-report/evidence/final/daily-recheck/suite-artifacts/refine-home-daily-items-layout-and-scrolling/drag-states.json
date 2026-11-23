@@ -1,0 +1,65 @@
+{
+  "updated": "2026-11-18T17:28:25.455Z",
+  "viewports": {
+    "original": {
+      "id": "2a0fee0a-eb0d-41d5-9218-39246a06a037",
+      "startDate": "2026-11-11",
+      "endDate": "2026-11-13",
+      "date": "2026-11-11",
+      "body": "整体拖动演示事项",
+      "completed": false,
+      "status": "overdue",
+      "rowVersion": 1,
+      "createdAt": "2026-11-18T17:08:36.282743Z",
+      "updatedAt": "2026-11-18T17:08:36.282743Z"
+    },
+    "moved": {
+      "id": "2a0fee0a-eb0d-41d5-9218-39246a06a037",
+      "startDate": "2026-11-09",
+      "endDate": "2026-11-11",
+      "date": "2026-11-09",
+      "body": "整体拖动演示事项",
+      "completed": false,
+      "status": "overdue",
+      "rowVersion": 2,
+      "createdAt": "2026-11-18T17:08:36.282743Z",
+      "updatedAt": "2026-11-18T17:28:08.215077Z"
+    },
+    "retried": {
+      "id": "2a0fee0a-eb0d-41d5-9218-39246a06a037",
+      "startDate": "2026-11-10",
+      "endDate": "2026-11-12",
+      "date": "2026-11-10",
+      "body": "整体拖动演示事项",
+      "completed": false,
+      "status": "overdue",
+      "rowVersion": 3,
+      "createdAt": "2026-11-18T17:08:36.282743Z",
+      "updatedAt": "2026-11-18T17:28:15.148767Z"
+    },
+    "replayed": {
+      "id": "2a0fee0a-eb0d-41d5-9218-39246a06a037",
+      "startDate": "2026-11-11",
+      "endDate": "2026-11-13",
+      "date": "2026-11-11",
+      "body": "整体拖动演示事项",
+      "completed": false,
+      "status": "overdue",
+      "rowVersion": 4,
+      "createdAt": "2026-11-18T17:08:36.282743Z",
+      "updatedAt": "2026-11-18T17:28:17.523239Z"
+    },
+    "conflicted": {
+      "id": "2a0fee0a-eb0d-41d5-9218-39246a06a037",
+      "startDate": "2026-11-11",
+      "endDate": "2026-11-13",
+      "date": "2026-11-11",
+      "body": "并发修改后的正文",
+      "completed": false,
+      "status": "overdue",
+      "rowVersion": 5,
+      "createdAt": "2026-11-18T17:08:36.282743Z",
+      "updatedAt": "2026-11-18T17:28:20.050274Z"
+    }
+  }
+}

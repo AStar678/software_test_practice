@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_log_backfill_entry.py", line 58, in <module>
+    main()
+    ~~~~^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_log_backfill_entry.py", line 37, in main
+    f.db.server_side('INSERT INTO tags(id,organization_id,name,color,owner_id) VALUES('+','.join(map(quote,[private,'fixture-company','旧私人标签','#E4DEF3',ids['alpha-head']]))+')')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/migration_precheck.py", line 172, in server_side
+    raise MysqlError(result.stderr.strip() or 'mysql client failed')
+migration_precheck.MysqlError: ERROR 1054 (42S22) at line 1: Unknown column 'owner_id' in 'field list'

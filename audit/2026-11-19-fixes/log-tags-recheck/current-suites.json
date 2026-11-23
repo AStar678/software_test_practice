@@ -1,0 +1,16 @@
+{
+  "startedAt": "2026-11-18T17:39:16.251147+00:00",
+  "suites": [
+    {
+      "suite": "check_apply_log_tags.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 7.945,
+      "passedAssertionsPrinted": 45,
+      "log": "check_apply_log_tags.log",
+      "sourceSha256": "5873f47079143bb618b2abc3aa200ee9012fe4f02a82f316fc27de68951dc28c",
+      "finishedAt": "2026-11-18T17:40:14.938165+00:00"
+    }
+  ],
+  "finishedAt": "2026-11-18T17:40:14.950525+00:00"
+}

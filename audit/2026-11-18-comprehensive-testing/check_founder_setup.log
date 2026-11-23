@@ -1,0 +1,9 @@
+PASS test owns a random disposable database
+PASS isolated service serves the current admin page
+PASS real browser founder setup regression passes
+PASS database contains exactly the committed founder and company-level placement
+PASS cancelled draft leaves no principal: cbd24b28-cba0-434c-8248-4c0c0539c0c9
+PASS cancelled draft leaves no principal: 348ae734-b7b9-44dc-80d0-6c68e6fa1073
+PASS failed second-founder command leaves no principal
+PASS existing organization retains its original unique founder
+PASS: /private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/.runtime/founder-setup-check/report.json

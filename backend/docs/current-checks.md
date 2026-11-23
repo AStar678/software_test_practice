@@ -1,5 +1,30 @@
 # Current fixed-organization checks
 
+## 2026-11-09 A contract (employee-client contracts and business upgrade)
+
+| Current suite | Coverage added or changed by A |
+| --- | --- |
+| `check_employee_contracts_upgrade.py --skip-witness` | Daily-item date range/status/legacy mapping, `/tasks/table` global pipeline and collation, independent table pin, fill source, hire/tenure/e-mail, real Chrome admin hire. 307 checks |
+| `check_holidays.py` | Official source sample, payload validation, bounded HTTP, atomic cache, ready/stale/missing GET, 24h retry/coalescing, admin refresh/idempotency/audit. 37 checks |
+| `check_chapter8_web.py` | Real Chrome: server-side task table/paging/sort, later-page table pin, ranged daily item create/edit/complete, profile hire/tenure/e-mail, 320/390/1440, logout/account switch. 33 checks |
+| `check_final_demo.py` | Animation four-role demo, 10–20 created tasks each, own items/logs/notifications, ten company items, two prepares/restart, edit preservation, PC takeover. |
+| `check_demo_extremes.py` | Isolated >100 tasks/items, six overlaps/all-day, cross-year/midnight/zero-length, cross-account denial. 130 checks |
+| `check_web_resources.py` | Employee/admin resource graph, content hashes, Maven resources and packaged bytes. 15 checks |
+| `check_account_lifecycle.py` | Strict phone/admin namespaces, refresh/logout/revocation, password policy, forced-change gate, one-time reset. |
+| Maven `test` | 128 rule/service tests including holiday parser/source, task table/collation, profile/tenure, workspace logs/notifications. |
+
+Run from the repository root after `mvn ... test package` and with project MySQL on 13306:
+
+```sh
+python backend/scripts/check_employee_contracts_upgrade.py --skip-witness
+python backend/scripts/check_holidays.py
+python backend/scripts/check_chapter8_web.py
+python backend/scripts/check_final_demo.py
+python backend/scripts/check_demo_extremes.py
+python backend/scripts/check_web_resources.py --repo . --jar backend/target/pandora-backend-0.1.0.jar
+python backend/scripts/check_account_lifecycle.py
+```
+
 ## 2026-11-04 change under implementation
 
 `refine-notifications-task-editing-and-staff-browsing` replaces the earlier private-tag and single-log-tag behavior. The checks below document the historical fixed-organization baseline. Current targeted real-service entries are:
@@ -45,7 +70,7 @@ Old command filenames now delegate to the suites below. Their old external `--ba
 | Home, calendar, task creation/form | `check_fixed_web.py`, `check_calendar_drawer.py`, `check_schedule_drag.py`: 320×740, 390×844, 1440×900, three home modules, priority visibility, complete global sort/filter/paging, effective version, nested returns, drawers/sheets/focus/touch, full-day projection and concurrency, continuous months/year/retry, day-axis drag eligibility, lightweight confirmation and pending proposal recovery |
 | Daily items and the three-section home | `check_daily_items.py` (API, V30→V31 upgrade and empty-chain migration) and `check_daily_items_browser.js` + `check_daily_items_refresh_browser.js` (real Chrome): 首页/公司 naming, event record/task board/daily items, at least three complete single-line rows per upper card with an independent scroll area, creator-inclusive board ordering and ten-item cap, private owner scope for every route, leap/invalid dates and 1–2000 body bounds, stable created_at/id paging past 100 rows, one total-based marker per day (width from open+completed, capped at five, blue while anything is open, grey only when all are done) that still counts every list page, explicit completion, version/Idempotency-Key fencing, separate month blocks whose heading sits above the month's own 1st column with non-interactive blanks instead of neighbouring dates, the mint glass header add control with its original form/focus behaviour, a preserved-session refresh followed by a direct real gesture in both directions before any month control is clicked, 320/390/1440 and short screens, horizontal swipe/click separation, nested list/detail/form returns |
 | Tags, flat comments, notifications and historical entry | `check_fixed_notifications.py` plus Maven `NotificationCommentAccessTest`, `WithdrawnNotificationTest`, `EventsRetentionTest`: founder catalogue, normal task-tag authority, logical deletion, author control, targeted delivery, independent comment edits, revocation/deletion/missing-comment redaction, withdrawn-manager exception, ordinary-task read-only history, open/hide, 180-second withdrawal and retention. `check_fixed_communication_web.py` / `check_fixed_communication_browser.js` additionally drive real catalogue create/rename/color/delete, comment submit/edit/delete and recipient controls, notification comment jumps, revoked-comment redaction and ordinary historical read-only detail. The former notification/tag browser commands delegate to this real Chrome suite; screenshots are separately named. |
-| Demo and database integrity | `check_final_demo.py`, `check_database.py`: explicit target/marker guards, repeated prepare/restart, stable seed keys and edited data, real accounts/144 tasks/scenarios, read-only structural/data invariants |
+| Demo and database integrity | `check_final_demo.py`, `check_database.py`: explicit target/marker guards, repeated prepare/restart, stable seed keys and edited data, animation four-role accounts with about 58 tasks (10–20 created per lead), read-only structural/data invariants; `check_demo_extremes.py` keeps >100-row/dense/cross-year cases isolated |
 | Full migration and restore | `check_final_migration.py` with `flyway_migrate.py` / `Migrate.java`: packaged Flyway chain on empty and V20 databases, structure comparison, real backup restore, unchanged historical IDs/checksums, conflicted administrator blocking |
 
 `check_final_workflow.py --phase migration|demo|api|browser` selects a group. `--only <filenames...>` selects specific suites in that group. The browser phase uses current suites that launch Chrome; it is separate from the former browser-named API entry points above. Existing historical reports are references only; check the current `final-*-run.json` timestamps and each result.

@@ -1,0 +1,2 @@
+RUN check_task_creation_refinement.py
+PASS check_task_creation_refinement.py assertions=78

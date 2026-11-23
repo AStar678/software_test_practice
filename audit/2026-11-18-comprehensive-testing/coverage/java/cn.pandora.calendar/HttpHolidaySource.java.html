@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpHolidaySource.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.calendar</a> &gt; <span class="el_source">HttpHolidaySource.java</span></div><h1>HttpHolidaySource.java</h1><pre class="source lang-java linenums">package cn.pandora.calendar;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+
+/**
+ * Bounded HTTP adapter for the fixed annual holiday-data source.
+ *
+ * &lt;p&gt;Only the configured URL template is used; the year is substituted server-side. The adapter
+ * enforces a connect timeout, a total request timeout, a response-body cap, a small retry count and
+ * no automatic trust of redirects to arbitrary hosts (the HTTP client follows redirects, so the
+ * final URI is checked against http/https before reading). Parsing/validation is delegated to
+ * {@link HolidayPayload}, so a failed fetch or invalid payload never reaches the cache writer.&lt;/p&gt;
+ */
+@Component
+public class HttpHolidaySource implements HolidaySource {
+    private final ObjectMapper mapper;
+    private final String template;
+    private final String sourceName;
+    private final int maxBytes;
+    private final int retries;
+    private final HttpClient client;
+    private final Duration requestTimeout;
+
+    public HttpHolidaySource(
+            ObjectMapper mapper,
+            @Value(&quot;${pandora.holiday.source-url-template:https://raw.githubusercontent.com/NateScarlet/holiday-cn/master/{year}.json}&quot;) String template,
+            @Value(&quot;${pandora.holiday.source-name:NateScarlet/holiday-cn}&quot;) String sourceName,
+            @Value(&quot;${pandora.holiday.connect-timeout-ms:3000}&quot;) long connectTimeoutMs,
+            @Value(&quot;${pandora.holiday.request-timeout-ms:10000}&quot;) long requestTimeoutMs,
+            @Value(&quot;${pandora.holiday.max-bytes:1048576}&quot;) int maxBytes,
+<span class="fc" id="L42">            @Value(&quot;${pandora.holiday.retries:1}&quot;) int retries) {</span>
+<span class="fc" id="L43">        this.mapper = mapper;</span>
+<span class="fc" id="L44">        this.template = template;</span>
+<span class="fc" id="L45">        this.sourceName = sourceName;</span>
+<span class="fc" id="L46">        this.maxBytes = Math.max(1024, maxBytes);</span>
+<span class="fc" id="L47">        this.retries = Math.max(0, Math.min(3, retries));</span>
+<span class="fc" id="L48">        this.requestTimeout = Duration.ofMillis(Math.max(500, requestTimeoutMs));</span>
+<span class="fc" id="L49">        this.client = HttpClient.newBuilder()</span>
+<span class="fc" id="L50">                .connectTimeout(Duration.ofMillis(Math.max(200, connectTimeoutMs)))</span>
+<span class="fc" id="L51">                .followRedirects(HttpClient.Redirect.NORMAL)</span>
+<span class="fc" id="L52">                .build();</span>
+<span class="fc" id="L53">    }</span>
+
+    @Override
+    public String sourceName() {
+<span class="fc" id="L57">        return sourceName;</span>
+    }
+
+    @Override
+    public HolidayPayload.Year fetch(int year) {
+<span class="fc" id="L62">        URI uri = uri(year);</span>
+<span class="fc" id="L63">        HolidaySourceException last = null;</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        for (int attempt = 0; attempt &lt;= retries; attempt++) {</span>
+            try {
+<span class="fc" id="L66">                return fetchOnce(uri, year);</span>
+<span class="fc" id="L67">            } catch (HolidaySourceException exception) {</span>
+<span class="fc" id="L68">                last = exception;</span>
+                // 4xx responses are definitive; repeating them only multiplies upstream requests.
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                if (!retryable(exception)) break;</span>
+            }
+        }
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">        throw last == null</span>
+<span class="nc" id="L74">                ? new HolidaySourceException(&quot;HOLIDAY_SOURCE_UNAVAILABLE&quot;, &quot;节假日数据源不可用&quot;)</span>
+<span class="fc" id="L75">                : last;</span>
+    }
+
+    private boolean retryable(HolidaySourceException exception) {
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        return switch (exception.safeCode()) {</span>
+<span class="fc" id="L80">            case &quot;HOLIDAY_SOURCE_TIMEOUT&quot;, &quot;HOLIDAY_SOURCE_IO&quot;, &quot;HOLIDAY_SOURCE_HTTP&quot; -&gt; true;</span>
+<span class="fc" id="L81">            default -&gt; false;</span>
+        };
+    }
+
+    private URI uri(int year) {
+<span class="fc" id="L86">        String value = template.replace(&quot;{year}&quot;, Integer.toString(year));</span>
+        URI uri;
+        try {
+<span class="fc" id="L89">            uri = URI.create(value);</span>
+<span class="nc" id="L90">        } catch (IllegalArgumentException exception) {</span>
+<span class="nc" id="L91">            throw new HolidaySourceException(&quot;HOLIDAY_SOURCE_CONFIGURATION&quot;, &quot;节假日数据源地址配置无效&quot;, exception);</span>
+<span class="fc" id="L92">        }</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        String scheme = uri.getScheme() == null ? &quot;&quot; : uri.getScheme().toLowerCase();</span>
+<span class="pc bpc" id="L94" title="1 of 6 branches missed.">        if (!(&quot;http&quot;.equals(scheme) || &quot;https&quot;.equals(scheme)) || uri.getHost() == null) {</span>
+<span class="fc" id="L95">            throw new HolidaySourceException(&quot;HOLIDAY_SOURCE_CONFIGURATION&quot;, &quot;节假日数据源地址必须是固定 HTTP(S) 地址&quot;);</span>
+        }
+<span class="fc" id="L97">        return uri;</span>
+    }
+
+    private HolidayPayload.Year fetchOnce(URI uri, int year) {
+<span class="fc" id="L101">        HttpRequest request = HttpRequest.newBuilder(uri)</span>
+<span class="fc" id="L102">                .timeout(requestTimeout)</span>
+<span class="fc" id="L103">                .header(&quot;Accept&quot;, &quot;application/json&quot;)</span>
+<span class="fc" id="L104">                .header(&quot;User-Agent&quot;, &quot;PandoraHoliday/1.0&quot;)</span>
+<span class="fc" id="L105">                .GET()</span>
+<span class="fc" id="L106">                .build();</span>
+        HttpResponse&lt;InputStream&gt; response;
+        try {
+<span class="fc" id="L109">            response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());</span>
+<span class="fc" id="L110">        } catch (java.net.http.HttpTimeoutException exception) {</span>
+<span class="fc" id="L111">            throw new HolidaySourceException(&quot;HOLIDAY_SOURCE_TIMEOUT&quot;, &quot;节假日数据源请求超时&quot;, exception);</span>
+<span class="nc" id="L112">        } catch (IOException exception) {</span>
+<span class="nc" id="L113">            throw new HolidaySourceException(&quot;HOLIDAY_SOURCE_IO&quot;, &quot;节假日数据源连接失败&quot;, exception);</span>
+<span class="fc" id="L114">        } catch (InterruptedException exception) {</span>
+<span class="fc" id="L115">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L116">            throw new HolidaySourceException(&quot;HOLIDAY_SOURCE_IO&quot;, &quot;节假日数据源请求被中断&quot;, exception);</span>
+<span class="fc" id="L117">        }</span>
+<span class="fc" id="L118">        try (InputStream stream = response.body()) {</span>
+<span class="fc" id="L119">            int status = response.statusCode();</span>
+<span class="pc bpc" id="L120" title="1 of 4 branches missed.">            if (status == 404 || status == 410) {</span>
+<span class="fc" id="L121">                throw new HolidaySourceException(&quot;HOLIDAY_YEAR_NOT_PUBLISHED&quot;, &quot;该年度节假日安排尚未公布&quot;);</span>
+            }
+<span class="pc bpc" id="L123" title="1 of 4 branches missed.">            if (status &lt; 200 || status &gt;= 300) {</span>
+<span class="fc" id="L124">                throw new HolidaySourceException(&quot;HOLIDAY_SOURCE_HTTP&quot;, &quot;节假日数据源返回非成功状态&quot;);</span>
+            }
+<span class="fc" id="L126">            byte[] body = readBounded(stream);</span>
+<span class="fc" id="L127">            return HolidayPayload.parse(body, year, mapper);</span>
+<span class="nc" id="L128">        } catch (IOException exception) {</span>
+<span class="nc" id="L129">            throw new HolidaySourceException(&quot;HOLIDAY_SOURCE_IO&quot;, &quot;读取节假日数据源失败&quot;, exception);</span>
+        }
+    }
+
+    private byte[] readBounded(InputStream stream) throws IOException {
+<span class="fc" id="L134">        ByteArrayOutputStream out = new ByteArrayOutputStream(Math.min(maxBytes, 65536));</span>
+<span class="fc" id="L135">        byte[] buffer = new byte[8192];</span>
+<span class="fc" id="L136">        int total = 0;</span>
+        int read;
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        while ((read = stream.read(buffer)) != -1) {</span>
+<span class="fc" id="L139">            total += read;</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">            if (total &gt; maxBytes) {</span>
+<span class="fc" id="L141">                throw new HolidaySourceException(&quot;HOLIDAY_SOURCE_TOO_LARGE&quot;, &quot;节假日数据源响应体超出上限&quot;);</span>
+            }
+<span class="fc" id="L143">            out.write(buffer, 0, read);</span>
+        }
+<span class="fc" id="L145">        return out.toByteArray();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

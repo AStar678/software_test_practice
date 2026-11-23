@@ -1,0 +1,16 @@
+PASS non-localhost HTTP login ready
+PASS real insecure context lacks randomUUID
+PASS insecure HTTP authentication succeeds
+PASS schedule form ready
+PASS schedule form fits 390
+PASS schedule form fits 1440
+PASS first submit finishes
+PASS committed response loss leaves retryable form
+PASS retry successfully submits on HTTP
+PASS retry reuses an RFC4122 v4 request key
+PASS pending schedule committed once with correct time
+PASS fallback uses strong randomness and preserves retry identity
+PASS native context script ready
+PASS native UUID path remains available
+PASS no browser exceptions
+PASS one new request despite response-loss retry

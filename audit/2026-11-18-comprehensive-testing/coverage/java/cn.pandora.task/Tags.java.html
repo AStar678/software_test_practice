@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Tags.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.task</a> &gt; <span class="el_source">Tags.java</span></div><h1>Tags.java</h1><pre class="source lang-java linenums">package cn.pandora.task;
+
+import cn.pandora.auth.Access;
+import cn.pandora.auth.Actor;
+import cn.pandora.auth.CompanyTree;
+import cn.pandora.common.ApiException;
+import cn.pandora.common.Db;
+import cn.pandora.common.Writes;
+import org.springframework.stereotype.Service;
+
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.util.*;
+
+import static cn.pandora.common.Db.*;
+
+/**
+ * The company tag catalogue shared by tasks and logs (chapters 8.1—8.3).
+ *
+ * The founder maintains company tags. Tasks and logs hold ordered shared tag collections.
+ * Deleting a tag is logical: the row keeps the name and
+ * colour that current references must keep displaying, the candidate list drops it, and new references
+ * are refused while an existing reference can still be cleared or replaced.
+ */
+@Service
+public class Tags {
+    /** Fixed palette; the unmarked task pink is deliberately outside it. */
+<span class="fc" id="L28">    public record PaletteColor(String color, String border, String label) {}</span>
+<span class="fc" id="L29">    public static final List&lt;PaletteColor&gt; PALETTE = List.of(</span>
+            new PaletteColor(&quot;#F6D5D2&quot;, &quot;#C05B52&quot;, &quot;珊瑚红&quot;),
+            new PaletteColor(&quot;#FBE3CB&quot;, &quot;#C08547&quot;, &quot;蜜杏&quot;),
+            new PaletteColor(&quot;#F8EFC8&quot;, &quot;#B79B3A&quot;, &quot;麦黄&quot;),
+            new PaletteColor(&quot;#DCEEE0&quot;, &quot;#4E9067&quot;, &quot;青瓷&quot;),
+            new PaletteColor(&quot;#D8EAF4&quot;, &quot;#4C87A3&quot;, &quot;湖蓝&quot;),
+            new PaletteColor(&quot;#E4DEF3&quot;, &quot;#7A68AE&quot;, &quot;雾紫&quot;),
+            new PaletteColor(&quot;#F2DFE9&quot;, &quot;#AF6E92&quot;, &quot;藕粉&quot;),
+            new PaletteColor(&quot;#E4E7EC&quot;, &quot;#6B7686&quot;, &quot;石灰&quot;));
+
+    private final Db db;
+    private final Access access;
+    private final CompanyTree companyTree;
+
+<span class="fc" id="L43">    public Tags(Db db, Access access, CompanyTree companyTree) {</span>
+<span class="fc" id="L44">        this.db = db; this.access = access; this.companyTree = companyTree;</span>
+<span class="fc" id="L45">    }</span>
+
+    public static boolean paletteColor(String color) {
+<span class="fc" id="L48">        return PALETTE.stream().anyMatch(entry -&gt; entry.color().equalsIgnoreCase(String.valueOf(color)));</span>
+    }
+
+    private static String borderOf(String color) {
+<span class="fc" id="L52">        return PALETTE.stream().filter(entry -&gt; entry.color().equalsIgnoreCase(String.valueOf(color)))</span>
+<span class="fc" id="L53">                .map(PaletteColor::border).findFirst().orElse(&quot;#8A8F98&quot;);</span>
+    }
+
+    public List&lt;Map&lt;String, Object&gt;&gt; palette() {
+<span class="fc" id="L57">        return PALETTE.stream().map(entry -&gt; {</span>
+<span class="fc" id="L58">            Map&lt;String, Object&gt; item = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L59">            item.put(&quot;color&quot;, entry.color());</span>
+<span class="fc" id="L60">            item.put(&quot;border&quot;, entry.border());</span>
+<span class="fc" id="L61">            item.put(&quot;label&quot;, entry.label());</span>
+<span class="fc" id="L62">            return item;</span>
+<span class="fc" id="L63">        }).toList();</span>
+    }
+
+    /** Read side shared by tasks, logs and the &quot;My&quot; page; includes logically deleted tags by design. */
+    public Map&lt;String, Object&gt; view(Actor a, String tagId) {
+<span class="pc bpc" id="L68" title="2 of 4 branches missed.">        if (tagId == null || tagId.isBlank()) return null;</span>
+<span class="fc" id="L69">        Map&lt;String, Object&gt; row = db.find(&quot;SELECT * FROM tags WHERE organization_id=? AND id=?&quot;, a.organizationId(), tagId);</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (row == null) return null;</span>
+<span class="fc" id="L71">        return view(row);</span>
+    }
+
+    public Map&lt;String, Object&gt; view(Map&lt;String, Object&gt; row) {
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        if (row == null) return null;</span>
+<span class="fc" id="L76">        Map&lt;String, Object&gt; item = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L77">        String color = s(row, &quot;color&quot;);</span>
+<span class="fc" id="L78">        item.put(&quot;id&quot;, s(row, &quot;id&quot;));</span>
+<span class="fc" id="L79">        item.put(&quot;name&quot;, s(row, &quot;name&quot;));</span>
+<span class="fc" id="L80">        item.put(&quot;color&quot;, color);</span>
+<span class="fc" id="L81">        item.put(&quot;border&quot;, borderOf(color));</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        item.put(&quot;deleted&quot;, row.get(&quot;deletedAt&quot;) != null);</span>
+<span class="fc" id="L83">        item.put(&quot;rowVersion&quot;, n(row, &quot;rowVersion&quot;));</span>
+<span class="fc" id="L84">        return item;</span>
+    }
+
+    /**
+     * Resolve the tag a write wants to store. A null request clears the tag. Keeping the tag a version
+     * already holds is always allowed (a deleted tag stays attached), while attaching a deleted tag or
+     * another company's tag is refused.
+     */
+    public Map&lt;String, Object&gt; resolveForWrite(Actor a, String tagId, String currentTagId) {
+<span class="pc bpc" id="L93" title="2 of 4 branches missed.">        String wanted = tagId == null || tagId.isBlank() ? null : tagId.trim();</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (wanted == null) return null;</span>
+<span class="fc" id="L95">        Map&lt;String, Object&gt; row = db.find(&quot;SELECT * FROM tags WHERE organization_id=? AND id=?&quot;, a.organizationId(), wanted);</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        if (row == null) throw new ApiException(400, &quot;INVALID_TAG&quot;, &quot;请选择公司共用标签&quot;);</span>
+<span class="fc bfc" id="L97" title="All 4 branches covered.">        if (row.get(&quot;deletedAt&quot;) != null &amp;&amp; !wanted.equals(currentTagId)) {</span>
+<span class="fc" id="L98">            throw conflict(&quot;TAG_DELETED&quot;, &quot;该标签已删除，不能再用于新的关联&quot;);</span>
+        }
+<span class="fc" id="L100">        return row;</span>
+    }
+
+    public Map&lt;String, Object&gt; list(Actor a, Map&lt;String, String&gt; filters) {
+<span class="fc" id="L104">        business(a);</span>
+<span class="fc" id="L105">        String query = filters.getOrDefault(&quot;q&quot;, &quot;&quot;).strip().toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L106">        boolean includeDeleted = &quot;true&quot;.equals(filters.get(&quot;includeDeleted&quot;));</span>
+<span class="fc" id="L107">        var items = db.list(&quot;SELECT * FROM tags WHERE organization_id=? ORDER BY deleted_at IS NOT NULL,name,id&quot;, a.organizationId())</span>
+<span class="fc" id="L108">                .stream()</span>
+<span class="pc bpc" id="L109" title="1 of 4 branches missed.">                .filter(row -&gt; includeDeleted || row.get(&quot;deletedAt&quot;) == null)</span>
+<span class="pc bpc" id="L110" title="3 of 4 branches missed.">                .filter(row -&gt; query.isEmpty() || s(row, &quot;name&quot;).toLowerCase(Locale.ROOT).contains(query))</span>
+<span class="fc" id="L111">                .map(row -&gt; {var item=view(row);item.put(&quot;canEdit&quot;,companyTree.isFounder(a));return item;}).toList();</span>
+<span class="fc" id="L112">        Map&lt;String, Object&gt; result = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L113">        result.put(&quot;items&quot;, items);</span>
+<span class="fc" id="L114">        result.put(&quot;palette&quot;, palette());</span>
+<span class="fc" id="L115">        result.put(&quot;canManage&quot;, companyTree.isFounder(a));</span>
+<span class="fc" id="L116">        result.put(&quot;defaultColor&quot;, &quot;#FFE1EA&quot;);</span>
+<span class="fc" id="L117">        result.put(&quot;empty&quot;, items.isEmpty());</span>
+<span class="fc" id="L118">        return result;</span>
+    }
+
+    public Map&lt;String, Object&gt; create(Actor a, Map&lt;String, Object&gt; body) {
+<span class="fc" id="L122">        business(a);access.requireCurrent(a);requireFounder(a);</span>
+<span class="fc" id="L123">        Map&lt;String, Object&gt; input = copy(body);</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (!input.keySet().stream().allMatch(key -&gt; Set.of(&quot;name&quot;,&quot;color&quot;).contains(key))) throw bad(&quot;请求含不支持的字段&quot;);</span>
+<span class="fc" id="L125">        String name = name(input);</span>
+<span class="fc" id="L126">        String color = color(input);</span>
+<span class="fc" id="L127">        requireNameFree(a, name, null);</span>
+<span class="fc" id="L128">        String tagId = id();</span>
+<span class="fc" id="L129">        db.update(&quot;INSERT INTO tags(id,organization_id,name,color) VALUES(?,?,?,?)&quot;, tagId, a.organizationId(), name, color);</span>
+<span class="fc" id="L130">        return Map.of(&quot;tagId&quot;, tagId, &quot;rowVersion&quot;, 1, &quot;tag&quot;, view(a, tagId));</span>
+    }
+
+    public Map&lt;String, Object&gt; change(Actor a, String tagId, String ifMatch, Map&lt;String, Object&gt; body) {
+<span class="fc" id="L134">        business(a);access.requireCurrent(a);requireFounder(a);</span>
+<span class="fc" id="L135">        Map&lt;String, Object&gt; input = copy(body);</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        if (input.isEmpty()) throw bad(&quot;请提供要修改的标签字段&quot;);</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (!input.keySet().stream().allMatch(key -&gt; Set.of(&quot;name&quot;, &quot;color&quot;).contains(key))) throw bad(&quot;请求含不支持的字段&quot;);</span>
+<span class="fc" id="L138">        Map&lt;String, Object&gt; row = editable(a,tagId);</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (row.get(&quot;deletedAt&quot;) != null) throw conflict(&quot;TAG_DELETED&quot;, &quot;该标签已删除，不能再修改&quot;);</span>
+<span class="fc" id="L140">        long version = n(row, &quot;rowVersion&quot;);</span>
+<span class="fc" id="L141">        Writes.checkVersion(ifMatch, version);</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        String name = input.containsKey(&quot;name&quot;) ? name(input) : s(row, &quot;name&quot;);</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">        String color = input.containsKey(&quot;color&quot;) ? color(input) : s(row, &quot;color&quot;);</span>
+<span class="fc" id="L144">        requireNameFree(a, name, tagId);</span>
+<span class="fc" id="L145">        db.update(&quot;UPDATE tags SET name=?,color=?,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) WHERE organization_id=? AND id=?&quot;,</span>
+<span class="fc" id="L146">                name, color, a.organizationId(), tagId);</span>
+        // Current references resolve the catalogue, so a rename or recolour is visible immediately; the
+        // immutable snapshot columns on task versions are deliberately not rewritten (chapter 8.3).
+<span class="fc" id="L149">        return Map.of(&quot;tagId&quot;, tagId, &quot;rowVersion&quot;, version + 1, &quot;tag&quot;, view(a, tagId));</span>
+    }
+
+    public Map&lt;String, Object&gt; delete(Actor a, String tagId, String ifMatch) {
+<span class="fc" id="L153">        business(a);access.requireCurrent(a);</span>
+<span class="fc" id="L154">        Map&lt;String, Object&gt; row = editable(a,tagId);</span>
+<span class="fc" id="L155">        long version = n(row, &quot;rowVersion&quot;);</span>
+<span class="fc" id="L156">        Writes.checkVersion(ifMatch, version);</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (row.get(&quot;deletedAt&quot;) == null) {</span>
+<span class="fc" id="L158">            db.update(&quot;UPDATE tags SET deleted_at=UTC_TIMESTAMP(6),row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) WHERE organization_id=? AND id=?&quot;,</span>
+<span class="fc" id="L159">                    a.organizationId(), tagId);</span>
+<span class="fc" id="L160">            version += 1;</span>
+        }
+<span class="fc" id="L162">        return Map.of(&quot;tagId&quot;, tagId, &quot;deleted&quot;, true, &quot;rowVersion&quot;, version, &quot;tag&quot;, view(a, tagId));</span>
+    }
+
+    public void requireFounder(Actor a) {
+<span class="fc" id="L166">        business(a);</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (!companyTree.isFounder(a)) {</span>
+<span class="fc" id="L168">            throw new ApiException(403, &quot;TAG_MAINTENANCE_FORBIDDEN&quot;, &quot;只有公司员工组织树唯一根节点（创始人）可以维护标签&quot;);</span>
+        }
+<span class="fc" id="L170">    }</span>
+
+    private Map&lt;String,Object&gt; editable(Actor a,String id) {
+<span class="fc" id="L173">        requireFounder(a);</span>
+<span class="fc" id="L174">        var row=db.find(&quot;SELECT * FROM tags WHERE organization_id=? AND id=? FOR UPDATE&quot;,a.organizationId(),id);</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        if(row==null) throw ApiException.notFound();</span>
+<span class="fc" id="L176">        return row;</span>
+    }
+
+    private void requireNameFree(Actor a, String name, String selfId) {
+<span class="fc" id="L180">        Map&lt;String, Object&gt; existing = db.find(&quot;SELECT id FROM tags WHERE organization_id=? AND name=?&quot;, a.organizationId(), name);</span>
+<span class="pc bpc" id="L181" title="3 of 4 branches missed.">        if (existing != null &amp;&amp; !s(existing, &quot;id&quot;).equals(selfId)) {</span>
+<span class="nc" id="L182">            throw conflict(&quot;TAG_NAME_TAKEN&quot;, &quot;已有同名标签，请换一个名称&quot;);</span>
+        }
+<span class="fc" id="L184">    }</span>
+
+    private static Map&lt;String, Object&gt; copy(Map&lt;String, Object&gt; body) {
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        return body == null ? new LinkedHashMap&lt;&gt;() : new LinkedHashMap&lt;&gt;(body);</span>
+    }
+
+    private static String name(Map&lt;String, Object&gt; body) {
+<span class="fc" id="L191">        Object value = body.get(&quot;name&quot;);</span>
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        if (!(value instanceof String text)) throw bad(&quot;name 必须为文字&quot;);</span>
+<span class="fc" id="L193">        String name = text.strip();</span>
+<span class="pc bpc" id="L194" title="2 of 4 branches missed.">        if (name.isEmpty() || name.length() &gt; 40) throw bad(&quot;标签名称须为1至40字&quot;);</span>
+<span class="fc" id="L195">        return name;</span>
+    }
+
+    private static String color(Map&lt;String, Object&gt; body) {
+<span class="fc" id="L199">        Object value = body.get(&quot;color&quot;);</span>
+<span class="pc bpc" id="L200" title="2 of 4 branches missed.">        if (!(value instanceof String text) || !paletteColor(text)) throw bad(&quot;请选择预定义色板中的颜色&quot;);</span>
+<span class="fc" id="L201">        return PALETTE.stream().filter(entry -&gt; entry.color().equalsIgnoreCase(text))</span>
+<span class="fc" id="L202">                .map(PaletteColor::color).findFirst().orElseThrow();</span>
+    }
+
+<span class="fc" id="L205">    static ApiException bad(String message) { return new ApiException(400, &quot;INVALID_INPUT&quot;, message); }</span>
+
+<span class="fc" id="L207">    static ApiException conflict(String code, String message) { return new ApiException(409, code, message); }</span>
+
+    static void business(Actor a) {
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">        if (&quot;admin&quot;.equals(a.role())) throw new ApiException(403, &quot;BUSINESS_ROLE_REQUIRED&quot;, &quot;管理员请使用管理端接口&quot;);</span>
+<span class="fc" id="L211">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

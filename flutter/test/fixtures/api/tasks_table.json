@@ -1,0 +1,3659 @@
+{
+ "items": [
+  {
+   "id": "415b0266-e756-4427-9e98-d777b3ef51a2",
+   "taskId": "415b0266-e756-4427-9e98-d777b3ef51a2",
+   "versionNo": 1,
+   "title": "表情库整理",
+   "description": "光屿动画业务数据：表情库整理",
+   "acceptanceCriteria": "",
+   "priority": "medium",
+   "allDay": false,
+   "startAt": "2026-11-11T02:00:00Z",
+   "dueAt": "2026-11-13T09:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.816847Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "c649a96d-65b4-4dfa-b438-c8b0d6079a0a",
+   "currentVersionId": "c649a96d-65b4-4dfa-b438-c8b0d6079a0a",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.823071Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "a7f4c327-bc7c-4181-b385-2db9ed1d0aee",
+   "taskId": "a7f4c327-bc7c-4181-b385-2db9ed1d0aee",
+   "versionNo": 1,
+   "title": "第二幕合成",
+   "description": "光屿动画业务数据：第二幕合成",
+   "acceptanceCriteria": "",
+   "priority": "high",
+   "allDay": false,
+   "startAt": "2026-11-09T03:00:00Z",
+   "dueAt": "2026-11-20T09:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "createdAt": "2026-11-10T11:46:55.913802Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "d9f46806-68e3-4d8c-8e4a-13f1496b6c56",
+   "currentVersionId": "d9f46806-68e3-4d8c-8e4a-13f1496b6c56",
+   "originalCreatorId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "businessOwnerId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.919614Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote",
+    "assigneeIds"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "bd895793-9d68-4f50-b9f3-4dabaf00ea27",
+   "taskId": "bd895793-9d68-4f50-b9f3-4dabaf00ea27",
+   "versionNo": 1,
+   "title": "第二幕原画",
+   "description": "光屿动画业务数据：第二幕原画",
+   "acceptanceCriteria": "",
+   "priority": "high",
+   "allDay": false,
+   "startAt": "2026-11-09T03:00:00Z",
+   "dueAt": "2026-11-20T09:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.798402Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "a0521b66-3272-4221-b7e1-ddc46b6df87e",
+   "currentVersionId": "a0521b66-3272-4221-b7e1-ddc46b6df87e",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.804508Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "3641de83-9cdf-46d0-bf3a-7603361a79c1",
+   "taskId": "3641de83-9cdf-46d0-bf3a-7603361a79c1",
+   "versionNo": 1,
+   "title": "第二幕原画验收",
+   "description": "光屿动画业务数据：第二幕原画验收",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-10T01:00:00Z",
+   "dueAt": "2026-11-17T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "createdAt": "2026-11-10T11:46:55.951350Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "3fc13cde-7974-4fed-9b17-9d9899fccfa0",
+   "currentVersionId": "3fc13cde-7974-4fed-9b17-9d9899fccfa0",
+   "originalCreatorId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "businessOwnerId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "rowVersion": 3,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.962602Z",
+   "pending": true,
+   "frozen": true,
+   "pendingKind": "complete",
+   "canReschedule": false,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+     "displayName": "苏格拉底"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "3155a64b-767b-42ce-b9b1-944e68474ab5",
+   "taskId": "3155a64b-767b-42ce-b9b1-944e68474ab5",
+   "versionNo": 1,
+   "title": "第三幕原画",
+   "description": "光屿动画业务数据：第三幕原画",
+   "acceptanceCriteria": "",
+   "priority": "medium",
+   "allDay": false,
+   "startAt": "2026-11-10T01:00:00Z",
+   "dueAt": "2026-11-12T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.807257Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "bfacc115-6ee8-4d5c-ad26-0509371de552",
+   "currentVersionId": "bfacc115-6ee8-4d5c-ad26-0509371de552",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.814366Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "bef37974-9ad5-4b84-9475-254bd2b23fcf",
+   "taskId": "bef37974-9ad5-4b84-9475-254bd2b23fcf",
+   "versionNo": 1,
+   "title": "第一幕粗剪反馈",
+   "description": "光屿动画业务数据：第一幕粗剪反馈",
+   "acceptanceCriteria": "",
+   "priority": "urgent",
+   "allDay": false,
+   "startAt": "2026-11-08T02:00:00Z",
+   "dueAt": "2026-11-19T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "createdAt": "2026-11-10T11:46:55.570401Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "6bda1993-3113-47c8-a692-12f553a12c49",
+   "currentVersionId": "6bda1993-3113-47c8-a692-12f553a12c49",
+   "originalCreatorId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "businessOwnerId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.572371Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "274137c8-058b-31fb-9eb8-579e51c35faf",
+     "displayName": "苏景昕"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "6122ee4f-8697-4dca-a9bc-00022f9fbe09",
+   "taskId": "6122ee4f-8697-4dca-a9bc-00022f9fbe09",
+   "versionNo": 1,
+   "title": "第一幕分镜节奏",
+   "description": "光屿动画业务数据：第一幕分镜节奏",
+   "acceptanceCriteria": "",
+   "priority": "medium",
+   "allDay": false,
+   "startAt": "2026-11-09T02:00:00Z",
+   "dueAt": "2026-11-13T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "createdAt": "2026-11-10T11:46:55.532088Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "851fc0ab-6395-4baf-a657-6138a2440608",
+   "currentVersionId": "851fc0ab-6395-4baf-a657-6138a2440608",
+   "originalCreatorId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "businessOwnerId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.535624Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "274137c8-058b-31fb-9eb8-579e51c35faf",
+     "displayName": "苏景昕"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "6ae0acaf-50c4-4518-b81a-4e98613be1d1",
+   "taskId": "6ae0acaf-50c4-4518-b81a-4e98613be1d1",
+   "versionNo": 1,
+   "title": "第一幕合成",
+   "description": "光屿动画业务数据：第一幕合成",
+   "acceptanceCriteria": "",
+   "priority": "urgent",
+   "allDay": false,
+   "startAt": "2026-11-08T02:00:00Z",
+   "dueAt": "2026-11-19T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "createdAt": "2026-11-10T11:46:55.904157Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "711f23a7-3119-4899-9ccc-43fa539be60f",
+   "currentVersionId": "711f23a7-3119-4899-9ccc-43fa539be60f",
+   "originalCreatorId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "businessOwnerId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.911267Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote",
+    "assigneeIds"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "60ab8789-0eca-4425-bf1a-c6fe949af4d5",
+   "taskId": "60ab8789-0eca-4425-bf1a-c6fe949af4d5",
+   "versionNo": 3,
+   "title": "第一幕合成镜头校对",
+   "description": "光屿动画业务数据：第一幕合成镜头校对",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-10T01:00:00Z",
+   "dueAt": "2026-11-17T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "doing",
+   "progressNote": "第一轮校对完成，等待组长确认。",
+   "status": "applied",
+   "createdBy": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "createdAt": "2026-11-10T11:46:55.922691Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "b8b4bb93-2f5d-33c9-83cd-2c856728bd37"
+   ],
+   "tags": [
+    {
+     "id": "39d0d3ff-b9b3-3cf7-914c-8c083f3f0e70",
+     "name": "重点镜头",
+     "color": "#F6D5D2",
+     "border": "#C05B52",
+     "deleted": false,
+     "rowVersion": 1
+    }
+   ],
+   "tagIds": [
+    "39d0d3ff-b9b3-3cf7-914c-8c083f3f0e70"
+   ],
+   "tagId": "39d0d3ff-b9b3-3cf7-914c-8c083f3f0e70",
+   "tag": {
+    "id": "39d0d3ff-b9b3-3cf7-914c-8c083f3f0e70",
+    "name": "重点镜头",
+    "color": "#F6D5D2",
+    "border": "#C05B52",
+    "deleted": false,
+    "rowVersion": 1
+   },
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "ce01d49a-1649-4e91-9ee9-54c3d26ae5b5",
+   "currentVersionId": "ce01d49a-1649-4e91-9ee9-54c3d26ae5b5",
+   "originalCreatorId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "businessOwnerId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "rowVersion": 6,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:56.155796Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+     "displayName": "苏格拉底"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    },
+    {
+     "id": "b8b4bb93-2f5d-33c9-83cd-2c856728bd37",
+     "displayName": "欧几里得"
+    }
+   ]
+  },
+  {
+   "id": "73dc442c-8b4a-4dd7-a23d-4809943734e4",
+   "taskId": "73dc442c-8b4a-4dd7-a23d-4809943734e4",
+   "versionNo": 1,
+   "title": "第一幕原画",
+   "description": "光屿动画业务数据：第一幕原画",
+   "acceptanceCriteria": "",
+   "priority": "urgent",
+   "allDay": false,
+   "startAt": "2026-11-08T02:00:00Z",
+   "dueAt": "2026-11-19T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.788758Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "49ddf4d7-74f5-48f0-81db-5a7247ce28de",
+   "currentVersionId": "49ddf4d7-74f5-48f0-81db-5a7247ce28de",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.795896Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "27933d54-c882-4051-8bb4-8acd6ce7f1cf",
+   "taskId": "27933d54-c882-4051-8bb4-8acd6ce7f1cf",
+   "versionNo": 1,
+   "title": "动画中间画检查",
+   "description": "光屿动画业务数据：动画中间画检查",
+   "acceptanceCriteria": "",
+   "priority": "urgent",
+   "allDay": false,
+   "startAt": "2026-11-11T01:00:00Z",
+   "dueAt": "2026-11-15T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.750898Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "3dd7ebd4-0464-4be3-9e8f-a72cac76f3a7",
+   "currentVersionId": "3dd7ebd4-0464-4be3-9e8f-a72cac76f3a7",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.758136Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "f157f143-11be-401d-809c-79950d9ac41d",
+   "taskId": "f157f143-11be-401d-809c-79950d9ac41d",
+   "versionNo": 1,
+   "title": "动作节奏走查",
+   "description": "光屿动画业务数据：动作节奏走查",
+   "acceptanceCriteria": "",
+   "priority": "medium",
+   "allDay": false,
+   "startAt": "2026-11-13T03:00:00Z",
+   "dueAt": "2026-11-17T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.770336Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "5b2eb5eb-6a24-4658-b5e9-23765e5cedff",
+   "currentVersionId": "5b2eb5eb-6a24-4658-b5e9-23765e5cedff",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.777538Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "34bad59c-6e5e-4633-8ac0-d3429a2e48a3",
+   "taskId": "34bad59c-6e5e-4633-8ac0-d3429a2e48a3",
+   "versionNo": 1,
+   "title": "对白节奏调整",
+   "description": "光屿动画业务数据：对白节奏调整",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-11T01:00:00Z",
+   "dueAt": "2026-11-15T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "createdAt": "2026-11-10T11:46:55.629303Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "4881d443-3ace-4a46-a70f-ccf7ab464c02",
+   "currentVersionId": "4881d443-3ace-4a46-a70f-ccf7ab464c02",
+   "originalCreatorId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "businessOwnerId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.636596Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+     "displayName": "苏格拉底"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "56b1e8eb-0994-496b-b0ad-4be33b751fee",
+   "taskId": "56b1e8eb-0994-496b-b0ad-4be33b751fee",
+   "versionNo": 1,
+   "title": "故事部与制作部联合评审",
+   "description": "光屿动画业务数据：故事部与制作部联合评审",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-10T01:00:00Z",
+   "dueAt": "2026-11-17T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "createdAt": "2026-11-10T11:46:56.109036Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "0823b201-6a24-3234-8e60-b77e82bb30b9"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "24d3adcf-2f3c-4f2d-b2a8-5c5ecc73f863",
+   "currentVersionId": "24d3adcf-2f3c-4f2d-b2a8-5c5ecc73f863",
+   "originalCreatorId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "businessOwnerId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:56.116811Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0823b201-6a24-3234-8e60-b77e82bb30b9",
+     "displayName": "阿基米德"
+    },
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+     "displayName": "苏格拉底"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "49e59a27-ee92-4e6e-be15-9f701b6f5edd",
+   "taskId": "49e59a27-ee92-4e6e-be15-9f701b6f5edd",
+   "versionNo": 1,
+   "title": "关键帧线稿",
+   "description": "光屿动画业务数据：关键帧线稿",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-10T03:00:00Z",
+   "dueAt": "2026-11-14T09:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.740893Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "78a64e70-0a08-4161-bb5e-1ee9cd701978",
+   "currentVersionId": "78a64e70-0a08-4161-bb5e-1ee9cd701978",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.748217Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "ecc4a60f-952e-4a39-8095-32fd30767971",
+   "taskId": "ecc4a60f-952e-4a39-8095-32fd30767971",
+   "versionNo": 1,
+   "title": "光效层次调整",
+   "description": "光屿动画业务数据：光效层次调整",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-10T03:00:00Z",
+   "dueAt": "2026-11-14T09:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "createdAt": "2026-11-10T11:46:55.854625Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "930d427d-6d85-4fbd-b64f-737d9deffc6e",
+   "currentVersionId": "930d427d-6d85-4fbd-b64f-737d9deffc6e",
+   "originalCreatorId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "businessOwnerId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.861632Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote",
+    "assigneeIds"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "53d845ae-7ee9-4791-bae9-fbcaca50e750",
+   "taskId": "53d845ae-7ee9-4791-bae9-fbcaca50e750",
+   "versionNo": 1,
+   "title": "合成层整理",
+   "description": "光屿动画业务数据：合成层整理",
+   "acceptanceCriteria": "",
+   "priority": "high",
+   "allDay": false,
+   "startAt": "2026-11-12T02:00:00Z",
+   "dueAt": "2026-11-16T09:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "createdAt": "2026-11-10T11:46:55.873415Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "69ab944a-2d2f-434a-a060-5b51411bcf11",
+   "currentVersionId": "69ab944a-2d2f-434a-a060-5b51411bcf11",
+   "originalCreatorId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "businessOwnerId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.880368Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote",
+    "assigneeIds"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "5ad48ae4-bb66-4bf8-ac32-9b91822b4e72",
+   "taskId": "5ad48ae4-bb66-4bf8-ac32-9b91822b4e72",
+   "versionNo": 1,
+   "title": "角色比例统一",
+   "description": "光屿动画业务数据：角色比例统一",
+   "acceptanceCriteria": "",
+   "priority": "high",
+   "allDay": false,
+   "startAt": "2026-11-12T02:00:00Z",
+   "dueAt": "2026-11-16T09:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.761589Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "075c9bda-db4f-4742-ac3d-79ed363838cc",
+   "currentVersionId": "075c9bda-db4f-4742-ac3d-79ed363838cc",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.767848Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "9620a7bd-373b-49db-9ea6-9233278975b4",
+   "taskId": "9620a7bd-373b-49db-9ea6-9233278975b4",
+   "versionNo": 2,
+   "title": "接管后由新责任方维护第二幕",
+   "description": "光屿动画业务数据：第二幕业务责任接管",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-10T01:00:00Z",
+   "dueAt": "2026-11-17T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "b8b4bb93-2f5d-33c9-83cd-2c856728bd37",
+   "createdAt": "2026-11-10T11:46:56.069292Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "ba90c7fa-daaf-49db-8360-83cdb96453b9",
+   "currentVersionId": "ba90c7fa-daaf-49db-8360-83cdb96453b9",
+   "originalCreatorId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "businessOwnerId": "b8b4bb93-2f5d-33c9-83cd-2c856728bd37",
+   "rowVersion": 5,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:56.104577Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+     "displayName": "苏格拉底"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    },
+    {
+     "id": "b8b4bb93-2f5d-33c9-83cd-2c856728bd37",
+     "displayName": "欧几里得"
+    }
+   ]
+  },
+  {
+   "id": "4dbfd75a-5b8b-44ac-9a90-c2f5e857b775",
+   "taskId": "4dbfd75a-5b8b-44ac-9a90-c2f5e857b775",
+   "versionNo": 1,
+   "title": "结尾伏笔确认",
+   "description": "光屿动画业务数据：结尾伏笔确认",
+   "acceptanceCriteria": "",
+   "priority": "high",
+   "allDay": false,
+   "startAt": "2026-11-13T03:00:00Z",
+   "dueAt": "2026-11-17T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "createdAt": "2026-11-10T11:46:55.651354Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "e356a00b-be53-40ef-8cc5-d0d2962a0df3",
+   "currentVersionId": "e356a00b-be53-40ef-8cc5-d0d2962a0df3",
+   "originalCreatorId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "businessOwnerId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.658338Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+     "displayName": "苏格拉底"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "89830702-8530-426c-9843-a9bfde54dce9",
+   "taskId": "89830702-8530-426c-9843-a9bfde54dce9",
+   "versionNo": 1,
+   "title": "仅创建不负责的片尾镜头",
+   "description": "光屿动画业务数据：仅创建不负责的片尾镜头",
+   "acceptanceCriteria": "",
+   "priority": "high",
+   "allDay": false,
+   "startAt": "2026-11-10T01:00:00Z",
+   "dueAt": "2026-11-17T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "createdAt": "2026-11-10T11:46:56.119246Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "0823b201-6a24-3234-8e60-b77e82bb30b9"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "b497340f-c22f-4450-9ca5-abe63080ea95",
+   "currentVersionId": "b497340f-c22f-4450-9ca5-abe63080ea95",
+   "originalCreatorId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "businessOwnerId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:56.126343Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": false,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "assigneeIds"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0823b201-6a24-3234-8e60-b77e82bb30b9",
+     "displayName": "阿基米德"
+    },
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "9fbdc811-90cc-4951-b964-5e9053ce137f",
+   "taskId": "9fbdc811-90cc-4951-b964-5e9053ce137f",
+   "versionNo": 1,
+   "title": "景深一致性",
+   "description": "光屿动画业务数据：景深一致性",
+   "acceptanceCriteria": "",
+   "priority": "urgent",
+   "allDay": false,
+   "startAt": "2026-11-11T01:00:00Z",
+   "dueAt": "2026-11-15T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "createdAt": "2026-11-10T11:46:55.864620Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "c13d3be7-b9c0-41c5-97ec-c3f036caf8ad",
+   "currentVersionId": "c13d3be7-b9c0-41c5-97ec-c3f036caf8ad",
+   "originalCreatorId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "businessOwnerId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.870998Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote",
+    "assigneeIds"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "d181ebad-4e2c-416a-aa6c-0f9d6ce696eb",
+   "taskId": "d181ebad-4e2c-416a-aa6c-0f9d6ce696eb",
+   "versionNo": 1,
+   "title": "镜头合成检查",
+   "description": "光屿动画业务数据：镜头合成检查",
+   "acceptanceCriteria": "",
+   "priority": "medium",
+   "allDay": false,
+   "startAt": "2026-11-09T02:00:00Z",
+   "dueAt": "2026-11-13T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "createdAt": "2026-11-10T11:46:55.845198Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "b1a1fd12-3a9f-4bcc-95a8-b76c40be6622",
+   "currentVersionId": "b1a1fd12-3a9f-4bcc-95a8-b76c40be6622",
+   "originalCreatorId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "businessOwnerId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.851272Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote",
+    "assigneeIds"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "ff6554e7-26c8-45c8-86df-670a7fc12cbf",
+   "taskId": "ff6554e7-26c8-45c8-86df-670a7fc12cbf",
+   "versionNo": 1,
+   "title": "镜头运动复盘",
+   "description": "光屿动画业务数据：镜头运动复盘",
+   "acceptanceCriteria": "",
+   "priority": "medium",
+   "allDay": false,
+   "startAt": "2026-11-13T03:00:00Z",
+   "dueAt": "2026-11-17T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "createdAt": "2026-11-10T11:46:55.559511Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "63d09300-cc9b-4107-b0c8-37ab90105422",
+   "currentVersionId": "63d09300-cc9b-4107-b0c8-37ab90105422",
+   "originalCreatorId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "businessOwnerId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.561618Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "274137c8-058b-31fb-9eb8-579e51c35faf",
+     "displayName": "苏景昕"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "d581e6ac-1aa8-45d6-948c-551b3d88d7c8",
+   "taskId": "d581e6ac-1aa8-45d6-948c-551b3d88d7c8",
+   "versionNo": 1,
+   "title": "剧本结构评审",
+   "description": "光屿动画业务数据：剧本结构评审",
+   "acceptanceCriteria": "",
+   "priority": "high",
+   "allDay": false,
+   "startAt": "2026-11-09T02:00:00Z",
+   "dueAt": "2026-11-13T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "createdAt": "2026-11-10T11:46:55.603680Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "ca1879a7-4e13-43d9-a224-0e77e924ff77",
+   "currentVersionId": "ca1879a7-4e13-43d9-a224-0e77e924ff77",
+   "originalCreatorId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "businessOwnerId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.613816Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+     "displayName": "苏格拉底"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "c659942b-f5d8-4b84-906d-586995e98dd4",
+   "taskId": "c659942b-f5d8-4b84-906d-586995e98dd4",
+   "versionNo": 1,
+   "title": "剧本文档归档",
+   "description": "光屿动画业务数据：剧本文档归档",
+   "acceptanceCriteria": "",
+   "priority": "urgent",
+   "allDay": false,
+   "startAt": "2026-11-12T03:00:00Z",
+   "dueAt": "2026-11-14T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "createdAt": "2026-11-10T11:46:55.713335Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "aecae3cd-21b5-40cd-8d7f-c55d3048acb0",
+   "currentVersionId": "aecae3cd-21b5-40cd-8d7f-c55d3048acb0",
+   "originalCreatorId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "businessOwnerId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.719400Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+     "displayName": "苏格拉底"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "5e1389fa-56b7-4862-8cb0-fff68c95f575",
+   "taskId": "5e1389fa-56b7-4862-8cb0-fff68c95f575",
+   "versionNo": 1,
+   "title": "跨月镜头排期",
+   "description": "光屿动画业务数据：跨月镜头排期",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-29T12:00:00Z",
+   "dueAt": "2026-12-01T02:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "createdAt": "2026-11-10T11:46:56.129157Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "ce70dfb4-f68d-47b6-8d35-63b1a2cfa22c",
+   "currentVersionId": "ce70dfb4-f68d-47b6-8d35-63b1a2cfa22c",
+   "originalCreatorId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "businessOwnerId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:56.130638Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "274137c8-058b-31fb-9eb8-579e51c35faf",
+     "displayName": "苏景昕"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "a9020c45-f38a-4c7e-9b48-34e461567b46",
+   "taskId": "a9020c45-f38a-4c7e-9b48-34e461567b46",
+   "versionNo": 1,
+   "title": "配音稿标注",
+   "description": "光屿动画业务数据：配音稿标注",
+   "acceptanceCriteria": "",
+   "priority": "high",
+   "allDay": false,
+   "startAt": "2026-11-10T01:00:00Z",
+   "dueAt": "2026-11-12T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "createdAt": "2026-11-10T11:46:55.694356Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "7f45e5e9-93d6-47a1-a028-5ab5b956aae6",
+   "currentVersionId": "7f45e5e9-93d6-47a1-a028-5ab5b956aae6",
+   "originalCreatorId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "businessOwnerId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.700562Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+     "displayName": "苏格拉底"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "1bd6f6ac-8cbe-41ea-9e44-2fd8063cd5f5",
+   "taskId": "1bd6f6ac-8cbe-41ea-9e44-2fd8063cd5f5",
+   "versionNo": 2,
+   "title": "片头字幕校对完成",
+   "description": "光屿动画业务数据：片头字幕校对完成",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-10T01:00:00Z",
+   "dueAt": "2026-11-17T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "done",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "createdAt": "2026-11-10T11:46:55.965806Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "8c1f7e76-5a58-4aeb-b169-bef21972d27c",
+   "currentVersionId": "8c1f7e76-5a58-4aeb-b169-bef21972d27c",
+   "originalCreatorId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "businessOwnerId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "rowVersion": 4,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.984326Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": false,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "7bac300c-94f0-4ef5-98c9-d2631d2b0c78",
+   "taskId": "7bac300c-94f0-4ef5-98c9-d2631d2b0c78",
+   "versionNo": 1,
+   "title": "片尾留白",
+   "description": "光屿动画业务数据：片尾留白",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-12T03:00:00Z",
+   "dueAt": "2026-11-14T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "createdAt": "2026-11-10T11:46:55.592493Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "53adeb17-81da-4428-a8e4-aa8cca8b85fb",
+   "currentVersionId": "53adeb17-81da-4428-a8e4-aa8cca8b85fb",
+   "originalCreatorId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "businessOwnerId": "274137c8-058b-31fb-9eb8-579e51c35faf",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.594821Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "274137c8-058b-31fb-9eb8-579e51c35faf",
+     "displayName": "苏景昕"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "1f7ce266-dce1-4295-9517-470792eacf03",
+   "taskId": "1f7ce266-dce1-4295-9517-470792eacf03",
+   "versionNo": 1,
+   "title": "素材命名规范",
+   "description": "光屿动画业务数据：素材命名规范",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-14T01:00:00Z",
+   "dueAt": "2026-11-18T09:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "createdAt": "2026-11-10T11:46:55.895265Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "a4b06c2a-e9f5-43ba-873a-fcc5b5709688",
+   "currentVersionId": "a4b06c2a-e9f5-43ba-873a-fcc5b5709688",
+   "originalCreatorId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "businessOwnerId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.901476Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote",
+    "assigneeIds"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "308a8662-ce8b-443f-84b8-43ce32b885d5",
+   "taskId": "308a8662-ce8b-443f-84b8-43ce32b885d5",
+   "versionNo": 1,
+   "title": "台词终稿",
+   "description": "光屿动画业务数据：台词终稿",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-08T02:00:00Z",
+   "dueAt": "2026-11-19T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "createdAt": "2026-11-10T11:46:55.674009Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "c3dddd8b-ad71-4478-ab9f-6b18bc095cdc",
+   "currentVersionId": "c3dddd8b-ad71-4478-ab9f-6b18bc095cdc",
+   "originalCreatorId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "businessOwnerId": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.681571Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "21ace4e9-c3a1-301b-a6fc-58a3256cefd3",
+     "displayName": "苏格拉底"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "6f297719-6a6c-47dd-82cf-f199a605bfe6",
+   "taskId": "6f297719-6a6c-47dd-82cf-f199a605bfe6",
+   "versionNo": 3,
+   "title": "预告片剪辑返工",
+   "description": "光屿动画业务数据：预告片剪辑返工",
+   "acceptanceCriteria": "",
+   "priority": "urgent",
+   "allDay": false,
+   "startAt": "2026-11-10T01:00:00Z",
+   "dueAt": "2026-11-17T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "doing",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "createdAt": "2026-11-10T11:46:55.987141Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "d0b268f7-7df6-475b-b6d9-71e9d7f431be",
+   "currentVersionId": "d0b268f7-7df6-475b-b6d9-71e9d7f431be",
+   "originalCreatorId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "businessOwnerId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "rowVersion": 6,
+   "executionRound": 2,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:56.018337Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote",
+    "assigneeIds"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "417ea9a9-aa7d-49be-94de-b1353fe01064",
+   "taskId": "417ea9a9-aa7d-49be-94de-b1353fe01064",
+   "versionNo": 1,
+   "title": "原画风格校准",
+   "description": "光屿动画业务数据：原画风格校准",
+   "acceptanceCriteria": "",
+   "priority": "medium",
+   "allDay": false,
+   "startAt": "2026-11-09T02:00:00Z",
+   "dueAt": "2026-11-13T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.732241Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "94375706-71ab-43a3-a397-b1763a01769e",
+   "currentVersionId": "94375706-71ab-43a3-a397-b1763a01769e",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.738420Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "7dca8b58-4a0c-4a2f-92d5-6c88875d0630",
+   "taskId": "7dca8b58-4a0c-4a2f-92d5-6c88875d0630",
+   "versionNo": 1,
+   "title": "原画归档",
+   "description": "光屿动画业务数据：原画归档",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-12T03:00:00Z",
+   "dueAt": "2026-11-14T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.826562Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "ef647543-2ab8-4065-b858-4fb215a088a5",
+   "currentVersionId": "ef647543-2ab8-4065-b858-4fb215a088a5",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.832873Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "68823271-369f-4660-8147-26883d4ea38b",
+   "taskId": "68823271-369f-4660-8147-26883d4ea38b",
+   "versionNo": 1,
+   "title": "原画交付清单",
+   "description": "光屿动画业务数据：原画交付清单",
+   "acceptanceCriteria": "",
+   "priority": "low",
+   "allDay": false,
+   "startAt": "2026-11-14T01:00:00Z",
+   "dueAt": "2026-11-18T09:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.780096Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "7a0f8daa-c8a0-410f-a6fa-dde39067253a",
+   "currentVersionId": "7a0f8daa-c8a0-410f-a6fa-dde39067253a",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.786303Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "0c67108a-3493-4a95-baa0-696f5f460ecb",
+   "taskId": "0c67108a-3493-4a95-baa0-696f5f460ecb",
+   "versionNo": 1,
+   "title": "作画会议纪要",
+   "description": "光屿动画业务数据：作画会议纪要",
+   "acceptanceCriteria": "",
+   "priority": "urgent",
+   "allDay": false,
+   "startAt": "2026-11-13T01:00:00Z",
+   "dueAt": "2026-11-15T09:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "createdAt": "2026-11-10T11:46:55.835237Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "89dd0040-43f1-4eb9-a5df-f74ffa3acc26",
+   "currentVersionId": "89dd0040-43f1-4eb9-a5df-f74ffa3acc26",
+   "originalCreatorId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "businessOwnerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.841223Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  },
+  {
+   "id": "41c41969-1ad5-480e-9a1e-f035e7d2b675",
+   "taskId": "41c41969-1ad5-480e-9a1e-f035e7d2b675",
+   "versionNo": 1,
+   "title": "渲染队列确认",
+   "description": "光屿动画业务数据：渲染队列确认",
+   "acceptanceCriteria": "",
+   "priority": "medium",
+   "allDay": false,
+   "startAt": "2026-11-13T03:00:00Z",
+   "dueAt": "2026-11-17T10:00:00Z",
+   "startDate": null,
+   "dueDate": null,
+   "executionState": "todo",
+   "progressNote": "",
+   "status": "applied",
+   "createdBy": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "createdAt": "2026-11-10T11:46:55.884192Z",
+   "allDayCutoffTime": null,
+   "assigneeIds": [
+    "8753895b-2df0-3b5e-a588-ff82986d4a2b"
+   ],
+   "tags": [],
+   "tagIds": [],
+   "tagId": null,
+   "tag": null,
+   "parentTaskId": null,
+   "parentUnavailable": false,
+   "versionId": "db83a3bc-f22e-491f-b962-e81d772288f4",
+   "currentVersionId": "db83a3bc-f22e-491f-b962-e81d772288f4",
+   "originalCreatorId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "businessOwnerId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+   "rowVersion": 2,
+   "executionRound": 1,
+   "scheduleVersion": 1,
+   "dueVersion": 1,
+   "published": true,
+   "updatedAt": "2026-11-10T11:46:55.892099Z",
+   "pending": false,
+   "frozen": false,
+   "pendingKind": null,
+   "canReschedule": true,
+   "canPin": true,
+   "canTablePin": true,
+   "tablePinned": false,
+   "editableFields": [
+    "allDay",
+    "startAt",
+    "dueAt",
+    "startDate",
+    "dueDate",
+    "title",
+    "description",
+    "acceptanceCriteria",
+    "priority",
+    "tagIds",
+    "parentTaskId",
+    "progressNote",
+    "assigneeIds"
+   ],
+   "route": {
+    "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+    "basisAssigneeId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+    "path": [
+     "0b4e4685-3490-31f4-b6eb-b5100dd61642"
+    ],
+    "reason": "direct-manager",
+    "reasonText": "按本次操作者的直属上级审核",
+    "authzVersion": 2,
+    "reviewerAvailable": true,
+    "blocked": false,
+    "creation": false,
+    "participants": [
+     {
+      "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+      "displayName": "柏拉图"
+     },
+     {
+      "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+      "displayName": "亚里士多德"
+     }
+    ]
+   },
+   "reviewerId": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+   "participants": [
+    {
+     "id": "0b4e4685-3490-31f4-b6eb-b5100dd61642",
+     "displayName": "柏拉图"
+    },
+    {
+     "id": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+     "displayName": "亚里士多德"
+    }
+   ]
+  }
+ ],
+ "total": 38,
+ "limit": 50,
+ "offset": 0,
+ "nextOffset": null
+}

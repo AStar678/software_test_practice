@@ -1,0 +1,82 @@
+{
+  "checks": [
+    {
+      "name": "owner login form",
+      "pass": true
+    },
+    {
+      "name": "owner authenticated",
+      "pass": true
+    },
+    {
+      "name": "owner task detail ready",
+      "pass": true
+    },
+    {
+      "name": "owner detail has one edit entry and no internal reviewer rows",
+      "pass": true,
+      "evidence": {
+        "edits": 1,
+        "updates": 0,
+        "adjust": 0,
+        "internal": false
+      }
+    },
+    {
+      "name": "owner unified edit form opens",
+      "pass": true
+    },
+    {
+      "name": "owner form projects only allowed fields",
+      "pass": true,
+      "evidence": {
+        "title": true,
+        "progress": true,
+        "tags": true,
+        "reason": true,
+        "assignees": false,
+        "title_": "浏览器混合编辑",
+        "progress_": ""
+      }
+    },
+    {
+      "name": "invalid owner edit stays in the form",
+      "pass": true
+    },
+    {
+      "name": "owner draft survives the failed submission",
+      "pass": true,
+      "evidence": {
+        "title": "浏览器混合标题",
+        "progress": "浏览器进展",
+        "open": true
+      }
+    },
+    {
+      "name": "owner form layout fits 320",
+      "pass": true
+    },
+    {
+      "name": "owner form layout fits 390",
+      "pass": true
+    },
+    {
+      "name": "owner form layout fits 1440",
+      "pass": true
+    },
+    {
+      "name": "owner mixed edit submits and closes the form",
+      "pass": true
+    },
+    {
+      "name": "owner submit shows the saved current reviewer",
+      "pass": true,
+      "evidence": "申请已提交，审核通过后生效。 当前审核人：alpha-one-head。"
+    },
+    {
+      "name": "owner browser has no exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

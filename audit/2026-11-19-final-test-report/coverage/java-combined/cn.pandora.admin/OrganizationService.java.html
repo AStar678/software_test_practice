@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrganizationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.admin</a> &gt; <span class="el_source">OrganizationService.java</span></div><h1>OrganizationService.java</h1><pre class="source lang-java linenums">package cn.pandora.admin;
+
+import cn.pandora.auth.*;
+import cn.pandora.common.*;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+import java.time.*;
+import java.util.*;
+import java.util.regex.Pattern;
+import static cn.pandora.common.Db.*;
+
+/** Independent administration; organization relationships are written only by complete plans. */
+@Service
+public class OrganizationService {
+<span class="fc" id="L16">    private static final Pattern TIME=Pattern.compile(&quot;^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$&quot;);</span>
+<span class="fc" id="L17">    private static final Set&lt;String&gt; LEVELS=Set.of(&quot;urgent&quot;,&quot;high&quot;,&quot;medium&quot;,&quot;low&quot;);</span>
+    private static final int COMPANY_ITEM_LIMIT=10;
+    private final Db db;
+    private final Access access;
+    private final Events events;
+    private final OrganizationConstraints constraints;
+    private final AuthService auth;
+    private final OrganizationPlans plans;
+    private final java.time.Clock clock;
+    public OrganizationService(Db db,Access access,Events events,OrganizationConstraints constraints,AuthService auth,OrganizationPlans plans,
+<span class="fc" id="L27">                               java.time.Clock clock) {</span>
+<span class="fc" id="L28">        this.db=db;this.access=access;this.events=events;this.constraints=constraints;this.auth=auth;this.plans=plans;this.clock=clock;</span>
+<span class="fc" id="L29">    }</span>
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; structure(Actor actor) {
+<span class="fc" id="L33">        access.requireAdmin(actor);access.requireCurrent(actor);</span>
+<span class="fc" id="L34">        var result=new LinkedHashMap&lt;String,Object&gt;(plans.draft(actor));</span>
+<span class="fc" id="L35">        result.put(&quot;organization&quot;,db.one(&quot;SELECT id,name,time_zone,off_work_time,founder_employee_id,authz_version FROM organizations WHERE id=?&quot;,actor.organizationId()));</span>
+<span class="fc" id="L36">        return result;</span>
+    }
+<span class="fc" id="L38">    public boolean applyOrganizationConstraints() {return false;}</span>
+<span class="fc" id="L39">    public List&lt;Map&lt;String,Object&gt;&gt; roles(Actor actor) {access.requireAdmin(actor);throw retiredRoles();}</span>
+<span class="fc" id="L40">    public Map&lt;String,Object&gt; updateRoleScopes(Actor actor,String code,Map&lt;String,Object&gt; input) {access.requireAdmin(actor);throw retiredRoles();}</span>
+<span class="fc" id="L41">    public Map&lt;String,Object&gt; grantRoles(Actor actor,String id,String match,Map&lt;String,Object&gt; input) {access.requireAdmin(actor);throw retiredRoles();}</span>
+<span class="fc" id="L42">    private static ApiException retiredRoles() {return new ApiException(410,&quot;ROLE_AUTHORIZATION_RETIRED&quot;,&quot;业务权限由固定组织位置推导，不再维护角色授权&quot;);}</span>
+<span class="fc" id="L43">    private ApiException planRequired(Actor actor) {access.requireAdmin(actor);return new ApiException(410,&quot;ORGANIZATION_PLAN_REQUIRED&quot;,&quot;请一次提交完整组织计划，安排单位负责人和所有人员最终位置&quot;);}</span>
+<span class="fc" id="L44">    public Map&lt;String,Object&gt; createDepartment(Actor actor,Map&lt;String,Object&gt; input) {throw planRequired(actor);}</span>
+<span class="nc" id="L45">    public Map&lt;String,Object&gt; updateDepartment(Actor actor,String id,String match,Map&lt;String,Object&gt; input) {throw planRequired(actor);}</span>
+<span class="nc" id="L46">    public Map&lt;String,Object&gt; createTeam(Actor actor,Map&lt;String,Object&gt; input) {throw planRequired(actor);}</span>
+<span class="nc" id="L47">    public Map&lt;String,Object&gt; updateTeam(Actor actor,String id,String match,Map&lt;String,Object&gt; input) {throw planRequired(actor);}</span>
+<span class="nc" id="L48">    public Map&lt;String,Object&gt; transferEmployee(Actor actor,String id,String match,Map&lt;String,Object&gt; input) {throw planRequired(actor);}</span>
+<span class="fc" id="L49">    public Map&lt;String,Object&gt; teamManagement(Actor actor) {throw new ApiException(403,&quot;FORBIDDEN&quot;,&quot;组织由独立管理员通过完整计划维护&quot;);}</span>
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; employees(Actor actor,Map&lt;String,String&gt; filters) {
+<span class="fc" id="L53">        access.requireAdmin(actor);access.requireCurrent(actor);</span>
+<span class="fc" id="L54">        String query=filters.getOrDefault(&quot;q&quot;,&quot;&quot;).strip().toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L55">        var phones=new HashMap&lt;String,Object&gt;();</span>
+<span class="fc" id="L56">        var hireDates=new HashMap&lt;String,Object&gt;();</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        for (var row:db.list(&quot;SELECT id,login_phone,hire_date FROM users WHERE organization_id=?&quot;,actor.organizationId())) {</span>
+<span class="fc" id="L58">            phones.put(s(row,&quot;id&quot;),row.get(&quot;loginPhone&quot;));</span>
+<span class="fc" id="L59">            hireDates.put(s(row,&quot;id&quot;),row.get(&quot;hireDate&quot;));</span>
+<span class="fc" id="L60">        }</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        var rows=access.employeeDirectory(actor,true).stream().filter(row-&gt;query.isEmpty()</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">                || Objects.toString(row.get(&quot;displayName&quot;),&quot;&quot;).toLowerCase(Locale.ROOT).contains(query)</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">                || Objects.toString(row.get(&quot;departmentName&quot;),&quot;&quot;).toLowerCase(Locale.ROOT).contains(query))</span>
+<span class="fc" id="L64">                .map(row -&gt; {var item=new LinkedHashMap&lt;&gt;(row);item.put(&quot;loginPhone&quot;,phones.get(s(row,&quot;id&quot;)));</span>
+<span class="fc" id="L65">                    item.put(&quot;hireDate&quot;,hireDates.get(s(row,&quot;id&quot;)));return item;}).toList();</span>
+<span class="fc" id="L66">        return Map.of(&quot;items&quot;,rows,&quot;total&quot;,rows.size());</span>
+    }
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; employee(Actor actor,String id) {
+<span class="fc" id="L70">        access.requireAdmin(actor);access.requireCurrent(actor);</span>
+<span class="fc" id="L71">        var person=access.employeeDirectory(actor,true).stream().filter(row-&gt;id.equals(s(row,&quot;id&quot;))).findFirst().orElseThrow(ApiException::notFound);</span>
+<span class="fc" id="L72">        var item=new LinkedHashMap&lt;&gt;(person);</span>
+<span class="fc" id="L73">        var phone=db.find(&quot;SELECT login_phone,hire_date FROM users WHERE organization_id=? AND id=?&quot;,actor.organizationId(),id);</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        item.put(&quot;loginPhone&quot;,phone==null?null:phone.get(&quot;loginPhone&quot;));</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        item.put(&quot;hireDate&quot;,phone==null?null:phone.get(&quot;hireDate&quot;));</span>
+<span class="fc" id="L76">        return item;</span>
+    }
+    public List&lt;Map&lt;String,Object&gt;&gt; departmentMembers(Actor actor,String departmentId) {
+<span class="nc" id="L79">        access.requireAdmin(actor);requireDepartment(actor,departmentId);</span>
+<span class="nc" id="L80">        return access.employeeDirectory(actor,false).stream().filter(row-&gt;departmentId.equals(s(row,&quot;departmentId&quot;))).toList();</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public Writes.Outcome createEmployee(Actor actor,Map&lt;String,Object&gt; input) {
+<span class="fc" id="L85">        access.requireAdmin(actor);allowed(input,Set.of(&quot;displayName&quot;,&quot;phone&quot;,&quot;placementType&quot;,&quot;departmentId&quot;,&quot;teamId&quot;,&quot;positionId&quot;,&quot;hireDate&quot;));</span>
+<span class="fc" id="L86">        var draft=plans.draft(actor);String id=Db.id();</span>
+<span class="fc" id="L87">        var plan=new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        for(String key:List.of(&quot;departments&quot;,&quot;teams&quot;,&quot;placements&quot;,&quot;expectedEmployees&quot;)) plan.put(key,draft.get(key));</span>
+        // Draft lists are local copies; cancellation or failed final validation leaves the DB untouched.
+<span class="fc" id="L90">        var places=new ArrayList&lt;&gt;((List&lt;Map&lt;String,Object&gt;&gt;)draft.get(&quot;placements&quot;));</span>
+<span class="fc" id="L91">        var placement=new LinkedHashMap&lt;String,Object&gt;();placement.put(&quot;employeeId&quot;,id);</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        for(String field:List.of(&quot;placementType&quot;,&quot;departmentId&quot;,&quot;teamId&quot;,&quot;positionId&quot;)) placement.put(field,input.get(field));</span>
+<span class="fc" id="L93">        places.add(placement);plan.put(&quot;placements&quot;,places);plan.put(&quot;reason&quot;,&quot;新增员工&quot;);</span>
+<span class="fc" id="L94">        var addition=new LinkedHashMap&lt;String,Object&gt;();addition.put(&quot;id&quot;,id);addition.put(&quot;displayName&quot;,input.get(&quot;displayName&quot;));addition.put(&quot;phone&quot;,input.get(&quot;phone&quot;));</span>
+<span class="fc" id="L95">        addition.put(&quot;hireDate&quot;,input.get(&quot;hireDate&quot;));</span>
+<span class="fc" id="L96">        plan.put(&quot;newEmployees&quot;,List.of(addition));</span>
+<span class="fc" id="L97">        var outcome=plans.save(actor,&quot;\&quot;&quot;+draft.get(&quot;rowVersion&quot;)+&quot;\&quot;&quot;,plan);</span>
+<span class="fc" id="L98">        var passwords=(Map&lt;String,String&gt;)outcome.oneTimeOnly().get(&quot;initialPasswords&quot;);</span>
+<span class="fc" id="L99">        return new Writes.Outcome(Map.of(&quot;userId&quot;,id,&quot;rowVersion&quot;,2,&quot;mustChangePassword&quot;,true),Map.of(&quot;initialPassword&quot;,passwords.get(id)));</span>
+    }
+
+    public Map&lt;String,Object&gt; administrator(Actor actor) {
+<span class="fc" id="L103">        access.requireAdmin(actor);</span>
+<span class="fc" id="L104">        return db.one(&quot;SELECT id,account_name,display_name,row_version,must_change_password FROM admin_accounts WHERE organization_id=? AND id=?&quot;,actor.organizationId(),actor.id());</span>
+    }
+    public Map&lt;String,Object&gt; updateAdministrator(Actor actor,String match,Map&lt;String,Object&gt; input) {
+<span class="fc" id="L107">        access.requireAdmin(actor);allowed(input,Set.of(&quot;accountName&quot;,&quot;displayName&quot;));</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if(input.isEmpty()) throw bad(&quot;请至少修改一项管理员账号资料&quot;);</span>
+<span class="fc" id="L109">        var current=administrator(actor);Writes.checkVersion(match,n(current,&quot;rowVersion&quot;));</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        String name=input.containsKey(&quot;accountName&quot;)?text(input.get(&quot;accountName&quot;),&quot;管理员账号名&quot;,80):s(current,&quot;accountName&quot;);</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        String display=input.containsKey(&quot;displayName&quot;)?text(input.get(&quot;displayName&quot;),&quot;管理员名称&quot;,100):s(current,&quot;displayName&quot;);</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        if(db.find(&quot;SELECT id FROM admin_accounts WHERE account_name=? AND id&lt;&gt;?&quot;,name,actor.id())!=null)</span>
+<span class="nc" id="L113">            throw new ApiException(409,&quot;ACCOUNT_NAME_TAKEN&quot;,&quot;管理员账号名已被使用&quot;);</span>
+<span class="fc" id="L114">        db.update(&quot;UPDATE admin_accounts SET account_name=?,display_name=?,row_version=row_version+1,credential_version=credential_version+1 WHERE organization_id=? AND id=?&quot;,name,display,actor.organizationId(),actor.id());</span>
+<span class="fc" id="L115">        int revoked=auth.revokeSessions(actor.organizationId(),actor.id());</span>
+<span class="fc" id="L116">        events.record(actor,null,&quot;administrator.updated&quot;,List.of(),Map.of(&quot;fields&quot;,input.keySet(),&quot;sessionsRevoked&quot;,revoked));</span>
+<span class="fc" id="L117">        return Map.of(&quot;id&quot;,actor.id(),&quot;rowVersion&quot;,n(current,&quot;rowVersion&quot;)+1,&quot;reauthenticationRequired&quot;,true);</span>
+    }
+
+    public Map&lt;String, Object&gt; createPosition(Actor actor, Map&lt;String, Object&gt; input) {
+<span class="fc" id="L121">        access.requireCapability(actor, &quot;manage_organization&quot;);</span>
+<span class="fc" id="L122">        allowed(input, Set.of(&quot;name&quot;, &quot;sortOrder&quot;));</span>
+<span class="fc" id="L123">        String name = text(input.get(&quot;name&quot;), &quot;职位名称&quot;, 100);</span>
+<span class="fc" id="L124">        requireUnique(&quot;SELECT 1 FROM positions WHERE organization_id=? AND name=?&quot;, &quot;职位名称已存在&quot;, actor.organizationId(), name);</span>
+<span class="fc" id="L125">        int sortOrder = integer(input.get(&quot;sortOrder&quot;), &quot;sortOrder&quot;, 0, 10000, 0);</span>
+<span class="fc" id="L126">        String id = Db.id();</span>
+<span class="fc" id="L127">        db.update(&quot;INSERT INTO positions(id,organization_id,name,sort_order) VALUES(?,?,?,?)&quot;, id, actor.organizationId(), name, sortOrder);</span>
+<span class="fc" id="L128">        bumpAuthority(actor, &quot;organization.position.created&quot;, Map.of(&quot;positionId&quot;, id, &quot;name&quot;, name));</span>
+<span class="fc" id="L129">        return Map.of(&quot;positionId&quot;, id, &quot;rowVersion&quot;, 1);</span>
+    }
+
+    public Map&lt;String, Object&gt; updatePosition(Actor actor, String id, String ifMatch, Map&lt;String, Object&gt; input) {
+<span class="fc" id="L133">        access.requireCapability(actor, &quot;manage_organization&quot;);</span>
+<span class="fc" id="L134">        allowed(input, Set.of(&quot;name&quot;, &quot;sortOrder&quot;));</span>
+<span class="fc" id="L135">        Map&lt;String, Object&gt; row = db.one(&quot;SELECT * FROM positions WHERE organization_id=? AND id=? FOR UPDATE&quot;, actor.organizationId(), id);</span>
+<span class="fc" id="L136">        Writes.checkVersion(ifMatch, n(row, &quot;rowVersion&quot;));</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        String name = input.containsKey(&quot;name&quot;) ? text(input.get(&quot;name&quot;), &quot;职位名称&quot;, 100) : s(row, &quot;name&quot;);</span>
+<span class="fc" id="L138">        requireUniqueExcept(&quot;SELECT 1 FROM positions WHERE organization_id=? AND name=? AND id&lt;&gt;?&quot;, actor.organizationId(), name, id);</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        int sortOrder = input.containsKey(&quot;sortOrder&quot;) ? integer(input.get(&quot;sortOrder&quot;), &quot;sortOrder&quot;, 0, 10000, 0) : Math.toIntExact(n(row, &quot;sortOrder&quot;));</span>
+<span class="fc" id="L140">        db.update(&quot;UPDATE positions SET name=?,sort_order=?,row_version=row_version+1 WHERE organization_id=? AND id=?&quot;, name, sortOrder, actor.organizationId(), id);</span>
+<span class="fc" id="L141">        bumpAuthority(actor, &quot;organization.position.updated&quot;, Map.of(&quot;positionId&quot;, id, &quot;name&quot;, name));</span>
+<span class="fc" id="L142">        return Map.of(&quot;positionId&quot;, id, &quot;rowVersion&quot;, n(row, &quot;rowVersion&quot;) + 1);</span>
+    }
+
+    public Map&lt;String,Object&gt; updateEmployee(Actor actor,String id,String ifMatch,Map&lt;String,Object&gt; input) {
+<span class="fc" id="L146">        access.requireAdmin(actor);</span>
+<span class="fc" id="L147">        allowed(input,Set.of(&quot;displayName&quot;,&quot;phone&quot;,&quot;hireDate&quot;));</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">        if(input.isEmpty()) throw bad(&quot;请至少修改姓名、手机号或入职日期&quot;);</span>
+<span class="fc" id="L149">        var row=db.one(&quot;SELECT u.* FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id &quot;</span>
+<span class="fc" id="L150">                + &quot;WHERE u.organization_id=? AND u.id=? AND p.account_type='employee' FOR UPDATE&quot;,actor.organizationId(),id);</span>
+<span class="fc" id="L151">        Writes.checkVersion(ifMatch,n(row,&quot;orgVersion&quot;));</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        String name=input.containsKey(&quot;displayName&quot;)?text(input.get(&quot;displayName&quot;),&quot;姓名&quot;,100):s(row,&quot;displayName&quot;);</span>
+<span class="fc" id="L153">        String phone=s(row,&quot;phone&quot;),login=s(row,&quot;loginPhone&quot;);</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if(input.containsKey(&quot;phone&quot;)) {</span>
+<span class="fc" id="L155">            phone=PhoneNumbers.normalize(optionalPhone(input.get(&quot;phone&quot;)));</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">            if(phone==null) throw bad(&quot;员工登录手机号不能为空&quot;);</span>
+<span class="fc" id="L157">            requireUniqueExceptLoginKey(actor,id,phone);login=phone;</span>
+        }
+        // Omitted keeps the stored date; an explicit null clears it; a future or malformed date is
+        // rejected before any other field is written.
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        java.time.LocalDate hireDate=row.get(&quot;hireDate&quot;)==null?null:java.time.LocalDate.parse(Objects.toString(row.get(&quot;hireDate&quot;)));</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        if(input.containsKey(&quot;hireDate&quot;)) hireDate=parseHireDate(input.get(&quot;hireDate&quot;),companyToday(actor));</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">        boolean phoneChanged=!Objects.equals(login,s(row,&quot;loginPhone&quot;));</span>
+        try {
+<span class="fc" id="L165">            db.update(&quot;UPDATE users SET display_name=?,phone=?,login_phone=?,hire_date=?,org_version=org_version+1,profile_version=profile_version+1 WHERE organization_id=? AND id=?&quot;,</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">                    name,phone,login,hireDate==null?null:java.sql.Date.valueOf(hireDate),actor.organizationId(),id);</span>
+<span class="pc" id="L167">        } catch(org.springframework.dao.DuplicateKeyException error) {throw new ApiException(409,&quot;PHONE_TAKEN&quot;,&quot;该手机号已被使用&quot;);}</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        int revoked=phoneChanged?auth.revokeSessions(actor.organizationId(),id):0;</span>
+<span class="fc" id="L169">        bumpAuthority(actor,&quot;organization.employee.identity_updated&quot;,Map.of(&quot;userId&quot;,id,&quot;fields&quot;,input.keySet(),&quot;sessionsRevoked&quot;,revoked));</span>
+<span class="fc" id="L170">        var result=new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="fc" id="L171">        result.put(&quot;userId&quot;,id);result.put(&quot;rowVersion&quot;,n(row,&quot;orgVersion&quot;)+1);</span>
+<span class="fc" id="L172">        result.put(&quot;phoneUpdated&quot;,input.containsKey(&quot;phone&quot;));</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        result.put(&quot;hireDate&quot;,hireDate==null?null:hireDate.toString());</span>
+<span class="fc" id="L174">        result.put(&quot;sessionsRevoked&quot;,revoked);</span>
+<span class="fc" id="L175">        return result;</span>
+    }
+
+    public Writes.Outcome resetPassword(Actor actor, String id) {
+<span class="fc" id="L179">        access.requireCapability(actor, &quot;manage_accounts&quot;);</span>
+<span class="fc" id="L180">        Map&lt;String, Object&gt; row = db.one(&quot;SELECT * FROM users WHERE organization_id=? AND id=? FOR UPDATE&quot;, actor.organizationId(), id);</span>
+<span class="fc" id="L181">        String password = Credentials.generate();</span>
+<span class="fc" id="L182">        long credentialVersion = n(row, &quot;credentialVersion&quot;) + 1;</span>
+<span class="fc" id="L183">        db.update(&quot;UPDATE users SET password_hash=?,must_change_password=TRUE,credential_version=? WHERE organization_id=? AND id=?&quot;,</span>
+<span class="fc" id="L184">                AuthService.PASSWORDS.encode(password), credentialVersion, actor.organizationId(), id);</span>
+<span class="fc" id="L185">        int revoked = auth.revokeSessions(actor.organizationId(), id);</span>
+<span class="fc" id="L186">        events.record(actor, null, &quot;account.password.reset&quot;, List.of(),</span>
+<span class="fc" id="L187">                Map.of(&quot;userId&quot;, id, &quot;sessionsRevoked&quot;, revoked));</span>
+<span class="fc" id="L188">        Map&lt;String, Object&gt; replayable = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L189">        replayable.put(&quot;userId&quot;, id);</span>
+<span class="fc" id="L190">        replayable.put(&quot;mustChangePassword&quot;, true);</span>
+<span class="fc" id="L191">        replayable.put(&quot;sessionsRevoked&quot;, revoked);</span>
+<span class="fc" id="L192">        replayable.put(&quot;credentialVersion&quot;, credentialVersion);</span>
+<span class="fc" id="L193">        return new Writes.Outcome(replayable, Map.of(&quot;initialPassword&quot;, password));</span>
+    }
+
+    public Map&lt;String, Object&gt; companyItems(Actor actor) {
+<span class="fc" id="L197">        access.requireAdmin(actor);</span>
+<span class="fc" id="L198">        Map&lt;String, Object&gt; result = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L199">        result.put(&quot;items&quot;, db.list(&quot;SELECT id,body,sort_order,row_version,created_at FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id&quot;, actor.organizationId()));</span>
+<span class="fc" id="L200">        result.put(&quot;limit&quot;, COMPANY_ITEM_LIMIT);</span>
+<span class="fc" id="L201">        result.put(&quot;offWorkTime&quot;, s(db.one(&quot;SELECT off_work_time FROM organizations WHERE id=?&quot;, actor.organizationId()), &quot;offWorkTime&quot;));</span>
+<span class="fc" id="L202">        return result;</span>
+    }
+
+    public Map&lt;String, Object&gt; createCompanyItem(Actor actor, Map&lt;String, Object&gt; input) {
+<span class="fc" id="L206">        access.requireCapability(actor, &quot;manage_company_info&quot;);</span>
+        // Company chronicles are body-only: the retired independent title is rejected with every other
+        // unknown field before any row is written, so a rejected request never partially inserts.
+<span class="fc" id="L209">        allowed(input, Set.of(&quot;body&quot;));</span>
+<span class="fc" id="L210">        String body = bodyText(input.get(&quot;body&quot;), &quot;公司信息内容&quot;, 2000);</span>
+<span class="fc" id="L211">        long existing = n(db.one(&quot;SELECT COUNT(*) AS c FROM home_items WHERE organization_id=? AND kind='company'&quot;, actor.organizationId()), &quot;c&quot;);</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        if (existing &gt;= COMPANY_ITEM_LIMIT) throw new ApiException(409, &quot;HOME_ITEM_LIMIT&quot;, &quot;公司信息最多10条，请先删除后再新增&quot;);</span>
+<span class="fc" id="L213">        long next = n(db.one(&quot;SELECT COALESCE(MAX(sort_order),0)+1 AS c FROM home_items WHERE organization_id=? AND kind='company'&quot;, actor.organizationId()), &quot;c&quot;);</span>
+<span class="fc" id="L214">        String id = Db.id();</span>
+<span class="fc" id="L215">        db.update(&quot;INSERT INTO home_items(id,organization_id,owner_id,kind,body,sort_order) VALUES(?,?,NULL,'company',?,?)&quot;, id, actor.organizationId(), body, next);</span>
+<span class="fc" id="L216">        events.record(actor, null, &quot;company_item.created&quot;, List.of(), Map.of(&quot;homeItemId&quot;, id));</span>
+<span class="fc" id="L217">        return Map.of(&quot;id&quot;, id, &quot;rowVersion&quot;, 1, &quot;sortOrder&quot;, next);</span>
+    }
+
+    public Map&lt;String, Object&gt; updateCompanyItem(Actor actor, String id, String ifMatch, Map&lt;String, Object&gt; input) {
+<span class="nc" id="L221">        access.requireCapability(actor, &quot;manage_company_info&quot;);</span>
+<span class="nc" id="L222">        allowed(input, Set.of(&quot;body&quot;));</span>
+<span class="nc" id="L223">        Map&lt;String, Object&gt; row = db.one(&quot;SELECT * FROM home_items WHERE organization_id=? AND id=? AND kind='company' FOR UPDATE&quot;, actor.organizationId(), id);</span>
+<span class="nc" id="L224">        Writes.checkVersion(ifMatch, n(row, &quot;rowVersion&quot;));</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        String body = input.containsKey(&quot;body&quot;) ? bodyText(input.get(&quot;body&quot;), &quot;公司信息内容&quot;, 2000) : s(row, &quot;body&quot;);</span>
+<span class="nc" id="L226">        db.update(&quot;UPDATE home_items SET body=?,row_version=row_version+1 WHERE organization_id=? AND id=?&quot;, body, actor.organizationId(), id);</span>
+<span class="nc" id="L227">        events.record(actor, null, &quot;company_item.updated&quot;, List.of(), Map.of(&quot;homeItemId&quot;, id));</span>
+<span class="nc" id="L228">        return Map.of(&quot;id&quot;, id, &quot;rowVersion&quot;, n(row, &quot;rowVersion&quot;) + 1);</span>
+    }
+
+    public Map&lt;String, Object&gt; deleteCompanyItem(Actor actor, String id, String ifMatch) {
+<span class="nc" id="L232">        access.requireCapability(actor, &quot;manage_company_info&quot;);</span>
+<span class="nc" id="L233">        Map&lt;String, Object&gt; row = db.one(&quot;SELECT * FROM home_items WHERE organization_id=? AND id=? AND kind='company' FOR UPDATE&quot;, actor.organizationId(), id);</span>
+<span class="nc" id="L234">        Writes.checkVersion(ifMatch, n(row, &quot;rowVersion&quot;));</span>
+<span class="nc" id="L235">        db.update(&quot;DELETE FROM home_items WHERE organization_id=? AND id=?&quot;, actor.organizationId(), id);</span>
+<span class="nc" id="L236">        events.record(actor, null, &quot;company_item.deleted&quot;, List.of(), Map.of(&quot;homeItemId&quot;, id));</span>
+<span class="nc" id="L237">        return Map.of(&quot;id&quot;, id, &quot;deleted&quot;, true);</span>
+    }
+
+    public Map&lt;String, Object&gt; reorderCompanyItems(Actor actor, Map&lt;String, Object&gt; input) {
+<span class="fc" id="L241">        access.requireCapability(actor, &quot;manage_company_info&quot;);</span>
+<span class="fc" id="L242">        allowed(input, Set.of(&quot;orderedIds&quot;));</span>
+<span class="fc" id="L243">        Object raw = input.get(&quot;orderedIds&quot;);</span>
+<span class="pc bpc" id="L244" title="2 of 4 branches missed.">        if (!(raw instanceof List&lt;?&gt; list) || list.isEmpty()) throw bad(&quot;orderedIds须为1至10个公司信息ID&quot;);</span>
+<span class="fc" id="L245">        List&lt;String&gt; ordered = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        for (Object value : list) ordered.add(requiredUuid(value, &quot;orderedIds&quot;));</span>
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">        if (new HashSet&lt;&gt;(ordered).size() != ordered.size()) throw bad(&quot;公司信息顺序不能重复&quot;);</span>
+<span class="fc" id="L248">        List&lt;String&gt; existing = db.list(&quot;SELECT id FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id&quot;, actor.organizationId()).stream().map(r -&gt; s(r, &quot;id&quot;)).toList();</span>
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">        if (!new HashSet&lt;&gt;(existing).equals(new HashSet&lt;&gt;(ordered))) throw bad(&quot;调序必须包含且仅包含全部现有公司信息&quot;);</span>
+<span class="fc" id="L250">        int order = 1;</span>
+<span class="fc bfc" id="L251" title="All 2 branches covered.">        for (String itemId : ordered) {</span>
+<span class="fc" id="L252">            db.update(&quot;UPDATE home_items SET sort_order=?,row_version=row_version+1 WHERE organization_id=? AND id=?&quot;, order++, actor.organizationId(), itemId);</span>
+<span class="fc" id="L253">        }</span>
+<span class="fc" id="L254">        events.record(actor, null, &quot;company_item.reordered&quot;, List.of(), Map.of(&quot;orderedIds&quot;, ordered));</span>
+<span class="fc" id="L255">        return Map.of(&quot;orderedIds&quot;, ordered, &quot;reordered&quot;, true);</span>
+    }
+
+    public Map&lt;String, Object&gt; setOffWorkTime(Actor actor, Map&lt;String, Object&gt; input) {
+<span class="nc" id="L259">        access.requireCapability(actor, &quot;manage_company_info&quot;);</span>
+<span class="nc" id="L260">        allowed(input, Set.of(&quot;offWorkTime&quot;));</span>
+<span class="nc" id="L261">        String raw = text(input.get(&quot;offWorkTime&quot;), &quot;下班时刻&quot;, 8);</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        if (!TIME.matcher(raw).matches()) throw bad(&quot;下班时刻须为 HH:MM 或 HH:MM:SS&quot;);</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        LocalTime time = raw.length() == 5 ? LocalTime.parse(raw + &quot;:00&quot;) : LocalTime.parse(raw);</span>
+<span class="nc" id="L264">        db.update(&quot;UPDATE organizations SET off_work_time=? WHERE id=?&quot;, java.sql.Time.valueOf(time), actor.organizationId());</span>
+<span class="nc" id="L265">        events.record(actor, null, &quot;organization.off_work_time.updated&quot;, List.of(), Map.of(&quot;offWorkTime&quot;, time.toString()));</span>
+<span class="nc" id="L266">        return Map.of(&quot;offWorkTime&quot;, time.toString());</span>
+    }
+
+    private void bumpAuthority(Actor actor, String action, Map&lt;String, Object&gt; details) {
+        // Any real organization or authority change invalidates stale candidates, analytics and
+        // cached idempotent responses across the company.
+<span class="fc" id="L272">        db.update(&quot;UPDATE organizations SET authz_version=authz_version+1 WHERE id=?&quot;, actor.organizationId());</span>
+<span class="fc" id="L273">        events.record(actor, null, action, List.of(), details);</span>
+<span class="fc" id="L274">    }</span>
+
+    private void requireDepartment(Actor actor, String id) {
+<span class="nc" id="L277">        requireExists(&quot;SELECT 1 FROM departments WHERE organization_id=? AND id=?&quot;, &quot;部门不存在，请选择本公司已创建的部门&quot;, actor.organizationId(), id);</span>
+<span class="nc" id="L278">    }</span>
+
+    private void requirePosition(Actor actor, String id) {
+<span class="nc" id="L281">        requireExists(&quot;SELECT 1 FROM positions WHERE organization_id=? AND id=?&quot;, &quot;职位不存在，请选择本公司已创建的职位&quot;, actor.organizationId(), id);</span>
+<span class="nc" id="L282">    }</span>
+
+    private void requireExists(String sql,String message,Object...args) {
+<span class="nc bnc" id="L285" title="All 2 branches missed.">        if(db.find(sql,args)==null) throw bad(message);</span>
+<span class="nc" id="L286">    }</span>
+
+    private void requireUniqueExceptLoginKey(Actor actor, String userId, String loginPhone) {
+<span class="fc bfc" id="L289" title="All 2 branches covered.">        if (db.find(&quot;SELECT 1 FROM users WHERE login_phone=? AND NOT (organization_id=? AND id=?)&quot;, loginPhone, actor.organizationId(), userId) != null) {</span>
+<span class="fc" id="L290">            throw new ApiException(409, &quot;PHONE_TAKEN&quot;, &quot;该手机号已被其他员工账号使用&quot;);</span>
+        }
+<span class="fc" id="L292">    }</span>
+
+    private void requireUnique(String sql, String message, Object... args) {
+<span class="pc bpc" id="L295" title="1 of 2 branches missed.">        if (db.find(sql, args) != null) throw new ApiException(409, &quot;DATA_CONFLICT&quot;, message);</span>
+<span class="fc" id="L296">    }</span>
+
+    private void requireUniqueExcept(String sql, Object... args) {
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">        if (db.find(sql, args) != null) throw new ApiException(409, &quot;DATA_CONFLICT&quot;, &quot;名称已存在&quot;);</span>
+<span class="fc" id="L300">    }</span>
+
+    private static String optionalPhone(Object value) {
+<span class="fc bfc" id="L303" title="All 2 branches covered.">        if (value == null) return null;</span>
+<span class="fc" id="L304">        String phone = text(value, &quot;联系电话&quot;, 32);</span>
+<span class="fc" id="L305">        long digits = phone.chars().filter(Character::isDigit).count();</span>
+<span class="pc bpc" id="L306" title="4 of 10 branches missed.">        if (!phone.matches(&quot;[+0-9() .-]+&quot;) || digits &lt; 3 || digits &gt; 20 || phone.indexOf('+') &gt; 0 || phone.lastIndexOf('+') != phone.indexOf('+')) {</span>
+<span class="fc" id="L307">            throw bad(&quot;联系电话须含3至20位数字，可使用开头的+、空格、括号或短横线&quot;);</span>
+        }
+<span class="fc" id="L309">        return phone;</span>
+    }
+
+    /** Strict ISO date, nullable to clear, never later than the company's today. */
+    static java.time.LocalDate parseHireDate(Object value, java.time.LocalDate today) {
+<span class="fc bfc" id="L314" title="All 2 branches covered.">        if (value == null) return null;</span>
+<span class="pc bpc" id="L315" title="1 of 2 branches missed.">        if (!(value instanceof String raw)) throw bad(&quot;入职日期须为YYYY-MM-DD或null&quot;);</span>
+<span class="fc" id="L316">        String text = raw.trim();</span>
+        try {
+<span class="fc" id="L318">            java.time.LocalDate date = java.time.LocalDate.parse(text);</span>
+<span class="pc bpc" id="L319" title="1 of 2 branches missed.">            if (!date.toString().equals(text)) throw bad(&quot;入职日期须为规范的YYYY-MM-DD日期&quot;);</span>
+<span class="fc bfc" id="L320" title="All 2 branches covered.">            if (date.isAfter(today)) throw bad(&quot;入职日期不得晚于公司今天&quot;);</span>
+<span class="fc" id="L321">            return date;</span>
+<span class="nc" id="L322">        } catch (java.time.format.DateTimeParseException error) {</span>
+<span class="nc" id="L323">            throw bad(&quot;入职日期须为YYYY-MM-DD有效日期&quot;);</span>
+        }
+    }
+
+    private java.time.LocalDate companyToday(Actor actor) {
+<span class="fc" id="L328">        String zone = s(db.one(&quot;SELECT time_zone FROM organizations WHERE id=?&quot;, actor.organizationId()), &quot;timeZone&quot;);</span>
+<span class="fc" id="L329">        return clock.instant().atZone(java.time.ZoneId.of(zone)).toLocalDate();</span>
+    }
+
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">    static String text(Object value, String label, int max) {        if (!(value instanceof String raw)) throw bad(label + &quot;必须为文字&quot;);</span>
+<span class="fc" id="L333">        String text = raw.strip();</span>
+<span class="pc bpc" id="L334" title="1 of 4 branches missed.">        if (text.isEmpty() || text.codePointCount(0, text.length()) &gt; max) throw bad(label + &quot;不能为空且不得超过&quot; + max + &quot;字&quot;);</span>
+<span class="pc bpc" id="L335" title="1 of 2 branches missed.">        if (text.codePoints().anyMatch(Character::isISOControl)) throw bad(label + &quot;含无效字符&quot;);</span>
+<span class="fc" id="L336">        return text;</span>
+    }
+
+    /** Company chronicle body: the same 1–2000 plain-text rule, but internal line breaks are kept. */
+    static String bodyText(Object value, String label, int max) {
+<span class="pc bpc" id="L341" title="1 of 2 branches missed.">        if (!(value instanceof String raw)) throw bad(label + &quot;必须为文字&quot;);</span>
+<span class="fc" id="L342">        String text = raw.strip();</span>
+<span class="pc bpc" id="L343" title="2 of 4 branches missed.">        if (text.isEmpty() || text.codePointCount(0, text.length()) &gt; max) throw bad(label + &quot;不能为空且不得超过&quot; + max + &quot;字&quot;);</span>
+<span class="pc bpc" id="L344" title="2 of 6 branches missed.">        if (text.codePoints().anyMatch(cp -&gt; cp != '\n' &amp;&amp; Character.isISOControl(cp))) throw bad(label + &quot;含无效字符&quot;);</span>
+<span class="fc" id="L345">        return text;</span>
+    }
+
+    static String requiredUuid(Object value, String key) {
+<span class="fc" id="L349">        return TaskIds.requireUuid(value, key);</span>
+    }
+
+    static String optionalId(Object value, String key) {
+<span class="nc bnc" id="L353" title="All 2 branches missed.">        return value == null ? null : TaskIds.requireUuid(value, key);</span>
+    }
+
+    static boolean bool(Object value, String key) {
+<span class="nc bnc" id="L357" title="All 2 branches missed.">        if (value instanceof Boolean b) return b;</span>
+<span class="nc bnc" id="L358" title="All 8 branches missed.">        if (value instanceof Number number &amp;&amp; (number.intValue() == 0 || number.intValue() == 1)) return number.intValue() == 1;</span>
+<span class="nc" id="L359">        throw bad(key + &quot;须为布尔值&quot;);</span>
+    }
+
+    static int integer(Object value, String key, int min, int max, int fallback) {
+<span class="pc bpc" id="L363" title="1 of 2 branches missed.">        if (value == null) return fallback;</span>
+<span class="nc bnc" id="L364" title="All 6 branches missed.">        if (!(value instanceof Number number) || number.intValue() &lt; min || number.intValue() &gt; max) {</span>
+<span class="nc" id="L365">            throw bad(key + &quot;须为&quot; + min + &quot;至&quot; + max + &quot;的整数&quot;);</span>
+        }
+<span class="nc" id="L367">        return number.intValue();</span>
+    }
+
+    static void allowed(Map&lt;String, Object&gt; input, Set&lt;String&gt; keys) {
+<span class="fc bfc" id="L371" title="All 2 branches covered.">        if (!keys.containsAll(input.keySet())) throw bad(&quot;请求含不支持的字段&quot;);</span>
+<span class="fc" id="L372">    }</span>
+
+<span class="fc" id="L374">    static ApiException bad(String message) { return new ApiException(400, &quot;INVALID_INPUT&quot;, message); }</span>
+
+    /** Shared UUID validation so the admin surface rejects malformed identifiers the same way. */
+    static final class TaskIds {
+        private TaskIds() {}
+        static String requireUuid(Object value, String key) {
+<span class="pc bpc" id="L380" title="1 of 4 branches missed.">            if (!(value instanceof String text) || !text.matches(&quot;[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}&quot;)) {</span>
+<span class="fc" id="L381">                throw bad(key + &quot;须为有效UUID&quot;);</span>
+            }
+<span class="fc" id="L383">            return text.toLowerCase(Locale.ROOT);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

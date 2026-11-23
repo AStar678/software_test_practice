@@ -1,0 +1,21 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+A problem occurred configuring root project 'PandoraAndroid'.
+> Could not resolve all artifacts for configuration 'classpath'.
+   > Could not resolve com.android.tools.build:gradle:8.13.2.
+     Required by:
+         root project : > com.android.application:com.android.application.gradle.plugin:8.13.2
+      > No cached version of com.android.tools.build:gradle:8.13.2 available for offline mode.
+      > No cached version of com.android.tools.build:gradle:8.13.2 available for offline mode.
+      > No cached version of com.android.tools.build:gradle:8.13.2 available for offline mode.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 30s

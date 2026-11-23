@@ -1,0 +1,49 @@
+{
+  "checks": [
+    {
+      "name": "login form",
+      "pass": true
+    },
+    {
+      "name": "reviewer authenticated",
+      "pass": true
+    },
+    {
+      "name": "approval detail ready",
+      "pass": true
+    },
+    {
+      "name": "title and progress have original above proposed",
+      "pass": true
+    },
+    {
+      "name": "complete snapshots start collapsed",
+      "pass": true
+    },
+    {
+      "name": "review diff fits 320",
+      "pass": true
+    },
+    {
+      "name": "review diff fits 390",
+      "pass": true
+    },
+    {
+      "name": "review diff fits 1440",
+      "pass": true
+    },
+    {
+      "name": "review actions remain reachable",
+      "pass": true
+    },
+    {
+      "name": "creation request has no fabricated old value",
+      "pass": true
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

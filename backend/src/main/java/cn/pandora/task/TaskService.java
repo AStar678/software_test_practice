@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.sql.Time;
+import java.text.Collator;
 import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -38,6 +39,24 @@ public class TaskService {
     private static final Set<String> OPERATIONS = Set.of("create", "change", "reschedule", "progress", "complete", "reopen", "handover");
     private static final Set<String> STATES = Set.of("todo", "doing", "done");
     private static final Set<String> PRIORITIES = Set.of("urgent", "high", "medium", "low");
+    /** Personal task-table query contract (design D3); every other parameter is rejected. */
+    private static final Set<String> TABLE_PARAMETERS = Set.of("relation", "completion", "q", "from", "to",
+            "sort", "direction", "limit", "offset");
+    private static final Set<String> TABLE_RELATIONS = Set.of("all", "assigned", "created");
+    private static final Set<String> TABLE_COMPLETIONS = Set.of("all", "unfinished", "completed");
+    private static final Set<String> TABLE_SORTS = Set.of("title", "createdAt", "startAt", "dueAt", "priority", "state");
+    private static final Map<String, Integer> PRIORITY_ORDER = Map.of("urgent", 0, "high", 1, "medium", 2, "low", 3);
+    private static final Map<String, Integer> STATE_ORDER = Map.of("todo", 0, "doing", 1, "done", 2);
+    /**
+     * The documented simplified-Chinese collation for the shared name sort. The runtime JDK/provider
+     * is asserted by the contract checks; clients consume this order and never re-sort locally.
+     */
+    private static final ThreadLocal<Collator> TITLE_COLLATOR = ThreadLocal.withInitial(() -> {
+        Collator collator = Collator.getInstance(Locale.SIMPLIFIED_CHINESE);
+        collator.setStrength(Collator.TERTIARY);
+        collator.setDecomposition(Collator.CANONICAL_DECOMPOSITION);
+        return collator;
+    });
     private static final Set<String> SCHEDULE_FIELDS = Set.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
     private static final List<String> SCHEDULE_FIELD_ORDER = List.of("allDay", "startAt", "dueAt", "startDate", "dueDate");
     /** Documented default for an organization that has not configured a cut-off. */
@@ -94,7 +113,128 @@ public class TaskService {
         }));
     }
 
-    /** Analytics needs one effective snapshot, not full route projections repeated once per page. */
+    /**
+     * Global personal task table: only tasks the caller originally created or currently owns, after
+     * every combined filter and de-duplication, then table-pin grouping, the chosen six-column stable
+     * sort and finally counting/paging. The general {@code /tasks} contract is untouched.
+     */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map<String, Object> table(Actor actor, Map<String, String> filters) {
+        requireBusiness(actor);access.requireCurrent(actor);
+        for (String key : filters.keySet()) if (!TABLE_PARAMETERS.contains(key)) throw bad("任务表不支持该筛选条件");
+        String relation = filters.getOrDefault("relation", "all");
+        String completion = filters.getOrDefault("completion", "all");
+        String sort = filters.getOrDefault("sort", "startAt");
+        String direction = filters.getOrDefault("direction", "asc");
+        if (!TABLE_RELATIONS.contains(relation)) throw bad("关联筛选只能为全部、我负责或我创建");
+        if (!TABLE_COMPLETIONS.contains(completion)) throw bad("完成筛选只能为全部、未完成或已完成");
+        if (!TABLE_SORTS.contains(sort)) throw bad("排序方式只能为标题、创建时间、开始时间、截止时间、紧急程度或状态");
+        if (!Set.of("asc", "desc").contains(direction)) throw bad("排序方向只能为升序或降序");
+        String query = Objects.toString(filters.get("q"), "").trim();
+        if (query.length() > 200) throw bad("搜索内容最多200字");
+        LocalDate from = optionalDate(filters.get("from"), "from");
+        LocalDate to = optionalDate(filters.get("to"), "to");
+        if (from != null && to != null && to.isBefore(from)) throw bad("结束日期不得早于开始日期");
+        int limit = integer(filters.get("limit"), 50, 1, 100, "limit");
+        int offset = integer(filters.get("offset"), 0, 0, Integer.MAX_VALUE, "offset");
+        ZoneId zone = organizationZone(actor);
+        String lowered = query.toLowerCase(Locale.ROOT);
+        return access.readScope(actor.organizationId(), () -> withReadBatch(loadTaskBatch(actor), () -> {
+            ReadBatch batch = currentBatch(actor);
+            List<VisibleTask> selected = new ArrayList<>();
+            for (var task : batch.tasks.values()) {
+                Map<String, Object> version = version(actor, s(task, "currentVersionId"));
+                List<String> owners = assignees(actor, s(version, "id"));
+                if (!access.canSeeTask(actor, task, version, owners)) continue;
+                boolean created = actor.id().equals(s(task, "originalCreatorId"));
+                boolean assigned = owners.contains(actor.id());
+                if (!created && !assigned) continue;
+                if ("created".equals(relation) && !created || "assigned".equals(relation) && !assigned) continue;
+                boolean done = "done".equals(s(task, "executionState"));
+                if ("unfinished".equals(completion) && done || "completed".equals(completion) && !done) continue;
+                if (!lowered.isEmpty() && !s(version, "title").toLowerCase(Locale.ROOT).contains(lowered)) continue;
+                LocalDate start = tableScheduleDate(version, true, zone);
+                LocalDate due = tableScheduleDate(version, false, zone);
+                if (from != null && due.isBefore(from)) continue;
+                if (to != null && start.isAfter(to)) continue;
+                selected.add(new VisibleTask(task, version, owners));
+            }
+            Comparator<VisibleTask> order = tableOrder(sort, direction);
+            selected.sort(order);
+            List<VisibleTask> pinned = selected.stream().filter(row -> batch.tablePins.contains(s(row.task(), "id"))).toList();
+            List<VisibleTask> others = selected.stream().filter(row -> !batch.tablePins.contains(s(row.task(), "id"))).toList();
+            List<VisibleTask> grouped = new ArrayList<>(pinned);
+            grouped.addAll(others);
+            int begin = Math.min(offset, grouped.size());
+            int end = (int) Math.min((long) begin + limit, grouped.size());
+            List<Map<String, Object>> items = new ArrayList<>();
+            for (VisibleTask row : grouped.subList(begin, end)) {
+                Map<String, Object> view = taskView(actor, row.task(), row.version(), row.owners());
+                // A table row exposes the effective version and review flags only, never a proposal
+                // schedule or a dedicated diff.
+                view.remove("pendingSchedule");
+                view.remove("pendingRequestId");
+                items.add(view);
+            }
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("items", items);
+            result.put("total", grouped.size());
+            result.put("limit", limit);
+            result.put("offset", offset);
+            result.put("nextOffset", end < grouped.size() ? (long) end : null);
+            return result;
+        }));
+    }
+
+    private Comparator<VisibleTask> tableOrder(String sort, String direction) {
+        boolean desc = "desc".equals(direction);
+        Comparator<VisibleTask> value = switch (sort) {
+            case "title" -> (left, right) -> {
+                int compared = compareTitle(s(left.version(), "title"), s(right.version(), "title"));
+                return desc ? -compared : compared;
+            };
+            case "createdAt" -> (left, right) -> {
+                int compared = instant(s(left.task(), "createdAt"), "createdAt")
+                        .compareTo(instant(s(right.task(), "createdAt"), "createdAt"));
+                return desc ? -compared : compared;
+            };
+            case "startAt" -> (left, right) -> compareInstants(left.version(), right.version(), "startAt", desc);
+            case "dueAt" -> (left, right) -> compareInstants(left.version(), right.version(), "dueAt", desc);
+            case "priority" -> (left, right) -> {
+                int compared = Integer.compare(PRIORITY_ORDER.get(s(left.version(), "priority")),
+                        PRIORITY_ORDER.get(s(right.version(), "priority")));
+                return desc ? -compared : compared;
+            };
+            case "state" -> (left, right) -> {
+                int compared = Integer.compare(STATE_ORDER.get(s(left.task(), "executionState")),
+                        STATE_ORDER.get(s(right.task(), "executionState")));
+                return desc ? -compared : compared;
+            };
+            default -> throw bad("排序方式只能为标题、创建时间、开始时间、截止时间、紧急程度或状态");
+        };
+        // A tie always keeps the task identifier ascending, in both sort directions.
+        return value.thenComparing((left, right) -> s(left.task(), "id").compareTo(s(right.task(), "id")));
+    }
+
+    /** Fixed shared title comparison; clients must consume this order and never re-sort locally. */
+    static int compareTitle(String left, String right) {
+        return TITLE_COLLATOR.get().compare(left, right);
+    }
+
+    private static int compareInstants(Map<String, Object> left, Map<String, Object> right, String key, boolean desc) {
+        int compared = instant(left.get(key), key).compareTo(instant(right.get(key), key));
+        return desc ? -compared : compared;
+    }
+
+    /** Company-local date used by the table's inclusive from/to intersection. */
+    private static LocalDate tableScheduleDate(Map<String, Object> version, boolean start, ZoneId zone) {
+        if (bool(version.get("allDay"), "allDay"))
+            return optionalDate(version.get(start ? "startDate" : "dueDate"), "schedule");
+        Instant time = instant(version.get(start ? "startAt" : "dueAt"), "schedule");
+        return time.atZone(zone).toLocalDate();
+    }
+
+
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public List<Map<String,Object>> statisticsTasks(Actor actor,Map<String,String> filters) {
         requireBusiness(actor);access.requireCurrent(actor);
@@ -206,6 +346,10 @@ public class TaskService {
         String creator = optionalId(filters.get("creatorId"), "creatorId");
         String assignee = optionalId(filters.get("assigneeId"), "assigneeId");
         String requestStatus = filters.get("requestStatus");
+        String deletedFilter = filters.get("deleted");
+        if (deletedFilter != null && !deletedFilter.isBlank() && !Set.of("true", "false").contains(deletedFilter))
+            throw bad("删除筛选只能为 true 或 false");
+        if (deletedFilter != null && deletedFilter.isBlank()) deletedFilter = null;
         String query = filters.getOrDefault("q", "").trim();
         if (query.length() > 200) throw bad("搜索内容最多200字");
         LocalDate from = optionalDate(filters.get("from"), "from");
@@ -217,6 +361,9 @@ public class TaskService {
         List<Map<String, Object>> visible = new ArrayList<>();
         for (Map<String,Object> task:currentBatch(actor).tasks.values()) {
             String taskId = s(task, "id");
+            boolean isDeleted = task.get("deletedAt") != null;
+            if ("true".equals(deletedFilter) && !isDeleted) continue;
+            if ("false".equals(deletedFilter) && isDeleted) continue;
             String current = s(task, "currentVersionId");
             Map<String, Object> request = latestRequests.get(taskId);
             Map<String, Object> version = current != null ? version(actor, current)
@@ -250,6 +397,11 @@ public class TaskService {
             for (String key : List.of("createdAt", "updatedAt", "rowVersion")) row.put(key, task.get(key));
             row.put("latestRequestId", request == null ? null : s(request, "id"));
             row.put("latestRequestStatus", latestStatus);
+            row.put("deleted", isDeleted);
+            row.put("deletedAt", task.get("deletedAt"));
+            row.put("deletedBy", task.get("deletedBy"));
+            row.put("deletedByName", task.get("deletedBy") == null ? null : names.getOrDefault(s(task, "deletedBy"), s(task, "deletedBy")));
+            row.put("deleteReason", task.get("deleteReason"));
             row.put("pendingRequestId", "pending".equals(latestStatus) ? s(request, "id") : null);
             row.put("pendingKind", "pending".equals(latestStatus) ? s(request, "kind") : null);
             visible.add(row);
@@ -301,7 +453,7 @@ public class TaskService {
         requireBusiness(actor);access.requireCurrent(actor);
         if (query != null && query.length() > 100) throw bad("搜索内容最多100字");
         String resolved = purpose == null || purpose.isBlank() ? "create" : purpose;
-        if (!Set.of("create", "edit").contains(resolved)) throw bad("purpose须为create或edit");
+        if (!Set.of("create", "edit").contains(resolved)) throw bad("负责人候选用途无效");
         List<Map<String, Object>> people = "edit".equals(resolved)
                 ? access.dispatchCandidates(actor, query)
                 : access.creationCandidates(actor, query);
@@ -325,6 +477,7 @@ public class TaskService {
     public Map<String, Object> detail(Actor actor, String id) {
         requireBusiness(actor);access.requireCurrent(actor);
         Map<String, Object> task = task(actor, id, false);
+        if (task.get("deletedAt") != null) throw deleted(actor, task);
         String current = s(task, "currentVersionId");
         if (current == null) {
             Map<String, Object> request = db.find("SELECT * FROM approval_requests WHERE organization_id=? AND task_id=? ORDER BY created_at DESC,id DESC LIMIT 1", actor.organizationId(), id);
@@ -382,7 +535,7 @@ public class TaskService {
         result.put("handoverSources", handoverSources);
         result.put("handoverPresets", handoverPresets);
         List<Map<String, Object>> children = new ArrayList<>();
-        for (Map<String, Object> child : db.list("SELECT t.* FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id WHERE t.organization_id=? AND v.parent_task_id=? ORDER BY t.created_at,t.id", actor.organizationId(), id)) {
+        for (Map<String, Object> child : db.list("SELECT t.* FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id WHERE t.organization_id=? AND t.deleted_at IS NULL AND v.parent_task_id=? ORDER BY t.created_at,t.id", actor.organizationId(), id)) {
             Map<String, Object> childVersion = version(actor, s(child, "currentVersionId"));
             if (access.canSeeTask(actor, child, childVersion, assignees(actor, s(childVersion, "id")))) {
                 children.add(Map.of("id", s(child, "id"), "title", s(childVersion, "title"), "executionState", s(child, "executionState")));
@@ -427,6 +580,7 @@ public class TaskService {
         String command = command(input, "command", "action", "change");
         if (!Set.of("create", "change", "reschedule", "progress", "complete", "reopen").contains(command)) throw bad("不支持的任务动作");
         Map<String, Object> task = task(actor, id, true);
+        if (task.get("deletedAt") != null) throw deleted(actor, task);
         String currentId = s(task, "currentVersionId");
         Map<String, Object> current = currentId == null ? null : version(actor, currentId);
         List<String> currentOwners = current == null ? List.of() : assignees(actor, currentId);
@@ -534,6 +688,65 @@ public class TaskService {
         return submit(actor, task, current, proposed, proposedOwners, route, command, body);
     }
 
+    /**
+     * Soft-delete one published task. The row, its versions, requests, comments, logs, notifications
+     * and handovers are never removed; every employee read path filters it out and the detail endpoint
+     * answers TASK_DELETED. The current business owner or the original creator may delete, and a
+     * pending request must be withdrawn or decided first.
+     */
+    public Map<String, Object> delete(Actor actor, String id, String ifMatch, Map<String, Object> input) {
+        requireBusiness(actor);
+        allowed(input, Set.of("reason"));
+        String reason = input.containsKey("reason")
+                ? optionalTextValue(input.get("reason"), "reason", 500) : "";
+        Map<String, Object> task = task(actor, id, true);
+        if (task.get("deletedAt") != null) throw deleted(actor, task);
+        boolean owner = actor.id().equals(access.businessOwner(task));
+        boolean creator = actor.id().equals(s(task, "originalCreatorId"));
+        if (!owner && !creator) throw forbidden("仅当前业务责任方或原创建人可删除任务");
+        if (pending(actor, id, true) != null)
+            throw conflict("TASK_HAS_PENDING_REQUEST", "任务存在待审核申请，请先撤销或办结");
+        Writes.checkVersion(ifMatch, n(task, "rowVersion"));
+        String title = "";
+        if (s(task, "currentVersionId") != null) {
+            Map<String, Object> current = version(actor, s(task, "currentVersionId"));
+            title = Objects.toString(current.get("title"), "");
+        }
+        long next = n(task, "rowVersion") + 1;
+        Timestamp now = now();
+        int updated = db.update("UPDATE tasks SET deleted_at=?,deleted_by=?,delete_reason=?,row_version=?,updated_at=? "
+                        + "WHERE organization_id=? AND id=? AND deleted_at IS NULL",
+                now, actor.id(), reason, next, now, actor.organizationId(), id);
+        if (updated != 1) throw deleted(actor, task);
+        Map<String, Object> history = new LinkedHashMap<>();
+        history.put("reason", reason);
+        history.put("source", owner ? "business-owner" : "original-creator");
+        history.put("previousExecutionState", s(task, "executionState"));
+        history.put("previousCurrentVersionId", s(task, "currentVersionId"));
+        recordHistory(actor, id, null, "deleted", null, null, null, history);
+        String actorName = Objects.toString(actorDisplayName(actor), actor.id());
+        Map<String, Object> eventDetails = new LinkedHashMap<>();
+        eventDetails.put("reason", reason);
+        eventDetails.put("source", history.get("source"));
+        eventDetails.put("deletedBy", actor.id());
+        events.record(actor, id, "task.deleted", List.of(), eventDetails, null,
+                s(task, "currentVersionId"), title,
+                "任务《" + title + "》已由 " + actorName + " 删除。" + (reason.isBlank() ? "" : "原因：" + reason));
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("taskId", id);
+        result.put("deleted", true);
+        result.put("rowVersion", next);
+        result.put("deletedAt", now.toInstant().toString());
+        result.put("message", "任务已删除");
+        return result;
+    }
+
+    private String actorDisplayName(Actor actor) {
+        Map<String, Object> row = db.find("SELECT display_name FROM users WHERE organization_id=? AND id=?",
+                actor.organizationId(), actor.id());
+        return row == null ? actor.id() : s(row, "displayName");
+    }
+
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> approvals(Actor actor, String mine) {
         return approvals(actor, mine, null, null);
@@ -547,7 +760,7 @@ public class TaskService {
         if (mine == null || mine.isBlank()) mine = "all";
         if ("submitted".equals(mine)) mine = "applicant";
         if ("reviewing".equals(mine)) mine = "reviewer";
-        if (!Set.of("all", "reviewer", "applicant").contains(mine)) throw bad("mine须为all、reviewer或applicant");
+        if (!Set.of("all", "reviewer", "applicant").contains(mine)) throw bad("申请筛选范围无效");
         String selectedMine=mine;
         return access.readScope(actor.organizationId(),()-> {
             // A pending review is routed from the current organization/business owner, never its stale stored reviewer.
@@ -641,7 +854,8 @@ public class TaskService {
                     try {
                         if (canSeeRequest(actor,row,task)) {
                             readable.add(s(row,"id"));
-                            if ("pending".equals(s(row,"status")) && actor.id().equals(requestReviewer(actor,row,task))
+                            if ("pending".equals(s(row,"status")) && task.get("deletedAt") == null
+                                    && actor.id().equals(requestReviewer(actor,row,task))
                                     && (row.get("applicableDeadline")==null
                                     || clock.instant().isBefore(instant(row.get("applicableDeadline"),"applicableDeadline"))))
                                 reviewable.add(s(row,"id"));
@@ -667,6 +881,8 @@ public class TaskService {
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("requestId", s(request, "id"));
         view.put("taskId", s(request, "taskId"));
+        view.put("taskDeleted", task.get("deletedAt") != null);
+        view.put("taskDeletedAt", task.get("deletedAt"));
         view.put("kind", s(request, "kind"));
         view.put("status", s(request, "status"));
         view.put("comment", request.get("comment"));
@@ -733,10 +949,11 @@ public class TaskService {
         requireBusiness(actor);
         allowed(input, Set.of("decision", "action", "comment"));
         String decision = command(input, "decision", "action", null);
-        if (!Set.of("approve", "reject", "withdraw").contains(decision == null ? "" : decision)) throw bad("decision须为approve、reject或withdraw");
+        if (!Set.of("approve", "reject", "withdraw").contains(decision == null ? "" : decision)) throw bad("审核决定无效");
         String comment = "reject".equals(decision) ? requiredText(input, "comment", 2000) : optionalText(input, "comment", 2000);
         Map<String, Object> initial = request(actor, id, false);
         Map<String, Object> task = task(actor, s(initial, "taskId"), true);
+        if (task.get("deletedAt") != null) throw deleted(actor, task);
         Map<String, Object> request = request(actor, id, true); // Always task first, request second.
         if (!canSeeRequest(actor, request, task)) throw ApiException.notFound();
         Writes.checkVersion(ifMatch, n(request, "rowVersion"));
@@ -867,8 +1084,9 @@ public class TaskService {
         Set<String> requestedFields = previewFields(input);
         String requestedTask = optionalId(input.get("taskId"), "taskId");
         boolean creation = requestedOperation != null ? "create".equals(requestedOperation) : requestedTask == null;
-        if (!creation && requestedTask == null) throw bad("非创建预览须提供taskId");
+        if (!creation && requestedTask == null) throw bad("创建预览之外的操作须提供任务标识");
         Map<String, Object> task = requestedTask == null ? null : task(actor, requestedTask, false);
+        if (task != null && task.get("deletedAt") != null) throw deleted(actor, task);
         String creatorId = actor.id();
         if (task != null) {
             if (creation) {
@@ -932,7 +1150,7 @@ public class TaskService {
     private static Set<String> previewFields(Map<String, Object> input) {
         if (!input.containsKey("fields")) return null;
         Object raw=input.get("fields");
-        if (!(raw instanceof List<?> list)) throw bad("fields 必须为数组");
+        if (!(raw instanceof List<?> list)) throw bad("字段列表格式不正确");
         LinkedHashSet<String> fields=new LinkedHashSet<>();
         for (Object item:list) {
             if (!(item instanceof String field) || !(FORM_FIELDS.contains(field) || "progressNote".equals(field)))
@@ -1056,6 +1274,7 @@ public class TaskService {
         requireBusiness(actor);
         allowed(input, Set.of("sourceUserId", "targetUserId", "reason"));
         Map<String, Object> task = task(actor, taskId, true);
+        if (task.get("deletedAt") != null) throw deleted(actor, task);
         String currentId = s(task, "currentVersionId");
         if (currentId == null) throw conflict("TASK_NOT_PUBLISHED", "未发布任务不能交接");
         Map<String, Object> current = version(actor, currentId);
@@ -1120,7 +1339,7 @@ public class TaskService {
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String, Object> taskHistory(Actor actor, String taskId) {
         access.requireCapability(actor, "view_task_history");access.requireCurrent(actor);
-        Map<String, Object> task = db.find("SELECT id,organization_id,original_creator_id,execution_state,created_at FROM tasks WHERE organization_id=? AND id=?", actor.organizationId(), taskId);
+        Map<String, Object> task = db.find("SELECT id,organization_id,original_creator_id,execution_state,created_at,deleted_at,deleted_by,delete_reason FROM tasks WHERE organization_id=? AND id=?", actor.organizationId(), taskId);
         if (task == null) throw ApiException.notFound();
         List<Map<String, Object>> entries = new ArrayList<>();
         for (Map<String, Object> row : db.list("SELECT h.*,COALESCE(u.display_name,ad.display_name) AS actor_name,p.account_type AS actor_account_type FROM task_history_entries h "
@@ -1191,6 +1410,11 @@ public class TaskService {
         result.put("originalCreatorName", names.getOrDefault(s(task, "originalCreatorId"), s(task, "originalCreatorId")));
         result.put("executionState", s(task, "executionState"));
         result.put("createdAt", task.get("createdAt"));
+        result.put("deleted", task.get("deletedAt") != null);
+        result.put("deletedAt", task.get("deletedAt"));
+        result.put("deletedBy", task.get("deletedBy"));
+        result.put("deletedByName", task.get("deletedBy") == null ? null : names.getOrDefault(s(task, "deletedBy"), s(task, "deletedBy")));
+        result.put("deleteReason", task.get("deleteReason"));
         result.put("entries", entries);
         result.put("versions", versions);
         result.put("reassignments", reassignments);
@@ -1607,6 +1831,32 @@ public class TaskService {
         };
     }
 
+    /** User-facing Chinese name for a request field; never echo an internal English field name. */
+    private static String messageLabel(String field) {
+        return switch (field) {
+            case "title", "description", "acceptanceCriteria", "priority", "allDay", "startAt", "dueAt",
+                    "startDate", "dueDate", "assigneeIds", "parentTaskId", "tagIds", "progressNote" -> fieldLabel(field);
+            case "limit" -> "每页条数";
+            case "offset" -> "翻页位置";
+            case "from" -> "开始日期";
+            case "to" -> "结束日期";
+            case "q" -> "搜索内容";
+            case "state" -> "任务状态";
+            case "assigneeId" -> "负责人筛选";
+            case "creatorId" -> "创建人筛选";
+            case "date" -> "日期";
+            case "body" -> "正文";
+            case "reason" -> "原因";
+            case "command", "action" -> "操作";
+            case "decision" -> "审核决定";
+            case "purpose" -> "候选用途";
+            case "mine" -> "申请范围";
+            case "taskId" -> "任务标识";
+            case "fields" -> "字段列表";
+            default -> "请求字段";
+        };
+    }
+
     /** Event evidence is deliberately short; the reviewer-only request diff remains a separate API. */
     private List<Map<String,String>> notificationChanges(Actor actor,Map<String,Object> base,Map<String,Object> proposed) {
         var result=new ArrayList<Map<String,String>>();
@@ -1713,9 +1963,48 @@ public class TaskService {
                 actor.organizationId(), actor.id(), taskId) != null;
     }
 
+    /** Reads the independent personal table preference; never reuses or mutates the calendar pin. */
+    private boolean isTablePinned(Actor actor, String taskId) {
+        ReadBatch batch = currentBatch(actor);
+        if (batch != null) return batch.tablePins.contains(taskId);
+        return db.find("SELECT 1 FROM user_task_table_pins WHERE organization_id=? AND user_id=? AND task_id=?",
+                actor.organizationId(), actor.id(), taskId) != null;
+    }
+
+    /** Eligibility is always recomputed from the current effective task and the current relationship. */
+    private boolean canTablePin(Actor actor, Map<String, Object> task, List<String> owners) {
+        if (s(task, "currentVersionId") == null) return false;
+        return actor.id().equals(s(task, "originalCreatorId")) || owners.contains(actor.id());
+    }
+
+    /**
+     * Independent personal table pin. It writes only this user's preference: the task row/version,
+     * schedule, approvals and notifications are untouched. A stored preference never grants access.
+     */
+    public Map<String, Object> setTablePinned(Actor actor, String taskId, boolean pinned) {
+        requireBusiness(actor);
+        Map<String, Object> task = task(actor, taskId, false);
+        if (task.get("deletedAt") != null) throw deleted(actor, task);
+        String current = s(task, "currentVersionId");
+        if (current == null) throw conflict("TASK_NOT_PUBLISHED", "未发布任务不能置顶");
+        Map<String, Object> version = version(actor, current);
+        List<String> owners = assignees(actor, current);
+        if (!access.canSeeTask(actor, task, version, owners)) throw ApiException.notFound();
+        if (!canTablePin(actor, task, owners)) throw forbidden("只有本人原始创建或当前负责的表单任务可置顶");
+        if (pinned) {
+            db.update("INSERT IGNORE INTO user_task_table_pins(organization_id,user_id,task_id) VALUES(?,?,?)",
+                    actor.organizationId(), actor.id(), taskId);
+        } else {
+            db.update("DELETE FROM user_task_table_pins WHERE organization_id=? AND user_id=? AND task_id=?",
+                    actor.organizationId(), actor.id(), taskId);
+        }
+        return Map.of("taskId", taskId, "tablePinned", pinned);
+    }
+
     public Map<String, Object> setPinned(Actor actor, String taskId, boolean pinned) {
         requireBusiness(actor);
         Map<String, Object> task = task(actor, taskId, false);
+        if (task.get("deletedAt") != null) throw deleted(actor, task);
         String current = s(task, "currentVersionId");
         if (current == null) throw conflict("TASK_NOT_PUBLISHED", "未发布任务不能置顶");
         Map<String, Object> version = version(actor, current);
@@ -1799,6 +2088,9 @@ public class TaskService {
         result.put("pendingKind", request == null ? null : s(request, "kind"));
         result.put("canReschedule",request==null && !"done".equals(s(task,"executionState")));
         result.put("canPin",owners.contains(actor.id()));
+        boolean canTablePin = canTablePin(actor, task, owners);
+        result.put("canTablePin", canTablePin);
+        result.put("tablePinned", canTablePin && isTablePinned(actor, s(task, "id")));
         result.put("editableFields",List.copyOf(editableFieldsFor(actor,task,owners,request!=null,s(task,"executionState"))));
         // Calendar-only proposal: never replace effective fields or disclose the full review snapshot.
         if (request != null) {
@@ -1868,7 +2160,7 @@ public class TaskService {
             var version=version(actor,s(task,"currentVersionId"));
             return access.canSeeTask(actor,task,version,assignees(actor,s(version,"id")));
         }
-        Map<String, Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?", actor.organizationId(), id);
+        Map<String, Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=? AND deleted_at IS NULL", actor.organizationId(), id);
         if (task == null || s(task, "currentVersionId") == null) return false;
         Map<String, Object> v = version(actor, s(task, "currentVersionId"));
         return access.canSeeTask(actor, task, v, assignees(actor, s(v, "id")));
@@ -1882,7 +2174,7 @@ public class TaskService {
         String cursor = parentId;
         while (cursor != null) {
             if (cursor.equals(taskId) || !visited.add(cursor)) throw conflict("TASK_CYCLE", "上级任务关系不能形成循环");
-            Map<String, Object> row = db.find("SELECT v.parent_task_id FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id WHERE t.organization_id=? AND t.id=?", actor.organizationId(), cursor);
+            Map<String, Object> row = db.find("SELECT v.parent_task_id FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id WHERE t.organization_id=? AND t.deleted_at IS NULL AND t.id=?", actor.organizationId(), cursor);
             cursor = row == null ? null : s(row, "parentTaskId");
         }
     }
@@ -2198,6 +2490,7 @@ public class TaskService {
         final CompanyTree.Tree tree;
         final Map<String,Map<String,Object>> tasks=new LinkedHashMap<>(),versions=new HashMap<>(),people=new HashMap<>(),tags=new HashMap<>();
         final Map<String,List<String>> owners=new HashMap<>();
+        final Set<String> tablePins=new HashSet<>();
         Map<String,Map<String,Object>> pending;
         final Map<String,Map<String,Object>> latestRequests=new LinkedHashMap<>();
         boolean completeVisibleTasks;
@@ -2208,6 +2501,10 @@ public class TaskService {
         // Display-only participants may be inactive, but routes always use the active fixed tree.
         for(var row:db.list("SELECT id,display_name FROM users WHERE organization_id=? ORDER BY id",actor.organizationId()))
             batch.people.put(s(row,"id"),row);
+        // One preference read per snapshot keeps table projections free of per-row N+1 queries.
+        if (actor.business())
+            for(var row:db.list("SELECT task_id FROM user_task_table_pins WHERE organization_id=? AND user_id=?",
+                    actor.organizationId(),actor.id())) batch.tablePins.add(s(row,"taskId"));
         return batch;
     }
     private ReadBatch loadAdminBatch(Actor actor) {
@@ -2227,8 +2524,8 @@ public class TaskService {
         ReadBatch batch=baseReadBatch(actor);
         List<Object> args=new ArrayList<>();args.add(actor.organizationId());
         String visibility=candidateTaskVisibility(actor,batch.tree,args);
-        for(var row:db.list("SELECT t.* FROM tasks t WHERE t.organization_id=? AND t.current_version_id IS NOT NULL AND ("
-                +visibility+") ORDER BY t.created_at DESC,t.id",args.toArray())) batch.tasks.put(s(row,"id"),row);
+        for(var row:db.list("SELECT t.* FROM tasks t WHERE t.organization_id=? AND t.deleted_at IS NULL "
+                + "AND t.current_version_id IS NOT NULL AND ("+visibility+") ORDER BY t.created_at DESC,t.id",args.toArray())) batch.tasks.put(s(row,"id"),row);
         batch.completeVisibleTasks=true;
         loadCurrentVersions(batch);access.primeBusinessOwners(actor.organizationId(),batch.tasks.keySet());
         batch.pending=new HashMap<>();
@@ -2353,6 +2650,20 @@ public class TaskService {
         return result;
     }
 
+    /** A stable, client-identifiable deleted state; carries only the minimal title and time. */
+    private ApiException deleted(Actor actor, Map<String, Object> task) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("taskId", s(task, "id"));
+        if (task.get("deletedAt") != null) details.put("deletedAt", task.get("deletedAt"));
+        String current = s(task, "currentVersionId");
+        if (current != null) {
+            Map<String, Object> row = db.find("SELECT title FROM task_versions WHERE organization_id=? AND id=?",
+                    actor.organizationId(), current);
+            if (row != null && row.get("title") != null) details.put("title", row.get("title"));
+        }
+        return new ApiException(410, "TASK_DELETED", "任务已删除", details);
+    }
+
     static String command(Map<String, Object> input, String key, String alias, String fallback) {
         Object primary = input.get(key);
         Object alternative = input.get(alias);
@@ -2363,10 +2674,10 @@ public class TaskService {
 
     static String requiredText(Map<String, Object> values, String key, int max) {
         Object value = values.get(key);
-        if (!(value instanceof String)) throw bad(key + "为必填文本");
+        if (!(value instanceof String)) throw bad(messageLabel(key) + "为必填文本");
         String text = ((String) value).strip();
-        if (text.isEmpty() || text.codePointCount(0, text.length()) > max) throw bad(key + "长度须为1至" + max + "字");
-        if (text.indexOf('\0') >= 0) throw bad(key + "含无效字符");
+        if (text.isEmpty() || text.codePointCount(0, text.length()) > max) throw bad(messageLabel(key) + "长度须为1至" + max + "字");
+        if (text.indexOf('\0') >= 0) throw bad(messageLabel(key) + "含无效字符");
         return text;
     }
 
@@ -2375,17 +2686,17 @@ public class TaskService {
         if (!input.containsKey("acceptanceCriteria")) return;
         Object raw = input.get("acceptanceCriteria");
         if (raw == null) return;
-        if (!(raw instanceof String text)) throw bad("acceptanceCriteria为文字");
+        if (!(raw instanceof String text)) throw bad("完成标准为文字");
         if (!text.isBlank()) throw bad("创建任务不再填写完成标准；历史任务的完成标准仍可保留和编辑");
     }
 
     /** Empty or absent text is a valid value here (completion criteria are optional). */
     static String optionalTextValue(Object value, String key, int max) {
         if (value == null) return "";
-        if (!(value instanceof String text)) throw bad(key + "为文字");
+        if (!(value instanceof String text)) throw bad(messageLabel(key) + "为文字");
         String stripped = text.strip();
-        if (stripped.codePointCount(0, stripped.length()) > max) throw bad(key + "长度须为0至" + max + "字");
-        if (stripped.indexOf('\0') >= 0) throw bad(key + "含无效字符");
+        if (stripped.codePointCount(0, stripped.length()) > max) throw bad(messageLabel(key) + "长度须为0至" + max + "字");
+        if (stripped.indexOf('\0') >= 0) throw bad(messageLabel(key) + "含无效字符");
         return stripped;
     }
 
@@ -2407,37 +2718,42 @@ public class TaskService {
     }
 
     static String requiredId(Object value, String key) {
-        if (!(value instanceof String text) || !text.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) throw bad(key + "须为有效UUID");
+        if (!(value instanceof String text) || !text.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) throw bad(messageLabel(key) + "格式不正确");
         return ((String) value).toLowerCase(Locale.ROOT);
     }
 
     static Instant instant(Object value, String key) {
         if (value instanceof Timestamp timestamp) return timestamp.toInstant();
         if (value instanceof Instant time) return time;
-        if (!(value instanceof String text)) throw bad(key + "为必填带时区日期时间");
+        if (!(value instanceof String text)) throw bad(messageLabel(key) + "为必填带时区日期时间");
         try {
             Instant result = OffsetDateTime.parse(text).toInstant();
             int year = result.atOffset(ZoneOffset.UTC).getYear();
-            if (year < 1000 || year > 9998) throw bad(key + "超出支持的日期范围");
+            if (year < 1000 || year > 9998) throw bad(messageLabel(key) + "超出支持的日期范围");
             return result.truncatedTo(java.time.temporal.ChronoUnit.MICROS);
-        } catch (DateTimeParseException e) { throw bad(key + "须为带时区的ISO日期时间"); }
+        } catch (DateTimeParseException e) { throw bad(messageLabel(key) + "须为带时区的日期时间"); }
     }
 
     private static LocalDate optionalDate(Object value, String key) { return value == null ? null : requiredDate(value, key); }
 
     static LocalDate requiredDate(Object value, String key) {
-        if (!(value instanceof String text)) throw bad(key + "为必填日期");
+        if (!(value instanceof String text)) throw bad(messageLabel(key) + "为必填日期");
         try {
             LocalDate date = LocalDate.parse(text);
-            if (date.getYear() < 1000 || date.getYear() > 9998) throw bad(key + "超出支持的日期范围");
+            if (date.getYear() < 1000 || date.getYear() > 9998) throw bad(messageLabel(key) + "超出支持的日期范围");
             return date;
-        } catch (DateTimeParseException e) { throw bad(key + "须为YYYY-MM-DD日期"); }
+        } catch (DateTimeParseException e) { throw bad(messageLabel(key) + "须为有效日期"); }
     }
 
     static boolean bool(Object value, String key) {
         if (value instanceof Boolean b) return b;
-        if (value instanceof Number n && (n.intValue() == 0 || n.intValue() == 1)) return n.intValue() == 1;
-        throw bad(key + "须为布尔值");
+        if (value instanceof Number n) {
+            try {
+                int exact = new java.math.BigDecimal(n.toString()).intValueExact();
+                if (exact == 0 || exact == 1) return exact == 1;
+            } catch (ArithmeticException | NumberFormatException ignored) { }
+        }
+        throw bad(messageLabel(key) + "须为布尔值");
     }
 
     private static boolean active(Map<String, Object> user) {
@@ -2446,7 +2762,7 @@ public class TaskService {
     }
 
     static void allowed(Map<String, Object> input, Set<String> keys) {
-        for (String key : input.keySet()) if (!keys.contains(key)) throw bad("不支持的字段：" + key);
+        for (String key : input.keySet()) if (!keys.contains(key)) throw bad("请求含不支持的字段");
     }
 
     private static Set<String> union(Set<String> base, String... extras) {
@@ -2459,9 +2775,9 @@ public class TaskService {
         if (raw == null) return fallback;
         try {
             int number = Integer.parseInt(raw);
-            if (number < min || number > max) throw bad(name + "超出范围");
+            if (number < min || number > max) throw bad(messageLabel(name) + "超出范围");
             return number;
-        } catch (NumberFormatException e) { throw bad(name + "须为整数"); }
+        } catch (NumberFormatException e) { throw bad(messageLabel(name) + "须为整数"); }
     }
 
     private void requireBusiness(Actor actor) {

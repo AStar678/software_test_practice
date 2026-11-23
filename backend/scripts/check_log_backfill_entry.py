@@ -31,12 +31,8 @@ def main():
             assert call('DELETE','/tags/'+tag,who=who,version=1)[0]==403
             assert not ok('GET','/tags',who=who)['canManage']
             assert all(not row['canEdit'] for row in ok('GET','/tags',who=who)['items'])
-        # Preexisting private labels retain their color data but no longer grant maintenance rights.
-        from fixed_model_fixture import quote
-        private=str(uuid.uuid4())
-        f.db.server_side('INSERT INTO tags(id,organization_id,name,color,owner_id) VALUES('+','.join(map(quote,[private,'fixture-company','旧私人标签','#E4DEF3',ids['alpha-head']]))+')')
-        assert call('PATCH','/tags/'+private,{'name':'私有也不能维护'},'alpha-head',1)[0]==403
-        assert call('DELETE','/tags/'+private,who='alpha-head',version=1)[0]==403
+        # V30 removes private tags; shared-tag management denial above is the live contract.
+        # The migration removal itself is exercised by check_apply_private_migration_guard.py.
         now=dt.datetime.now(dt.timezone.utc)
         schedule={'allDay':False,'startAt':now.isoformat(),'dueAt':(now+dt.timedelta(days=3)).isoformat()}
         def task(title,owners,who='founder'):

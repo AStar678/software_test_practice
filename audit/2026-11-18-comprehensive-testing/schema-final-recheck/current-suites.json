@@ -1,0 +1,15 @@
+{
+  "startedAt": "2026-11-18T16:13:47.451846+00:00",
+  "suites": [
+    {
+      "suite": "check_final_migration.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 29.627,
+      "passedAssertionsPrinted": 13,
+      "log": "check_final_migration.log",
+      "sourceSha256": "4be21cb7510c40607331aa0185e957decae9f7cbf29b3a1375c6c67a64c400a1"
+    }
+  ],
+  "finishedAt": "2026-11-18T16:14:17.159114+00:00"
+}

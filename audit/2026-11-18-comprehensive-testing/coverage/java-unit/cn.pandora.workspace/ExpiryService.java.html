@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExpiryService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.workspace</a> &gt; <span class="el_source">ExpiryService.java</span></div><h1>ExpiryService.java</h1><pre class="source lang-java linenums">package cn.pandora.workspace;
+
+import cn.pandora.common.ApiException;
+import cn.pandora.common.Db;
+import cn.pandora.common.Events;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.*;
+
+import static cn.pandora.common.Db.*;
+
+/**
+ * Applicable-deadline computation and the transactional pending-expiry terminal state
+ * (DEV-012, DEV-013, DEV-016).
+ *
+ * Expiry is written exactly once against the pending row version. Every caller holds the organization
+ * lock first, so an approval/withdrawal and the scan cannot both win. The caller decides whether to
+ * return a business error after the transaction commits; this service never rolls back a terminal
+ * state to produce an error.
+ */
+@Service
+public class ExpiryService {
+    private final Db db;
+    private final Events events;
+    private final ReminderService reminders;
+    private final TransactionTemplate transaction;
+    private final Clock clock;
+
+<span class="nc" id="L34">    public ExpiryService(Db db, Events events, ReminderService reminders, PlatformTransactionManager tx, Clock clock) {</span>
+<span class="nc" id="L35">        this.db = db;</span>
+<span class="nc" id="L36">        this.events = events;</span>
+<span class="nc" id="L37">        this.reminders = reminders;</span>
+<span class="nc" id="L38">        this.transaction = new TransactionTemplate(tx);</span>
+<span class="nc" id="L39">        this.clock = clock;</span>
+<span class="nc" id="L40">    }</span>
+
+    /**
+     * Committed expiry for a submission entry point. The command transaction that follows may reject a
+     * stale page with 4xx, but the deadline terminal state (status, unfreeze, expiry/overdue events)
+     * must survive that error, so it is written and committed in its own transaction first
+     * (design §6, DEV-012). Call this only outside {@code Writes.run}.
+     *
+     * &lt;p&gt;The checked clock is sampled only after the organization lock has been acquired: a submission
+     * that waited on the lock may cross its deadline while waiting, and must then see the actual
+     * post-wait instant rather than the pre-lock time it queued at (V-002).
+     */
+    public int expirePendingBeforeSubmit(String organizationId, String taskId) {
+<span class="nc" id="L53">        Integer expired = transaction.execute(status -&gt; {</span>
+<span class="nc" id="L54">            db.one(&quot;SELECT * FROM organizations WHERE id=? FOR UPDATE&quot;, organizationId);</span>
+<span class="nc" id="L55">            return expirePendingForTask(organizationId, taskId, clock.instant());</span>
+        });
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        return expired == null ? 0 : expired;</span>
+    }
+
+    /**
+     * Create, a schedule-changing modification and reopen use the proposed deadline; every other
+     * request uses the effective deadline it was raised against (DEV-012).
+     */
+    public Instant applicableDeadline(String kind, Map&lt;String, Object&gt; base, Map&lt;String, Object&gt; proposed) {
+<span class="nc bnc" id="L65" title="All 4 branches missed.">        boolean proposedVersion = &quot;create&quot;.equals(kind) || &quot;reopen&quot;.equals(kind)</span>
+<span class="nc bnc" id="L66" title="All 4 branches missed.">                || (&quot;change&quot;.equals(kind) &amp;&amp; scheduleChanged(base, proposed));</span>
+<span class="nc bnc" id="L67" title="All 4 branches missed.">        Map&lt;String, Object&gt; source = proposedVersion || base == null ? proposed : base;</span>
+<span class="nc" id="L68">        return instant(source.get(&quot;dueAt&quot;));</span>
+    }
+
+    public static boolean scheduleChanged(Map&lt;String, Object&gt; base, Map&lt;String, Object&gt; proposed) {
+<span class="nc bnc" id="L72" title="All 4 branches missed.">        if (base == null || proposed == null) return true;</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        for (String field : List.of(&quot;allDay&quot;, &quot;startAt&quot;, &quot;dueAt&quot;, &quot;startDate&quot;, &quot;dueDate&quot;)) {</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            if (!Objects.equals(plain(base.get(field)), plain(proposed.get(field)))) return true;</span>
+<span class="nc" id="L75">        }</span>
+<span class="nc" id="L76">        return false;</span>
+    }
+
+    /** Expire every pending request whose applicable deadline has been reached. */
+    public int expirePending(String organizationId, Instant now) {
+<span class="nc" id="L81">        int expired = 0;</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        for (Map&lt;String, Object&gt; request : db.list(&quot;SELECT * FROM approval_requests WHERE organization_id=? &quot;</span>
+                + &quot;AND status='pending' AND applicable_deadline IS NOT NULL AND applicable_deadline&lt;=? &quot;
+<span class="nc" id="L84">                + &quot;ORDER BY created_at,id FOR UPDATE&quot;, organizationId, Timestamp.from(now))) {</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            if (expire(organizationId, request, now, &quot;applicable_deadline_reached&quot;)) expired++;</span>
+<span class="nc" id="L86">        }</span>
+<span class="nc" id="L87">        return expired;</span>
+    }
+
+    /** Deadline check for one task's locked pending request, used by submission and decision paths. */
+    public int expirePendingForTask(String organizationId, String taskId, Instant now) {
+<span class="nc" id="L92">        Map&lt;String, Object&gt; request = db.find(&quot;SELECT * FROM approval_requests WHERE organization_id=? AND task_id=? &quot;</span>
+                + &quot;AND status='pending' FOR UPDATE&quot;, organizationId, taskId);
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (request == null) return 0;</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        Instant deadline = request.get(&quot;applicableDeadline&quot;) == null ? null : instant(request.get(&quot;applicableDeadline&quot;));</span>
+<span class="nc bnc" id="L96" title="All 4 branches missed.">        if (deadline == null || now.isBefore(deadline)) return 0;</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        return expire(organizationId, request, now, &quot;applicable_deadline_reached&quot;) ? 1 : 0;</span>
+    }
+
+    /** Expire one locked request. Returns false when another terminal state already won. */
+    public boolean expire(String organizationId, Map&lt;String, Object&gt; request, Instant now, String reason) {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (!&quot;pending&quot;.equals(s(request, &quot;status&quot;))) return false;</span>
+<span class="nc" id="L103">        String requestId = s(request, &quot;id&quot;);</span>
+<span class="nc" id="L104">        String taskId = s(request, &quot;taskId&quot;);</span>
+<span class="nc" id="L105">        String proposedVersionId = s(request, &quot;proposedVersionId&quot;);</span>
+<span class="nc" id="L106">        String kind = s(request, &quot;kind&quot;);</span>
+<span class="nc" id="L107">        int changed = db.update(&quot;UPDATE approval_requests SET status='expired',expired_at=?,decided_at=?,&quot;</span>
+                        + &quot;decided_by=NULL,row_version=row_version+1 WHERE organization_id=? AND id=? AND status='pending' AND row_version=?&quot;,
+<span class="nc" id="L109">                Timestamp.from(now), Timestamp.from(now), organizationId, requestId, n(request, &quot;rowVersion&quot;));</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (changed != 1) return false;</span>
+<span class="nc" id="L111">        db.update(&quot;UPDATE task_versions SET status='expired',expired_at=? WHERE organization_id=? AND id=? AND status='proposed'&quot;,</span>
+<span class="nc" id="L112">                Timestamp.from(now), organizationId, proposedVersionId);</span>
+<span class="nc" id="L113">        db.update(&quot;INSERT INTO task_history_entries(id,organization_id,task_id,request_id,actor_id,entry_type,field_name,&quot;</span>
+                        + &quot;before_value,after_value,detail_json,occurred_at) VALUES(?,?,?,?,NULL,'request_expired','status',&quot;
+                        + &quot;'pending','expired',?,?)&quot;,
+<span class="nc" id="L116">                id(), organizationId, taskId, requestId,</span>
+<span class="nc" id="L117">                db.json(Map.of(&quot;reason&quot;, reason, &quot;applicableDeadline&quot;,</span>
+<span class="nc" id="L118">                        Objects.toString(request.get(&quot;applicableDeadline&quot;), &quot;&quot;),</span>
+<span class="nc" id="L119">                        &quot;previousState&quot;, Objects.toString(request.get(&quot;previousState&quot;), &quot;&quot;))),</span>
+<span class="nc" id="L120">                Timestamp.from(now));</span>
+        // The task row version changes because the freeze was released; the effective version and the
+        // pre-submission execution state are untouched.
+<span class="nc" id="L123">        db.update(&quot;UPDATE tasks SET row_version=row_version+1,updated_at=? WHERE organization_id=? AND id=?&quot;,</span>
+<span class="nc" id="L124">                Timestamp.from(now), organizationId, taskId);</span>
+
+<span class="nc" id="L126">        Map&lt;String, Object&gt; proposed = db.find(&quot;SELECT title FROM task_versions WHERE organization_id=? AND id=?&quot;,</span>
+                organizationId, proposedVersionId);
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        String title = proposed == null ? &quot;任务&quot; : s(proposed, &quot;title&quot;);</span>
+<span class="nc" id="L129">        LinkedHashSet&lt;String&gt; recipients = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc" id="L130">        recipients.add(s(request, &quot;applicantId&quot;));</span>
+<span class="nc" id="L131">        recipients.add(s(request, &quot;currentReviewerId&quot;));</span>
+<span class="nc" id="L132">        recipients.remove(null);</span>
+<span class="nc" id="L133">        events.systemRecord(organizationId, taskId, &quot;task.&quot; + kind + &quot;.expired&quot;, recipients,</span>
+<span class="nc" id="L134">                Map.of(&quot;requestId&quot;, requestId, &quot;kind&quot;, kind, &quot;status&quot;, &quot;expired&quot;, &quot;reason&quot;, reason),</span>
+<span class="nc" id="L135">                requestId, proposedVersionId, s(request, &quot;applicantId&quot;), title,</span>
+<span class="nc" id="L136">                &quot;任务《&quot; + title + &quot;》的&quot; + kindLabel(kind) + &quot;申请已到期失效，请调整后重提。&quot;, now);</span>
+        // A published, unfinished task that was frozen past its effective deadline gets its one
+        // overdue notice now; an unpublished creation gets only the expiry/resubmit message.
+<span class="nc" id="L139">        Map&lt;String, Object&gt; task = db.find(&quot;SELECT * FROM tasks WHERE organization_id=? AND id=?&quot;, organizationId, taskId);</span>
+<span class="nc bnc" id="L140" title="All 4 branches missed.">        if (task != null &amp;&amp; s(task, &quot;currentVersionId&quot;) != null) reminders.ensureOverdueAfterExpiry(organizationId, taskId, now);</span>
+<span class="nc" id="L141">        return true;</span>
+    }
+
+    public static String kindLabel(String kind) {
+<span class="nc bnc" id="L145" title="All 9 branches missed.">        return switch (kind == null ? &quot;&quot; : kind) {</span>
+<span class="nc" id="L146">            case &quot;create&quot; -&gt; &quot;创建&quot;;</span>
+<span class="nc" id="L147">            case &quot;change&quot; -&gt; &quot;修改&quot;;</span>
+<span class="nc" id="L148">            case &quot;progress&quot; -&gt; &quot;进展&quot;;</span>
+<span class="nc" id="L149">            case &quot;complete&quot; -&gt; &quot;完成&quot;;</span>
+<span class="nc" id="L150">            case &quot;reopen&quot; -&gt; &quot;重开&quot;;</span>
+<span class="nc" id="L151">            case &quot;handover&quot; -&gt; &quot;交接&quot;;</span>
+<span class="nc" id="L152">            default -&gt; Objects.toString(kind, &quot;&quot;);</span>
+        };
+    }
+
+    private static String plain(Object value) {
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        return value == null ? null : String.valueOf(value);</span>
+    }
+
+    public static Instant instant(Object value) {
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        if (value == null) return null;</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        if (value instanceof Timestamp timestamp) return timestamp.toInstant();</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        if (value instanceof Instant instant) return instant;</span>
+        try {
+<span class="nc" id="L165">            return Instant.parse(value.toString());</span>
+<span class="nc" id="L166">        } catch (RuntimeException exception) {</span>
+<span class="nc" id="L167">            throw new ApiException(409, &quot;INVALID_DEADLINE&quot;, &quot;任务截止时间无法解析&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

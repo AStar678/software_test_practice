@@ -1,0 +1,92 @@
+{
+  "checks": [
+    {
+      "name": "visible assignee gets schedule permission",
+      "pass": true
+    },
+    {
+      "name": "visible-only manager gets schedule permission",
+      "pass": true
+    },
+    {
+      "name": "unrelated or admin cannot reschedule beta-one-head",
+      "pass": true
+    },
+    {
+      "name": "unrelated or admin cannot reschedule other-founder",
+      "pass": true
+    },
+    {
+      "name": "unrelated or admin cannot reschedule admin",
+      "pass": true
+    },
+    {
+      "name": "schedule endpoint refuses title",
+      "pass": true
+    },
+    {
+      "name": "schedule endpoint refuses assigneeIds",
+      "pass": true
+    },
+    {
+      "name": "schedule endpoint refuses tagIds",
+      "pass": true
+    },
+    {
+      "name": "schedule endpoint refuses progressNote",
+      "pass": true
+    },
+    {
+      "name": "visible-only manager cannot edit ordinary metadata",
+      "pass": true
+    },
+    {
+      "name": "effective owner can propose ordinary metadata",
+      "pass": true
+    },
+    {
+      "name": "stale reschedule is rejected",
+      "pass": true
+    },
+    {
+      "name": "viewer preview routes to operator manager",
+      "pass": true
+    },
+    {
+      "name": "viewer creates a normal pending review",
+      "pass": true
+    },
+    {
+      "name": "frozen schedule permission removed",
+      "pass": true
+    },
+    {
+      "name": "viewer schedule applies after correct approval",
+      "pass": true
+    },
+    {
+      "name": "schedule-only write preserves metadata and owners",
+      "pass": true
+    },
+    {
+      "name": "viewer loses task visibility",
+      "pass": true
+    },
+    {
+      "name": "approval rechecks applicant authority",
+      "pass": true
+    },
+    {
+      "name": "failed approval keeps effective schedule",
+      "pass": true
+    },
+    {
+      "name": "completed tasks cannot reschedule",
+      "pass": true
+    },
+    {
+      "name": "unpublished tasks do not grant schedule permission",
+      "pass": true
+    }
+  ]
+}

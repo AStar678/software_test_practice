@@ -1,0 +1,2 @@
+RUN check_web_alignment_drag.py
+PASS check_web_alignment_drag.py assertions=52

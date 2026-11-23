@@ -1,0 +1,83 @@
+PASS fixture seeds a same-name employee in another team
+PASS employee creation pending
+PASS reviewer alpha-one-head
+PASS multiple tags persisted in order
+PASS legacy scalar cannot truncate tags
+PASS creator still requires manager review
+PASS reviewer alpha-one-head
+PASS omitted tags preserve full collection
+PASS progress uses operator manager
+PASS creator cannot decide assignee request
+PASS review filter and pagination
+PASS read filter after opening
+PASS reviewer beta-one-head
+PASS completed request leaves review filter
+PASS complete uses operator manager
+PASS creator cannot decide assignee request
+PASS review filter and pagination
+PASS read filter after opening
+PASS reviewer beta-one-head
+PASS completed request leaves review filter
+PASS reviewer alpha-one-head
+PASS reviewer beta-head
+PASS handover keeps tags
+PASS candidate tree has true parents and no contacts
+PASS invalid notification filters rejected
+PASS result filter counts beyond first page
+PASS founder remains exempt
+PASS personal tag creation rejected
+PASS duplicate foreign private and conflicting tags rejected
+PASS deleted tag preserves other tags and snapshot
+PASS deleted tag cannot be newly attached
+PASS omitted deleted reference retained
+PASS empty collection clears legacy projection too
+PASS unapproved tags stay out of effective task
+PASS tag collection included in review diff
+PASS rejection preserves entire collection
+PASS personal tag route is removed
+PASS private tag leaves shared collection intact
+PASS login ready
+PASS real authenticated UI
+PASS calendar honors first shared and default colors
+PASS editing retains deleted selected tag control
+PASS deleted selection can be removed but not newly reselected
+PASS multi-tag controls ready
+PASS toggle multiple tags
+PASS tag supports keyboard toggle
+PASS schedule fits 320
+PASS schedule fits 390
+PASS schedule fits 1440
+PASS full-day shortcut retains explicit times and next midnight
+PASS repeated shortcut does not extend again
+PASS tree picker ready
+PASS tree initially collapsed
+PASS expansion separate from selection
+PASS founder node shows the company level instead of a fake department
+PASS department head without a team shows the department without an empty separator
+PASS same-name people stay distinguishable by their real department and team
+PASS search expands actual ancestor path
+PASS clearing search preserves selected person
+PASS selected order can change
+PASS subpage preserves title and ordered tags
+PASS reopened picker has working copy
+PASS cancel restores original ordered people
+PASS invalid date range remains in form
+PASS UI submission persisted both tags
+PASS notification filters visible
+PASS compact has no body summary
+PASS category filter uses classified messages
+FAIL unread results exist
+Error: unread results exist undefined
+    at check (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-hlhfhisa/project/backend/scripts/check_task_creation_refinement_browser.js:8:150)
+    at main (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-hlhfhisa/project/backend/scripts/check_task_creation_refinement_browser.js:89:3)
+Traceback (most recent call last):
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-hlhfhisa/project/backend/scripts/check_task_creation_refinement.py", line 117, in <module>
+    if __name__=='__main__': main()
+                             ~~~~^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-hlhfhisa/project/backend/scripts/check_task_creation_refinement.py", line 113, in main
+    subprocess.run(['node',str(BASE/'scripts/check_task_creation_refinement_browser.js')],env={**os.environ,'PANDORA_BROWSER_FIXTURE':json.dumps(manifest)},check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['node', '/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-hlhfhisa/project/backend/scripts/check_task_creation_refinement_browser.js']' returned non-zero exit status 1.

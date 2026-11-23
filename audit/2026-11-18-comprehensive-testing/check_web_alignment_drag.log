@@ -1,0 +1,51 @@
+PASS login form
+PASS founder authenticated
+PASS long-press capability is reported
+PASS touch source exists [data-schedule-move="9d4360dd-2e4b-4f4e-86c0-109c2447b8ca"][data-resize-mode=month]
+PASS movement beyond tolerance cancels the press candidate
+PASS cancelled candidate writes nothing and opens nothing
+PASS touch source exists [data-schedule-move="9d4360dd-2e4b-4f4e-86c0-109c2447b8ca"][data-resize-mode=month]
+PASS a scroll before activation keeps ordinary scrolling
+PASS touch source exists [data-schedule-move="9d4360dd-2e4b-4f4e-86c0-109c2447b8ca"][data-resize-mode=month]
+hit debug {"inside":true,"tag":"DIV.p-month-duration","rect":{"x":111.421875,"y":394.25,"w":55.71875,"h":51},"touchAction":"auto","gesture":{"pressing":true,"dragging":false,"haptic":"not-called","steps":null,"lastX":null,"lastY":null,"target":null}}
+press state {"gesture":{"pressing":true,"dragging":false,"haptic":"not-called","steps":null,"lastX":null,"lastY":null,"target":null},"idle":true,"pressing":true} activated {"gesture":{"pressing":false,"dragging":true,"haptic":"called","steps":0,"lastX":139.28125,"lastY":419.75,"target":"2032-04-14"},"idle":true,"preview":true,"ghost":true,"dragging":true,"source":true,"haptic":"called"}
+PASS a long press activates the floating drag state
+PASS haptic support result is recorded honestly
+PASS long press without movement writes nothing and opens nothing
+PASS touch source exists [data-schedule-move="9d4360dd-2e4b-4f4e-86c0-109c2447b8ca"][data-resize-mode=month]
+PASS target date cell exists in view for the touch drop
+after move {"gesture":{"pressing":false,"dragging":true,"haptic":"called","steps":7,"lastX":139.28125,"lastY":634.75,"target":"2032-04-21"},"tip":"2032-04-21 09:00 → 2032-04-21 11:00 · 松开后确认（1天/步）","target":{"x":139.28125,"y":634.75}}
+PASS the floating preview names the actual target date and kept times
+PASS long-press drop opens the lightweight confirmation
+PASS confirmation shows the 2D target date and original duration
+PASS drag source exists [data-schedule-move="9d4360dd-2e4b-4f4e-86c0-109c2447b8ca"][data-resize-mode=month]
+PASS target date cell is visible for the mouse drop
+PASS month mouse press waits without a drag preview before the threshold
+PASS month mouse long press activates before movement
+PASS drag preview follows the pointer
+PASS mouse 2D drop opens confirmation at the target date
+PASS mouse confirmation keeps the cross-week target
+PASS a continued month segment exposes whole-task movement but no fake endpoint
+PASS month mouse press waits without a drag preview before the threshold
+PASS month mouse long press activates before movement
+PASS dragging a continued segment opens the lightweight confirmation
+PASS the continued segment moves the full task by the grabbed-day delta with times kept
+PASS month mouse press waits without a drag preview before the threshold
+PASS month mouse long press activates before movement
+FAIL holding the bottom edge auto-scrolls and can append a month {"edgeBefore":{"top":2596,"months":5},"edgeAfter":{"top":2506,"months":5,"preview":true}}
+Error: holding the bottom edge auto-scrolls and can append a month {"edgeBefore":{"top":2596,"months":5},"edgeAfter":{"top":2506,"months":5,"preview":true}}
+    at check (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_web_alignment_drag_browser.js:8:179)
+    at main (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_web_alignment_drag_browser.js:157:3)
+Traceback (most recent call last):
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_web_alignment_drag.py", line 58, in <module>
+    main()
+    ~~~~^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_web_alignment_drag.py", line 41, in main
+    subprocess.run(['node', str(BASE / 'scripts/check_web_alignment_drag_browser.js')],
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                   env={**os.environ, 'PANDORA_DRAG_FIXTURE': json.dumps(manifest)}, check=True)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['node', '/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_web_alignment_drag_browser.js']' returned non-zero exit status 1.

@@ -1,0 +1,106 @@
+PASS  V30 fixture writes a real task and log before the migration
+PASS  baseline is V30 and still holds the old personal item
+PASS  V31–V36 create daily_items, range columns and record the current migration head
+PASS  the V30 fixture really stored a title different from its body
+PASS  V36 retires company-item titles and keeps each existing body, id, order, version and timestamp
+PASS  V31 removes only the old personal home items
+PASS  V31 leaves tasks and logs byte-identical
+PASS  a valid leap-day item with internal newlines is created
+PASS  detail returns the exact leap date and plain text with rowVersion
+PASS  create rejects invalid leap date
+PASS  create rejects impossible month
+PASS  create rejects non-padded date
+PASS  create rejects blank body
+PASS  create rejects whitespace only
+PASS  create rejects unknown owner injection
+PASS  create rejects unknown task injection
+PASS  2000-character body boundary is accepted
+PASS  2001-character body is rejected without partial save
+PASS  completed must be an explicit boolean
+PASS  update without If-Match is rejected with 428
+PASS  stale version is rejected with 412 instead of silent overwrite
+PASS  date, body and completed are saved atomically with a new version
+PASS  completion is explicitly reversible
+PASS  one page is capped at 100 and reports the complete total
+PASS  the second page returns the remaining items without duplicates
+PASS  paging order is created_at then id, independent of completion
+PASS  items with identical bodies keep distinct real ids
+PASS  summary omits a truly zero day, so absence means zero
+PASS  summary counts 1 open item(s) on day 11
+PASS  summary counts 2 open item(s) on day 12
+PASS  summary counts 3 open item(s) on day 13
+PASS  summary counts 4 open item(s) on day 14
+PASS  summary counts 5 open item(s) on day 15
+PASS  summary counts 7 open item(s) on day 16
+PASS  summary keeps 105 items independent of the 100-row list page
+PASS  summary reports mixed open/completed counts
+PASS  summary reports an all-completed day as zero open
+PASS  summary rejects a range longer than 93 closed days
+PASS  summary rejects an inverted range
+PASS  same-team peer cannot read another person's daily list
+PASS  same-team peer cannot read another person's detail
+PASS  same-team peer cannot modify another person's item
+PASS  same-team peer cannot delete another person's item
+PASS  same-team peer summary does not expose another person's count
+PASS  department head cannot read another person's daily list
+PASS  department head cannot read another person's detail
+PASS  department head cannot modify another person's item
+PASS  department head cannot delete another person's item
+PASS  department head summary does not expose another person's count
+PASS  founder cannot read another person's daily list
+PASS  founder cannot read another person's detail
+PASS  founder cannot modify another person's item
+PASS  founder cannot delete another person's item
+PASS  founder summary does not expose another person's count
+PASS  other company cannot read another person's daily list
+PASS  other company cannot read another person's detail
+PASS  other company cannot modify another person's item
+PASS  other company cannot delete another person's item
+PASS  other company summary does not expose another person's count
+PASS  an independent administrator cannot use the employee daily-item API
+PASS  an invalid session is rejected
+PASS  the retired personal home-item create path is rejected
+PASS  daily-item maintenance writes no notification and leaves tasks/logs untouched
+PASS  the audit event carries the item identity but never its body and has no recipients
+PASS  the same create request replays without a duplicate item
+PASS  deleting and replaying the same idempotent request returns the cached result
+PASS  the deleted item is gone after the replayed delete
+PASS  one idempotency key cannot be reused for a different request
+PASS  the home board includes self-created tasks the actor currently owns
+PASS  the home board excludes completed, removed and not-created tasks
+PASS  the home board is capped at ten and ordered by effective due, urgency then id
+PASS  every board row projects a canonical due instant and execution state
+PASS  the complete authorized set is due-ordered before the ten-item limit
+PASS  same-instant rows fall back to urgent/high/medium/low and then id; all-day uses the real cut-off
+PASS  a pending proposal never replaces the effective deadline used by the board
+PASS  the home response no longer carries personalItems or recentLogs
+PASS  another employee's board shows tasks assigned by someone else
+PASS  an unpublished creation never enters the board
+PASS  the administrator company-information limit still rejects the eleventh item
+PASS login form is ready
+PASS employee login loads the home page
+PASS after a preserved-session refresh at 320x740 the vertical calendar already has scroll range in both directions
+PASS a real vertical gesture at 320x740 browses forward and back without opening a day list
+PASS after a preserved-session refresh at 390x844 the vertical calendar already has scroll range in both directions
+PASS a real vertical gesture at 390x844 browses forward and back without opening a day list
+PASS after a preserved-session refresh at 1440x900 the vertical calendar already has scroll range in both directions
+PASS a real vertical gesture at 1440x900 browses forward and back without opening a day list
+PASS after a preserved-session refresh at 390x600 the vertical calendar already has scroll range in both directions
+PASS a real vertical gesture at 390x600 browses forward and back without opening a day list
+PASS page return at 390px + 0ms keeps daily-next after delayed layouts settle
+PASS page return at 390px + 0ms keeps daily-prev after delayed layouts settle
+PASS page return at 390px + 0ms keeps daily-locate after delayed layouts settle
+FAIL page return at 390px + 0ms keeps daily-today after delayed layouts settle
+
+Error: page return at 390px + 0ms keeps daily-today after delayed layouts settle {"width":390,"delay":0,"action":"daily-today","expected":"2026-11","immediate":{"anchor":"2026-11","date":"2026-11-01","offset":8,"months":3,"visible":["2026-11-01","2026-11-02","2026-11-03","2026-11-04","2026-11-05","2026-11-06","2026-11-07","2026-11-08","2026-11-09","2026-11-10","2026-11-11","2026-11-12","2026-11-13","2026-11-14","2026-11-15"]},"settled":{"anchor":"2026-11","date":"2026-11-01","offset":8,"months":3,"visible":["2026-11-01","2026-11-02","2026-11-03","2026-11-04","2026-11-05","2026-11-06","2026-11-07","2026-11-08","2026-11-09","2026-11-10","2026-11-11","2026-11-12","2026-11-13","2026-11-14","2026-11-15"]}}
+    at check (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_daily_items_browser.js:20:20)
+    at checkDailyItemsRefresh (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_daily_items_refresh_browser.js:116:9)
+    at async main (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_daily_items_browser.js:38:5)
+
+Traceback (most recent call last):
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_daily_items.py", line 564, in <module>
+    main()
+    ~~~~^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_daily_items.py", line 273, in main
+    raise AssertionError("daily-items browser checks failed with exit " + str(browser.returncode))
+AssertionError: daily-items browser checks failed with exit 1

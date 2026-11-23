@@ -453,16 +453,20 @@
     if (!d) return null;
     const before=scheduleDraftText(d.oldStart,d.oldDue);
     const after=scheduleDraftText(d.newStart,d.newDue);
+    const outside=!!d.boundaryDay && !!P.scheduleWithinDay && !P.scheduleWithinDay(d.newStart,d.newDue,d.boundaryDay);
     return {title:'确认排期调整',draftKind:'schedule',rebuild:scheduleConfirmationView,
       body:'<div class="kv">'+kv('原排期',before)+kv('新排期',after)+'</div>'+
         (d.stale?'<div class="callout reject">任务版本已变化，请取消后重新调整。</div>':'')+
+        (outside?'<div class="callout reject">调整后的排期超出当天 00:00–24:00，请取消后重新调整。</div>':'')+
         textField('sc-reason','调整原因（必填，最多500字）',d.reason,500,false)+errorBox('sc-error'),
-      foot:withBack('<button type="button" class="btn primary" data-action="p-save-schedule"'+(d.stale?' disabled':'')+'>提交排期</button>')};
+      foot:withBack('<button type="button" class="btn primary" data-action="p-save-schedule"'+(d.stale||outside?' disabled':'')+'>提交排期</button>')};
   }
   function saveScheduleDraft() {
     return P.busy(async function () {
       const d=scheduleDraft,field=document.getElementById('sc-reason');
       if (!d || !field || d.epoch!==P.epoch || d.stale) throw new Error('排期草稿已失效，请重新调整。');
+      if (d.boundaryDay && P.scheduleWithinDay && !P.scheduleWithinDay(d.newStart,d.newDue,d.boundaryDay))
+        throw new Error('调整后的排期超出当天 00:00–24:00，不能提交。');
       d.reason=field.value;
       const body={command:'reschedule',allDay:!!d.allDay,reason:required(d.reason,'调整原因',500)};
       if (d.allDay) { body.startDate=P.companyDateKey(d.newStart);body.dueDate=P.companyDateKey(d.newDue); }
@@ -490,9 +494,12 @@
     },'sc-error');
   }
   // A calendar drop has a separate schedule-only draft and confirmation sheet.
-  P.openScheduleChange = async function (id, start, due, rowVersion) {
+  P.openScheduleChange = async function (id, start, due, rowVersion, boundary) {
     if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
     if (!Number.isFinite(+start) || !Number.isFinite(+due) || due<start) { P.notice('截止不得早于开始。');return; }
+    if (boundary && boundary.dayKey && P.scheduleWithinDay && !P.scheduleWithinDay(start,due,boundary.dayKey)) {
+      P.notice('调整后的排期超出当天 00:00–24:00，本次调整未保存。');return;
+    }
     return P.busy(async function () {
       const mark=session(),raw=await P.request('/tasks/'+encodeURIComponent(id));
       if (!stillHere(mark)) return;
@@ -500,6 +507,7 @@
       scheduleDraft={id,epoch:P.epoch,mark,slot:newSlot('schedule'),rowVersion,
         oldStart:new Date(raw.startAt),oldDue:new Date(raw.dueAt),
         newStart:new Date(start),newDue:new Date(due),allDay,reason:'',attempted:false,
+        boundaryDay:boundary && boundary.dayKey || null,
         stale:raw.rowVersion!==rowVersion || !raw.canReschedule || raw.frozen || raw.executionState==='done'};
       openSheet(scheduleConfirmationView());
     });
@@ -535,6 +543,7 @@
       if (canReopen(task)) buttons.push('<button type="button" class="btn primary" data-action="p-reopen-task" data-id="' + attr(id) + '">重开任务</button>');
       if (raw.canHandover) buttons.push('<button type="button" class="btn" data-action="p-open-handover" data-id="' + attr(id) + '">专用交接</button>');
       if (raw.canPin) buttons.push('<button type="button" class="btn" data-action="p-toggle-task-pin" data-id="' + attr(id) + '">' + (task.pinned ? '取消置顶' : '置顶到我的月视图') + '</button>');
+      if (raw.canTablePin) buttons.push('<button type="button" class="btn" data-action="p-toggle-table-pin" data-id="' + attr(id) + '">' + (raw.tablePinned ? '取消表单置顶' : '置顶到任务表单') + '</button>');
       if (requestId) buttons.push('<button type="button" class="btn" data-action="p-open-approval" data-id="' + attr(requestId) + '">查看当前申请</button>');
     }
     // Comments are an independent aggregate at the bottom of the detail (chapter 8.4).
@@ -842,6 +851,25 @@
       P.notice(next ? "已置顶到我的月视图。" : "已取消置顶。");
     });
   }
+  function toggleTablePin(id) {
+    if (P.subordinateMode()) {P.notice('下属浏览仅可评论。');return;}
+    const task = taskById(id);
+    if (!task) return;
+    const next = !task.tablePinned;
+    return P.busy(async function () {
+      await P.mutation("table-pin:" + id, next ? "PUT" : "DELETE", "/tasks/" + encodeURIComponent(id) + "/table-pin", null, null);
+      // The pin changes the grouped order. Force the table back to its first page after the shared
+      // reload so a later-page pin cannot leave the newly pinned row off-screen.
+      await P.reload();
+      if (P.taskForm && P.taskForm.state && P.taskForm.state.active) {
+        P.taskForm.state.page = 0;
+        await P.taskForm.refresh();
+      }
+      const view = taskDetailView(id);
+      if (view) replaceTopSheet(view);
+      P.notice(next ? "已置顶到任务表单。" : "已取消表单置顶。");
+    });
+  }
 
   function selectedHandoverTarget(source) {
     const node = document.querySelector('[data-handover-target="' + source + '"]');
@@ -1079,6 +1107,7 @@
     if (action === "submit-complete") return openAction("complete", id);
     if (action === "p-reopen-task") return openAction("reopen", id);
     if (action === "p-toggle-task-pin") return togglePin(id);
+    if (action === "p-toggle-table-pin") return toggleTablePin(id);
     if (action === "p-confirm-reopen") return saveAction("reopen", id);
     if (action === "p-approve-request") return decide(id, "approve");
     if (action === "p-reject-request" || action === "p-withdraw-request") {

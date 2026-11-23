@@ -1,0 +1,84 @@
+{
+  "mode": "after",
+  "checks": [
+    {
+      "name": "non-localhost HTTP login ready",
+      "pass": true
+    },
+    {
+      "name": "real insecure context lacks randomUUID",
+      "pass": true,
+      "evidence": {
+        "secure": false,
+        "native": "undefined",
+        "random": "function",
+        "host": "pandora-fixture.test"
+      }
+    },
+    {
+      "name": "insecure HTTP authentication succeeds",
+      "pass": true
+    },
+    {
+      "name": "schedule form ready",
+      "pass": true
+    },
+    {
+      "name": "schedule form fits 390",
+      "pass": true
+    },
+    {
+      "name": "schedule form fits 1440",
+      "pass": true
+    },
+    {
+      "name": "first submit finishes",
+      "pass": true
+    },
+    {
+      "name": "committed response loss leaves retryable form",
+      "pass": true
+    },
+    {
+      "name": "retry successfully submits on HTTP",
+      "pass": true
+    },
+    {
+      "name": "retry reuses an RFC4122 v4 request key",
+      "pass": true
+    },
+    {
+      "name": "pending schedule committed once with correct time",
+      "pass": true
+    },
+    {
+      "name": "fallback uses strong randomness and preserves retry identity",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "changed": true,
+        "count": 257,
+        "valid": true
+      }
+    },
+    {
+      "name": "native context script ready",
+      "pass": true
+    },
+    {
+      "name": "native UUID path remains available",
+      "pass": true,
+      "evidence": {
+        "secure": true,
+        "calls": 1,
+        "valid": true
+      }
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "persistedRequestCount": 2
+}

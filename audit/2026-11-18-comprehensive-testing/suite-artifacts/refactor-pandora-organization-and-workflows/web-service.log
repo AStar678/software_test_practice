@@ -1,0 +1,76 @@
+Picked up JAVA_TOOL_OPTIONS: -javaagent:/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/jacoco-agent.jar=destfile=/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/coverage/check_fixed_web.exec,append=true,includes=cn.pandora.*
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-11-19T00:09:52.834+08:00  INFO 71843 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 23.0.2 with PID 71843 (/Users/aoxiang/Desktop/软件测试/backend/target/pandora-backend-0.1.0.jar started by aoxiang in /private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project)
+2026-11-19T00:09:52.835+08:00  INFO 71843 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-11-19T00:09:53.559+08:00  INFO 71843 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18181 (http)
+2026-11-19T00:09:53.569+08:00  INFO 71843 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-19T00:09:53.570+08:00  INFO 71843 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-11-19T00:09:53.583+08:00  INFO 71843 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-19T00:09:53.583+08:00  INFO 71843 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 716 ms
+2026-11-19T00:09:53.688+08:00  INFO 71843 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-19T00:09:53.796+08:00  INFO 71843 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@7f22687e
+2026-11-19T00:09:53.797+08:00  INFO 71843 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-19T00:09:53.820+08:00  INFO 71843 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_precheck_model_bacd46d38d3840a0?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 9.3)
+2026-11-19T00:09:54.068+08:00  WARN 71843 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 9.3 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-11-19T00:09:54.086+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table `pandora_precheck_model_bacd46d38d3840a0`.`flyway_schema_history` does not exist yet
+2026-11-19T00:09:54.088+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 36 migrations (execution time 00:00.014s)
+2026-11-19T00:09:54.094+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table `pandora_precheck_model_bacd46d38d3840a0`.`flyway_schema_history` ...
+2026-11-19T00:09:54.116+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_precheck_model_bacd46d38d3840a0`: << Empty Schema >>
+2026-11-19T00:09:54.130+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "1 - initial schema"
+2026-11-19T00:09:54.224+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "2 - case sensitive idempotency"
+2026-11-19T00:09:54.240+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "3 - home item versions"
+2026-11-19T00:09:54.252+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "4 - personal profile"
+2026-11-19T00:09:54.290+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "5 - organization roles and account gate"
+2026-11-19T00:09:54.372+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "6 - ordered routing expiration and handover"
+2026-11-19T00:09:54.519+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "7 - event provenance dispatch and pins"
+2026-11-19T00:09:54.613+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "8 - lossless work log merge and unique day"
+2026-11-19T00:09:54.629+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "9 - organization row versions"
+2026-11-19T00:09:54.698+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "10 - retire superseded check constraints"
+2026-11-19T00:09:54.741+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "11 - schedule snapshots reminder nodes and notification lifecycle"
+2026-11-19T00:09:54.814+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "12 - backfill task assignments"
+2026-11-19T00:09:54.820+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "13 - mask undelivered notification content"
+2026-11-19T00:09:54.833+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "14 - handover presets"
+2026-11-19T00:09:54.843+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "15 - personal avatar"
+2026-11-19T00:09:54.874+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "16 - work log day slot"
+2026-11-19T00:09:54.892+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "17 - tags and task tag snapshot"
+2026-11-19T00:09:54.935+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "18 - flat comments"
+2026-11-19T00:09:54.950+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "19 - employee phone login"
+2026-11-19T00:09:55.007+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "20 - notification object refs"
+2026-11-19T00:09:55.030+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "21 - fixed employee placements"
+2026-11-19T00:09:55.080+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "22 - independent account principals"
+2026-11-19T00:09:55.244+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "23 - task business ownership"
+2026-11-19T00:09:55.263+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "24 - explicit blocked review routes"
+2026-11-19T00:09:55.297+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "25 - retire legacy employee authority"
+2026-11-19T00:09:55.448+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "26 - explicit demo manifest"
+2026-11-19T00:09:55.457+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "27 - private calendar tags"
+2026-11-19T00:09:55.502+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "28 - task version multiple tags"
+2026-11-19T00:09:55.518+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "29 - work log multiple tags"
+2026-11-19T00:09:55.554+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "30 - remove private tags"
+2026-11-19T00:09:55.584+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "31 - daily items"
+2026-11-19T00:09:55.595+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "32 - daily item date range"
+2026-11-19T00:09:55.626+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "33 - user task table pins"
+2026-11-19T00:09:55.636+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "34 - hire date and holiday cache"
+2026-11-19T00:09:55.672+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "35 - holiday cache failure state"
+2026-11-19T00:09:55.680+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `pandora_precheck_model_bacd46d38d3840a0` to version "36 - retire company item title"
+2026-11-19T00:09:55.691+08:00  INFO 71843 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 36 migrations to schema `pandora_precheck_model_bacd46d38d3840a0`, now at version v36 (execution time 00:01.357s)
+2026-11-19T00:09:56.295+08:00  INFO 71843 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-19T00:09:56.478+08:00  INFO 71843 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18181 (http) with context path '/'
+2026-11-19T00:09:56.490+08:00  INFO 71843 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 3.843 seconds (process running for 4.05)
+2026-11-19T00:09:56.502+08:00  INFO 71843 --- [pandora-backend] [           main] c.pandora.admin.OrganizationConstraints  : Fixed organization readiness: {runtimeDdlEnabled=false, formalWritesReady=true, companies=[]}
+2026-11-19T00:09:56.504+08:00  INFO 71843 --- [pandora-backend] [           main] cn.pandora.admin.LoginKeyConstraints     : Employee login-key uniqueness is established; duplicate V19 blockers resolved
+2026-11-19T00:09:56.995+08:00  INFO 71843 --- [pandora-backend] [.1-18181-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-19T00:09:56.995+08:00  INFO 71843 --- [pandora-backend] [.1-18181-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-19T00:09:56.996+08:00  INFO 71843 --- [pandora-backend] [.1-18181-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-11-19T00:11:14.867+08:00  INFO 71843 --- [pandora-backend] [ionShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-19T00:11:14.871+08:00  INFO 71843 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-11-19T00:11:14.875+08:00  INFO 71843 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-19T00:11:14.880+08:00  INFO 71843 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

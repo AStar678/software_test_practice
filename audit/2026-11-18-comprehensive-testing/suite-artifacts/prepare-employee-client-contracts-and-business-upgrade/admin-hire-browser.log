@@ -1,0 +1,13 @@
+PASS  administrator console opens with a real session
+PASS  the employees table renders the hire-date column
+PASS  the edit dialog opens and shows the clearable date input
+PASS  saving closes the dialog and refreshes the employee row
+PASS  the saved date is read back from the real service
+PASS  cancel keeps the stored date unchanged
+PASS  a future date keeps the dialog open with the invalid input and an error
+PASS  the rejected future date does not change the stored value
+PASS  an empty date clears the value through the real service
+PASS  clearing restores the absent-date row state
+PASS  the organization draft carries the entered hire date
+PASS  the draft form did not create an account before the plan is saved
+PASS  no uncaught browser errors occurred

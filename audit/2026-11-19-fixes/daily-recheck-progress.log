@@ -1,0 +1,2 @@
+RUN check_daily_items.py
+PASS check_daily_items.py assertions=385

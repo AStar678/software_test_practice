@@ -1,0 +1,161 @@
+{"protocolVersion":"0.1.1","runnerVersion":null,"pid":83939,"type":"start","time":0}
+{"suite":{"id":0,"platform":"vm","path":"/Users/aoxiang/Desktop/软件测试/flutter/tool/tests/managed_backend_test.dart"},"type":"suite","time":0}
+{"test":{"id":1,"name":"loading /Users/aoxiang/Desktop/软件测试/flutter/tool/tests/managed_backend_test.dart","suiteID":0,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":0}
+{"count":1,"time":1,"type":"allSuites"}
+{"testID":1,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":1802}
+{"group":{"id":2,"suiteID":0,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":5,"line":null,"column":null,"url":null},"type":"group","time":1804}
+{"test":{"id":3,"name":"(setUpAll)","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":96,"column":3,"url":"file:///Users/aoxiang/Desktop/%E8%BD%AF%E4%BB%B6%E6%B5%8B%E8%AF%95/flutter/tool/tests/managed_backend_test.dart"},"type":"testStart","time":1804}
+{"testID":3,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":2064}
+{"test":{"id":4,"name":"J08/J12 四层实际申请人预览、保存审核人和审批发布一致","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":119,"column":3,"url":"file:///Users/aoxiang/Desktop/%E8%BD%AF%E4%BB%B6%E6%B5%8B%E8%AF%95/flutter/tool/tests/managed_backend_test.dart"},"type":"testStart","time":2064}
+{"testID":4,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks/reviewer-preview","type":"print","time":2314}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/reviewer-preview","type":"print","time":2331}
+{"testID":4,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks","type":"print","time":2335}
+{"testID":4,"messageType":"print","message":"[api] 201 http://127.0.0.1:18582/api/v1/tasks","type":"print","time":2362}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/e623da45-367d-45b6-9356-e26bade85ed9","type":"print","time":2362}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/e623da45-367d-45b6-9356-e26bade85ed9","type":"print","time":2368}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/f68736a1-f335-42c1-8b99-b7248da09a0d","type":"print","time":2370}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/f68736a1-f335-42c1-8b99-b7248da09a0d","type":"print","time":2381}
+{"testID":4,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks/reviewer-preview","type":"print","time":2608}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/reviewer-preview","type":"print","time":2616}
+{"testID":4,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks","type":"print","time":2616}
+{"testID":4,"messageType":"print","message":"[api] 201 http://127.0.0.1:18582/api/v1/tasks","type":"print","time":2630}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/a98c1951-7f64-4ffb-b9bf-2c0d4a9e67dd","type":"print","time":2631}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/a98c1951-7f64-4ffb-b9bf-2c0d4a9e67dd","type":"print","time":2638}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/f4d97242-c228-4a17-ba58-ed5e48fac955","type":"print","time":2638}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/f4d97242-c228-4a17-ba58-ed5e48fac955","type":"print","time":2643}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/a98c1951-7f64-4ffb-b9bf-2c0d4a9e67dd","type":"print","time":2644}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/a98c1951-7f64-4ffb-b9bf-2c0d4a9e67dd","type":"print","time":2652}
+{"testID":4,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/approval-requests/a98c1951-7f64-4ffb-b9bf-2c0d4a9e67dd","type":"print","time":2653}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/a98c1951-7f64-4ffb-b9bf-2c0d4a9e67dd","type":"print","time":2670}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/f4d97242-c228-4a17-ba58-ed5e48fac955","type":"print","time":2670}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/f4d97242-c228-4a17-ba58-ed5e48fac955","type":"print","time":2678}
+{"testID":4,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks/reviewer-preview","type":"print","time":2917}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/reviewer-preview","type":"print","time":2923}
+{"testID":4,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks","type":"print","time":2923}
+{"testID":4,"messageType":"print","message":"[api] 201 http://127.0.0.1:18582/api/v1/tasks","type":"print","time":2935}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/08f3650e-c298-4c5a-b93d-86041669f739","type":"print","time":2935}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/08f3650e-c298-4c5a-b93d-86041669f739","type":"print","time":2942}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/819a16a9-8a79-42bd-918a-647847693d01","type":"print","time":2942}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/819a16a9-8a79-42bd-918a-647847693d01","type":"print","time":2947}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/08f3650e-c298-4c5a-b93d-86041669f739","type":"print","time":2947}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/08f3650e-c298-4c5a-b93d-86041669f739","type":"print","time":2954}
+{"testID":4,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/approval-requests/08f3650e-c298-4c5a-b93d-86041669f739","type":"print","time":2955}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/08f3650e-c298-4c5a-b93d-86041669f739","type":"print","time":2969}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/819a16a9-8a79-42bd-918a-647847693d01","type":"print","time":2969}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/819a16a9-8a79-42bd-918a-647847693d01","type":"print","time":2976}
+{"testID":4,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks/reviewer-preview","type":"print","time":3200}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/reviewer-preview","type":"print","time":3206}
+{"testID":4,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3206}
+{"testID":4,"messageType":"print","message":"[api] 201 http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3218}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/d1383c1b-a837-434e-9841-06374d20c356","type":"print","time":3219}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/d1383c1b-a837-434e-9841-06374d20c356","type":"print","time":3226}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/299de75c-0af1-4c79-a35f-6e740b2b7db4","type":"print","time":3226}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/299de75c-0af1-4c79-a35f-6e740b2b7db4","type":"print","time":3231}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/d1383c1b-a837-434e-9841-06374d20c356","type":"print","time":3231}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/d1383c1b-a837-434e-9841-06374d20c356","type":"print","time":3239}
+{"testID":4,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/approval-requests/d1383c1b-a837-434e-9841-06374d20c356","type":"print","time":3239}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/d1383c1b-a837-434e-9841-06374d20c356","type":"print","time":3257}
+{"testID":4,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/299de75c-0af1-4c79-a35f-6e740b2b7db4","type":"print","time":3257}
+{"testID":4,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/299de75c-0af1-4c79-a35f-6e740b2b7db4","type":"print","time":3263}
+{"testID":4,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":3264}
+{"test":{"id":5,"name":"J10 父任务搜索、深层循环拒绝、独立完成及显式清空","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":147,"column":3,"url":"file:///Users/aoxiang/Desktop/%E8%BD%AF%E4%BB%B6%E6%B5%8B%E8%AF%95/flutter/tool/tests/managed_backend_test.dart"},"type":"testStart","time":3264}
+{"testID":5,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3266}
+{"testID":5,"messageType":"print","message":"[api] 201 http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3278}
+{"testID":5,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3278}
+{"testID":5,"messageType":"print","message":"[api] 201 http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3291}
+{"testID":5,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3291}
+{"testID":5,"messageType":"print","message":"[api] 201 http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3303}
+{"testID":5,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3304}
+{"testID":5,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3312}
+{"testID":5,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/d693c982-15c7-4d10-9635-1e6eba7e296c","type":"print","time":3314}
+{"testID":5,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/d693c982-15c7-4d10-9635-1e6eba7e296c","type":"print","time":3321}
+{"testID":5,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/tasks/d693c982-15c7-4d10-9635-1e6eba7e296c","type":"print","time":3323}
+{"testID":5,"messageType":"print","message":"[api] ERR 409 http://127.0.0.1:18582/api/v1/tasks/d693c982-15c7-4d10-9635-1e6eba7e296c","type":"print","time":3336}
+{"testID":5,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/d693c982-15c7-4d10-9635-1e6eba7e296c","type":"print","time":3337}
+{"testID":5,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/d693c982-15c7-4d10-9635-1e6eba7e296c","type":"print","time":3344}
+{"testID":5,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/7136df87-fe59-433a-b5a5-713435902525","type":"print","time":3345}
+{"testID":5,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/7136df87-fe59-433a-b5a5-713435902525","type":"print","time":3355}
+{"testID":5,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/tasks/7136df87-fe59-433a-b5a5-713435902525","type":"print","time":3355}
+{"testID":5,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/7136df87-fe59-433a-b5a5-713435902525","type":"print","time":3370}
+{"testID":5,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/7136df87-fe59-433a-b5a5-713435902525","type":"print","time":3370}
+{"testID":5,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/7136df87-fe59-433a-b5a5-713435902525","type":"print","time":3377}
+{"testID":5,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/8f9905c2-3c6f-4efd-972b-d72ad117af71","type":"print","time":3377}
+{"testID":5,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8f9905c2-3c6f-4efd-972b-d72ad117af71","type":"print","time":3384}
+{"testID":5,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/tasks/8f9905c2-3c6f-4efd-972b-d72ad117af71","type":"print","time":3384}
+{"testID":5,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8f9905c2-3c6f-4efd-972b-d72ad117af71","type":"print","time":3398}
+{"testID":5,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/8f9905c2-3c6f-4efd-972b-d72ad117af71","type":"print","time":3398}
+{"testID":5,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8f9905c2-3c6f-4efd-972b-d72ad117af71","type":"print","time":3406}
+{"testID":5,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/tasks/8f9905c2-3c6f-4efd-972b-d72ad117af71","type":"print","time":3406}
+{"testID":5,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8f9905c2-3c6f-4efd-972b-d72ad117af71","type":"print","time":3425}
+{"testID":5,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/8f9905c2-3c6f-4efd-972b-d72ad117af71","type":"print","time":3425}
+{"testID":5,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8f9905c2-3c6f-4efd-972b-d72ad117af71","type":"print","time":3431}
+{"testID":5,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":3431}
+{"test":{"id":6,"name":"J25/J28 管理资料、转组改派、旧上级失权及重置密码回读","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":205,"column":3,"url":"file:///Users/aoxiang/Desktop/%E8%BD%AF%E4%BB%B6%E6%B5%8B%E8%AF%95/flutter/tool/tests/managed_backend_test.dart"},"type":"testStart","time":3431}
+{"testID":6,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":3442}
+{"testID":6,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":3445}
+{"testID":6,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3446}
+{"testID":6,"messageType":"print","message":"[api] 201 http://127.0.0.1:18582/api/v1/tasks","type":"print","time":3456}
+{"testID":6,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/8b83373b-afd7-4692-9b82-aee0b341091b","type":"print","time":3456}
+{"testID":6,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/8b83373b-afd7-4692-9b82-aee0b341091b","type":"print","time":3461}
+{"testID":6,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/8b83373b-afd7-4692-9b82-aee0b341091b","type":"print","time":3482}
+{"testID":6,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/8b83373b-afd7-4692-9b82-aee0b341091b","type":"print","time":3488}
+{"testID":6,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/users/4ce9a359-10d8-524d-8232-c73416f398d0","type":"print","time":3488}
+{"testID":6,"messageType":"print","message":"[api] ERR 404 http://127.0.0.1:18582/api/v1/users/4ce9a359-10d8-524d-8232-c73416f398d0","type":"print","time":3493}
+{"testID":6,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/approval-requests/8b83373b-afd7-4692-9b82-aee0b341091b","type":"print","time":3493}
+{"testID":6,"messageType":"print","message":"[api] ERR 404 http://127.0.0.1:18582/api/v1/approval-requests/8b83373b-afd7-4692-9b82-aee0b341091b","type":"print","time":3498}
+{"testID":6,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/8b83373b-afd7-4692-9b82-aee0b341091b","type":"print","time":3730}
+{"testID":6,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/8b83373b-afd7-4692-9b82-aee0b341091b","type":"print","time":3736}
+{"testID":6,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/approval-requests/8b83373b-afd7-4692-9b82-aee0b341091b","type":"print","time":3736}
+{"testID":6,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/8b83373b-afd7-4692-9b82-aee0b341091b","type":"print","time":3748}
+{"testID":6,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":4861}
+{"test":{"id":7,"name":"J11/J28 停用原责任人并接管后，Flutter重开原子替换有效负责人和排期","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":283,"column":3,"url":"file:///Users/aoxiang/Desktop/%E8%BD%AF%E4%BB%B6%E6%B5%8B%E8%AF%95/flutter/tool/tests/managed_backend_test.dart"},"type":"testStart","time":4861}
+{"testID":7,"messageType":"print","message":"[api] POST http://127.0.0.1:18582/api/v1/tasks","type":"print","time":5083}
+{"testID":7,"messageType":"print","message":"[api] 201 http://127.0.0.1:18582/api/v1/tasks","type":"print","time":5092}
+{"testID":7,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/f8356455-1d13-4dbe-bdc0-58f8396f5627","type":"print","time":5317}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/f8356455-1d13-4dbe-bdc0-58f8396f5627","type":"print","time":5325}
+{"testID":7,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/approval-requests/f8356455-1d13-4dbe-bdc0-58f8396f5627","type":"print","time":5326}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/f8356455-1d13-4dbe-bdc0-58f8396f5627","type":"print","time":5339}
+{"testID":7,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5339}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5345}
+{"testID":7,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5345}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5356}
+{"testID":7,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/f7444c32-2318-49ac-94ab-9a800519a984","type":"print","time":5356}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/f7444c32-2318-49ac-94ab-9a800519a984","type":"print","time":5366}
+{"testID":7,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/approval-requests/f7444c32-2318-49ac-94ab-9a800519a984","type":"print","time":5366}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/f7444c32-2318-49ac-94ab-9a800519a984","type":"print","time":5381}
+{"testID":7,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5627}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5632}
+{"testID":7,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5633}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5646}
+{"testID":7,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5646}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5651}
+{"testID":7,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/6174c4d6-5966-4909-b5b4-e68de2e28f6e","type":"print","time":5651}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/6174c4d6-5966-4909-b5b4-e68de2e28f6e","type":"print","time":5665}
+{"testID":7,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/approval-requests/6174c4d6-5966-4909-b5b4-e68de2e28f6e","type":"print","time":5666}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/6174c4d6-5966-4909-b5b4-e68de2e28f6e","type":"print","time":5680}
+{"testID":7,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5680}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5685}
+{"testID":7,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5685}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5698}
+{"testID":7,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/approval-requests/19369961-6166-4345-abee-c2dbe2700043","type":"print","time":5698}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/19369961-6166-4345-abee-c2dbe2700043","type":"print","time":5710}
+{"testID":7,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/approval-requests/19369961-6166-4345-abee-c2dbe2700043","type":"print","time":5710}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/approval-requests/19369961-6166-4345-abee-c2dbe2700043","type":"print","time":5726}
+{"testID":7,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5727}
+{"testID":7,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/tasks/8eb7624a-8f8b-404f-9a98-5d263d501beb","type":"print","time":5732}
+{"testID":7,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":5732}
+{"test":{"id":8,"name":"J25/J30 Flutter处理头像经真实资料接口保存，非法尺寸拒绝且原值不丢","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":376,"column":3,"url":"file:///Users/aoxiang/Desktop/%E8%BD%AF%E4%BB%B6%E6%B5%8B%E8%AF%95/flutter/tool/tests/managed_backend_test.dart"},"type":"testStart","time":5732}
+{"testID":8,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":5773}
+{"testID":8,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":5775}
+{"testID":8,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":5776}
+{"testID":8,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":5809}
+{"testID":8,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":5809}
+{"testID":8,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":5812}
+{"testID":8,"messageType":"print","message":"[api] PATCH http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":5815}
+{"testID":8,"messageType":"print","message":"[api] ERR 400 http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":5822}
+{"testID":8,"messageType":"print","message":"[api] GET http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":5823}
+{"testID":8,"messageType":"print","message":"[api] 200 http://127.0.0.1:18582/api/v1/me/profile","type":"print","time":5826}
+{"testID":8,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":5893}
+{"test":{"id":9,"name":"(tearDownAll)","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":112,"column":3,"url":"file:///Users/aoxiang/Desktop/%E8%BD%AF%E4%BB%B6%E6%B5%8B%E8%AF%95/flutter/tool/tests/managed_backend_test.dart"},"type":"testStart","time":5893}
+{"testID":9,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":5895}
+{"success":true,"type":"done","time":5904}

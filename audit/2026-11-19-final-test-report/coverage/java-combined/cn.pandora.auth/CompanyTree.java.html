@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompanyTree.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.auth</a> &gt; <span class="el_source">CompanyTree.java</span></div><h1>CompanyTree.java</h1><pre class="source lang-java linenums">package cn.pandora.auth;
+
+import cn.pandora.common.Db;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.*;
+import static cn.pandora.common.Db.*;
+
+/** Fixed four-level organization. Titles, legacy manager fields and roles are never authority. */
+@Component
+public class CompanyTree {
+    private final Db db;
+<span class="fc" id="L14">    public CompanyTree(Db db) { this.db=db; }</span>
+
+<span class="fc" id="L16">    public record Tree(Map&lt;String,Map&lt;String,Object&gt;&gt; nodes,List&lt;String&gt; roots,</span>
+                       Set&lt;String&gt; dangling,Set&lt;String&gt; cyclic,String founderId,boolean valid,
+                       List&lt;String&gt; blockers) {}
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Tree of(String organizationId) {
+<span class="fc" id="L22">        var company=db.find(&quot;SELECT founder_employee_id FROM organizations WHERE id=?&quot;,organizationId);</span>
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        return validate(organizationId,company==null?null:s(company,&quot;founderEmployeeId&quot;),</span>
+<span class="fc" id="L24">                db.list(&quot;SELECT u.id,u.organization_id,u.display_name,(u.active AND p.active) AS active,u.reviewer_available,u.must_change_password,u.credential_version &quot;</span>
+                        + &quot;FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id &quot;
+                        + &quot;WHERE u.organization_id=? AND p.account_type='employee' ORDER BY u.id&quot;,organizationId),
+<span class="fc" id="L27">                db.list(&quot;SELECT * FROM departments WHERE organization_id=? ORDER BY id&quot;,organizationId),</span>
+<span class="fc" id="L28">                db.list(&quot;SELECT * FROM teams WHERE organization_id=? ORDER BY id&quot;,organizationId),</span>
+<span class="fc" id="L29">                db.list(&quot;SELECT * FROM positions WHERE organization_id=? ORDER BY id&quot;,organizationId),</span>
+<span class="fc" id="L30">                db.list(&quot;SELECT * FROM employee_placements WHERE organization_id=? ORDER BY employee_id&quot;,organizationId));</span>
+    }
+
+    /** Validates a complete final result in memory, including newly-created units and head swaps. */
+    public static Tree validate(String organizationId,String founderId,List&lt;Map&lt;String,Object&gt;&gt; employees,
+                                List&lt;Map&lt;String,Object&gt;&gt; departments,List&lt;Map&lt;String,Object&gt;&gt; teams,
+                                List&lt;Map&lt;String,Object&gt;&gt; positions,List&lt;Map&lt;String,Object&gt;&gt; placements) {
+<span class="fc" id="L37">        List&lt;String&gt; blockers=new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L38">        Map&lt;String,Map&lt;String,Object&gt;&gt; people=index(organizationId,employees,&quot;id&quot;,&quot;employee&quot;,blockers);</span>
+<span class="fc" id="L39">        Map&lt;String,Map&lt;String,Object&gt;&gt; deps=index(organizationId,departments,&quot;id&quot;,&quot;department&quot;,blockers);</span>
+<span class="fc" id="L40">        Map&lt;String,Map&lt;String,Object&gt;&gt; groups=index(organizationId,teams,&quot;id&quot;,&quot;team&quot;,blockers);</span>
+<span class="fc" id="L41">        Map&lt;String,Map&lt;String,Object&gt;&gt; titles=index(organizationId,positions,&quot;id&quot;,&quot;position&quot;,blockers);</span>
+<span class="fc" id="L42">        Map&lt;String,Map&lt;String,Object&gt;&gt; places=index(organizationId,placements,&quot;employeeId&quot;,&quot;placement&quot;,blockers);</span>
+<span class="fc" id="L43">        Map&lt;String,String&gt; departmentHeads=new HashMap&lt;&gt;(),teamHeads=new HashMap&lt;&gt;();</span>
+<span class="fc" id="L44">        List&lt;String&gt; founders=new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L45">        Set&lt;String&gt; dangling=new LinkedHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        for(var entry:deps.entrySet())</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            if(s(entry.getValue(),&quot;parentId&quot;)!=null) blockers.add(&quot;NESTED_DEPARTMENT:&quot;+entry.getKey());</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        for(var entry:groups.entrySet()) {</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            if(s(entry.getValue(),&quot;parentId&quot;)!=null) blockers.add(&quot;NESTED_TEAM:&quot;+entry.getKey());</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">            if(!deps.containsKey(s(entry.getValue(),&quot;departmentId&quot;))) blockers.add(&quot;TEAM_DEPARTMENT_MISSING:&quot;+entry.getKey());</span>
+<span class="fc" id="L51">        }</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        for(var entry:places.entrySet()) {</span>
+<span class="fc" id="L53">            String employeeId=entry.getKey();var placement=entry.getValue();</span>
+<span class="fc" id="L54">            var employee=people.get(employeeId);</span>
+<span class="pc bpc" id="L55" title="1 of 4 branches missed.">            if(employee==null || !active(employee)) {blockers.add(&quot;PLACEMENT_EMPLOYEE_INACTIVE_OR_MISSING:&quot;+employeeId);continue;}</span>
+<span class="fc" id="L56">            String type=s(placement,&quot;placementType&quot;),dep=s(placement,&quot;departmentId&quot;),team=s(placement,&quot;teamId&quot;);</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            if(!titles.containsKey(s(placement,&quot;positionId&quot;))) blockers.add(&quot;POSITION_REQUIRED:&quot;+employeeId);</span>
+<span class="fc bfc" id="L58" title="All 4 branches covered.">            if(dep!=null &amp;&amp; !deps.containsKey(dep)) blockers.add(&quot;PLACEMENT_DEPARTMENT_MISSING:&quot;+employeeId);</span>
+<span class="pc bpc" id="L59" title="1 of 6 branches missed.">            if(team!=null &amp;&amp; (!groups.containsKey(team) || !Objects.equals(dep,s(groups.get(team),&quot;departmentId&quot;))))</span>
+<span class="fc" id="L60">                blockers.add(&quot;TEAM_DEPARTMENT_MISMATCH:&quot;+employeeId);</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            if(&quot;founder&quot;.equals(type)) {</span>
+<span class="fc" id="L62">                founders.add(employeeId);</span>
+<span class="pc bpc" id="L63" title="2 of 4 branches missed.">                if(dep!=null || team!=null) blockers.add(&quot;FOUNDER_COMPANY_ONLY:&quot;+employeeId);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            } else if(&quot;department_head&quot;.equals(type)) {</span>
+<span class="pc bpc" id="L65" title="2 of 4 branches missed.">                if(dep==null || team!=null) blockers.add(&quot;DEPARTMENT_HEAD_SHAPE:&quot;+employeeId);</span>
+<span class="pc bpc" id="L66" title="2 of 4 branches missed.">                if(dep!=null &amp;&amp; departmentHeads.putIfAbsent(dep,employeeId)!=null) blockers.add(&quot;DUPLICATE_DEPARTMENT_HEAD:&quot;+dep);</span>
+<span class="fc bfc" id="L67" title="All 4 branches covered.">            } else if(&quot;team_head&quot;.equals(type) || &quot;employee&quot;.equals(type)) {</span>
+<span class="pc bpc" id="L68" title="1 of 4 branches missed.">                if(dep==null || team==null) blockers.add(&quot;TEAM_REQUIRED:&quot;+employeeId);</span>
+<span class="pc bpc" id="L69" title="1 of 6 branches missed.">                if(&quot;team_head&quot;.equals(type) &amp;&amp; team!=null &amp;&amp; teamHeads.putIfAbsent(team,employeeId)!=null) blockers.add(&quot;DUPLICATE_TEAM_HEAD:&quot;+team);</span>
+<span class="fc" id="L70">            } else blockers.add(&quot;INVALID_PLACEMENT_TYPE:&quot;+employeeId);</span>
+<span class="fc" id="L71">        }</span>
+<span class="pc bpc" id="L72" title="1 of 6 branches missed.">        if(founderId==null || founders.size()!=1 || !founders.contains(founderId)) blockers.add(&quot;FIXED_FOUNDER_REQUIRED&quot;);</span>
+<span class="fc bfc" id="L73" title="All 4 branches covered.">        for(String dep:deps.keySet()) if(!departmentHeads.containsKey(dep)) blockers.add(&quot;DEPARTMENT_HEAD_REQUIRED:&quot;+dep);</span>
+<span class="fc bfc" id="L74" title="All 4 branches covered.">        for(String team:groups.keySet()) if(!teamHeads.containsKey(team)) blockers.add(&quot;TEAM_HEAD_REQUIRED:&quot;+team);</span>
+<span class="fc" id="L75">        Map&lt;String,Map&lt;String,Object&gt;&gt; nodes=new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for(var entry:people.entrySet()) {</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            String employeeId=entry.getKey();if(!active(entry.getValue())) continue;</span>
+<span class="fc" id="L78">            var placement=places.get(employeeId);</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            if(placement==null) {blockers.add(&quot;PLACEMENT_REQUIRED:&quot;+employeeId);dangling.add(employeeId);continue;}</span>
+<span class="fc" id="L80">            String type=s(placement,&quot;placementType&quot;),dep=s(placement,&quot;departmentId&quot;),team=s(placement,&quot;teamId&quot;);</span>
+<span class="fc bfc" id="L81" title="All 5 branches covered.">            String manager=switch(Objects.toString(type,&quot;&quot;)) {</span>
+<span class="fc" id="L82">                case &quot;founder&quot; -&gt; null;</span>
+<span class="fc" id="L83">                case &quot;department_head&quot; -&gt; founderId;</span>
+<span class="fc" id="L84">                case &quot;team_head&quot; -&gt; departmentHeads.get(dep);</span>
+<span class="fc" id="L85">                case &quot;employee&quot; -&gt; teamHeads.get(team);</span>
+<span class="fc" id="L86">                default -&gt; null;</span>
+            };
+<span class="fc bfc" id="L88" title="All 5 branches covered.">            int rank=switch(Objects.toString(type,&quot;&quot;)) {</span>
+<span class="fc" id="L89">                case &quot;founder&quot; -&gt; 1;case &quot;department_head&quot; -&gt; 2;case &quot;team_head&quot; -&gt; 3;case &quot;employee&quot; -&gt; 4;default -&gt; 0;</span>
+            };
+<span class="pc bpc" id="L91" title="2 of 8 branches missed.">            if(!&quot;founder&quot;.equals(type) &amp;&amp; (manager==null || manager.equals(employeeId) || !people.containsKey(manager)</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                    || !active(people.get(manager)))) {dangling.add(employeeId);blockers.add(&quot;MANAGER_REQUIRED:&quot;+employeeId);}</span>
+<span class="fc" id="L93">            Map&lt;String,Object&gt; node=new LinkedHashMap&lt;&gt;(entry.getValue());</span>
+<span class="fc" id="L94">            node.put(&quot;departmentId&quot;,dep);node.put(&quot;teamId&quot;,team);node.put(&quot;positionId&quot;,s(placement,&quot;positionId&quot;));</span>
+<span class="fc" id="L95">            node.put(&quot;placementType&quot;,type);node.put(&quot;role&quot;,type);node.put(&quot;rankLevel&quot;,rank);node.put(&quot;managerId&quot;,manager);</span>
+<span class="fc" id="L96">            node.put(&quot;accountType&quot;,&quot;employee&quot;);nodes.put(employeeId,Collections.unmodifiableMap(node));</span>
+<span class="fc" id="L97">        }</span>
+        // Four legal kinds derive all edges. Still detect malformed cycles before granting authority.
+<span class="fc" id="L99">        Set&lt;String&gt; cyclic=new LinkedHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        for(String id:nodes.keySet()) {</span>
+<span class="fc" id="L101">            Set&lt;String&gt; visited=new LinkedHashSet&lt;&gt;();String cursor=id;</span>
+<span class="pc bpc" id="L102" title="1 of 4 branches missed.">            while(cursor!=null &amp;&amp; nodes.containsKey(cursor)) {</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">                if(!visited.add(cursor)) {cyclic.addAll(visited);break;}</span>
+<span class="fc" id="L104">                cursor=s(nodes.get(cursor),&quot;managerId&quot;);</span>
+            }
+<span class="fc" id="L106">        }</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if(!cyclic.isEmpty()) blockers.add(&quot;MANAGEMENT_CYCLE&quot;);</span>
+<span class="fc" id="L108">        return new Tree(Collections.unmodifiableMap(nodes),List.copyOf(founders),Set.copyOf(dangling),Set.copyOf(cyclic),</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">                blockers.isEmpty()?founderId:null,blockers.isEmpty(),List.copyOf(blockers));</span>
+    }
+
+    private static Map&lt;String,Map&lt;String,Object&gt;&gt; index(String organizationId,List&lt;Map&lt;String,Object&gt;&gt; rows,
+                                                       String key,String kind,List&lt;String&gt; blockers) {
+<span class="fc" id="L114">        Map&lt;String,Map&lt;String,Object&gt;&gt; result=new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        for(var row:rows) {</span>
+<span class="fc" id="L116">            String id=s(row,key);</span>
+<span class="pc bpc" id="L117" title="1 of 4 branches missed.">            if(id==null || !organizationId.equals(s(row,&quot;organizationId&quot;))) {blockers.add(&quot;INVALID_COMPANY_REFERENCE:&quot;+kind+&quot;:&quot;+id);continue;}</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">            if(result.putIfAbsent(id,row)!=null) blockers.add(&quot;DUPLICATE_ID:&quot;+kind+&quot;:&quot;+id);</span>
+<span class="fc" id="L119">        }</span>
+<span class="fc" id="L120">        return result;</span>
+    }
+<span class="fc" id="L122">    public String founderId(String organizationId) {return of(organizationId).founderId();}</span>
+<span class="pc bpc" id="L123" title="1 of 4 branches missed.">    public boolean isFounder(Actor actor) {return actor.business() &amp;&amp; actor.id().equals(founderId(actor.organizationId()));}</span>
+    private static boolean active(Map&lt;String,Object&gt; row) {
+<span class="fc bfc" id="L125" title="All 6 branches covered.">        Object value=row.get(&quot;active&quot;);return Boolean.TRUE.equals(value) || value instanceof Number number &amp;&amp; number.intValue()==1;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

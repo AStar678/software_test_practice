@@ -1,0 +1,2 @@
+# Test runner only; Java service coverage comes from JaCoCo, not Python harness coverage.
+pytest==9.2.0

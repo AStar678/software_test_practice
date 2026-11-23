@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PhoneNumbers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.auth</a> &gt; <span class="el_source">PhoneNumbers.java</span></div><h1>PhoneNumbers.java</h1><pre class="source lang-java linenums">package cn.pandora.auth;
+
+/**
+ * One normalization rule for employee phone numbers (chapter 2.1).
+ *
+ * The login key is derived from the contact number by removing the display separators the profile
+ * form already allows (spaces, hyphens, brackets, dots) and keeping a single leading {@code +} for a
+ * real international prefix. No number range, country code or digit count is invented: the accepted
+ * shape stays the one the existing profile validation already accepted (3–20 digits), and a value
+ * that does not normalize to that shape is reported to the caller instead of being guessed.
+ *
+ * The same function backs the authentication lookup, every write that changes a contact number, and
+ * the Python migration precheck (see {@code backend/scripts/migration_precheck.py}), so a login key
+ * can never drift from the number it came from.
+ */
+public final class PhoneNumbers {
+    private PhoneNumbers() {}
+
+    /** Normalized login/contact key, or {@code null} when the input is blank or not a usable number. */
+    public static String normalize(String raw) {
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        if (raw == null) return null;</span>
+<span class="fc" id="L22">        StringBuilder out = new StringBuilder(raw.length());</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        for (int i = 0; i &lt; raw.length(); i++) {</span>
+<span class="fc" id="L24">            char c = raw.charAt(i);</span>
+<span class="pc bpc" id="L25" title="2 of 14 branches missed.">            if (c == ' ' || c == '\u3000' || c == '\t' || c == '-' || c == '(' || c == ')' || c == '.') continue;</span>
+<span class="fc" id="L26">            out.append(c);</span>
+        }
+<span class="fc" id="L28">        String text = out.toString();</span>
+<span class="fc bfc" id="L29" title="All 4 branches covered.">        if (text.isEmpty() || !text.matches(&quot;\\+?[0-9]{3,20}&quot;)) return null;</span>
+<span class="fc" id="L30">        return text;</span>
+    }
+
+    /** True when the raw value is a usable phone number (so login can treat it as an employee key). */
+    public static boolean isPhone(String raw) {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        return normalize(raw) != null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

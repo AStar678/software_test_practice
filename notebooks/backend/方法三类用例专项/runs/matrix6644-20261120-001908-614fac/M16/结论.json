@@ -1,0 +1,110 @@
+{
+  "id": "M16",
+  "method": "TaskService.assigneeCandidates",
+  "endpoint": "GET /assignee-candidates",
+  "status": "PASS",
+  "counts": {
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0
+  },
+  "categoryCoverage": {
+    "正常": {
+      "designed": 1,
+      "executed": 1,
+      "passed": 1
+    },
+    "边界": {
+      "designed": 2,
+      "executed": 2,
+      "passed": 2
+    },
+    "异常": {
+      "designed": 2,
+      "executed": 2,
+      "passed": 2
+    }
+  },
+  "threeCategoriesSatisfied": true,
+  "cleanup": {
+    "created": 0,
+    "unresolved": []
+  },
+  "analysis": "正常输入：N_query（q长度=10，purpose=create）实际HTTP 200；items=0，purpose=create。\n\n边界输入：B_query0（q长度=0，purpose=create）实际HTTP 200；items=14，purpose=create；B_query100（q长度=100，purpose=create）实际HTTP 200；items=0，purpose=create。\n\n异常输入：E_query101（q长度=101，purpose=create）实际HTTP 400；code=INVALID_INPUT；E_purpose（q长度=10，purpose=invalid）实际HTTP 400；code=INVALID_INPUT。\n\n以上实际状态均与各用例预期吻合，且pytest业务后置条件全部通过，因此本轮所列三类用例通过。",
+  "actualEvidence": [
+    {
+      "caseId": "N_query",
+      "kind": "正常",
+      "input": "q长度=10，purpose=create",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；items=0，purpose=create",
+      "pytest": "passed",
+      "requestLines": [
+        1
+      ],
+      "metrics": {
+        "items": 0,
+        "purpose": "create"
+      }
+    },
+    {
+      "caseId": "B_query0",
+      "kind": "边界",
+      "input": "q长度=0，purpose=create",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；items=14，purpose=create",
+      "pytest": "passed",
+      "requestLines": [
+        2
+      ],
+      "metrics": {
+        "items": 14,
+        "purpose": "create"
+      }
+    },
+    {
+      "caseId": "B_query100",
+      "kind": "边界",
+      "input": "q长度=100，purpose=create",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；items=0，purpose=create",
+      "pytest": "passed",
+      "requestLines": [
+        3
+      ],
+      "metrics": {
+        "items": 0,
+        "purpose": "create"
+      }
+    },
+    {
+      "caseId": "E_query101",
+      "kind": "异常",
+      "input": "q长度=101，purpose=create",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT",
+      "pytest": "passed",
+      "requestLines": [
+        4
+      ],
+      "metrics": {}
+    },
+    {
+      "caseId": "E_purpose",
+      "kind": "异常",
+      "input": "q长度=10，purpose=invalid",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT",
+      "pytest": "passed",
+      "requestLines": [
+        5
+      ],
+      "metrics": {}
+    }
+  ]
+}

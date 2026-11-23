@@ -1,0 +1,19 @@
+{
+  "updated": "2026-11-18T16:27:20.002Z",
+  "checks": [
+    {
+      "check": "employee session is ready",
+      "pass": true
+    },
+    {
+      "check": "no separate backfill entry",
+      "pass": true
+    },
+    {
+      "check": "personal task table loaded",
+      "pass": true
+    }
+  ],
+  "result": "FAIL",
+  "error": "TypeError: Cannot read properties of undefined (reading 'map')\n    at <anonymous>:1:34 in Pandora.taskForm.current().sorted.map(t=>t.id)"
+}

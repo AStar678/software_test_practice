@@ -1,0 +1,51 @@
+PASS stable employee IDs and creation times survive V21
+PASS migration never infers a founder from legacy roots
+PASS explicit mapping blockers exist for both companies
+PASS all four placement types including department head without team are legal
+PASS company-level founder is not forced into a legacy department
+PASS one employee cannot occupy two placements
+PASS one company cannot have two founder slots
+PASS one department cannot have two heads
+PASS one team cannot have two heads
+PASS ordinary employee requires a team
+PASS department head cannot occupy a team
+PASS founder cannot occupy a department
+PASS unknown placement type is rejected
+PASS display position is required
+PASS cross-company employee is rejected
+PASS cross-company display position is rejected
+PASS team must belong to its placement department
+PASS cross-company founder reference is rejected
+PASS clean administrator needs no pseudo employee row
+PASS administrator ID and credential source survive extraction
+PASS old administrator audit resolves via principal after employee removal
+PASS auth_sessions.user_id retains shared administrator provenance
+PASS idempotency_keys.user_id retains shared administrator provenance
+PASS domain_events.initiator_id retains shared administrator provenance
+PASS domain_events.revoked_by retains shared administrator provenance
+PASS notifications.recipient_id retains shared administrator provenance
+PASS task_records.author_id retains shared administrator provenance
+PASS task_history_entries.actor_id retains shared administrator provenance
+PASS approval_requests.decided_by retains shared administrator provenance
+PASS employee business history occupied by legacy administrator is retained and blocked
+PASS independent administrator cannot occupy an employee placement
+PASS independent administrator cannot author a business log
+PASS independent administrator cannot be an original task creator
+PASS employee-only current reviewer FK remains restricted to users
+PASS independent administrator cannot be a current business reviewer
+PASS independent administrator cannot become an effective assignee
+PASS employee cannot be used as an administrator credential principal
+PASS initial business responsibility belongs to the original employee creator
+PASS ownership migration fabricates no takeover history
+PASS one task cannot have two current business owners
+PASS current business owner must belong to the task company
+PASS independent administrator cannot be the current business owner
+PASS takeover history requires a nonblank reason
+PASS takeover administrator must be an admin principal
+PASS takeover next owner must belong to the company
+PASS takeover history cannot name an administrator as business owner
+PASS takeover keeps object, before/after owners, admin actor, time and reason
+PASS business takeover does not overwrite original creator or creation time
+PASS same ownership version cannot record two takeover results
+PASS V1–V20 files match Git HEAD
+PASS V1–V20 checksums remain unchanged during the check

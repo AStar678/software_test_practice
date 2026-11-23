@@ -1,0 +1,32 @@
+PASS founder reports include exactly all actual descendants
+PASS founder log author directory includes self and actual descendants
+PASS founder log author directory contains no private fields or username
+PASS founder visible log list uses the same full descendant range
+PASS founder self profile derives fixed identity and retains only own contacts
+PASS alpha-head reports include exactly all actual descendants
+PASS alpha-head log author directory includes self and actual descendants
+PASS alpha-head log author directory contains no private fields or username
+PASS alpha-head visible log list uses the same full descendant range
+PASS alpha-head self profile derives fixed identity and retains only own contacts
+PASS alpha-one-head reports include exactly all actual descendants
+PASS alpha-one-head log author directory includes self and actual descendants
+PASS alpha-one-head log author directory contains no private fields or username
+PASS alpha-one-head visible log list uses the same full descendant range
+PASS alpha-one-head self profile derives fixed identity and retains only own contacts
+PASS alpha-one-employee reports include exactly all actual descendants
+PASS alpha-one-employee log author directory includes self and actual descendants
+PASS alpha-one-employee log author directory contains no private fields or username
+PASS alpha-one-employee visible log list uses the same full descendant range
+PASS alpha-one-employee self profile derives fixed identity and retains only own contacts
+FAIL alpha-head profile access to alpha-one-employee matches current chain
+Traceback (most recent call last):
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_fixed_workspace_access.py", line 107, in <module>
+    if __name__=='__main__': main()
+                             ~~~~^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_fixed_workspace_access.py", line 51, in main
+    check(reader+' profile access to '+target+' matches current chain',(status==200 and person.get('phone')==f.identities[target]['identifier'] and 'email' not in person) if allowed else status==404)
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/backend/scripts/check_fixed_workspace_access.py", line 16, in check
+    if not condition: raise AssertionError(name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: alpha-head profile access to alpha-one-employee matches current chain

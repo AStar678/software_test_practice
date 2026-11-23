@@ -1,0 +1,214 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Pandora 综合测试报告</title><style>:root{color-scheme:light}*{box-sizing:border-box}body{font:15px/1.75 -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;color:#23303e;margin:0;background:#f4f6f8}main{max-width:1120px;background:white;margin:32px auto;padding:44px 52px;border:1px solid #dde4eb;border-radius:16px}h1{font-size:30px;line-height:1.35;margin:0 0 24px;color:#102c46}h2{font-size:23px;line-height:1.45;margin:35px 0 16px;padding-bottom:8px;border-bottom:1px solid #dce6ee}h3{font-size:18px;line-height:1.6;margin:25px 0 10px}p{margin:12px 0}a{color:#155d9b;text-decoration:none}table{border-collapse:collapse;width:100%;font-size:13px;margin:20px 0}th,td{border:1px solid #d8e1ea;padding:9px 10px;text-align:left;vertical-align:top;word-break:break-word}th{background:#eef4f9;color:#264b68}tr:nth-child(even){background:#f8fafc}code{font-size:12px;background:#eef1f4;padding:2px 4px;overflow-wrap:anywhere}pre{padding:16px;background:#f0f3f6;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:8px;font-size:12px;line-height:1.6}pre code{padding:0}blockquote{margin:18px 0;padding:5px 18px;border-left:4px solid #98b4cd;background:#f3f7fa}li{margin:7px 0}strong{color:#183c59}img{max-width:100%}@page{size:A4;margin:17mm 15mm 19mm}@media print{body{background:white;font-size:10pt;line-height:1.65}main{padding:0;margin:0;border:0;border-radius:0;max-width:none}h1{font-size:22pt}h2{font-size:15pt;margin-top:23px}h3{font-size:12pt}h1,h2,h3{break-after:avoid}p,li{orphans:3;widows:3}table{font-size:8pt;table-layout:fixed}th,td{padding:6px}tr{break-inside:avoid}pre,blockquote{break-inside:avoid}a{color:#264b68}code{font-size:8pt}thead{display:table-header-group}}</style><main><h1>测试设计与核心方法矩阵</h1>
+<p>本轮采用等价类划分、边界值分析、状态迁移、角色权限矩阵、真实数据库集成和界面回归。下表给出核心业务的正常、边界、异常三类设计；展开后的参数、结果、失败堆栈见 <code>test-cases.csv</code>、<code>test-cases.json</code>。这些是已执行设计，不代表每个 Java 方法已完成三条独立单元用例的人工签字。</p>
+<table>
+<thead>
+<tr>
+<th>业务 / 方法</th>
+<th>正常等价类</th>
+<th>边界</th>
+<th>异常 / 对抗情况</th>
+<th>可复核的执行证据</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AuthService.login、Phone.normalize</td>
+<td>员工手机号、独立管理员、四类员工身份</td>
+<td>3 / 20 位手机号；空格、括号、区号格式</td>
+<td>2 / 21 位、Unicode 数字、错误 JSON 类型、错密、冲突登录、跨账号</td>
+<td>PhoneBoundaryMatrixTest；pytest <code>test_login_rejects_invalid_equivalence_classes</code>；check_login_identity_collision.log；phone-complete</td>
+</tr>
+<tr>
+<td>Credentials.requirePolicy</td>
+<td>字母 + 数字、正常 10 字符密码</td>
+<td>9 / 10 码点；UTF-8 72 / 73 字节；Unicode 字母</td>
+<td>缺字母、缺数字、空值、超限；Flutter 对照相同字符串</td>
+<td>CredentialBoundaryMatrixTest；flutter-expanded.jsonl；存在跨端失败</td>
+</tr>
+<tr>
+<td>Credentials.generate</td>
+<td>多次生成符合策略</td>
+<td>每批 64 个、重复三批</td>
+<td>样本内重复、生成值不满足策略均报错</td>
+<td>CredentialBoundaryMatrixTest；这是有限样本检查，不能证明绝无碰撞</td>
+</tr>
+<tr>
+<td>Writes.checkVersion</td>
+<td>正确强 ETag</td>
+<td>0、1、Long.MAX_VALUE；旧 / 新一版本</td>
+<td>缺失、空白、弱 ETag、负数、通配符、格式错误</td>
+<td>CoreBoundaryMatrixTest；pytest <code>test_daily_update_version_fence</code></td>
+</tr>
+<tr>
+<td>Writes.run / 幂等写入</td>
+<td>同一键同一正文重放</td>
+<td>8 个并行相同请求只产生一份数据</td>
+<td>同键换正文冲突；两次并行旧版本更新只有一次成功、另一次 412</td>
+<td>pytest <code>test_same_idempotency_key…</code>、<code>test_eight_concurrent…</code>、<code>test_two_stale_concurrent…</code></td>
+</tr>
+<tr>
+<td>TaskService 文本、负责人、时间校验</td>
+<td>合法标题、负责人、带时区日期</td>
+<td>标题 1/79/80/81 码点；负责人 1/99/100/101；年份 1000/9998、前后越界</td>
+<td>空标题、错误字段类型、非法闰日、无时区时间、溢出数字伪装布尔</td>
+<td>TaskGuardBoundaryMatrixTest；pytest <code>test_task_title_unicode_code_point_boundaries</code>、<code>test_task_all_day_requires_real_json_boolean</code></td>
+</tr>
+<tr>
+<td>TaskService.create/change/decide</td>
+<td>创建、变更、批准、驳回、创始人直达</td>
+<td>审核冻结期间、负责人顺序变化、审核链即时变化</td>
+<td>越权、陈旧版本、离职后权限丧失、申请期间提醒冻结</td>
+<td>check_review_routing.log；check_apply_mixed_edit.log；check_auto_apply_authorization.log</td>
+</tr>
+<tr>
+<td>TaskService 日程 / 置顶 / 移交</td>
+<td>正常日程更新、本人置顶、正式移交</td>
+<td>跨日、零时长、跨月跨年、多任务重叠、24:00 截止</td>
+<td>过期版本、拖拽取消、无权置顶、日轴越界、移交后旧权限</td>
+<td>check_schedule_drag.log；drag-final/check_web_alignment_drag.log；check_handover_chain.log；check_demo_extremes.log</td>
+</tr>
+<tr>
+<td>DailyItemsService.create/change/list/summary</td>
+<td>本人事项增改查与完成切换</td>
+<td>正文 1/2000/2001；分页 1/100/101；区间 93 天及首次越界；闰日</td>
+<td>经理、其他员工、异公司不可读；倒序、非法日期、陈旧版本</td>
+<td>pytest <code>test_daily_*</code>；browser-recheck/check_daily_items.log</td>
+</tr>
+<tr>
+<td>DailyItemsService 稳定分页 / 生命周期</td>
+<td>多页接续、编辑后排序稳定</td>
+<td>满页、最后一页、空页；跨月跨年</td>
+<td>删除 / 新增发生在接续中、重复键、切账号残留</td>
+<td>browser-recheck 的 daily-items-browser.json 及 paging/lifecycle 子检查</td>
+</tr>
+<tr>
+<td>WorkspaceService.createLog/changeLog</td>
+<td>当日写入、昨天和前天补填、显式编辑</td>
+<td>正文 UTF-16 10000 / 10001；emoji；冻结时刻前后</td>
+<td>重复日期并发创建、越权日志、冻结后编辑、未保存草稿冲突</td>
+<td>pytest <code>test_work_log_utf16_contract</code>；forms-final/check_log_backfill_entry.log；check_employee_contracts_upgrade.log</td>
+</tr>
+<tr>
+<td>CommentService.create/change</td>
+<td>普通文字和作者本人编辑</td>
+<td>1 / 10000 / 10001 UTF-16；5000 / 5001 emoji；空白</td>
+<td>Number/Boolean/List/Map；非作者修改；权限变更后读写；禁止回复层级</td>
+<td>pytest <code>test_comment_*</code>；check_fixed_notifications.log；新增 / 编辑均发现错误类型被接受</td>
+</tr>
+<tr>
+<td>CommentService.list/delete</td>
+<td>发布顺序接续、作者删除</td>
+<td>删页中间记录仍能接续、通知已投递后删除</td>
+<td>外公司、非作者、对象权限收回、已删除 / 物理消失内容</td>
+<td>check_fixed_notifications.log；check_fixed_communication_web.log；check_web_verification_repairs.log</td>
+</tr>
+<tr>
+<td>ProfileService.update / 资料读取</td>
+<td>本人资料、管理链可读下属资料</td>
+<td>邮箱本地部分 64/65；PNG 1/512/513 像素、真实解码</td>
+<td>非法邮箱、0 像素图、错误格式；目录无隐私、旧经理失权</td>
+<td>pytest <code>test_email_*</code>、<code>test_avatar_*</code>；oracle-recheck 的两个资料权限套件</td>
+</tr>
+<tr>
+<td>OrganizationPlans / OrganizationService</td>
+<td>完整组织计划、新增人员、职责接管</td>
+<td>职位 / 负责人变化、同名人员、空单位、末位负责人</td>
+<td>不完整计划、跨公司 ID、重复手机号、旧版本、操作回滚</td>
+<td>check_organization_plans.log；check_business_takeover.log；check_employee_contracts_upgrade.log</td>
+</tr>
+<tr>
+<td>OrganizationService.setOffWorkTime</td>
+<td>18:00</td>
+<td>00:00 / 23:59:59</td>
+<td>24:00、23:60、12:00:60、非补零时间、空串；三种业务身份越权</td>
+<td>pytest test_00_uncovered_contracts.py 的 <code>test_off_work_time_*</code>、<code>test_company_clock_is_admin_only</code></td>
+</tr>
+<tr>
+<td>OrganizationService.deleteCompanyItem</td>
+<td>管理员删除后实际不可读</td>
+<td>正确版本 / 缺 If-Match / 超前版本</td>
+<td>非管理员写入被拒；失败删除保持原条目</td>
+<td>pytest <code>test_company_delete_preconditions</code>；check_admin_contract.log</td>
+</tr>
+<tr>
+<td>OrganizationService 公司信息增改排序</td>
+<td>管理员维护正文、业务端只读</td>
+<td>10 条允许、第 11 条拒绝；完整顺序集合</td>
+<td>旧 title 字段、重复 / 少项 / 外公司排序、业务端写入</td>
+<td>check_admin_contract.log；check_daily_items.log；新增删除测试</td>
+</tr>
+<tr>
+<td>WorkspaceService.homeItem</td>
+<td>公司内不同业务角色读取、editable=false</td>
+<td>合法 UUID / 不存在 UUID</td>
+<td>异公司 404；不返回 ownerId / organizationId</td>
+<td>pytest <code>test_company_home_item_detail_scope</code></td>
+</tr>
+<tr>
+<td>WorkspaceService.adminTeams / audit</td>
+<td>独立管理员按页读取</td>
+<td>limit 1/100 与 0/101/-1/x</td>
+<td>三种业务角色 403；teams 在当前结构上实际 500</td>
+<td>pytest <code>test_admin_directory_and_audit_pagination</code>、<code>test_admin_audit_and_team_reads_reject_business_roles</code></td>
+</tr>
+<tr>
+<td>EventsWorker / NotificationService</td>
+<td>事件投递、已读、请求 / 评论通知</td>
+<td>撤回 180 秒前后；分页 20 到 120；通知刷新一半失败</td>
+<td>冻结不提醒、撤回后隐去内容、越权事件、迟到旧响应、账号切换</td>
+<td>check_fixed_notifications.log；check_admin_contract.log；check_web_verification_repairs.log；notifications-final</td>
+</tr>
+<tr>
+<td>HolidayCalendar / 调度</td>
+<td>缓存读取、管理员刷新</td>
+<td>缺失年份、当前 / 次年各一次；重复读合并</td>
+<td>外部源不可用、坏 payload、普通员工刷新、失败不覆盖旧缓存</td>
+<td>check_holidays.log；Holiday* JUnit</td>
+</tr>
+<tr>
+<td>WorkspaceService.statistics / analysis</td>
+<td>实际范围统计、本地规则分析</td>
+<td>零任务、多任务、排序 / 接续、部门和团队范围</td>
+<td>授权收回后旧结果不可读、角色切换、不伪造云端 AI</td>
+<td>JUnit WorkspaceAnalysisTest；Flutter real-backend；check_subordinate_workspace.log</td>
+</tr>
+<tr>
+<td>ControllableClock / AdminController.advanceClock</td>
+<td>零增量、推进、重置</td>
+<td>0 / 1 / 86400 秒；管理接口 400 天上界</td>
+<td>负数、分数、2^64；withZone 丢失已推进偏移</td>
+<td>CoreBoundaryMatrixTest；pytest <code>test_admin_clock_seconds_are_bounded_integers</code>；仅受控测试时钟</td>
+</tr>
+<tr>
+<td>Flutter 会话 / 页面</td>
+<td>4 种身份登录、5 个页签、真实后端读写</td>
+<td>进程被结束后恢复、断网冷启动、网络恢复</td>
+<td>不展示未验证旧正文、提供重试、未授权错误、登录输入规范化</td>
+<td>flutter-managed.jsonl 5 项；flutter-real-backend.jsonl 32 项；phone-complete 16 项</td>
+</tr>
+<tr>
+<td>网页日历 / 表单 / 响应式</td>
+<td>鼠标、触摸、键盘、展开折叠</td>
+<td>320/390/1440 像素，390×600 短屏；500ms 长按</td>
+<td>Esc、拖拽前滚动取消、边界拖动、迟到请求、页面往返、跨远月回今天</td>
+<td>check_fixed_web.log；check_calendar_drawer.log；drag-final；browser-recheck，回今天四项失败</td>
+</tr>
+<tr>
+<td>结构迁移</td>
+<td>全新库与升级库最终一致</td>
+<td>历史 V20–V26 与当前全部迁移至 V36</td>
+<td>旧映射、外键/唯一约束、回滚、禁止旧私人标签复活</td>
+<td>migration-recheck；schema-final-recheck；check_apply_private_migration_guard.log</td>
+</tr>
+</tbody></table>
+<h2>逐方法追踪的诚实边界</h2>
+<p><code>core-method-inventory.json</code> 从源代码收集 249 个 public 候选，包含服务方法、退役兼容入口、record 构造器和辅助方法，不等于 249 个现行业务功能。<code>core-method-coverage-review.json</code> 将这些候选与真实 JaCoCo 方法命中关联；<code>coverage/java-method-coverage.csv</code> 列出所有可执行方法的覆盖率。</p>
+<p>按《中期验收要求》严格逐方法检查时，仍需要小组给每个<strong>现行核心方法</strong>选定至少三条正常 / 边界 / 异常用例并逐条复核签字。当前矩阵是业务 / 方法组级追踪，不能把同一模块的三条测试自动算到每个方法，也不能用覆盖率替代这个要求。退役入口与 record 构造器需要人工标注是否属于核心方法，不能靠名称机械认定。</p>
+<h2>特殊边界口径</h2>
+<ul>
+<li>密码：服务端按 Unicode 码点检查最少 10 字符，按 UTF-8 检查最多 72 字节；日志 / 评论按 Java UTF-16 计上限。这三种长度不同，已分别测试。</li>
+<li>日期：闰年包含 2000 / 2024，非闰年包含 1900 / 2026；时间戳必须带时区，并按数据库微秒精度向下截断。</li>
+<li>并发：8 路同键创建与 2 路旧版本更新检查的是数据一致性，不据此宣称达到生产吞吐指标。</li>
+<li>角色：独立管理员与创始人分开；实际上下级与角色名称分开；另一公司角色作为隔离对照。</li>
+<li>分页：检查完整性、稳定接续、无重复、删除并发和刷新失败保留有效行，而非只检查 HTTP 200。</li>
+</ul>
+</main></html>

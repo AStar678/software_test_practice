@@ -3,6 +3,7 @@ package cn.pandora.workspace;
 import cn.pandora.auth.Access;
 import cn.pandora.auth.Actor;
 import cn.pandora.common.*;
+import cn.pandora.profile.Tenure;
 import cn.pandora.task.Tags;
 import cn.pandora.task.TaskService;
 import org.springframework.dao.DuplicateKeyException;
@@ -54,13 +55,18 @@ public class WorkspaceService {
 
     private Map<String,Object> meRead(Actor a) {
         business(a);
-        var result=safeUser(employee(a,a.id()));
-        var contacts=db.one("SELECT phone,email,avatar,profile_version,employment_start_date FROM users WHERE id=? AND organization_id=? AND active=1",a.id(),a.organizationId());
+        var source=employee(a,a.id());
+        var result=safeUser(source);
+        var contacts=db.find("SELECT phone,email,avatar,profile_version,hire_date FROM users WHERE id=? AND organization_id=? AND active=1",a.id(),a.organizationId());
+        // The directory row is only a defensive fallback for tests; it never selects contact columns.
+        if(contacts==null || contacts.isEmpty()) contacts=source;
         for(String key:List.of("phone","email","avatar","profileVersion")) result.put(key,contacts.get(key));
+        LocalDate hireDate=contacts.get("hireDate")==null?null:LocalDate.parse(Objects.toString(contacts.get("hireDate")));
+        result.put("hireDate",hireDate==null?null:hireDate.toString());
+        result.put("tenure",Tenure.of(hireDate,today(a)));
         var company=db.one("SELECT name,time_zone FROM organizations WHERE id=?",a.organizationId());
         result.put("organizationName",company.get("name"));
         result.put("organizationTimeZone",company.get("timeZone"));
-        putEmployment(result,s(contacts,"employmentStartDate"),s(contacts,"employmentStartDate")==null?null:today(a));
         result.put("canManageTeam",false);
         return result;
     }
@@ -92,19 +98,82 @@ public class WorkspaceService {
         var result=safeUser(row);
         result.put("canReadLogs",access.canReadLogAuthor(a,userId));
         result.put("canSetHandoverPreset",access.canSetHandoverPreset(a,row));
-        if(access.canReadPhone(a,row)) {
-            var contact=db.one("SELECT phone,employment_start_date FROM users WHERE id=? AND organization_id=? AND active=1",userId,a.organizationId());
-            result.put("phone",contact.get("phone"));
-            String start=s(contact,"employmentStartDate");
-            putEmployment(result,start,start==null?null:today(a));
-        }
+        var privateRow=db.find("SELECT phone,email,hire_date FROM users WHERE id=? AND organization_id=? AND active=1",userId,a.organizationId());
+        if(privateRow==null || privateRow.isEmpty()) privateRow=row;
+        LocalDate hireDate=privateRow.get("hireDate")==null?null:LocalDate.parse(Objects.toString(privateRow.get("hireDate")));
+        result.put("hireDate",hireDate==null?null:hireDate.toString());
+        result.put("tenure",Tenure.of(hireDate,today(a)));
+        if(access.canReadPhone(a,row)) result.put("phone",privateRow.get("phone"));
+        // E-mail is only added to an authorized person detail for the person or an actual current
+        // management-chain ancestor; directories, trees and candidate summaries never carry it.
+        if(access.canReadEmail(a,row)) result.put("email",privateRow.get("email"));
         return result;
     }
 
-    private void putEmployment(Map<String,Object> result, String start, LocalDate today) {
-        result.put("employmentStartDate",start);
-        Long days=start==null?null:Math.max(0,java.time.temporal.ChronoUnit.DAYS.between(LocalDate.parse(start),today)+1);
-        result.put("employmentDays",days);
+    /**
+     * Read-only complete name source for one log business date. It accepts no {@code userId}, is not
+     * limited by the three-day creation window, returns every covered personal item and currently
+     * owned published task, and mutates nothing. Any source failure fails the whole read rather than
+     * pretending a partial set is complete.
+     */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map<String,Object> fillSource(Actor a, Map<String,String> filters) {
+        return access.readScope(a.organizationId(), () -> fillSourceRead(a,filters));
+    }
+
+    private Map<String,Object> fillSourceRead(Actor a, Map<String,String> filters) {
+        business(a);
+        if (!Set.of("businessDate").containsAll(filters.keySet())) throw bad("填充源仅支持 businessDate");
+        LocalDate date = optionalDate(filters.get("businessDate"));
+        if (date == null) throw bad("businessDate 必须为 YYYY-MM-DD 有效日期");
+        ZoneId zone = zone(a);
+        var items = db.list("SELECT id,body,created_at FROM daily_items WHERE organization_id=? AND owner_id=? "
+                        + "AND start_date<=? AND end_date>=? ORDER BY created_at,id",
+                a.organizationId(), a.id(), java.sql.Date.valueOf(date), java.sql.Date.valueOf(date)).stream()
+                .map(row -> {var item=new LinkedHashMap<String,Object>();item.put("id",s(row,"id"));item.put("name",s(row,"body"));return (Map<String,Object>)item;})
+                .toList();
+        var taskRows = db.list("SELECT t.id,v.title,v.all_day,v.start_at,v.due_at,v.start_date,v.due_date "
+                + "FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
+                + "JOIN task_version_assignees a ON a.organization_id=v.organization_id AND a.version_id=v.id "
+                + "WHERE t.organization_id=? AND t.deleted_at IS NULL AND a.user_id=? AND t.current_version_id IS NOT NULL "
+                + "ORDER BY v.start_at,t.id", a.organizationId(), a.id());
+        Map<String,Map<String,Object>> byTask=new LinkedHashMap<>();
+        for (var row : taskRows) {
+            if (!coversBusinessDay(row, date, zone)) continue;
+            byTask.putIfAbsent(s(row,"id"), row);
+        }
+        var tasks = byTask.values().stream()
+                .map(row -> {var task=new LinkedHashMap<String,Object>();task.put("id",s(row,"id"));task.put("name",s(row,"title"));return (Map<String,Object>)task;})
+                .toList();
+        var result = new LinkedHashMap<String,Object>();
+        result.put("businessDate",date.toString());
+        result.put("organizationTimeZone",zone.getId());
+        result.put("dailyItems",items);
+        result.put("tasks",tasks);
+        result.put("complete",true);
+        return result;
+    }
+
+    /**
+     * Actual business-day coverage: legacy all-day tasks include both first and last date; timed tasks
+     * use the half-open instant interval [start,due) intersected with [dayStart,nextDayStart), so a
+     * midnight due time never spills into the next day and a zero-length task belongs to its start day.
+     */
+    static boolean coversBusinessDay(Map<String,Object> version, LocalDate day, ZoneId zone) {
+        boolean allDay = version.get("allDay") instanceof Boolean value ? value
+                : version.get("allDay") instanceof Number number && number.intValue() == 1;
+        if (allDay) {
+            LocalDate start = LocalDate.parse(Objects.toString(version.get("startDate")));
+            LocalDate due = LocalDate.parse(Objects.toString(version.get("dueDate")));
+            return !day.isBefore(start) && !day.isAfter(due);
+        }
+        Instant start = instant(Objects.toString(version.get("startAt")));
+        Instant due = instant(Objects.toString(version.get("dueAt")));
+        if (start == null || due == null) return false;
+        Instant dayStart = day.atStartOfDay(zone).toInstant();
+        Instant nextDayStart = day.plusDays(1).atStartOfDay(zone).toInstant();
+        if (start.equals(due)) return !start.isBefore(dayStart) && start.isBefore(nextDayStart);
+        return start.isBefore(nextDayStart) && due.isAfter(dayStart);
     }
 
     /** Every actual descendant, including team heads and their employees below a department head. */
@@ -155,14 +224,18 @@ public class WorkspaceService {
         var logRows = new HashMap<String,Map<String,Object>>();
         if(!selectedMetadata.isEmpty()) {
             var args=new ArrayList<Object>();args.add(a.organizationId());selectedMetadata.forEach(row->args.add(s(row,"id")));
-            for(var row:db.list("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id "
+            for(var row:db.list("SELECT w.*,u.display_name author_name,t.deleted_at AS linked_task_deleted_at FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id "
+                    +"LEFT JOIN tasks t ON t.organization_id=w.organization_id AND t.id=w.task_id "
                     +"WHERE w.organization_id=? AND w.id IN ("+String.join(",",Collections.nCopies(selectedMetadata.size(),"?"))+")",args.toArray())) logRows.put(s(row,"id"),row);
         }
         var selected=selectedMetadata.stream().map(row->logRows.get(s(row,"id"))).filter(Objects::nonNull).toList();
         var linked = selected.stream().map(row -> s(row,"taskId")).filter(Objects::nonNull).toList();
         Set<String> readable = linked.isEmpty() ? Set.of() : tasks.readableTaskIds(a,linked);
+        Set<String> deletedLinked = selected.stream().filter(row -> row.get("linkedTaskDeletedAt") != null)
+                .map(row -> s(row,"taskId")).filter(Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
         var logTags = logTags(a,selected.stream().map(row -> s(row,"id")).toList());
-        paged.put("items",selected.stream().map(row -> safeLog(a,new LinkedHashMap<>(row),readable,logTags)).toList());
+        paged.put("items",selected.stream().map(row -> safeLog(a,new LinkedHashMap<>(row),readable,logTags,deletedLinked)).toList());
         return paged;
     }
 
@@ -286,82 +359,19 @@ public class WorkspaceService {
         business(a);
         var row = db.one("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.id=? AND w.deleted_at IS NULL",a.organizationId(),logId);
         if (!access.canReadLogAuthor(a, s(row,"authorId"))) throw ApiException.notFound();
-        var result=safeLog(a,row);
-        result.put("references",savedLogReferences(a,logId,a.id().equals(s(row,"authorId"))));
-        return result;
-    }
-
-    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
-    public Map<String,Object> logReferences(Actor a, String businessDate) {
-        business(a);
-        access.requireCurrent(a);
-        LocalDate date=optionalDate(businessDate);
-        validateLogDate(a,date);
-        var references=collectLogReferences(a,date);
-        return Map.of("dailyItems",references.dailyItems(),"tasks",references.tasks());
-    }
-
-    private void validateLogDate(Actor a, LocalDate date) {
-        LocalDate today=today(a);
-        if (date==null || date.isAfter(today)) throw bad("不能新建未来日期的日志");
-        if (date.isBefore(today.minusDays(LOG_BACKFILL_DAYS))) throw bad("只能补写公司今天、昨天和前天的日志");
-    }
-
-    private record LogReferences(List<Map<String,Object>> dailyItems, List<Map<String,Object>> tasks) {}
-
-    private LogReferences collectLogReferences(Actor a, LocalDate date) {
-        var items=db.list("SELECT id,item_date AS date,body,completed FROM daily_items WHERE organization_id=? AND owner_id=? AND item_date=? ORDER BY created_at,id",
-                a.organizationId(),a.id(),java.sql.Date.valueOf(date));
-        ZoneId zone=zone(a);
-        Instant from=date.atStartOfDay(zone).toInstant(), until=date.plusDays(1).atStartOfDay(zone).toInstant();
-        List<Map<String,Object>> schedule=new ArrayList<>();
-        for (var row:tasks.statisticsTasks(a,Map.of("assigneeId",a.id(),"from",date.toString(),"to",date.toString()))) {
-            Instant start=instant(s(row,"startAt")), end=instant(s(row,"dueAt"));
-            if (start==null || end==null || !end.isAfter(from) || !start.isBefore(until)) continue;
-            if (!end.isAfter(start.atZone(zone).toLocalDate().plusDays(1).atStartOfDay(zone).toInstant())) continue;
-            schedule.add(Map.of("id",s(row,"taskId"),"title",s(row,"title")));
-        }
-        schedule.sort(Comparator.comparing(row->s(row,"id")));
-        return new LogReferences(items,schedule);
-    }
-
-    private void saveLogReferences(Actor a, String logId, LocalDate date, boolean restored) {
-        if (restored) {
-            db.update("DELETE FROM work_log_task_references WHERE organization_id=? AND log_id=?",a.organizationId(),logId);
-            db.update("DELETE FROM work_log_daily_references WHERE organization_id=? AND log_id=?",a.organizationId(),logId);
-        }
-        var references=collectLogReferences(a,date);
-        for (var task:references.tasks()) {
-            db.update("INSERT INTO work_log_task_references(organization_id,log_id,task_id) VALUES(?,?,?)",
-                    a.organizationId(),logId,s(task,"id"));
-        }
-        for (var item:references.dailyItems()) {
-            db.update("INSERT INTO work_log_daily_references(organization_id,log_id,item_id) VALUES(?,?,?)",
-                    a.organizationId(),logId,s(item,"id"));
-        }
-    }
-
-    private Map<String,List<Map<String,Object>>> savedLogReferences(Actor a, String logId, boolean author) {
-        Map<String,List<Map<String,Object>>> result=new LinkedHashMap<>();
-        var linked=db.list("SELECT t.id,v.title FROM work_log_task_references r JOIN tasks t ON t.organization_id=r.organization_id AND t.id=r.task_id "
-                +"JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id WHERE r.organization_id=? AND r.log_id=? ORDER BY t.id",
-                a.organizationId(),logId);
-        Set<String> readable=linked.isEmpty()?Set.of():tasks.readableTaskIds(a,linked.stream().map(row->s(row,"id")).toList());
-        result.put("tasks",linked.stream().filter(row->readable.contains(s(row,"id"))).toList());
-        if (author) result.put("dailyItems",db.list("SELECT d.id,d.item_date AS date,d.body,d.completed FROM work_log_daily_references r "
-                +"JOIN daily_items d ON d.organization_id=r.organization_id AND d.id=r.item_id WHERE r.organization_id=? AND r.log_id=? AND d.owner_id=? ORDER BY d.created_at,d.id",
-                a.organizationId(),logId,a.id()));
-        return result;
+        return safeLog(a,row);
     }
 
     public Map<String,Object> createLog(Actor a, Map<String,Object> body) {
         business(a);
         allowed(body,Set.of("body","businessDate","taskId","tagIds"));
         String text = required(body,"body",10000);
-        LocalDate date = dateFor(a,body,"businessDate");
-        validateLogDate(a,date);
+        LocalDate today = today(a);
+        LocalDate date = body.containsKey("businessDate") ? dateFor(a,body,"businessDate") : today;
+        if (date.isAfter(today)) throw bad("不能新建未来日期的日志");
+        if (date.isBefore(today.minusDays(LOG_BACKFILL_DAYS))) throw bad("只能补写公司今天、昨天和前天的日志");
         String taskId = nullable(body,"taskId");
-        if (taskId != null) throw bad("日志关联由所属日期自动生成");
+        if (taskId != null) tasks.detail(a,taskId);
         var wantedTags = requestedLogTags(a,body.getOrDefault("tagIds",List.of()),Set.of());
         var existing = findLog(a, date);
         if (existing != null && s(existing, "id") != null) {
@@ -377,7 +387,6 @@ public class WorkspaceService {
                     text, taskId, a.organizationId(), a.id(), s(existing, "id"));
             if (restored != 1) throw conflict("WORK_LOG_CONFLICT","日志日位置已被并发修改，请刷新后重试");
             replaceLogTags(a,s(existing,"id"),wantedTags);
-            saveLogReferences(a,s(existing,"id"),date,true);
             events.record(a,null,"log.restored",List.of(),Map.of("logId",s(existing,"id")));
             return Map.of("logId",s(existing,"id"),"rowVersion",n(existing,"rowVersion")+1,"businessDate",date.toString(),"restored",true);
         }
@@ -390,7 +399,6 @@ public class WorkspaceService {
             throw duplicate;
         }
         replaceLogTags(a,logId,wantedTags);
-        saveLogReferences(a,logId,date,false);
         events.record(a,null,"log.created",List.of(),Map.of("logId",logId));
         return Map.of("logId",logId,"rowVersion",1,"businessDate",date.toString());
     }
@@ -408,7 +416,7 @@ public class WorkspaceService {
         Writes.checkVersion(ifMatch,n(row,"rowVersion"));
         String text = body.containsKey("body") ? required(body,"body",10000) : s(row,"body");
         String taskId = body.containsKey("taskId") ? nullable(body,"taskId") : s(row,"taskId");
-        if (!Objects.equals(taskId,s(row,"taskId"))) throw bad("已保存的日志关联不能修改");
+        if (body.containsKey("taskId") && taskId != null) tasks.detail(a,taskId);
         List<Map<String,Object>> wantedTags = null;
         if (body.containsKey("tagIds")) {
             var current = logTags(a,List.of(logId)).getOrDefault(logId,List.of());
@@ -601,6 +609,13 @@ public class WorkspaceService {
         if (!Boolean.TRUE.equals(safeNotification(a,row,now).get("canOpenTask"))) throw ApiException.notFound();
         Map<String,Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?",a.organizationId(),s(row,"taskId"));
         if (task == null || s(task,"currentVersionId")==null) throw conflict("HISTORICAL_TASK_UNAVAILABLE","该任务尚未发布或已不可用");
+        if (task.get("deletedAt") != null) {
+            Map<String,Object> details = new LinkedHashMap<>();
+            details.put("taskId", s(task,"id"));
+            Map<String,Object> version = db.find("SELECT title FROM task_versions WHERE organization_id=? AND id=?", a.organizationId(), s(task,"currentVersionId"));
+            if (version != null && version.get("title") != null) details.put("title", version.get("title"));
+            throw new ApiException(410,"TASK_DELETED","任务已删除",details);
+        }
         Map<String,Object> version = db.find("SELECT * FROM task_versions WHERE organization_id=? AND id=?",a.organizationId(),s(task,"currentVersionId"));
         List<String> owners = db.list("SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=? ORDER BY ordinal,user_id",a.organizationId(),s(version,"id"))
                 .stream().map(r -> s(r,"userId")).toList();
@@ -704,6 +719,8 @@ public class WorkspaceService {
         view.put("rowVersion",notificationVersion(row));
         view.put("canWithdraw",!revoked && withinWithdrawal && (manager || (!automatic && event!=null && a.id().equals(s(event,"initiatorId")))));
         view.put("canOpenTask",objectOpen && s(row,"taskId")!=null);
+        view.put("taskDeleted", objectOpen && "task".equals(objectType)
+                && taskDeleted(a,s(row,"taskId"),batch));
         view.put("canReview",false);
         view.put("canReadRequest",false);
         view.put("canWithdrawRequest",false);
@@ -808,7 +825,7 @@ public class WorkspaceService {
         }
         batch.logs=rowsById(a,"work_logs","id,author_id,business_date,deleted_at",logIds);
         batch.comments=rowsById(a,"task_log_comments","id,deleted_at",commentIds);
-        batch.taskRows=rowsById(a,"tasks","id,current_version_id",taskIds);
+        batch.taskRows=rowsById(a,"tasks","id,current_version_id,deleted_at",taskIds);
         var versionRows=rowsById(a,"task_versions","id,title",batch.taskRows.values().stream().map(row->s(row,"currentVersionId")).toList());
         for(var task:batch.taskRows.values()) {
             var version=versionRows.get(s(task,"currentVersionId"));
@@ -898,7 +915,7 @@ public class WorkspaceService {
 
     private String notificationMetadataCategory(Map<String,Object> row,TaskService.RequestAccess requestAccess) {
         Map<String,Object> classification=new HashMap<>(row);
-        classification.put("canReview",row.get("eventRevokedAt")==null
+        classification.put("canReview",s(row,"requestId")!=null && row.get("eventRevokedAt")==null
                 && Objects.equals(s(row,"taskId"),s(row,"requestTaskId"))
                 && requestAccess.reviewable().contains(s(row,"requestId")));
         return notificationCategory(classification);
@@ -1010,16 +1027,21 @@ public class WorkspaceService {
         business(a);
         // The board is the actor's current effective responsibility, never filtered by who created the
         // task; an active assignment to a normally published, unfinished task is the only inclusion rule.
-        var assigned = db.list("SELECT t.id AS task_id,v.title,v.priority,a.assigned_at,a.assigned_source "
+        // The complete authorized set is ordered first and limited last: real effective due instant
+        // ascending (all-day versions already store the company-zone cut-off instant), then
+        // urgent/high/medium/low, then task id. Dispatch time and personal pins never participate.
+        var assigned = db.list("SELECT t.id AS task_id,v.title,v.priority,v.due_at,t.execution_state "
                 + "FROM task_assignments a JOIN tasks t ON t.organization_id=a.organization_id AND t.id=a.task_id "
                 + "JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
                 + "WHERE a.organization_id=? AND a.user_id=? AND a.active=TRUE "
-                + "AND t.current_version_id IS NOT NULL AND t.execution_state<>'done' "
-                + "ORDER BY a.assigned_at DESC,t.id LIMIT 10",a.organizationId(),a.id());
+                + "AND t.deleted_at IS NULL AND t.current_version_id IS NOT NULL AND t.execution_state<>'done' "
+                + "ORDER BY v.due_at ASC,"
+                + "CASE v.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END,"
+                + "t.id ASC LIMIT 10",a.organizationId(),a.id());
         LocalDate today = clock.instant().atZone(zone(a)).toLocalDate();
         // The home page no longer renders logs or personal items; the log page keeps loading its own
         // authorized /work-logs data and nothing queries a card-only log window here.
-        return Map.of("companyItems",db.list("SELECT id,kind,title,body,sort_order,row_version FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id LIMIT 10",a.organizationId()),
+        return Map.of("companyItems",db.list("SELECT id,kind,body,sort_order,row_version FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id LIMIT 10",a.organizationId()),
             "assignedTasks",assigned,"businessDate",today.toString());
     }
 
@@ -1031,28 +1053,28 @@ public class WorkspaceService {
     }
 
     public Map<String,Object> createHomeItem(Actor a,Map<String,Object> body) {
-        business(a);allowed(body,Set.of("kind","title","body"));
+        // The company chronicle contract is body-only everywhere, including this retired legacy route.
+        business(a);allowed(body,Set.of("kind","body"));
         String kind=required(body,"kind",20);
         if(!Set.of("company","personal").contains(kind)) throw bad("kind 只能为 company 或 personal");
         if("personal".equals(kind)) throw personalItemsRetired();
         requireHomeWrite(a,kind);
-        String content=required(body,"body",2000),title=body.containsKey("title")?required(body,"title",200):content.substring(0,Math.min(content.length(),200));
+        String content=required(body,"body",2000);
         var items=db.list("SELECT id,sort_order FROM home_items WHERE organization_id=? AND kind=? AND (kind='company' OR owner_id=?)",a.organizationId(),kind,a.id());
         if(items.size()>=10) throw new ApiException(409,"HOME_ITEM_LIMIT","每类首页信息最多 10 条，请先删除后再新增");
         long order=items.stream().mapToLong(r->n(r,"sortOrder")).max().orElse(0)+1;
         String itemId=id();
-        db.update("INSERT INTO home_items(id,organization_id,owner_id,kind,title,body,sort_order) VALUES(?,?,?,?,?,?,?)",itemId,a.organizationId(),"personal".equals(kind)?a.id():null,kind,title,content,order);
+        db.update("INSERT INTO home_items(id,organization_id,owner_id,kind,body,sort_order) VALUES(?,?,?,?,?,?)",itemId,a.organizationId(),"personal".equals(kind)?a.id():null,kind,content,order);
         events.record(a,null,"home_item.created",List.of(),Map.of("homeItemId",itemId,"kind",kind));
         return Map.of("id",itemId,"rowVersion",1);
     }
 
     public Map<String,Object> changeHomeItem(Actor a,String itemId,String ifMatch,Map<String,Object> body) {
-        allowed(body,Set.of("title","body"));
+        allowed(body,Set.of("body"));
         var item=readHomeItem(a,itemId,true);if("personal".equals(s(item,"kind"))) throw personalItemsRetired();
         requireHomeWrite(a,s(item,"kind"));Writes.checkVersion(ifMatch,n(item,"rowVersion"));
         String content=body.containsKey("body")?required(body,"body",2000):s(item,"body");
-        String title=body.containsKey("title")?required(body,"title",200):s(item,"title");
-        db.update("UPDATE home_items SET title=?,body=?,row_version=row_version+1 WHERE organization_id=? AND id=?",title,content,a.organizationId(),itemId);
+        db.update("UPDATE home_items SET body=?,row_version=row_version+1 WHERE organization_id=? AND id=?",content,a.organizationId(),itemId);
         events.record(a,null,"home_item.updated",List.of(),Map.of("homeItemId",itemId,"kind",s(item,"kind")));
         return Map.of("id",itemId,"rowVersion",n(item,"rowVersion")+1);
     }
@@ -1164,7 +1186,7 @@ public class WorkspaceService {
 
     public Map<String,Object> adminTeams(Actor a,Map<String,String> filters) {
         access.requireAdmin(a);
-        return page(db.list("SELECT id,name,parent_id FROM teams WHERE organization_id=? ORDER BY name,id",a.organizationId()),filters);
+        return page(db.list("SELECT id,name,department_id FROM teams WHERE organization_id=? ORDER BY name,id",a.organizationId()),filters);
     }
 
     public Map<String,Object> audit(Actor a, Map<String,String> filters) {
@@ -1185,9 +1207,17 @@ public class WorkspaceService {
     public boolean canReadTaskForComments(Actor a, String taskId) {
         if (taskId == null) return false;
         var task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?", a.organizationId(), taskId);
-        if (task == null) return false;
+        if (task == null || task.get("deletedAt") != null) return false;
         if (s(task,"currentVersionId") == null) return canReadTask(a, taskId, true);
         return canReadTask(a, taskId, false);
+    }
+
+    private boolean taskDeleted(Actor a, String taskId, NotificationBatch batch) {
+        if (taskId == null) return false;
+        Map<String,Object> row = batch == null
+                ? db.find("SELECT deleted_at FROM tasks WHERE organization_id=? AND id=?", a.organizationId(), taskId)
+                : batch.taskRows.get(taskId);
+        return row != null && row.get("deletedAt") != null;
     }
 
     public boolean canReadTask(Actor a,String taskId,boolean includeApproval) {
@@ -1421,12 +1451,29 @@ public class WorkspaceService {
     }
 
     private Map<String,Object> safeLog(Actor a,Map<String,Object> row) {
-        return safeLog(a,row,null,logTags(a,List.of(s(row,"id"))));
+        String taskId=s(row,"taskId");
+        return safeLog(a,row,null,logTags(a,List.of(s(row,"id"))),
+                taskId==null?Set.of():deletedTaskIds(a,List.of(taskId)));
     }
+
+    private Set<String> deletedTaskIds(Actor a,Collection<String> ids) {
+        if (ids == null || ids.isEmpty()) return Set.of();
+        var args=new ArrayList<Object>();args.add(a.organizationId());args.addAll(ids);
+        return db.list("SELECT id FROM tasks WHERE organization_id=? AND deleted_at IS NOT NULL AND id IN ("
+                        +String.join(",",Collections.nCopies(ids.size(),"?"))+")",args.toArray())
+                .stream().map(row -> s(row,"id")).collect(java.util.stream.Collectors.toSet());
+    }
+
     private Map<String,Object> safeLog(Actor a,Map<String,Object> row,Set<String> readable,Map<String,List<Map<String,Object>>> tagRows) {
+        return safeLog(a,row,readable,tagRows,Set.of());
+    }
+
+    private Map<String,Object> safeLog(Actor a,Map<String,Object> row,Set<String> readable,Map<String,List<Map<String,Object>>> tagRows,Set<String> deletedTasks) {
         row.remove("organizationId");
         String taskId=s(row,"taskId");
-        if (taskId!=null && !(readable == null ? canReadTask(a,taskId,false) : readable.contains(taskId))) row.remove("taskId");
+        boolean readableTask = taskId!=null && (readable == null ? canReadTask(a,taskId,false) : readable.contains(taskId));
+        if (!readableTask) row.remove("taskId");
+        row.put("taskDeleted", readableTask && deletedTasks.contains(taskId));
         var values = tagRows.getOrDefault(s(row,"id"),List.of());
         row.put("tagIds",values.stream().map(tag -> s(tag,"id")).toList());
         row.put("tags",values);
@@ -1472,7 +1519,11 @@ public class WorkspaceService {
         for(String key:List.of("id","displayName","accountType","role","placementType","departmentId","departmentName","positionId","positionName","teamId","teamName","managerId","managerName","rankLevel","active","avatar")) safe.put(key,row.get(key));
         return safe;
     }
-    private ZoneId zone(Actor a) {return ZoneId.of(s(db.one("SELECT time_zone FROM organizations WHERE id=?",a.organizationId()),"timeZone"));}
+    private ZoneId zone(Actor a) {
+        String value=s(db.one("SELECT time_zone FROM organizations WHERE id=?",a.organizationId()),"timeZone");
+        try{return value==null||value.isBlank()?ZoneOffset.UTC:ZoneId.of(value);}
+        catch(RuntimeException error){return ZoneOffset.UTC;}
+    }
     private LocalDate dateFor(Actor a,Map<String,Object> body,String key) {
         String value=nullable(body,key); return value==null?clock.instant().atZone(zone(a)).toLocalDate():optionalDate(value);
     }

@@ -46,7 +46,11 @@ public class AuthFilter extends OncePerRequestFilter {
                     "message","首次登录或管理员重置后必须修改密码，当前会话仅可改密或退出"));
             return;
         }
-        if(actor.administrator() && !req.getRequestURI().startsWith("/api/v1/admin/")
+        // The shared official holiday labels are the one business-neutral read an independent
+        // administrator may perform outside /admin; their employee-management console uses it too.
+        boolean adminHolidayRead = actor.administrator() && "GET".equals(req.getMethod())
+                && req.getRequestURI().matches("/api/v1/calendar/holidays/\\d{4}");
+        if(actor.administrator() && !adminHolidayRead && !req.getRequestURI().startsWith("/api/v1/admin/")
                 && !req.getRequestURI().startsWith("/api/v1/auth/")) {
             res.setStatus(403);res.setContentType("application/json;charset=UTF-8");
             mapper.writeValue(res.getOutputStream(),Map.of("code","BUSINESS_ROLE_REQUIRED",

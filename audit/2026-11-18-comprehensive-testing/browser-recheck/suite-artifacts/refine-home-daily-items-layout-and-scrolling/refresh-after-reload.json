@@ -1,0 +1,117 @@
+{
+  "updated": "2026-11-18T16:28:17.971Z",
+  "viewports": [
+    {
+      "viewport": "320x740",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-10",
+          "2026-11",
+          "2026-12"
+        ],
+        "clientHeight": 384,
+        "scrollHeight": 2694,
+        "scrollTop": 1359,
+        "maxTop": 2310,
+        "todayVisible": true
+      },
+      "canSlideBack": true,
+      "canSlideForward": true,
+      "forward": {
+        "top": 1802,
+        "open": false
+      },
+      "backward": {
+        "top": 1360,
+        "open": false
+      },
+      "movedForward": true,
+      "movedBackward": true
+    },
+    {
+      "viewport": "390x844",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-10",
+          "2026-11",
+          "2026-12"
+        ],
+        "clientHeight": 384,
+        "scrollHeight": 2694,
+        "scrollTop": 1359,
+        "maxTop": 2310,
+        "todayVisible": true
+      },
+      "canSlideBack": true,
+      "canSlideForward": true,
+      "forward": {
+        "top": 1800,
+        "open": false
+      },
+      "backward": {
+        "top": 1357,
+        "open": false
+      },
+      "movedForward": true,
+      "movedBackward": true
+    },
+    {
+      "viewport": "1440x900",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-10",
+          "2026-11",
+          "2026-12"
+        ],
+        "clientHeight": 384,
+        "scrollHeight": 2694,
+        "scrollTop": 1359,
+        "maxTop": 2310,
+        "todayVisible": true
+      },
+      "canSlideBack": true,
+      "canSlideForward": true,
+      "forward": {
+        "top": 1803,
+        "open": false
+      },
+      "backward": {
+        "top": 1364,
+        "open": false
+      },
+      "movedForward": true,
+      "movedBackward": true
+    },
+    {
+      "viewport": "390x600",
+      "ready": true,
+      "initial": {
+        "months": [
+          "2026-10",
+          "2026-11",
+          "2026-12"
+        ],
+        "clientHeight": 384,
+        "scrollHeight": 2694,
+        "scrollTop": 1359,
+        "maxTop": 2310,
+        "todayVisible": true
+      },
+      "canSlideBack": true,
+      "canSlideForward": true,
+      "forward": {
+        "top": 1803,
+        "open": false
+      },
+      "backward": {
+        "top": 1364,
+        "open": false
+      },
+      "movedForward": true,
+      "movedBackward": true
+    }
+  ]
+}

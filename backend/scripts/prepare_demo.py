@@ -2,7 +2,7 @@
 """Prepare only an explicitly selected, marker-guarded demo database. Never clears data.
 
 First run on an empty database:
-  python3 backend/scripts/prepare_demo.py --database pandora_demo --demo-marker local-web-v2 --initialize
+  python3 backend/scripts/prepare_demo.py --database pandora_demo --demo-marker local-web-v3 --initialize
 Repeat without --initialize. The marker and manifest version must match on every run.
 The command owns a short-lived packaged service; it does not touch the normal application process.
 """
@@ -18,8 +18,6 @@ import time
 import urllib.request
 from migration_precheck import BASE, Mysql, DEFAULT_OPTION_FILE, cell
 from fixed_model_fixture import quote
-
-MANIFEST_VERSION=3
 
 
 def database_env():
@@ -45,7 +43,7 @@ def manifest(db):
             'preparedAt':identity[0][3],'identities':people,'objects':keys,
             'counts':{table:db.scalar('SELECT COUNT(*) FROM '+table) for table in
                       ('users','admin_accounts','employee_placements','departments','teams','tasks','task_versions',
-                       'approval_requests','work_logs','home_items','task_business_transfers','handover_requests','task_log_comments','notifications','daily_items','work_log_task_references','work_log_daily_references')}}
+                       'approval_requests','work_logs','home_items','task_business_transfers','handover_requests','task_log_comments','notifications')}}
 
 
 def prepare(database,marker,initialize=False,port=18194,output=None):
@@ -61,11 +59,9 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
             raise ValueError('Target has existing data but no demo identity; refusing preparation')
         identity=db.rows('SELECT database_name,marker,manifest_version FROM demo_database_identity WHERE singleton=1')
         if identity:
-            if identity[0][:2]!=[database,marker]:raise ValueError('Target demo identity does not match')
+            if identity[0]!=[database,marker,'3']:
+                raise ValueError('Target demo identity or manifest version does not match v3; use an explicit new empty demo database instead of silently upgrading old data')
             already_prepared=bool(db.scalar('SELECT COUNT(*) FROM demo_database_identity WHERE prepared_at IS NOT NULL'))
-            legacy_prepared=identity[0][2]=='2' and already_prepared and not initialize
-            if identity[0][2]!=str(MANIFEST_VERSION) and not legacy_prepared:
-                raise ValueError('Target demo manifest does not match')
         elif not initialize or ('organizations' in present and db.scalar('SELECT COUNT(*) FROM organizations')):
             raise ValueError('An empty target and --initialize are required for first preparation')
     elif not initialize:raise ValueError('First preparation requires --initialize')
@@ -96,7 +92,7 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
         # Only a new seed needs delivery. Repeated preparation must also work after the real
         # administrator has changed their name/password; never reset credentials to drain events.
         if not already_prepared:
-            data=json.dumps({'accountType':'admin','accountName':'admin','password':env.get('PANDORA_DEMO_PASSWORD','Demo@123456')}).encode()
+            data=json.dumps({'accountType':'admin','accountName':'admin','password':env.get('PANDORA_DEMO_PASSWORD','111')}).encode()
             with urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{port}/api/v1/auth/sessions',data=data,headers={'Content-Type':'application/json'})) as response:
                 token=json.load(response)['token']
             for _ in range(10):
@@ -106,7 +102,7 @@ def prepare(database,marker,initialize=False,port=18194,output=None):
         result=manifest(db)
         if output:
             output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n');output.chmod(0o600)
-        print(json.dumps({'database':database,'manifestVersion':result['manifestVersion'],'businessDate':result['businessDate'],'counts':result['counts']},ensure_ascii=False))
+        print(json.dumps({'database':database,'manifestVersion':3,'businessDate':result['businessDate'],'counts':result['counts']},ensure_ascii=False))
         return result
     finally:
         if process and process.poll() is None:

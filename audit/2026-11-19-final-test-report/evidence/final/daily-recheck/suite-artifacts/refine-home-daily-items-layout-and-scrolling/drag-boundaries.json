@@ -1,0 +1,63 @@
+{
+  "updated": "2026-11-18T17:28:34.765Z",
+  "viewports": {
+    "savingBefore": {
+      "id": "2a0fee0a-eb0d-41d5-9218-39246a06a037",
+      "startDate": "2026-11-11",
+      "endDate": "2026-11-13",
+      "date": "2026-11-11",
+      "body": "并发修改后的正文",
+      "completed": false,
+      "status": "overdue",
+      "rowVersion": 5,
+      "createdAt": "2026-11-18T17:08:36.282743Z",
+      "updatedAt": "2026-11-18T17:28:20.050274Z"
+    },
+    "savingCommitted": {
+      "id": "2a0fee0a-eb0d-41d5-9218-39246a06a037",
+      "startDate": "2026-11-12",
+      "endDate": "2026-11-14",
+      "date": "2026-11-12",
+      "body": "并发修改后的正文",
+      "completed": false,
+      "status": "overdue",
+      "rowVersion": 6,
+      "createdAt": "2026-11-18T17:08:36.282743Z",
+      "updatedAt": "2026-11-18T17:28:27.641715Z"
+    },
+    "cross": {
+      "id": "69ffe4aa-2c65-4c32-a4f5-cc377b493281",
+      "startDate": "2026-10-30",
+      "endDate": "2026-11-25",
+      "date": "2026-10-30",
+      "body": "已完成跨月续接拖动",
+      "completed": true,
+      "status": "completed",
+      "rowVersion": 2,
+      "createdAt": "2026-11-18T17:28:29.488983Z",
+      "updatedAt": "2026-11-18T17:28:29.495137Z"
+    },
+    "crossMoved": {
+      "id": "69ffe4aa-2c65-4c32-a4f5-cc377b493281",
+      "startDate": "2026-11-06",
+      "endDate": "2026-12-02",
+      "date": "2026-11-06",
+      "body": "已完成跨月续接拖动",
+      "completed": true,
+      "status": "completed",
+      "rowVersion": 3,
+      "createdAt": "2026-11-18T17:28:29.488983Z",
+      "updatedAt": "2026-11-18T17:28:30.937865Z"
+    },
+    "monthsBefore": [
+      "2026-10",
+      "2026-11",
+      "2026-12"
+    ],
+    "edgeTarget": {
+      "x": 47.5703125,
+      "y": 529.78125,
+      "key": "2026-12-21"
+    }
+  }
+}

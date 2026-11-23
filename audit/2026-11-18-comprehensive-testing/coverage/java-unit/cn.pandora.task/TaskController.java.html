@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TaskController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.task</a> &gt; <span class="el_source">TaskController.java</span></div><h1>TaskController.java</h1><pre class="source lang-java linenums">package cn.pandora.task;
+
+import cn.pandora.auth.Actor;
+import cn.pandora.common.Writes;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/api/v1&quot;)
+public class TaskController {
+    private final TaskService tasks;
+    private final Tags tags;
+    private final Writes writes;
+
+<span class="nc" id="L18">    public TaskController(TaskService tasks, Tags tags, Writes writes) {</span>
+<span class="nc" id="L19">        this.tasks = tasks;</span>
+<span class="nc" id="L20">        this.tags = tags;</span>
+<span class="nc" id="L21">        this.writes = writes;</span>
+<span class="nc" id="L22">    }</span>
+
+    /** Shared catalogue plus only the requesting employee's private tags. */
+    @GetMapping(&quot;/tags&quot;)
+    public Map&lt;String, Object&gt; tags(@RequestAttribute(&quot;actor&quot;) Actor actor, @RequestParam Map&lt;String, String&gt; filters) {
+<span class="nc" id="L27">        return tags.list(actor, filters);</span>
+    }
+
+    @PostMapping(&quot;/tags&quot;)
+    public Map&lt;String, Object&gt; createTag(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L34">        return writes.run(actor, key, &quot;POST /tags&quot;, input, null, () -&gt; tags.create(actor, input));</span>
+    }
+
+    @PatchMapping(&quot;/tags/{id}&quot;)
+    public Map&lt;String, Object&gt; changeTag(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L42">        return writes.run(actor, key, &quot;PATCH /tags/&quot; + id, input, ifMatch, () -&gt; tags.change(actor, id, ifMatch, input));</span>
+    }
+
+    @DeleteMapping(&quot;/tags/{id}&quot;)
+    public Map&lt;String, Object&gt; deleteTag(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch) {
+<span class="nc" id="L49">        return writes.run(actor, key, &quot;DELETE /tags/&quot; + id, Map.of(), ifMatch, () -&gt; tags.delete(actor, id, ifMatch));</span>
+    }
+
+    @GetMapping(&quot;/tasks&quot;)
+    public Map&lt;String, Object&gt; list(@RequestAttribute(&quot;actor&quot;) Actor actor, @RequestParam Map&lt;String, String&gt; filters) {
+<span class="nc" id="L54">        return tasks.list(actor, filters);</span>
+    }
+
+    /** Authorized assignee candidates; reading a department never puts its people in this list. */
+    @GetMapping(&quot;/assignee-candidates&quot;)
+    public Map&lt;String, Object&gt; assigneeCandidates(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestParam(value = &quot;q&quot;, required = false) String query,
+            @RequestParam(value = &quot;purpose&quot;, required = false) String purpose) {
+        // purpose=create (default) is the company-wide creation candidate list; purpose=edit keeps the
+        // historical dispatch range for modifications of an already published task.
+<span class="nc" id="L64">        return tasks.assigneeCandidates(actor, query, purpose);</span>
+    }
+
+    /** Read-only reviewer preview; it creates no request and is not an authorization token. */
+    @PostMapping(&quot;/tasks/reviewer-preview&quot;)
+    public Map&lt;String, Object&gt; reviewerPreview(@RequestAttribute(&quot;actor&quot;) Actor actor, @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L70">        return tasks.reviewerPreview(actor, input);</span>
+    }
+
+    /** Dedicated handover: replaces one assignee position and can never carry a base field. */
+    @PostMapping(&quot;/tasks/{id}/handover&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; handover(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch, @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L78">        tasks.expireBeforeSubmit(actor, id);</span>
+<span class="nc" id="L79">        Map&lt;String, Object&gt; result = writes.run(actor, key, &quot;POST:/tasks/&quot; + id + &quot;/handover&quot;, input, ifMatch,</span>
+<span class="nc" id="L80">                () -&gt; tasks.handover(actor, id, ifMatch, input));</span>
+<span class="nc" id="L81">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    /** Legal handover targets for one person (self or that person's direct manager only). */
+    @GetMapping(&quot;/handover-targets&quot;)
+    public Map&lt;String, Object&gt; handoverTargets(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestParam String subjectId, @RequestParam(value = &quot;q&quot;, required = false) String query) {
+<span class="nc" id="L88">        return tasks.handoverTargets(actor, subjectId, query);</span>
+    }
+
+    /** Preset successor for one person's current tasks (V-010). */
+    @GetMapping(&quot;/users/{id}/handover-preset&quot;)
+    public Map&lt;String, Object&gt; handoverPreset(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id) {
+<span class="nc" id="L94">        return tasks.handoverPreset(actor, id);</span>
+    }
+
+    @PutMapping(&quot;/users/{id}/handover-preset&quot;)
+    public Map&lt;String, Object&gt; saveHandoverPreset(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L101">        return writes.run(actor, key, &quot;PUT /users/&quot; + id + &quot;/handover-preset&quot;, input, null,</span>
+<span class="nc" id="L102">                () -&gt; tasks.saveHandoverPreset(actor, id, input));</span>
+    }
+
+    @DeleteMapping(&quot;/users/{id}/handover-preset&quot;)
+    public Map&lt;String, Object&gt; clearHandoverPreset(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key) {
+<span class="nc" id="L108">        return writes.run(actor, key, &quot;DELETE /users/&quot; + id + &quot;/handover-preset&quot;, Map.of(), null,</span>
+<span class="nc" id="L109">                () -&gt; tasks.clearHandoverPreset(actor, id));</span>
+    }
+
+    /** Server-side personal task table; a literal path that never falls through to task detail. */
+    @GetMapping(&quot;/tasks/table&quot;)
+    public Map&lt;String, Object&gt; table(@RequestAttribute(&quot;actor&quot;) Actor actor, @RequestParam Map&lt;String, String&gt; filters) {
+<span class="nc" id="L115">        return tasks.table(actor, filters);</span>
+    }
+
+    /** Personal month-view pin; never changes task data or another user's order. */
+    @PutMapping(&quot;/tasks/{id}/pin&quot;)
+    public Map&lt;String, Object&gt; pin(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key) {
+<span class="nc" id="L122">        return writes.run(actor, key, &quot;PUT /tasks/&quot; + id + &quot;/pin&quot;, Map.of(), null,</span>
+<span class="nc" id="L123">                () -&gt; tasks.setPinned(actor, id, true));</span>
+    }
+
+    @DeleteMapping(&quot;/tasks/{id}/pin&quot;)
+    public Map&lt;String, Object&gt; unpin(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key) {
+<span class="nc" id="L129">        return writes.run(actor, key, &quot;DELETE /tasks/&quot; + id + &quot;/pin&quot;, Map.of(), null,</span>
+<span class="nc" id="L130">                () -&gt; tasks.setPinned(actor, id, false));</span>
+    }
+
+    /** Independent personal task-table pin; does not change calendar pin, task version or schedule. */
+    @PutMapping(&quot;/tasks/{id}/table-pin&quot;)
+    public Map&lt;String, Object&gt; tablePin(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key) {
+<span class="nc" id="L137">        return writes.run(actor, key, &quot;PUT /tasks/&quot; + id + &quot;/table-pin&quot;, Map.of(), null,</span>
+<span class="nc" id="L138">                () -&gt; tasks.setTablePinned(actor, id, true));</span>
+    }
+
+    @DeleteMapping(&quot;/tasks/{id}/table-pin&quot;)
+    public Map&lt;String, Object&gt; tableUnpin(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key) {
+<span class="nc" id="L144">        return writes.run(actor, key, &quot;DELETE /tasks/&quot; + id + &quot;/table-pin&quot;, Map.of(), null,</span>
+<span class="nc" id="L145">                () -&gt; tasks.setTablePinned(actor, id, false));</span>
+    }
+
+    @GetMapping(&quot;/tasks/{id}&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; detail(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id) {
+<span class="nc" id="L150">        Map&lt;String, Object&gt; result = tasks.detail(actor, id);</span>
+<span class="nc" id="L151">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @PostMapping(&quot;/tasks&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; create(@RequestAttribute(&quot;actor&quot;) Actor actor,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key, @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L157">        Map&lt;String, Object&gt; result = writes.run(actor, key, &quot;POST:/tasks&quot;, input, null, () -&gt; tasks.create(actor, input));</span>
+<span class="nc" id="L158">        return ResponseEntity.created(URI.create(&quot;/api/v1/tasks/&quot; + result.get(&quot;taskId&quot;))).eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @PatchMapping(&quot;/tasks/{id}&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; change(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch, @RequestBody Map&lt;String, Object&gt; input) {
+        // Commit the deadline terminal state before the command so a stale-page 4xx cannot roll it back.
+<span class="nc" id="L166">        tasks.expireBeforeSubmit(actor, id);</span>
+<span class="nc" id="L167">        Map&lt;String, Object&gt; result = writes.run(actor, key, &quot;PATCH:/tasks/&quot; + id, input, ifMatch, () -&gt; tasks.change(actor, id, ifMatch, input));</span>
+<span class="nc" id="L168">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @GetMapping(&quot;/approval-requests&quot;)
+    public Map&lt;String, Object&gt; approvals(@RequestAttribute(&quot;actor&quot;) Actor actor, @RequestParam(required = false) String mine,
+            @RequestParam(required = false) String limit, @RequestParam(required = false) String offset) {
+<span class="nc" id="L174">        return tasks.approvals(actor, mine, limit, offset);</span>
+    }
+
+    @GetMapping(&quot;/approval-requests/{id}&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; approval(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id) {
+<span class="nc" id="L179">        Map&lt;String, Object&gt; result = tasks.approval(actor, id);</span>
+<span class="nc" id="L180">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;rowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+
+    @PatchMapping(&quot;/approval-requests/{id}&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; decide(@RequestAttribute(&quot;actor&quot;) Actor actor, @PathVariable String id,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String key,
+            @RequestHeader(value = &quot;If-Match&quot;, required = false) String ifMatch, @RequestBody Map&lt;String, Object&gt; input) {
+<span class="nc" id="L187">        Map&lt;String, Object&gt; result = writes.run(actor, key, &quot;PATCH:/approval-requests/&quot; + id, input, ifMatch, () -&gt; tasks.decide(actor, id, ifMatch, input));</span>
+        // The expired terminal state (and its unfreeze/overdue events) is committed by writes.run before
+        // this business error is returned; rolling it back would let the old page approve afterwards.
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        if (Boolean.TRUE.equals(result.get(&quot;deadlineExpired&quot;))) {</span>
+<span class="nc" id="L191">            throw new cn.pandora.common.ApiException(409, &quot;REQUEST_EXPIRED&quot;, &quot;申请已到适用截止时间失效，请调整后重提&quot;);</span>
+        }
+<span class="nc" id="L193">        return ResponseEntity.ok().eTag(&quot;\&quot;&quot; + result.get(&quot;requestRowVersion&quot;) + &quot;\&quot;&quot;).body(result);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

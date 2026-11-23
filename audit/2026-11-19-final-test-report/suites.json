@@ -1,0 +1,248 @@
+[
+  {
+    "suite": "check_fixed_organization_migration.py",
+    "status": "PASS",
+    "printedAssertions": 51,
+    "evidence": "evidence/final/regression/check_fixed_organization_migration.log"
+  },
+  {
+    "suite": "check_legacy_mapping.py",
+    "status": "PASS",
+    "printedAssertions": 81,
+    "evidence": "evidence/final/regression/check_legacy_mapping.log"
+  },
+  {
+    "suite": "check_final_migration.py",
+    "status": "PASS",
+    "printedAssertions": 13,
+    "evidence": "evidence/final/regression/check_final_migration.log"
+  },
+  {
+    "suite": "check_login_identity_collision.py",
+    "status": "PASS",
+    "printedAssertions": 74,
+    "evidence": "evidence/final/regression/check_login_identity_collision.log"
+  },
+  {
+    "suite": "check_organization_plans.py",
+    "status": "PASS",
+    "printedAssertions": 30,
+    "evidence": "evidence/final/regression/check_organization_plans.log"
+  },
+  {
+    "suite": "check_review_routing.py",
+    "status": "PASS",
+    "printedAssertions": 204,
+    "evidence": "evidence/final/regression/check_review_routing.log"
+  },
+  {
+    "suite": "check_auto_apply_authorization.py",
+    "status": "PASS",
+    "printedAssertions": 18,
+    "evidence": "evidence/final/regression/check_auto_apply_authorization.log"
+  },
+  {
+    "suite": "check_business_takeover.py",
+    "status": "PASS",
+    "printedAssertions": 87,
+    "evidence": "evidence/final/regression/check_business_takeover.log"
+  },
+  {
+    "suite": "check_profile_phone_matrix.py",
+    "status": "PASS",
+    "printedAssertions": 41,
+    "evidence": "evidence/final/regression/check_profile_phone_matrix.log"
+  },
+  {
+    "suite": "check_fixed_workspace_access.py",
+    "status": "PASS",
+    "printedAssertions": 62,
+    "evidence": "evidence/final/regression/check_fixed_workspace_access.log"
+  },
+  {
+    "suite": "check_fixed_notifications.py",
+    "status": "PASS",
+    "printedAssertions": 49,
+    "evidence": "evidence/final/regression/check_fixed_notifications.log"
+  },
+  {
+    "suite": "check_visible_schedule_permissions.py",
+    "status": "PASS",
+    "printedAssertions": 22,
+    "evidence": "evidence/final/regression/check_visible_schedule_permissions.log"
+  },
+  {
+    "suite": "check_holidays.py",
+    "status": "PASS",
+    "printedAssertions": 37,
+    "evidence": "evidence/final/regression/check_holidays.log"
+  },
+  {
+    "suite": "check_employee_contracts_upgrade.py",
+    "status": "PASS",
+    "printedAssertions": 331,
+    "evidence": "evidence/final/regression/check_employee_contracts_upgrade.log"
+  },
+  {
+    "suite": "check_task_refinement_upgrade.py",
+    "status": "PASS",
+    "printedAssertions": 13,
+    "evidence": "evidence/final/regression/check_task_refinement_upgrade.log"
+  },
+  {
+    "suite": "check_apply_private_migration_guard.py",
+    "status": "PASS",
+    "printedAssertions": 2,
+    "evidence": "evidence/final/regression/check_apply_private_migration_guard.log"
+  },
+  {
+    "suite": "check_demo_extremes.py",
+    "status": "PASS",
+    "printedAssertions": 130,
+    "evidence": "evidence/final/regression/check_demo_extremes.log"
+  },
+  {
+    "suite": "check_final_demo.py",
+    "status": "PASS",
+    "printedAssertions": 94,
+    "evidence": "evidence/final/regression/check_final_demo.log"
+  },
+  {
+    "suite": "check_admin_contract.py",
+    "status": "PASS",
+    "printedAssertions": 42,
+    "evidence": "evidence/final/regression/check_admin_contract.log"
+  },
+  {
+    "suite": "check_handover_chain.py",
+    "status": "PASS",
+    "printedAssertions": 24,
+    "evidence": "evidence/final/regression/check_handover_chain.log"
+  },
+  {
+    "suite": "check_fixed_web.py",
+    "status": "PASS",
+    "printedAssertions": 195,
+    "evidence": "evidence/final/regression/check_fixed_web.log"
+  },
+  {
+    "suite": "check_calendar_drawer.py",
+    "status": "PASS",
+    "printedAssertions": 102,
+    "evidence": "evidence/final/regression/check_calendar_drawer.log"
+  },
+  {
+    "suite": "check_fixed_late_response.py",
+    "status": "PASS",
+    "printedAssertions": 9,
+    "evidence": "evidence/final/regression/check_fixed_late_response.log"
+  },
+  {
+    "suite": "check_log_backfill_entry.py",
+    "status": "PASS",
+    "printedAssertions": 50,
+    "evidence": "evidence/final/regression/check_log_backfill_entry.log"
+  },
+  {
+    "suite": "check_fixed_communication_web.py",
+    "status": "PASS",
+    "printedAssertions": 34,
+    "evidence": "evidence/final/regression/check_fixed_communication_web.log"
+  },
+  {
+    "suite": "check_daily_items.py",
+    "status": "PASS",
+    "printedAssertions": 385,
+    "evidence": "evidence/final/daily-recheck/check_daily_items.log"
+  },
+  {
+    "suite": "check_chapter8_web.py",
+    "status": "PASS",
+    "printedAssertions": 57,
+    "evidence": "evidence/final/regression/check_chapter8_web.log"
+  },
+  {
+    "suite": "check_apply_notifications.py",
+    "status": "PASS",
+    "printedAssertions": 113,
+    "evidence": "evidence/final/regression/check_apply_notifications.log"
+  },
+  {
+    "suite": "check_apply_mixed_edit.py",
+    "status": "PASS",
+    "printedAssertions": 68,
+    "evidence": "evidence/final/regression/check_apply_mixed_edit.log"
+  },
+  {
+    "suite": "check_apply_log_tags.py",
+    "status": "PASS",
+    "printedAssertions": 45,
+    "evidence": "evidence/final/log-tags-recheck/check_apply_log_tags.log"
+  },
+  {
+    "suite": "check_apply_admin_login_phone.py",
+    "status": "PASS",
+    "printedAssertions": 18,
+    "evidence": "evidence/final/regression/check_apply_admin_login_phone.log"
+  },
+  {
+    "suite": "check_apply_profile_pin_history.py",
+    "status": "PASS",
+    "printedAssertions": 44,
+    "evidence": "evidence/final/regression/check_apply_profile_pin_history.log"
+  },
+  {
+    "suite": "check_calendar_tags.py",
+    "status": "PASS",
+    "printedAssertions": 26,
+    "evidence": "evidence/final/regression/check_calendar_tags.log"
+  },
+  {
+    "suite": "check_subordinate_workspace.py",
+    "status": "PASS",
+    "printedAssertions": 100,
+    "evidence": "evidence/final/regression/check_subordinate_workspace.log"
+  },
+  {
+    "suite": "check_schedule_drag.py",
+    "status": "PASS",
+    "printedAssertions": 158,
+    "evidence": "evidence/final/regression/check_schedule_drag.log"
+  },
+  {
+    "suite": "check_request_id_compat.py",
+    "status": "PASS",
+    "printedAssertions": 16,
+    "evidence": "evidence/final/regression/check_request_id_compat.log"
+  },
+  {
+    "suite": "check_apply_copy_audit.py",
+    "status": "PASS",
+    "printedAssertions": 42,
+    "evidence": "evidence/final/regression/check_apply_copy_audit.log"
+  },
+  {
+    "suite": "check_web_alignment_drag.py",
+    "status": "PASS",
+    "printedAssertions": 52,
+    "evidence": "evidence/final/regression/check_web_alignment_drag.log"
+  },
+  {
+    "suite": "check_task_creation_refinement.py",
+    "status": "PASS",
+    "printedAssertions": 78,
+    "evidence": "evidence/final/regression/check_task_creation_refinement.log"
+  },
+  {
+    "suite": "check_web_verification_repairs.py",
+    "status": "PASS",
+    "printedAssertions": 100,
+    "evidence": "evidence/final/regression/check_web_verification_repairs.log"
+  },
+  {
+    "suite": "check_founder_setup.py",
+    "status": "PASS",
+    "printedAssertions": 8,
+    "evidence": "evidence/final/regression/check_founder_setup.log"
+  }
+]

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Writes.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.common</a> &gt; <span class="el_source">Writes.java</span></div><h1>Writes.java</h1><pre class="source lang-java linenums">package cn.pandora.common;
+
+import cn.pandora.admin.OrganizationConstraints;
+import cn.pandora.auth.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
+import java.util.*;
+import java.util.function.Supplier;
+import static cn.pandora.common.Db.*;
+
+@Component
+public class Writes {
+    private final Db db; private final TransactionTemplate tx; private final ObjectMapper mapper; private final AuthService auth;
+    private final OrganizationConstraints constraints;
+<span class="fc" id="L17">    public Writes(Db db,TransactionTemplate tx,ObjectMapper mapper,AuthService auth,OrganizationConstraints constraints) {</span>
+<span class="fc" id="L18">        this.db=db;this.tx=tx;this.mapper=mapper;this.auth=auth;this.constraints=constraints;</span>
+<span class="fc" id="L19">    }</span>
+
+    /**
+     * A command outcome split into the part that may be replayed from the idempotency cache and the
+     * part that may be shown exactly once. One-time credentials (initial passwords) go in the second
+     * part, so a lost response can never re-display a secret and the cache never stores one.
+     */
+<span class="fc" id="L26">    public record Outcome(Map&lt;String,Object&gt; replayable, Map&lt;String,Object&gt; oneTimeOnly) {</span>
+<span class="fc" id="L27">        public static Outcome of(Map&lt;String,Object&gt; replayable) { return new Outcome(replayable, Map.of()); }</span>
+    }
+
+    public Map&lt;String,Object&gt; run(Actor actor,String key,String scope,Object body,String ifMatch,Supplier&lt;Map&lt;String,Object&gt;&gt; work) {
+<span class="fc" id="L31">        return runOutcome(actor,key,scope,body,ifMatch,() -&gt; Outcome.of(work.get()));</span>
+    }
+
+    /**
+     * Return a previously committed response for the same idempotency key without running the
+     * command. Used by commands that must fetch an external resource before entering their short
+     * write transaction: a retry of a successful request must replay the result without another
+     * network call. Returns {@code null} when this key has not committed yet.
+     */
+    public Map&lt;String,Object&gt; replayIfPresent(Actor actor,String key,String scope,Object body,String ifMatch) {
+<span class="pc bpc" id="L41" title="1 of 4 branches missed.">        if(key==null || !key.matches(&quot;[A-Za-z0-9._:-]{8,80}&quot;)) throw new ApiException(400,&quot;IDEMPOTENCY_KEY_REQUIRED&quot;,&quot;请提供8至80位 Idempotency-Key&quot;);</span>
+<span class="fc" id="L42">        String digest=AuthService.hash(scope+&quot;\n&quot;+canonical(mapper.valueToTree(body))+&quot;\n&quot;+Objects.toString(ifMatch,&quot;&quot;));</span>
+<span class="fc" id="L43">        var previous=db.find(&quot;SELECT * FROM idempotency_keys WHERE organization_id=? AND user_id=? AND scope=? AND key_value=?&quot;,actor.organizationId(),actor.id(),scope,key);</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if(previous==null) return null;</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        if(!digest.equals(s(previous,&quot;requestHash&quot;))) throw new ApiException(409,&quot;IDEMPOTENCY_CONFLICT&quot;,&quot;同一幂等键不能用于不同请求&quot;);</span>
+<span class="fc" id="L46">        var cached=db.parse(s(previous,&quot;responseJson&quot;));</span>
+<span class="fc" id="L47">        Object saved=cached.remove(&quot;_authzVersion&quot;);</span>
+<span class="fc" id="L48">        var org=db.one(&quot;SELECT authz_version FROM organizations WHERE id=?&quot;,actor.organizationId());</span>
+<span class="pc bpc" id="L49" title="2 of 4 branches missed.">        if(!(saved instanceof Number value) || value.longValue()!=n(org,&quot;authzVersion&quot;))</span>
+<span class="nc" id="L50">            throw new ApiException(409,&quot;AUTHORIZATION_CHANGED&quot;,&quot;权限已变化，请使用新请求&quot;);</span>
+<span class="fc" id="L51">        return cached;</span>
+    }
+
+    /**
+     * Same transaction and idempotency contract, for commands that return a one-time secret. Named
+     * separately because Java cannot overload on a generic type argument.
+     */
+    public Map&lt;String,Object&gt; runOutcome(Actor actor,String key,String scope,Object body,String ifMatch,Supplier&lt;Outcome&gt; work) {
+<span class="pc bpc" id="L59" title="2 of 4 branches missed.">        if(key==null || !key.matches(&quot;[A-Za-z0-9._:-]{8,80}&quot;)) throw new ApiException(400,&quot;IDEMPOTENCY_KEY_REQUIRED&quot;,&quot;请提供8至80位 Idempotency-Key&quot;);</span>
+<span class="fc" id="L60">        String digest=AuthService.hash(scope+&quot;\n&quot;+canonical(mapper.valueToTree(body))+&quot;\n&quot;+Objects.toString(ifMatch,&quot;&quot;));</span>
+<span class="fc" id="L61">        return tx.execute(status-&gt;{</span>
+            // Local single-company commands deliberately serialize here; this also fixes parent-cycle races.
+<span class="fc" id="L63">            var org=db.one(&quot;SELECT * FROM organizations WHERE id=? FOR UPDATE&quot;,actor.organizationId());</span>
+<span class="fc" id="L64">            var user=auth.account(actor);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            if(!actor.equals(auth.actor(user))) throw new ApiException(409,&quot;AUTHORIZATION_CHANGED&quot;,&quot;权限已更新，请重新读取后操作&quot;);</span>
+            // A reviewed V4 mapping must be complete before formal business writes start. Administration
+            // repair scopes stay available so the mapping can be finished through the console, and old
+            // idempotency replays cannot bypass the gate because it runs before the cache lookup
+            // (Migration Plan §2, DEV-001/002).
+<span class="pc bpc" id="L70" title="1 of 4 branches missed.">            if(!scope.contains(&quot;/admin/&quot;) &amp;&amp; !constraints.formalWritesReady(actor.organizationId()))</span>
+<span class="nc" id="L71">                throw new ApiException(409,&quot;ORGANIZATION_MAPPING_INCOMPLETE&quot;,</span>
+                        &quot;组织部门/职位映射尚未完成，正式业务写入暂不可用，请管理员在管理端补齐映射&quot;);
+<span class="fc" id="L73">            var previous=db.find(&quot;SELECT * FROM idempotency_keys WHERE organization_id=? AND user_id=? AND scope=? AND key_value=?&quot;,actor.organizationId(),actor.id(),scope,key);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            if(previous!=null) {</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">                if(!digest.equals(s(previous,&quot;requestHash&quot;))) throw new ApiException(409,&quot;IDEMPOTENCY_CONFLICT&quot;,&quot;同一幂等键不能用于不同请求&quot;);</span>
+<span class="fc" id="L76">                var cached=db.parse(s(previous,&quot;responseJson&quot;));</span>
+                // A later permission change must not replay a previously authorized result.
+<span class="fc" id="L78">                Object saved=cached.remove(&quot;_authzVersion&quot;);</span>
+<span class="pc bpc" id="L79" title="1 of 4 branches missed.">                if(!(saved instanceof Number value) || value.longValue()!=n(org,&quot;authzVersion&quot;))</span>
+<span class="fc" id="L80">                    throw new ApiException(409,&quot;AUTHORIZATION_CHANGED&quot;,&quot;权限已变化，请使用新请求&quot;);</span>
+<span class="fc" id="L81">                return cached;</span>
+            }
+<span class="fc" id="L83">            Outcome outcome=work.get();</span>
+            // Store the version as it stands *after* the command: an idempotent retry of the same
+            // request must still replay, while any later authority change must invalidate the cache.
+<span class="fc" id="L86">            var afterOrg=db.one(&quot;SELECT authz_version FROM organizations WHERE id=?&quot;,actor.organizationId());</span>
+<span class="fc" id="L87">            Map&lt;String,Object&gt; stored=new LinkedHashMap&lt;&gt;(outcome.replayable());stored.put(&quot;_authzVersion&quot;,n(afterOrg,&quot;authzVersion&quot;));</span>
+<span class="fc" id="L88">            db.update(&quot;INSERT INTO idempotency_keys(organization_id,user_id,scope,key_value,request_hash,response_json) VALUES(?,?,?,?,?,?)&quot;,actor.organizationId(),actor.id(),scope,key,digest,db.json(stored));</span>
+<span class="fc" id="L89">            Map&lt;String,Object&gt; response=new LinkedHashMap&lt;&gt;(outcome.replayable());</span>
+<span class="fc" id="L90">            response.putAll(outcome.oneTimeOnly());</span>
+<span class="fc" id="L91">            return response;</span>
+        });
+    }
+    private JsonNode canonical(JsonNode node) {
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if(node.isObject()) { ObjectNode result=mapper.createObjectNode();List&lt;String&gt; names=new ArrayList&lt;&gt;();node.fieldNames().forEachRemaining(names::add);Collections.sort(names);names.forEach(k-&gt;result.set(k,canonical(node.get(k))));return result; }</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        if(node.isArray()) {ArrayNode result=mapper.createArrayNode();node.forEach(v-&gt;result.add(canonical(v)));return result;}</span>
+<span class="fc" id="L97">        return node;</span>
+    }
+    public static void checkVersion(String ifMatch,long version) {
+<span class="fc bfc" id="L100" title="All 4 branches covered.">        if(ifMatch==null || ifMatch.isBlank()) throw new ApiException(428,&quot;PRECONDITION_REQUIRED&quot;,&quot;请先读取详情并提交 If-Match&quot;);</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        if(!ifMatch.equals(&quot;\&quot;&quot;+version+&quot;\&quot;&quot;)) throw new ApiException(412,&quot;VERSION_CONFLICT&quot;,&quot;内容已更新，请刷新后重试&quot;);</span>
+<span class="fc" id="L102">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,104 @@
+{
+  "JUnit": {
+    "total": 225,
+    "failed": 0
+  },
+  "Android": {
+    "total": 25,
+    "failed": 0
+  },
+  "Flutter unit/widget": {
+    "total": 248,
+    "failed": 0,
+    "defaultRunSkippedRealBackendCases": 32,
+    "realBackendCasesExecutedSeparately": 32
+  },
+  "Flutter managed": {
+    "total": 5,
+    "failed": 0
+  },
+  "Flutter real API": {
+    "total": 32,
+    "failed": 0
+  },
+  "pytest": {
+    "total": 139,
+    "failed": 0
+  },
+  "businessSuites": {
+    "total": 41,
+    "failed": 0
+  },
+  "phoneChecks": 16,
+  "jarSHA256": "f3182ca996f6b759b6c123a299dd2badee479e1eaa3d3fe071df32bf1e07889b",
+  "apkSHA256": "1d6b70d59d96b88371d42b4d3f46e042708e041b0baf38a1a2bb47bae0e7f3cf",
+  "coverageCombined": {
+    "INSTRUCTION": {
+      "covered": 41732,
+      "missed": 4965,
+      "percent": 89.37
+    },
+    "BRANCH": {
+      "covered": 3450,
+      "missed": 1184,
+      "percent": 74.45
+    },
+    "LINE": {
+      "covered": 5169,
+      "missed": 476,
+      "percent": 91.57
+    },
+    "COMPLEXITY": {
+      "covered": 2262,
+      "missed": 1109,
+      "percent": 67.1
+    },
+    "METHOD": {
+      "covered": 934,
+      "missed": 85,
+      "percent": 91.66
+    },
+    "CLASS": {
+      "covered": 65,
+      "missed": 1,
+      "percent": 98.48
+    }
+  },
+  "coverageUnit": {
+    "INSTRUCTION": {
+      "covered": 14964,
+      "missed": 31733,
+      "percent": 32.04
+    },
+    "BRANCH": {
+      "covered": 1537,
+      "missed": 3097,
+      "percent": 33.17
+    },
+    "LINE": {
+      "covered": 1880,
+      "missed": 3765,
+      "percent": 33.3
+    },
+    "COMPLEXITY": {
+      "covered": 907,
+      "missed": 2464,
+      "percent": 26.91
+    },
+    "METHOD": {
+      "covered": 382,
+      "missed": 637,
+      "percent": 37.49
+    },
+    "CLASS": {
+      "covered": 37,
+      "missed": 29,
+      "percent": 56.06
+    }
+  },
+  "coverageFlutter": {
+    "covered": 7170,
+    "total": 9480,
+    "percent": 75.63
+  }
+}

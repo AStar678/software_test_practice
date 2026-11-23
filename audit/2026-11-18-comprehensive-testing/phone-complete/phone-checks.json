@@ -1,0 +1,82 @@
+[
+  {
+    "check": "dedicated device forwarding port is unused",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "real phone employee login: employee",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "employee tab renders without login redirect: 公司",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "real phone day view opens with a return-to-month control",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "employee tab renders without login redirect: 日志",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "employee tab renders without login redirect: 统计",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "employee tab renders without login redirect: 我的",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "employee tab renders without login redirect: 首页",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "real phone employee login: team-head",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "real phone employee login: department-head",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "real phone employee login: founder",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "process death restores verified account session",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "offline startup does not show prior sensitive dashboard",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "offline state provides an explicit retry control",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "network restoration revalidates the same session",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "original installed Flutter app remains byte-identical",
+    "pass": true,
+    "detail": null
+  }
+]

@@ -1,0 +1,156 @@
+{
+  "id": "M15",
+  "method": "TaskService.adminTasks",
+  "endpoint": "GET /admin/tasks",
+  "status": "PASS",
+  "counts": {
+    "passed": 8,
+    "failed": 0,
+    "skipped": 0
+  },
+  "categoryCoverage": {
+    "正常": {
+      "designed": 1,
+      "executed": 1,
+      "passed": 1
+    },
+    "边界": {
+      "designed": 3,
+      "executed": 3,
+      "passed": 3
+    },
+    "异常": {
+      "designed": 4,
+      "executed": 4,
+      "passed": 4
+    }
+  },
+  "threeCategoriesSatisfied": true,
+  "cleanup": {
+    "created": 0,
+    "unresolved": []
+  },
+  "analysis": "正常输入：N_limit20（limit=20，offset=0）实际HTTP 200；items=20，total=62，nextOffset=20。\n\n边界输入：B_limit1（limit=1，offset=0）实际HTTP 200；items=1，total=62，nextOffset=1；B_limit100（limit=100，offset=0）实际HTTP 200；items=62，total=62，nextOffset=null；B_offset_max（limit=20，offset=2147483647）实际HTTP 200；items=0，total=62，nextOffset=null。\n\n异常输入：E_limit0（limit=0，offset=0）实际HTTP 400；code=INVALID_INPUT；E_limit101（limit=101，offset=0）实际HTTP 400；code=INVALID_INPUT；E_limit_text（limit=x，offset=0）实际HTTP 400；code=INVALID_INPUT；E_offset_overflow（limit=20，offset=2147483648）实际HTTP 400；code=INVALID_INPUT。\n\n以上实际状态均与各用例预期吻合，且pytest业务后置条件全部通过，因此本轮所列三类用例通过。 limit=100时实际仅返回62条，本轮未覆盖装满100条的满页场景，不能由此推断满页数据正确性。",
+  "actualEvidence": [
+    {
+      "caseId": "N_limit20",
+      "kind": "正常",
+      "input": "limit=20，offset=0",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；items=20，total=62，nextOffset=20",
+      "pytest": "passed",
+      "requestLines": [
+        1
+      ],
+      "metrics": {
+        "items": 20,
+        "total": 62,
+        "nextOffset": 20
+      }
+    },
+    {
+      "caseId": "B_limit1",
+      "kind": "边界",
+      "input": "limit=1，offset=0",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；items=1，total=62，nextOffset=1",
+      "pytest": "passed",
+      "requestLines": [
+        2
+      ],
+      "metrics": {
+        "items": 1,
+        "total": 62,
+        "nextOffset": 1
+      }
+    },
+    {
+      "caseId": "B_limit100",
+      "kind": "边界",
+      "input": "limit=100，offset=0",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；items=62，total=62，nextOffset=null",
+      "pytest": "passed",
+      "requestLines": [
+        3
+      ],
+      "metrics": {
+        "items": 62,
+        "total": 62,
+        "nextOffset": null
+      }
+    },
+    {
+      "caseId": "E_limit0",
+      "kind": "异常",
+      "input": "limit=0，offset=0",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT",
+      "pytest": "passed",
+      "requestLines": [
+        4
+      ],
+      "metrics": {}
+    },
+    {
+      "caseId": "E_limit101",
+      "kind": "异常",
+      "input": "limit=101，offset=0",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT",
+      "pytest": "passed",
+      "requestLines": [
+        5
+      ],
+      "metrics": {}
+    },
+    {
+      "caseId": "E_limit_text",
+      "kind": "异常",
+      "input": "limit=x，offset=0",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT",
+      "pytest": "passed",
+      "requestLines": [
+        6
+      ],
+      "metrics": {}
+    },
+    {
+      "caseId": "B_offset_max",
+      "kind": "边界",
+      "input": "limit=20，offset=2147483647",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；items=0，total=62，nextOffset=null",
+      "pytest": "passed",
+      "requestLines": [
+        7
+      ],
+      "metrics": {
+        "items": 0,
+        "total": 62,
+        "nextOffset": null
+      }
+    },
+    {
+      "caseId": "E_offset_overflow",
+      "kind": "异常",
+      "input": "limit=20，offset=2147483648",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_INPUT",
+      "pytest": "passed",
+      "requestLines": [
+        8
+      ],
+      "metrics": {}
+    }
+  ]
+}

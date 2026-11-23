@@ -1,0 +1,192 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.2.0, pluggy-1.7.0 -- /private/tmp/pandora-comprehensive-20261118/venv/bin/python3.14
+cachedir: .pytest_cache
+rootdir: /Users/aoxiang/Desktop/软件测试
+plugins: cov-7.1.0
+collecting ... collected 85 items
+
+backend/tests/test_acceptance_extremes.py::test_login_rejects_invalid_equivalence_classes[payload0-401] PASSED [  1%]
+backend/tests/test_acceptance_extremes.py::test_login_rejects_invalid_equivalence_classes[payload1-401] PASSED [  2%]
+backend/tests/test_acceptance_extremes.py::test_login_rejects_invalid_equivalence_classes[payload2-400] PASSED [  3%]
+backend/tests/test_acceptance_extremes.py::test_login_rejects_invalid_equivalence_classes[payload3-400] PASSED [  4%]
+backend/tests/test_acceptance_extremes.py::test_login_rejects_invalid_equivalence_classes[payload4-400] PASSED [  5%]
+backend/tests/test_acceptance_extremes.py::test_login_rejects_invalid_equivalence_classes[payload5-400] PASSED [  7%]
+backend/tests/test_acceptance_extremes.py::test_login_rejects_invalid_equivalence_classes[payload6-400] PASSED [  8%]
+backend/tests/test_acceptance_extremes.py::test_login_rejects_invalid_equivalence_classes[payload7-400] PASSED [  9%]
+backend/tests/test_acceptance_extremes.py::test_task_title_unicode_code_point_boundaries[0-400] PASSED [ 10%]
+backend/tests/test_acceptance_extremes.py::test_task_title_unicode_code_point_boundaries[1-200] PASSED [ 11%]
+backend/tests/test_acceptance_extremes.py::test_task_title_unicode_code_point_boundaries[79-200] PASSED [ 12%]
+backend/tests/test_acceptance_extremes.py::test_task_title_unicode_code_point_boundaries[80-200] PASSED [ 14%]
+backend/tests/test_acceptance_extremes.py::test_task_title_unicode_code_point_boundaries[81-400] PASSED [ 15%]
+backend/tests/test_acceptance_extremes.py::test_task_all_day_requires_real_json_boolean[None] PASSED [ 16%]
+backend/tests/test_acceptance_extremes.py::test_task_all_day_requires_real_json_boolean[0] PASSED [ 17%]
+backend/tests/test_acceptance_extremes.py::test_task_all_day_requires_real_json_boolean[1] PASSED [ 18%]
+backend/tests/test_acceptance_extremes.py::test_task_all_day_requires_real_json_boolean[0.5] PASSED [ 20%]
+backend/tests/test_acceptance_extremes.py::test_task_all_day_requires_real_json_boolean[1.5] PASSED [ 21%]
+backend/tests/test_acceptance_extremes.py::test_task_all_day_requires_real_json_boolean[4294967296] PASSED [ 22%]
+backend/tests/test_acceptance_extremes.py::test_task_all_day_requires_real_json_boolean[true] PASSED [ 23%]
+backend/tests/test_acceptance_extremes.py::test_task_all_day_requires_real_json_boolean[value7] PASSED [ 24%]
+backend/tests/test_acceptance_extremes.py::test_task_all_day_requires_real_json_boolean[value8] PASSED [ 25%]
+backend/tests/test_acceptance_extremes.py::test_daily_item_text_exact_boundaries[0-400] PASSED [ 27%]
+backend/tests/test_acceptance_extremes.py::test_daily_item_text_exact_boundaries[1-200] PASSED [ 28%]
+backend/tests/test_acceptance_extremes.py::test_daily_item_text_exact_boundaries[1999-200] PASSED [ 29%]
+backend/tests/test_acceptance_extremes.py::test_daily_item_text_exact_boundaries[2000-200] PASSED [ 30%]
+backend/tests/test_acceptance_extremes.py::test_daily_item_text_exact_boundaries[2001-400] PASSED [ 31%]
+backend/tests/test_acceptance_extremes.py::test_daily_summary_inclusive_range_boundary[1-200] PASSED [ 32%]
+backend/tests/test_acceptance_extremes.py::test_daily_summary_inclusive_range_boundary[92-200] PASSED [ 34%]
+backend/tests/test_acceptance_extremes.py::test_daily_summary_inclusive_range_boundary[93-200] PASSED [ 35%]
+backend/tests/test_acceptance_extremes.py::test_daily_summary_inclusive_range_boundary[94-400] PASSED [ 36%]
+backend/tests/test_acceptance_extremes.py::test_daily_list_page_limit[0-400] PASSED [ 37%]
+backend/tests/test_acceptance_extremes.py::test_daily_list_page_limit[1-200] PASSED [ 38%]
+backend/tests/test_acceptance_extremes.py::test_daily_list_page_limit[100-200] PASSED [ 40%]
+backend/tests/test_acceptance_extremes.py::test_daily_list_page_limit[101-400] PASSED [ 41%]
+backend/tests/test_acceptance_extremes.py::test_daily_list_page_limit[2147483647-400] PASSED [ 42%]
+backend/tests/test_acceptance_extremes.py::test_daily_date_equivalence_partitions[2024-02-29-2024-02-29-200] PASSED [ 43%]
+backend/tests/test_acceptance_extremes.py::test_daily_date_equivalence_partitions[2000-02-29-2000-03-01-200] PASSED [ 44%]
+backend/tests/test_acceptance_extremes.py::test_daily_date_equivalence_partitions[2026-12-31-2027-01-01-200] PASSED [ 45%]
+backend/tests/test_acceptance_extremes.py::test_daily_date_equivalence_partitions[1900-02-29-1900-03-01-400] PASSED [ 47%]
+backend/tests/test_acceptance_extremes.py::test_daily_date_equivalence_partitions[2026-04-31-2026-05-01-400] PASSED [ 48%]
+backend/tests/test_acceptance_extremes.py::test_daily_date_equivalence_partitions[2026-11-20-2026-11-19-400] PASSED [ 49%]
+backend/tests/test_acceptance_extremes.py::test_daily_item_is_private_even_from_managers[founder-200] PASSED [ 50%]
+backend/tests/test_acceptance_extremes.py::test_daily_item_is_private_even_from_managers[alpha-one-employee-404] PASSED [ 51%]
+backend/tests/test_acceptance_extremes.py::test_daily_item_is_private_even_from_managers[other-founder-404] PASSED [ 52%]
+backend/tests/test_acceptance_extremes.py::test_daily_item_is_private_even_from_managers[admin-403] PASSED [ 54%]
+backend/tests/test_acceptance_extremes.py::test_daily_update_version_fence[None-428] PASSED [ 55%]
+backend/tests/test_acceptance_extremes.py::test_daily_update_version_fence[0-412] PASSED [ 56%]
+backend/tests/test_acceptance_extremes.py::test_daily_update_version_fence[1-200] PASSED [ 57%]
+backend/tests/test_acceptance_extremes.py::test_daily_update_version_fence[9223372036854775807-412] PASSED [ 58%]
+backend/tests/test_acceptance_extremes.py::test_same_idempotency_key_replays_once_and_rejects_changed_body PASSED [ 60%]
+backend/tests/test_acceptance_extremes.py::test_eight_concurrent_identical_writes_have_one_effect PASSED [ 61%]
+backend/tests/test_acceptance_extremes.py::test_two_stale_concurrent_updates_do_not_silently_overwrite PASSED [ 62%]
+backend/tests/test_acceptance_extremes.py::test_work_log_utf16_contract[min1] PASSED [ 63%]
+backend/tests/test_acceptance_extremes.py::test_work_log_utf16_contract[upper9999] PASSED [ 64%]
+backend/tests/test_acceptance_extremes.py::test_work_log_utf16_contract[upper10000] PASSED [ 65%]
+backend/tests/test_acceptance_extremes.py::test_work_log_utf16_contract[utf16-10000] PASSED [ 67%]
+backend/tests/test_acceptance_extremes.py::test_work_log_utf16_contract[empty] PASSED [ 68%]
+backend/tests/test_acceptance_extremes.py::test_work_log_utf16_contract[first10001] PASSED [ 69%]
+backend/tests/test_acceptance_extremes.py::test_work_log_utf16_contract[utf16-10002] PASSED [ 70%]
+backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[42] FAILED [ 71%]
+backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[True] FAILED [ 72%]
+backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[value2] FAILED [ 74%]
+backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[value3] FAILED [ 75%]
+backend/tests/test_acceptance_extremes.py::test_avatar_actual_decode_and_dimension_boundaries[1-1-200] PASSED [ 76%]
+backend/tests/test_acceptance_extremes.py::test_avatar_actual_decode_and_dimension_boundaries[512-1-200] PASSED [ 77%]
+backend/tests/test_acceptance_extremes.py::test_avatar_actual_decode_and_dimension_boundaries[512-512-200] PASSED [ 78%]
+backend/tests/test_acceptance_extremes.py::test_avatar_actual_decode_and_dimension_boundaries[513-1-400] PASSED [ 80%]
+backend/tests/test_acceptance_extremes.py::test_avatar_actual_decode_and_dimension_boundaries[1-513-400] PASSED [ 81%]
+backend/tests/test_acceptance_extremes.py::test_avatar_actual_decode_and_dimension_boundaries[0-1-400] PASSED [ 82%]
+backend/tests/test_acceptance_extremes.py::test_email_equivalence_and_local_part_boundary[person+pdl@example.test-200] PASSED [ 83%]
+backend/tests/test_acceptance_extremes.py::test_email_equivalence_and_local_part_boundary[aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.test-200] PASSED [ 84%]
+backend/tests/test_acceptance_extremes.py::test_email_equivalence_and_local_part_boundary[aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.test-400] PASSED [ 85%]
+backend/tests/test_acceptance_extremes.py::test_email_equivalence_and_local_part_boundary[.person@example.test-400] PASSED [ 87%]
+backend/tests/test_acceptance_extremes.py::test_email_equivalence_and_local_part_boundary[person..name@example.test-400] PASSED [ 88%]
+backend/tests/test_acceptance_extremes.py::test_email_equivalence_and_local_part_boundary[person@example-400] PASSED [ 89%]
+backend/tests/test_acceptance_extremes.py::test_email_equivalence_and_local_part_boundary[not-an-email-400] PASSED [ 90%]
+backend/tests/test_acceptance_extremes.py::test_email_equivalence_and_local_part_boundary[-200] PASSED [ 91%]
+backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[0-200] PASSED [ 92%]
+backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[0.5-400] FAILED [ 94%]
+backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[-0.5-400] FAILED [ 95%]
+backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[-1-400] PASSED [ 96%]
+backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[34560001-400] PASSED [ 97%]
+backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[18446744073709551616-400] FAILED [ 98%]
+backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[34560000-200] PASSED [100%]
+
+=================================== FAILURES ===================================
+____________________ test_comment_rejects_non_text_json[42] ____________________
+
+service = <fixed_model_fixture.Fixture object at 0x10b4c0440>, value = 42
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_rejects_non_text_json(service, value):
+        """CommentService.create: JSON numbers/booleans/arrays/objects are not plain text."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+>       assert call(service, 'POST', '/tasks/' + task + '/comments', {'body': value})[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:160: AssertionError
+___________________ test_comment_rejects_non_text_json[True] ___________________
+
+service = <fixed_model_fixture.Fixture object at 0x10b4c0440>, value = True
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_rejects_non_text_json(service, value):
+        """CommentService.create: JSON numbers/booleans/arrays/objects are not plain text."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+>       assert call(service, 'POST', '/tasks/' + task + '/comments', {'body': value})[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:160: AssertionError
+__________________ test_comment_rejects_non_text_json[value2] __________________
+
+service = <fixed_model_fixture.Fixture object at 0x10b4c0440>, value = ['text']
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_rejects_non_text_json(service, value):
+        """CommentService.create: JSON numbers/booleans/arrays/objects are not plain text."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+>       assert call(service, 'POST', '/tasks/' + task + '/comments', {'body': value})[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:160: AssertionError
+__________________ test_comment_rejects_non_text_json[value3] __________________
+
+service = <fixed_model_fixture.Fixture object at 0x10b4c0440>
+value = {'text': 'comment'}
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_rejects_non_text_json(service, value):
+        """CommentService.create: JSON numbers/booleans/arrays/objects are not plain text."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+>       assert call(service, 'POST', '/tasks/' + task + '/comments', {'body': value})[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:160: AssertionError
+____________ test_admin_clock_seconds_are_bounded_integers[0.5-400] ____________
+
+service = <fixed_model_fixture.Fixture object at 0x10b4c0440>, seconds = 0.5
+expected = 400
+
+    @pytest.mark.parametrize('seconds,expected', [(0, 200), (0.5, 400), (-0.5, 400), (-1, 400), (34560001, 400), (18446744073709551616, 400), (34560000, 200)])
+    def test_admin_clock_seconds_are_bounded_integers(service, seconds, expected):
+        """AdminController.advanceClock: integer lower/upper bounds and coercion/overflow negatives."""
+        token = service.login('admin')[1]['token']
+>       assert service.call('POST', '/admin/clock/advance', {'seconds': seconds}, token)[0] == expected
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:193: AssertionError
+___________ test_admin_clock_seconds_are_bounded_integers[-0.5-400] ____________
+
+service = <fixed_model_fixture.Fixture object at 0x10b4c0440>, seconds = -0.5
+expected = 400
+
+    @pytest.mark.parametrize('seconds,expected', [(0, 200), (0.5, 400), (-0.5, 400), (-1, 400), (34560001, 400), (18446744073709551616, 400), (34560000, 200)])
+    def test_admin_clock_seconds_are_bounded_integers(service, seconds, expected):
+        """AdminController.advanceClock: integer lower/upper bounds and coercion/overflow negatives."""
+        token = service.login('admin')[1]['token']
+>       assert service.call('POST', '/admin/clock/advance', {'seconds': seconds}, token)[0] == expected
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:193: AssertionError
+___ test_admin_clock_seconds_are_bounded_integers[18446744073709551616-400] ____
+
+service = <fixed_model_fixture.Fixture object at 0x10b4c0440>
+seconds = 18446744073709551616, expected = 400
+
+    @pytest.mark.parametrize('seconds,expected', [(0, 200), (0.5, 400), (-0.5, 400), (-1, 400), (34560001, 400), (18446744073709551616, 400), (34560000, 200)])
+    def test_admin_clock_seconds_are_bounded_integers(service, seconds, expected):
+        """AdminController.advanceClock: integer lower/upper bounds and coercion/overflow negatives."""
+        token = service.login('admin')[1]['token']
+>       assert service.call('POST', '/admin/clock/advance', {'seconds': seconds}, token)[0] == expected
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:193: AssertionError
+- generated xml file: /Users/aoxiang/Desktop/软件测试/audit/2026-11-18-comprehensive-testing/pytest-junit.xml -
+=========================== short test summary info ============================
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[42]
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[True]
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[value2]
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[value3]
+FAILED backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[0.5-400]
+FAILED backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[-0.5-400]
+FAILED backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[18446744073709551616-400]
+======================== 7 failed, 78 passed in 15.22s =========================

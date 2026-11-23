@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Events.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.common</a> &gt; <span class="el_source">Events.java</span></div><h1>Events.java</h1><pre class="source lang-java linenums">package cn.pandora.common;
+
+import cn.pandora.auth.Actor;
+import org.springframework.stereotype.Component;
+
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.*;
+
+import static cn.pandora.common.Db.id;
+import static cn.pandora.common.Db.s;
+
+/**
+ * Durable domain events with their own provenance and retention (DEV-030—033).
+ *
+ * Every business event persists the originating request/version, its initiator, the task title, the
+ * actual change summary, the occurrence instant and the pre-computed retention instant. Message
+ * copies are created later by the worker from this record only; nothing is reconstructed from the
+ * task's current state at delivery time.
+ */
+@Component
+public class Events {
+    private static final int SUMMARY_LIMIT = 1000;
+    private final Db db;
+    private final Clock clock;
+
+<span class="fc" id="L29">    public Events(Db db, Clock clock) {</span>
+<span class="fc" id="L30">        this.db = db;</span>
+<span class="fc" id="L31">        this.clock = clock;</span>
+<span class="fc" id="L32">    }</span>
+
+    public void record(Actor actor, String taskId, String type, Collection&lt;String&gt; recipients, Map&lt;String, Object&gt; details) {
+<span class="fc" id="L35">        record(actor, taskId, type, recipients, details, null, null, null, null);</span>
+<span class="fc" id="L36">    }</span>
+
+    public void record(Actor actor, String taskId, String type, Collection&lt;String&gt; recipients, Map&lt;String, Object&gt; details,
+                       String requestId, String versionId, String title, String summary) {
+<span class="fc" id="L40">        recordObject(actor, taskId, type, recipients, details, requestId, versionId, title, summary,</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">                taskId == null ? null : &quot;task&quot;, taskId);</span>
+<span class="fc" id="L42">    }</span>
+
+    /**
+     * Same durable event, with an explicit business object reference. A log comment message has no task,
+     * so the reference travels with the event and its copies instead of being forced into task_id
+     * (chapter 8.5). The audit row keeps pointing at the object that actually changed.
+     */
+    public void recordObject(Actor actor, String taskId, String type, Collection&lt;String&gt; recipients,
+                             Map&lt;String, Object&gt; details, String requestId, String versionId,
+                             String title, String summary, String objectType, String objectId) {
+<span class="fc" id="L52">        Instant occurredAt = clock.instant();</span>
+<span class="fc" id="L53">        db.update(&quot;INSERT INTO audit_logs(id,organization_id,actor_id,object_id,action,details_json) VALUES(?,?,?,?,?,?)&quot;,</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">                id(), actor.organizationId(), actor.id(), objectId == null ? taskId : objectId, type,</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">                db.json(details == null ? Map.of() : details));</span>
+<span class="fc" id="L56">        insert(actor.organizationId(), taskId, type, recipients, details, requestId, versionId, actor.id(),</span>
+                title, summary, occurredAt, objectType, objectId);
+<span class="fc" id="L58">    }</span>
+
+    /**
+     * Scheduled reminders and overdue backfills have no human initiator. They are deliberately not
+     * written to the human audit trail but keep the same event provenance and retention.
+     */
+    public String scheduled(String organizationId, String taskId, String type, String recipient,
+                            Map&lt;String, Object&gt; details, String title, String summary) {
+<span class="fc" id="L66">        return insert(organizationId, taskId, type, List.of(recipient), details, null, null, null, title, summary,</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">                clock.instant(), taskId == null ? null : &quot;task&quot;, taskId);</span>
+    }
+
+    /**
+     * A domain event produced by the deadline scan rather than a human command. It carries the
+     * originating request/version so the resulting message keeps its original-application binding,
+     * but it is not attributed to a person in the audit trail.
+     */
+    public void systemRecord(String organizationId, String taskId, String type, Collection&lt;String&gt; recipients,
+                             Map&lt;String, Object&gt; details, String requestId, String versionId,
+                             String initiatorId, String title, String summary, Instant occurredAt) {
+<span class="fc" id="L78">        insert(organizationId, taskId, type, recipients, details, requestId, versionId, initiatorId, title, summary,</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">                occurredAt, taskId == null ? null : &quot;task&quot;, taskId);</span>
+<span class="fc" id="L80">    }</span>
+
+    private String insert(String organizationId, String taskId, String type, Collection&lt;String&gt; recipients,
+                        Map&lt;String, Object&gt; details, String requestId, String versionId, String initiatorId,
+                        String title, String summary, Instant occurredAt, String objectType, String objectId) {
+<span class="fc" id="L85">        LinkedHashSet&lt;String&gt; unique = new LinkedHashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L86" title="3 of 8 branches missed.">        if (recipients != null) for (String recipient : recipients) if (recipient != null &amp;&amp; !recipient.isBlank()) unique.add(recipient);</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        Map&lt;String, Object&gt; payload = details == null ? new LinkedHashMap&lt;&gt;() : new LinkedHashMap&lt;&gt;(details);</span>
+<span class="fc" id="L88">        String eventId = id();</span>
+<span class="fc" id="L89">        db.update(&quot;INSERT INTO domain_events(id,organization_id,task_id,event_type,recipients_json,details_json,status,&quot;</span>
+                        + &quot;request_id,task_version_id,initiator_id,title,change_summary,occurred_at,expires_at,object_type,object_id) &quot;
+                        + &quot;VALUES(?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?,?)&quot;,
+<span class="fc" id="L92">                eventId, organizationId, taskId, type, db.json(unique), db.json(payload),</span>
+<span class="fc" id="L93">                requestId, versionId, initiatorId, truncate(title, 200), truncate(summary, SUMMARY_LIMIT),</span>
+<span class="fc" id="L94">                Timestamp.from(occurredAt), Timestamp.from(retentionEndsAt(organizationId, occurredAt)),</span>
+                objectType, objectId);
+<span class="fc" id="L96">        return eventId;</span>
+    }
+
+    /** Three company-local calendar months, truncated to the target month's last day. */
+    public Instant retentionEndsAt(String organizationId, Instant occurredAt) {
+<span class="fc" id="L101">        return retentionEndsAt(occurredAt, organizationZone(organizationId));</span>
+    }
+
+    /** Pure calendar-month rule, exposed for boundary tests. */
+    public static Instant retentionEndsAt(Instant occurredAt, ZoneId zone) {
+<span class="fc" id="L106">        return occurredAt.atZone(zone).plusMonths(3).toInstant();</span>
+    }
+
+    public ZoneId organizationZone(String organizationId) {
+<span class="fc" id="L110">        Map&lt;String, Object&gt; organization = db.find(&quot;SELECT time_zone FROM organizations WHERE id=?&quot;, organizationId);</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        if (organization == null) throw new ApiException(409, &quot;INVALID_ORGANIZATION&quot;, &quot;组织不存在或已失效&quot;);</span>
+        try {
+<span class="fc" id="L113">            return ZoneId.of(s(organization, &quot;timeZone&quot;));</span>
+<span class="nc" id="L114">        } catch (RuntimeException exception) {</span>
+<span class="nc" id="L115">            throw new ApiException(409, &quot;INVALID_ORGANIZATION_ZONE&quot;, &quot;组织时区配置无效&quot;);</span>
+        }
+    }
+
+    private static String truncate(String value, int limit) {
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (value == null) return null;</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        return value.length() &lt;= limit ? value : value.substring(0, limit);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WorkLogSlots.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.workspace</a> &gt; <span class="el_source">WorkLogSlots.java</span></div><h1>WorkLogSlots.java</h1><pre class="source lang-java linenums">package cn.pandora.workspace;
+
+import cn.pandora.common.Db;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Map;
+import java.util.Objects;
+
+import static cn.pandora.common.Db.s;
+
+/**
+ * Rebuilds the per-author/per-day log position for logs that earlier code physically deleted
+ * (chapter 1.2).
+ *
+ * The previous version removed the row outright, so only recorded events can prove the slot existed.
+ * A {@code log.deleted} event carries the log id, and the matching {@code log.created} event carries
+ * the same id, its initiator (the author) and the real creation instant. Because the old write rule
+ * only accepted the company's current day, the business date is the company-local date of that
+ * creation instant — this is a derived fact, not an invented one.
+ *
+ * The reconstruction writes a row that keeps its real first-creation time, has an empty body and is
+ * marked deleted, so it can never be read as content. A later same-day write restores the position by
+ * filling the body and clearing {@code deleted_at} instead of starting a new freeze window. Anything
+ * that cannot be proven (missing creation event, unknown author, damaged organization zone) is left
+ * alone and recorded as an explicit migration finding, and an already occupied day is never touched.
+ */
+@Component
+@Order(WorkLogSlots.ORDER)
+public class WorkLogSlots implements ApplicationRunner {
+    /** After the seed (0) and the organization constraints, on every start; the work is idempotent. */
+    public static final int ORDER = 20;
+<span class="fc" id="L42">    @Value(&quot;${pandora.startup-maintenance-enabled:true}&quot;)</span>
+    private boolean startupMaintenanceEnabled = true;
+    private final Db db;
+    private final TransactionTemplate tx;
+
+<span class="fc" id="L47">    public WorkLogSlots(Db db, TransactionTemplate tx) {</span>
+<span class="fc" id="L48">        this.db = db;</span>
+<span class="fc" id="L49">        this.tx = tx;</span>
+<span class="fc" id="L50">    }</span>
+
+    @Override
+    public void run(ApplicationArguments args) {
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        if (!startupMaintenanceEnabled) return;</span>
+<span class="nc" id="L55">        tx.executeWithoutResult(status -&gt; {</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">            for (Map&lt;String, Object&gt; organization : db.list(&quot;SELECT id,time_zone FROM organizations ORDER BY id&quot;)) {</span>
+<span class="nc" id="L57">                String organizationId = s(organization, &quot;id&quot;);</span>
+                ZoneId zone;
+                try {
+<span class="nc" id="L60">                    zone = ZoneId.of(s(organization, &quot;timeZone&quot;));</span>
+<span class="nc" id="L61">                } catch (RuntimeException invalidZone) {</span>
+                    // Without a trustworthy zone the business date cannot be derived, so nothing is written.
+<span class="nc" id="L63">                    finding(organizationId, &quot;work_log_slot_zone_invalid&quot;, &quot;blocker&quot;, organizationId,</span>
+                            &quot;组织时区无效，无法依据日志创建事件还原业务日位置；未写入任何还原记录。&quot;);
+<span class="nc" id="L65">                    continue;</span>
+<span class="nc" id="L66">                }</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                for (Map&lt;String, Object&gt; deleted : db.list(</span>
+                        &quot;SELECT * FROM domain_events WHERE organization_id=? AND event_type='log.deleted' ORDER BY occurred_at,id&quot;,
+                        organizationId)) {
+<span class="nc" id="L70">                    String logId = logId(deleted);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">                    if (logId == null) continue;</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                    if (db.find(&quot;SELECT 1 FROM work_logs WHERE organization_id=? AND id=?&quot;, organizationId, logId) != null) continue;</span>
+<span class="nc" id="L73">                    Map&lt;String, Object&gt; created = db.find(</span>
+                            &quot;SELECT * FROM domain_events WHERE organization_id=? AND event_type='log.created' &quot;
+                                    + &quot;AND JSON_UNQUOTE(JSON_EXTRACT(details_json,'$.logId'))=? ORDER BY occurred_at,id LIMIT 1&quot;,
+                            organizationId, logId);
+                    // Older rows never filled the event initiator, but the human audit trail always
+                    // recorded the same log id with the acting account, so the author stays provable.
+<span class="nc" id="L79">                    Map&lt;String, Object&gt; audit = db.find(</span>
+                            &quot;SELECT actor_id,created_at FROM audit_logs WHERE organization_id=? AND action='log.created' &quot;
+                                    + &quot;AND JSON_UNQUOTE(JSON_EXTRACT(details_json,'$.logId'))=? ORDER BY created_at,id LIMIT 1&quot;,
+                            organizationId, logId);
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                    String authorId = created == null ? null : s(created, &quot;initiatorId&quot;);</span>
+<span class="nc bnc" id="L84" title="All 4 branches missed.">                    if (authorId == null &amp;&amp; audit != null) authorId = s(audit, &quot;actorId&quot;);</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                    String createdAtText = created != null ? s(created, &quot;occurredAt&quot;)</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                            : audit != null ? s(audit, &quot;createdAt&quot;) : null;</span>
+<span class="nc bnc" id="L87" title="All 4 branches missed.">                    if (authorId == null || createdAtText == null) {</span>
+<span class="nc" id="L88">                        finding(organizationId, &quot;work_log_slot_unprovable&quot;, &quot;limitation&quot;, logId,</span>
+                                &quot;日志删除事件缺少可证明的创建事件或作者，未还原业务日位置，也不会因此编造历史。&quot;);
+<span class="nc" id="L90">                        continue;</span>
+                    }
+                    Instant createdAt;
+                    Instant deletedAt;
+                    try {
+<span class="nc" id="L95">                        createdAt = Instant.parse(createdAtText);</span>
+<span class="nc" id="L96">                        deletedAt = Instant.parse(Objects.toString(deleted.get(&quot;occurredAt&quot;), createdAtText));</span>
+<span class="nc" id="L97">                    } catch (RuntimeException unreadable) {</span>
+<span class="nc" id="L98">                        finding(organizationId, &quot;work_log_slot_unprovable&quot;, &quot;limitation&quot;, logId,</span>
+                                &quot;日志事件时间无法解析，未还原业务日位置。&quot;);
+<span class="nc" id="L100">                        continue;</span>
+<span class="nc" id="L101">                    }</span>
+<span class="nc" id="L102">                    LocalDate businessDate = createdAt.atZone(zone).toLocalDate();</span>
+<span class="nc" id="L103">                    Map&lt;String, Object&gt; occupied = db.find(</span>
+                            &quot;SELECT id FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?&quot;,
+<span class="nc" id="L105">                            organizationId, authorId, Date.valueOf(businessDate));</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">                    if (occupied != null) {</span>
+                        // Another row already holds the day (for example a later recreate). The slot is
+                        // still protected, so the historic delete is recorded without touching the day.
+<span class="nc" id="L109">                        finding(organizationId, &quot;work_log_slot_already_occupied&quot;, &quot;limitation&quot;, logId,</span>
+                                &quot;该业务日已有日志行占用，历史删除事件只登记不覆盖，未改写任何已有创建时间。&quot;);
+<span class="nc" id="L111">                        continue;</span>
+                    }
+<span class="nc" id="L113">                    db.update(&quot;INSERT INTO work_logs(id,organization_id,author_id,business_date,body,task_id,row_version,created_at,updated_at,deleted_at,recovered_from) &quot;</span>
+                                    + &quot;VALUES(?,?,?,?,'',NULL,1,?,?,?,'deleted-event')&quot;,
+<span class="nc" id="L115">                            logId, organizationId, authorId, Date.valueOf(businessDate),</span>
+<span class="nc" id="L116">                            Timestamp.from(createdAt), Timestamp.from(deletedAt), Timestamp.from(deletedAt));</span>
+<span class="nc" id="L117">                    finding(organizationId, &quot;work_log_slot_recovered&quot;, &quot;limitation&quot;, logId,</span>
+                            &quot;依据可证明的日志创建事件还原了被物理删除的日志日位置：保留原首次创建时间，正文为空且已标记删除。&quot;);
+<span class="nc" id="L119">                }</span>
+<span class="nc" id="L120">            }</span>
+<span class="nc" id="L121">        });</span>
+<span class="nc" id="L122">    }</span>
+
+    private String logId(Map&lt;String, Object&gt; event) {
+<span class="nc" id="L125">        Object raw = event.get(&quot;detailsJson&quot;);</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (raw == null) return null;</span>
+<span class="nc" id="L127">        String text = String.valueOf(raw);</span>
+        // Stored as JSON; parse through the shared helper so a non-object payload cannot throw.
+        try {
+<span class="nc" id="L130">            Object value = db.parse(text).get(&quot;logId&quot;);</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">            return value == null ? null : String.valueOf(value);</span>
+<span class="nc" id="L132">        } catch (RuntimeException unreadable) {</span>
+<span class="nc" id="L133">            return null;</span>
+        }
+    }
+
+    /** One durable finding per subject and category so a restart cannot duplicate the same note. */
+    private void finding(String organizationId, String category, String severity, String subject, String detail) {
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (db.find(&quot;SELECT 1 FROM migration_findings WHERE organization_id=? AND migration='V16' AND category=? AND subject&lt;=&gt;?&quot;,</span>
+<span class="nc" id="L140">                organizationId, category, subject) != null) return;</span>
+<span class="nc" id="L141">        db.update(&quot;INSERT INTO migration_findings(id,organization_id,migration,category,severity,subject,detail) VALUES(?,?,?,?,?,?,?)&quot;,</span>
+<span class="nc" id="L142">                Db.id(), organizationId, &quot;V16&quot;, category, severity, subject, detail);</span>
+<span class="nc" id="L143">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

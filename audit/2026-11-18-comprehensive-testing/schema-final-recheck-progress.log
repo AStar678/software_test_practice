@@ -1,0 +1,2 @@
+RUN check_final_migration.py
+PASS check_final_migration.py assertions=13

@@ -1,0 +1,16 @@
+[
+  {
+    "phase": "flutter-managed",
+    "exitCode": 0,
+    "log": "flutter-managed.jsonl"
+  },
+  {
+    "phase": "flutter-real-backend",
+    "exitCode": 0,
+    "log": "flutter-real-backend.jsonl"
+  },
+  {
+    "phase": "phone",
+    "exitCode": 1
+  }
+]

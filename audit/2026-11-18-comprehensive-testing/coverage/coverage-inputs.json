@@ -1,0 +1,226 @@
+[
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/backend/target/jacoco.exec",
+    "bytes": 178219
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/browser-recheck/integration-coverage/check_apply_profile_pin_history.exec",
+    "bytes": 4932
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/browser-recheck/integration-coverage/check_daily_items.exec",
+    "bytes": 13442
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/browser-recheck/integration-coverage/check_log_backfill_entry.exec",
+    "bytes": 4723
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/browser-recheck/integration-coverage/check_web_alignment_drag.exec",
+    "bytes": 4735
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/drag-final/integration-coverage/check_web_alignment_drag.exec",
+    "bytes": 4735
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/forms-final/integration-coverage/check_log_backfill_entry.exec",
+    "bytes": 4822
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/forms-final/integration-coverage/check_task_creation_refinement.exec",
+    "bytes": 4916
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_admin_contract.exec",
+    "bytes": 4621
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_apply_admin_login_phone.exec",
+    "bytes": 4345
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_apply_copy_audit.exec",
+    "bytes": 4779
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_apply_log_tags.exec",
+    "bytes": 4787
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_apply_mixed_edit.exec",
+    "bytes": 5037
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_apply_notifications.exec",
+    "bytes": 4927
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_apply_private_migration_guard.exec",
+    "bytes": 12486
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_apply_profile_pin_history.exec",
+    "bytes": 4868
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_auto_apply_authorization.exec",
+    "bytes": 4434
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_business_takeover.exec",
+    "bytes": 4576
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_calendar_drawer.exec",
+    "bytes": 4799
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_calendar_tags.exec",
+    "bytes": 4786
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_chapter8_web.exec",
+    "bytes": 4744
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_daily_items.exec",
+    "bytes": 13300
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_demo_extremes.exec",
+    "bytes": 4453
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_employee_contracts_upgrade.exec",
+    "bytes": 16863
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_final_demo.exec",
+    "bytes": 25602
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_final_migration.exec",
+    "bytes": 176
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_fixed_communication_web.exec",
+    "bytes": 4887
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_fixed_late_response.exec",
+    "bytes": 4534
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_fixed_notifications.exec",
+    "bytes": 4823
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_fixed_web.exec",
+    "bytes": 4889
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_fixed_workspace_access.exec",
+    "bytes": 4297
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_founder_setup.exec",
+    "bytes": 4430
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_handover_chain.exec",
+    "bytes": 4879
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_holidays.exec",
+    "bytes": 12890
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_log_backfill_entry.exec",
+    "bytes": 4300
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_login_identity_collision.exec",
+    "bytes": 4515
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_organization_plans.exec",
+    "bytes": 4524
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_profile_phone_matrix.exec",
+    "bytes": 4296
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_request_id_compat.exec",
+    "bytes": 4715
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_review_routing.exec",
+    "bytes": 4922
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_schedule_drag.exec",
+    "bytes": 4987
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_subordinate_workspace.exec",
+    "bytes": 4787
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_task_creation_refinement.exec",
+    "bytes": 4915
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_task_refinement_upgrade.exec",
+    "bytes": 24434
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_visible_schedule_permissions.exec",
+    "bytes": 4349
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_web_alignment_drag.exec",
+    "bytes": 4735
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/integration-coverage/check_web_verification_repairs.exec",
+    "bytes": 4771
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/migration-recheck/integration-coverage/check_final_migration.exec",
+    "bytes": 177
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/notifications-final/integration-coverage/check_task_creation_refinement.exec",
+    "bytes": 4916
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/oracle-recheck/integration-coverage/check_fixed_workspace_access.exec",
+    "bytes": 4636
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/oracle-recheck/integration-coverage/check_profile_phone_matrix.exec",
+    "bytes": 4385
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/schema-final-recheck/integration-coverage/check_final_migration.exec",
+    "bytes": 295
+  },
+  {
+    "path": "/Users/aoxiang/Desktop/\u8f6f\u4ef6\u6d4b\u8bd5/audit/2026-11-18-comprehensive-testing/task-ui-recheck/integration-coverage/check_task_creation_refinement.exec",
+    "bytes": 4916
+  },
+  {
+    "path": "/private/tmp/pandora-comprehensive-20261118/pytest-api.exec",
+    "bytes": 18572
+  },
+  {
+    "path": "/private/tmp/pandora-comprehensive-20261118/flutter-integration.exec",
+    "bytes": 14265
+  },
+  {
+    "path": "/private/tmp/pandora-comprehensive-20261118/phone-backend.exec",
+    "bytes": 44563
+  }
+]

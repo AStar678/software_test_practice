@@ -1,0 +1,7 @@
+{
+  "normalBusinessDatabaseUnchanged": true,
+  "tablesCompared": 21,
+  "phoneTestPackageRemoved": true,
+  "ownedPhoneForwardingRemoved": true,
+  "ownedDemoPort8080Released": true
+}

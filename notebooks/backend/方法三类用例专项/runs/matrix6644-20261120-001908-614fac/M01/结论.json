@@ -1,0 +1,114 @@
+{
+  "id": "M01",
+  "method": "AuthService.login",
+  "endpoint": "POST /auth/sessions",
+  "status": "PASS",
+  "counts": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  "categoryCoverage": {
+    "正常": {
+      "designed": 2,
+      "executed": 2,
+      "passed": 2
+    },
+    "边界": {
+      "designed": 1,
+      "executed": 1,
+      "passed": 1
+    },
+    "异常": {
+      "designed": 3,
+      "executed": 3,
+      "passed": 3
+    }
+  },
+  "threeCategoriesSatisfied": true,
+  "cleanup": {
+    "created": 0,
+    "unresolved": []
+  },
+  "analysis": "正常输入：N_employee（accountType=employee，phone原始长度=11）实际HTTP 200；会话accountType=employee，退出revoked=true；N_admin（accountType=admin，accountName原始长度=5）实际HTTP 200；会话accountType=admin，退出revoked=true。\n\n边界输入：B_identifier80（accountType=employee，phone原始长度=80）实际HTTP 200；会话accountType=employee，退出revoked=true。\n\n异常输入：E_identifier81（accountType=employee，phone原始长度=81）实际HTTP 401；code=BAD_CREDENTIALS；E_phone_type（accountType=employee，phone类型=list）实际HTTP 400；code=INVALID_LOGIN_CONTRACT；E_password_wrong（accountType=employee，phone原始长度=11）实际HTTP 401；code=BAD_CREDENTIALS。\n\n以上实际状态均与各用例预期吻合，且pytest业务后置条件全部通过，因此本轮所列三类用例通过。",
+  "actualEvidence": [
+    {
+      "caseId": "N_employee",
+      "kind": "正常",
+      "input": "accountType=employee，phone原始长度=11",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；会话accountType=employee，退出revoked=true",
+      "pytest": "passed",
+      "requestLines": [
+        1
+      ],
+      "metrics": {}
+    },
+    {
+      "caseId": "N_admin",
+      "kind": "正常",
+      "input": "accountType=admin，accountName原始长度=5",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；会话accountType=admin，退出revoked=true",
+      "pytest": "passed",
+      "requestLines": [
+        4
+      ],
+      "metrics": {}
+    },
+    {
+      "caseId": "B_identifier80",
+      "kind": "边界",
+      "input": "accountType=employee，phone原始长度=80",
+      "expected": 200,
+      "actualStatus": 200,
+      "observed": "HTTP 200；会话accountType=employee，退出revoked=true",
+      "pytest": "passed",
+      "requestLines": [
+        7
+      ],
+      "metrics": {}
+    },
+    {
+      "caseId": "E_identifier81",
+      "kind": "异常",
+      "input": "accountType=employee，phone原始长度=81",
+      "expected": 401,
+      "actualStatus": 401,
+      "observed": "HTTP 401；code=BAD_CREDENTIALS",
+      "pytest": "passed",
+      "requestLines": [
+        10
+      ],
+      "metrics": {}
+    },
+    {
+      "caseId": "E_phone_type",
+      "kind": "异常",
+      "input": "accountType=employee，phone类型=list",
+      "expected": 400,
+      "actualStatus": 400,
+      "observed": "HTTP 400；code=INVALID_LOGIN_CONTRACT",
+      "pytest": "passed",
+      "requestLines": [
+        11
+      ],
+      "metrics": {}
+    },
+    {
+      "caseId": "E_password_wrong",
+      "kind": "异常",
+      "input": "accountType=employee，phone原始长度=11",
+      "expected": 401,
+      "actualStatus": 401,
+      "observed": "HTTP 401；code=BAD_CREDENTIALS",
+      "pytest": "passed",
+      "requestLines": [
+        12
+      ],
+      "metrics": {}
+    }
+  ]
+}

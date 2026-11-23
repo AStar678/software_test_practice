@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HolidayCalendarService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.calendar</a> &gt; <span class="el_source">HolidayCalendarService.java</span></div><h1>HolidayCalendarService.java</h1><pre class="source lang-java linenums">package cn.pandora.calendar;
+
+import cn.pandora.auth.Access;
+import cn.pandora.auth.Actor;
+import cn.pandora.common.ApiException;
+import cn.pandora.common.Db;
+import cn.pandora.common.Writes;
+import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.sql.Timestamp;
+import java.time.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static cn.pandora.common.Db.*;
+
+/**
+ * Project-owned annual holiday cache.
+ *
+ * &lt;p&gt;Reads never touch the network. A missing or expired year registers one bounded background
+ * intent per year; repeats within the retry interval are ignored. An explicit administrator refresh
+ * fetches and validates outside the write transaction, then commits the whole year atomically. A
+ * failed fetch or invalid payload updates only the attempt/failure state and keeps the last
+ * successful days/source/updatedAt.&lt;/p&gt;
+ */
+@Service
+public class HolidayCalendarService {
+<span class="fc" id="L35">    private static final Logger log = LoggerFactory.getLogger(HolidayCalendarService.class);</span>
+    private static final String REGION = &quot;CN&quot;;
+<span class="fc" id="L37">    private static final ZoneId COMPANY_ZONE = ZoneId.of(&quot;Asia/Shanghai&quot;);</span>
+<span class="fc" id="L38">    private static final Duration RETRY_INTERVAL = Duration.ofHours(24);</span>
+<span class="fc" id="L39">    private static final Duration READY_REFRESH_INTERVAL = Duration.ofHours(24);</span>
+
+    private final Db db;
+    private final HolidaySource source;
+    private final Writes writes;
+    private final Access access;
+    private final Clock clock;
+    private final TransactionTemplate tx;
+    private final boolean backgroundEnabled;
+    private final int workerThreads;
+    private final ExecutorService executor;
+<span class="fc" id="L50">    private final Set&lt;Integer&gt; inFlight = ConcurrentHashMap.newKeySet();</span>
+
+    public HolidayCalendarService(Db db, HolidaySource source, Writes writes, Access access, Clock clock,
+                                  PlatformTransactionManager transactionManager,
+                                  @Value(&quot;${pandora.holiday.background-enabled:true}&quot;) boolean backgroundEnabled,
+<span class="fc" id="L55">                                  @Value(&quot;${pandora.holiday.worker-threads:2}&quot;) int workerThreads) {</span>
+<span class="fc" id="L56">        this.db = db;</span>
+<span class="fc" id="L57">        this.source = source;</span>
+<span class="fc" id="L58">        this.writes = writes;</span>
+<span class="fc" id="L59">        this.access = access;</span>
+<span class="fc" id="L60">        this.clock = clock;</span>
+<span class="fc" id="L61">        this.tx = new TransactionTemplate(transactionManager);</span>
+<span class="fc" id="L62">        this.backgroundEnabled = backgroundEnabled;</span>
+<span class="fc" id="L63">        this.workerThreads = Math.max(1, Math.min(4, workerThreads));</span>
+<span class="fc" id="L64">        AtomicInteger sequence = new AtomicInteger();</span>
+<span class="fc" id="L65">        this.executor = Executors.newFixedThreadPool(this.workerThreads, runnable -&gt; {</span>
+<span class="fc" id="L66">            Thread thread = new Thread(runnable, &quot;holiday-refresh-&quot; + sequence.incrementAndGet());</span>
+<span class="fc" id="L67">            thread.setDaemon(true);</span>
+<span class="fc" id="L68">            return thread;</span>
+        });
+<span class="fc" id="L70">    }</span>
+
+    public static int parseYear(String raw) {
+<span class="pc bpc" id="L73" title="1 of 4 branches missed.">        if (raw == null || !raw.matches(&quot;\\d{4}&quot;)) {</span>
+<span class="fc" id="L74">            throw new ApiException(400, &quot;INVALID_YEAR&quot;, &quot;年份须为 1900–9999 的四位公历年&quot;);</span>
+        }
+        int year;
+        try {
+<span class="fc" id="L78">            year = Integer.parseInt(raw);</span>
+<span class="nc" id="L79">        } catch (NumberFormatException exception) {</span>
+<span class="nc" id="L80">            throw new ApiException(400, &quot;INVALID_YEAR&quot;, &quot;年份须为 1900–9999 的四位公历年&quot;);</span>
+<span class="fc" id="L81">        }</span>
+<span class="pc bpc" id="L82" title="1 of 4 branches missed.">        if (year &lt; 1900 || year &gt; 9999) {</span>
+<span class="fc" id="L83">            throw new ApiException(400, &quot;INVALID_YEAR&quot;, &quot;年份须为 1900–9999 的四位公历年&quot;);</span>
+        }
+<span class="fc" id="L85">        return year;</span>
+    }
+
+    /** Read the local cache and register one background refresh intent when the year needs it. */
+    public Map&lt;String, Object&gt; view(int year, boolean allowBackground) {
+<span class="fc" id="L90">        validateYear(year);</span>
+<span class="fc" id="L91">        Map&lt;String, Object&gt; result = read(year);</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (allowBackground) scheduleIfDue(year, false);</span>
+<span class="fc" id="L93">        return result;</span>
+    }
+
+    /** Command used by the independent administrator; fetches outside the short write transaction. */
+    public Map&lt;String, Object&gt; refreshNow(Actor actor, int year, String key) {
+<span class="fc" id="L98">        access.requireAdmin(actor);</span>
+<span class="fc" id="L99">        validateYear(year);</span>
+<span class="fc" id="L100">        Map&lt;String, Object&gt; body = Map.of(&quot;year&quot;, year);</span>
+<span class="fc" id="L101">        String scope = &quot;POST /admin/calendar/holidays/&quot; + year + &quot;/refresh&quot;;</span>
+<span class="fc" id="L102">        var replay = writes.replayIfPresent(actor, key, scope, body, null);</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (replay != null) return replay;</span>
+        HolidayPayload.Year parsed;
+        try {
+<span class="fc" id="L106">            parsed = source.fetch(year);</span>
+<span class="fc" id="L107">        } catch (HolidaySourceException exception) {</span>
+<span class="fc" id="L108">            logSourceFailure(year, exception);</span>
+<span class="fc" id="L109">            recordFailure(year, exception.safeCode());</span>
+<span class="fc" id="L110">            throw refreshFailure(exception.safeCode());</span>
+<span class="fc" id="L111">        }</span>
+        try {
+<span class="fc" id="L113">            return writes.run(actor, key, scope, body, null, () -&gt; {</span>
+<span class="fc" id="L114">                access.requireCurrent(actor);</span>
+<span class="fc" id="L115">                store(parsed);</span>
+<span class="fc" id="L116">                audit(actor, parsed);</span>
+<span class="fc" id="L117">                return read(year);</span>
+            });
+<span class="nc" id="L119">        } catch (HolidaySourceException exception) {</span>
+<span class="nc" id="L120">            logSourceFailure(year, exception);</span>
+<span class="nc" id="L121">            recordFailure(year, exception.safeCode());</span>
+<span class="nc" id="L122">            throw refreshFailure(exception.safeCode());</span>
+        }
+    }
+
+    /** Enqueue the current and next calendar year after startup and on the daily maintenance tick. */
+    public void checkCurrentAndNext() {
+<span class="fc" id="L128">        int current = LocalDate.now(clock.withZone(COMPANY_ZONE)).getYear();</span>
+<span class="fc" id="L129">        scheduleIfDue(current, true);</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">        if (current &lt; 9999) scheduleIfDue(current + 1, true);</span>
+<span class="fc" id="L131">    }</span>
+
+    /** Visible for deterministic tests: schedule only if the stored state says another try is due. */
+    public boolean scheduleIfDue(int year, boolean includeReady) {
+<span class="fc" id="L135">        validateYear(year);</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (!backgroundEnabled) return false;</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (!due(year, includeReady)) return false;</span>
+<span class="fc" id="L138">        return schedule(year);</span>
+    }
+
+    private boolean schedule(int year) {
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        if (!inFlight.add(year)) return false;</span>
+        try {
+<span class="fc" id="L144">            executor.submit(() -&gt; {</span>
+                try {
+<span class="fc" id="L146">                    refreshBackground(year);</span>
+<span class="nc" id="L147">                } catch (RuntimeException exception) {</span>
+<span class="nc" id="L148">                    log.warn(&quot;Holiday refresh for {} failed: {}&quot;, year, exception.getClass().getSimpleName());</span>
+                } finally {
+<span class="fc" id="L150">                    inFlight.remove(year);</span>
+                }
+<span class="fc" id="L152">            });</span>
+<span class="fc" id="L153">            return true;</span>
+<span class="nc" id="L154">        } catch (RejectedExecutionException exception) {</span>
+<span class="nc" id="L155">            inFlight.remove(year);</span>
+<span class="nc" id="L156">            return false;</span>
+        }
+    }
+
+    private void refreshBackground(int year) {
+        try {
+<span class="fc" id="L162">            HolidayPayload.Year parsed = source.fetch(year);</span>
+<span class="fc" id="L163">            store(parsed);</span>
+<span class="fc" id="L164">        } catch (HolidaySourceException exception) {</span>
+<span class="fc" id="L165">            logSourceFailure(year, exception);</span>
+<span class="fc" id="L166">            recordFailure(year, exception.safeCode());</span>
+<span class="fc" id="L167">        } catch (RuntimeException exception) {</span>
+<span class="fc" id="L168">            recordFailure(year, &quot;HOLIDAY_REFRESH_INTERNAL&quot;);</span>
+<span class="fc" id="L169">            log.warn(&quot;Holiday refresh for {} failed: {}&quot;, year, exception.getClass().getSimpleName());</span>
+<span class="fc" id="L170">        }</span>
+<span class="fc" id="L171">    }</span>
+
+    private void logSourceFailure(int year, HolidaySourceException exception) {
+        // Exception messages can contain source URLs or credentials. Keep only bounded type names
+        // so DNS, TLS and connection failures remain distinguishable without exposing configuration.
+<span class="fc" id="L176">        List&lt;String&gt; causeTypes = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L177">        Throwable cause = exception;</span>
+<span class="pc bpc" id="L178" title="1 of 4 branches missed.">        while (cause != null &amp;&amp; causeTypes.size() &lt; 8) {</span>
+<span class="fc" id="L179">            causeTypes.add(cause.getClass().getName());</span>
+<span class="fc" id="L180">            cause = cause.getCause();</span>
+        }
+<span class="fc" id="L182">        log.warn(&quot;Holiday refresh for {} failed: code={}, causeTypes={}&quot;,</span>
+<span class="fc" id="L183">                year, exception.safeCode(), String.join(&quot; -&gt; &quot;, causeTypes));</span>
+<span class="fc" id="L184">    }</span>
+
+    private boolean due(int year, boolean includeReady) {
+<span class="fc" id="L187">        Map&lt;String, Object&gt; header = db.find(</span>
+                &quot;SELECT fetched_at,last_attempt_at,last_failure_at FROM holiday_calendar_years WHERE region=? AND year=?&quot;,
+<span class="fc" id="L189">                REGION, year);</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        if (header == null) return true;</span>
+<span class="fc" id="L191">        Instant now = clock.instant();</span>
+<span class="fc" id="L192">        Instant lastAttempt = instant(header.get(&quot;lastAttemptAt&quot;));</span>
+<span class="fc" id="L193">        Instant lastFailure = instant(header.get(&quot;lastFailureAt&quot;));</span>
+<span class="fc" id="L194">        Instant fetched = instant(header.get(&quot;fetchedAt&quot;));</span>
+<span class="pc bpc" id="L195" title="2 of 4 branches missed.">        if (lastAttempt != null &amp;&amp; lastAttempt.plus(RETRY_INTERVAL).isAfter(now)) return false;</span>
+<span class="nc bnc" id="L196" title="All 4 branches missed.">        if (lastFailure != null &amp;&amp; lastFailure.plus(RETRY_INTERVAL).isAfter(now)) return false;</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        if (fetched == null) return true;</span>
+<span class="nc bnc" id="L198" title="All 6 branches missed.">        return includeReady &amp;&amp; (lastAttempt == null || !lastAttempt.plus(READY_REFRESH_INTERVAL).isAfter(now));</span>
+    }
+
+    private Map&lt;String, Object&gt; read(int year) {
+<span class="fc" id="L202">        Map&lt;String, Object&gt; header = db.find(</span>
+                &quot;SELECT source,fetched_at,last_failure_at,last_failure_code FROM holiday_calendar_years WHERE region=? AND year=?&quot;,
+<span class="fc" id="L204">                REGION, year);</span>
+<span class="fc" id="L205">        List&lt;Map&lt;String, Object&gt;&gt; days = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L206">        String status = &quot;missing&quot;;</span>
+<span class="fc" id="L207">        String sourceName = source.sourceName();</span>
+<span class="fc" id="L208">        Object updatedAt = null;</span>
+<span class="fc" id="L209">        String reason = null;</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        if (header != null) {</span>
+<span class="fc" id="L211">            sourceName = Objects.toString(header.get(&quot;source&quot;), sourceName);</span>
+<span class="fc" id="L212">            Instant fetched = instant(header.get(&quot;fetchedAt&quot;));</span>
+<span class="fc" id="L213">            Instant failure = instant(header.get(&quot;lastFailureAt&quot;));</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">            if (fetched != null) {</span>
+<span class="pc bpc" id="L215" title="1 of 4 branches missed.">                status = failure != null &amp;&amp; failure.isAfter(fetched) ? &quot;stale&quot; : &quot;ready&quot;;</span>
+<span class="fc" id="L216">                updatedAt = header.get(&quot;fetchedAt&quot;);</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">                if (&quot;stale&quot;.equals(status)) reason = Objects.toString(header.get(&quot;lastFailureCode&quot;), null);</span>
+<span class="fc bfc" id="L218" title="All 2 branches covered.">                for (Map&lt;String, Object&gt; row : db.list(</span>
+                        &quot;SELECT holiday_date,name,is_off_day FROM holiday_calendar_days WHERE region=? AND year=? ORDER BY holiday_date&quot;,
+<span class="fc" id="L220">                        REGION, year)) {</span>
+<span class="fc" id="L221">                    Map&lt;String, Object&gt; day = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L222">                    day.put(&quot;date&quot;, row.get(&quot;holidayDate&quot;));</span>
+<span class="fc" id="L223">                    day.put(&quot;name&quot;, row.get(&quot;name&quot;));</span>
+<span class="fc" id="L224">                    Object off = row.get(&quot;isOffDay&quot;);</span>
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">                    boolean offDay = off instanceof Boolean flag ? flag</span>
+<span class="pc bnc" id="L226" title="All 4 branches missed.">                            : off instanceof Number number &amp;&amp; number.intValue() != 0;</span>
+<span class="fc" id="L227">                    day.put(&quot;isOffDay&quot;, offDay);</span>
+<span class="fc" id="L228">                    days.add(day);</span>
+<span class="fc" id="L229">                }</span>
+            } else {
+<span class="fc" id="L231">                reason = Objects.toString(header.get(&quot;lastFailureCode&quot;), null);</span>
+            }
+        }
+<span class="fc" id="L234">        Map&lt;String, Object&gt; result = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L235">        result.put(&quot;year&quot;, year);</span>
+<span class="fc" id="L236">        result.put(&quot;region&quot;, REGION);</span>
+<span class="fc" id="L237">        result.put(&quot;status&quot;, status);</span>
+<span class="fc" id="L238">        result.put(&quot;days&quot;, days);</span>
+<span class="fc" id="L239">        result.put(&quot;source&quot;, sourceName);</span>
+<span class="fc" id="L240">        result.put(&quot;updatedAt&quot;, updatedAt);</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">        if (reason != null) result.put(&quot;reason&quot;, reason);</span>
+<span class="fc" id="L242">        return result;</span>
+    }
+
+    private void store(HolidayPayload.Year parsed) {
+<span class="fc" id="L246">        Timestamp now = Timestamp.from(clock.instant());</span>
+<span class="fc" id="L247">        tx.executeWithoutResult(status -&gt; {</span>
+<span class="fc" id="L248">            db.update(&quot;INSERT INTO holiday_calendar_years(region,year,source,source_hash,official_notice,fetched_at,last_attempt_at,last_failure_at,last_failure_code) &quot;</span>
+                            + &quot;VALUES(?,?,?,?,?,?,?,NULL,NULL) ON DUPLICATE KEY UPDATE source=VALUES(source),source_hash=VALUES(source_hash),&quot;
+                            + &quot;official_notice=VALUES(official_notice),fetched_at=VALUES(fetched_at),last_attempt_at=VALUES(last_attempt_at),&quot;
+                            + &quot;last_failure_at=NULL,last_failure_code=NULL&quot;,
+<span class="fc" id="L252">                    REGION, parsed.year(), source.sourceName(), parsed.sourceHash(), parsed.officialNotice(), now, now);</span>
+<span class="fc" id="L253">            db.update(&quot;DELETE FROM holiday_calendar_days WHERE region=? AND year=?&quot;, REGION, parsed.year());</span>
+<span class="fc bfc" id="L254" title="All 2 branches covered.">            for (HolidayPayload.Day day : parsed.days()) {</span>
+<span class="fc" id="L255">                db.update(&quot;INSERT INTO holiday_calendar_days(region,year,holiday_date,name,is_off_day) VALUES(?,?,?,?,?)&quot;,</span>
+<span class="fc" id="L256">                        REGION, parsed.year(), day.date(), day.name(), day.offDay());</span>
+<span class="fc" id="L257">            }</span>
+<span class="fc" id="L258">        });</span>
+<span class="fc" id="L259">    }</span>
+
+    private void recordFailure(int year, String safeCode) {
+<span class="fc" id="L262">        Timestamp now = Timestamp.from(clock.instant());</span>
+<span class="fc" id="L263">        tx.executeWithoutResult(status -&gt; {</span>
+<span class="fc" id="L264">            Map&lt;String, Object&gt; header = db.find(</span>
+<span class="fc" id="L265">                    &quot;SELECT year FROM holiday_calendar_years WHERE region=? AND year=? FOR UPDATE&quot;, REGION, year);</span>
+<span class="fc bfc" id="L266" title="All 2 branches covered.">            if (header == null) {</span>
+<span class="fc" id="L267">                db.update(&quot;INSERT INTO holiday_calendar_years(region,year,source,fetched_at,last_attempt_at,last_failure_at,last_failure_code) &quot;</span>
+                                + &quot;VALUES(?,?,?,NULL,?,?,?)&quot;,
+<span class="fc" id="L269">                        REGION, year, source.sourceName(), now, now, safeCode);</span>
+            } else {
+<span class="fc" id="L271">                db.update(&quot;UPDATE holiday_calendar_years SET last_attempt_at=?,last_failure_at=?,last_failure_code=? WHERE region=? AND year=?&quot;,</span>
+<span class="fc" id="L272">                        now, now, safeCode, REGION, year);</span>
+            }
+<span class="fc" id="L274">        });</span>
+<span class="fc" id="L275">    }</span>
+
+    private void audit(Actor actor, HolidayPayload.Year parsed) {
+<span class="fc" id="L278">        Map&lt;String, Object&gt; details = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L279">        details.put(&quot;year&quot;, parsed.year());</span>
+<span class="fc" id="L280">        details.put(&quot;source&quot;, source.sourceName());</span>
+<span class="fc" id="L281">        details.put(&quot;sourceHash&quot;, parsed.sourceHash());</span>
+<span class="fc" id="L282">        details.put(&quot;officialNotice&quot;, parsed.officialNotice());</span>
+<span class="fc" id="L283">        details.put(&quot;days&quot;, parsed.days().size());</span>
+<span class="fc" id="L284">        db.update(&quot;INSERT INTO audit_logs(id,organization_id,actor_id,object_id,action,details_json) VALUES(?,?,?,?,?,?)&quot;,</span>
+<span class="fc" id="L285">                id(), actor.organizationId(), actor.id(), null, &quot;holiday.calendar.refreshed&quot;, db.json(details));</span>
+<span class="fc" id="L286">    }</span>
+
+    private static ApiException refreshFailure(String safeCode) {
+<span class="fc" id="L289">        return new ApiException(502, &quot;HOLIDAY_REFRESH_FAILED&quot;,</span>
+<span class="fc" id="L290">                &quot;节假日数据刷新失败，已保留现有缓存&quot;, Map.of(&quot;reason&quot;, safeCode));</span>
+    }
+
+    private static void validateYear(int year) {
+<span class="pc bpc" id="L294" title="2 of 4 branches missed.">        if (year &lt; 1900 || year &gt; 9999) {</span>
+<span class="nc" id="L295">            throw new ApiException(400, &quot;INVALID_YEAR&quot;, &quot;年份须为 1900–9999 的四位公历年&quot;);</span>
+        }
+<span class="fc" id="L297">    }</span>
+
+    private static Instant instant(Object value) {
+<span class="fc bfc" id="L300" title="All 2 branches covered.">        if (value == null) return null;</span>
+<span class="pc bpc" id="L301" title="1 of 2 branches missed.">        if (value instanceof Instant instant) return instant;</span>
+<span class="pc bpc" id="L302" title="1 of 2 branches missed.">        if (value instanceof Timestamp timestamp) return timestamp.toInstant();</span>
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">        if (value instanceof java.time.LocalDateTime local) return local.toInstant(ZoneOffset.UTC);</span>
+        try {
+<span class="fc" id="L305">            return Instant.parse(value.toString());</span>
+<span class="nc" id="L306">        } catch (RuntimeException exception) {</span>
+<span class="nc" id="L307">            return null;</span>
+        }
+    }
+
+    @PreDestroy
+    void shutdown() {
+<span class="fc" id="L313">        executor.shutdownNow();</span>
+<span class="fc" id="L314">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

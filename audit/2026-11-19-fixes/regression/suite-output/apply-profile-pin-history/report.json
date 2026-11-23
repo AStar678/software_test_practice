@@ -1,0 +1,847 @@
+{
+  "checks": [
+    {
+      "check": "effective owner gets the personal pin action",
+      "pass": true,
+      "evidence": {
+        "id": "b9ad873e-426e-48b0-a07f-2e502d444bb9",
+        "taskId": "b9ad873e-426e-48b0-a07f-2e502d444bb9",
+        "versionNo": 1,
+        "title": "置顶资格验证",
+        "description": "原说明",
+        "acceptanceCriteria": "",
+        "priority": "medium",
+        "allDay": false,
+        "startAt": "2026-11-18T17:29:44.915371Z",
+        "dueAt": "2026-11-18T19:28:04.915371Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "todo",
+        "progressNote": "",
+        "status": "applied",
+        "createdBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "createdAt": "2026-11-18T17:28:04.929587Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "tags": [],
+        "tagIds": [],
+        "tagId": null,
+        "tag": null,
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "06f43c29-ae50-4fe0-b2e3-fca3fb049375",
+        "currentVersionId": "06f43c29-ae50-4fe0-b2e3-fca3fb049375",
+        "originalCreatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "businessOwnerId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "rowVersion": 2,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-11-18T17:28:04.936188Z",
+        "pending": false,
+        "frozen": false,
+        "pendingKind": null,
+        "canReschedule": true,
+        "canPin": true,
+        "canTablePin": true,
+        "tablePinned": false,
+        "editableFields": [
+          "allDay",
+          "startAt",
+          "dueAt",
+          "startDate",
+          "dueDate",
+          "title",
+          "description",
+          "acceptanceCriteria",
+          "priority",
+          "tagIds",
+          "parentTaskId",
+          "progressNote"
+        ],
+        "route": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "displayName": "alpha-one-head",
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+            },
+            {
+              "displayName": "alpha-one-employee",
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          ]
+        },
+        "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "participants": [
+          {
+            "displayName": "alpha-one-head",
+            "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          },
+          {
+            "displayName": "alpha-one-employee",
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          },
+          {
+            "displayName": "founder",
+            "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+          }
+        ],
+        "pinned": false,
+        "pendingRoute": {},
+        "canHandover": true,
+        "handoverSources": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "handoverPresets": {},
+        "children": []
+      }
+    },
+    {
+      "check": "visible manager without ownership gets no pin action",
+      "pass": true,
+      "evidence": {
+        "id": "b9ad873e-426e-48b0-a07f-2e502d444bb9",
+        "taskId": "b9ad873e-426e-48b0-a07f-2e502d444bb9",
+        "versionNo": 1,
+        "title": "置顶资格验证",
+        "description": "原说明",
+        "acceptanceCriteria": "",
+        "priority": "medium",
+        "allDay": false,
+        "startAt": "2026-11-18T17:29:44.915371Z",
+        "dueAt": "2026-11-18T19:28:04.915371Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "todo",
+        "progressNote": "",
+        "status": "applied",
+        "createdBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "createdAt": "2026-11-18T17:28:04.929587Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "tags": [],
+        "tagIds": [],
+        "tagId": null,
+        "tag": null,
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "06f43c29-ae50-4fe0-b2e3-fca3fb049375",
+        "currentVersionId": "06f43c29-ae50-4fe0-b2e3-fca3fb049375",
+        "originalCreatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "businessOwnerId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "rowVersion": 2,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-11-18T17:28:04.936188Z",
+        "pending": false,
+        "frozen": false,
+        "pendingKind": null,
+        "canReschedule": true,
+        "canPin": false,
+        "canTablePin": false,
+        "tablePinned": false,
+        "editableFields": [
+          "allDay",
+          "startAt",
+          "dueAt",
+          "startDate",
+          "dueDate"
+        ],
+        "route": {
+          "reviewerId": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+          "basisAssigneeId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "path": [
+            "7d3fedd7-7397-5412-a536-b4fbb0e29c7c"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "displayName": "alpha-one-head",
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+            },
+            {
+              "displayName": "alpha-head",
+              "id": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c"
+            }
+          ]
+        },
+        "reviewerId": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+        "participants": [
+          {
+            "displayName": "alpha-one-employee",
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          },
+          {
+            "displayName": "alpha-head",
+            "id": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c"
+          },
+          {
+            "displayName": "founder",
+            "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+          }
+        ],
+        "pinned": false,
+        "pendingRoute": {},
+        "canHandover": true,
+        "handoverSources": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "handoverPresets": {},
+        "children": []
+      }
+    },
+    {
+      "check": "non-owner pin write is rejected",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "owner pin is private to that owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "pin and unpin do not change the task schedule",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "completed effective task remains pin-eligible",
+      "pass": true,
+      "evidence": {
+        "id": "a0b06237-c4b1-4a46-8fb9-4295d4f6ec2d",
+        "taskId": "a0b06237-c4b1-4a46-8fb9-4295d4f6ec2d",
+        "versionNo": 2,
+        "title": "已完成置顶验证",
+        "description": "原说明",
+        "acceptanceCriteria": "",
+        "priority": "medium",
+        "allDay": false,
+        "startAt": "2026-11-18T17:31:24.915371Z",
+        "dueAt": "2026-11-18T20:28:04.915371Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "done",
+        "progressNote": "",
+        "status": "applied",
+        "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "createdAt": "2026-11-18T17:28:05.028918Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "tags": [],
+        "tagIds": [],
+        "tagId": null,
+        "tag": null,
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "b150884d-a493-4fb9-90c7-16bafede493e",
+        "currentVersionId": "b150884d-a493-4fb9-90c7-16bafede493e",
+        "originalCreatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "businessOwnerId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "rowVersion": 4,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-11-18T17:28:05.091680Z",
+        "pending": false,
+        "frozen": false,
+        "pendingKind": null,
+        "canReschedule": false,
+        "canPin": true,
+        "canTablePin": true,
+        "tablePinned": false,
+        "editableFields": [],
+        "route": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "displayName": "alpha-one-head",
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+            },
+            {
+              "displayName": "alpha-one-employee",
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          ]
+        },
+        "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "participants": [
+          {
+            "displayName": "alpha-one-head",
+            "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          },
+          {
+            "displayName": "alpha-one-employee",
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          },
+          {
+            "displayName": "founder",
+            "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+          }
+        ],
+        "pinned": false,
+        "pendingRoute": {},
+        "canHandover": true,
+        "handoverSources": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "handoverPresets": {},
+        "children": []
+      }
+    },
+    {
+      "check": "completed task can be pinned without changing state",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "unpublished task has no pin action",
+      "pass": true,
+      "evidence": {
+        "id": "22a6949e-2b7f-4d88-b6f6-830dc287f268",
+        "taskId": "22a6949e-2b7f-4d88-b6f6-830dc287f268",
+        "rowVersion": 1,
+        "currentVersionId": null,
+        "published": false,
+        "pending": true,
+        "frozen": true,
+        "pendingRequestId": "cc1a04c8-91f6-4eea-ab54-4e1f02f077b2",
+        "latestRequestId": "cc1a04c8-91f6-4eea-ab54-4e1f02f077b2",
+        "proposedVersion": {
+          "id": "449a6a97-b785-4d58-aaae-e9e69aba9c64",
+          "taskId": "22a6949e-2b7f-4d88-b6f6-830dc287f268",
+          "versionNo": 1,
+          "title": "未发布置顶验证",
+          "description": "原说明",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-11-18T17:33:04.915371Z",
+          "dueAt": "2026-11-18T21:28:04.915371Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "proposed",
+          "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "createdAt": "2026-11-18T17:28:05.135454Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "4ce9a359-10d8-524d-8232-c73416f398d0"
+          ],
+          "tags": [],
+          "tagIds": [],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "originalCreatorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "businessOwnerId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "route": {},
+        "proposedRoute": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": true,
+          "participants": [
+            {
+              "displayName": "alpha-one-head",
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+            },
+            {
+              "displayName": "alpha-one-employee",
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          ]
+        },
+        "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "participants": [
+          {
+            "displayName": "alpha-one-head",
+            "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          },
+          {
+            "displayName": "alpha-one-employee",
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          }
+        ],
+        "canHandover": false,
+        "handoverSources": [],
+        "handoverPresets": {}
+      }
+    },
+    {
+      "check": "unpublished pin write is rejected",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee detail exposes only the current progress and no records timeline",
+      "pass": true,
+      "evidence": {
+        "id": "2f4d2649-5836-4f96-8f71-a01d33a90050",
+        "taskId": "2f4d2649-5836-4f96-8f71-a01d33a90050",
+        "versionNo": 4,
+        "title": "员工历史投影",
+        "description": "原说明",
+        "acceptanceCriteria": "",
+        "priority": "medium",
+        "allDay": false,
+        "startAt": "2026-11-18T17:34:44.915371Z",
+        "dueAt": "2026-11-18T22:28:04.915371Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "done",
+        "progressNote": "第二轮进展",
+        "status": "applied",
+        "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "createdAt": "2026-11-18T17:28:05.159076Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "tags": [],
+        "tagIds": [],
+        "tagId": null,
+        "tag": null,
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "b950f275-98bb-4b0a-8cf6-8e1e4837fbe5",
+        "currentVersionId": "b950f275-98bb-4b0a-8cf6-8e1e4837fbe5",
+        "originalCreatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "businessOwnerId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "rowVersion": 8,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-11-18T17:28:05.337907Z",
+        "pending": false,
+        "frozen": false,
+        "pendingKind": null,
+        "canReschedule": false,
+        "canPin": true,
+        "canTablePin": true,
+        "tablePinned": false,
+        "editableFields": [],
+        "route": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "displayName": "alpha-one-head",
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+            },
+            {
+              "displayName": "alpha-one-employee",
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          ]
+        },
+        "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "participants": [
+          {
+            "displayName": "alpha-one-head",
+            "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          },
+          {
+            "displayName": "alpha-one-employee",
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          },
+          {
+            "displayName": "founder",
+            "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+          }
+        ],
+        "pinned": false,
+        "pendingRoute": {},
+        "canHandover": true,
+        "handoverSources": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "handoverPresets": {},
+        "children": []
+      }
+    },
+    {
+      "check": "employee cannot query the administrator history endpoint",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "administrator retains the complete operation history",
+      "pass": true,
+      "evidence": {
+        "taskId": "2f4d2649-5836-4f96-8f71-a01d33a90050",
+        "originalCreatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "businessOwnerId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "businessTransfers": [],
+        "originalCreatorName": "founder",
+        "executionState": "done",
+        "createdAt": "2026-11-18T17:28:05.159076Z",
+        "entries": [
+          {
+            "id": "74b75002-7cb0-4435-81bf-4c29e694b504",
+            "entryType": "request_submitted",
+            "fieldName": null,
+            "beforeValue": null,
+            "afterValue": null,
+            "actorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "actorName": "founder",
+            "requestId": "5d10de77-dd7e-4dde-9e30-03b1dc3bc257",
+            "occurredAt": "2026-11-18T17:28:05.161811Z",
+            "detail": {
+              "kind": "create",
+              "status": "direct",
+              "reviewerId": "",
+              "routeReason": "founder-exempt",
+              "basisAssigneeId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+            }
+          },
+          {
+            "id": "888d0b98-15b4-419a-ad8f-a2d875e21462",
+            "entryType": "version_created",
+            "fieldName": null,
+            "beforeValue": null,
+            "afterValue": null,
+            "actorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "actorName": "founder",
+            "requestId": "5d10de77-dd7e-4dde-9e30-03b1dc3bc257",
+            "occurredAt": "2026-11-18T17:28:05.162061Z",
+            "detail": {
+              "versionId": "efa06902-40a8-4c15-a413-13cadc100df3"
+            }
+          },
+          {
+            "id": "d4cc8e3b-7853-45a2-9392-4225476d5235",
+            "entryType": "no_reviewer",
+            "fieldName": "exemptionReason",
+            "beforeValue": null,
+            "afterValue": "固定创始人操作，记录原因后直接生效",
+            "actorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "actorName": "founder",
+            "requestId": "5d10de77-dd7e-4dde-9e30-03b1dc3bc257",
+            "occurredAt": "2026-11-18T17:28:05.162268Z",
+            "detail": {
+              "basisAssigneeId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+            }
+          },
+          {
+            "id": "040d228a-f192-4421-bcfe-c63eefd4d18f",
+            "entryType": "request_submitted",
+            "fieldName": null,
+            "beforeValue": null,
+            "afterValue": null,
+            "actorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "actorName": "alpha-one-employee",
+            "requestId": "7e8657ea-dae7-4662-95c0-8c0e22531c82",
+            "occurredAt": "2026-11-18T17:28:05.184357Z",
+            "detail": {
+              "kind": "progress",
+              "status": "pending",
+              "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+              "routeReason": "direct-manager",
+              "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          },
+          {
+            "id": "26e33854-7482-4ee5-bc54-0eb0b75ebf55",
+            "entryType": "field_change",
+            "fieldName": "progressNote",
+            "beforeValue": "",
+            "afterValue": "第一轮进展",
+            "actorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "actorName": "alpha-one-employee",
+            "requestId": "7e8657ea-dae7-4662-95c0-8c0e22531c82",
+            "occurredAt": "2026-11-18T17:28:05.184571Z",
+            "detail": {}
+          },
+          {
+            "id": "03f6fa99-b447-4784-996a-158ef7367d4c",
+            "entryType": "version_applied",
+            "fieldName": "versionId",
+            "beforeValue": "efa06902-40a8-4c15-a413-13cadc100df3",
+            "afterValue": "d523798e-4872-4904-b474-e56b5792cadf",
+            "actorId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "actorName": "alpha-one-head",
+            "requestId": "7e8657ea-dae7-4662-95c0-8c0e22531c82",
+            "occurredAt": "2026-11-18T17:28:05.217521Z",
+            "detail": {
+              "kind": "progress",
+              "executionRound": 1,
+              "executionState": "doing"
+            }
+          },
+          {
+            "id": "1a755359-c175-4390-8c35-9de5d2d723e9",
+            "entryType": "request_decided",
+            "fieldName": "status",
+            "beforeValue": "pending",
+            "afterValue": "approved",
+            "actorId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "actorName": "alpha-one-head",
+            "requestId": "7e8657ea-dae7-4662-95c0-8c0e22531c82",
+            "occurredAt": "2026-11-18T17:28:05.217702Z",
+            "detail": {
+              "kind": "progress",
+              "status": "approved",
+              "comment": "",
+              "decision": "approve"
+            }
+          },
+          {
+            "id": "8e78aba9-7708-45e9-b202-88541081551a",
+            "entryType": "request_submitted",
+            "fieldName": null,
+            "beforeValue": null,
+            "afterValue": null,
+            "actorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "actorName": "alpha-one-employee",
+            "requestId": "977a165c-1f5f-489c-a016-a7002d00028f",
+            "occurredAt": "2026-11-18T17:28:05.245806Z",
+            "detail": {
+              "kind": "progress",
+              "status": "pending",
+              "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+              "routeReason": "direct-manager",
+              "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          },
+          {
+            "id": "ebefc562-8d9b-4443-837f-ad510f129b7f",
+            "entryType": "field_change",
+            "fieldName": "progressNote",
+            "beforeValue": "第一轮进展",
+            "afterValue": "第二轮进展",
+            "actorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "actorName": "alpha-one-employee",
+            "requestId": "977a165c-1f5f-489c-a016-a7002d00028f",
+            "occurredAt": "2026-11-18T17:28:05.246176Z",
+            "detail": {}
+          },
+          {
+            "id": "3b131b18-991b-4644-aacd-4c885bf80c01",
+            "entryType": "version_applied",
+            "fieldName": "versionId",
+            "beforeValue": "d523798e-4872-4904-b474-e56b5792cadf",
+            "afterValue": "b6b1dbbb-1af3-4182-b394-7dac6baff53f",
+            "actorId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "actorName": "alpha-one-head",
+            "requestId": "977a165c-1f5f-489c-a016-a7002d00028f",
+            "occurredAt": "2026-11-18T17:28:05.284617Z",
+            "detail": {
+              "kind": "progress",
+              "executionRound": 1,
+              "executionState": "doing"
+            }
+          },
+          {
+            "id": "ba633ba1-fcb6-4b72-8b92-1f4ce54fd3ab",
+            "entryType": "request_decided",
+            "fieldName": "status",
+            "beforeValue": "pending",
+            "afterValue": "approved",
+            "actorId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "actorName": "alpha-one-head",
+            "requestId": "977a165c-1f5f-489c-a016-a7002d00028f",
+            "occurredAt": "2026-11-18T17:28:05.284809Z",
+            "detail": {
+              "kind": "progress",
+              "status": "approved",
+              "comment": "",
+              "decision": "approve"
+            }
+          },
+          {
+            "id": "f8cce2f0-4939-4170-b73a-ebafb3666e94",
+            "entryType": "request_submitted",
+            "fieldName": null,
+            "beforeValue": null,
+            "afterValue": null,
+            "actorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "actorName": "alpha-one-employee",
+            "requestId": "4b468b7a-f342-4b3a-9603-a709b8d0c290",
+            "occurredAt": "2026-11-18T17:28:05.307447Z",
+            "detail": {
+              "kind": "complete",
+              "status": "pending",
+              "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+              "routeReason": "direct-manager",
+              "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          },
+          {
+            "id": "e9a82158-0258-4ea4-a91b-bf805c00f3a7",
+            "entryType": "version_applied",
+            "fieldName": "versionId",
+            "beforeValue": "b6b1dbbb-1af3-4182-b394-7dac6baff53f",
+            "afterValue": "b950f275-98bb-4b0a-8cf6-8e1e4837fbe5",
+            "actorId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "actorName": "alpha-one-head",
+            "requestId": "4b468b7a-f342-4b3a-9603-a709b8d0c290",
+            "occurredAt": "2026-11-18T17:28:05.339190Z",
+            "detail": {
+              "kind": "complete",
+              "executionRound": 1,
+              "executionState": "done"
+            }
+          },
+          {
+            "id": "8c542e77-52f5-41b0-9a0a-acfb8bf76acc",
+            "entryType": "request_decided",
+            "fieldName": "status",
+            "beforeValue": "pending",
+            "afterValue": "approved",
+            "actorId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "actorName": "alpha-one-head",
+            "requestId": "4b468b7a-f342-4b3a-9603-a709b8d0c290",
+            "occurredAt": "2026-11-18T17:28:05.339415Z",
+            "detail": {
+              "kind": "complete",
+              "status": "approved",
+              "comment": "",
+              "decision": "approve"
+            }
+          }
+        ],
+        "versions": [
+          {
+            "id": "efa06902-40a8-4c15-a413-13cadc100df3",
+            "versionNo": 1,
+            "status": "applied",
+            "title": "员工历史投影",
+            "priority": "medium",
+            "allDay": false,
+            "startAt": "2026-11-18T17:34:44.915371Z",
+            "dueAt": "2026-11-18T22:28:04.915371Z",
+            "executionState": "todo",
+            "progressNote": "",
+            "createdBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "createdAt": "2026-11-18T17:28:05.160795Z",
+            "appliedAt": null,
+            "expiredAt": null,
+            "assigneeIds": [
+              "4ce9a359-10d8-524d-8232-c73416f398d0"
+            ]
+          },
+          {
+            "id": "d523798e-4872-4904-b474-e56b5792cadf",
+            "versionNo": 2,
+            "status": "applied",
+            "title": "员工历史投影",
+            "priority": "medium",
+            "allDay": false,
+            "startAt": "2026-11-18T17:34:44.915371Z",
+            "dueAt": "2026-11-18T22:28:04.915371Z",
+            "executionState": "doing",
+            "progressNote": "第一轮进展",
+            "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "createdAt": "2026-11-18T17:28:05.183157Z",
+            "appliedAt": null,
+            "expiredAt": null,
+            "assigneeIds": [
+              "4ce9a359-10d8-524d-8232-c73416f398d0"
+            ]
+          },
+          {
+            "id": "b6b1dbbb-1af3-4182-b394-7dac6baff53f",
+            "versionNo": 3,
+            "status": "applied",
+            "title": "员工历史投影",
+            "priority": "medium",
+            "allDay": false,
+            "startAt": "2026-11-18T17:34:44.915371Z",
+            "dueAt": "2026-11-18T22:28:04.915371Z",
+            "executionState": "doing",
+            "progressNote": "第二轮进展",
+            "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "createdAt": "2026-11-18T17:28:05.244167Z",
+            "appliedAt": null,
+            "expiredAt": null,
+            "assigneeIds": [
+              "4ce9a359-10d8-524d-8232-c73416f398d0"
+            ]
+          },
+          {
+            "id": "b950f275-98bb-4b0a-8cf6-8e1e4837fbe5",
+            "versionNo": 4,
+            "status": "applied",
+            "title": "员工历史投影",
+            "priority": "medium",
+            "allDay": false,
+            "startAt": "2026-11-18T17:34:44.915371Z",
+            "dueAt": "2026-11-18T22:28:04.915371Z",
+            "executionState": "done",
+            "progressNote": "第二轮进展",
+            "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "createdAt": "2026-11-18T17:28:05.306123Z",
+            "appliedAt": null,
+            "expiredAt": null,
+            "assigneeIds": [
+              "4ce9a359-10d8-524d-8232-c73416f398d0"
+            ]
+          }
+        ],
+        "reassignments": [],
+        "handovers": [],
+        "people": {
+          "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a": "founder",
+          "4ce9a359-10d8-524d-8232-c73416f398d0": "alpha-one-employee",
+          "41e37310-9a49-5e6e-a05c-27e11029c2fc": "alpha-one-head"
+        }
+      }
+    }
+  ],
+  "result": "PASS"
+}

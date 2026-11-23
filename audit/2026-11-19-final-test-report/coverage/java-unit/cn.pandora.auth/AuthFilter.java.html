@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.auth</a> &gt; <span class="el_source">AuthFilter.java</span></div><h1>AuthFilter.java</h1><pre class="source lang-java linenums">package cn.pandora.auth;
+
+import cn.pandora.common.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Authentication plus the forced-password-change gate (DEV-003).
+ *
+ * A session flagged `must_change_password` — a brand-new account or an administrator reset — may only
+ * read its own identity, change its password, or log out. The gate lives in the filter, not in the
+ * pages, so a direct business request, a refreshed token or a workspace loaded by URL cannot bypass it.
+ */
+@Component
+public class AuthFilter extends OncePerRequestFilter {
+    /** Exact method+path pairs a restricted session may still reach. */
+<span class="nc" id="L23">    private static final Set&lt;String&gt; GATE_ALLOWED = Set.of(</span>
+            &quot;GET /api/v1/auth/session&quot;,
+            &quot;POST /api/v1/auth/password&quot;,
+            &quot;DELETE /api/v1/auth/sessions/current&quot;);
+
+    private final AuthService auth;private final ObjectMapper mapper;
+<span class="nc" id="L29">    public AuthFilter(AuthService auth,ObjectMapper mapper) {this.auth=auth;this.mapper=mapper;}</span>
+    @Override protected void doFilterInternal(HttpServletRequest req,HttpServletResponse res,FilterChain chain) throws ServletException,IOException {
+<span class="nc" id="L31">        res.setHeader(&quot;X-Content-Type-Options&quot;,&quot;nosniff&quot;);res.setHeader(&quot;X-Frame-Options&quot;,&quot;DENY&quot;);</span>
+<span class="nc bnc" id="L32" title="All 6 branches missed.">        if(!req.getRequestURI().startsWith(&quot;/api/&quot;) || (req.getRequestURI().equals(&quot;/api/v1/auth/sessions&quot;) &amp;&amp; req.getMethod().equals(&quot;POST&quot;))) { chain.doFilter(req,res); return; }</span>
+<span class="nc" id="L33">        res.setHeader(&quot;Cache-Control&quot;,&quot;no-store&quot;);</span>
+        Actor actor;
+        try {
+<span class="nc" id="L36">            String header=req.getHeader(&quot;Authorization&quot;);</span>
+<span class="nc bnc" id="L37" title="All 4 branches missed.">            String token=header!=null&amp;&amp;header.startsWith(&quot;Bearer &quot;)?header.substring(7):null;</span>
+<span class="nc" id="L38">            actor=auth.authenticate(token); req.setAttribute(&quot;actor&quot;,actor); req.setAttribute(&quot;token&quot;,token);</span>
+<span class="nc" id="L39">        } catch(ApiException e) {</span>
+<span class="nc" id="L40">            res.setStatus(e.status);res.setContentType(&quot;application/json;charset=UTF-8&quot;);</span>
+<span class="nc" id="L41">            mapper.writeValue(res.getOutputStream(),Map.of(&quot;code&quot;,e.code,&quot;message&quot;,e.getMessage()));return;</span>
+<span class="nc" id="L42">        }</span>
+<span class="nc bnc" id="L43" title="All 4 branches missed.">        if(actor.mustChangePassword() &amp;&amp; !GATE_ALLOWED.contains(req.getMethod()+&quot; &quot;+req.getRequestURI())) {</span>
+<span class="nc" id="L44">            res.setStatus(403);res.setContentType(&quot;application/json;charset=UTF-8&quot;);</span>
+<span class="nc" id="L45">            mapper.writeValue(res.getOutputStream(),Map.of(&quot;code&quot;,&quot;PASSWORD_CHANGE_REQUIRED&quot;,</span>
+                    &quot;message&quot;,&quot;首次登录或管理员重置后必须修改密码，当前会话仅可改密或退出&quot;));
+<span class="nc" id="L47">            return;</span>
+        }
+        // The shared official holiday labels are the one business-neutral read an independent
+        // administrator may perform outside /admin; their employee-management console uses it too.
+<span class="nc bnc" id="L51" title="All 4 branches missed.">        boolean adminHolidayRead = actor.administrator() &amp;&amp; &quot;GET&quot;.equals(req.getMethod())</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                &amp;&amp; req.getRequestURI().matches(&quot;/api/v1/calendar/holidays/\\d{4}&quot;);</span>
+<span class="nc bnc" id="L53" title="All 6 branches missed.">        if(actor.administrator() &amp;&amp; !adminHolidayRead &amp;&amp; !req.getRequestURI().startsWith(&quot;/api/v1/admin/&quot;)</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">                &amp;&amp; !req.getRequestURI().startsWith(&quot;/api/v1/auth/&quot;)) {</span>
+<span class="nc" id="L55">            res.setStatus(403);res.setContentType(&quot;application/json;charset=UTF-8&quot;);</span>
+<span class="nc" id="L56">            mapper.writeValue(res.getOutputStream(),Map.of(&quot;code&quot;,&quot;BUSINESS_ROLE_REQUIRED&quot;,</span>
+<span class="nc" id="L57">                    &quot;message&quot;,&quot;管理员请使用独立管理端&quot;));return;</span>
+        }
+<span class="nc bnc" id="L59" title="All 4 branches missed.">        if(actor.business() &amp;&amp; req.getRequestURI().startsWith(&quot;/api/v1/admin/&quot;)) {</span>
+<span class="nc" id="L60">            res.setStatus(403);res.setContentType(&quot;application/json;charset=UTF-8&quot;);</span>
+<span class="nc" id="L61">            mapper.writeValue(res.getOutputStream(),Map.of(&quot;code&quot;,&quot;FORBIDDEN&quot;,&quot;message&quot;,&quot;需要独立管理员身份&quot;));return;</span>
+        }
+<span class="nc bnc" id="L63" title="All 6 branches missed.">        if(actor.business() &amp;&amp; &quot;unplaced&quot;.equals(actor.role()) &amp;&amp; !req.getRequestURI().startsWith(&quot;/api/v1/auth/&quot;)) {</span>
+<span class="nc" id="L64">            res.setStatus(409);res.setContentType(&quot;application/json;charset=UTF-8&quot;);</span>
+<span class="nc" id="L65">            mapper.writeValue(res.getOutputStream(),Map.of(&quot;code&quot;,&quot;ORGANIZATION_MAPPING_INCOMPLETE&quot;,</span>
+<span class="nc" id="L66">                    &quot;message&quot;,&quot;固定组织位置尚未就绪，请管理员修复&quot;));return;</span>
+        }
+<span class="nc" id="L68">        chain.doFilter(req,res);</span>
+<span class="nc" id="L69">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

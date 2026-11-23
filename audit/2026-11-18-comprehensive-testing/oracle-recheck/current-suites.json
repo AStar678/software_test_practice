@@ -1,0 +1,33 @@
+{
+  "startedAt": "2026-11-18T16:06:37.904489+00:00",
+  "suites": [
+    {
+      "suite": "check_final_migration.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 0.6,
+      "passedAssertionsPrinted": 0,
+      "log": "check_final_migration.log",
+      "sourceSha256": "1622b496cb499e354c70927429c4a503449e2586790af6968abd551646314522"
+    },
+    {
+      "suite": "check_profile_phone_matrix.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 16.438,
+      "passedAssertionsPrinted": 41,
+      "log": "check_profile_phone_matrix.log",
+      "sourceSha256": "a0ede4161655d7be6dd4da45c81a1457f62077221c1a753b5fd4a427d2bd3480"
+    },
+    {
+      "suite": "check_fixed_workspace_access.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 17.711,
+      "passedAssertionsPrinted": 62,
+      "log": "check_fixed_workspace_access.log",
+      "sourceSha256": "b67206bd43e2d4043ad95788f7d8564e63a1486ceab15e887a085ac62aa43d1f"
+    }
+  ],
+  "finishedAt": "2026-11-18T16:07:12.706273+00:00"
+}

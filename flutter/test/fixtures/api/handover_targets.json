@@ -1,0 +1,3 @@
+{
+ "error": "{\"timestamp\":\"2026-11-10T11:49:21.351+00:00\",\"status\":400,\"error\":\"Bad Request\",\"path\":\"/api/v1/handover-targets\"}"
+}

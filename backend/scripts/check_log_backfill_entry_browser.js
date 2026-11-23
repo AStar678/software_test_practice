@@ -37,8 +37,8 @@ async function main() {
       for(const width of [320,390,1440]){
         await browser.viewport({width,height:width===1440?900:844,mobile:width!==1440});
         await ev("document.getElementById('lf-date').scrollIntoView({block:'center'})");
-        const g=await ev("(()=>{const a=document.getElementById('lf-date').getBoundingClientRect(),b=document.getElementById('lf-tag').getBoundingClientRect(),body=document.getElementById('sheetBody');return {a:{x:a.x,y:a.y,w:a.width,h:a.height,right:a.right},b:{x:b.x,y:b.y,w:b.width,h:b.height,right:b.right},overflow:body.scrollWidth>body.clientWidth+1}})()");
-        check(kind+' metadata aligned '+width,!g.overflow&&Math.abs(g.a.h-g.b.h)<1&&g.a.x>=0&&g.b.right<=width+1&&(Math.abs(g.a.x-g.b.x)<1||Math.abs(g.a.y-g.b.y)<1),g);
+        const g=await ev("(()=>{const a=document.getElementById('lf-date').getBoundingClientRect(),b=document.getElementById('lf-tags').getBoundingClientRect(),body=document.getElementById('sheetBody');return {a:{x:a.x,y:a.y,w:a.width,h:a.height,right:a.right},b:{x:b.x,y:b.y,w:b.width,h:b.height,right:b.right},overflow:body.scrollWidth>body.clientWidth+1}})()");
+        check(kind+' metadata aligned '+width,!g.overflow&&g.a.w>0&&g.b.w>0&&g.a.x>=0&&g.b.right<=width+1&&(Math.abs(g.a.x-g.b.x)<1||Math.abs(g.a.y-g.b.y)<1),g);
         await browser.screenshot(path.join(screenshots,kind+'-aligned-'+width+'.png'));
       }
       await browser.viewport({width:390,height:844,mobile:true});
@@ -50,11 +50,11 @@ async function main() {
     check('no separate backfill entry',await ev("!document.querySelector('[data-action=backfill-log]')"));
     await ev("setPage('view');Pandora.taskForm.open()");
     check('personal task table loaded',await waitFor(browser,"Pandora.taskForm.state.loaded&&Pandora.idle()"));
-    const rows=await ev("Pandora.taskForm.current().sorted.map(t=>t.id)");
+    const rows=await ev("Pandora.taskForm.current().paged.items.map(t=>t.id)");
     check('table includes created and assigned only',rows.length===2&&fixture.personalTasks.every(id=>rows.includes(id)),rows);
     for(const width of [390,1440]){await browser.viewport({width,height:width===1440?900:844,mobile:width===390});await browser.screenshot(path.join(screenshots,'table-'+width+'.png'));}
     await browser.viewport({width:390,height:844,mobile:true});
-    check('subordinate is globally authorized but absent from table',await ev(`TASKS.some(t=>t.id===${JSON.stringify(fixture.subordinateTask)})&&!Pandora.taskForm.current().sorted.some(t=>t.id===${JSON.stringify(fixture.subordinateTask)})`));
+    check('subordinate is globally authorized but absent from table',await ev(`TASKS.some(t=>t.id===${JSON.stringify(fixture.subordinateTask)})&&!Pandora.taskForm.current().paged.items.some(t=>t.id===${JSON.stringify(fixture.subordinateTask)})`));
     await ev(`document.getElementById('p-filter-query').value='下属专属';document.getElementById('p-filter-query').dispatchEvent(new Event('input',{bubbles:true}))`);
     check('search cannot recover subordinate rows',await waitFor(browser,"Pandora.taskForm.current().paged.total===0"));
     await ev('Pandora.reload()');
@@ -70,7 +70,7 @@ async function main() {
     await ev("setPage('log')");
     check('today log entry opens for the first write', await open('new-log') && await ev(`document.getElementById('lf-date').value===${JSON.stringify(today)}`));
     check('initial date options include all missing days',await ev("document.querySelectorAll('#lf-date option').length===3&&!drafts.log.id"));
-    check('log form shows no tag or ownership rule paragraphs',await ev("!document.getElementById('sheetBody').textContent.includes('标签由创始人统一维护')&&!document.getElementById('sheetBody').textContent.includes('日志归属于本人')&&document.querySelector('#lf-tag').closest('.field').querySelector('label').textContent.trim()==='标签'"));
+    check('log form shows no tag or ownership rule paragraphs',await ev("!document.getElementById('sheetBody').textContent.includes('标签由创始人统一维护')&&!document.getElementById('sheetBody').textContent.includes('日志归属于本人')&&document.querySelector('#lf-tags').closest('.field').querySelector('label').textContent.trim()==='共用标签（可多选）'"));
     await logGeometry('create');
     await browser.screenshot(path.join(screenshots,'create-log-390.png'));
     await ev(`drafts.log.taskId=${JSON.stringify(fixture.colorTask)};drafts.log.relationshipChanged=true`);
@@ -134,7 +134,7 @@ async function main() {
     check('ordinary employee authenticates',await waitFor(browser,'Pandora.ready&&Pandora.idle()'));
     await ev("setPage('log')");
     await open('new-log');
-    check('ordinary employee can choose existing log tag',await ev(`!!document.querySelector('#lf-tag option[value="${fixture.tagId}"]')`));
+    check('ordinary employee can choose existing log tag',await ev(`!!document.querySelector('#lf-tags [data-id="${fixture.tagId}"]')`));
     await ev(`Pandora.mutation('concurrent-log-create','POST','/work-logs',{businessDate:${JSON.stringify(today)},body:'Created from another session'})`);
     await ev("document.getElementById('lf-content').value='Unsaved draft must not replace existing';document.querySelector('[data-action=save-log]').click()");
     check('duplicate create retains draft without entering edit',await waitFor(browser,"Pandora.idle()&&!drafts.log.id&&document.getElementById('sheetTitle').textContent==='写日志'&&document.getElementById('lf-error').textContent.includes('已有日志')"));

@@ -1,0 +1,1509 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WorkspaceService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pandora local backend</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.workspace</a> &gt; <span class="el_source">WorkspaceService.java</span></div><h1>WorkspaceService.java</h1><pre class="source lang-java linenums">package cn.pandora.workspace;
+
+import cn.pandora.auth.Access;
+import cn.pandora.auth.Actor;
+import cn.pandora.common.*;
+import cn.pandora.profile.Tenure;
+import cn.pandora.task.Tags;
+import cn.pandora.task.TaskService;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.Timestamp;
+import java.time.*;
+import java.util.*;
+import java.util.regex.Pattern;
+
+import static cn.pandora.common.Db.*;
+
+@Service
+public class WorkspaceService {
+<span class="fc" id="L23">    private static final Pattern HAN_RUN = Pattern.compile(&quot;\\p{IsHan}{2,}&quot;);</span>
+<span class="fc" id="L24">    private static final Pattern OTHER_WORD = Pattern.compile(&quot;[\\p{L}\\p{N}][\\p{L}\\p{N}_-]{1,31}&quot;);</span>
+<span class="fc" id="L25">    private static final Set&lt;String&gt; KEYWORD_STOP_WORDS = Set.of(</span>
+            &quot;任务&quot;, &quot;项目&quot;, &quot;工作&quot;, &quot;进行&quot;, &quot;完成&quot;, &quot;需要&quot;, &quot;以及&quot;, &quot;一个&quot;, &quot;我们&quot;, &quot;相关&quot;, &quot;当前&quot;,
+            &quot;the&quot;, &quot;and&quot;, &quot;for&quot;, &quot;with&quot;, &quot;from&quot;, &quot;this&quot;, &quot;that&quot;);
+    private final Db db;
+    private final Access access;
+    private final TaskService tasks;
+    private final Events events;
+    private final Clock clock;
+    private final Tags tags;
+
+    /** Logs may be written for the company's today plus the previous two business days (chapter 7.1). */
+    private static final int LOG_BACKFILL_DAYS = 2;
+    /** Editing and deleting share one real freeze instant: first creation plus 24 hours. */
+<span class="fc" id="L38">    private static final Duration LOG_FREEZE_WINDOW = Duration.ofHours(24);</span>
+
+    /** Test seam: the tag catalogue is derived from the same Db when constructed directly. */
+    public WorkspaceService(Db db, Access access, TaskService tasks, Events events, Clock clock) {
+<span class="fc" id="L42">        this(db, access, tasks, events, clock, new Tags(db, access, new cn.pandora.auth.CompanyTree(db)));</span>
+<span class="fc" id="L43">    }</span>
+
+    @org.springframework.beans.factory.annotation.Autowired
+<span class="fc" id="L46">    public WorkspaceService(Db db, Access access, TaskService tasks, Events events, Clock clock, Tags tags) {</span>
+<span class="fc" id="L47">        this.db = db; this.access = access; this.tasks = tasks; this.events = events; this.clock = clock;</span>
+<span class="fc" id="L48">        this.tags = tags;</span>
+<span class="fc" id="L49">    }</span>
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; me(Actor a) {
+<span class="fc" id="L53">        return access.readScope(a.organizationId(), () -&gt; meRead(a));</span>
+    }
+
+    private Map&lt;String,Object&gt; meRead(Actor a) {
+<span class="fc" id="L57">        business(a);</span>
+<span class="fc" id="L58">        var source=employee(a,a.id());</span>
+<span class="fc" id="L59">        var result=safeUser(source);</span>
+<span class="fc" id="L60">        var contacts=db.find(&quot;SELECT phone,email,avatar,profile_version,hire_date FROM users WHERE id=? AND organization_id=? AND active=1&quot;,a.id(),a.organizationId());</span>
+        // The directory row is only a defensive fallback for tests; it never selects contact columns.
+<span class="pc bpc" id="L62" title="2 of 4 branches missed.">        if(contacts==null || contacts.isEmpty()) contacts=source;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        for(String key:List.of(&quot;phone&quot;,&quot;email&quot;,&quot;avatar&quot;,&quot;profileVersion&quot;)) result.put(key,contacts.get(key));</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        LocalDate hireDate=contacts.get(&quot;hireDate&quot;)==null?null:LocalDate.parse(Objects.toString(contacts.get(&quot;hireDate&quot;)));</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        result.put(&quot;hireDate&quot;,hireDate==null?null:hireDate.toString());</span>
+<span class="fc" id="L66">        result.put(&quot;tenure&quot;,Tenure.of(hireDate,today(a)));</span>
+<span class="fc" id="L67">        var company=db.one(&quot;SELECT name,time_zone FROM organizations WHERE id=?&quot;,a.organizationId());</span>
+<span class="fc" id="L68">        result.put(&quot;organizationName&quot;,company.get(&quot;name&quot;));</span>
+<span class="fc" id="L69">        result.put(&quot;organizationTimeZone&quot;,company.get(&quot;timeZone&quot;));</span>
+<span class="fc" id="L70">        result.put(&quot;canManageTeam&quot;,false);</span>
+<span class="fc" id="L71">        return result;</span>
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; users(Actor a, Map&lt;String,String&gt; filters, boolean admin) {
+<span class="fc" id="L76">        return access.readScope(a.organizationId(), () -&gt; usersRead(a,filters,admin));</span>
+    }
+
+    private Map&lt;String,Object&gt; usersRead(Actor a, Map&lt;String,String&gt; filters, boolean admin) {
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if(admin) {access.requireAdmin(a);access.requireCurrent(a);} else business(a);</span>
+<span class="fc" id="L81">        String query=filters.getOrDefault(&quot;q&quot;,&quot;&quot;).strip().toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L82">        var allowed=access.employeeDirectory(a,admin).stream()</span>
+<span class="pc bpc" id="L83" title="1 of 4 branches missed.">                .filter(row-&gt;admin || access.canSeePerson(a,row))</span>
+<span class="pc bpc" id="L84" title="3 of 4 branches missed.">                .filter(row-&gt;query.isEmpty() || Objects.toString(row.get(&quot;displayName&quot;),&quot;&quot;).toLowerCase(Locale.ROOT).contains(query))</span>
+<span class="fc" id="L85">                .map(this::safeUser).toList();</span>
+<span class="fc" id="L86">        return page(allowed,filters);</span>
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; person(Actor a, String userId) {
+<span class="fc" id="L91">        return access.readScope(a.organizationId(), () -&gt; personRead(a,userId));</span>
+    }
+
+    private Map&lt;String,Object&gt; personRead(Actor a, String userId) {
+<span class="fc" id="L95">        business(a);</span>
+<span class="fc" id="L96">        var row=employee(a,userId);</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if(!access.canSeePerson(a,row)) throw ApiException.notFound();</span>
+<span class="fc" id="L98">        var result=safeUser(row);</span>
+<span class="fc" id="L99">        result.put(&quot;canReadLogs&quot;,access.canReadLogAuthor(a,userId));</span>
+<span class="fc" id="L100">        result.put(&quot;canSetHandoverPreset&quot;,access.canSetHandoverPreset(a,row));</span>
+<span class="fc" id="L101">        var privateRow=db.find(&quot;SELECT phone,email,hire_date FROM users WHERE id=? AND organization_id=? AND active=1&quot;,userId,a.organizationId());</span>
+<span class="pc bpc" id="L102" title="2 of 4 branches missed.">        if(privateRow==null || privateRow.isEmpty()) privateRow=row;</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">        LocalDate hireDate=privateRow.get(&quot;hireDate&quot;)==null?null:LocalDate.parse(Objects.toString(privateRow.get(&quot;hireDate&quot;)));</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        result.put(&quot;hireDate&quot;,hireDate==null?null:hireDate.toString());</span>
+<span class="fc" id="L105">        result.put(&quot;tenure&quot;,Tenure.of(hireDate,today(a)));</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if(access.canReadPhone(a,row)) result.put(&quot;phone&quot;,privateRow.get(&quot;phone&quot;));</span>
+        // E-mail is only added to an authorized person detail for the person or an actual current
+        // management-chain ancestor; directories, trees and candidate summaries never carry it.
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if(access.canReadEmail(a,row)) result.put(&quot;email&quot;,privateRow.get(&quot;email&quot;));</span>
+<span class="fc" id="L110">        return result;</span>
+    }
+
+    /**
+     * Read-only complete name source for one log business date. It accepts no {@code userId}, is not
+     * limited by the three-day creation window, returns every covered personal item and currently
+     * owned published task, and mutates nothing. Any source failure fails the whole read rather than
+     * pretending a partial set is complete.
+     */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; fillSource(Actor a, Map&lt;String,String&gt; filters) {
+<span class="nc" id="L121">        return access.readScope(a.organizationId(), () -&gt; fillSourceRead(a,filters));</span>
+    }
+
+    private Map&lt;String,Object&gt; fillSourceRead(Actor a, Map&lt;String,String&gt; filters) {
+<span class="nc" id="L125">        business(a);</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (!Set.of(&quot;businessDate&quot;).containsAll(filters.keySet())) throw bad(&quot;填充源仅支持 businessDate&quot;);</span>
+<span class="nc" id="L127">        LocalDate date = optionalDate(filters.get(&quot;businessDate&quot;));</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        if (date == null) throw bad(&quot;businessDate 必须为 YYYY-MM-DD 有效日期&quot;);</span>
+<span class="nc" id="L129">        ZoneId zone = zone(a);</span>
+<span class="nc" id="L130">        var items = db.list(&quot;SELECT id,body,created_at FROM daily_items WHERE organization_id=? AND owner_id=? &quot;</span>
+                        + &quot;AND start_date&lt;=? AND end_date&gt;=? ORDER BY created_at,id&quot;,
+<span class="nc" id="L132">                a.organizationId(), a.id(), java.sql.Date.valueOf(date), java.sql.Date.valueOf(date)).stream()</span>
+<span class="nc" id="L133">                .map(row -&gt; {var item=new LinkedHashMap&lt;String,Object&gt;();item.put(&quot;id&quot;,s(row,&quot;id&quot;));item.put(&quot;name&quot;,s(row,&quot;body&quot;));return (Map&lt;String,Object&gt;)item;})</span>
+<span class="nc" id="L134">                .toList();</span>
+<span class="nc" id="L135">        var taskRows = db.list(&quot;SELECT t.id,v.title,v.all_day,v.start_at,v.due_at,v.start_date,v.due_date &quot;</span>
+                + &quot;FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id &quot;
+                + &quot;JOIN task_version_assignees a ON a.organization_id=v.organization_id AND a.version_id=v.id &quot;
+                + &quot;WHERE t.organization_id=? AND a.user_id=? AND t.current_version_id IS NOT NULL &quot;
+<span class="nc" id="L139">                + &quot;ORDER BY v.start_at,t.id&quot;, a.organizationId(), a.id());</span>
+<span class="nc" id="L140">        Map&lt;String,Map&lt;String,Object&gt;&gt; byTask=new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        for (var row : taskRows) {</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (!coversBusinessDay(row, date, zone)) continue;</span>
+<span class="nc" id="L143">            byTask.putIfAbsent(s(row,&quot;id&quot;), row);</span>
+<span class="nc" id="L144">        }</span>
+<span class="nc" id="L145">        var tasks = byTask.values().stream()</span>
+<span class="nc" id="L146">                .map(row -&gt; {var task=new LinkedHashMap&lt;String,Object&gt;();task.put(&quot;id&quot;,s(row,&quot;id&quot;));task.put(&quot;name&quot;,s(row,&quot;title&quot;));return (Map&lt;String,Object&gt;)task;})</span>
+<span class="nc" id="L147">                .toList();</span>
+<span class="nc" id="L148">        var result = new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="nc" id="L149">        result.put(&quot;businessDate&quot;,date.toString());</span>
+<span class="nc" id="L150">        result.put(&quot;organizationTimeZone&quot;,zone.getId());</span>
+<span class="nc" id="L151">        result.put(&quot;dailyItems&quot;,items);</span>
+<span class="nc" id="L152">        result.put(&quot;tasks&quot;,tasks);</span>
+<span class="nc" id="L153">        result.put(&quot;complete&quot;,true);</span>
+<span class="nc" id="L154">        return result;</span>
+    }
+
+    /**
+     * Actual business-day coverage: legacy all-day tasks include both first and last date; timed tasks
+     * use the half-open instant interval [start,due) intersected with [dayStart,nextDayStart), so a
+     * midnight due time never spills into the next day and a zero-length task belongs to its start day.
+     */
+    static boolean coversBusinessDay(Map&lt;String,Object&gt; version, LocalDate day, ZoneId zone) {
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">        boolean allDay = version.get(&quot;allDay&quot;) instanceof Boolean value ? value</span>
+<span class="pc bnc" id="L164" title="All 4 branches missed.">                : version.get(&quot;allDay&quot;) instanceof Number number &amp;&amp; number.intValue() == 1;</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">        if (allDay) {</span>
+<span class="fc" id="L166">            LocalDate start = LocalDate.parse(Objects.toString(version.get(&quot;startDate&quot;)));</span>
+<span class="fc" id="L167">            LocalDate due = LocalDate.parse(Objects.toString(version.get(&quot;dueDate&quot;)));</span>
+<span class="pc bpc" id="L168" title="1 of 4 branches missed.">            return !day.isBefore(start) &amp;&amp; !day.isAfter(due);</span>
+        }
+<span class="fc" id="L170">        Instant start = instant(Objects.toString(version.get(&quot;startAt&quot;)));</span>
+<span class="fc" id="L171">        Instant due = instant(Objects.toString(version.get(&quot;dueAt&quot;)));</span>
+<span class="pc bpc" id="L172" title="2 of 4 branches missed.">        if (start == null || due == null) return false;</span>
+<span class="fc" id="L173">        Instant dayStart = day.atStartOfDay(zone).toInstant();</span>
+<span class="fc" id="L174">        Instant nextDayStart = day.plusDays(1).atStartOfDay(zone).toInstant();</span>
+<span class="pc bpc" id="L175" title="1 of 6 branches missed.">        if (start.equals(due)) return !start.isBefore(dayStart) &amp;&amp; start.isBefore(nextDayStart);</span>
+<span class="pc bpc" id="L176" title="1 of 4 branches missed.">        return start.isBefore(nextDayStart) &amp;&amp; due.isAfter(dayStart);</span>
+    }
+
+    /** Every actual descendant, including team heads and their employees below a department head. */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; reports(Actor a) {
+<span class="fc" id="L182">        return access.readScope(a.organizationId(), () -&gt; reportsRead(a));</span>
+    }
+
+    private Map&lt;String,Object&gt; reportsRead(Actor a) {
+<span class="fc" id="L186">        business(a);</span>
+<span class="fc" id="L187">        var items=access.employeeDirectory(a,false).stream()</span>
+<span class="fc bfc" id="L188" title="All 4 branches covered.">                .filter(row-&gt;!a.id().equals(s(row,&quot;id&quot;)) &amp;&amp; access.isManagerOf(a,s(row,&quot;id&quot;)))</span>
+<span class="fc" id="L189">                .map(row-&gt;{var item=safeUser(row);item.put(&quot;canReadLogs&quot;,access.canReadLogAuthor(a,s(row,&quot;id&quot;)));return item;})</span>
+<span class="fc" id="L190">                .toList();</span>
+<span class="fc" id="L191">        return Map.of(&quot;items&quot;,items);</span>
+    }
+
+    private Map&lt;String,Object&gt; employee(Actor a,String id) {
+<span class="fc" id="L195">        return access.employeeDirectory(a,false).stream().filter(row-&gt;id.equals(s(row,&quot;id&quot;)))</span>
+<span class="fc" id="L196">                .findFirst().orElseThrow(ApiException::notFound);</span>
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; logs(Actor a, Map&lt;String,String&gt; filters) {
+<span class="fc" id="L201">        return access.readScope(a.organizationId(), () -&gt; logsRead(a,filters));</span>
+    }
+
+    private Map&lt;String,Object&gt; logsRead(Actor a, Map&lt;String,String&gt; filters) {
+<span class="fc" id="L205">        business(a);</span>
+<span class="fc" id="L206">        String scope = filters.getOrDefault(&quot;scope&quot;, &quot;self&quot;);</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">        if (!Set.of(&quot;self&quot;,&quot;visible&quot;,&quot;log&quot;).contains(scope)) throw bad(&quot;scope 只能为 self 或 visible&quot;);</span>
+        // The log range is its own authority: company for the executive, direct reports for a
+        // manager, self below that. Being a teammate or sharing a task grants nothing here.
+<span class="fc" id="L210">        var allowedIds = new HashSet&lt;&gt;(access.logAuthorIds(a));</span>
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">        if (scope.equals(&quot;self&quot;)) allowedIds.retainAll(Set.of(a.id()));</span>
+<span class="fc" id="L212">        String author = filters.get(&quot;authorId&quot;);</span>
+<span class="pc bpc" id="L213" title="3 of 4 branches missed.">        if (author != null &amp;&amp; !allowedIds.contains(author)) throw ApiException.notFound();</span>
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">        if (author != null) allowedIds.retainAll(Set.of(author));</span>
+<span class="fc" id="L215">        LocalDate from = optionalDate(filters.get(&quot;from&quot;)), to = optionalDate(filters.get(&quot;to&quot;));</span>
+<span class="pc bpc" id="L216" title="5 of 6 branches missed.">        if (from != null &amp;&amp; to != null &amp;&amp; from.isAfter(to)) throw bad(&quot;开始日期不得晚于结束日期&quot;);</span>
+<span class="fc" id="L217">        var result = db.list(&quot;SELECT w.id,w.author_id,w.business_date FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.deleted_at IS NULL ORDER BY w.business_date DESC,w.created_at DESC,w.id&quot;,a.organizationId()).stream()</span>
+<span class="fc" id="L218">            .filter(row -&gt; allowedIds.contains(s(row,&quot;authorId&quot;)))</span>
+<span class="pc bpc" id="L219" title="3 of 4 branches missed.">            .filter(row -&gt; from == null || !LocalDate.parse(s(row,&quot;businessDate&quot;)).isBefore(from))</span>
+<span class="pc bpc" id="L220" title="3 of 4 branches missed.">            .filter(row -&gt; to == null || !LocalDate.parse(s(row,&quot;businessDate&quot;)).isAfter(to))</span>
+<span class="fc" id="L221">            .toList();</span>
+<span class="fc" id="L222">        var paged = page(result,filters);</span>
+<span class="fc" id="L223">        @SuppressWarnings(&quot;unchecked&quot;) var selectedMetadata = (List&lt;Map&lt;String,Object&gt;&gt;) paged.get(&quot;items&quot;);</span>
+<span class="fc" id="L224">        var logRows = new HashMap&lt;String,Map&lt;String,Object&gt;&gt;();</span>
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">        if(!selectedMetadata.isEmpty()) {</span>
+<span class="fc" id="L226">            var args=new ArrayList&lt;Object&gt;();args.add(a.organizationId());selectedMetadata.forEach(row-&gt;args.add(s(row,&quot;id&quot;)));</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">            for(var row:db.list(&quot;SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id &quot;</span>
+<span class="fc" id="L228">                    +&quot;WHERE w.organization_id=? AND w.id IN (&quot;+String.join(&quot;,&quot;,Collections.nCopies(selectedMetadata.size(),&quot;?&quot;))+&quot;)&quot;,args.toArray())) logRows.put(s(row,&quot;id&quot;),row);</span>
+        }
+<span class="fc" id="L230">        var selected=selectedMetadata.stream().map(row-&gt;logRows.get(s(row,&quot;id&quot;))).filter(Objects::nonNull).toList();</span>
+<span class="fc" id="L231">        var linked = selected.stream().map(row -&gt; s(row,&quot;taskId&quot;)).filter(Objects::nonNull).toList();</span>
+<span class="pc bpc" id="L232" title="1 of 2 branches missed.">        Set&lt;String&gt; readable = linked.isEmpty() ? Set.of() : tasks.readableTaskIds(a,linked);</span>
+<span class="fc" id="L233">        var logTags = logTags(a,selected.stream().map(row -&gt; s(row,&quot;id&quot;)).toList());</span>
+<span class="fc" id="L234">        paged.put(&quot;items&quot;,selected.stream().map(row -&gt; safeLog(a,new LinkedHashMap&lt;&gt;(row),readable,logTags)).toList());</span>
+<span class="fc" id="L235">        return paged;</span>
+    }
+
+    /**
+     * Author directory for the log page (chapter 7.3): only people inside the reader's own log range,
+     * carrying their real department and team. Each level can be searched independently — department,
+     * then team, then person — and every count is computed after the log-authority filter, so an
+     * unauthorized colleague can never be inferred from a candidate, a count or a tree edge.
+     */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; logAuthors(Actor a, Map&lt;String,String&gt; filters) {
+<span class="nc" id="L246">        return access.readScope(a.organizationId(), () -&gt; logAuthorsRead(a,filters));</span>
+    }
+
+    private Map&lt;String,Object&gt; logAuthorsRead(Actor a, Map&lt;String,String&gt; filters) {
+<span class="nc" id="L250">        business(a);</span>
+<span class="nc" id="L251">        String query = filters.getOrDefault(&quot;q&quot;,&quot;&quot;).strip().toLowerCase(Locale.ROOT);</span>
+<span class="nc" id="L252">        String departmentQuery = filters.getOrDefault(&quot;departmentQ&quot;,&quot;&quot;).strip().toLowerCase(Locale.ROOT);</span>
+<span class="nc" id="L253">        String teamQuery = filters.getOrDefault(&quot;teamQ&quot;,&quot;&quot;).strip().toLowerCase(Locale.ROOT);</span>
+<span class="nc" id="L254">        String department = optionalId(filters.get(&quot;departmentId&quot;), &quot;departmentId&quot;);</span>
+<span class="nc" id="L255">        String team = optionalId(filters.get(&quot;teamId&quot;), &quot;teamId&quot;);</span>
+<span class="nc" id="L256">        var allowed = new LinkedHashSet&lt;&gt;(access.logAuthorIds(a));</span>
+<span class="nc" id="L257">        var rows=access.employeeDirectory(a,false).stream()</span>
+<span class="nc" id="L258">                .filter(u-&gt;allowed.contains(s(u,&quot;id&quot;))).toList();</span>
+        // The department/team levels themselves are derived from the authorized authors only.
+<span class="nc" id="L260">        Map&lt;String,String&gt; departments = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L261">        Map&lt;String,Map&lt;String,Object&gt;&gt; teams = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L262">        Map&lt;String,Integer&gt; departmentCounts = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L263">        Map&lt;String,Integer&gt; teamCounts = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">        for (var u : rows) {</span>
+<span class="nc" id="L265">            String departmentId = s(u,&quot;departmentId&quot;);</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">            String departmentName = s(u,&quot;departmentName&quot;) == null ? &quot;未分配部门&quot; : s(u,&quot;departmentName&quot;);</span>
+<span class="nc bnc" id="L267" title="All 2 branches missed.">            String key = departmentId == null ? &quot;__none__&quot; : departmentId;</span>
+<span class="nc" id="L268">            departments.putIfAbsent(key, departmentName);</span>
+<span class="nc" id="L269">            departmentCounts.merge(key, 1, Integer::sum);</span>
+<span class="nc" id="L270">            String teamId = s(u,&quot;teamId&quot;);</span>
+<span class="nc bnc" id="L271" title="All 4 branches missed.">            if (teamId != null &amp;&amp; !teams.containsKey(teamId)) {</span>
+<span class="nc" id="L272">                Map&lt;String,Object&gt; node = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L273">                node.put(&quot;id&quot;, teamId);</span>
+<span class="nc" id="L274">                node.put(&quot;name&quot;, s(u,&quot;teamName&quot;));</span>
+<span class="nc" id="L275">                node.put(&quot;departmentId&quot;, s(u,&quot;departmentId&quot;));</span>
+<span class="nc" id="L276">                teams.put(teamId, node);</span>
+<span class="nc" id="L277">                teamCounts.put(teamId, 0);</span>
+            }
+<span class="nc bnc" id="L279" title="All 2 branches missed.">            if (teamId != null) teamCounts.merge(teamId, 1, Integer::sum);</span>
+<span class="nc" id="L280">        }</span>
+<span class="nc" id="L281">        var items = rows.stream()</span>
+<span class="nc bnc" id="L282" title="All 4 branches missed.">            .filter(u -&gt; department == null || department.equals(departmentKey(u)))</span>
+<span class="nc bnc" id="L283" title="All 4 branches missed.">            .filter(u -&gt; team == null || team.equals(s(u,&quot;teamId&quot;)))</span>
+<span class="nc bnc" id="L284" title="All 2 branches missed.">            .filter(u -&gt; query.isEmpty()</span>
+<span class="nc bnc" id="L285" title="All 2 branches missed.">                || s(u,&quot;displayName&quot;).toLowerCase(Locale.ROOT).contains(query))</span>
+<span class="nc" id="L286">            .map(u -&gt; {</span>
+<span class="nc" id="L287">                Map&lt;String,Object&gt; item = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">                for (String key : List.of(&quot;id&quot;,&quot;displayName&quot;,&quot;placementType&quot;,&quot;positionId&quot;,&quot;positionName&quot;,&quot;managerId&quot;,&quot;departmentId&quot;,&quot;departmentName&quot;,&quot;teamId&quot;,&quot;teamName&quot;)) item.put(key,u.get(key));</span>
+<span class="nc" id="L289">                item.put(&quot;self&quot;, a.id().equals(s(u,&quot;id&quot;)));</span>
+<span class="nc" id="L290">                return item;</span>
+<span class="nc" id="L291">            }).toList();</span>
+<span class="nc" id="L292">        var departmentItems = departments.entrySet().stream()</span>
+<span class="nc bnc" id="L293" title="All 4 branches missed.">            .filter(entry -&gt; departmentQuery.isEmpty() || entry.getValue().toLowerCase(Locale.ROOT).contains(departmentQuery))</span>
+<span class="nc" id="L294">            .map(entry -&gt; {</span>
+<span class="nc" id="L295">                Map&lt;String,Object&gt; node = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L296">                node.put(&quot;id&quot;, entry.getKey());</span>
+<span class="nc" id="L297">                node.put(&quot;name&quot;, entry.getValue());</span>
+<span class="nc" id="L298">                node.put(&quot;count&quot;, departmentCounts.getOrDefault(entry.getKey(), 0));</span>
+<span class="nc" id="L299">                return node;</span>
+<span class="nc" id="L300">            }).toList();</span>
+<span class="nc" id="L301">        var teamItems = teams.values().stream()</span>
+<span class="nc bnc" id="L302" title="All 4 branches missed.">            .filter(node -&gt; department == null || department.equals(node.get(&quot;departmentId&quot;)))</span>
+<span class="nc bnc" id="L303" title="All 4 branches missed.">            .filter(node -&gt; teamQuery.isEmpty() || Objects.toString(node.get(&quot;name&quot;),&quot;&quot;).toLowerCase(Locale.ROOT).contains(teamQuery))</span>
+<span class="nc" id="L304">            .map(node -&gt; {</span>
+<span class="nc" id="L305">                Map&lt;String,Object&gt; item = new LinkedHashMap&lt;&gt;(node);</span>
+<span class="nc" id="L306">                item.put(&quot;count&quot;, teamCounts.getOrDefault(s(node,&quot;id&quot;), 0));</span>
+<span class="nc" id="L307">                return item;</span>
+<span class="nc" id="L308">            }).toList();</span>
+        // Tree edges only ever point at people the reader may already read.
+<span class="nc" id="L310">        Map&lt;String,Map&lt;String,Object&gt;&gt; nodes = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L311" title="All 2 branches missed.">        for (var u : rows) {</span>
+<span class="nc" id="L312">            Map&lt;String,Object&gt; node = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L313">            node.put(&quot;id&quot;, s(u,&quot;id&quot;));</span>
+<span class="nc" id="L314">            node.put(&quot;displayName&quot;, s(u,&quot;displayName&quot;));</span>
+<span class="nc" id="L315">            node.put(&quot;departmentName&quot;, u.get(&quot;departmentName&quot;));</span>
+<span class="nc" id="L316">            node.put(&quot;children&quot;, new ArrayList&lt;Map&lt;String,Object&gt;&gt;());</span>
+<span class="nc" id="L317">            nodes.put(s(u,&quot;id&quot;), node);</span>
+<span class="nc" id="L318">        }</span>
+<span class="nc" id="L319">        List&lt;Map&lt;String,Object&gt;&gt; roots = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        for (var u : rows) {</span>
+<span class="nc" id="L321">            Map&lt;String,Object&gt; node = nodes.get(s(u,&quot;id&quot;));</span>
+<span class="nc" id="L322">            Map&lt;String,Object&gt; parent = nodes.get(s(u,&quot;managerId&quot;));</span>
+<span class="nc bnc" id="L323" title="All 2 branches missed.">            if (parent == null) roots.add(node);</span>
+<span class="nc" id="L324">            else ((List&lt;Map&lt;String,Object&gt;&gt;) parent.get(&quot;children&quot;)).add(node);</span>
+<span class="nc" id="L325">        }</span>
+<span class="nc" id="L326">        Map&lt;String,Object&gt; result = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L327">        result.put(&quot;items&quot;, items);</span>
+<span class="nc" id="L328">        result.put(&quot;tree&quot;, roots);</span>
+<span class="nc" id="L329">        result.put(&quot;departments&quot;, departmentItems);</span>
+<span class="nc" id="L330">        result.put(&quot;teams&quot;, teamItems);</span>
+<span class="nc" id="L331">        result.put(&quot;total&quot;, rows.size());</span>
+<span class="nc" id="L332">        result.put(&quot;matched&quot;, items.size());</span>
+<span class="nc" id="L333">        result.put(&quot;empty&quot;, items.isEmpty());</span>
+<span class="nc" id="L334">        return result;</span>
+    }
+
+    private static String optionalId(String value,String name) {
+<span class="nc bnc" id="L338" title="All 4 branches missed.">        if(value==null||value.isBlank())return null;</span>
+<span class="nc" id="L339">        String id=value.trim();</span>
+<span class="nc bnc" id="L340" title="All 4 branches missed.">        if(id.length()&gt;64||!id.matches(&quot;[A-Za-z0-9_-]+&quot;))throw bad(name+&quot; 无效&quot;);</span>
+<span class="nc" id="L341">        return id;</span>
+    }
+
+    private static String departmentKey(Map&lt;String,Object&gt; row) {
+<span class="nc" id="L345">        String departmentId = s(row,&quot;departmentId&quot;);</span>
+<span class="nc bnc" id="L346" title="All 2 branches missed.">        return departmentId == null ? &quot;__none__&quot; : departmentId;</span>
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; log(Actor a, String logId) {
+<span class="fc" id="L351">        return access.readScope(a.organizationId(), () -&gt; logRead(a,logId));</span>
+    }
+
+    private Map&lt;String,Object&gt; logRead(Actor a, String logId) {
+<span class="fc" id="L355">        business(a);</span>
+<span class="fc" id="L356">        var row = db.one(&quot;SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id WHERE w.organization_id=? AND w.id=? AND w.deleted_at IS NULL&quot;,a.organizationId(),logId);</span>
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">        if (!access.canReadLogAuthor(a, s(row,&quot;authorId&quot;))) throw ApiException.notFound();</span>
+<span class="fc" id="L358">        return safeLog(a,row);</span>
+    }
+
+    public Map&lt;String,Object&gt; createLog(Actor a, Map&lt;String,Object&gt; body) {
+<span class="fc" id="L362">        business(a);</span>
+<span class="fc" id="L363">        allowed(body,Set.of(&quot;body&quot;,&quot;businessDate&quot;,&quot;taskId&quot;,&quot;tagIds&quot;));</span>
+<span class="fc" id="L364">        String text = required(body,&quot;body&quot;,10000);</span>
+<span class="fc" id="L365">        LocalDate today = today(a);</span>
+<span class="fc bfc" id="L366" title="All 2 branches covered.">        LocalDate date = body.containsKey(&quot;businessDate&quot;) ? dateFor(a,body,&quot;businessDate&quot;) : today;</span>
+<span class="fc bfc" id="L367" title="All 2 branches covered.">        if (date.isAfter(today)) throw bad(&quot;不能新建未来日期的日志&quot;);</span>
+<span class="fc bfc" id="L368" title="All 2 branches covered.">        if (date.isBefore(today.minusDays(LOG_BACKFILL_DAYS))) throw bad(&quot;只能补写公司今天、昨天和前天的日志&quot;);</span>
+<span class="fc" id="L369">        String taskId = nullable(body,&quot;taskId&quot;);</span>
+<span class="pc bpc" id="L370" title="1 of 2 branches missed.">        if (taskId != null) tasks.detail(a,taskId);</span>
+<span class="fc" id="L371">        var wantedTags = requestedLogTags(a,body.getOrDefault(&quot;tagIds&quot;,List.of()),Set.of());</span>
+<span class="fc" id="L372">        var existing = findLog(a, date);</span>
+<span class="pc bpc" id="L373" title="1 of 4 branches missed.">        if (existing != null &amp;&amp; s(existing, &quot;id&quot;) != null) {</span>
+            // The day slot survives a delete (chapter 1.2): writing again restores that same row,
+            // keeps the real first-creation time and gives the writer a new row version instead of a
+            // fresh freeze window. A live row is still a real conflict.
+<span class="pc bpc" id="L377" title="1 of 2 branches missed.">            if (existing.get(&quot;deletedAt&quot;) == null) throw logExists(existing);</span>
+            // Recreating a deleted day is a write like any other: the original first-creation instant
+            // is the only freeze base, so a slot whose 24 hours are over stays closed (chapter 7.2).
+<span class="nc" id="L380">            requireWritable(existing);</span>
+<span class="nc" id="L381">            int restored = db.update(&quot;UPDATE work_logs SET body=?,task_id=?,deleted_at=NULL,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) &quot;</span>
+                    + &quot;WHERE organization_id=? AND author_id=? AND id=? AND deleted_at IS NOT NULL&quot;,
+<span class="nc" id="L383">                    text, taskId, a.organizationId(), a.id(), s(existing, &quot;id&quot;));</span>
+<span class="nc bnc" id="L384" title="All 2 branches missed.">            if (restored != 1) throw conflict(&quot;WORK_LOG_CONFLICT&quot;,&quot;日志日位置已被并发修改，请刷新后重试&quot;);</span>
+<span class="nc" id="L385">            replaceLogTags(a,s(existing,&quot;id&quot;),wantedTags);</span>
+<span class="nc" id="L386">            events.record(a,null,&quot;log.restored&quot;,List.of(),Map.of(&quot;logId&quot;,s(existing,&quot;id&quot;)));</span>
+<span class="nc" id="L387">            return Map.of(&quot;logId&quot;,s(existing,&quot;id&quot;),&quot;rowVersion&quot;,n(existing,&quot;rowVersion&quot;)+1,&quot;businessDate&quot;,date.toString(),&quot;restored&quot;,true);</span>
+        }
+<span class="fc" id="L389">        String logId = id();</span>
+        try {
+<span class="fc" id="L391">            db.update(&quot;INSERT INTO work_logs(id,organization_id,author_id,business_date,body,task_id) VALUES(?,?,?,?,?,?)&quot;,logId,a.organizationId(),a.id(),java.sql.Date.valueOf(date),text,taskId);</span>
+<span class="nc" id="L392">        } catch (DuplicateKeyException duplicate) {</span>
+<span class="nc" id="L393">            var concurrent = findLog(a, date);</span>
+<span class="nc bnc" id="L394" title="All 4 branches missed.">            if (concurrent != null &amp;&amp; s(concurrent, &quot;id&quot;) != null) throw logExists(concurrent);</span>
+<span class="nc" id="L395">            throw duplicate;</span>
+<span class="fc" id="L396">        }</span>
+<span class="fc" id="L397">        replaceLogTags(a,logId,wantedTags);</span>
+<span class="fc" id="L398">        events.record(a,null,&quot;log.created&quot;,List.of(),Map.of(&quot;logId&quot;,logId));</span>
+<span class="fc" id="L399">        return Map.of(&quot;logId&quot;,logId,&quot;rowVersion&quot;,1,&quot;businessDate&quot;,date.toString());</span>
+    }
+
+    public Map&lt;String,Object&gt; changeLog(Actor a, String logId, String ifMatch, Map&lt;String,Object&gt; body) {
+<span class="fc" id="L403">        business(a);</span>
+<span class="fc" id="L404">        allowed(body,Set.of(&quot;body&quot;,&quot;businessDate&quot;,&quot;taskId&quot;,&quot;tagIds&quot;));</span>
+<span class="fc" id="L405">        var row = ownedLog(a,logId);</span>
+<span class="fc" id="L406">        LocalDate rowDate = LocalDate.parse(s(row,&quot;businessDate&quot;));</span>
+<span class="fc" id="L407">        requireWritable(row);</span>
+<span class="fc bfc" id="L408" title="All 2 branches covered.">        if (body.containsKey(&quot;businessDate&quot;)) {</span>
+<span class="fc" id="L409">            LocalDate requested = dateFor(a,body,&quot;businessDate&quot;);</span>
+<span class="pc bpc" id="L410" title="1 of 2 branches missed.">            if (!requested.equals(rowDate)) throw bad(&quot;日志日期不能修改&quot;);</span>
+        }
+<span class="fc" id="L412">        Writes.checkVersion(ifMatch,n(row,&quot;rowVersion&quot;));</span>
+<span class="pc bpc" id="L413" title="1 of 2 branches missed.">        String text = body.containsKey(&quot;body&quot;) ? required(body,&quot;body&quot;,10000) : s(row,&quot;body&quot;);</span>
+<span class="pc bpc" id="L414" title="1 of 2 branches missed.">        String taskId = body.containsKey(&quot;taskId&quot;) ? nullable(body,&quot;taskId&quot;) : s(row,&quot;taskId&quot;);</span>
+<span class="pc bpc" id="L415" title="3 of 4 branches missed.">        if (body.containsKey(&quot;taskId&quot;) &amp;&amp; taskId != null) tasks.detail(a,taskId);</span>
+<span class="fc" id="L416">        List&lt;Map&lt;String,Object&gt;&gt; wantedTags = null;</span>
+<span class="pc bpc" id="L417" title="1 of 2 branches missed.">        if (body.containsKey(&quot;tagIds&quot;)) {</span>
+<span class="nc" id="L418">            var current = logTags(a,List.of(logId)).getOrDefault(logId,List.of());</span>
+<span class="nc" id="L419">            var currentIds = new HashSet&lt;String&gt;();</span>
+<span class="nc" id="L420">            current.forEach(tag -&gt; currentIds.add(s(tag,&quot;id&quot;)));</span>
+<span class="nc" id="L421">            wantedTags = requestedLogTags(a,body.get(&quot;tagIds&quot;),currentIds);</span>
+        }
+        // Editing text never moves created_at, so the freeze instant is unchanged (chapter 7.1).
+<span class="fc" id="L424">        db.update(&quot;UPDATE work_logs SET body=?,task_id=?,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) WHERE id=? AND organization_id=?&quot;,text,taskId,logId,a.organizationId());</span>
+<span class="pc bpc" id="L425" title="1 of 2 branches missed.">        if (wantedTags != null) replaceLogTags(a,logId,wantedTags);</span>
+<span class="fc" id="L426">        events.record(a,null,&quot;log.updated&quot;,List.of(),Map.of(&quot;logId&quot;,logId));</span>
+<span class="fc" id="L427">        return Map.of(&quot;logId&quot;,logId,&quot;rowVersion&quot;,n(row,&quot;rowVersion&quot;)+1,&quot;businessDate&quot;,rowDate.toString());</span>
+    }
+
+    public Map&lt;String,Object&gt; deleteLog(Actor a, String logId, String ifMatch) {
+<span class="fc" id="L431">        business(a);</span>
+<span class="fc" id="L432">        var row = ownedLog(a,logId);</span>
+<span class="nc" id="L433">        requireWritable(row);</span>
+<span class="nc" id="L434">        Writes.checkVersion(ifMatch,n(row,&quot;rowVersion&quot;));</span>
+        // Logical delete keeps the author/day row (and its real created_at) so the slot cannot be
+        // reused with a reset window; the row is excluded from every read path instead.
+<span class="nc" id="L437">        int changed = db.update(&quot;UPDATE work_logs SET deleted_at=UTC_TIMESTAMP(6),row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) &quot;</span>
+                + &quot;WHERE id=? AND organization_id=? AND author_id=? AND deleted_at IS NULL&quot;,
+<span class="nc" id="L439">                logId, a.organizationId(), a.id());</span>
+<span class="nc bnc" id="L440" title="All 2 branches missed.">        if (changed != 1) throw conflict(&quot;WORK_LOG_CONFLICT&quot;,&quot;日志已被删除，请刷新后重试&quot;);</span>
+<span class="nc" id="L441">        events.record(a,null,&quot;log.deleted&quot;,List.of(),Map.of(&quot;logId&quot;,logId));</span>
+<span class="nc" id="L442">        return Map.of(&quot;logId&quot;,logId,&quot;deleted&quot;,true,&quot;rowVersion&quot;,n(row,&quot;rowVersion&quot;)+1);</span>
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; notifications(Actor a, Map&lt;String,String&gt; filters) {
+<span class="fc" id="L447">        return access.readScope(a.organizationId(), () -&gt; notificationsRead(a,filters));</span>
+    }
+
+    private Map&lt;String,Object&gt; notificationsRead(Actor a, Map&lt;String,String&gt; filters) {
+<span class="fc" id="L451">        String legacy=filters.get(&quot;unread&quot;);</span>
+<span class="pc bpc" id="L452" title="1 of 4 branches missed.">        if(legacy!=null &amp;&amp; !Set.of(&quot;true&quot;,&quot;false&quot;).contains(legacy)) throw new ApiException(400,&quot;INVALID_NOTIFICATION_FILTER&quot;,&quot;unread须为true或false&quot;);</span>
+<span class="fc bfc" id="L453" title="All 2 branches covered.">        String read=filters.getOrDefault(&quot;readStatus&quot;,&quot;true&quot;.equals(legacy)?&quot;unread&quot;:&quot;all&quot;);</span>
+<span class="fc" id="L454">        String category=filters.getOrDefault(&quot;category&quot;,&quot;all&quot;);</span>
+<span class="pc bpc" id="L455" title="2 of 4 branches missed.">        if(!Set.of(&quot;all&quot;,&quot;unread&quot;,&quot;read&quot;).contains(read) || !Set.of(&quot;all&quot;,&quot;review&quot;,&quot;result&quot;,&quot;reminder&quot;,&quot;comment&quot;,&quot;other&quot;).contains(category))</span>
+<span class="nc" id="L456">            throw new ApiException(400,&quot;INVALID_NOTIFICATION_FILTER&quot;,&quot;无效的通知筛选条件&quot;);</span>
+<span class="pc bpc" id="L457" title="5 of 8 branches missed.">        if(legacy!=null &amp;&amp; filters.containsKey(&quot;readStatus&quot;) &amp;&amp; !(&quot;true&quot;.equals(legacy)?&quot;unread&quot;:&quot;all&quot;).equals(read))</span>
+<span class="nc" id="L458">            throw new ApiException(400,&quot;INVALID_NOTIFICATION_FILTER&quot;,&quot;通知已读筛选条件冲突&quot;);</span>
+<span class="fc" id="L459">        Instant now = clock.instant();</span>
+<span class="fc" id="L460">        var rows = notificationMetadata(a,false);</span>
+<span class="fc" id="L461">        var readable = notificationReadableTasks(a,rows);</span>
+<span class="fc" id="L462">        var visible = rows.stream().filter(row -&gt; notificationVisible(row,now,readable)).toList();</span>
+<span class="fc" id="L463">        var requestAccess=tasks.requestAccess(a,visible.stream().map(row-&gt;s(row,&quot;requestId&quot;)).toList());</span>
+<span class="fc bfc" id="L464" title="All 6 branches covered.">        var filtered=visible.stream().filter(row -&gt; &quot;all&quot;.equals(read) || (&quot;unread&quot;.equals(read)==(row.get(&quot;readAt&quot;)==null)))</span>
+<span class="fc bfc" id="L465" title="All 4 branches covered.">                .filter(row -&gt; &quot;all&quot;.equals(category) || category.equals(notificationMetadataCategory(row,requestAccess))).toList();</span>
+<span class="fc" id="L466">        var result=page(filtered,filters);</span>
+<span class="fc" id="L467">        @SuppressWarnings(&quot;unchecked&quot;) var selected=(List&lt;Map&lt;String,Object&gt;&gt;)result.get(&quot;items&quot;);</span>
+<span class="fc" id="L468">        var complete=rowsById(a,&quot;notifications&quot;,&quot;*&quot;,selected.stream().map(row-&gt;s(row,&quot;id&quot;)).toList());</span>
+<span class="fc" id="L469">        var selectedRows=selected.stream().map(row-&gt;complete.get(s(row,&quot;id&quot;))).filter(Objects::nonNull).toList();</span>
+<span class="fc" id="L470">        var batch=notificationBatch(a,selectedRows);</span>
+<span class="fc" id="L471">        result.put(&quot;items&quot;,selectedRows.stream().map(row-&gt;safeNotification(a,row,now,batch)).toList());</span>
+<span class="fc bfc" id="L472" title="All 2 branches covered.">        result.put(&quot;unreadCount&quot;,visible.stream().filter(row -&gt; row.get(&quot;readAt&quot;)==null).count());</span>
+<span class="fc" id="L473">        return result;</span>
+    }
+
+    /** Non-mutating detail read; opening a message goes through {@link #openNotification}. */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; notification(Actor a, String notificationId) {
+<span class="fc" id="L479">        return access.readScope(a.organizationId(), () -&gt; notificationRead(a,notificationId));</span>
+    }
+
+    private Map&lt;String,Object&gt; notificationRead(Actor a, String notificationId) {
+<span class="fc" id="L483">        var row = db.one(&quot;SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=? AND hidden_at IS NULL&quot;,a.organizationId(),a.id(),notificationId);</span>
+<span class="fc" id="L484">        Instant now = clock.instant();</span>
+<span class="pc bpc" id="L485" title="1 of 2 branches missed.">        if (!notificationVisible(a,row,now)) throw ApiException.notFound();</span>
+<span class="fc" id="L486">        return safeNotification(a,row,now);</span>
+    }
+
+    /**
+     * Open-as-read command (DEV-031). The ordinary list GET never changes state; this command marks the
+     * message read and returns only command metadata, so the unread badge can refresh without
+     * copying notification/task text into the idempotency cache. Detail remains a separate GET.
+     */
+    public Map&lt;String,Object&gt; openNotification(Actor a, String notificationId) {
+<span class="nc" id="L495">        var row = db.one(&quot;SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=? AND hidden_at IS NULL FOR UPDATE&quot;,a.organizationId(),a.id(),notificationId);</span>
+<span class="nc" id="L496">        Instant now = clock.instant();</span>
+<span class="nc bnc" id="L497" title="All 2 branches missed.">        if (!notificationVisible(a,row,now)) throw ApiException.notFound();</span>
+<span class="nc bnc" id="L498" title="All 2 branches missed.">        if (row.get(&quot;readAt&quot;)==null) {</span>
+<span class="nc" id="L499">            db.update(&quot;UPDATE notifications SET read_at=?,row_version=row_version+1 WHERE organization_id=? AND id=?&quot;,Timestamp.from(now),a.organizationId(),notificationId);</span>
+            // Read back MySQL's DATETIME(6) value so the first response and a later
+            // idempotent open expose the same microsecond-normalized timestamp.
+<span class="nc" id="L502">            row = db.one(&quot;SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=?&quot;,</span>
+<span class="nc" id="L503">                a.organizationId(),a.id(),notificationId);</span>
+        }
+<span class="nc" id="L505">        Map&lt;String,Object&gt; result = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L506">        result.put(&quot;notificationId&quot;,notificationId);</span>
+<span class="nc" id="L507">        result.put(&quot;readAt&quot;,Objects.toString(row.get(&quot;readAt&quot;),null));</span>
+<span class="nc" id="L508">        result.put(&quot;rowVersion&quot;,n(row,&quot;rowVersion&quot;));</span>
+<span class="nc" id="L509">        result.put(&quot;unreadCount&quot;,unreadCount(a,now));</span>
+<span class="nc" id="L510">        return result;</span>
+    }
+
+    public Map&lt;String,Object&gt; changeNotification(Actor a, String notificationId, String ifMatch, Map&lt;String,Object&gt; body) {
+<span class="nc" id="L514">        allowed(body,Set.of(&quot;action&quot;));</span>
+<span class="nc" id="L515">        var row = db.one(&quot;SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=? FOR UPDATE&quot;,a.organizationId(),a.id(),notificationId);</span>
+<span class="nc" id="L516">        Instant now = clock.instant();</span>
+<span class="nc bnc" id="L517" title="All 2 branches missed.">        if (!notificationVisible(a,row,now)) throw ApiException.notFound();</span>
+<span class="nc" id="L518">        long version = notificationVersion(row);</span>
+<span class="nc" id="L519">        Writes.checkVersion(ifMatch,version);</span>
+<span class="nc" id="L520">        String action = required(body,&quot;action&quot;,20);</span>
+<span class="nc bnc" id="L521" title="All 2 branches missed.">        if (action.equals(&quot;read&quot;)) {</span>
+<span class="nc" id="L522">            db.update(&quot;UPDATE notifications SET read_at=COALESCE(read_at,?) WHERE organization_id=? AND id=?&quot;,Timestamp.from(now),a.organizationId(),notificationId);</span>
+<span class="nc bnc" id="L523" title="All 2 branches missed.">            if (row.get(&quot;readAt&quot;)==null) version++;</span>
+<span class="nc bnc" id="L524" title="All 4 branches missed.">        } else if (action.equals(&quot;hide&quot;) || action.equals(&quot;delete&quot;)) {</span>
+<span class="nc" id="L525">            db.update(&quot;UPDATE notifications SET hidden_at=COALESCE(hidden_at,?) WHERE organization_id=? AND id=?&quot;,Timestamp.from(now),a.organizationId(),notificationId);</span>
+<span class="nc bnc" id="L526" title="All 2 branches missed.">            if (row.get(&quot;hiddenAt&quot;)==null) version+=2;</span>
+<span class="nc" id="L527">        } else throw bad(&quot;action 只能为 read、hide 或 delete&quot;);</span>
+<span class="nc" id="L528">        return Map.of(&quot;notificationId&quot;,notificationId,&quot;rowVersion&quot;,version,&quot;action&quot;,action,&quot;unreadCount&quot;,unreadCount(a,now));</span>
+    }
+
+    /**
+     * Event-level withdrawal (DEV-032). The business initiator or a notification manager may withdraw
+     * only while the event is strictly younger than 180 seconds. Automatic reminders are managed by the
+     * administrator only. Every copy keeps a placeholder with no body or jump target.
+     */
+    public Map&lt;String,Object&gt; withdrawNotification(Actor a, String notificationId, Map&lt;String,Object&gt; body) {
+<span class="nc" id="L537">        allowed(body,Set.of(&quot;reason&quot;));</span>
+<span class="nc" id="L538">        var row = db.one(&quot;SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=?&quot;,a.organizationId(),a.id(),notificationId);</span>
+<span class="nc" id="L539">        return withdrawEvent(a,s(row,&quot;eventId&quot;),body);</span>
+    }
+
+    public Map&lt;String,Object&gt; withdrawEvent(Actor a, String eventId, Map&lt;String,Object&gt; body) {
+<span class="nc" id="L543">        allowed(body,Set.of(&quot;reason&quot;));</span>
+<span class="nc bnc" id="L544" title="All 4 branches missed.">        String reason = body != null &amp;&amp; body.containsKey(&quot;reason&quot;) ? required(body,&quot;reason&quot;,500) : &quot;发起人撤回&quot;;</span>
+<span class="nc" id="L545">        var event = db.one(&quot;SELECT * FROM domain_events WHERE organization_id=? AND id=? FOR UPDATE&quot;,a.organizationId(),eventId);</span>
+<span class="nc" id="L546">        Instant now = clock.instant();</span>
+<span class="nc bnc" id="L547" title="All 2 branches missed.">        Instant occurred = event.get(&quot;occurredAt&quot;)==null ? null : Instant.parse(String.valueOf(event.get(&quot;occurredAt&quot;)));</span>
+<span class="nc bnc" id="L548" title="All 2 branches missed.">        if (event.get(&quot;revokedAt&quot;)!=null) throw conflict(&quot;NOTIFICATION_WITHDRAWN&quot;,&quot;该通知已撤回&quot;);</span>
+<span class="nc bnc" id="L549" title="All 6 branches missed.">        if (occurred == null || now.isBefore(occurred) || !now.isBefore(occurred.plusSeconds(180)))</span>
+<span class="nc" id="L550">            throw conflict(&quot;WITHDRAW_WINDOW_CLOSED&quot;,&quot;通知发出已满3分钟，不能撤回&quot;);</span>
+<span class="nc bnc" id="L551" title="All 2 branches missed.">        Map&lt;String,Object&gt; details = event.get(&quot;detailsJson&quot;)==null ? Map.of() : db.parse(s(event,&quot;detailsJson&quot;));</span>
+<span class="nc bnc" id="L552" title="All 4 branches missed.">        boolean automatic = &quot;scheduled_rule&quot;.equals(Objects.toString(details.get(&quot;origin&quot;),&quot;&quot;)) || event.get(&quot;initiatorId&quot;)==null;</span>
+<span class="nc" id="L553">        boolean manager = a.can(&quot;manage_notifications&quot;);</span>
+<span class="nc bnc" id="L554" title="All 4 branches missed.">        if (automatic &amp;&amp; !manager) throw forbidden(&quot;仅管理员可管理自动提醒&quot;);</span>
+<span class="nc bnc" id="L555" title="All 4 branches missed.">        if (!manager &amp;&amp; !a.id().equals(s(event,&quot;initiatorId&quot;))) throw forbidden(&quot;仅业务发起人或通知管理员可撤回&quot;);</span>
+<span class="nc" id="L556">        int changed = db.update(&quot;UPDATE domain_events SET revoked_at=?,revoked_by=?,revocation_reason=? WHERE organization_id=? AND id=? AND revoked_at IS NULL&quot;,</span>
+<span class="nc" id="L557">                Timestamp.from(now),a.id(),reason,a.organizationId(),eventId);</span>
+<span class="nc bnc" id="L558" title="All 2 branches missed.">        if (changed != 1) throw conflict(&quot;NOTIFICATION_WITHDRAWN&quot;,&quot;该通知已撤回&quot;);</span>
+<span class="nc" id="L559">        int copies = db.update(&quot;UPDATE notifications SET summary=?,title=NULL,change_summary=NULL,task_id=NULL,readonly=TRUE,row_version=row_version+1 WHERE organization_id=? AND event_id=?&quot;,</span>
+<span class="nc" id="L560">                &quot;该通知已被撤回。&quot;,a.organizationId(),eventId);</span>
+<span class="nc" id="L561">        db.update(&quot;INSERT INTO audit_logs(id,organization_id,actor_id,object_id,action,details_json) VALUES(?,?,?,?,?,?)&quot;,</span>
+<span class="nc" id="L562">                id(),a.organizationId(),a.id(),eventId,&quot;notification.withdrawn&quot;,db.json(Map.of(&quot;reason&quot;,reason,&quot;copies&quot;,copies)));</span>
+<span class="nc" id="L563">        return Map.of(&quot;eventId&quot;,eventId,&quot;withdrawn&quot;,true,&quot;copies&quot;,copies);</span>
+    }
+
+    /** Administration notification management (DEV-001, DEV-032): visible to explicit managers only. */
+    public Map&lt;String,Object&gt; adminNotifications(Actor a, Map&lt;String,String&gt; filters) {
+<span class="nc" id="L568">        access.requireCapability(a,&quot;manage_notifications&quot;);</span>
+<span class="nc" id="L569">        Instant now = clock.instant();</span>
+<span class="nc" id="L570">        var rows = db.list(&quot;SELECT n.*,u.display_name AS recipient_name,e.revoked_at,e.expires_at AS event_expires_at,e.title AS event_title,&quot;</span>
+                + &quot;e.change_summary AS event_summary FROM notifications n &quot;
+                + &quot;LEFT JOIN users u ON u.organization_id=n.organization_id AND u.id=n.recipient_id &quot;
+                + &quot;LEFT JOIN domain_events e ON e.organization_id=n.organization_id AND e.id=n.event_id &quot;
+<span class="nc" id="L574">                + &quot;WHERE n.organization_id=? ORDER BY n.created_at DESC,n.id&quot;,a.organizationId())</span>
+<span class="nc" id="L575">            .stream().map(row -&gt; {</span>
+<span class="nc" id="L576">                Map&lt;String,Object&gt; view = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L577" title="All 2 branches missed.">                for (String key : List.of(&quot;id&quot;,&quot;eventId&quot;,&quot;eventType&quot;,&quot;recipientId&quot;,&quot;recipientName&quot;,&quot;title&quot;,&quot;summary&quot;,</span>
+<span class="nc" id="L578">                        &quot;changeSummary&quot;,&quot;taskId&quot;,&quot;requestId&quot;,&quot;createdAt&quot;,&quot;deliveredAt&quot;,&quot;readAt&quot;,&quot;hiddenAt&quot;,&quot;revokedAt&quot;)) view.put(key,row.get(key));</span>
+<span class="nc bnc" id="L579" title="All 2 branches missed.">                Object expires = row.get(&quot;expiresAt&quot;)!=null?row.get(&quot;expiresAt&quot;):row.get(&quot;eventExpiresAt&quot;);</span>
+<span class="nc" id="L580">                view.put(&quot;expiresAt&quot;,expires);</span>
+<span class="nc bnc" id="L581" title="All 4 branches missed.">                view.put(&quot;expired&quot;,expires!=null &amp;&amp; !now.isBefore(Instant.parse(String.valueOf(expires))));</span>
+<span class="nc" id="L582">                return view;</span>
+<span class="nc" id="L583">            }).toList();</span>
+<span class="nc" id="L584">        return page(rows,filters);</span>
+    }
+
+    /**
+     * Dedicated read-only historical entry (DEV-033). It is available only through the recipient's own
+     * delivered, non-deleted, non-withdrawn, unexpired message; it returns the current effective task
+     * only and never a proposal, diff, contact, log, route or business action.
+     */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; notificationTask(Actor a, String notificationId) {
+<span class="fc" id="L594">        return access.readScope(a.organizationId(), () -&gt; notificationTaskRead(a,notificationId));</span>
+    }
+
+    private Map&lt;String,Object&gt; notificationTaskRead(Actor a, String notificationId) {
+<span class="fc" id="L598">        var row = db.one(&quot;SELECT * FROM notifications WHERE organization_id=? AND recipient_id=? AND id=? AND hidden_at IS NULL&quot;,a.organizationId(),a.id(),notificationId);</span>
+<span class="fc" id="L599">        Instant now = clock.instant();</span>
+<span class="pc bpc" id="L600" title="1 of 2 branches missed.">        if (!notificationVisible(a,row,now)) throw ApiException.notFound();</span>
+<span class="pc bpc" id="L601" title="1 of 2 branches missed.">        if (s(row,&quot;taskId&quot;)==null) throw conflict(&quot;HISTORICAL_TASK_UNAVAILABLE&quot;,&quot;该消息没有可查看的任务&quot;);</span>
+        // The historical entry must apply the inbox's current-object mask too. In particular, a
+        // delivered comment never grants historical access after its object permission is lost or
+        // its comment is deleted. Ordinary task messages keep their existing read-only exception.
+<span class="fc bfc" id="L605" title="All 2 branches covered.">        if (!Boolean.TRUE.equals(safeNotification(a,row,now).get(&quot;canOpenTask&quot;))) throw ApiException.notFound();</span>
+<span class="fc" id="L606">        Map&lt;String,Object&gt; task = db.find(&quot;SELECT * FROM tasks WHERE organization_id=? AND id=?&quot;,a.organizationId(),s(row,&quot;taskId&quot;));</span>
+<span class="pc bpc" id="L607" title="2 of 4 branches missed.">        if (task == null || s(task,&quot;currentVersionId&quot;)==null) throw conflict(&quot;HISTORICAL_TASK_UNAVAILABLE&quot;,&quot;该任务尚未发布或已不可用&quot;);</span>
+<span class="fc" id="L608">        Map&lt;String,Object&gt; version = db.find(&quot;SELECT * FROM task_versions WHERE organization_id=? AND id=?&quot;,a.organizationId(),s(task,&quot;currentVersionId&quot;));</span>
+<span class="fc" id="L609">        List&lt;String&gt; owners = db.list(&quot;SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=? ORDER BY ordinal,user_id&quot;,a.organizationId(),s(version,&quot;id&quot;))</span>
+<span class="pc" id="L610">                .stream().map(r -&gt; s(r,&quot;userId&quot;)).toList();</span>
+<span class="fc bfc" id="L611" title="All 2 branches covered.">        boolean accessRevoked = !access.canSeeTask(a,task,version,owners);</span>
+<span class="fc" id="L612">        Map&lt;String,Object&gt; view = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L613" title="All 2 branches covered.">        for (String key : List.of(&quot;title&quot;,&quot;description&quot;,&quot;acceptanceCriteria&quot;,&quot;priority&quot;,&quot;allDay&quot;,&quot;startAt&quot;,&quot;dueAt&quot;,</span>
+<span class="fc" id="L614">                &quot;startDate&quot;,&quot;dueDate&quot;,&quot;executionState&quot;,&quot;progressNote&quot;)) view.put(key,version.get(key));</span>
+<span class="fc" id="L615">        view.put(&quot;taskId&quot;,s(task,&quot;id&quot;));</span>
+<span class="fc" id="L616">        view.put(&quot;originalCreatorId&quot;,s(task,&quot;originalCreatorId&quot;));</span>
+<span class="fc" id="L617">        view.put(&quot;createdAt&quot;,task.get(&quot;createdAt&quot;));</span>
+<span class="fc" id="L618">        view.put(&quot;readonly&quot;,true);</span>
+<span class="fc" id="L619">        view.put(&quot;historical&quot;,true);</span>
+<span class="fc" id="L620">        view.put(&quot;accessRevoked&quot;,accessRevoked);</span>
+<span class="fc" id="L621">        view.put(&quot;relationLost&quot;,row.get(&quot;relationLost&quot;));</span>
+<span class="fc bfc" id="L622" title="All 2 branches covered.">        view.put(&quot;notice&quot;,accessRevoked ? &quot;你已不再具有该任务的当前权限，此页仅展示消息送达时保留的只读摘要。&quot;</span>
+<span class="fc" id="L623">                : &quot;该入口仅提供当前有效任务的只读摘要，不开放任何业务操作。&quot;);</span>
+<span class="fc" id="L624">        view.put(&quot;assignees&quot;,participantSummaries(a,owners));</span>
+<span class="fc" id="L625">        view.put(&quot;creator&quot;,db.find(&quot;SELECT id,display_name AS displayName FROM users WHERE organization_id=? AND id=?&quot;,a.organizationId(),s(task,&quot;originalCreatorId&quot;)));</span>
+<span class="fc" id="L626">        return view;</span>
+    }
+
+    /** Retention cleanup: expired message copies are removed; task/request/audit history is untouched. */
+    public int cleanupNotifications(String organizationId, Instant now) {
+<span class="nc" id="L631">        return db.update(&quot;DELETE FROM notifications WHERE organization_id=? AND expires_at IS NOT NULL AND expires_at&lt;=?&quot;,organizationId,Timestamp.from(now));</span>
+    }
+
+    private long unreadCount(Actor a, Instant now) {
+<span class="nc" id="L635">        var rows = notificationMetadata(a,true);</span>
+<span class="nc" id="L636">        var readable = notificationReadableTasks(a,rows);</span>
+<span class="nc" id="L637">        return rows.stream().filter(row -&gt; notificationVisible(row,now,readable)).count();</span>
+    }
+
+    private Map&lt;String,Object&gt; safeNotification(Actor a, Map&lt;String,Object&gt; row, Instant now) {
+<span class="fc" id="L641">        return safeNotification(a,row,now,null);</span>
+    }
+
+    private Map&lt;String,Object&gt; safeNotification(Actor a, Map&lt;String,Object&gt; row, Instant now, NotificationBatch batch) {
+<span class="fc bfc" id="L645" title="All 2 branches covered.">        var event = batch == null ? db.find(&quot;SELECT * FROM domain_events WHERE organization_id=? AND id=?&quot;,a.organizationId(),s(row,&quot;eventId&quot;))</span>
+<span class="fc" id="L646">                : batch.events.get(s(row,&quot;eventId&quot;));</span>
+<span class="fc" id="L647">        String objectType = s(row,&quot;objectType&quot;), objectId = s(row,&quot;objectId&quot;);</span>
+<span class="pc bpc" id="L648" title="1 of 4 branches missed.">        if (objectType == null &amp;&amp; s(row,&quot;taskId&quot;) != null) { objectType = &quot;task&quot;; objectId = s(row,&quot;taskId&quot;); }</span>
+<span class="fc" id="L649">        String eventType = s(row,&quot;eventType&quot;);</span>
+<span class="pc bpc" id="L650" title="1 of 4 branches missed.">        Map&lt;String,Object&gt; objectDetails = event == null || event.get(&quot;detailsJson&quot;)==null ? Map.of() : db.parse(s(event,&quot;detailsJson&quot;));</span>
+        // A comment message must be re-verified against the current object authority every time it is
+        // read; a deleted comment keeps a placeholder and never exposes its excerpt (chapter 8.5).
+<span class="fc bfc" id="L653" title="All 8 branches covered.">        boolean objectReadable = objectType == null || (batch == null ? canReadEventObject(a,objectType,objectId,objectDetails) : batchObjectReadable(a,objectType,objectId,objectDetails,batch));</span>
+<span class="fc bfc" id="L654" title="All 4 branches covered.">        boolean commentEvent = eventType != null &amp;&amp; eventType.startsWith(&quot;comment.&quot;);</span>
+        // A deleted comment keeps a placeholder; a mere loss of authority uses the generic message.
+<span class="fc bfc" id="L656" title="All 8 branches covered.">        boolean commentGone = commentEvent &amp;&amp; (batch == null ? eventObjectDeleted(a,objectType,objectId,objectDetails) : batchObjectDeleted(objectType,objectId,objectDetails,batch));</span>
+        // Comments have no historical-notification exception: losing the object authority now masks the
+        // excerpt, while an ordinary task message keeps its delivered read-only historical entry.
+<span class="fc bfc" id="L659" title="All 4 branches covered.">        boolean commentMasked = commentEvent &amp;&amp; !objectReadable;</span>
+<span class="pc bpc" id="L660" title="1 of 4 branches missed.">        boolean revoked = event != null &amp;&amp; event.get(&quot;revokedAt&quot;)!=null;</span>
+        // Copies masked at delivery must never regain the restricted title/summary from the event row.
+<span class="fc bfc" id="L662" title="All 2 branches covered.">        boolean contentMasked = Boolean.TRUE.equals(row.get(&quot;contentMasked&quot;))</span>
+<span class="pc bpc" id="L663" title="1 of 4 branches missed.">                || row.get(&quot;contentMasked&quot;) instanceof Number masked &amp;&amp; masked.intValue() == 1;</span>
+<span class="fc bfc" id="L664" title="All 8 branches covered.">        boolean objectOpen = !revoked &amp;&amp; !contentMasked &amp;&amp; !commentGone &amp;&amp; !commentMasked;</span>
+<span class="fc bfc" id="L665" title="All 8 branches covered.">        boolean canReadWithdrawnDetails = revoked &amp;&amp; !contentMasked &amp;&amp; !commentGone &amp;&amp; !commentMasked</span>
+<span class="fc bfc" id="L666" title="All 2 branches covered.">                &amp;&amp; access.isManagerOf(a, s(event,&quot;initiatorId&quot;));</span>
+<span class="pc bpc" id="L667" title="1 of 4 branches missed.">        Map&lt;String,Object&gt; details = event == null || event.get(&quot;detailsJson&quot;)==null ? Map.of() : db.parse(s(event,&quot;detailsJson&quot;));</span>
+<span class="pc bpc" id="L668" title="1 of 4 branches missed.">        Instant occurred = event == null || event.get(&quot;occurredAt&quot;)==null ? null : Instant.parse(String.valueOf(event.get(&quot;occurredAt&quot;)));</span>
+<span class="fc" id="L669">        boolean manager = a.can(&quot;manage_notifications&quot;);</span>
+<span class="pc bpc" id="L670" title="3 of 6 branches missed.">        boolean automatic = &quot;scheduled_rule&quot;.equals(Objects.toString(details.get(&quot;origin&quot;),&quot;&quot;)) || (event != null &amp;&amp; event.get(&quot;initiatorId&quot;)==null);</span>
+<span class="pc bpc" id="L671" title="2 of 6 branches missed.">        boolean withinWithdrawal = occurred != null &amp;&amp; !now.isBefore(occurred) &amp;&amp; now.isBefore(occurred.plusSeconds(180));</span>
+<span class="fc" id="L672">        var view = new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="fc bfc" id="L673" title="All 2 branches covered.">        for (String key : List.of(&quot;id&quot;,&quot;eventId&quot;,&quot;eventType&quot;,&quot;createdAt&quot;,&quot;deliveredAt&quot;,&quot;readAt&quot;,&quot;readonly&quot;,&quot;relationLost&quot;)) view.put(key,row.get(key));</span>
+        // A copy delivered before a later organization/assignment change keeps only the historical
+        // task entry. Delivery-time flags cannot describe authority lost after delivery.
+<span class="fc bfc" id="L676" title="All 6 branches covered.">        if (!commentEvent &amp;&amp; objectOpen &amp;&amp; s(row,&quot;taskId&quot;)!=null</span>
+<span class="pc bpc" id="L677" title="1 of 6 branches missed.">                &amp;&amp; row.get(&quot;deliveredAt&quot;)!=null &amp;&amp; &quot;event&quot;.equals(s(row,&quot;source&quot;))</span>
+<span class="fc bfc" id="L678" title="All 4 branches covered.">                &amp;&amp; !(batch == null ? canReadTask(a,s(row,&quot;taskId&quot;),true) : batch.readableWithApprovals.contains(s(row,&quot;taskId&quot;)))) {</span>
+<span class="fc" id="L679">            view.put(&quot;readonly&quot;,true);</span>
+<span class="fc" id="L680">            view.put(&quot;relationLost&quot;,true);</span>
+        }
+<span class="fc bfc" id="L682" title="All 2 branches covered.">        view.put(&quot;taskId&quot;,objectOpen?row.get(&quot;taskId&quot;):null);</span>
+<span class="fc" id="L683">        view.put(&quot;requestId&quot;,null);</span>
+<span class="fc bfc" id="L684" title="All 2 branches covered.">        if (revoked) {</span>
+<span class="fc bfc" id="L685" title="All 2 branches covered.">            view.put(&quot;title&quot;,canReadWithdrawnDetails ? event.get(&quot;title&quot;) : null);</span>
+<span class="fc bfc" id="L686" title="All 2 branches covered.">            view.put(&quot;summary&quot;,canReadWithdrawnDetails ? event.get(&quot;changeSummary&quot;) : &quot;该通知已被撤回。&quot;);</span>
+<span class="fc bfc" id="L687" title="All 2 branches covered.">            view.put(&quot;changeSummary&quot;,canReadWithdrawnDetails ? event.get(&quot;changeSummary&quot;) : null);</span>
+<span class="fc" id="L688">            view.put(&quot;readonly&quot;,true);</span>
+<span class="fc bfc" id="L689" title="All 6 branches covered.">        } else if (contentMasked || commentGone || commentMasked) {</span>
+            // Ordinary event whose recipient lost task authority before delivery: keep only the generic
+            // delivery message, with no restricted title, change summary, request metadata or task jump.
+<span class="fc" id="L692">            view.put(&quot;title&quot;,null);</span>
+            // A masked copy must never reuse a stored excerpt: losing the object authority leaves only
+            // the generic delivery notice, exactly like a comment that no longer exists.
+<span class="fc bfc" id="L695" title="All 2 branches covered.">            view.put(&quot;summary&quot;,commentGone ? &quot;该评论已删除，正文不再展示。&quot;</span>
+<span class="fc" id="L696">                    : &quot;你的工作关系或访问范围已变化，请查看当前工作安排。&quot;);</span>
+<span class="fc" id="L697">            view.put(&quot;changeSummary&quot;,null);</span>
+<span class="fc" id="L698">            view.put(&quot;readonly&quot;,true);</span>
+        } else {
+<span class="pc bpc" id="L700" title="2 of 4 branches missed.">            view.put(&quot;title&quot;,row.get(&quot;title&quot;)!=null?row.get(&quot;title&quot;):event==null?null:event.get(&quot;title&quot;));</span>
+<span class="fc" id="L701">            view.put(&quot;summary&quot;,row.get(&quot;summary&quot;));</span>
+<span class="pc bpc" id="L702" title="2 of 4 branches missed.">            view.put(&quot;changeSummary&quot;,row.get(&quot;changeSummary&quot;)!=null?row.get(&quot;changeSummary&quot;):event==null?null:event.get(&quot;changeSummary&quot;));</span>
+        }
+<span class="fc" id="L704">        view.put(&quot;revoked&quot;,revoked);</span>
+<span class="fc" id="L705">        view.put(&quot;withdrawn&quot;,revoked);</span>
+<span class="fc" id="L706">        view.put(&quot;canReadWithdrawnDetails&quot;,canReadWithdrawnDetails);</span>
+<span class="pc bpc" id="L707" title="2 of 4 branches missed.">        view.put(&quot;expiresAt&quot;,row.get(&quot;expiresAt&quot;)!=null?row.get(&quot;expiresAt&quot;):event==null?null:event.get(&quot;expiresAt&quot;));</span>
+<span class="fc" id="L708">        view.put(&quot;rowVersion&quot;,notificationVersion(row));</span>
+<span class="pc bpc" id="L709" title="9 of 12 branches missed.">        view.put(&quot;canWithdraw&quot;,!revoked &amp;&amp; withinWithdrawal &amp;&amp; (manager || (!automatic &amp;&amp; event!=null &amp;&amp; a.id().equals(s(event,&quot;initiatorId&quot;)))));</span>
+<span class="fc bfc" id="L710" title="All 4 branches covered.">        view.put(&quot;canOpenTask&quot;,objectOpen &amp;&amp; s(row,&quot;taskId&quot;)!=null);</span>
+<span class="fc" id="L711">        view.put(&quot;canReview&quot;,false);</span>
+<span class="fc" id="L712">        view.put(&quot;canReadRequest&quot;,false);</span>
+<span class="fc" id="L713">        view.put(&quot;canWithdrawRequest&quot;,false);</span>
+<span class="fc" id="L714">        view.put(&quot;requestStatus&quot;,null);</span>
+<span class="fc" id="L715">        view.put(&quot;requestKind&quot;,null);</span>
+<span class="fc bfc" id="L716" title="All 2 branches covered.">        view.put(&quot;objectType&quot;,objectOpen?objectType:null);</span>
+<span class="fc bfc" id="L717" title="All 2 branches covered.">        view.put(&quot;objectId&quot;,objectOpen?objectId:null);</span>
+<span class="fc bfc" id="L718" title="All 4 branches covered.">        view.put(&quot;focus&quot;,objectOpen &amp;&amp; commentEvent ? &quot;comments&quot; : null);</span>
+<span class="fc bfc" id="L719" title="All 4 branches covered.">        view.put(&quot;commentId&quot;,objectOpen &amp;&amp; objectDetails.get(&quot;commentId&quot;) instanceof String id ? id : null);</span>
+<span class="fc" id="L720">        view.put(&quot;purpose&quot;,notificationPurpose(eventType));</span>
+<span class="fc bfc" id="L721" title="All 2 branches covered.">        view.put(&quot;eventResult&quot;,objectOpen?notificationResult(eventType):null);</span>
+<span class="fc" id="L722">        view.put(&quot;changes&quot;,List.of());</span>
+<span class="fc bfc" id="L723" title="All 4 branches covered.">        view.put(&quot;objectName&quot;,objectOpen ? (batch == null ? objectName(a,objectType,objectId,row,event) : batchObjectName(objectType,objectId,row,event,batch)) : null);</span>
+<span class="fc bfc" id="L724" title="All 2 branches covered.">        String requestId = objectOpen ? s(row,&quot;requestId&quot;) : null;</span>
+<span class="fc bfc" id="L725" title="All 2 branches covered.">        if (requestId != null) {</span>
+<span class="fc bfc" id="L726" title="All 2 branches covered.">            var request = batch == null ? db.find(&quot;SELECT id,task_id,applicant_id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline FROM approval_requests WHERE organization_id=? AND id=?&quot;,a.organizationId(),requestId)</span>
+<span class="fc" id="L727">                    : batch.requests.get(requestId);</span>
+<span class="pc bpc" id="L728" title="2 of 4 branches missed.">            boolean bound=request!=null &amp;&amp; Objects.equals(s(request,&quot;taskId&quot;),s(row,&quot;taskId&quot;))</span>
+<span class="pc bpc" id="L729" title="2 of 4 branches missed.">                    &amp;&amp; (!&quot;task&quot;.equals(objectType) || Objects.equals(objectId,s(request,&quot;taskId&quot;)));</span>
+<span class="fc bfc" id="L730" title="All 2 branches covered.">            var accessResult=batch==null ? tasks.requestAccess(a,List.of(requestId)) : batch.requestAccess;</span>
+<span class="pc bpc" id="L731" title="1 of 4 branches missed.">            boolean canRead=bound &amp;&amp; accessResult.readable().contains(requestId);</span>
+<span class="fc" id="L732">            view.put(&quot;canReadRequest&quot;,canRead);</span>
+<span class="fc bfc" id="L733" title="All 2 branches covered.">            view.put(&quot;requestUnavailable&quot;,!canRead);</span>
+<span class="fc bfc" id="L734" title="All 2 branches covered.">            if (canRead) {</span>
+<span class="fc" id="L735">                view.put(&quot;requestId&quot;,requestId);</span>
+<span class="pc bpc" id="L736" title="2 of 6 branches missed.">                view.put(&quot;canWithdrawRequest&quot;,canRead &amp;&amp; &quot;pending&quot;.equals(s(request,&quot;status&quot;)) &amp;&amp; a.id().equals(s(request,&quot;applicantId&quot;)));</span>
+<span class="fc" id="L737">                view.put(&quot;requestStatus&quot;,s(request,&quot;status&quot;));</span>
+<span class="fc" id="L738">                view.put(&quot;requestKind&quot;,s(request,&quot;kind&quot;));</span>
+<span class="fc" id="L739">                view.put(&quot;requestComment&quot;,request.get(&quot;comment&quot;));</span>
+<span class="fc" id="L740">                view.put(&quot;requestDecidedAt&quot;,request.get(&quot;decidedAt&quot;));</span>
+<span class="pc bpc" id="L741" title="1 of 4 branches missed.">                view.put(&quot;canReview&quot;,!revoked &amp;&amp; accessResult.reviewable().contains(requestId));</span>
+            }
+        }
+<span class="fc bfc" id="L744" title="All 6 branches covered.">        boolean currentTaskRead=objectOpen &amp;&amp; s(row,&quot;taskId&quot;)!=null &amp;&amp; (batch==null</span>
+<span class="fc bfc" id="L745" title="All 4 branches covered.">                ? canReadTask(a,s(row,&quot;taskId&quot;),false) : batch.readableTasks.contains(s(row,&quot;taskId&quot;)));</span>
+<span class="fc bfc" id="L746" title="All 6 branches covered.">        if (objectOpen &amp;&amp; (Boolean.TRUE.equals(view.get(&quot;canReadRequest&quot;)) || currentTaskRead)</span>
+<span class="pc bpc" id="L747" title="1 of 2 branches missed.">                &amp;&amp; details.get(&quot;changes&quot;) instanceof List&lt;?&gt; savedChanges) {</span>
+<span class="nc" id="L748">            var changes=new ArrayList&lt;Map&lt;String,String&gt;&gt;();</span>
+<span class="nc bnc" id="L749" title="All 4 branches missed.">            for (Object value:savedChanges) if (value instanceof Map&lt;?,?&gt; item</span>
+<span class="nc bnc" id="L750" title="All 4 branches missed.">                    &amp;&amp; item.get(&quot;field&quot;) instanceof String field &amp;&amp; item.get(&quot;label&quot;) instanceof String label</span>
+<span class="nc bnc" id="L751" title="All 4 branches missed.">                    &amp;&amp; item.get(&quot;before&quot;) instanceof String before &amp;&amp; item.get(&quot;after&quot;) instanceof String after)</span>
+<span class="nc" id="L752">                changes.add(Map.of(&quot;field&quot;,field,&quot;label&quot;,label,&quot;before&quot;,before,&quot;after&quot;,after));</span>
+<span class="nc" id="L753">            view.put(&quot;changes&quot;,changes);</span>
+        }
+<span class="fc" id="L755">        view.put(&quot;category&quot;,notificationCategory(view));</span>
+<span class="fc" id="L756">        return view;</span>
+    }
+
+    /** Inbox counts and page boundaries need lifecycle metadata, never message bodies. */
+    private List&lt;Map&lt;String,Object&gt;&gt; notificationMetadata(Actor a,boolean unreadOnly) {
+<span class="fc" id="L761">        return db.list(&quot;SELECT n.id,n.event_id,n.task_id,n.hidden_at,n.expires_at,n.read_at,n.source,n.delivered_at,n.event_type,n.request_id,&quot;</span>
+                + &quot;r.status AS request_status,r.task_id AS request_task_id,r.current_reviewer_id AS reviewer_id,r.applicable_deadline,&quot;
+                + &quot;e.revoked_at AS event_revoked_at,e.expires_at AS event_expires_at FROM notifications n &quot;
+                + &quot;LEFT JOIN domain_events e ON e.organization_id=n.organization_id AND e.id=n.event_id &quot;
+                + &quot;LEFT JOIN approval_requests r ON r.organization_id=n.organization_id AND r.id=n.request_id &quot;
+                + &quot;WHERE n.organization_id=? AND n.recipient_id=? AND n.hidden_at IS NULL&quot;
+<span class="pc bpc" id="L767" title="1 of 2 branches missed.">                + (unreadOnly ? &quot; AND n.read_at IS NULL&quot; : &quot;&quot;) + &quot; ORDER BY n.created_at DESC,n.id&quot;,a.organizationId(),a.id());</span>
+    }
+
+    private Set&lt;String&gt; notificationReadableTasks(Actor a,List&lt;Map&lt;String,Object&gt;&gt; rows) {
+<span class="fc bfc" id="L771" title="All 2 branches covered.">        var ids=rows.stream().filter(row -&gt; row.get(&quot;eventRevokedAt&quot;)==null)</span>
+<span class="pc bpc" id="L772" title="1 of 6 branches missed.">                .filter(row -&gt; &quot;pending&quot;.equals(s(row,&quot;requestStatus&quot;)) || row.get(&quot;deliveredAt&quot;)==null || !&quot;event&quot;.equals(s(row,&quot;source&quot;)))</span>
+<span class="fc" id="L773">                .map(row -&gt; s(row,&quot;taskId&quot;)).filter(Objects::nonNull).toList();</span>
+<span class="fc bfc" id="L774" title="All 2 branches covered.">        return ids.isEmpty() ? Set.of() : tasks.readableTaskIds(a,ids,true);</span>
+    }
+
+    private static boolean notificationVisible(Map&lt;String,Object&gt; row,Instant now,Set&lt;String&gt; readable) {
+<span class="pc bpc" id="L778" title="1 of 2 branches missed.">        if(row.get(&quot;hiddenAt&quot;)!=null) return false;</span>
+<span class="fc bfc" id="L779" title="All 2 branches covered.">        Object expires=row.get(&quot;expiresAt&quot;)!=null?row.get(&quot;expiresAt&quot;):row.get(&quot;eventExpiresAt&quot;);</span>
+<span class="pc bpc" id="L780" title="1 of 4 branches missed.">        if(expires!=null &amp;&amp; !now.isBefore(Instant.parse(String.valueOf(expires)))) return false;</span>
+<span class="fc bfc" id="L781" title="All 6 branches covered.">        return row.get(&quot;eventRevokedAt&quot;)!=null || s(row,&quot;taskId&quot;)==null || readable.contains(s(row,&quot;taskId&quot;))</span>
+<span class="pc bpc" id="L782" title="1 of 4 branches missed.">                || (row.get(&quot;deliveredAt&quot;)!=null &amp;&amp; &quot;event&quot;.equals(s(row,&quot;source&quot;)));</span>
+    }
+
+    /** Only this page's projections; mutable content and authority never survive the request. */
+    private static final class NotificationBatch {
+        Map&lt;String,Map&lt;String,Object&gt;&gt; events,requests,logs,comments,taskRows;
+        Set&lt;String&gt; readableTasks,readableWithApprovals;
+        TaskService.RequestAccess requestAccess;
+    }
+
+    private NotificationBatch notificationBatch(Actor a,List&lt;Map&lt;String,Object&gt;&gt; rows) {
+<span class="fc" id="L793">        var batch=new NotificationBatch();</span>
+<span class="fc" id="L794">        batch.events=rowsById(a,&quot;domain_events&quot;,&quot;id,revoked_at,occurred_at,expires_at,initiator_id,title,change_summary,details_json&quot;,</span>
+<span class="fc" id="L795">                rows.stream().map(row -&gt; s(row,&quot;eventId&quot;)).toList());</span>
+<span class="fc" id="L796">        batch.requests=rowsById(a,&quot;approval_requests&quot;,&quot;id,task_id,applicant_id,kind,status,comment,decided_at,current_reviewer_id,applicable_deadline&quot;,</span>
+<span class="fc" id="L797">                rows.stream().map(row -&gt; s(row,&quot;requestId&quot;)).toList());</span>
+<span class="fc" id="L798">        batch.requestAccess=tasks.requestAccess(a,batch.requests.keySet());</span>
+<span class="fc" id="L799">        var taskIds=new LinkedHashSet&lt;String&gt;();</span>
+<span class="fc" id="L800">        var logIds=new LinkedHashSet&lt;String&gt;();</span>
+<span class="fc" id="L801">        var commentIds=new LinkedHashSet&lt;String&gt;();</span>
+<span class="fc bfc" id="L802" title="All 2 branches covered.">        for(var row:rows) {</span>
+<span class="fc" id="L803">            String taskId=s(row,&quot;taskId&quot;),type=s(row,&quot;objectType&quot;),objectId=s(row,&quot;objectId&quot;);</span>
+<span class="fc bfc" id="L804" title="All 2 branches covered.">            if(taskId!=null) taskIds.add(taskId);</span>
+<span class="pc bpc" id="L805" title="1 of 4 branches missed.">            if(&quot;task&quot;.equals(type) &amp;&amp; objectId!=null) taskIds.add(objectId);</span>
+<span class="pc bpc" id="L806" title="3 of 4 branches missed.">            if(&quot;log&quot;.equals(type) &amp;&amp; objectId!=null) logIds.add(objectId);</span>
+<span class="fc" id="L807">            var event=batch.events.get(s(row,&quot;eventId&quot;));</span>
+<span class="pc bpc" id="L808" title="2 of 4 branches missed.">            if(event!=null &amp;&amp; event.get(&quot;detailsJson&quot;)!=null) {</span>
+<span class="fc" id="L809">                Object commentId=db.parse(s(event,&quot;detailsJson&quot;)).get(&quot;commentId&quot;);</span>
+<span class="fc bfc" id="L810" title="All 2 branches covered.">                if(commentId instanceof String id) commentIds.add(id);</span>
+            }
+<span class="fc" id="L812">        }</span>
+<span class="fc" id="L813">        batch.logs=rowsById(a,&quot;work_logs&quot;,&quot;id,author_id,business_date,deleted_at&quot;,logIds);</span>
+<span class="fc" id="L814">        batch.comments=rowsById(a,&quot;task_log_comments&quot;,&quot;id,deleted_at&quot;,commentIds);</span>
+<span class="fc" id="L815">        batch.taskRows=rowsById(a,&quot;tasks&quot;,&quot;id,current_version_id&quot;,taskIds);</span>
+<span class="fc" id="L816">        var versionRows=rowsById(a,&quot;task_versions&quot;,&quot;id,title&quot;,batch.taskRows.values().stream().map(row-&gt;s(row,&quot;currentVersionId&quot;)).toList());</span>
+<span class="fc bfc" id="L817" title="All 2 branches covered.">        for(var task:batch.taskRows.values()) {</span>
+<span class="fc" id="L818">            var version=versionRows.get(s(task,&quot;currentVersionId&quot;));</span>
+<span class="fc bfc" id="L819" title="All 2 branches covered.">            task.put(&quot;title&quot;,version==null?null:version.get(&quot;title&quot;));</span>
+<span class="fc" id="L820">        }</span>
+<span class="fc bfc" id="L821" title="All 2 branches covered.">        batch.readableTasks=taskIds.isEmpty()?Set.of():tasks.readableTaskIds(a,taskIds);</span>
+<span class="fc bfc" id="L822" title="All 2 branches covered.">        batch.readableWithApprovals=taskIds.isEmpty()?Set.of():tasks.readableTaskIds(a,taskIds,true);</span>
+<span class="fc" id="L823">        return batch;</span>
+    }
+
+    /** Company-bound, parameterized reads; chunking also bounds the maximum SQL placeholder count. */
+    private Map&lt;String,Map&lt;String,Object&gt;&gt; rowsById(Actor a,String table,String projection,Collection&lt;String&gt; ids) {
+<span class="fc" id="L828">        var selected=new ArrayList&lt;&gt;(new LinkedHashSet&lt;&gt;(ids.stream().filter(Objects::nonNull).toList()));</span>
+<span class="fc" id="L829">        Map&lt;String,Map&lt;String,Object&gt;&gt; result=new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L830" title="All 2 branches covered.">        for(int start=0;start&lt;selected.size();start+=500) {</span>
+<span class="fc" id="L831">            var chunk=selected.subList(start,Math.min(start+500,selected.size()));</span>
+<span class="fc" id="L832">            var args=new ArrayList&lt;Object&gt;();args.add(a.organizationId());args.addAll(chunk);</span>
+<span class="fc bfc" id="L833" title="All 2 branches covered.">            for(var row:db.list(&quot;SELECT &quot;+projection+&quot; FROM &quot;+table+&quot; WHERE organization_id=? AND id IN (&quot;</span>
+<span class="fc" id="L834">                    +String.join(&quot;,&quot;,Collections.nCopies(chunk.size(),&quot;?&quot;))+&quot;)&quot;,args.toArray())) result.put(s(row,&quot;id&quot;),new LinkedHashMap&lt;&gt;(row));</span>
+        }
+<span class="fc" id="L836">        return result;</span>
+    }
+
+    private boolean batchObjectReadable(Actor a,String type,String id,Map&lt;String,Object&gt; details,NotificationBatch batch) {
+<span class="pc bpc" id="L840" title="1 of 2 branches missed.">        if(&quot;task&quot;.equals(type)) {</span>
+<span class="fc" id="L841">            var task=batch.taskRows.get(id);</span>
+<span class="pc bpc" id="L842" title="1 of 6 branches missed.">            return task!=null &amp;&amp; (s(task,&quot;currentVersionId&quot;)==null ? batch.readableWithApprovals : batch.readableTasks).contains(id);</span>
+        }
+<span class="nc bnc" id="L844" title="All 2 branches missed.">        if(&quot;log&quot;.equals(type)) {</span>
+<span class="nc" id="L845">            var log=batch.logs.get(id);</span>
+<span class="nc bnc" id="L846" title="All 4 branches missed.">            if(log==null || log.get(&quot;deletedAt&quot;)!=null) return false;</span>
+<span class="nc bnc" id="L847" title="All 2 branches missed.">            if(details.get(&quot;commentId&quot;) instanceof String commentId) {</span>
+<span class="nc" id="L848">                var comment=batch.comments.get(commentId);</span>
+<span class="nc bnc" id="L849" title="All 4 branches missed.">                if(comment==null || comment.get(&quot;deletedAt&quot;)!=null) return false;</span>
+            }
+<span class="nc" id="L851">            return access.canReadLogAuthor(a,s(log,&quot;authorId&quot;));</span>
+        }
+<span class="nc" id="L853">        return true;</span>
+    }
+
+    private static boolean batchObjectDeleted(String type,String id,Map&lt;String,Object&gt; details,NotificationBatch batch) {
+<span class="pc bpc" id="L857" title="1 of 2 branches missed.">        if(id==null) return false;</span>
+<span class="pc bpc" id="L858" title="1 of 2 branches missed.">        if(details.get(&quot;commentId&quot;) instanceof String commentId) {</span>
+<span class="fc" id="L859">            var comment=batch.comments.get(commentId);</span>
+<span class="pc bpc" id="L860" title="1 of 4 branches missed.">            return comment==null || comment.get(&quot;deletedAt&quot;)!=null;</span>
+        }
+<span class="nc bnc" id="L862" title="All 2 branches missed.">        if(&quot;log&quot;.equals(type)) {</span>
+<span class="nc" id="L863">            var log=batch.logs.get(id);</span>
+<span class="nc bnc" id="L864" title="All 4 branches missed.">            return log==null || log.get(&quot;deletedAt&quot;)!=null;</span>
+        }
+<span class="nc bnc" id="L866" title="All 4 branches missed.">        return &quot;task&quot;.equals(type) &amp;&amp; !batch.taskRows.containsKey(id);</span>
+    }
+
+    private static String batchObjectName(String type,String id,Map&lt;String,Object&gt; row,Map&lt;String,Object&gt; event,NotificationBatch batch) {
+<span class="fc bfc" id="L870" title="All 2 branches covered.">        if(id==null) return null;</span>
+<span class="pc bpc" id="L871" title="1 of 2 branches missed.">        if(&quot;log&quot;.equals(type)) {</span>
+<span class="nc" id="L872">            var log=batch.logs.get(id);</span>
+<span class="nc bnc" id="L873" title="All 2 branches missed.">            return log==null?&quot;日志&quot;:&quot;日志 · &quot;+s(log,&quot;businessDate&quot;);</span>
+        }
+<span class="pc bpc" id="L875" title="1 of 2 branches missed.">        if(&quot;task&quot;.equals(type)) {</span>
+<span class="fc" id="L876">            String title=s(row,&quot;title&quot;);</span>
+<span class="pc bpc" id="L877" title="2 of 4 branches missed.">            if(title==null &amp;&amp; event!=null) title=s(event,&quot;title&quot;);</span>
+<span class="pc bpc" id="L878" title="1 of 2 branches missed.">            if(title!=null) return title;</span>
+<span class="nc bnc" id="L879" title="All 2 branches missed.">            var task=batch.taskRows.get(s(row,&quot;taskId&quot;)==null?id:s(row,&quot;taskId&quot;));</span>
+<span class="nc bnc" id="L880" title="All 2 branches missed.">            return task==null?null:s(task,&quot;title&quot;);</span>
+        }
+<span class="nc" id="L882">        return null;</span>
+    }
+
+    /** Readable identity of the object a message is about; never a restricted proposal or body. */
+    private String objectName(Actor a, String objectType, String objectId, Map&lt;String,Object&gt; row, Map&lt;String,Object&gt; event) {
+<span class="pc bpc" id="L887" title="1 of 2 branches missed.">        if (objectId == null) return null;</span>
+<span class="pc bpc" id="L888" title="1 of 2 branches missed.">        if (&quot;log&quot;.equals(objectType)) {</span>
+<span class="nc" id="L889">            var log = db.find(&quot;SELECT business_date FROM work_logs WHERE organization_id=? AND id=?&quot;,a.organizationId(),objectId);</span>
+<span class="nc bnc" id="L890" title="All 2 branches missed.">            return log == null ? &quot;日志&quot; : &quot;日志 · &quot; + s(log,&quot;businessDate&quot;);</span>
+        }
+<span class="pc bpc" id="L892" title="1 of 2 branches missed.">        if (&quot;task&quot;.equals(objectType)) {</span>
+<span class="fc" id="L893">            String title = s(row,&quot;title&quot;);</span>
+<span class="pc bpc" id="L894" title="2 of 4 branches missed.">            if (title == null &amp;&amp; event != null) title = s(event,&quot;title&quot;);</span>
+<span class="pc bpc" id="L895" title="1 of 2 branches missed.">            if (title != null) return title;</span>
+<span class="nc bnc" id="L896" title="All 2 branches missed.">            String taskId = s(row,&quot;taskId&quot;) == null ? objectId : s(row,&quot;taskId&quot;);</span>
+<span class="nc" id="L897">            var task = db.find(&quot;SELECT v.title FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id WHERE t.organization_id=? AND t.id=?&quot;,a.organizationId(),taskId);</span>
+<span class="nc bnc" id="L898" title="All 2 branches missed.">            return task == null ? null : s(task,&quot;title&quot;);</span>
+        }
+<span class="nc" id="L900">        return null;</span>
+    }
+
+    private String notificationMetadataCategory(Map&lt;String,Object&gt; row,TaskService.RequestAccess requestAccess) {
+<span class="fc" id="L904">        Map&lt;String,Object&gt; classification=new HashMap&lt;&gt;(row);</span>
+<span class="fc bfc" id="L905" title="All 4 branches covered.">        classification.put(&quot;canReview&quot;,s(row,&quot;requestId&quot;)!=null &amp;&amp; row.get(&quot;eventRevokedAt&quot;)==null</span>
+<span class="pc bpc" id="L906" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(s(row,&quot;taskId&quot;),s(row,&quot;requestTaskId&quot;))</span>
+<span class="fc bfc" id="L907" title="All 2 branches covered.">                &amp;&amp; requestAccess.reviewable().contains(s(row,&quot;requestId&quot;)));</span>
+<span class="fc" id="L908">        return notificationCategory(classification);</span>
+    }
+
+    static String notificationCategory(Map&lt;String,Object&gt; view) {
+<span class="fc bfc" id="L912" title="All 2 branches covered.">        if(Boolean.TRUE.equals(view.get(&quot;canReview&quot;))) return &quot;review&quot;;</span>
+<span class="fc" id="L913">        String type=Objects.toString(view.get(&quot;eventType&quot;),&quot;&quot;);</span>
+<span class="fc bfc" id="L914" title="All 2 branches covered.">        if(type.startsWith(&quot;comment.&quot;)) return &quot;comment&quot;;</span>
+<span class="pc bpc" id="L915" title="2 of 4 branches missed.">        if(type.startsWith(&quot;reminder.&quot;) || type.startsWith(&quot;task.deadline.&quot;)</span>
+<span class="pc bpc" id="L916" title="2 of 4 branches missed.">                || type.startsWith(&quot;task.reminder_&quot;) || type.equals(&quot;task.overdue&quot;)) return &quot;reminder&quot;;</span>
+<span class="pc bpc" id="L917" title="5 of 14 branches missed.">        if(type.startsWith(&quot;task.&quot;) &amp;&amp; (type.endsWith(&quot;.approved&quot;) || type.endsWith(&quot;.rejected&quot;) || type.endsWith(&quot;.withdrawn&quot;) || type.endsWith(&quot;.expired&quot;) || type.endsWith(&quot;.direct&quot;) || type.endsWith(&quot;.applied&quot;))) return &quot;result&quot;;</span>
+<span class="fc" id="L918">        return &quot;other&quot;;</span>
+    }
+
+    /** Human purpose of a message, independent of its body (chapter 8.6). */
+    static String notificationPurpose(String eventType) {
+<span class="fc bfc" id="L923" title="All 2 branches covered.">        String type = eventType == null ? &quot;&quot; : eventType;</span>
+<span class="fc bfc" id="L924" title="All 2 branches covered.">        if (type.startsWith(&quot;comment.&quot;)) return &quot;新评论&quot;;</span>
+<span class="pc bpc" id="L925" title="1 of 2 branches missed.">        if (type.startsWith(&quot;log.&quot;)) return &quot;日志&quot;;</span>
+<span class="pc bpc" id="L926" title="1 of 4 branches missed.">        if (type.startsWith(&quot;task.create.&quot;)) return type.endsWith(&quot;.submitted&quot;) ? &quot;待创建审核&quot; : &quot;创建结果&quot;;</span>
+<span class="pc bpc" id="L927" title="1 of 4 branches missed.">        if (type.startsWith(&quot;task.change.&quot;)) return type.endsWith(&quot;.submitted&quot;) ? &quot;修改资料待审&quot; : &quot;修改结果&quot;;</span>
+<span class="fc bfc" id="L928" title="All 4 branches covered.">        if (type.startsWith(&quot;task.progress.&quot;)) return type.endsWith(&quot;.submitted&quot;) ? &quot;进展待审&quot; : &quot;进展结果&quot;;</span>
+<span class="pc bpc" id="L929" title="1 of 4 branches missed.">        if (type.startsWith(&quot;task.complete.&quot;)) return type.endsWith(&quot;.submitted&quot;) ? &quot;完成待审&quot; : &quot;完成结果&quot;;</span>
+<span class="pc bpc" id="L930" title="3 of 4 branches missed.">        if (type.startsWith(&quot;task.reopen.&quot;)) return type.endsWith(&quot;.submitted&quot;) ? &quot;重开待审&quot; : &quot;重开结果&quot;;</span>
+<span class="pc bpc" id="L931" title="3 of 4 branches missed.">        if (type.startsWith(&quot;task.handover.&quot;)) return type.endsWith(&quot;.submitted&quot;) ? &quot;交接待审&quot; : &quot;交接结果&quot;;</span>
+<span class="pc bpc" id="L932" title="2 of 4 branches missed.">        if (type.startsWith(&quot;task.deadline.&quot;) || type.startsWith(&quot;reminder.&quot;)</span>
+<span class="pc bpc" id="L933" title="2 of 4 branches missed.">                || type.startsWith(&quot;task.reminder_&quot;) || type.equals(&quot;task.overdue&quot;)) return &quot;截止提醒&quot;;</span>
+<span class="pc bpc" id="L934" title="1 of 2 branches missed.">        if (type.startsWith(&quot;home_item.&quot;)) return &quot;公司信息&quot;;</span>
+<span class="fc" id="L935">        return &quot;工作通知&quot;;</span>
+    }
+
+    private static String notificationResult(String eventType) {
+<span class="fc" id="L939">        String type=Objects.toString(eventType,&quot;&quot;);</span>
+<span class="pc bpc" id="L940" title="2 of 6 branches missed.">        if (type.endsWith(&quot;.approved&quot;) || type.endsWith(&quot;.applied&quot;) || type.endsWith(&quot;.direct&quot;)) return &quot;已通过并生效&quot;;</span>
+<span class="pc bpc" id="L941" title="1 of 2 branches missed.">        if (type.endsWith(&quot;.rejected&quot;)) return &quot;已退回&quot;;</span>
+<span class="pc bpc" id="L942" title="1 of 2 branches missed.">        if (type.endsWith(&quot;.withdrawn&quot;)) return &quot;申请已撤销&quot;;</span>
+<span class="pc bpc" id="L943" title="1 of 2 branches missed.">        if (type.endsWith(&quot;.expired&quot;)) return &quot;申请已失效&quot;;</span>
+<span class="fc bfc" id="L944" title="All 2 branches covered.">        if (type.endsWith(&quot;.submitted&quot;)) return &quot;等待审核&quot;;</span>
+<span class="pc bpc" id="L945" title="1 of 2 branches missed.">        if (type.equals(&quot;task.overdue&quot;)) return &quot;任务已逾期&quot;;</span>
+<span class="pc bpc" id="L946" title="2 of 4 branches missed.">        if (type.startsWith(&quot;task.reminder_&quot;) || type.startsWith(&quot;reminder.&quot;)) return &quot;任务即将截止&quot;;</span>
+<span class="fc" id="L947">        return null;</span>
+    }
+
+    /** Whether the business object (or the exact comment) a message refers to no longer exists. */
+    public boolean eventObjectDeleted(Actor a, String objectType, String objectId, Map&lt;String,Object&gt; details) {
+        // A copy that never carried an object reference (masked at delivery) proves nothing about
+        // deletion, so it must not be presented as &quot;the comment was deleted&quot;.
+<span class="pc bpc" id="L954" title="1 of 2 branches missed.">        if (objectId == null) return false;</span>
+<span class="pc bpc" id="L955" title="2 of 4 branches missed.">        if (details != null &amp;&amp; details.get(&quot;commentId&quot;) instanceof String commentId) {</span>
+<span class="fc" id="L956">            var comment = db.find(&quot;SELECT deleted_at FROM task_log_comments WHERE organization_id=? AND id=?&quot;,a.organizationId(),commentId);</span>
+<span class="fc bfc" id="L957" title="All 4 branches covered.">            return comment == null || comment.get(&quot;deletedAt&quot;) != null;</span>
+        }
+<span class="nc bnc" id="L959" title="All 2 branches missed.">        if (&quot;log&quot;.equals(objectType)) {</span>
+<span class="nc bnc" id="L960" title="All 2 branches missed.">            return db.find(&quot;SELECT id FROM work_logs WHERE organization_id=? AND id=? AND deleted_at IS NULL&quot;,a.organizationId(),objectId) == null;</span>
+        }
+<span class="nc bnc" id="L962" title="All 2 branches missed.">        if (&quot;task&quot;.equals(objectType)) {</span>
+<span class="nc bnc" id="L963" title="All 2 branches missed.">            return db.find(&quot;SELECT id FROM tasks WHERE organization_id=? AND id=?&quot;,a.organizationId(),objectId) == null;</span>
+        }
+<span class="nc" id="L965">        return false;</span>
+    }
+
+    /** Delivery/open-time authority for a non-task object; the historical-notification exception never applies. */
+    public boolean canReadEventObject(Actor a, String objectType, String objectId, Map&lt;String,Object&gt; details) {
+<span class="pc bpc" id="L970" title="1 of 2 branches missed.">        if (&quot;log&quot;.equals(objectType)) {</span>
+<span class="nc" id="L971">            var log = db.find(&quot;SELECT * FROM work_logs WHERE organization_id=? AND id=? AND deleted_at IS NULL&quot;,a.organizationId(),objectId);</span>
+<span class="nc bnc" id="L972" title="All 2 branches missed.">            if (log == null) return false;</span>
+<span class="nc bnc" id="L973" title="All 4 branches missed.">            if (details != null &amp;&amp; details.get(&quot;commentId&quot;) instanceof String commentId) {</span>
+<span class="nc" id="L974">                var comment = db.find(&quot;SELECT deleted_at FROM task_log_comments WHERE organization_id=? AND id=?&quot;,a.organizationId(),commentId);</span>
+<span class="nc bnc" id="L975" title="All 4 branches missed.">                if (comment == null || comment.get(&quot;deletedAt&quot;) != null) return false;</span>
+            }
+<span class="nc" id="L977">            return access.canReadLogAuthor(a, s(log,&quot;authorId&quot;));</span>
+        }
+<span class="pc bpc" id="L979" title="1 of 2 branches missed.">        if (&quot;task&quot;.equals(objectType)) return canReadTaskForComments(a, objectId);</span>
+<span class="nc" id="L980">        return true;</span>
+    }
+
+    private boolean notificationVisible(Actor a, Map&lt;String,Object&gt; row, Instant now) {
+<span class="pc bpc" id="L984" title="1 of 2 branches missed.">        if (row.get(&quot;hiddenAt&quot;)!=null) return false;</span>
+<span class="fc" id="L985">        var event = db.find(&quot;SELECT revoked_at,occurred_at,expires_at FROM domain_events WHERE organization_id=? AND id=?&quot;,a.organizationId(),s(row,&quot;eventId&quot;));</span>
+<span class="pc bpc" id="L986" title="2 of 4 branches missed.">        Object expires = row.get(&quot;expiresAt&quot;)!=null?row.get(&quot;expiresAt&quot;):event==null?null:event.get(&quot;expiresAt&quot;);</span>
+<span class="pc bpc" id="L987" title="3 of 4 branches missed.">        if (expires != null &amp;&amp; !now.isBefore(Instant.parse(String.valueOf(expires)))) return false;</span>
+<span class="pc bpc" id="L988" title="1 of 4 branches missed.">        boolean revoked = event != null &amp;&amp; event.get(&quot;revokedAt&quot;)!=null;</span>
+<span class="fc bfc" id="L989" title="All 2 branches covered.">        if (revoked) return true;</span>
+<span class="pc bpc" id="L990" title="1 of 2 branches missed.">        if (s(row,&quot;taskId&quot;)==null) return true;</span>
+<span class="fc bfc" id="L991" title="All 2 branches covered.">        if (canReadTask(a,s(row,&quot;taskId&quot;),true)) return true;</span>
+        // Delivered event messages keep a read-only historical entry after the current authority is lost;
+        // legacy-unbound copies and undelivered candidates never gain that exception (DEV-033).
+<span class="pc bpc" id="L994" title="2 of 4 branches missed.">        return row.get(&quot;deliveredAt&quot;)!=null &amp;&amp; &quot;event&quot;.equals(s(row,&quot;source&quot;));</span>
+    }
+
+    private List&lt;Map&lt;String,Object&gt;&gt; participantSummaries(Actor a, Collection&lt;String&gt; ids) {
+<span class="pc bnc" id="L998" title="All 4 branches missed.">        List&lt;String&gt; safeIds = ids.stream().filter(id -&gt; id != null &amp;&amp; !id.isBlank()).toList();</span>
+<span class="pc bpc" id="L999" title="1 of 2 branches missed.">        if (safeIds.isEmpty()) return List.of();</span>
+<span class="nc" id="L1000">        List&lt;Object&gt; args = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L1001">        args.add(a.organizationId());</span>
+<span class="nc" id="L1002">        args.addAll(safeIds);</span>
+<span class="nc" id="L1003">        String placeholders = String.join(&quot;,&quot;, Collections.nCopies(safeIds.size(), &quot;?&quot;));</span>
+<span class="nc" id="L1004">        return db.list(&quot;SELECT id,display_name FROM users WHERE organization_id=? AND id IN (&quot;+placeholders+&quot;) ORDER BY display_name,id&quot;,args.toArray())</span>
+<span class="nc" id="L1005">                .stream().map(row -&gt; Map.&lt;String,Object&gt;of(&quot;id&quot;,s(row,&quot;id&quot;),&quot;displayName&quot;,s(row,&quot;displayName&quot;))).toList();</span>
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; home(Actor a) {
+<span class="nc" id="L1010">        return access.readScope(a.organizationId(), () -&gt; homeRead(a));</span>
+    }
+
+    private Map&lt;String,Object&gt; homeRead(Actor a) {
+<span class="nc" id="L1014">        business(a);</span>
+        // The board is the actor's current effective responsibility, never filtered by who created the
+        // task; an active assignment to a normally published, unfinished task is the only inclusion rule.
+        // The complete authorized set is ordered first and limited last: real effective due instant
+        // ascending (all-day versions already store the company-zone cut-off instant), then
+        // urgent/high/medium/low, then task id. Dispatch time and personal pins never participate.
+<span class="nc" id="L1020">        var assigned = db.list(&quot;SELECT t.id AS task_id,v.title,v.priority,v.due_at,t.execution_state &quot;</span>
+                + &quot;FROM task_assignments a JOIN tasks t ON t.organization_id=a.organization_id AND t.id=a.task_id &quot;
+                + &quot;JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id &quot;
+                + &quot;WHERE a.organization_id=? AND a.user_id=? AND a.active=TRUE &quot;
+                + &quot;AND t.current_version_id IS NOT NULL AND t.execution_state&lt;&gt;'done' &quot;
+                + &quot;ORDER BY v.due_at ASC,&quot;
+                + &quot;CASE v.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END,&quot;
+<span class="nc" id="L1027">                + &quot;t.id ASC LIMIT 10&quot;,a.organizationId(),a.id());</span>
+<span class="nc" id="L1028">        LocalDate today = clock.instant().atZone(zone(a)).toLocalDate();</span>
+        // The home page no longer renders logs or personal items; the log page keeps loading its own
+        // authorized /work-logs data and nothing queries a card-only log window here.
+<span class="nc" id="L1031">        return Map.of(&quot;companyItems&quot;,db.list(&quot;SELECT id,kind,body,sort_order,row_version FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id LIMIT 10&quot;,a.organizationId()),</span>
+<span class="nc" id="L1032">            &quot;assignedTasks&quot;,assigned,&quot;businessDate&quot;,today.toString());</span>
+    }
+
+    public Map&lt;String,Object&gt; homeItem(Actor a,String itemId) {
+<span class="nc" id="L1036">        var item=readHomeItem(a,itemId,false);</span>
+<span class="nc" id="L1037">        item.remove(&quot;organizationId&quot;);item.remove(&quot;ownerId&quot;);</span>
+<span class="nc bnc" id="L1038" title="All 2 branches missed.">        item.put(&quot;editable&quot;,!&quot;company&quot;.equals(s(item,&quot;kind&quot;)));</span>
+<span class="nc" id="L1039">        return item;</span>
+    }
+
+    public Map&lt;String,Object&gt; createHomeItem(Actor a,Map&lt;String,Object&gt; body) {
+        // The company chronicle contract is body-only everywhere, including this retired legacy route.
+<span class="fc" id="L1044">        business(a);allowed(body,Set.of(&quot;kind&quot;,&quot;body&quot;));</span>
+<span class="fc" id="L1045">        String kind=required(body,&quot;kind&quot;,20);</span>
+<span class="nc bnc" id="L1046" title="All 2 branches missed.">        if(!Set.of(&quot;company&quot;,&quot;personal&quot;).contains(kind)) throw bad(&quot;kind 只能为 company 或 personal&quot;);</span>
+<span class="nc bnc" id="L1047" title="All 2 branches missed.">        if(&quot;personal&quot;.equals(kind)) throw personalItemsRetired();</span>
+<span class="nc" id="L1048">        requireHomeWrite(a,kind);</span>
+<span class="nc" id="L1049">        String content=required(body,&quot;body&quot;,2000);</span>
+<span class="nc" id="L1050">        var items=db.list(&quot;SELECT id,sort_order FROM home_items WHERE organization_id=? AND kind=? AND (kind='company' OR owner_id=?)&quot;,a.organizationId(),kind,a.id());</span>
+<span class="nc bnc" id="L1051" title="All 2 branches missed.">        if(items.size()&gt;=10) throw new ApiException(409,&quot;HOME_ITEM_LIMIT&quot;,&quot;每类首页信息最多 10 条，请先删除后再新增&quot;);</span>
+<span class="nc" id="L1052">        long order=items.stream().mapToLong(r-&gt;n(r,&quot;sortOrder&quot;)).max().orElse(0)+1;</span>
+<span class="nc" id="L1053">        String itemId=id();</span>
+<span class="nc bnc" id="L1054" title="All 2 branches missed.">        db.update(&quot;INSERT INTO home_items(id,organization_id,owner_id,kind,body,sort_order) VALUES(?,?,?,?,?,?)&quot;,itemId,a.organizationId(),&quot;personal&quot;.equals(kind)?a.id():null,kind,content,order);</span>
+<span class="nc" id="L1055">        events.record(a,null,&quot;home_item.created&quot;,List.of(),Map.of(&quot;homeItemId&quot;,itemId,&quot;kind&quot;,kind));</span>
+<span class="nc" id="L1056">        return Map.of(&quot;id&quot;,itemId,&quot;rowVersion&quot;,1);</span>
+    }
+
+    public Map&lt;String,Object&gt; changeHomeItem(Actor a,String itemId,String ifMatch,Map&lt;String,Object&gt; body) {
+<span class="nc" id="L1060">        allowed(body,Set.of(&quot;body&quot;));</span>
+<span class="nc bnc" id="L1061" title="All 2 branches missed.">        var item=readHomeItem(a,itemId,true);if(&quot;personal&quot;.equals(s(item,&quot;kind&quot;))) throw personalItemsRetired();</span>
+<span class="nc" id="L1062">        requireHomeWrite(a,s(item,&quot;kind&quot;));Writes.checkVersion(ifMatch,n(item,&quot;rowVersion&quot;));</span>
+<span class="nc bnc" id="L1063" title="All 2 branches missed.">        String content=body.containsKey(&quot;body&quot;)?required(body,&quot;body&quot;,2000):s(item,&quot;body&quot;);</span>
+<span class="nc" id="L1064">        db.update(&quot;UPDATE home_items SET body=?,row_version=row_version+1 WHERE organization_id=? AND id=?&quot;,content,a.organizationId(),itemId);</span>
+<span class="nc" id="L1065">        events.record(a,null,&quot;home_item.updated&quot;,List.of(),Map.of(&quot;homeItemId&quot;,itemId,&quot;kind&quot;,s(item,&quot;kind&quot;)));</span>
+<span class="nc" id="L1066">        return Map.of(&quot;id&quot;,itemId,&quot;rowVersion&quot;,n(item,&quot;rowVersion&quot;)+1);</span>
+    }
+
+    public Map&lt;String,Object&gt; deleteHomeItem(Actor a,String itemId,String ifMatch) {
+<span class="nc bnc" id="L1070" title="All 2 branches missed.">        var item=readHomeItem(a,itemId,true);if(&quot;personal&quot;.equals(s(item,&quot;kind&quot;))) throw personalItemsRetired();</span>
+<span class="nc" id="L1071">        requireHomeWrite(a,s(item,&quot;kind&quot;));Writes.checkVersion(ifMatch,n(item,&quot;rowVersion&quot;));</span>
+<span class="nc" id="L1072">        db.update(&quot;DELETE FROM home_items WHERE organization_id=? AND id=?&quot;,a.organizationId(),itemId);</span>
+<span class="nc" id="L1073">        events.record(a,null,&quot;home_item.deleted&quot;,List.of(),Map.of(&quot;homeItemId&quot;,itemId,&quot;kind&quot;,s(item,&quot;kind&quot;)));</span>
+<span class="nc" id="L1074">        return Map.of(&quot;id&quot;,itemId,&quot;deleted&quot;,true);</span>
+    }
+
+    private Map&lt;String,Object&gt; readHomeItem(Actor a,String itemId,boolean lock) {
+<span class="nc" id="L1078">        business(a);</span>
+<span class="nc bnc" id="L1079" title="All 2 branches missed.">        return db.one(&quot;SELECT * FROM home_items WHERE organization_id=? AND id=? AND (kind='company' OR (kind='personal' AND owner_id=?))&quot;+(lock?&quot; FOR UPDATE&quot;:&quot;&quot;),a.organizationId(),itemId,a.id());</span>
+    }
+    private void requireHomeWrite(Actor a,String kind) {
+<span class="pc bpc" id="L1082" title="1 of 2 branches missed.">        if(&quot;company&quot;.equals(kind)) throw new ApiException(403,&quot;COMPANY_READ_ONLY&quot;,&quot;公司信息由管理员维护，业务账号仅可查看&quot;);</span>
+<span class="nc" id="L1083">    }</span>
+
+    // Check before idempotency replay as well: commands cached under the old upper-role policy cannot bypass this restriction.
+    public void checkHomeCreateAccess(Actor a,Map&lt;String,Object&gt; body) {
+<span class="fc" id="L1087">        business(a);</span>
+<span class="nc bnc" id="L1088" title="All 2 branches missed.">        if(&quot;personal&quot;.equals(s(body,&quot;kind&quot;))) throw personalItemsRetired();</span>
+<span class="nc" id="L1089">        requireHomeWrite(a,s(body,&quot;kind&quot;));</span>
+<span class="nc" id="L1090">    }</span>
+    /** Personal items moved to the independent daily-items model; old writes must not resurrect them. */
+    private static ApiException personalItemsRetired() {
+<span class="nc" id="L1093">        return new ApiException(410,&quot;HOME_ITEMS_PERSONAL_RETIRED&quot;,&quot;个人事项已改为每日事项，请使用每日事项接口&quot;);</span>
+    }
+    public void checkHomeItemWriteAccess(Actor a,String itemId) {
+<span class="fc" id="L1096">        business(a);</span>
+<span class="fc" id="L1097">        var company=db.find(&quot;SELECT kind FROM home_items WHERE organization_id=? AND id=? AND kind='company'&quot;,a.organizationId(),itemId);</span>
+<span class="pc bpc" id="L1098" title="1 of 2 branches missed.">        if(company!=null) requireHomeWrite(a,&quot;company&quot;);</span>
+<span class="fc" id="L1099">    }</span>
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; statistics(Actor a, Map&lt;String,String&gt; filters) {
+<span class="fc" id="L1103">        return access.readScope(a.organizationId(), () -&gt; statisticsRead(a,filters));</span>
+    }
+
+    private Map&lt;String,Object&gt; statisticsRead(Actor a, Map&lt;String,String&gt; filters) {
+<span class="pc bpc" id="L1107" title="1 of 2 branches missed.">        if(!Set.of(&quot;scope&quot;).containsAll(filters.keySet())) throw bad(&quot;统计接口当前仅支持 scope，不支持日期筛选&quot;);</span>
+<span class="fc" id="L1108">        String requested=filters.getOrDefault(&quot;scope&quot;,&quot;auto&quot;);</span>
+<span class="fc" id="L1109">        AnalysisScope scope=analysisScope(a,requested);</span>
+<span class="fc" id="L1110">        var rows=visibleTasks(a,scope.statisticsQuery());</span>
+<span class="fc" id="L1111">        var summary=summarize(rows);</span>
+<span class="fc" id="L1112">        summary.put(&quot;scope&quot;,scope.statisticsScope());</span>
+<span class="fc" id="L1113">        summary.put(&quot;scopeLabel&quot;,scopeLabel(scope.statisticsScope()));</span>
+<span class="fc" id="L1114">        summary.put(&quot;method&quot;,&quot;current_effective_tasks&quot;);</span>
+<span class="fc" id="L1115">        summary.put(&quot;keywords&quot;,keywords(rows));</span>
+<span class="fc" id="L1116">        summary.put(&quot;keywordMethod&quot;,&quot;unicode_text_frequency&quot;);</span>
+<span class="fc" id="L1117">        return summary;</span>
+    }
+
+    public Map&lt;String,Object&gt; createAiJob(Actor a, Map&lt;String,Object&gt; input) {
+<span class="fc" id="L1121">        allowed(input,Set.of(&quot;scopeType&quot;));</span>
+<span class="fc" id="L1122">        String requested = Optional.ofNullable(nullable(input,&quot;scopeType&quot;)).orElse(&quot;auto&quot;);</span>
+<span class="fc" id="L1123">        AnalysisScope scope = analysisScope(a,requested);</span>
+<span class="fc" id="L1124">        var statisticsRows = visibleTasks(a,scope.statisticsQuery());</span>
+<span class="pc bpc" id="L1125" title="1 of 2 branches missed.">        var suggestionRows = scope.statisticsQuery().equals(scope.suggestionQuery())</span>
+<span class="pc" id="L1126">                ? statisticsRows : visibleTasks(a,scope.suggestionQuery());</span>
+<span class="fc" id="L1127">        var summary = summarize(statisticsRows);</span>
+<span class="fc" id="L1128">        summary.put(&quot;scope&quot;,scope.statisticsScope());</span>
+<span class="fc" id="L1129">        summary.put(&quot;scopeLabel&quot;,scopeLabel(scope.statisticsScope()));</span>
+<span class="fc" id="L1130">        summary.put(&quot;method&quot;,&quot;current_effective_tasks&quot;);</span>
+<span class="fc" id="L1131">        summary.put(&quot;keywords&quot;,keywords(statisticsRows));</span>
+<span class="fc" id="L1132">        summary.put(&quot;keywordMethod&quot;,&quot;unicode_text_frequency&quot;);</span>
+<span class="fc" id="L1133">        Instant now = clock.instant();</span>
+<span class="fc" id="L1134">        var suggestions = suggestions(suggestionRows,now);</span>
+<span class="fc" id="L1135">        var sourceTaskIds = new LinkedHashSet&lt;String&gt;();</span>
+<span class="fc" id="L1136">        statisticsRows.forEach(t-&gt;sourceTaskIds.add(s(t,&quot;id&quot;)));</span>
+<span class="fc" id="L1137">        suggestionRows.forEach(t-&gt;sourceTaskIds.add(s(t,&quot;id&quot;)));</span>
+<span class="fc" id="L1138">        var result = new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="fc" id="L1139">        result.put(&quot;mode&quot;,&quot;rule_based&quot;); result.put(&quot;method&quot;,&quot;local_proportional_schedule_rules&quot;); result.put(&quot;modelUsed&quot;,false);</span>
+<span class="fc" id="L1140">        result.put(&quot;statisticsScope&quot;,scope.statisticsScope()); result.put(&quot;statisticsScopeLabel&quot;,scopeLabel(scope.statisticsScope()));</span>
+<span class="fc" id="L1141">        result.put(&quot;keywordScope&quot;,scope.statisticsScope()); result.put(&quot;suggestionScope&quot;,scope.suggestionScope());</span>
+<span class="fc" id="L1142">        result.put(&quot;suggestionScopeLabel&quot;,scopeLabel(scope.suggestionScope())); result.put(&quot;requestedScope&quot;,scope.requestedScope());</span>
+<span class="fc" id="L1143">        result.put(&quot;scopeModel&quot;,&quot;fixed_positions_v1&quot;); result.put(&quot;authzVersion&quot;,a.authzVersion()); result.put(&quot;summary&quot;,summary); result.put(&quot;suggestions&quot;,suggestions);</span>
+<span class="fc" id="L1144">        result.put(&quot;sourceTaskIds&quot;,List.copyOf(sourceTaskIds)); result.put(&quot;generatedAt&quot;,now.toString());</span>
+<span class="fc" id="L1145">        String jobId = id();</span>
+<span class="fc" id="L1146">        db.update(&quot;INSERT INTO ai_jobs(id,organization_id,requested_by,status,scope_type,result_json,completed_at) VALUES(?,?,?,'completed',?,?,UTC_TIMESTAMP(6))&quot;,jobId,a.organizationId(),a.id(),&quot;role_scoped&quot;,db.json(result));</span>
+<span class="fc" id="L1147">        events.record(a,null,&quot;analysis.completed&quot;,List.of(),Map.of(&quot;jobId&quot;,jobId,&quot;mode&quot;,&quot;rule_based&quot;,</span>
+<span class="fc" id="L1148">                &quot;statisticsScope&quot;,scope.statisticsScope(),&quot;suggestionScope&quot;,scope.suggestionScope()));</span>
+<span class="fc" id="L1149">        return Map.of(&quot;jobId&quot;,jobId,&quot;status&quot;,&quot;completed&quot;,&quot;mode&quot;,&quot;rule_based&quot;);</span>
+    }
+
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map&lt;String,Object&gt; aiJob(Actor a, String jobId) {
+<span class="fc" id="L1154">        business(a);</span>
+<span class="fc" id="L1155">        var row = db.one(&quot;SELECT * FROM ai_jobs WHERE organization_id=? AND requested_by=? AND id=?&quot;,a.organizationId(),a.id(),jobId);</span>
+<span class="fc" id="L1156">        var result = db.parse(s(row,&quot;resultJson&quot;));</span>
+<span class="pc bpc" id="L1157" title="2 of 4 branches missed.">        if(!&quot;fixed_positions_v1&quot;.equals(s(result,&quot;scopeModel&quot;)) || !(result.get(&quot;authzVersion&quot;) instanceof Number stored)</span>
+<span class="pc bpc" id="L1158" title="1 of 2 branches missed.">                || stored.longValue()!=a.authzVersion())</span>
+<span class="fc" id="L1159">            throw new ApiException(409,&quot;ANALYSIS_SCOPE_CHANGED&quot;,&quot;授权范围已变化，请重新生成分析&quot;);</span>
+<span class="nc" id="L1160">        AnalysisScope current=analysisScope(a,Optional.ofNullable(s(result,&quot;requestedScope&quot;)).orElse(&quot;auto&quot;));</span>
+<span class="nc bnc" id="L1161" title="All 2 branches missed.">        if(!Objects.equals(current.statisticsScope(),s(result,&quot;statisticsScope&quot;))</span>
+<span class="nc bnc" id="L1162" title="All 2 branches missed.">                || !Objects.equals(current.suggestionScope(),s(result,&quot;suggestionScope&quot;)))</span>
+<span class="nc" id="L1163">            throw new ApiException(409,&quot;ANALYSIS_SCOPE_CHANGED&quot;,&quot;授权范围已变化，请重新生成分析&quot;);</span>
+<span class="nc" id="L1164">        Set&lt;String&gt; currentIds=new HashSet&lt;&gt;();</span>
+<span class="nc" id="L1165">        visibleTasks(a,current.statisticsQuery()).forEach(t-&gt;currentIds.add(s(t,&quot;id&quot;)));</span>
+<span class="nc" id="L1166">        visibleTasks(a,current.suggestionQuery()).forEach(t-&gt;currentIds.add(s(t,&quot;id&quot;)));</span>
+<span class="nc bnc" id="L1167" title="All 4 branches missed.">        if (result.get(&quot;sourceTaskIds&quot;) instanceof Collection&lt;?&gt; ids &amp;&amp; !currentIds.containsAll(ids)) {</span>
+<span class="nc" id="L1168">            throw new ApiException(409,&quot;ANALYSIS_SCOPE_CHANGED&quot;,&quot;可见范围已变化，请重新生成分析&quot;);</span>
+        }
+<span class="nc" id="L1170">        row.remove(&quot;resultJson&quot;); result.remove(&quot;sourceTaskIds&quot;); row.put(&quot;result&quot;,result);</span>
+<span class="nc" id="L1171">        return row;</span>
+    }
+
+    public Map&lt;String,Object&gt; adminTeams(Actor a,Map&lt;String,String&gt; filters) {
+<span class="nc" id="L1175">        access.requireAdmin(a);</span>
+<span class="nc" id="L1176">        return page(db.list(&quot;SELECT id,name,parent_id FROM teams WHERE organization_id=? ORDER BY name,id&quot;,a.organizationId()),filters);</span>
+    }
+
+    public Map&lt;String,Object&gt; audit(Actor a, Map&lt;String,String&gt; filters) {
+<span class="nc" id="L1180">        access.requireAdmin(a);</span>
+<span class="nc" id="L1181">        var list = db.list(&quot;SELECT a.*,COALESCE(u.display_name,ad.display_name) AS actor_name,p.account_type AS actor_account_type FROM audit_logs a JOIN principals p ON p.id=a.actor_id AND p.organization_id=a.organization_id LEFT JOIN users u ON u.id=p.id AND u.organization_id=p.organization_id LEFT JOIN admin_accounts ad ON ad.id=p.id AND ad.organization_id=p.organization_id WHERE a.organization_id=? ORDER BY a.created_at DESC,a.id&quot;,a.organizationId()).stream()</span>
+<span class="nc bnc" id="L1182" title="All 4 branches missed.">            .filter(row-&gt;!filters.containsKey(&quot;action&quot;) || filters.get(&quot;action&quot;).equals(s(row,&quot;action&quot;)))</span>
+<span class="nc bnc" id="L1183" title="All 4 branches missed.">            .filter(row-&gt;!filters.containsKey(&quot;objectId&quot;) || filters.get(&quot;objectId&quot;).equals(s(row,&quot;objectId&quot;)))</span>
+<span class="nc" id="L1184">            .map(row-&gt;{row.put(&quot;details&quot;,db.parse(s(row,&quot;detailsJson&quot;)));row.remove(&quot;detailsJson&quot;);return row;}).toList();</span>
+<span class="nc" id="L1185">        return page(list,filters);</span>
+    }
+
+    /**
+     * Normal viewing authority for comments and comment messages. A published task is judged only by
+     * its current effective version: an older approval request (whose base version may still list the
+     * requester) must not keep a removed assignee inside the current object (chapter 8.4/8.5). Only an
+     * unpublished creation falls back to its applicant/reviewer participants.
+     */
+    public boolean canReadTaskForComments(Actor a, String taskId) {
+<span class="pc bpc" id="L1195" title="1 of 2 branches missed.">        if (taskId == null) return false;</span>
+<span class="fc" id="L1196">        var task = db.find(&quot;SELECT * FROM tasks WHERE organization_id=? AND id=?&quot;, a.organizationId(), taskId);</span>
+<span class="pc bpc" id="L1197" title="1 of 2 branches missed.">        if (task == null) return false;</span>
+<span class="pc bpc" id="L1198" title="1 of 2 branches missed.">        if (s(task,&quot;currentVersionId&quot;) == null) return canReadTask(a, taskId, true);</span>
+<span class="fc" id="L1199">        return canReadTask(a, taskId, false);</span>
+    }
+
+    public boolean canReadTask(Actor a,String taskId,boolean includeApproval) {
+<span class="pc bpc" id="L1203" title="1 of 2 branches missed.">        if (taskId == null) return true;</span>
+<span class="fc" id="L1204">        var task = db.find(&quot;SELECT * FROM tasks WHERE organization_id=? AND id=?&quot;,a.organizationId(),taskId);</span>
+<span class="pc bpc" id="L1205" title="1 of 2 branches missed.">        if (task == null) return false;</span>
+<span class="fc bfc" id="L1206" title="All 2 branches covered.">        if (s(task,&quot;currentVersionId&quot;) != null) {</span>
+<span class="fc" id="L1207">            var version = db.find(&quot;SELECT * FROM task_versions WHERE organization_id=? AND task_id=? AND id=?&quot;,a.organizationId(),taskId,s(task,&quot;currentVersionId&quot;));</span>
+<span class="pc" id="L1208">            var ids = db.list(&quot;SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=?&quot;,a.organizationId(),s(task,&quot;currentVersionId&quot;)).stream().map(r-&gt;s(r,&quot;userId&quot;)).toList();</span>
+<span class="fc bfc" id="L1209" title="All 2 branches covered.">            if (access.canSeeTask(a,task,version,ids)) return true;</span>
+        }
+<span class="fc bfc" id="L1211" title="All 2 branches covered.">        if(includeApproval) {</span>
+<span class="fc bfc" id="L1212" title="All 2 branches covered.">            for(var request:db.list(&quot;SELECT id FROM approval_requests WHERE organization_id=? AND task_id=?&quot;,a.organizationId(),taskId)) {</span>
+                // A plain read probe: the transactional approval projection would mark this worker
+                // transaction rollback-only when an unrelated request is legitimately not visible.
+<span class="pc bpc" id="L1215" title="1 of 2 branches missed.">                if(tasks.canReadRequest(a,s(request,&quot;id&quot;))) return true;</span>
+<span class="fc" id="L1216">            }</span>
+        }
+<span class="fc" id="L1218">        return false;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private List&lt;Map&lt;String,Object&gt;&gt; visibleTasks(Actor a,String scope) {
+<span class="fc" id="L1223">        business(a);</span>
+<span class="pc bpc" id="L1224" title="1 of 2 branches missed.">        if (!Set.of(&quot;self&quot;,&quot;visible&quot;,&quot;company&quot;,&quot;department&quot;,&quot;team&quot;).contains(scope)) throw bad(&quot;分析范围无效&quot;);</span>
+<span class="fc" id="L1225">        var rows = new ArrayList&lt;&gt;(tasks.statisticsTasks(a,Map.of()));</span>
+<span class="fc bfc" id="L1226" title="All 4 branches covered.">        if (scope.equals(&quot;self&quot;)) rows.removeIf(t -&gt; !a.id().equals(s(t,&quot;originalCreatorId&quot;))</span>
+<span class="pc bpc" id="L1227" title="2 of 4 branches missed.">                &amp;&amp; !(t.get(&quot;assigneeIds&quot;) instanceof Collection&lt;?&gt; ids &amp;&amp; ids.contains(a.id())));</span>
+<span class="fc bfc" id="L1228" title="All 2 branches covered.">        if(Set.of(&quot;department&quot;,&quot;team&quot;).contains(scope)) {</span>
+<span class="fc" id="L1229">            var members=access.employeeDirectory(a,false).stream()</span>
+<span class="pc bpc" id="L1230" title="1 of 2 branches missed.">                    .filter(person-&gt;&quot;department&quot;.equals(scope)</span>
+<span class="fc" id="L1231">                            ? Objects.equals(a.departmentId(),s(person,&quot;departmentId&quot;))</span>
+<span class="nc" id="L1232">                            : Objects.equals(a.teamId(),s(person,&quot;teamId&quot;)))</span>
+<span class="fc" id="L1233">                    .map(person-&gt;s(person,&quot;id&quot;)).collect(java.util.stream.Collectors.toSet());</span>
+<span class="pc bpc" id="L1234" title="1 of 2 branches missed.">            rows.removeIf(task-&gt;!(task.get(&quot;assigneeIds&quot;) instanceof Collection&lt;?&gt; ids)</span>
+<span class="fc bfc" id="L1235" title="All 2 branches covered.">                    || ids.stream().noneMatch(members::contains));</span>
+        }
+<span class="fc" id="L1237">        return rows;</span>
+    }
+
+    private Map&lt;String,Object&gt; summarize(List&lt;Map&lt;String,Object&gt;&gt; rows) {
+<span class="fc" id="L1241">        var result = new LinkedHashMap&lt;String,Object&gt;(); Instant now=clock.instant();</span>
+<span class="fc" id="L1242">        result.put(&quot;total&quot;,rows.size());</span>
+<span class="fc bfc" id="L1243" title="All 2 branches covered.">        for (String state : List.of(&quot;todo&quot;,&quot;doing&quot;,&quot;done&quot;)) result.put(state,rows.stream().filter(t-&gt;state.equals(s(t,&quot;executionState&quot;))).count());</span>
+<span class="fc" id="L1244">        result.put(&quot;frozen&quot;,rows.stream().filter(t-&gt;Boolean.TRUE.equals(t.get(&quot;frozen&quot;))).count());</span>
+<span class="pc bpc" id="L1245" title="1 of 4 branches missed.">        result.put(&quot;pendingComplete&quot;,rows.stream().filter(t-&gt;Boolean.TRUE.equals(t.get(&quot;pending&quot;)) &amp;&amp; &quot;complete&quot;.equals(s(t,&quot;pendingKind&quot;))).count());</span>
+<span class="pc bpc" id="L1246" title="3 of 6 branches missed.">        result.put(&quot;overdue&quot;,rows.stream().filter(t-&gt;!&quot;done&quot;.equals(s(t,&quot;executionState&quot;))).filter(t-&gt;{var due=instant(s(t,&quot;dueAt&quot;));return due!=null&amp;&amp;due.isBefore(now);}).count());</span>
+<span class="fc" id="L1247">        var priority=new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="fc bfc" id="L1248" title="All 2 branches covered.">        for(String level:List.of(&quot;urgent&quot;,&quot;high&quot;,&quot;medium&quot;,&quot;low&quot;))</span>
+<span class="fc" id="L1249">            priority.put(level,rows.stream().filter(t-&gt;level.equals(s(t,&quot;priority&quot;))).count());</span>
+<span class="fc" id="L1250">        result.put(&quot;priority&quot;,priority);</span>
+<span class="fc" id="L1251">        result.put(&quot;ruleBased&quot;,true); result.put(&quot;generatedAt&quot;,now.toString());</span>
+<span class="fc" id="L1252">        return result;</span>
+    }
+
+    /** Analysis ranges are derived from the current authority snapshot; callers cannot broaden them. */
+    private AnalysisScope analysisScope(Actor a,String requested) {
+<span class="fc" id="L1257">        business(a);</span>
+<span class="fc bfc" id="L1258" title="All 2 branches covered.">        String normalized=&quot;visible&quot;.equals(requested)?&quot;auto&quot;:requested;</span>
+<span class="pc bpc" id="L1259" title="1 of 2 branches missed.">        if (!Set.of(&quot;auto&quot;,&quot;self&quot;).contains(normalized)) throw bad(&quot;scope 只能为 auto、visible 或 self&quot;);</span>
+<span class="pc bpc" id="L1260" title="1 of 2 branches missed.">        if (&quot;self&quot;.equals(normalized)) return new AnalysisScope(&quot;self&quot;,&quot;self&quot;,&quot;self&quot;,&quot;self&quot;,&quot;self&quot;);</span>
+<span class="pc bpc" id="L1261" title="3 of 4 branches missed.">        String statisticsScope=switch(a.scope(&quot;task_view&quot;)) {</span>
+<span class="nc" id="L1262">            case &quot;company&quot; -&gt; &quot;company&quot;;</span>
+<span class="fc" id="L1263">            case &quot;department&quot; -&gt; &quot;department&quot;;</span>
+<span class="nc" id="L1264">            case &quot;team&quot; -&gt; &quot;team&quot;;</span>
+<span class="nc" id="L1265">            default -&gt; &quot;self&quot;;</span>
+        };
+<span class="fc" id="L1267">        String statisticsQuery=statisticsScope;</span>
+<span class="pc bpc" id="L1268" title="1 of 2 branches missed.">        String suggestionScope=Set.of(&quot;department&quot;,&quot;team&quot;).contains(statisticsScope)?&quot;self&quot;:statisticsScope;</span>
+<span class="fc" id="L1269">        String suggestionQuery=suggestionScope;</span>
+<span class="fc" id="L1270">        return new AnalysisScope(statisticsScope,statisticsQuery,suggestionScope,suggestionQuery,&quot;auto&quot;);</span>
+    }
+
+    private static String scopeLabel(String scope) {
+<span class="pc bpc" id="L1274" title="2 of 4 branches missed.">        return switch(scope) {case &quot;company&quot;-&gt;&quot;全公司&quot;;case &quot;department&quot;-&gt;&quot;本部门&quot;;case &quot;team&quot;-&gt;&quot;本团队&quot;;default-&gt;&quot;本人&quot;;};</span>
+    }
+
+    /** Real title/description extraction; the vocabulary is learned from the authorized task text. */
+    static List&lt;Map&lt;String,Object&gt;&gt; keywords(List&lt;Map&lt;String,Object&gt;&gt; rows) {
+<span class="fc" id="L1279">        Map&lt;String,Integer&gt; counts=new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L1280">        Set&lt;String&gt; primaryTokens=new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L1281" title="All 2 branches covered.">        for(var row:rows) {</span>
+<span class="fc" id="L1282">            String text=String.join(&quot; &quot;,Objects.toString(row.get(&quot;title&quot;),&quot;&quot;),Objects.toString(row.get(&quot;description&quot;),&quot;&quot;))</span>
+<span class="fc" id="L1283">                    .toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L1284">            var han=HAN_RUN.matcher(text);</span>
+<span class="fc" id="L1285">            StringBuffer nonHan=new StringBuffer();</span>
+<span class="fc bfc" id="L1286" title="All 2 branches covered.">            while(han.find()) {</span>
+<span class="fc" id="L1287">                String value=han.group(); addChineseKeywords(counts,primaryTokens,value);</span>
+<span class="fc" id="L1288">                han.appendReplacement(nonHan,&quot; &quot;);</span>
+<span class="fc" id="L1289">            }</span>
+<span class="fc" id="L1290">            han.appendTail(nonHan);</span>
+<span class="fc" id="L1291">            var other=OTHER_WORD.matcher(nonHan.toString());</span>
+<span class="fc bfc" id="L1292" title="All 2 branches covered.">            while(other.find()) {</span>
+<span class="fc" id="L1293">                String value=other.group(); addKeyword(counts,value); primaryTokens.add(value.toLowerCase(Locale.ROOT));</span>
+<span class="fc" id="L1294">            }</span>
+<span class="fc" id="L1295">        }</span>
+<span class="fc" id="L1296">        return counts.entrySet().stream()</span>
+                // Prefer complete text tokens over fallback CJK n-grams, then rank by real frequency.
+<span class="fc bfc" id="L1298" title="All 2 branches covered.">                .sorted(Comparator.&lt;Map.Entry&lt;String,Integer&gt;&gt;comparingInt(entry-&gt;primaryTokens.contains(entry.getKey())?1:0).reversed()</span>
+<span class="fc" id="L1299">                        .thenComparing(Comparator.&lt;Map.Entry&lt;String,Integer&gt;&gt;comparingInt(Map.Entry::getValue).reversed())</span>
+<span class="fc" id="L1300">                        .thenComparing((left,right)-&gt;Integer.compare(right.getKey().length(),left.getKey().length()))</span>
+<span class="fc" id="L1301">                        .thenComparing(Map.Entry::getKey))</span>
+<span class="fc" id="L1302">                .limit(24)</span>
+<span class="fc" id="L1303">                .map(entry-&gt;Map.&lt;String,Object&gt;of(&quot;word&quot;,entry.getKey(),&quot;count&quot;,entry.getValue()))</span>
+<span class="fc" id="L1304">                .toList();</span>
+    }
+
+    private static void addChineseKeywords(Map&lt;String,Integer&gt; counts,Set&lt;String&gt; primaryTokens,String value) {
+<span class="pc bpc" id="L1308" title="1 of 2 branches missed.">        if(value.length()&lt;=12) {addKeyword(counts,value);primaryTokens.add(value);}</span>
+<span class="fc" id="L1309">        int max=Math.min(3,value.length());</span>
+<span class="fc bfc" id="L1310" title="All 2 branches covered.">        for(int size=2;size&lt;=max;size++) {</span>
+<span class="fc bfc" id="L1311" title="All 2 branches covered.">            for(int start=0;start+size&lt;=value.length();start++) addKeyword(counts,value.substring(start,start+size));</span>
+        }
+<span class="fc" id="L1313">    }</span>
+
+    private static void addKeyword(Map&lt;String,Integer&gt; counts,String word) {
+<span class="fc" id="L1316">        String value=word.strip().toLowerCase(Locale.ROOT);</span>
+<span class="pc bpc" id="L1317" title="1 of 4 branches missed.">        if(value.length()&lt;2 || KEYWORD_STOP_WORDS.contains(value)) return;</span>
+<span class="fc" id="L1318">        counts.merge(value,1,Integer::sum);</span>
+<span class="fc" id="L1319">    }</span>
+
+    /** Rule-only advice: proportional deadline nodes, overlapping schedules and high priorities. */
+    static List&lt;Map&lt;String,Object&gt;&gt; suggestions(List&lt;Map&lt;String,Object&gt;&gt; rows,Instant now) {
+<span class="fc" id="L1323">        List&lt;Map&lt;String,Object&gt;&gt; active=rows.stream()</span>
+<span class="fc bfc" id="L1324" title="All 4 branches covered.">                .filter(t-&gt;!Boolean.TRUE.equals(t.get(&quot;frozen&quot;)) &amp;&amp; !&quot;done&quot;.equals(s(t,&quot;executionState&quot;))).toList();</span>
+<span class="fc" id="L1325">        var result=new ArrayList&lt;Map&lt;String,Object&gt;&gt;();</span>
+<span class="fc bfc" id="L1326" title="All 2 branches covered.">        for(var task:active) {</span>
+<span class="fc" id="L1327">            Instant start=instant(s(task,&quot;startAt&quot;)),due=instant(s(task,&quot;dueAt&quot;));</span>
+<span class="pc bpc" id="L1328" title="2 of 4 branches missed.">            ReminderService.Node node=start==null||due==null?null:ReminderService.chooseNode(start,due,now);</span>
+<span class="fc bfc" id="L1329" title="All 2 branches covered.">            if(node!=null) {</span>
+<span class="fc" id="L1330">                boolean overdue=&quot;overdue&quot;.equals(node.node());</span>
+<span class="fc bfc" id="L1331" title="All 2 branches covered.">                String rule=overdue?&quot;overdue&quot;:&quot;remaining_&quot;+node.node()+&quot;_percent&quot;;</span>
+<span class="fc bfc" id="L1332" title="All 2 branches covered.">                String message=overdue?&quot;任务已逾期，请确认未完成事项与下一步安排。&quot;</span>
+<span class="fc" id="L1333">                        :&quot;任务已到剩余工期 &quot;+node.node()+&quot;% 节点，请确认进展与所需资源。&quot;;</span>
+<span class="fc" id="L1334">                result.add(suggestion(rule,task,List.of(task),message,node.node(),node.at()));</span>
+            }
+<span class="fc" id="L1336">        }</span>
+<span class="fc" id="L1337">        int conflictCount=0;</span>
+<span class="fc bfc" id="L1338" title="All 2 branches covered.">        conflicts: for(int left=0;left&lt;active.size();left++) {</span>
+<span class="fc" id="L1339">            var first=active.get(left); Instant firstStart=instant(s(first,&quot;startAt&quot;)),firstDue=instant(s(first,&quot;dueAt&quot;));</span>
+<span class="pc bpc" id="L1340" title="3 of 6 branches missed.">            if(firstStart==null||firstDue==null||!firstStart.isBefore(firstDue)) continue;</span>
+<span class="fc bfc" id="L1341" title="All 2 branches covered.">            for(int right=left+1;right&lt;active.size();right++) {</span>
+<span class="fc" id="L1342">                var second=active.get(right); Instant secondStart=instant(s(second,&quot;startAt&quot;)),secondDue=instant(s(second,&quot;dueAt&quot;));</span>
+<span class="pc bpc" id="L1343" title="3 of 6 branches missed.">                if(secondStart==null||secondDue==null||!secondStart.isBefore(secondDue)) continue;</span>
+<span class="pc bpc" id="L1344" title="2 of 4 branches missed.">                if(firstStart.isBefore(secondDue)&amp;&amp;secondStart.isBefore(firstDue)) {</span>
+<span class="fc" id="L1345">                    result.add(suggestion(&quot;schedule_conflict&quot;,first,List.of(first,second),</span>
+<span class="fc" id="L1346">                            &quot;任务《&quot;+s(first,&quot;title&quot;)+&quot;》与《&quot;+s(second,&quot;title&quot;)+&quot;》排期重叠，请确认优先级或协调资源。&quot;,null,null));</span>
+<span class="pc bpc" id="L1347" title="1 of 2 branches missed.">                    if(++conflictCount&gt;=50) break conflicts;</span>
+                }
+            }
+        }
+<span class="fc bfc" id="L1351" title="All 2 branches covered.">        for(var task:active) {</span>
+<span class="fc" id="L1352">            String priority=s(task,&quot;priority&quot;);</span>
+<span class="fc bfc" id="L1353" title="All 2 branches covered.">            if(Set.of(&quot;urgent&quot;,&quot;high&quot;).contains(priority)) {</span>
+<span class="fc" id="L1354">                result.add(suggestion(&quot;high_priority&quot;,task,List.of(task),</span>
+<span class="pc bpc" id="L1355" title="1 of 2 branches missed.">                        &quot;urgent&quot;.equals(priority)?&quot;任务紧急程度为“紧急”，建议优先确认负责人和处理计划。&quot;:&quot;任务紧急程度为“高”，建议预留处理时间并持续跟进。&quot;,null,null));</span>
+            }
+<span class="fc" id="L1357">        }</span>
+<span class="fc" id="L1358">        return result;</span>
+    }
+
+    private static Map&lt;String,Object&gt; suggestion(String rule,Map&lt;String,Object&gt; primary,List&lt;Map&lt;String,Object&gt;&gt; sources,
+                                                  String message,String reminderNode,Instant scheduledAt) {
+<span class="fc" id="L1363">        var value=new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="fc" id="L1364">        value.put(&quot;rule&quot;,rule); value.put(&quot;taskId&quot;,s(primary,&quot;id&quot;)); value.put(&quot;title&quot;,s(primary,&quot;title&quot;)); value.put(&quot;message&quot;,message);</span>
+<span class="fc" id="L1365">        value.put(&quot;sourceTaskIds&quot;,sources.stream().map(t-&gt;s(t,&quot;id&quot;)).toList());</span>
+<span class="fc" id="L1366">        value.put(&quot;sources&quot;,sources.stream().map(WorkspaceService::analysisSource).toList());</span>
+<span class="fc bfc" id="L1367" title="All 2 branches covered.">        if(reminderNode!=null)value.put(&quot;reminderNode&quot;,reminderNode);</span>
+<span class="fc bfc" id="L1368" title="All 2 branches covered.">        if(scheduledAt!=null)value.put(&quot;scheduledAt&quot;,scheduledAt.toString());</span>
+<span class="fc" id="L1369">        return value;</span>
+    }
+
+    private static Map&lt;String,Object&gt; analysisSource(Map&lt;String,Object&gt; task) {
+<span class="fc" id="L1373">        var value=new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="fc bfc" id="L1374" title="All 2 branches covered.">        for(String key:List.of(&quot;id&quot;,&quot;title&quot;,&quot;priority&quot;,&quot;startAt&quot;,&quot;dueAt&quot;)) value.put(key,task.get(key));</span>
+<span class="fc" id="L1375">        return value;</span>
+    }
+
+<span class="fc" id="L1378">    private record AnalysisScope(String statisticsScope,String statisticsQuery,String suggestionScope,</span>
+                                 String suggestionQuery,String requestedScope) {}
+
+    private Map&lt;String,Object&gt; ownedLog(Actor a,String logId) {
+<span class="fc" id="L1382">        return db.one(&quot;SELECT * FROM work_logs WHERE organization_id=? AND author_id=? AND id=? AND deleted_at IS NULL FOR UPDATE&quot;,a.organizationId(),a.id(),logId);</span>
+    }
+
+    private Map&lt;String,List&lt;Map&lt;String,Object&gt;&gt;&gt; logTags(Actor a,Collection&lt;String&gt; logIds) {
+<span class="fc" id="L1386">        Map&lt;String,List&lt;Map&lt;String,Object&gt;&gt;&gt; result = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L1387" title="1 of 2 branches missed.">        if (logIds.isEmpty()) return result;</span>
+<span class="fc" id="L1388">        var args = new ArrayList&lt;Object&gt;();</span>
+<span class="fc" id="L1389">        args.add(a.organizationId());</span>
+<span class="fc" id="L1390">        args.addAll(logIds);</span>
+<span class="fc" id="L1391">        String sql = &quot;SELECT wt.log_id,wt.tag_id,wt.ordinal,wt.tag_name_snapshot,wt.tag_color_snapshot,&quot;</span>
+                + &quot;t.name,t.color,t.deleted_at,t.row_version FROM work_log_tags wt &quot;
+                + &quot;JOIN tags t ON t.organization_id=wt.organization_id AND t.id=wt.tag_id &quot;
+                + &quot;WHERE wt.organization_id=? AND wt.log_id IN (&quot;
+<span class="fc" id="L1395">                + String.join(&quot;,&quot;,Collections.nCopies(logIds.size(),&quot;?&quot;)) + &quot;) ORDER BY wt.log_id,wt.ordinal&quot;;</span>
+<span class="fc bfc" id="L1396" title="All 2 branches covered.">        for (var row : db.list(sql,args.toArray())) {</span>
+<span class="fc" id="L1397">            var tag = new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="fc" id="L1398">            tag.put(&quot;id&quot;,s(row,&quot;tagId&quot;));</span>
+<span class="fc" id="L1399">            tag.put(&quot;name&quot;,s(row,&quot;name&quot;));</span>
+<span class="fc" id="L1400">            tag.put(&quot;color&quot;,s(row,&quot;color&quot;));</span>
+<span class="fc" id="L1401">            tag.put(&quot;border&quot;,Tags.PALETTE.stream().filter(entry -&gt; entry.color().equalsIgnoreCase(Objects.toString(tag.get(&quot;color&quot;),&quot;&quot;)))</span>
+<span class="fc" id="L1402">                    .map(Tags.PaletteColor::border).findFirst().orElse(&quot;#8A8F98&quot;));</span>
+<span class="pc bpc" id="L1403" title="1 of 2 branches missed.">            tag.put(&quot;deleted&quot;,row.get(&quot;deletedAt&quot;) != null);</span>
+<span class="fc" id="L1404">            tag.put(&quot;rowVersion&quot;,n(row,&quot;rowVersion&quot;));</span>
+<span class="fc" id="L1405">            result.computeIfAbsent(s(row,&quot;logId&quot;),ignored -&gt; new ArrayList&lt;&gt;()).add(tag);</span>
+<span class="fc" id="L1406">        }</span>
+<span class="fc" id="L1407">        return result;</span>
+    }
+
+    private List&lt;Map&lt;String,Object&gt;&gt; requestedLogTags(Actor a,Object raw,Set&lt;String&gt; currentIds) {
+<span class="pc bpc" id="L1411" title="1 of 2 branches missed.">        if (!(raw instanceof List&lt;?&gt; ids)) throw bad(&quot;tagIds 必须为标签 ID 数组&quot;);</span>
+<span class="fc" id="L1412">        var seen = new HashSet&lt;String&gt;();</span>
+<span class="fc" id="L1413">        var resolved = new ArrayList&lt;Map&lt;String,Object&gt;&gt;();</span>
+<span class="pc bpc" id="L1414" title="1 of 2 branches missed.">        for (Object value : ids) {</span>
+<span class="nc bnc" id="L1415" title="All 6 branches missed.">            if (!(value instanceof String tagId) || tagId.isBlank() || !seen.add(tagId))</span>
+<span class="nc" id="L1416">                throw bad(&quot;tagIds 必须是不重复的标签 ID 数组&quot;);</span>
+<span class="nc bnc" id="L1417" title="All 2 branches missed.">            var tag = tags.resolveForWrite(a,tagId,currentIds.contains(tagId) ? tagId : null);</span>
+<span class="nc" id="L1418">            resolved.add(tag);</span>
+<span class="nc" id="L1419">        }</span>
+<span class="fc" id="L1420">        return resolved;</span>
+    }
+
+    private void replaceLogTags(Actor a,String logId,List&lt;Map&lt;String,Object&gt;&gt; values) {
+<span class="fc" id="L1424">        db.update(&quot;DELETE FROM work_log_tags WHERE organization_id=? AND log_id=?&quot;,a.organizationId(),logId);</span>
+<span class="pc bpc" id="L1425" title="1 of 2 branches missed.">        for (int ordinal=0;ordinal&lt;values.size();ordinal++) {</span>
+<span class="nc" id="L1426">            var tag=values.get(ordinal);</span>
+<span class="nc" id="L1427">            db.update(&quot;INSERT INTO work_log_tags(organization_id,log_id,tag_id,ordinal,tag_name_snapshot,tag_color_snapshot) VALUES(?,?,?,?,?,?)&quot;,</span>
+<span class="nc" id="L1428">                    a.organizationId(),logId,s(tag,&quot;id&quot;),ordinal,s(tag,&quot;name&quot;),s(tag,&quot;color&quot;));</span>
+        }
+<span class="fc" id="L1430">    }</span>
+
+    private Map&lt;String,Object&gt; safeLog(Actor a,Map&lt;String,Object&gt; row) {
+<span class="fc" id="L1433">        return safeLog(a,row,null,logTags(a,List.of(s(row,&quot;id&quot;))));</span>
+    }
+    private Map&lt;String,Object&gt; safeLog(Actor a,Map&lt;String,Object&gt; row,Set&lt;String&gt; readable,Map&lt;String,List&lt;Map&lt;String,Object&gt;&gt;&gt; tagRows) {
+<span class="fc" id="L1436">        row.remove(&quot;organizationId&quot;);</span>
+<span class="fc" id="L1437">        String taskId=s(row,&quot;taskId&quot;);</span>
+<span class="pc bpc" id="L1438" title="2 of 8 branches missed.">        if (taskId!=null &amp;&amp; !(readable == null ? canReadTask(a,taskId,false) : readable.contains(taskId))) row.remove(&quot;taskId&quot;);</span>
+<span class="fc" id="L1439">        var values = tagRows.getOrDefault(s(row,&quot;id&quot;),List.of());</span>
+<span class="fc" id="L1440">        row.put(&quot;tagIds&quot;,values.stream().map(tag -&gt; s(tag,&quot;id&quot;)).toList());</span>
+<span class="fc" id="L1441">        row.put(&quot;tags&quot;,values);</span>
+<span class="fc" id="L1442">        Instant freezeAt = freezeAt(row);</span>
+<span class="fc bfc" id="L1443" title="All 4 branches covered.">        boolean frozen = freezeAt == null || !clock.instant().isBefore(freezeAt);</span>
+<span class="fc" id="L1444">        boolean owner = a.id().equals(s(row,&quot;authorId&quot;));</span>
+        // The freeze is a real instant, not a business-date comparison: a log written last night stays
+        // editable across midnight until its own 24 hours are over (chapter 7.1).
+<span class="fc" id="L1447">        row.put(&quot;frozen&quot;, frozen);</span>
+<span class="fc bfc" id="L1448" title="All 2 branches covered.">        row.put(&quot;frozenAt&quot;, freezeAt == null ? null : freezeAt.toString());</span>
+<span class="pc bpc" id="L1449" title="1 of 4 branches missed.">        row.put(&quot;editable&quot;, owner &amp;&amp; !frozen);</span>
+<span class="pc bpc" id="L1450" title="1 of 4 branches missed.">        row.put(&quot;deletable&quot;, owner &amp;&amp; !frozen);</span>
+<span class="fc" id="L1451">        return row;</span>
+    }
+
+    /** Real first-creation plus 24 hours, from the stored created_at only (never the migration time). */
+    private static Instant freezeAt(Map&lt;String,Object&gt; row) {
+<span class="fc" id="L1456">        Instant created = instant(s(row,&quot;createdAt&quot;));</span>
+<span class="fc bfc" id="L1457" title="All 2 branches covered.">        return created == null ? null : created.plus(LOG_FREEZE_WINDOW);</span>
+    }
+
+    private void requireWritable(Map&lt;String,Object&gt; row) {
+<span class="fc" id="L1461">        Instant freezeAt = freezeAt(row);</span>
+<span class="pc bpc" id="L1462" title="1 of 4 branches missed.">        if (freezeAt == null || !clock.instant().isBefore(freezeAt)) {</span>
+<span class="fc" id="L1463">            throw conflict(&quot;WORK_LOG_FROZEN&quot;,&quot;该日志自首次创建已满24小时，只能查看&quot;);</span>
+        }
+<span class="fc" id="L1465">    }</span>
+
+    private Map&lt;String,Object&gt; findLog(Actor a,LocalDate date) {
+<span class="fc" id="L1468">        return db.find(&quot;SELECT id,row_version,business_date,deleted_at,created_at FROM work_logs WHERE organization_id=? AND author_id=? AND business_date=?&quot;,</span>
+<span class="fc" id="L1469">                a.organizationId(),a.id(),java.sql.Date.valueOf(date));</span>
+    }
+    private static ApiException logExists(Map&lt;String,Object&gt; row) {
+<span class="fc" id="L1472">        return new ApiException(409,&quot;WORK_LOG_EXISTS&quot;,&quot;今天已有日志，请打开已有记录编辑&quot;,</span>
+<span class="fc" id="L1473">                Map.of(&quot;logId&quot;,s(row,&quot;id&quot;),&quot;rowVersion&quot;,n(row,&quot;rowVersion&quot;),&quot;businessDate&quot;,s(row,&quot;businessDate&quot;)));</span>
+    }
+<span class="fc" id="L1475">    private LocalDate today(Actor a) {return clock.instant().atZone(zone(a)).toLocalDate();}</span>
+<span class="nc" id="L1476">    private boolean notificationVisible(Actor a,Map&lt;String,Object&gt; row) {return canReadTask(a,s(row,&quot;taskId&quot;),true);}</span>
+<span class="nc" id="L1477">    private Map&lt;String,Object&gt; safeNotification(Map&lt;String,Object&gt; row) {row.remove(&quot;organizationId&quot;);row.remove(&quot;recipientId&quot;);row.put(&quot;rowVersion&quot;,notificationVersion(row));return row;}</span>
+<span class="pc bpc" id="L1478" title="1 of 4 branches missed.">    public static long notificationVersion(Map&lt;String,Object&gt; row) {return 1+(row.get(&quot;readAt&quot;)==null?0:1)+(row.get(&quot;hiddenAt&quot;)==null?0:2);}</span>
+    private Map&lt;String,Object&gt; safeUser(Map&lt;String,Object&gt; row) {
+<span class="fc" id="L1480">        var safe=new LinkedHashMap&lt;String,Object&gt;();</span>
+<span class="fc bfc" id="L1481" title="All 2 branches covered.">        for(String key:List.of(&quot;id&quot;,&quot;displayName&quot;,&quot;accountType&quot;,&quot;role&quot;,&quot;placementType&quot;,&quot;departmentId&quot;,&quot;departmentName&quot;,&quot;positionId&quot;,&quot;positionName&quot;,&quot;teamId&quot;,&quot;teamName&quot;,&quot;managerId&quot;,&quot;managerName&quot;,&quot;rankLevel&quot;,&quot;active&quot;,&quot;avatar&quot;)) safe.put(key,row.get(key));</span>
+<span class="fc" id="L1482">        return safe;</span>
+    }
+    private ZoneId zone(Actor a) {
+<span class="fc" id="L1485">        String value=s(db.one(&quot;SELECT time_zone FROM organizations WHERE id=?&quot;,a.organizationId()),&quot;timeZone&quot;);</span>
+<span class="pc bpc" id="L1486" title="1 of 4 branches missed.">        try{return value==null||value.isBlank()?ZoneOffset.UTC:ZoneId.of(value);}</span>
+<span class="nc" id="L1487">        catch(RuntimeException error){return ZoneOffset.UTC;}</span>
+    }
+    private LocalDate dateFor(Actor a,Map&lt;String,Object&gt; body,String key) {
+<span class="pc bpc" id="L1490" title="1 of 2 branches missed.">        String value=nullable(body,key); return value==null?clock.instant().atZone(zone(a)).toLocalDate():optionalDate(value);</span>
+    }
+<span class="pc bfc" id="L1492" title="All 2 branches covered.">    private static LocalDate optionalDate(String value) {try{return value==null?null:LocalDate.parse(value);}catch(Exception e){throw bad(&quot;日期必须为 YYYY-MM-DD&quot;);}}</span>
+<span class="pc bfc" id="L1493" title="All 2 branches covered.">    static Instant instant(String value) {try{return value==null?null:Instant.parse(value);}catch(Exception e){return null;}}</span>
+<span class="nc bnc" id="L1494" title="All 4 branches missed.">    static boolean enabled(Map&lt;String,Object&gt; row) {Object v=row.get(&quot;active&quot;);return Boolean.TRUE.equals(v)||&quot;1&quot;.equals(String.valueOf(v));}</span>
+<span class="fc bfc" id="L1495" title="All 2 branches covered.">    private void business(Actor a) {if(a.administrator())throw new ApiException(403,&quot;BUSINESS_ROLE_REQUIRED&quot;,&quot;管理员请使用管理端接口&quot;);access.requireCurrent(a);}</span>
+<span class="pc bpc" id="L1496" title="1 of 4 branches missed.">    static String nullable(Map&lt;String,Object&gt; body,String key) {String value=s(body,key);return value==null||value.isBlank()?null:value.trim();}</span>
+<span class="pc bpc" id="L1497" title="2 of 6 branches missed.">    static String required(Map&lt;String,Object&gt; body,String key,int max) {if(!(body.get(key) instanceof String))throw bad(key+&quot; 必须为文字&quot;);String value=nullable(body,key);if(value==null||value.length()&gt;max)throw bad(key+&quot; 不能为空且不得超过 &quot;+max+&quot; 字&quot;);return value;}</span>
+<span class="pc bpc" id="L1498" title="1 of 2 branches missed.">    static void allowed(Map&lt;String,Object&gt; body,Set&lt;String&gt; keys) {if(!keys.containsAll(body.keySet()))throw bad(&quot;请求含不支持的字段&quot;);}</span>
+<span class="fc" id="L1499">    static ApiException bad(String message) {return new ApiException(400,&quot;INVALID_INPUT&quot;,message);}</span>
+<span class="nc" id="L1500">    static ApiException forbidden(String message) {return new ApiException(403,&quot;FORBIDDEN&quot;,message);}</span>
+<span class="fc" id="L1501">    static ApiException conflict(String code,String message) {return new ApiException(409,code,message);}</span>
+    static Map&lt;String,Object&gt; page(List&lt;Map&lt;String,Object&gt;&gt; rows,Map&lt;String,String&gt; filters) {
+<span class="fc" id="L1503">        int limit=number(filters,&quot;limit&quot;,20,1,100),offset=number(filters,&quot;offset&quot;,0,0,Integer.MAX_VALUE);</span>
+<span class="fc" id="L1504">        int start=Math.min(offset,rows.size()),end=(int)Math.min((long)start+limit,rows.size());</span>
+<span class="fc bfc" id="L1505" title="All 2 branches covered.">        var result=new LinkedHashMap&lt;String,Object&gt;();result.put(&quot;items&quot;,rows.subList(start,end));result.put(&quot;total&quot;,rows.size());result.put(&quot;nextOffset&quot;,end&lt;rows.size()?end:null);return result;</span>
+    }
+<span class="pc bpc" id="L1507" title="2 of 4 branches missed.">    static int number(Map&lt;String,String&gt; filters,String key,int fallback,int min,int max) {try{int value=Integer.parseInt(filters.getOrDefault(key,Integer.toString(fallback)));if(value&lt;min||value&gt;max)throw new NumberFormatException();return value;}catch(Exception e){throw bad(key+&quot; 超出允许范围&quot;);}}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

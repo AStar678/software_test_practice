@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HolidayPayload.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.calendar</a> &gt; <span class="el_source">HolidayPayload.java</span></div><h1>HolidayPayload.java</h1><pre class="source lang-java linenums">package cn.pandora.calendar;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.*;
+
+/**
+ * Validates one annual holiday payload before it can replace the cached year.
+ *
+ * &lt;p&gt;The source is fixed server configuration, never a client URL. The payload contract follows the
+ * year-file format used by the verified China holiday data set:
+ * {@code {&quot;year&quot;:2026,&quot;papers&quot;:[&quot;https://...&quot;],&quot;days&quot;:[{&quot;name&quot;:&quot;元旦&quot;,&quot;date&quot;:&quot;2026-01-01&quot;,&quot;isOffDay&quot;:true}]}}.
+ * A payload is all-or-nothing: cross-year dates, duplicates, conflicting rest/work entries, blank
+ * names, non-boolean flags or a missing official paper reference are rejected before any write.&lt;/p&gt;
+ */
+public final class HolidayPayload {
+<span class="fc" id="L22">    public record Day(LocalDate date, String name, boolean offDay) {}</span>
+<span class="fc" id="L23">    public record Year(int year, List&lt;Day&gt; days, String officialNotice, String sourceHash) {}</span>
+
+    private static final int MAX_DAYS = 400;
+    private static final int MAX_NAME_LENGTH = 100;
+
+    private HolidayPayload() {}
+
+    public static Year parse(byte[] body, int expectedYear, ObjectMapper mapper) {
+<span class="pc bpc" id="L31" title="1 of 4 branches missed.">        if (body == null || body.length == 0) {</span>
+<span class="fc" id="L32">            throw new HolidaySourceException(&quot;HOLIDAY_PAYLOAD_EMPTY&quot;, &quot;节假日年度数据为空&quot;);</span>
+        }
+        JsonNode root;
+        try {
+<span class="fc" id="L36">            root = mapper.readTree(body);</span>
+<span class="fc" id="L37">        } catch (Exception exception) {</span>
+<span class="fc" id="L38">            throw new HolidaySourceException(&quot;HOLIDAY_PAYLOAD_INVALID&quot;, &quot;节假日年度数据不是合法 JSON&quot;);</span>
+<span class="fc" id="L39">        }</span>
+<span class="pc bpc" id="L40" title="2 of 4 branches missed.">        if (root == null || !root.isObject()) {</span>
+<span class="nc" id="L41">            throw new HolidaySourceException(&quot;HOLIDAY_PAYLOAD_INVALID&quot;, &quot;节假日年度数据不是对象&quot;);</span>
+        }
+<span class="fc" id="L43">        JsonNode yearNode = root.get(&quot;year&quot;);</span>
+<span class="pc bpc" id="L44" title="2 of 6 branches missed.">        if (yearNode == null || !yearNode.isInt() || yearNode.intValue() != expectedYear) {</span>
+<span class="fc" id="L45">            throw new HolidaySourceException(&quot;HOLIDAY_YEAR_MISMATCH&quot;, &quot;节假日数据年份与请求年份不一致&quot;);</span>
+        }
+<span class="fc" id="L47">        JsonNode papers = root.get(&quot;papers&quot;);</span>
+<span class="pc bpc" id="L48" title="2 of 6 branches missed.">        if (papers == null || !papers.isArray() || papers.isEmpty()) {</span>
+<span class="fc" id="L49">            throw new HolidaySourceException(&quot;HOLIDAY_PAYLOAD_WITHOUT_NOTICE&quot;, &quot;节假日数据缺少官方通知依据&quot;);</span>
+        }
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        for (JsonNode paper : papers) {</span>
+<span class="pc bpc" id="L52" title="2 of 4 branches missed.">            if (!paper.isTextual() || !isHttpUrl(paper.textValue())) {</span>
+<span class="nc" id="L53">                throw new HolidaySourceException(&quot;HOLIDAY_PAYLOAD_WITHOUT_NOTICE&quot;, &quot;节假日数据的官方通知地址无效&quot;);</span>
+            }
+<span class="fc" id="L55">        }</span>
+<span class="fc" id="L56">        JsonNode days = root.get(&quot;days&quot;);</span>
+<span class="pc bpc" id="L57" title="4 of 8 branches missed.">        if (days == null || !days.isArray() || days.isEmpty() || days.size() &gt; MAX_DAYS) {</span>
+<span class="nc" id="L58">            throw new HolidaySourceException(&quot;HOLIDAY_PAYLOAD_INVALID&quot;, &quot;节假日日期集合为空或超出上限&quot;);</span>
+        }
+<span class="fc" id="L60">        List&lt;Day&gt; parsed = new ArrayList&lt;&gt;(days.size());</span>
+<span class="fc" id="L61">        Set&lt;LocalDate&gt; seen = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L62">        boolean anyOffDay = false;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        for (JsonNode item : days) {</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">            if (!item.isObject()) {</span>
+<span class="nc" id="L65">                throw new HolidaySourceException(&quot;HOLIDAY_PAYLOAD_INVALID&quot;, &quot;节假日日期项不是对象&quot;);</span>
+            }
+<span class="fc" id="L67">            JsonNode dateNode = item.get(&quot;date&quot;);</span>
+<span class="fc" id="L68">            JsonNode nameNode = item.get(&quot;name&quot;);</span>
+<span class="fc" id="L69">            JsonNode offNode = item.get(&quot;isOffDay&quot;);</span>
+<span class="pc bpc" id="L70" title="3 of 6 branches missed.">            if (dateNode == null || !dateNode.isTextual()</span>
+<span class="pc bpc" id="L71" title="2 of 4 branches missed.">                    || nameNode == null || !nameNode.isTextual()</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                    || offNode == null || !offNode.isBoolean()) {</span>
+<span class="fc" id="L73">                throw new HolidaySourceException(&quot;HOLIDAY_PAYLOAD_INVALID&quot;, &quot;节假日日期项缺少合法 date/name/isOffDay&quot;);</span>
+            }
+            LocalDate date;
+            try {
+<span class="fc" id="L77">                date = LocalDate.parse(dateNode.textValue().strip());</span>
+<span class="nc" id="L78">            } catch (DateTimeParseException exception) {</span>
+<span class="nc" id="L79">                throw new HolidaySourceException(&quot;HOLIDAY_PAYLOAD_INVALID&quot;, &quot;节假日日期不是合法公历日期&quot;);</span>
+<span class="fc" id="L80">            }</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (date.getYear() != expectedYear) {</span>
+<span class="fc" id="L82">                throw new HolidaySourceException(&quot;HOLIDAY_DATE_OUT_OF_YEAR&quot;, &quot;节假日日期不属于请求年份&quot;);</span>
+            }
+<span class="fc" id="L84">            String name = nameNode.textValue().strip();</span>
+<span class="pc bpc" id="L85" title="1 of 4 branches missed.">            if (name.isEmpty() || name.length() &gt; MAX_NAME_LENGTH) {</span>
+<span class="fc" id="L86">                throw new HolidaySourceException(&quot;HOLIDAY_PAYLOAD_INVALID&quot;, &quot;节假日名称为空或超长&quot;);</span>
+            }
+<span class="fc bfc" id="L88" title="All 2 branches covered.">            if (!seen.add(date)) {</span>
+<span class="fc" id="L89">                throw new HolidaySourceException(&quot;HOLIDAY_DATE_DUPLICATE&quot;, &quot;节假日日期重复&quot;);</span>
+            }
+<span class="fc" id="L91">            boolean off = offNode.booleanValue();</span>
+<span class="fc" id="L92">            anyOffDay |= off;</span>
+<span class="fc" id="L93">            parsed.add(new Day(date, name, off));</span>
+<span class="fc" id="L94">        }</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (!anyOffDay) {</span>
+<span class="fc" id="L96">            throw new HolidaySourceException(&quot;HOLIDAY_PAYLOAD_INVALID&quot;, &quot;节假日数据没有任何休假日期&quot;);</span>
+        }
+<span class="fc" id="L98">        parsed.sort(Comparator.comparing(Day::date));</span>
+<span class="fc" id="L99">        return new Year(expectedYear, List.copyOf(parsed), papers.get(0).textValue(), sha256(body));</span>
+    }
+
+    private static boolean isHttpUrl(String value) {
+        try {
+<span class="fc" id="L104">            var uri = java.net.URI.create(value.strip());</span>
+<span class="pc bpc" id="L105" title="2 of 4 branches missed.">            return (&quot;http&quot;.equalsIgnoreCase(uri.getScheme()) || &quot;https&quot;.equalsIgnoreCase(uri.getScheme()))</span>
+<span class="pc bpc" id="L106" title="2 of 4 branches missed.">                    &amp;&amp; uri.getHost() != null &amp;&amp; !uri.getHost().isBlank();</span>
+<span class="nc" id="L107">        } catch (IllegalArgumentException exception) {</span>
+<span class="nc" id="L108">            return false;</span>
+        }
+    }
+
+    private static String sha256(byte[] body) {
+        try {
+<span class="fc" id="L114">            return HexFormat.of().formatHex(MessageDigest.getInstance(&quot;SHA-256&quot;).digest(body));</span>
+<span class="nc" id="L115">        } catch (Exception exception) {</span>
+<span class="nc" id="L116">            throw new IllegalStateException(exception);</span>
+        }
+    }
+
+    public static String utf8(byte[] body) {
+<span class="nc" id="L121">        return new String(body, StandardCharsets.UTF_8);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

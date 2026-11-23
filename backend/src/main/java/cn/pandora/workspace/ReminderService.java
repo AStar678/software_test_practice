@@ -36,7 +36,7 @@ public class ReminderService {
         int created = 0;
         for (Map<String, Object> task : db.list("SELECT t.*,v.title,v.start_at,v.due_at,v.priority FROM tasks t "
                 + "JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
-                + "WHERE t.organization_id=? AND t.current_version_id IS NOT NULL AND t.execution_state<>'done' "
+                + "WHERE t.organization_id=? AND t.deleted_at IS NULL AND t.current_version_id IS NOT NULL AND t.execution_state<>'done' "
                 + "AND NOT EXISTS (SELECT 1 FROM approval_requests a WHERE a.organization_id=t.organization_id "
                 + "AND a.task_id=t.id AND a.status='pending') ORDER BY v.due_at,t.id", organizationId)) {
             created += remindTask(organizationId, task, now, null);
@@ -52,7 +52,7 @@ public class ReminderService {
     public int ensureOverdueAfterExpiry(String organizationId, String taskId, Instant now) {
         Map<String, Object> task = db.find("SELECT t.*,v.title,v.start_at,v.due_at FROM tasks t "
                 + "JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
-                + "WHERE t.organization_id=? AND t.id=? AND t.current_version_id IS NOT NULL", organizationId, taskId);
+                + "WHERE t.organization_id=? AND t.id=? AND t.deleted_at IS NULL AND t.current_version_id IS NOT NULL", organizationId, taskId);
         if (task == null || "done".equals(s(task, "executionState"))) return 0;
         Instant due = instant(task.get("dueAt"));
         if (due == null || !now.isAfter(due)) return 0;

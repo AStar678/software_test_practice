@@ -1,0 +1,45 @@
+PASS create preserves both tag IDs and order
+PASS home omits the retired recent-log card
+PASS own log list uses the ordered collection
+PASS manager list reads same ordered collection
+PASS manager pages retain independent ordered tag sets
+PASS omitted tagIds preserve existing collection
+PASS unrelated colleague cannot read log
+PASS old singular tag field is rejected
+PASS duplicate IDs reject whole edit
+PASS cross-company tag rejects whole edit
+PASS manager cannot alter author tags
+PASS remove and append retains selection order
+PASS live catalogue change refreshes log tag
+PASS deleted reference stays visible
+PASS deleted tag cannot be newly attached
+PASS unchanged deleted reference can remain
+PASS stale version leaves body and tags unchanged
+PASS explicit empty collection clears tags
+PASS login form ready
+PASS authenticated founder
+PASS log create form exposes the shared tag picker
+PASS log create form keeps its own date field
+PASS cancel then re-select appends at the new position
+PASS log picker keeps aria-pressed in sync
+PASS log tag keeps keyboard toggle state
+PASS log tag picker fits 320
+PASS log tag picker fits 390
+PASS log tag picker fits 1440
+PASS nested task picker opens over the log form
+PASS nested return keeps the ordered tags and body draft
+PASS failed save keeps the tag draft and the form
+PASS log saved with the selected order
+PASS saved log reads back the ordered collection
+PASS log detail shows every selected tag in order
+PASS employee login form ready
+PASS login form ready
+PASS authenticated alpha-one-employee
+PASS employee log detail keeps the deleted snapshot
+PASS log edit form reuses the shared picker
+PASS log edit keeps the date read-only beside the tags
+PASS retained deleted tag starts selected
+PASS removing the deleted reference disables re-selection
+PASS log edit tag picker fits 320
+PASS log edit tag picker fits 390
+PASS no browser exceptions

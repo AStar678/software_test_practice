@@ -1,0 +1,375 @@
+{
+  "startedAt": "2026-11-18T16:03:03.899040+00:00",
+  "suites": [
+    {
+      "suite": "check_fixed_organization_migration.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 2.543,
+      "passedAssertionsPrinted": 49,
+      "log": "check_fixed_organization_migration.log",
+      "sourceSha256": "992efe1cbcd7f57693a96ec809485ebbf50b5db9c2d56cd05cd772fdc8dc09ee"
+    },
+    {
+      "suite": "check_legacy_mapping.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 4.922,
+      "passedAssertionsPrinted": 5,
+      "log": "check_legacy_mapping.log",
+      "sourceSha256": "328aabb2765564c8a58627bb4c92f7b9e2ef66cbe5b94e43f42420d70544644f"
+    },
+    {
+      "suite": "check_final_migration.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 8.629,
+      "passedAssertionsPrinted": 2,
+      "log": "check_final_migration.log",
+      "sourceSha256": "8788fabefcd760224cc6a5f45e00f7bdb1e3a8790899c0c15a6fa546d8e4c99b"
+    },
+    {
+      "suite": "check_login_identity_collision.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 14.118,
+      "passedAssertionsPrinted": 74,
+      "log": "check_login_identity_collision.log",
+      "sourceSha256": "1a53695563d4a31f12c7b688b7f39224c934bcc4ebe36156b376d6f1478f0da7"
+    },
+    {
+      "suite": "check_organization_plans.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 7.756,
+      "passedAssertionsPrinted": 30,
+      "log": "check_organization_plans.log",
+      "sourceSha256": "ae78126673622756c5d7ea1490cee01cd6417d7b337c0d0ab75778b67615de8c"
+    },
+    {
+      "suite": "check_review_routing.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 11.587,
+      "passedAssertionsPrinted": 204,
+      "log": "check_review_routing.log",
+      "sourceSha256": "cb9f96876109342c1a12478d86ca8b4c72a234ad64c8892edbd83425b3306ac2"
+    },
+    {
+      "suite": "check_auto_apply_authorization.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 8.751,
+      "passedAssertionsPrinted": 18,
+      "log": "check_auto_apply_authorization.log",
+      "sourceSha256": "6d8c6199754fed53b8c7771855b20e791859eba7263d2a58d478c38b2968f77f"
+    },
+    {
+      "suite": "check_business_takeover.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 9.556,
+      "passedAssertionsPrinted": 87,
+      "log": "check_business_takeover.log",
+      "sourceSha256": "4915a0e10ab7cc1f224c59a63662295ad8a446e8a04316265412c240deca1d9e"
+    },
+    {
+      "suite": "check_profile_phone_matrix.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 9.177,
+      "passedAssertionsPrinted": 0,
+      "log": "check_profile_phone_matrix.log",
+      "sourceSha256": "100d3eb979d83b3106e8c75ed2543b15eb54ee0a56f0a955a0d1deaef4766dc4"
+    },
+    {
+      "suite": "check_fixed_workspace_access.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 10.495,
+      "passedAssertionsPrinted": 20,
+      "log": "check_fixed_workspace_access.log",
+      "sourceSha256": "d409c797e9d634d7ec6c58f3727472091628b398434c830ca28e0286bfbe4afe"
+    },
+    {
+      "suite": "check_fixed_notifications.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 11.29,
+      "passedAssertionsPrinted": 49,
+      "log": "check_fixed_notifications.log",
+      "sourceSha256": "d8f073ccff92d5ab340b44f1847409daaffb18e601ee22afad5f4d7c9a2f7b9f"
+    },
+    {
+      "suite": "check_visible_schedule_permissions.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 12.078,
+      "passedAssertionsPrinted": 22,
+      "log": "check_visible_schedule_permissions.log",
+      "sourceSha256": "505151d4af8322a2c6484eeba341e002b68a90c3f8c60faf1143422bb1bd5da2"
+    },
+    {
+      "suite": "check_holidays.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 21.503,
+      "passedAssertionsPrinted": 37,
+      "log": "check_holidays.log",
+      "sourceSha256": "5786861dc1b61f486a6310928d76de1ccb338042b69d89413cc200a60d47ce31"
+    },
+    {
+      "suite": "check_employee_contracts_upgrade.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 63.578,
+      "passedAssertionsPrinted": 331,
+      "log": "check_employee_contracts_upgrade.log",
+      "sourceSha256": "814fd18fce36e22665c19b2e514a119f0a8b9079fc37e5c922eb152c6d40b60c"
+    },
+    {
+      "suite": "check_task_refinement_upgrade.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 31.107,
+      "passedAssertionsPrinted": 13,
+      "log": "check_task_refinement_upgrade.log",
+      "sourceSha256": "ddc5582f95fedf18ca2c84c96f0d26dc60fe7403cae244243e2a77aeccd9bbd1"
+    },
+    {
+      "suite": "check_apply_private_migration_guard.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 27.738,
+      "passedAssertionsPrinted": 2,
+      "log": "check_apply_private_migration_guard.log",
+      "sourceSha256": "5ea927a287fec940b68046244c39978770cbbfd995c4e3689be8a440e56bd429"
+    },
+    {
+      "suite": "check_demo_extremes.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 11.667,
+      "passedAssertionsPrinted": 130,
+      "log": "check_demo_extremes.log",
+      "sourceSha256": "cbccb72d51945d69d54e25833ac3101d2cd898abb565235b2b8e3401d7307e24"
+    },
+    {
+      "suite": "check_final_demo.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 70.418,
+      "passedAssertionsPrinted": 94,
+      "log": "check_final_demo.log",
+      "sourceSha256": "deda4d0fb91c486986693117c06ca597bd62ef40856cc426da4f08afb19f41cf"
+    },
+    {
+      "suite": "check_admin_contract.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 34.074,
+      "passedAssertionsPrinted": 42,
+      "log": "check_admin_contract.log",
+      "sourceSha256": "45f9fc2812dd463ee3426a442790752c6453038a96dee7a89fb691e2edc20490"
+    },
+    {
+      "suite": "check_handover_chain.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 37.356,
+      "passedAssertionsPrinted": 24,
+      "log": "check_handover_chain.log",
+      "sourceSha256": "62e3004c60b5c7d4f5a11e4973e487b6a068fd9e2ab0cb4ab917ec0a55cdf202"
+    },
+    {
+      "suite": "check_fixed_web.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 83.141,
+      "passedAssertionsPrinted": 195,
+      "log": "check_fixed_web.log",
+      "sourceSha256": "0678beb1a1780416ea5cf3a03bcaf3d2e1216d9cb1bc85ba72a50c5c737251c9"
+    },
+    {
+      "suite": "check_calendar_drawer.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 67.169,
+      "passedAssertionsPrinted": 102,
+      "log": "check_calendar_drawer.log",
+      "sourceSha256": "d36f973de38fc1c3c9308fd8647d35c5cae80d4753594d458c9c9be24b0dfb8d"
+    },
+    {
+      "suite": "check_fixed_late_response.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 29.931,
+      "passedAssertionsPrinted": 9,
+      "log": "check_fixed_late_response.log",
+      "sourceSha256": "6dd6d7e37bc68eda5682e5f399227cbcb685765c67fe17e3b49c6786fad82831"
+    },
+    {
+      "suite": "check_log_backfill_entry.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 7.603,
+      "passedAssertionsPrinted": 0,
+      "log": "check_log_backfill_entry.log",
+      "sourceSha256": "60a7b4077cc7ab20f89fa026647186a5d5d510a966053790d90316035780a55f"
+    },
+    {
+      "suite": "check_fixed_communication_web.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 34.38,
+      "passedAssertionsPrinted": 34,
+      "log": "check_fixed_communication_web.log",
+      "sourceSha256": "52050be4c091f7e7ffdf9d7c71f64741957d3eaeb1eb44624d1cdc6599d72987"
+    },
+    {
+      "suite": "check_daily_items.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 58.452,
+      "passedAssertionsPrinted": 92,
+      "log": "check_daily_items.log",
+      "sourceSha256": "006a4b519c63714dc2a7b461ba0749ca832199edc0b5fef90a04333eae579497"
+    },
+    {
+      "suite": "check_chapter8_web.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 39.466,
+      "passedAssertionsPrinted": 57,
+      "log": "check_chapter8_web.log",
+      "sourceSha256": "43a2a2b22e37e77471a0f1f21909e69059bc5a07ddf4bd312a13c21e3e89ef13"
+    },
+    {
+      "suite": "check_apply_notifications.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 71.326,
+      "passedAssertionsPrinted": 113,
+      "log": "check_apply_notifications.log",
+      "sourceSha256": "472e6cbd52a9d4fe00c54e4e33da68780cd2d332c043f4fb98063ab2504234f8"
+    },
+    {
+      "suite": "check_apply_mixed_edit.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 52.409,
+      "passedAssertionsPrinted": 68,
+      "log": "check_apply_mixed_edit.log",
+      "sourceSha256": "758cbfb9b5b62157e3e68a20b2b74ce59788902d03bf71326af1d6ff70874c5b"
+    },
+    {
+      "suite": "check_apply_log_tags.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 9.715,
+      "passedAssertionsPrinted": 45,
+      "log": "check_apply_log_tags.log",
+      "sourceSha256": "5873f47079143bb618b2abc3aa200ee9012fe4f02a82f316fc27de68951dc28c"
+    },
+    {
+      "suite": "check_apply_admin_login_phone.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 9.385,
+      "passedAssertionsPrinted": 18,
+      "log": "check_apply_admin_login_phone.log",
+      "sourceSha256": "544c92bec61f1421965302d9765674f9e9396f24e37ba0fb66145f11d83cce5a"
+    },
+    {
+      "suite": "check_apply_profile_pin_history.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 33.315,
+      "passedAssertionsPrinted": 35,
+      "log": "check_apply_profile_pin_history.log",
+      "sourceSha256": "0bddd0579a230d7dc459ddb5f2b2bb90a7085affba003db8caf0392344e0b9c1"
+    },
+    {
+      "suite": "check_calendar_tags.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 28.527,
+      "passedAssertionsPrinted": 26,
+      "log": "check_calendar_tags.log",
+      "sourceSha256": "780cce027fec7bb2f6ec76e398b73db81da2b20bc1cbe1d59491421da445256b"
+    },
+    {
+      "suite": "check_subordinate_workspace.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 44.106,
+      "passedAssertionsPrinted": 100,
+      "log": "check_subordinate_workspace.log",
+      "sourceSha256": "9eb6cc872751922a9bd0c166f3fcbc42d84cb37becd04ec031f3a58f3fd6efeb"
+    },
+    {
+      "suite": "check_schedule_drag.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 82.654,
+      "passedAssertionsPrinted": 158,
+      "log": "check_schedule_drag.log",
+      "sourceSha256": "ab5052c23f75b29240dfc37cb358d8b1bc2302b20461da864f4079e230ca899c"
+    },
+    {
+      "suite": "check_request_id_compat.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 27.969,
+      "passedAssertionsPrinted": 16,
+      "log": "check_request_id_compat.log",
+      "sourceSha256": "34dac526e49d461e78487a0d81ee6d3722ab159ac0ab6518fa0eaf39be96e075"
+    },
+    {
+      "suite": "check_apply_copy_audit.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 15.026,
+      "passedAssertionsPrinted": 42,
+      "log": "check_apply_copy_audit.log",
+      "sourceSha256": "25e9c66de9281c719f9c6c48f4b826c31bae82d0a58f053907efb93c7d215afe"
+    },
+    {
+      "suite": "check_web_alignment_drag.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 37.752,
+      "passedAssertionsPrinted": 31,
+      "log": "check_web_alignment_drag.log",
+      "sourceSha256": "08485fd2315772cc6925d8f6088d146200ebd42797aab76531746160822e9882"
+    },
+    {
+      "suite": "check_task_creation_refinement.py",
+      "exitCode": 1,
+      "timedOut": false,
+      "seconds": 49.859,
+      "passedAssertionsPrinted": 65,
+      "log": "check_task_creation_refinement.log",
+      "sourceSha256": "d522c1c2aef0f109ea907e90254aa93ca855a9679f161d9c9c706527e1071dbc"
+    },
+    {
+      "suite": "check_web_verification_repairs.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 42.594,
+      "passedAssertionsPrinted": 100,
+      "log": "check_web_verification_repairs.log",
+      "sourceSha256": "d67cfe995edfaee8be81b67e645b262c8ed9862f7cbe74126e9cc604995e8ec6"
+    },
+    {
+      "suite": "check_founder_setup.py",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 11.223,
+      "passedAssertionsPrinted": 8,
+      "log": "check_founder_setup.log",
+      "sourceSha256": "573fb84fab85ff26048b943190c62d82d18197ef37d4bc268667406cc123045c"
+    }
+  ],
+  "finishedAt": "2026-11-18T16:24:31.205507+00:00"
+}

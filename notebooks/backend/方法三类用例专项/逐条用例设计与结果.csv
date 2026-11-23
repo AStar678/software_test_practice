@@ -1,0 +1,127 @@
+﻿方法,用例ID,类别,等价类,边界依据,输入,预期HTTP,实际结论
+AuthService.login,N_employee,正常,有效员工手机号和密码,通常长度11的有效登录标识,"{""id"": ""N_employee"", ""kind"": ""正常"", ""value"": ""employee"", ""expected"": 200}",200,PASS
+AuthService.login,N_admin,正常,有效独立管理员账号和密码,管理员与员工登录分支分开,"{""id"": ""N_admin"", ""kind"": ""正常"", ""value"": ""admin"", ""expected"": 200}",200,PASS
+AuthService.login,B_identifier80,边界,可规范化的合法员工标识,原始identifier长度上限80，69空格+11位手机号=80,"{""id"": ""B_identifier80"", ""kind"": ""边界"", ""value"": 80, ""expected"": 200}",200,PASS
+AuthService.login,E_identifier81,异常,超长登录标识,上限80的首次越界81，规范化前应拒绝,"{""id"": ""E_identifier81"", ""kind"": ""异常"", ""value"": 81, ""expected"": 401}",401,PASS
+AuthService.login,E_phone_type,异常,手机号为数组而非字符串,无效JSON类型等价类,"{""id"": ""E_phone_type"", ""kind"": ""异常"", ""value"": ""wrong_type"", ""expected"": 400}",400,PASS
+AuthService.login,E_password_wrong,异常,身份格式有效但密码错误,无效凭据等价类,"{""id"": ""E_password_wrong"", ""kind"": ""异常"", ""value"": ""wrong_password"", ""expected"": 401}",401,PASS
+DailyItemService.list,N_limit20,正常,允许范围内的分页长度,内部代表值20,"{""id"": ""N_limit20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+DailyItemService.list,B_limit1,边界,合法最小分页长度,精确下界1,"{""id"": ""B_limit1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+DailyItemService.list,B_limit100,边界,合法最大分页长度,精确上界100,"{""id"": ""B_limit100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+DailyItemService.list,E_limit0,异常,小于允许范围,下界外相邻值0,"{""id"": ""E_limit0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+DailyItemService.list,E_limit101,异常,大于允许范围,上界外相邻值101,"{""id"": ""E_limit101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+DailyItemService.list,E_limit_text,异常,分页值非整数,无效类型/格式等价类,"{""id"": ""E_limit_text"", ""kind"": ""异常"", ""value"": ""x"", ""expected"": 400}",400,PASS
+DailyItemService.list,B_offset_max,边界,最大合法分页偏移,offset的Integer.MAX_VALUE=2147483647,"{""id"": ""B_offset_max"", ""kind"": ""边界"", ""value"": 20, ""expected"": 200, ""offset"": 2147483647}",200,PASS
+DailyItemService.list,E_offset_overflow,异常,偏移数值溢出,offset首次越界2147483648,"{""id"": ""E_offset_overflow"", ""kind"": ""异常"", ""value"": 20, ""expected"": 400, ""offset"": 2147483648}",400,PASS
+DailyItemService.summary,N_days30,正常,有效的含首尾日期范围,内部代表值30天,"{""id"": ""N_days30"", ""kind"": ""正常"", ""value"": 30, ""expected"": 200}",200,PASS
+DailyItemService.summary,B_days1,边界,最短合法区间,精确下界1天，from=to,"{""id"": ""B_days1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+DailyItemService.summary,B_days93,边界,最长合法区间,精确上界93天,"{""id"": ""B_days93"", ""kind"": ""边界"", ""value"": 93, ""expected"": 200}",200,PASS
+DailyItemService.summary,E_days0,异常,倒序区间,下界外相邻值0天,"{""id"": ""E_days0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+DailyItemService.summary,E_days94,异常,超长区间,上界外相邻值94天,"{""id"": ""E_days94"", ""kind"": ""异常"", ""value"": 94, ""expected"": 400}",400,PASS
+DailyItemService.summary,E_invalid_date,异常,非法公历日期,1900年不是闰年,"{""id"": ""E_invalid_date"", ""kind"": ""异常"", ""value"": ""1900-02-29"", ""expected"": 400}",400,PASS
+DailyItemService.create,N_text20,正常,非空且在长度内的正文,内部代表值20码点,"{""id"": ""N_text20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+DailyItemService.create,B_text1,边界,最短合法正文,精确下界1码点,"{""id"": ""B_text1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+DailyItemService.create,B_text2000,边界,最长合法正文,精确上界2000码点,"{""id"": ""B_text2000"", ""kind"": ""边界"", ""value"": 2000, ""expected"": 200}",200,PASS
+DailyItemService.create,E_text0,异常,空正文,下界外相邻值0,"{""id"": ""E_text0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+DailyItemService.create,E_text2001,异常,超长正文,上界外相邻值2001,"{""id"": ""E_text2001"", ""kind"": ""异常"", ""value"": 2001, ""expected"": 400}",400,PASS
+DailyItemService.create,E_text_type,异常,正文为数字,无效JSON类型等价类,"{""id"": ""E_text_type"", ""kind"": ""异常"", ""value"": ""number"", ""expected"": 400}",400,PASS
+DailyItemService.change,N_text20,正常,非空且在长度内的正文,内部代表值20码点,"{""id"": ""N_text20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+DailyItemService.change,B_text1,边界,最短合法正文,精确下界1码点,"{""id"": ""B_text1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+DailyItemService.change,B_text2000,边界,最长合法正文,精确上界2000码点,"{""id"": ""B_text2000"", ""kind"": ""边界"", ""value"": 2000, ""expected"": 200}",200,PASS
+DailyItemService.change,E_text0,异常,空正文,下界外相邻值0,"{""id"": ""E_text0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+DailyItemService.change,E_text2001,异常,超长正文,上界外相邻值2001,"{""id"": ""E_text2001"", ""kind"": ""异常"", ""value"": 2001, ""expected"": 400}",400,PASS
+DailyItemService.change,E_text_type,异常,正文为数字,无效JSON类型等价类,"{""id"": ""E_text_type"", ""kind"": ""异常"", ""value"": ""number"", ""expected"": 400}",400,PASS
+DailyItemService.change,E_version_missing,异常,版本前置条件缺失,If-Match未提供,"{""id"": ""E_version_missing"", ""kind"": ""异常"", ""value"": 20, ""expected"": 428, ""version"": null}",428,PASS
+DailyItemService.change,E_version_stale,异常,版本前置条件陈旧,初始版本为1，输入0,"{""id"": ""E_version_stale"", ""kind"": ""异常"", ""value"": 20, ""expected"": 412, ""version"": 0}",412,PASS
+DailyItemService.delete,N_version2,正常,存在且版本匹配的本人对象,先将本次新建对象更新至版本2,"{""id"": ""N_version2"", ""kind"": ""正常"", ""value"": 2, ""expected"": 200}",200,PASS
+DailyItemService.delete,B_version1,边界,最小有效对象版本,对象刚创建时初始版本1,"{""id"": ""B_version1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+DailyItemService.delete,E_version0,异常,陈旧版本,小于初始版本的相邻值0,"{""id"": ""E_version0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 412}",412,PASS
+DailyItemService.delete,E_version_missing,异常,缺少版本前置条件,If-Match缺失,"{""id"": ""E_version_missing"", ""kind"": ""异常"", ""value"": null, ""expected"": 428}",428,PASS
+WorkspaceService.users,N_limit20,正常,允许范围内的分页长度,内部代表值20,"{""id"": ""N_limit20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+WorkspaceService.users,B_limit1,边界,合法最小分页长度,精确下界1,"{""id"": ""B_limit1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+WorkspaceService.users,B_limit100,边界,合法最大分页长度,精确上界100,"{""id"": ""B_limit100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+WorkspaceService.users,E_limit0,异常,小于允许范围,下界外相邻值0,"{""id"": ""E_limit0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+WorkspaceService.users,E_limit101,异常,大于允许范围,上界外相邻值101,"{""id"": ""E_limit101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+WorkspaceService.users,E_limit_text,异常,分页值非整数,无效类型/格式等价类,"{""id"": ""E_limit_text"", ""kind"": ""异常"", ""value"": ""x"", ""expected"": 400}",400,PASS
+WorkspaceService.users,B_offset_max,边界,最大合法分页偏移,offset的Integer.MAX_VALUE=2147483647,"{""id"": ""B_offset_max"", ""kind"": ""边界"", ""value"": 20, ""expected"": 200, ""offset"": 2147483647}",200,PASS
+WorkspaceService.users,E_offset_overflow,异常,偏移数值溢出,offset首次越界2147483648,"{""id"": ""E_offset_overflow"", ""kind"": ""异常"", ""value"": 20, ""expected"": 400, ""offset"": 2147483648}",400,PASS
+WorkspaceService.users,N_admin20,正常,管理员目录有效分页,管理员调用同一users方法的admin分支,"{""id"": ""N_admin20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200, ""actor"": ""ADMIN"", ""path"": ""/admin/users""}",200,PASS
+WorkspaceService.users,B_admin100,边界,管理员目录合法最大分页,精确上界100,"{""id"": ""B_admin100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200, ""actor"": ""ADMIN"", ""path"": ""/admin/users""}",200,PASS
+WorkspaceService.users,E_admin101,异常,管理员目录越界,上界外相邻值101,"{""id"": ""E_admin101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400, ""actor"": ""ADMIN"", ""path"": ""/admin/users""}",400,PASS
+WorkspaceService.logs,N_limit20,正常,允许范围内的分页长度,内部代表值20,"{""id"": ""N_limit20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+WorkspaceService.logs,B_limit1,边界,合法最小分页长度,精确下界1,"{""id"": ""B_limit1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+WorkspaceService.logs,B_limit100,边界,合法最大分页长度,精确上界100,"{""id"": ""B_limit100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+WorkspaceService.logs,E_limit0,异常,小于允许范围,下界外相邻值0,"{""id"": ""E_limit0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+WorkspaceService.logs,E_limit101,异常,大于允许范围,上界外相邻值101,"{""id"": ""E_limit101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+WorkspaceService.logs,E_limit_text,异常,分页值非整数,无效类型/格式等价类,"{""id"": ""E_limit_text"", ""kind"": ""异常"", ""value"": ""x"", ""expected"": 400}",400,PASS
+WorkspaceService.logs,B_offset_max,边界,最大合法分页偏移,offset的Integer.MAX_VALUE=2147483647,"{""id"": ""B_offset_max"", ""kind"": ""边界"", ""value"": 20, ""expected"": 200, ""offset"": 2147483647}",200,PASS
+WorkspaceService.logs,E_offset_overflow,异常,偏移数值溢出,offset首次越界2147483648,"{""id"": ""E_offset_overflow"", ""kind"": ""异常"", ""value"": 20, ""expected"": 400, ""offset"": 2147483648}",400,PASS
+WorkspaceService.notifications,N_limit20,正常,允许范围内的分页长度,内部代表值20,"{""id"": ""N_limit20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+WorkspaceService.notifications,B_limit1,边界,合法最小分页长度,精确下界1,"{""id"": ""B_limit1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+WorkspaceService.notifications,B_limit100,边界,合法最大分页长度,精确上界100,"{""id"": ""B_limit100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+WorkspaceService.notifications,E_limit0,异常,小于允许范围,下界外相邻值0,"{""id"": ""E_limit0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+WorkspaceService.notifications,E_limit101,异常,大于允许范围,上界外相邻值101,"{""id"": ""E_limit101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+WorkspaceService.notifications,E_limit_text,异常,分页值非整数,无效类型/格式等价类,"{""id"": ""E_limit_text"", ""kind"": ""异常"", ""value"": ""x"", ""expected"": 400}",400,PASS
+WorkspaceService.notifications,B_offset_max,边界,最大合法分页偏移,offset的Integer.MAX_VALUE=2147483647,"{""id"": ""B_offset_max"", ""kind"": ""边界"", ""value"": 20, ""expected"": 200, ""offset"": 2147483647}",200,PASS
+WorkspaceService.notifications,E_offset_overflow,异常,偏移数值溢出,offset首次越界2147483648,"{""id"": ""E_offset_overflow"", ""kind"": ""异常"", ""value"": 20, ""expected"": 400, ""offset"": 2147483648}",400,PASS
+WorkspaceService.adminTeams,N_limit20,正常,允许范围内的分页长度,内部代表值20,"{""id"": ""N_limit20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+WorkspaceService.adminTeams,B_limit1,边界,合法最小分页长度,精确下界1,"{""id"": ""B_limit1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+WorkspaceService.adminTeams,B_limit100,边界,合法最大分页长度,精确上界100,"{""id"": ""B_limit100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+WorkspaceService.adminTeams,E_limit0,异常,小于允许范围,下界外相邻值0,"{""id"": ""E_limit0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+WorkspaceService.adminTeams,E_limit101,异常,大于允许范围,上界外相邻值101,"{""id"": ""E_limit101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+WorkspaceService.adminTeams,E_limit_text,异常,分页值非整数,无效类型/格式等价类,"{""id"": ""E_limit_text"", ""kind"": ""异常"", ""value"": ""x"", ""expected"": 400}",400,PASS
+WorkspaceService.adminTeams,B_offset_max,边界,最大合法分页偏移,offset的Integer.MAX_VALUE=2147483647,"{""id"": ""B_offset_max"", ""kind"": ""边界"", ""value"": 20, ""expected"": 200, ""offset"": 2147483647}",200,PASS
+WorkspaceService.adminTeams,E_offset_overflow,异常,偏移数值溢出,offset首次越界2147483648,"{""id"": ""E_offset_overflow"", ""kind"": ""异常"", ""value"": 20, ""expected"": 400, ""offset"": 2147483648}",400,PASS
+WorkspaceService.audit,N_limit20,正常,允许范围内的分页长度,内部代表值20,"{""id"": ""N_limit20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+WorkspaceService.audit,B_limit1,边界,合法最小分页长度,精确下界1,"{""id"": ""B_limit1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+WorkspaceService.audit,B_limit100,边界,合法最大分页长度,精确上界100,"{""id"": ""B_limit100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+WorkspaceService.audit,E_limit0,异常,小于允许范围,下界外相邻值0,"{""id"": ""E_limit0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+WorkspaceService.audit,E_limit101,异常,大于允许范围,上界外相邻值101,"{""id"": ""E_limit101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+WorkspaceService.audit,E_limit_text,异常,分页值非整数,无效类型/格式等价类,"{""id"": ""E_limit_text"", ""kind"": ""异常"", ""value"": ""x"", ""expected"": 400}",400,PASS
+WorkspaceService.audit,B_offset_max,边界,最大合法分页偏移,offset的Integer.MAX_VALUE=2147483647,"{""id"": ""B_offset_max"", ""kind"": ""边界"", ""value"": 20, ""expected"": 200, ""offset"": 2147483647}",200,PASS
+WorkspaceService.audit,E_offset_overflow,异常,偏移数值溢出,offset首次越界2147483648,"{""id"": ""E_offset_overflow"", ""kind"": ""异常"", ""value"": 20, ""expected"": 400, ""offset"": 2147483648}",400,PASS
+WorkspaceService.adminNotifications,N_limit20,正常,允许范围内的分页长度,内部代表值20,"{""id"": ""N_limit20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+WorkspaceService.adminNotifications,B_limit1,边界,合法最小分页长度,精确下界1,"{""id"": ""B_limit1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+WorkspaceService.adminNotifications,B_limit100,边界,合法最大分页长度,精确上界100,"{""id"": ""B_limit100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+WorkspaceService.adminNotifications,E_limit0,异常,小于允许范围,下界外相邻值0,"{""id"": ""E_limit0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+WorkspaceService.adminNotifications,E_limit101,异常,大于允许范围,上界外相邻值101,"{""id"": ""E_limit101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+WorkspaceService.adminNotifications,E_limit_text,异常,分页值非整数,无效类型/格式等价类,"{""id"": ""E_limit_text"", ""kind"": ""异常"", ""value"": ""x"", ""expected"": 400}",400,PASS
+WorkspaceService.adminNotifications,B_offset_max,边界,最大合法分页偏移,offset的Integer.MAX_VALUE=2147483647,"{""id"": ""B_offset_max"", ""kind"": ""边界"", ""value"": 20, ""expected"": 200, ""offset"": 2147483647}",200,PASS
+WorkspaceService.adminNotifications,E_offset_overflow,异常,偏移数值溢出,offset首次越界2147483648,"{""id"": ""E_offset_overflow"", ""kind"": ""异常"", ""value"": 20, ""expected"": 400, ""offset"": 2147483648}",400,PASS
+TaskService.list,N_limit20,正常,允许范围内的分页长度,内部代表值20,"{""id"": ""N_limit20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+TaskService.list,B_limit1,边界,合法最小分页长度,精确下界1,"{""id"": ""B_limit1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+TaskService.list,B_limit100,边界,合法最大分页长度,精确上界100,"{""id"": ""B_limit100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+TaskService.list,E_limit0,异常,小于允许范围,下界外相邻值0,"{""id"": ""E_limit0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+TaskService.list,E_limit101,异常,大于允许范围,上界外相邻值101,"{""id"": ""E_limit101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+TaskService.list,E_limit_text,异常,分页值非整数,无效类型/格式等价类,"{""id"": ""E_limit_text"", ""kind"": ""异常"", ""value"": ""x"", ""expected"": 400}",400,PASS
+TaskService.list,B_offset_max,边界,最大合法分页偏移,offset的Integer.MAX_VALUE=2147483647,"{""id"": ""B_offset_max"", ""kind"": ""边界"", ""value"": 20, ""expected"": 200, ""offset"": 2147483647}",200,PASS
+TaskService.list,E_offset_overflow,异常,偏移数值溢出,offset首次越界2147483648,"{""id"": ""E_offset_overflow"", ""kind"": ""异常"", ""value"": 20, ""expected"": 400, ""offset"": 2147483648}",400,PASS
+TaskService.table,N_limit20,正常,允许范围内的分页长度,内部代表值20,"{""id"": ""N_limit20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+TaskService.table,B_limit1,边界,合法最小分页长度,精确下界1,"{""id"": ""B_limit1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+TaskService.table,B_limit100,边界,合法最大分页长度,精确上界100,"{""id"": ""B_limit100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+TaskService.table,E_limit0,异常,小于允许范围,下界外相邻值0,"{""id"": ""E_limit0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+TaskService.table,E_limit101,异常,大于允许范围,上界外相邻值101,"{""id"": ""E_limit101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+TaskService.table,E_limit_text,异常,分页值非整数,无效类型/格式等价类,"{""id"": ""E_limit_text"", ""kind"": ""异常"", ""value"": ""x"", ""expected"": 400}",400,PASS
+TaskService.table,B_offset_max,边界,最大合法分页偏移,offset的Integer.MAX_VALUE=2147483647,"{""id"": ""B_offset_max"", ""kind"": ""边界"", ""value"": 20, ""expected"": 200, ""offset"": 2147483647}",200,PASS
+TaskService.table,E_offset_overflow,异常,偏移数值溢出,offset首次越界2147483648,"{""id"": ""E_offset_overflow"", ""kind"": ""异常"", ""value"": 20, ""expected"": 400, ""offset"": 2147483648}",400,PASS
+TaskService.adminTasks,N_limit20,正常,允许范围内的分页长度,内部代表值20,"{""id"": ""N_limit20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+TaskService.adminTasks,B_limit1,边界,合法最小分页长度,精确下界1,"{""id"": ""B_limit1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+TaskService.adminTasks,B_limit100,边界,合法最大分页长度,精确上界100,"{""id"": ""B_limit100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+TaskService.adminTasks,E_limit0,异常,小于允许范围,下界外相邻值0,"{""id"": ""E_limit0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+TaskService.adminTasks,E_limit101,异常,大于允许范围,上界外相邻值101,"{""id"": ""E_limit101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+TaskService.adminTasks,E_limit_text,异常,分页值非整数,无效类型/格式等价类,"{""id"": ""E_limit_text"", ""kind"": ""异常"", ""value"": ""x"", ""expected"": 400}",400,PASS
+TaskService.adminTasks,B_offset_max,边界,最大合法分页偏移,offset的Integer.MAX_VALUE=2147483647,"{""id"": ""B_offset_max"", ""kind"": ""边界"", ""value"": 20, ""expected"": 200, ""offset"": 2147483647}",200,PASS
+TaskService.adminTasks,E_offset_overflow,异常,偏移数值溢出,offset首次越界2147483648,"{""id"": ""E_offset_overflow"", ""kind"": ""异常"", ""value"": 20, ""expected"": 400, ""offset"": 2147483648}",400,PASS
+TaskService.assigneeCandidates,N_query,正常,合法检索字符串,长度10的普通检索,"{""id"": ""N_query"", ""kind"": ""正常"", ""value"": 10, ""expected"": 200}",200,PASS
+TaskService.assigneeCandidates,B_query0,边界,空检索返回允许候选范围,精确下界0字符,"{""id"": ""B_query0"", ""kind"": ""边界"", ""value"": 0, ""expected"": 200}",200,PASS
+TaskService.assigneeCandidates,B_query100,边界,最长合法检索,精确上界100字符,"{""id"": ""B_query100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+TaskService.assigneeCandidates,E_query101,异常,检索过长,上界外相邻值101,"{""id"": ""E_query101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+TaskService.assigneeCandidates,E_purpose,异常,无效操作场景枚举,purpose不属于create/edit,"{""id"": ""E_purpose"", ""kind"": ""异常"", ""value"": 10, ""expected"": 400, ""purpose"": ""invalid""}",400,PASS
+TaskService.approvals,N_limit20,正常,允许范围内的分页长度,内部代表值20,"{""id"": ""N_limit20"", ""kind"": ""正常"", ""value"": 20, ""expected"": 200}",200,PASS
+TaskService.approvals,B_limit1,边界,合法最小分页长度,精确下界1,"{""id"": ""B_limit1"", ""kind"": ""边界"", ""value"": 1, ""expected"": 200}",200,PASS
+TaskService.approvals,B_limit100,边界,合法最大分页长度,精确上界100,"{""id"": ""B_limit100"", ""kind"": ""边界"", ""value"": 100, ""expected"": 200}",200,PASS
+TaskService.approvals,E_limit0,异常,小于允许范围,下界外相邻值0,"{""id"": ""E_limit0"", ""kind"": ""异常"", ""value"": 0, ""expected"": 400}",400,PASS
+TaskService.approvals,E_limit101,异常,大于允许范围,上界外相邻值101,"{""id"": ""E_limit101"", ""kind"": ""异常"", ""value"": 101, ""expected"": 400}",400,PASS
+TaskService.approvals,E_limit_text,异常,分页值非整数,无效类型/格式等价类,"{""id"": ""E_limit_text"", ""kind"": ""异常"", ""value"": ""x"", ""expected"": 400}",400,PASS
+TaskService.approvals,B_offset_max,边界,最大合法分页偏移,offset的Integer.MAX_VALUE=2147483647,"{""id"": ""B_offset_max"", ""kind"": ""边界"", ""value"": 20, ""expected"": 200, ""offset"": 2147483647}",200,PASS
+TaskService.approvals,E_offset_overflow,异常,偏移数值溢出,offset首次越界2147483648,"{""id"": ""E_offset_overflow"", ""kind"": ""异常"", ""value"": 20, ""expected"": 400, ""offset"": 2147483648}",400,PASS

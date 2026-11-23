@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="cn.pandora.mobile.WebUrlPolicyTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-11-18T16:03:07.350Z" hostname="aoxiangdeMacBook-Air.local" time="0.004">
+  <properties/>
+  <testcase name="cleartextNeedsAnExplicitOptIn" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.001"/>
+  <testcase name="webUrlRecognitionRequiresAnAbsoluteAddressButAllowsHttp" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.0"/>
+  <testcase name="rejectsCredentialsEvenWhenTheVisiblePrefixLooksTrusted" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.0"/>
+  <testcase name="rejectsInvalidPortsButAcceptsTheValidBoundaries" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.0"/>
+  <testcase name="originComparisonUsesSchemeHostAndEffectivePort" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.001"/>
+  <testcase name="doesNotResolvePathsOrDropEmptyQueryAndFragment" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.0"/>
+  <testcase name="localServerAddressesCanBeConfiguredExplicitly" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.0"/>
+  <testcase name="normalizesConfiguredHostnameWithoutChangingItsRoute" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.0"/>
+  <testcase name="originComparisonRejectsSuffixCredentialsAndRelativeAddressBypasses" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.001"/>
+  <testcase name="rejectsControlCharactersBeforeAnyWhitespaceTrimming" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.0"/>
+  <testcase name="rejectsExplicitNonWebSchemesIncludingNumericPayloads" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.0"/>
+  <testcase name="signedAddressKeepsRawEncodingAndQueryOrder" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.0"/>
+  <testcase name="rejectsMissingOrAmbiguousAuthorities" classname="cn.pandora.mobile.WebUrlPolicyTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

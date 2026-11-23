@@ -1,0 +1,58 @@
+PASS login form is ready
+PASS employee login loads the workspace
+PASS task table queries the real server and loads 50 rows
+PASS the table uses the server total and exact current-page order
+PASS relation=own maps to the server assigned relation and keeps the full total
+PASS relation=created returns no invented rows for an assigned-only employee
+PASS a title sort asks the server for title/asc and resets the page
+PASS the visible page follows the server order without a local re-sort
+PASS the second page queries offset=50 and keeps the full total
+PASS the second page contains the remaining five rows
+PASS the selected task detail opens
+PASS the normal detail exposes the independent table-pin action
+PASS the later-page task is table-pinned and the table reloads
+PASS the pinned later-page task appears first after the server re-query
+PASS the pin did not change the task total or version
+PASS the pinned row paints all of its cells, including the sticky name column, as one glass-blue band
+PASS non-pinned rows keep their zebra striping and no in-table form-pin label is rendered
+PASS real hover and the active row keep a recognizable blue glass background on the pinned row
+PASS horizontal scrolling keeps the sticky pinned name column painted with the same band
+PASS switching column views keeps the pinned row class on the same task
+PASS the pinned row class survives switching back and the table renders no form-pin label
+PASS the refreshed page returns to the same signed-in employee
+PASS the table pin survives a real refresh with the pinned row still first and blue
+PASS the daily calendar reaches January 2027
+PASS the daily item form offers start and end dates
+PASS the ranged item saves and the sheet closes
+PASS the covered day opens its list
+PASS the list shows the complete range and keeps one row for the ranged record
+PASS the detail shows the complete range with a non-repeated accessible status
+PASS completing from the detail keeps the same range and updates the status
+PASS the edit form is prefilled with the same pair
+PASS the shortened pair returns to the original date list with updated range
+PASS the detail after editing keeps the new range and the same record
+PASS the self profile shows hire date, tenure and the authorized e-mail
+PASS the missing/real tenure is a real projection, not an account-created date
+PASS the self tenure shows only the real duration without an as-of suffix
+PASS own hire date and tenure appear once in the personal card and never in the organization fold
+PASS administrator can locate the signed-in employee record
+PASS administrator can clear the hire date for the empty-state check
+PASS reload after clearing the hire date keeps the same account
+PASS an unset hire date shows the original empty state once in the card and not in the organization fold
+PASS administrator restores the hire date after the empty-state check
+PASS the restored hire date comes back to the personal card
+PASS the restored hire date shows once in the card and the organization fold stays clean
+PASS five main navigations and three home modules remain intact
+PASS logout clears the task table and returns to the login form
+PASS a different account loads only its own current authorization
+PASS an authorized manager sees the subordinate tenure without an as-of suffix
+PASS a subordinate without a hire date keeps the original empty state and no invented suffix
+PASS the employee page has no horizontal document overflow at 320x740
+PASS the own employment rows stay de-duplicated at 320x740
+PASS the employee page has no horizontal document overflow at 390x844
+PASS the own employment rows stay de-duplicated at 390x844
+PASS the employee page has no horizontal document overflow at 1440x900
+PASS the own employment rows stay de-duplicated at 1440x900
+PASS the employee page has no horizontal document overflow at 390x600
+PASS the own employment rows stay de-duplicated at 390x600
+{"report": "/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-f4si91od/project/audit/prepare-employee-client-contracts-and-business-upgrade/chapter8-browser.json", "exists": true}

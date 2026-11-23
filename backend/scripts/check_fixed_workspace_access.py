@@ -48,7 +48,7 @@ def main():
                     ('alpha-one-employee','alpha-one-head',False),('alpha-one-employee','alpha-two-employee',False),
                     ('alpha-head','beta-one-employee',False),('alpha-one-head','alpha-two-employee',False)):
                 status,person=f.call('GET','/users/'+ids[target],token=tokens[reader])
-                check(reader+' profile access to '+target+' matches current chain',(status==200 and person.get('phone')==f.identities[target]['identifier'] and 'email' not in person) if allowed else status==404)
+                check(reader+' profile access to '+target+' matches current chain',(status==200 and person.get('phone')==f.identities[target]['identifier'] and person.get('email')==target+'@private.example.test') if allowed else status==404)
                 status,_=f.call('GET','/work-logs/log-'+target,token=tokens[reader])
                 check(reader+' log detail access to '+target+' matches current chain',status==(200 if allowed else 404))
                 status,_=f.call('GET','/work-logs?scope=visible&authorId='+ids[target],token=tokens[reader])

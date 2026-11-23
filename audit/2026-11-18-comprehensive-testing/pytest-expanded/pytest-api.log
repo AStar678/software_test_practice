@@ -1,0 +1,157 @@
+............................................................FFFFFFFF.... [ 69%]
+.........................FF..F.                                          [100%]
+=================================== FAILURES ===================================
+____________________ test_comment_rejects_non_text_json[42] ____________________
+
+service = <fixed_model_fixture.Fixture object at 0x1076ac050>, value = 42
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_rejects_non_text_json(service, value):
+        """CommentService.create: JSON numbers/booleans/arrays/objects are not plain text."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+>       assert call(service, 'POST', '/tasks/' + task + '/comments', {'body': value})[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:160: AssertionError
+___________________ test_comment_rejects_non_text_json[True] ___________________
+
+service = <fixed_model_fixture.Fixture object at 0x1076ac050>, value = True
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_rejects_non_text_json(service, value):
+        """CommentService.create: JSON numbers/booleans/arrays/objects are not plain text."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+>       assert call(service, 'POST', '/tasks/' + task + '/comments', {'body': value})[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:160: AssertionError
+__________________ test_comment_rejects_non_text_json[value2] __________________
+
+service = <fixed_model_fixture.Fixture object at 0x1076ac050>, value = ['text']
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_rejects_non_text_json(service, value):
+        """CommentService.create: JSON numbers/booleans/arrays/objects are not plain text."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+>       assert call(service, 'POST', '/tasks/' + task + '/comments', {'body': value})[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:160: AssertionError
+__________________ test_comment_rejects_non_text_json[value3] __________________
+
+service = <fixed_model_fixture.Fixture object at 0x1076ac050>
+value = {'text': 'comment'}
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_rejects_non_text_json(service, value):
+        """CommentService.create: JSON numbers/booleans/arrays/objects are not plain text."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+>       assert call(service, 'POST', '/tasks/' + task + '/comments', {'body': value})[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:160: AssertionError
+________________ test_comment_change_rejects_non_text_json[42] _________________
+
+service = <fixed_model_fixture.Fixture object at 0x1076ac050>, value = 42
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_change_rejects_non_text_json(service, value):
+        """CommentService.change: editing must enforce the same plain-text JSON contract as creation."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+        comment = ok(service, 'POST', '/tasks/' + task + '/comments', {'body': 'original'})
+>       assert call(service, 'PATCH', '/comments/' + comment['commentId'], {'body': value}, version=1)[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:168: AssertionError
+_______________ test_comment_change_rejects_non_text_json[True] ________________
+
+service = <fixed_model_fixture.Fixture object at 0x1076ac050>, value = True
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_change_rejects_non_text_json(service, value):
+        """CommentService.change: editing must enforce the same plain-text JSON contract as creation."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+        comment = ok(service, 'POST', '/tasks/' + task + '/comments', {'body': 'original'})
+>       assert call(service, 'PATCH', '/comments/' + comment['commentId'], {'body': value}, version=1)[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:168: AssertionError
+______________ test_comment_change_rejects_non_text_json[value2] _______________
+
+service = <fixed_model_fixture.Fixture object at 0x1076ac050>, value = ['text']
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_change_rejects_non_text_json(service, value):
+        """CommentService.change: editing must enforce the same plain-text JSON contract as creation."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+        comment = ok(service, 'POST', '/tasks/' + task + '/comments', {'body': 'original'})
+>       assert call(service, 'PATCH', '/comments/' + comment['commentId'], {'body': value}, version=1)[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:168: AssertionError
+______________ test_comment_change_rejects_non_text_json[value3] _______________
+
+service = <fixed_model_fixture.Fixture object at 0x1076ac050>
+value = {'text': 'comment'}
+
+    @pytest.mark.parametrize('value', [42, True, ['text'], {'text': 'comment'}])
+    def test_comment_change_rejects_non_text_json(service, value):
+        """CommentService.change: editing must enforce the same plain-text JSON contract as creation."""
+        task = ok(service, 'POST', '/tasks', task_body(service))['taskId']
+        comment = ok(service, 'POST', '/tasks/' + task + '/comments', {'body': 'original'})
+>       assert call(service, 'PATCH', '/comments/' + comment['commentId'], {'body': value}, version=1)[0] == 400
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:168: AssertionError
+____________ test_admin_clock_seconds_are_bounded_integers[0.5-400] ____________
+
+service = <fixed_model_fixture.Fixture object at 0x1076ac050>, seconds = 0.5
+expected = 400
+
+    @pytest.mark.parametrize('seconds,expected', [(0, 200), (0.5, 400), (-0.5, 400), (-1, 400), (34560001, 400), (18446744073709551616, 400), (34560000, 200)])
+    def test_admin_clock_seconds_are_bounded_integers(service, seconds, expected):
+        """AdminController.advanceClock: integer lower/upper bounds and coercion/overflow negatives."""
+        token = service.login('admin')[1]['token']
+>       assert service.call('POST', '/admin/clock/advance', {'seconds': seconds}, token)[0] == expected
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:217: AssertionError
+___________ test_admin_clock_seconds_are_bounded_integers[-0.5-400] ____________
+
+service = <fixed_model_fixture.Fixture object at 0x1076ac050>, seconds = -0.5
+expected = 400
+
+    @pytest.mark.parametrize('seconds,expected', [(0, 200), (0.5, 400), (-0.5, 400), (-1, 400), (34560001, 400), (18446744073709551616, 400), (34560000, 200)])
+    def test_admin_clock_seconds_are_bounded_integers(service, seconds, expected):
+        """AdminController.advanceClock: integer lower/upper bounds and coercion/overflow negatives."""
+        token = service.login('admin')[1]['token']
+>       assert service.call('POST', '/admin/clock/advance', {'seconds': seconds}, token)[0] == expected
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:217: AssertionError
+___ test_admin_clock_seconds_are_bounded_integers[18446744073709551616-400] ____
+
+service = <fixed_model_fixture.Fixture object at 0x1076ac050>
+seconds = 18446744073709551616, expected = 400
+
+    @pytest.mark.parametrize('seconds,expected', [(0, 200), (0.5, 400), (-0.5, 400), (-1, 400), (34560001, 400), (18446744073709551616, 400), (34560000, 200)])
+    def test_admin_clock_seconds_are_bounded_integers(service, seconds, expected):
+        """AdminController.advanceClock: integer lower/upper bounds and coercion/overflow negatives."""
+        token = service.login('admin')[1]['token']
+>       assert service.call('POST', '/admin/clock/advance', {'seconds': seconds}, token)[0] == expected
+E       assert 200 == 400
+
+backend/tests/test_acceptance_extremes.py:217: AssertionError
+=========================== short test summary info ============================
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[42]
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[True]
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[value2]
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_rejects_non_text_json[value3]
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_change_rejects_non_text_json[42]
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_change_rejects_non_text_json[True]
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_change_rejects_non_text_json[value2]
+FAILED backend/tests/test_acceptance_extremes.py::test_comment_change_rejects_non_text_json[value3]
+FAILED backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[0.5-400]
+FAILED backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[-0.5-400]
+FAILED backend/tests/test_acceptance_extremes.py::test_admin_clock_seconds_are_bounded_integers[18446744073709551616-400]
+11 failed, 92 passed in 13.61s

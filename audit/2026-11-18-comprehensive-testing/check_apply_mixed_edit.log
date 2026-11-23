@@ -1,0 +1,68 @@
+PASS owner may edit ordinary fields and progress but not owner order
+PASS visible manager has schedule access only
+PASS creator may reorder owners but not their progress
+PASS owner change preview uses the current manager
+PASS owner cannot preview assignee replacement or reordering
+PASS creator cannot preview owner progress
+PASS visible-only manager cannot preview metadata
+PASS visible-only manager can preview schedule
+PASS mixed edit creates one pending request
+PASS pending request keeps both effective fields
+PASS pending request keeps the effective tag order
+PASS reviewer sees both changed fields
+PASS pending request reads back the current reviewer
+PASS reviewer diff keeps tag order distinct
+PASS applicant receives no reviewer comparison
+PASS login form
+PASS reviewer authenticated
+PASS approval detail ready
+PASS title and progress have original above proposed
+PASS complete snapshots start collapsed
+PASS review diff fits 320
+PASS review diff fits 390
+PASS review diff fits 1440
+PASS review actions remain reachable
+PASS creation request has no fabricated old value
+PASS no browser exceptions
+PASS approval applies title and progress together
+PASS approval applies the proposed ordered tags
+PASS mixed approval records field and effective progress audit
+PASS mixed approval emits one result event
+PASS approved notification carries structured legal changes
+PASS employee task detail omits execution record timeline
+PASS owner cannot reorder the same assignee IDs
+PASS creator cannot write owner progress
+PASS visible manager cannot write owner progress
+PASS creator can reorder effective assignees
+PASS an unchanged owner list does not require owner-order authority
+PASS rejection publishes neither metadata nor progress
+PASS withdrawal publishes neither metadata nor progress
+PASS expired mixed request returns a deadline error
+PASS expiry publishes neither metadata nor progress
+PASS founder mixed edit applies directly in one step
+PASS same idempotency key returns one mixed request
+PASS creation has no fabricated old version or diff
+PASS creator owner reorder produces an ordered reviewer diff
+PASS approval rejects reordering after transfer revokes assignee edit authority
+PASS blocked reorder preserves the effective assignee order
+PASS approval blocks after the applicant loses the owner field
+PASS blocked approval keeps the effective version
+PASS ordinary edit rejects source and status fields
+PASS mixed edit still rejects a self parent
+PASS owner login form
+PASS owner authenticated
+PASS owner task detail ready
+PASS owner detail has one edit entry and no internal reviewer rows
+PASS owner unified edit form opens
+PASS owner form projects only allowed fields
+PASS invalid owner edit stays in the form
+PASS owner draft survives the failed submission
+PASS owner form layout fits 320
+PASS owner form layout fits 390
+PASS owner form layout fits 1440
+PASS owner mixed edit submits and closes the form
+PASS owner submit shows the saved current reviewer
+PASS owner browser has no exceptions
+PASS browser owner mixed edit created exactly one request
+PASS browser owner request contains metadata and progress
+PASS browser owner mixed edit applies once

@@ -1,0 +1,41 @@
+PASS founder contact detail follows actual management relationship
+PASS alpha-head contact detail follows actual management relationship
+PASS alpha-one-head contact detail follows actual management relationship
+PASS alpha-one-employee contact detail follows actual management relationship
+PASS alpha-two-employee contact detail follows actual management relationship
+PASS alpha-two-head contact detail follows actual management relationship
+PASS beta-head contact detail follows actual management relationship
+PASS other-founder contact detail follows actual management relationship
+PASS admin contact detail follows actual management relationship
+PASS /users?limit=100 summary has no contact, credential or username fields
+PASS /work-log-authors summary has no contact, credential or username fields
+PASS /assignee-candidates?purpose=create summary has no contact, credential or username fields
+PASS /assignee-candidates?purpose=edit summary has no contact, credential or username fields
+PASS /admin/organization-plans summary has no contact, credential or username fields
+PASS same-company administrator list and detail show the current full login phone
+PASS management readback exposes no other contact, credential or username fields
+PASS founder cannot read management login phones via /admin/employees
+PASS founder cannot read management login phones via /admin/employees/4ce9a359-10d8-524d-8232-c73416f398d0
+PASS alpha-one-employee cannot read management login phones via /admin/employees
+PASS alpha-one-employee cannot read management login phones via /admin/employees/4ce9a359-10d8-524d-8232-c73416f398d0
+PASS cross-company administrator cannot read target management detail
+PASS cross-company administrator list excludes target and login phone
+PASS self identity or mixed payload is rejected: phone
+PASS self identity or mixed payload is rejected: displayName
+PASS self identity or mixed payload is rejected: email,phone
+PASS self avatar and email remain editable
+PASS actual manager reads the current subordinate email only in authorized detail
+PASS administrator cannot edit employee email
+PASS empty, invalid or occupied login phone is rejected
+PASS empty, invalid or occupied login phone is rejected
+PASS empty, invalid or occupied login phone is rejected
+PASS empty, invalid or occupied login phone is rejected
+PASS administrator normalized phone/name command succeeds with contact-free receipt
+PASS same-company administrator list and detail show the current full login phone
+PASS management readback exposes no other contact, credential or username fields
+PASS phone change revokes all employee sessions
+PASS old phone cannot log in after change
+PASS new normalized phone logs into same stable ID
+PASS audit_logs never captures employee contact values
+PASS domain_events never captures employee contact values
+PASS idempotency_keys never captures employee contact values

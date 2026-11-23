@@ -1,0 +1,302 @@
+{
+  "checks": [
+    {
+      "check": "login ready",
+      "pass": true,
+      "evidence": {
+        "url": "http://127.0.0.1:18207/%E6%BD%98%E5%A4%9A%E6%8B%89-%E4%BA%A4%E4%BA%92%E5%8E%9F%E5%9E%8B.html",
+        "title": "潘多拉 · 首页",
+        "body": "潘多拉\n\nPANDORA WORKSPACE\n\n让每一天，\n有序向前。\n\n登录你的首页，查看每日事项与任务动态。\n\n手机号\n密码\n登录首页\n\n员工使用本人手机号登录，初始密码由公司管理员提供；忘记密码请联系管理员。管理员请通过下方“进入管理后台”入口使用管理账号登录。\n\n进入管理后台\n请使用真实账号登录。"
+      }
+    },
+    {
+      "check": "real authenticated UI",
+      "pass": true
+    },
+    {
+      "check": "calendar honors first shared and default colors",
+      "pass": true
+    },
+    {
+      "check": "editing retains deleted selected tag control",
+      "pass": true
+    },
+    {
+      "check": "deleted selection can be removed but not newly reselected",
+      "pass": true
+    },
+    {
+      "check": "multi-tag controls ready",
+      "pass": true
+    },
+    {
+      "check": "toggle multiple tags",
+      "pass": true
+    },
+    {
+      "check": "tag supports keyboard toggle",
+      "pass": true,
+      "evidence": {
+        "focus": "<button type=\"button\" class=\"p-task-tag\" data-action=\"p-task-tag\" data-collection=\"tf\" data-id=\"0a19fc2c-2c01-49f1-993a-7ea794266d8d\" aria-pressed=\"false\"><span class=\"p-task-tag-color\" style=\"--tag-bg:#F6D5D2;--tag-bd:#C05B52\"><span aria-hidden=\"true\">✓</span></span><span class=\"p-task-tag-label\">研发重点</span></button>",
+        "tags": [
+          "a3dc3dd4-b10d-4745-8cd6-14cd8afd30b3"
+        ]
+      }
+    },
+    {
+      "check": "schedule fits 320",
+      "pass": true,
+      "evidence": {
+        "bodyWidth": 318,
+        "scrollWidth": 318,
+        "fields": [
+          {
+            "id": "tf-start-date",
+            "left": 17,
+            "right": 303,
+            "width": 286
+          },
+          {
+            "id": "tf-start-time-hour",
+            "left": 17,
+            "right": 153.75,
+            "width": 136.75
+          },
+          {
+            "id": "tf-start-time-minute",
+            "left": 166.25,
+            "right": 303,
+            "width": 136.75
+          },
+          {
+            "id": "tf-end-date",
+            "left": 17,
+            "right": 303,
+            "width": 286
+          },
+          {
+            "id": "tf-end-time-hour",
+            "left": 17,
+            "right": 153.75,
+            "width": 136.75
+          },
+          {
+            "id": "tf-end-time-minute",
+            "left": 166.25,
+            "right": 303,
+            "width": 136.75
+          }
+        ]
+      }
+    },
+    {
+      "check": "schedule fits 390",
+      "pass": true,
+      "evidence": {
+        "bodyWidth": 388,
+        "scrollWidth": 388,
+        "fields": [
+          {
+            "id": "tf-start-date",
+            "left": 21,
+            "right": 189,
+            "width": 168
+          },
+          {
+            "id": "tf-start-time-hour",
+            "left": 201,
+            "right": 278.75,
+            "width": 77.75
+          },
+          {
+            "id": "tf-start-time-minute",
+            "left": 291.25,
+            "right": 369,
+            "width": 77.75
+          },
+          {
+            "id": "tf-end-date",
+            "left": 21,
+            "right": 189,
+            "width": 168
+          },
+          {
+            "id": "tf-end-time-hour",
+            "left": 201,
+            "right": 278.75,
+            "width": 77.75
+          },
+          {
+            "id": "tf-end-time-minute",
+            "left": 291.25,
+            "right": 369,
+            "width": 77.75
+          }
+        ]
+      }
+    },
+    {
+      "check": "schedule fits 1440",
+      "pass": true,
+      "evidence": {
+        "bodyWidth": 618,
+        "scrollWidth": 618,
+        "fields": [
+          {
+            "id": "tf-start-date",
+            "left": 439,
+            "right": 714,
+            "width": 275
+          },
+          {
+            "id": "tf-start-time-hour",
+            "left": 726,
+            "right": 857.25,
+            "width": 131.25
+          },
+          {
+            "id": "tf-start-time-minute",
+            "left": 869.75,
+            "right": 1001,
+            "width": 131.25
+          },
+          {
+            "id": "tf-end-date",
+            "left": 439,
+            "right": 714,
+            "width": 275
+          },
+          {
+            "id": "tf-end-time-hour",
+            "left": 726,
+            "right": 857.25,
+            "width": 131.25
+          },
+          {
+            "id": "tf-end-time-minute",
+            "left": 869.75,
+            "right": 1001,
+            "width": 131.25
+          }
+        ]
+      }
+    },
+    {
+      "check": "full-day shortcut retains explicit times and next midnight",
+      "pass": true
+    },
+    {
+      "check": "repeated shortcut does not extend again",
+      "pass": true
+    },
+    {
+      "check": "tree picker ready",
+      "pass": true
+    },
+    {
+      "check": "tree initially collapsed",
+      "pass": true
+    },
+    {
+      "check": "expansion separate from selection",
+      "pass": true
+    },
+    {
+      "check": "founder node shows the company level instead of a fake department",
+      "pass": true
+    },
+    {
+      "check": "department head without a team shows the department without an empty separator",
+      "pass": true
+    },
+    {
+      "check": "same-name people stay distinguishable by their real department and team",
+      "pass": true
+    },
+    {
+      "check": "search expands actual ancestor path",
+      "pass": true
+    },
+    {
+      "check": "clearing search preserves selected person",
+      "pass": true
+    },
+    {
+      "check": "selected order can change",
+      "pass": true
+    },
+    {
+      "check": "subpage preserves title and ordered tags",
+      "pass": true
+    },
+    {
+      "check": "reopened picker has working copy",
+      "pass": true
+    },
+    {
+      "check": "cancel restores original ordered people",
+      "pass": true
+    },
+    {
+      "check": "invalid date range remains in form",
+      "pass": true
+    },
+    {
+      "check": "UI submission persisted both tags",
+      "pass": true
+    },
+    {
+      "check": "notification filters visible",
+      "pass": true
+    },
+    {
+      "check": "compact has no body summary",
+      "pass": true
+    },
+    {
+      "check": "category filter uses classified messages",
+      "pass": true
+    },
+    {
+      "check": "notification filters finish loading",
+      "pass": true
+    },
+    {
+      "check": "unread results exist",
+      "pass": true
+    },
+    {
+      "check": "notice opens detail",
+      "pass": true
+    },
+    {
+      "check": "return preserves filters and removes newly read item",
+      "pass": true
+    },
+    {
+      "check": "clear filters resets both conditions",
+      "pass": true
+    },
+    {
+      "check": "no-match state distinct from empty inbox",
+      "pass": true
+    },
+    {
+      "check": "logout clears view",
+      "pass": true
+    },
+    {
+      "check": "another employee authenticates",
+      "pass": true
+    },
+    {
+      "check": "new account starts with default notification filters",
+      "pass": true
+    },
+    {
+      "check": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

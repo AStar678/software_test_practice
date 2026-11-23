@@ -1,0 +1,1245 @@
+[
+  {
+    "id": "M01",
+    "method": "AuthService.login",
+    "endpoint": "POST /auth/sessions",
+    "description": "签发员工或独立管理员会话。",
+    "domain": "identifier为字符串且原始长度≤80；员工手机号可去除显示分隔符；凭据必须匹配。",
+    "cases": [
+      {
+        "id": "N_employee",
+        "kind": "正常",
+        "value": "employee",
+        "expected": 200,
+        "equivalenceClass": "有效员工手机号和密码",
+        "boundaryBasis": "通常长度11的有效登录标识"
+      },
+      {
+        "id": "N_admin",
+        "kind": "正常",
+        "value": "admin",
+        "expected": 200,
+        "equivalenceClass": "有效独立管理员账号和密码",
+        "boundaryBasis": "管理员与员工登录分支分开"
+      },
+      {
+        "id": "B_identifier80",
+        "kind": "边界",
+        "value": 80,
+        "expected": 200,
+        "equivalenceClass": "可规范化的合法员工标识",
+        "boundaryBasis": "原始identifier长度上限80，69空格+11位手机号=80"
+      },
+      {
+        "id": "E_identifier81",
+        "kind": "异常",
+        "value": 81,
+        "expected": 401,
+        "equivalenceClass": "超长登录标识",
+        "boundaryBasis": "上限80的首次越界81，规范化前应拒绝"
+      },
+      {
+        "id": "E_phone_type",
+        "kind": "异常",
+        "value": "wrong_type",
+        "expected": 400,
+        "equivalenceClass": "手机号为数组而非字符串",
+        "boundaryBasis": "无效JSON类型等价类"
+      },
+      {
+        "id": "E_password_wrong",
+        "kind": "异常",
+        "value": "wrong_password",
+        "expected": 401,
+        "equivalenceClass": "身份格式有效但密码错误",
+        "boundaryBasis": "无效凭据等价类"
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/auth/AuthService.java:61",
+    "sourceSha256": "4b6359a687bffa5f9af891ca80c2310f82725785f9739bb5a9fdce7c1c678666",
+    "interpretation": "80字符是原始输入长度边界，包含可去除空格；并不是把手机号数字长度伪造为80。每次成功登录的新会话均立即退出。"
+  },
+  {
+    "id": "M02",
+    "method": "DailyItemService.list",
+    "endpoint": "GET /daily-items",
+    "description": "按日期分页读取本人事项。",
+    "domain": "limit∈[1,100]；offset∈[0,2147483647]；日期必须可解析。",
+    "cases": [
+      {
+        "id": "N_limit20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "允许范围内的分页长度",
+        "boundaryBasis": "内部代表值20"
+      },
+      {
+        "id": "B_limit1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "合法最小分页长度",
+        "boundaryBasis": "精确下界1"
+      },
+      {
+        "id": "B_limit100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "合法最大分页长度",
+        "boundaryBasis": "精确上界100"
+      },
+      {
+        "id": "E_limit0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "小于允许范围",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_limit101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "大于允许范围",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_limit_text",
+        "kind": "异常",
+        "value": "x",
+        "expected": 400,
+        "equivalenceClass": "分页值非整数",
+        "boundaryBasis": "无效类型/格式等价类"
+      },
+      {
+        "id": "B_offset_max",
+        "kind": "边界",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "最大合法分页偏移",
+        "boundaryBasis": "offset的Integer.MAX_VALUE=2147483647",
+        "offset": 2147483647
+      },
+      {
+        "id": "E_offset_overflow",
+        "kind": "异常",
+        "value": 20,
+        "expected": 400,
+        "equivalenceClass": "偏移数值溢出",
+        "boundaryBasis": "offset首次越界2147483648",
+        "offset": 2147483648
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/workspace/DailyItemService.java:102",
+    "sourceSha256": "7c9e7099f27ddfe8ba3bee805226ffe627a8dddfc104593a73540b38549bb378",
+    "interpretation": "边界输入真实落在1、100和2147483647，异常输入分别紧邻边界或属于非整数类；只读本人数据。"
+  },
+  {
+    "id": "M03",
+    "method": "DailyItemService.summary",
+    "endpoint": "GET /daily-items/summary",
+    "description": "汇总个人事项日期范围内的计数。",
+    "domain": "日期区间含首尾，长度必须为1–93天。",
+    "cases": [
+      {
+        "id": "N_days30",
+        "kind": "正常",
+        "value": 30,
+        "expected": 200,
+        "equivalenceClass": "有效的含首尾日期范围",
+        "boundaryBasis": "内部代表值30天"
+      },
+      {
+        "id": "B_days1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "最短合法区间",
+        "boundaryBasis": "精确下界1天，from=to"
+      },
+      {
+        "id": "B_days93",
+        "kind": "边界",
+        "value": 93,
+        "expected": 200,
+        "equivalenceClass": "最长合法区间",
+        "boundaryBasis": "精确上界93天"
+      },
+      {
+        "id": "E_days0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "倒序区间",
+        "boundaryBasis": "下界外相邻值0天"
+      },
+      {
+        "id": "E_days94",
+        "kind": "异常",
+        "value": 94,
+        "expected": 400,
+        "equivalenceClass": "超长区间",
+        "boundaryBasis": "上界外相邻值94天"
+      },
+      {
+        "id": "E_invalid_date",
+        "kind": "异常",
+        "value": "1900-02-29",
+        "expected": 400,
+        "equivalenceClass": "非法公历日期",
+        "boundaryBasis": "1900年不是闰年"
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/workspace/DailyItemService.java:52",
+    "sourceSha256": "7c9e7099f27ddfe8ba3bee805226ffe627a8dddfc104593a73540b38549bb378",
+    "interpretation": "按含首尾天数计算，93天接受、94天拒绝；不能误按两个日期相差值计算成92/93。"
+  },
+  {
+    "id": "M04",
+    "method": "DailyItemService.create",
+    "endpoint": "POST /daily-items",
+    "description": "新建本人单日事项。",
+    "domain": "正文为字符串，长度按Unicode码点计算，允许1–2000；单日日期有效。",
+    "cases": [
+      {
+        "id": "N_text20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "非空且在长度内的正文",
+        "boundaryBasis": "内部代表值20码点"
+      },
+      {
+        "id": "B_text1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "最短合法正文",
+        "boundaryBasis": "精确下界1码点"
+      },
+      {
+        "id": "B_text2000",
+        "kind": "边界",
+        "value": 2000,
+        "expected": 200,
+        "equivalenceClass": "最长合法正文",
+        "boundaryBasis": "精确上界2000码点"
+      },
+      {
+        "id": "E_text0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "空正文",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_text2001",
+        "kind": "异常",
+        "value": 2001,
+        "expected": 400,
+        "equivalenceClass": "超长正文",
+        "boundaryBasis": "上界外相邻值2001"
+      },
+      {
+        "id": "E_text_type",
+        "kind": "异常",
+        "value": "number",
+        "expected": 400,
+        "equivalenceClass": "正文为数字",
+        "boundaryBasis": "无效JSON类型等价类"
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/workspace/DailyItemService.java:151",
+    "sourceSha256": "7c9e7099f27ddfe8ba3bee805226ffe627a8dddfc104593a73540b38549bb378",
+    "interpretation": "所有成功创建项由客户端立即登记ID，在本方法结束时逐条清理；验证读回正文，避免仅凭200判断保存成功。"
+  },
+  {
+    "id": "M05",
+    "method": "DailyItemService.change",
+    "endpoint": "PATCH /daily-items/{id}",
+    "description": "按行版本更新本人事项正文。",
+    "domain": "正文1–2000码点；If-Match必须等于对象当前版本。",
+    "cases": [
+      {
+        "id": "N_text20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "非空且在长度内的正文",
+        "boundaryBasis": "内部代表值20码点"
+      },
+      {
+        "id": "B_text1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "最短合法正文",
+        "boundaryBasis": "精确下界1码点"
+      },
+      {
+        "id": "B_text2000",
+        "kind": "边界",
+        "value": 2000,
+        "expected": 200,
+        "equivalenceClass": "最长合法正文",
+        "boundaryBasis": "精确上界2000码点"
+      },
+      {
+        "id": "E_text0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "空正文",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_text2001",
+        "kind": "异常",
+        "value": 2001,
+        "expected": 400,
+        "equivalenceClass": "超长正文",
+        "boundaryBasis": "上界外相邻值2001"
+      },
+      {
+        "id": "E_text_type",
+        "kind": "异常",
+        "value": "number",
+        "expected": 400,
+        "equivalenceClass": "正文为数字",
+        "boundaryBasis": "无效JSON类型等价类"
+      },
+      {
+        "id": "E_version_missing",
+        "kind": "异常",
+        "value": 20,
+        "expected": 428,
+        "equivalenceClass": "版本前置条件缺失",
+        "boundaryBasis": "If-Match未提供",
+        "version": null
+      },
+      {
+        "id": "E_version_stale",
+        "kind": "异常",
+        "value": 20,
+        "expected": 412,
+        "equivalenceClass": "版本前置条件陈旧",
+        "boundaryBasis": "初始版本为1，输入0",
+        "version": 0
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/workspace/DailyItemService.java:183",
+    "sourceSha256": "7c9e7099f27ddfe8ba3bee805226ffe627a8dddfc104593a73540b38549bb378",
+    "interpretation": "正常和上下界更新后正文与版本必须吻合；异常更新读回仍为原文、版本1，证明拒绝没有覆盖数据。"
+  },
+  {
+    "id": "M06",
+    "method": "DailyItemService.delete",
+    "endpoint": "DELETE /daily-items/{id}",
+    "description": "按当前版本删除本人事项。",
+    "domain": "新对象行版本从1开始；删除时须提供匹配的版本。",
+    "cases": [
+      {
+        "id": "N_version2",
+        "kind": "正常",
+        "value": 2,
+        "expected": 200,
+        "equivalenceClass": "存在且版本匹配的本人对象",
+        "boundaryBasis": "先将本次新建对象更新至版本2"
+      },
+      {
+        "id": "B_version1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "最小有效对象版本",
+        "boundaryBasis": "对象刚创建时初始版本1"
+      },
+      {
+        "id": "E_version0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 412,
+        "equivalenceClass": "陈旧版本",
+        "boundaryBasis": "小于初始版本的相邻值0"
+      },
+      {
+        "id": "E_version_missing",
+        "kind": "异常",
+        "value": null,
+        "expected": 428,
+        "equivalenceClass": "缺少版本前置条件",
+        "boundaryBasis": "If-Match缺失"
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/workspace/DailyItemService.java:229",
+    "sourceSha256": "7c9e7099f27ddfe8ba3bee805226ffe627a8dddfc104593a73540b38549bb378",
+    "interpretation": "版本1是对象生命周期的最小有效状态边界；版本2代表通常更新后对象。失败删除仍可读，成功删除后404。"
+  },
+  {
+    "id": "M07",
+    "method": "WorkspaceService.users",
+    "endpoint": "GET /users",
+    "description": "读取员工可见目录。",
+    "domain": "limit∈[1,100]；offset∈[0,2147483647]；非整数或越界拒绝。",
+    "cases": [
+      {
+        "id": "N_limit20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "允许范围内的分页长度",
+        "boundaryBasis": "内部代表值20"
+      },
+      {
+        "id": "B_limit1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "合法最小分页长度",
+        "boundaryBasis": "精确下界1"
+      },
+      {
+        "id": "B_limit100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "合法最大分页长度",
+        "boundaryBasis": "精确上界100"
+      },
+      {
+        "id": "E_limit0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "小于允许范围",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_limit101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "大于允许范围",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_limit_text",
+        "kind": "异常",
+        "value": "x",
+        "expected": 400,
+        "equivalenceClass": "分页值非整数",
+        "boundaryBasis": "无效类型/格式等价类"
+      },
+      {
+        "id": "B_offset_max",
+        "kind": "边界",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "最大合法分页偏移",
+        "boundaryBasis": "offset的Integer.MAX_VALUE=2147483647",
+        "offset": 2147483647
+      },
+      {
+        "id": "E_offset_overflow",
+        "kind": "异常",
+        "value": 20,
+        "expected": 400,
+        "equivalenceClass": "偏移数值溢出",
+        "boundaryBasis": "offset首次越界2147483648",
+        "offset": 2147483648
+      },
+      {
+        "id": "N_admin20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "管理员目录有效分页",
+        "boundaryBasis": "管理员调用同一users方法的admin分支",
+        "actor": "ADMIN",
+        "path": "/admin/users"
+      },
+      {
+        "id": "B_admin100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "管理员目录合法最大分页",
+        "boundaryBasis": "精确上界100",
+        "actor": "ADMIN",
+        "path": "/admin/users"
+      },
+      {
+        "id": "E_admin101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "管理员目录越界",
+        "boundaryBasis": "上界外相邻值101",
+        "actor": "ADMIN",
+        "path": "/admin/users"
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/workspace/WorkspaceService.java:75",
+    "sourceSha256": "9abf0f6a578d6a0854784d524ccb7e870927bb59acef39b2a73f70c8c00c2ba0",
+    "interpretation": "正常值20、精确边界1/100及偏移最大值应接受；0/101、非整数字符串及偏移溢出应拒绝。管理员方法使用独立管理员身份。"
+  },
+  {
+    "id": "M08",
+    "method": "WorkspaceService.logs",
+    "endpoint": "GET /work-logs",
+    "description": "读取本人工作日志。",
+    "domain": "limit∈[1,100]；offset∈[0,2147483647]；非整数或越界拒绝。",
+    "cases": [
+      {
+        "id": "N_limit20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "允许范围内的分页长度",
+        "boundaryBasis": "内部代表值20"
+      },
+      {
+        "id": "B_limit1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "合法最小分页长度",
+        "boundaryBasis": "精确下界1"
+      },
+      {
+        "id": "B_limit100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "合法最大分页长度",
+        "boundaryBasis": "精确上界100"
+      },
+      {
+        "id": "E_limit0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "小于允许范围",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_limit101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "大于允许范围",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_limit_text",
+        "kind": "异常",
+        "value": "x",
+        "expected": 400,
+        "equivalenceClass": "分页值非整数",
+        "boundaryBasis": "无效类型/格式等价类"
+      },
+      {
+        "id": "B_offset_max",
+        "kind": "边界",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "最大合法分页偏移",
+        "boundaryBasis": "offset的Integer.MAX_VALUE=2147483647",
+        "offset": 2147483647
+      },
+      {
+        "id": "E_offset_overflow",
+        "kind": "异常",
+        "value": 20,
+        "expected": 400,
+        "equivalenceClass": "偏移数值溢出",
+        "boundaryBasis": "offset首次越界2147483648",
+        "offset": 2147483648
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/workspace/WorkspaceService.java:200",
+    "sourceSha256": "9abf0f6a578d6a0854784d524ccb7e870927bb59acef39b2a73f70c8c00c2ba0",
+    "interpretation": "正常值20、精确边界1/100及偏移最大值应接受；0/101、非整数字符串及偏移溢出应拒绝。管理员方法使用独立管理员身份。"
+  },
+  {
+    "id": "M09",
+    "method": "WorkspaceService.notifications",
+    "endpoint": "GET /notifications",
+    "description": "读取本人通知。",
+    "domain": "limit∈[1,100]；offset∈[0,2147483647]；非整数或越界拒绝。",
+    "cases": [
+      {
+        "id": "N_limit20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "允许范围内的分页长度",
+        "boundaryBasis": "内部代表值20"
+      },
+      {
+        "id": "B_limit1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "合法最小分页长度",
+        "boundaryBasis": "精确下界1"
+      },
+      {
+        "id": "B_limit100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "合法最大分页长度",
+        "boundaryBasis": "精确上界100"
+      },
+      {
+        "id": "E_limit0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "小于允许范围",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_limit101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "大于允许范围",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_limit_text",
+        "kind": "异常",
+        "value": "x",
+        "expected": 400,
+        "equivalenceClass": "分页值非整数",
+        "boundaryBasis": "无效类型/格式等价类"
+      },
+      {
+        "id": "B_offset_max",
+        "kind": "边界",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "最大合法分页偏移",
+        "boundaryBasis": "offset的Integer.MAX_VALUE=2147483647",
+        "offset": 2147483647
+      },
+      {
+        "id": "E_offset_overflow",
+        "kind": "异常",
+        "value": 20,
+        "expected": 400,
+        "equivalenceClass": "偏移数值溢出",
+        "boundaryBasis": "offset首次越界2147483648",
+        "offset": 2147483648
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/workspace/WorkspaceService.java:446",
+    "sourceSha256": "9abf0f6a578d6a0854784d524ccb7e870927bb59acef39b2a73f70c8c00c2ba0",
+    "interpretation": "正常值20、精确边界1/100及偏移最大值应接受；0/101、非整数字符串及偏移溢出应拒绝。管理员方法使用独立管理员身份。"
+  },
+  {
+    "id": "M10",
+    "method": "WorkspaceService.adminTeams",
+    "endpoint": "GET /admin/teams",
+    "description": "管理员读取小组目录。",
+    "domain": "limit∈[1,100]；offset∈[0,2147483647]；非整数或越界拒绝。",
+    "cases": [
+      {
+        "id": "N_limit20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "允许范围内的分页长度",
+        "boundaryBasis": "内部代表值20"
+      },
+      {
+        "id": "B_limit1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "合法最小分页长度",
+        "boundaryBasis": "精确下界1"
+      },
+      {
+        "id": "B_limit100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "合法最大分页长度",
+        "boundaryBasis": "精确上界100"
+      },
+      {
+        "id": "E_limit0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "小于允许范围",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_limit101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "大于允许范围",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_limit_text",
+        "kind": "异常",
+        "value": "x",
+        "expected": 400,
+        "equivalenceClass": "分页值非整数",
+        "boundaryBasis": "无效类型/格式等价类"
+      },
+      {
+        "id": "B_offset_max",
+        "kind": "边界",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "最大合法分页偏移",
+        "boundaryBasis": "offset的Integer.MAX_VALUE=2147483647",
+        "offset": 2147483647
+      },
+      {
+        "id": "E_offset_overflow",
+        "kind": "异常",
+        "value": 20,
+        "expected": 400,
+        "equivalenceClass": "偏移数值溢出",
+        "boundaryBasis": "offset首次越界2147483648",
+        "offset": 2147483648
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/workspace/WorkspaceService.java:1174",
+    "sourceSha256": "9abf0f6a578d6a0854784d524ccb7e870927bb59acef39b2a73f70c8c00c2ba0",
+    "interpretation": "正常值20、精确边界1/100及偏移最大值应接受；0/101、非整数字符串及偏移溢出应拒绝。管理员方法使用独立管理员身份。"
+  },
+  {
+    "id": "M11",
+    "method": "WorkspaceService.audit",
+    "endpoint": "GET /admin/audit-logs",
+    "description": "管理员读取审计记录。",
+    "domain": "limit∈[1,100]；offset∈[0,2147483647]；非整数或越界拒绝。",
+    "cases": [
+      {
+        "id": "N_limit20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "允许范围内的分页长度",
+        "boundaryBasis": "内部代表值20"
+      },
+      {
+        "id": "B_limit1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "合法最小分页长度",
+        "boundaryBasis": "精确下界1"
+      },
+      {
+        "id": "B_limit100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "合法最大分页长度",
+        "boundaryBasis": "精确上界100"
+      },
+      {
+        "id": "E_limit0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "小于允许范围",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_limit101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "大于允许范围",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_limit_text",
+        "kind": "异常",
+        "value": "x",
+        "expected": 400,
+        "equivalenceClass": "分页值非整数",
+        "boundaryBasis": "无效类型/格式等价类"
+      },
+      {
+        "id": "B_offset_max",
+        "kind": "边界",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "最大合法分页偏移",
+        "boundaryBasis": "offset的Integer.MAX_VALUE=2147483647",
+        "offset": 2147483647
+      },
+      {
+        "id": "E_offset_overflow",
+        "kind": "异常",
+        "value": 20,
+        "expected": 400,
+        "equivalenceClass": "偏移数值溢出",
+        "boundaryBasis": "offset首次越界2147483648",
+        "offset": 2147483648
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/workspace/WorkspaceService.java:1179",
+    "sourceSha256": "9abf0f6a578d6a0854784d524ccb7e870927bb59acef39b2a73f70c8c00c2ba0",
+    "interpretation": "正常值20、精确边界1/100及偏移最大值应接受；0/101、非整数字符串及偏移溢出应拒绝。管理员方法使用独立管理员身份。"
+  },
+  {
+    "id": "M12",
+    "method": "WorkspaceService.adminNotifications",
+    "endpoint": "GET /admin/notifications",
+    "description": "管理员读取投递通知。",
+    "domain": "limit∈[1,100]；offset∈[0,2147483647]；非整数或越界拒绝。",
+    "cases": [
+      {
+        "id": "N_limit20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "允许范围内的分页长度",
+        "boundaryBasis": "内部代表值20"
+      },
+      {
+        "id": "B_limit1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "合法最小分页长度",
+        "boundaryBasis": "精确下界1"
+      },
+      {
+        "id": "B_limit100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "合法最大分页长度",
+        "boundaryBasis": "精确上界100"
+      },
+      {
+        "id": "E_limit0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "小于允许范围",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_limit101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "大于允许范围",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_limit_text",
+        "kind": "异常",
+        "value": "x",
+        "expected": 400,
+        "equivalenceClass": "分页值非整数",
+        "boundaryBasis": "无效类型/格式等价类"
+      },
+      {
+        "id": "B_offset_max",
+        "kind": "边界",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "最大合法分页偏移",
+        "boundaryBasis": "offset的Integer.MAX_VALUE=2147483647",
+        "offset": 2147483647
+      },
+      {
+        "id": "E_offset_overflow",
+        "kind": "异常",
+        "value": 20,
+        "expected": 400,
+        "equivalenceClass": "偏移数值溢出",
+        "boundaryBasis": "offset首次越界2147483648",
+        "offset": 2147483648
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/workspace/WorkspaceService.java:567",
+    "sourceSha256": "9abf0f6a578d6a0854784d524ccb7e870927bb59acef39b2a73f70c8c00c2ba0",
+    "interpretation": "正常值20、精确边界1/100及偏移最大值应接受；0/101、非整数字符串及偏移溢出应拒绝。管理员方法使用独立管理员身份。"
+  },
+  {
+    "id": "M13",
+    "method": "TaskService.list",
+    "endpoint": "GET /tasks",
+    "description": "读取本人任务列表。",
+    "domain": "limit∈[1,100]；offset∈[0,2147483647]；非整数或越界拒绝。",
+    "cases": [
+      {
+        "id": "N_limit20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "允许范围内的分页长度",
+        "boundaryBasis": "内部代表值20"
+      },
+      {
+        "id": "B_limit1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "合法最小分页长度",
+        "boundaryBasis": "精确下界1"
+      },
+      {
+        "id": "B_limit100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "合法最大分页长度",
+        "boundaryBasis": "精确上界100"
+      },
+      {
+        "id": "E_limit0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "小于允许范围",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_limit101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "大于允许范围",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_limit_text",
+        "kind": "异常",
+        "value": "x",
+        "expected": 400,
+        "equivalenceClass": "分页值非整数",
+        "boundaryBasis": "无效类型/格式等价类"
+      },
+      {
+        "id": "B_offset_max",
+        "kind": "边界",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "最大合法分页偏移",
+        "boundaryBasis": "offset的Integer.MAX_VALUE=2147483647",
+        "offset": 2147483647
+      },
+      {
+        "id": "E_offset_overflow",
+        "kind": "异常",
+        "value": 20,
+        "expected": 400,
+        "equivalenceClass": "偏移数值溢出",
+        "boundaryBasis": "offset首次越界2147483648",
+        "offset": 2147483648
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/task/TaskService.java:91",
+    "sourceSha256": "23b77837aacdf684cca660395e647ae4eaa59f01d85ecbaade7f924412ea060a",
+    "interpretation": "正常值20、精确边界1/100及偏移最大值应接受；0/101、非整数字符串及偏移溢出应拒绝。管理员方法使用独立管理员身份。"
+  },
+  {
+    "id": "M14",
+    "method": "TaskService.table",
+    "endpoint": "GET /tasks/table",
+    "description": "读取个人任务表单投影。",
+    "domain": "limit∈[1,100]；offset∈[0,2147483647]；非整数或越界拒绝。",
+    "cases": [
+      {
+        "id": "N_limit20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "允许范围内的分页长度",
+        "boundaryBasis": "内部代表值20"
+      },
+      {
+        "id": "B_limit1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "合法最小分页长度",
+        "boundaryBasis": "精确下界1"
+      },
+      {
+        "id": "B_limit100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "合法最大分页长度",
+        "boundaryBasis": "精确上界100"
+      },
+      {
+        "id": "E_limit0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "小于允许范围",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_limit101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "大于允许范围",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_limit_text",
+        "kind": "异常",
+        "value": "x",
+        "expected": 400,
+        "equivalenceClass": "分页值非整数",
+        "boundaryBasis": "无效类型/格式等价类"
+      },
+      {
+        "id": "B_offset_max",
+        "kind": "边界",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "最大合法分页偏移",
+        "boundaryBasis": "offset的Integer.MAX_VALUE=2147483647",
+        "offset": 2147483647
+      },
+      {
+        "id": "E_offset_overflow",
+        "kind": "异常",
+        "value": 20,
+        "expected": 400,
+        "equivalenceClass": "偏移数值溢出",
+        "boundaryBasis": "offset首次越界2147483648",
+        "offset": 2147483648
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/task/TaskService.java:117",
+    "sourceSha256": "23b77837aacdf684cca660395e647ae4eaa59f01d85ecbaade7f924412ea060a",
+    "interpretation": "正常值20、精确边界1/100及偏移最大值应接受；0/101、非整数字符串及偏移溢出应拒绝。管理员方法使用独立管理员身份。"
+  },
+  {
+    "id": "M15",
+    "method": "TaskService.adminTasks",
+    "endpoint": "GET /admin/tasks",
+    "description": "管理员定位任务。",
+    "domain": "limit∈[1,100]；offset∈[0,2147483647]；非整数或越界拒绝。",
+    "cases": [
+      {
+        "id": "N_limit20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "允许范围内的分页长度",
+        "boundaryBasis": "内部代表值20"
+      },
+      {
+        "id": "B_limit1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "合法最小分页长度",
+        "boundaryBasis": "精确下界1"
+      },
+      {
+        "id": "B_limit100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "合法最大分页长度",
+        "boundaryBasis": "精确上界100"
+      },
+      {
+        "id": "E_limit0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "小于允许范围",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_limit101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "大于允许范围",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_limit_text",
+        "kind": "异常",
+        "value": "x",
+        "expected": 400,
+        "equivalenceClass": "分页值非整数",
+        "boundaryBasis": "无效类型/格式等价类"
+      },
+      {
+        "id": "B_offset_max",
+        "kind": "边界",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "最大合法分页偏移",
+        "boundaryBasis": "offset的Integer.MAX_VALUE=2147483647",
+        "offset": 2147483647
+      },
+      {
+        "id": "E_offset_overflow",
+        "kind": "异常",
+        "value": 20,
+        "expected": 400,
+        "equivalenceClass": "偏移数值溢出",
+        "boundaryBasis": "offset首次越界2147483648",
+        "offset": 2147483648
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/task/TaskService.java:330",
+    "sourceSha256": "23b77837aacdf684cca660395e647ae4eaa59f01d85ecbaade7f924412ea060a",
+    "interpretation": "正常值20、精确边界1/100及偏移最大值应接受；0/101、非整数字符串及偏移溢出应拒绝。管理员方法使用独立管理员身份。"
+  },
+  {
+    "id": "M16",
+    "method": "TaskService.assigneeCandidates",
+    "endpoint": "GET /assignee-candidates",
+    "description": "读取有权限分派的负责人候选。",
+    "domain": "q长度0–100；purpose只能为create或edit。",
+    "cases": [
+      {
+        "id": "N_query",
+        "kind": "正常",
+        "value": 10,
+        "expected": 200,
+        "equivalenceClass": "合法检索字符串",
+        "boundaryBasis": "长度10的普通检索"
+      },
+      {
+        "id": "B_query0",
+        "kind": "边界",
+        "value": 0,
+        "expected": 200,
+        "equivalenceClass": "空检索返回允许候选范围",
+        "boundaryBasis": "精确下界0字符"
+      },
+      {
+        "id": "B_query100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "最长合法检索",
+        "boundaryBasis": "精确上界100字符"
+      },
+      {
+        "id": "E_query101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "检索过长",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_purpose",
+        "kind": "异常",
+        "value": 10,
+        "expected": 400,
+        "equivalenceClass": "无效操作场景枚举",
+        "boundaryBasis": "purpose不属于create/edit",
+        "purpose": "invalid"
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/task/TaskService.java:435",
+    "sourceSha256": "23b77837aacdf684cca660395e647ae4eaa59f01d85ecbaade7f924412ea060a",
+    "interpretation": "0和100字符是q的真实边界；101字符和非法purpose分别覆盖长度越界与无效枚举等价类。"
+  },
+  {
+    "id": "M17",
+    "method": "TaskService.approvals",
+    "endpoint": "GET /approval-requests",
+    "description": "读取本人相关的申请列表。",
+    "domain": "limit∈[1,100]；offset∈[0,2147483647]；mine可为all/reviewer/applicant。",
+    "cases": [
+      {
+        "id": "N_limit20",
+        "kind": "正常",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "允许范围内的分页长度",
+        "boundaryBasis": "内部代表值20"
+      },
+      {
+        "id": "B_limit1",
+        "kind": "边界",
+        "value": 1,
+        "expected": 200,
+        "equivalenceClass": "合法最小分页长度",
+        "boundaryBasis": "精确下界1"
+      },
+      {
+        "id": "B_limit100",
+        "kind": "边界",
+        "value": 100,
+        "expected": 200,
+        "equivalenceClass": "合法最大分页长度",
+        "boundaryBasis": "精确上界100"
+      },
+      {
+        "id": "E_limit0",
+        "kind": "异常",
+        "value": 0,
+        "expected": 400,
+        "equivalenceClass": "小于允许范围",
+        "boundaryBasis": "下界外相邻值0"
+      },
+      {
+        "id": "E_limit101",
+        "kind": "异常",
+        "value": 101,
+        "expected": 400,
+        "equivalenceClass": "大于允许范围",
+        "boundaryBasis": "上界外相邻值101"
+      },
+      {
+        "id": "E_limit_text",
+        "kind": "异常",
+        "value": "x",
+        "expected": 400,
+        "equivalenceClass": "分页值非整数",
+        "boundaryBasis": "无效类型/格式等价类"
+      },
+      {
+        "id": "B_offset_max",
+        "kind": "边界",
+        "value": 20,
+        "expected": 200,
+        "equivalenceClass": "最大合法分页偏移",
+        "boundaryBasis": "offset的Integer.MAX_VALUE=2147483647",
+        "offset": 2147483647
+      },
+      {
+        "id": "E_offset_overflow",
+        "kind": "异常",
+        "value": 20,
+        "expected": 400,
+        "equivalenceClass": "偏移数值溢出",
+        "boundaryBasis": "offset首次越界2147483648",
+        "offset": 2147483648
+      }
+    ],
+    "sourceReference": "backend/src/main/java/cn/pandora/task/TaskService.java:675",
+    "sourceSha256": "23b77837aacdf684cca660395e647ae4eaa59f01d85ecbaade7f924412ea060a",
+    "interpretation": "本章经HTTP验证四参数approvals重载；不将内部私有方法或其他重载重复计为已测方法。"
+  }
+]

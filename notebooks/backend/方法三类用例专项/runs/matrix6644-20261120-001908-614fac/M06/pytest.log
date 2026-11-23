@@ -1,0 +1,14 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.2.0, pluggy-1.7.0 -- /Users/aoxiang/Desktop/软件测试/notebooks/backend/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/aoxiang/Desktop/软件测试/notebooks/backend/方法三类用例专项
+plugins: platformdirs-4.14.7, anyio-4.16.0
+collecting ... collected 4 items
+
+runs/matrix6644-20261120-001908-614fac/M06/test_method.py::test_delete_three_classes[N_version2] PASSED [ 25%]
+runs/matrix6644-20261120-001908-614fac/M06/test_method.py::test_delete_three_classes[B_version1] PASSED [ 50%]
+runs/matrix6644-20261120-001908-614fac/M06/test_method.py::test_delete_three_classes[E_version0] PASSED [ 75%]
+runs/matrix6644-20261120-001908-614fac/M06/test_method.py::test_delete_three_classes[E_version_missing] PASSED [100%]
+
+- generated xml file: /Users/aoxiang/Desktop/软件测试/notebooks/backend/方法三类用例专项/runs/matrix6644-20261120-001908-614fac/M06/pytest.xml -
+============================== 4 passed in 2.18s ===============================

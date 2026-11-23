@@ -1,0 +1,175 @@
+{
+  "checks": [
+    {
+      "name": "login form",
+      "pass": true
+    },
+    {
+      "name": "authenticated alpha-one-employee",
+      "pass": true
+    },
+    {
+      "name": "expired proposal still projects at its proposed date while pending",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "date": "2031-02-28",
+        "dashed": true,
+        "text": "过期排期投影任务2月28日 09:00 → 2月28日 11:00 · 审核中",
+        "color": "#F6D5D2"
+      }
+    },
+    {
+      "name": "review after the applicable deadline expires the request",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "REQUEST_EXPIRED",
+          "message": "申请已到适用截止时间失效，请调整后重提"
+        }
+      }
+    },
+    {
+      "name": "expired proposal returns the calendar to the effective date",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "date": "2031-02-26",
+        "dashed": false,
+        "text": "过期排期投影任务2月26日 09:00 → 2月26日 11:00",
+        "color": "#F6D5D2"
+      }
+    },
+    {
+      "name": "expired proposal is unpublished and the task is unfrozen",
+      "pass": true,
+      "evidence": {
+        "id": "f0beb492-b294-4724-9221-a249a1aa796d",
+        "taskId": "f0beb492-b294-4724-9221-a249a1aa796d",
+        "versionNo": 1,
+        "title": "过期排期投影任务",
+        "description": "横向排期验证",
+        "acceptanceCriteria": "",
+        "priority": "medium",
+        "allDay": false,
+        "startAt": "2031-02-26T01:00:00Z",
+        "dueAt": "2031-02-26T03:00:00Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "todo",
+        "progressNote": "",
+        "status": "applied",
+        "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "createdAt": "2026-11-18T17:31:09.690612Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "tags": [
+          {
+            "id": "67bbe74b-c182-4c31-8c83-eea718cbce98",
+            "name": "排期投影标签",
+            "color": "#F6D5D2",
+            "border": "#C05B52",
+            "deleted": false,
+            "rowVersion": 1
+          }
+        ],
+        "tagIds": [
+          "67bbe74b-c182-4c31-8c83-eea718cbce98"
+        ],
+        "tagId": "67bbe74b-c182-4c31-8c83-eea718cbce98",
+        "tag": {
+          "id": "67bbe74b-c182-4c31-8c83-eea718cbce98",
+          "name": "排期投影标签",
+          "color": "#F6D5D2",
+          "border": "#C05B52",
+          "deleted": false,
+          "rowVersion": 1
+        },
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "c7a85a01-61da-4ec1-9353-66103087cdfc",
+        "currentVersionId": "c7a85a01-61da-4ec1-9353-66103087cdfc",
+        "originalCreatorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "businessOwnerId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "rowVersion": 4,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-11-18T17:32:02.722326Z",
+        "pending": false,
+        "frozen": false,
+        "pendingKind": null,
+        "canReschedule": true,
+        "canPin": true,
+        "canTablePin": true,
+        "tablePinned": false,
+        "editableFields": [
+          "allDay",
+          "startAt",
+          "dueAt",
+          "startDate",
+          "dueDate",
+          "title",
+          "description",
+          "acceptanceCriteria",
+          "priority",
+          "tagIds",
+          "parentTaskId",
+          "progressNote",
+          "assigneeIds"
+        ],
+        "route": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+              "displayName": "alpha-one-head"
+            },
+            {
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+              "displayName": "alpha-one-employee"
+            }
+          ]
+        },
+        "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "participants": [
+          {
+            "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "displayName": "alpha-one-head"
+          },
+          {
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "displayName": "alpha-one-employee"
+          }
+        ],
+        "pinned": false,
+        "pendingRoute": {},
+        "canHandover": true,
+        "handoverSources": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "handoverPresets": {},
+        "children": []
+      }
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

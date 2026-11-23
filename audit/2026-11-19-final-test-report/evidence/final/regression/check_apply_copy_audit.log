@@ -1,0 +1,42 @@
+PASS login form ready
+PASS founder signed in
+PASS 工作台 copy audit
+PASS 日程 copy audit
+PASS 日志 copy audit
+PASS 统计 copy audit
+PASS 我的 copy audit
+PASS analysis keeps concise provenance
+PASS profile keeps contact and account labels
+PASS task detail opens
+PASS task business text is preserved verbatim
+PASS 任务详情 copy audit
+PASS unified task edit form opens
+PASS task form keeps field labels and validation reason
+PASS 任务编辑 copy audit
+PASS task edit fits 320
+PASS task edit fits 390
+PASS task edit fits 1440
+PASS log form keeps its fields
+PASS log form labels stay visible
+PASS log validation error stays concise
+PASS 日志表单 copy audit
+PASS notification list opens
+PASS notification filters are visible
+PASS 通知列表 copy audit
+PASS calendar drawer opens
+PASS my applications opens
+PASS 我的申请 copy audit
+PASS subordinate entry is reachable
+PASS person card opens before work
+PASS person card keeps schedule and log entries
+PASS 下属资料卡 copy audit
+PASS subordinate work page opens
+PASS 下属工作页 copy audit
+PASS subordinate work fits 320
+PASS subordinate work fits 390
+PASS subordinate work fits 1440
+PASS admin login ready
+PASS 管理端登录 copy audit
+PASS admin console opens
+PASS 管理端业务维护 copy audit
+PASS no browser exceptions

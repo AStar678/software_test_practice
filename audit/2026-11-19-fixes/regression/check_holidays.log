@@ -1,0 +1,38 @@
+PASS  an employee reads a missing year as a stable empty state
+PASS  a missing GET does not invoke the external source when background is disabled
+PASS  the independent administrator can read the shared holiday labels outside /admin
+PASS  an employee cannot refresh a holiday year
+PASS  an administrator refresh requires an idempotency key
+PASS  a year below 1900 is rejected
+PASS  a year above 9999 is rejected
+PASS  POST /admin/calendar/holidays/2026/refresh succeeds
+PASS  the validated 2026 official notice becomes a ready cache
+PASS  the cache keeps the official New Year rest day and Spring Festival make-up workday
+PASS  days are sorted by date and contain only that year
+PASS  the successful admin refresh is recorded in the audit trail
+PASS  an idempotent retry replays without another source request
+PASS  a concurrent reader sees the complete old year before the replace commits
+PASS  the slow refresh completes successfully
+PASS  after commit every reader sees the complete new year
+PASS  the ready 2026 labels are readable by founder
+PASS  the ready 2026 labels are readable by employee
+PASS  the ready 2026 labels are readable by other-company employee
+PASS  the ready 2026 labels are readable by independent administrator
+PASS  POST /tasks succeeds
+PASS  GET /tasks/827989c4-fd5d-454a-9cda-6ca50cd158b0 succeeds
+PASS  POST /admin/calendar/holidays/2026/refresh succeeds
+PASS  GET /tasks/827989c4-fd5d-454a-9cda-6ca50cd158b0 succeeds
+PASS  a holiday refresh does not change task start/due/version
+PASS  the ready year survives a backend restart with the same source/updatedAt
+PASS  restart did not fetch the cached year again
+PASS  a failed source refresh is a safe 502 with a reason code
+PASS  a failed refresh preserves the old days/source/updatedAt and reports stale
+PASS  a cross-year payload is rejected without publishing a partial year
+PASS  the rejected year stays missing and has no fabricated days
+PASS  POST /admin/calendar/holidays/2027/refresh succeeds
+PASS  a repaired 2027 payload replaces only the 2027 year
+PASS  startup checks the current and next year exactly once each
+PASS  repeated reads of a missing year coalesce into one bounded intent
+PASS  an unavailable year is not retried on every GET
+PASS  the background fixture still serves the ready cached years
+{"total": 37, "failed": 0, "report": "/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-u8b7073v/project/audit/prepare-employee-client-contracts-and-business-upgrade/holiday-check.json"}

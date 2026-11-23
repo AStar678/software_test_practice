@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: cn.pandora.workspace.WorkspaceBatchReadTest
+-------------------------------------------------------------------------------
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.003 s -- in cn.pandora.workspace.WorkspaceBatchReadTest

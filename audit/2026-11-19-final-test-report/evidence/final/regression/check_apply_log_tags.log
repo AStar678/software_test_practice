@@ -1,0 +1,39 @@
+PASS create preserves both tag IDs and order
+PASS home omits the retired recent-log card
+PASS own log list uses the ordered collection
+PASS manager list reads same ordered collection
+PASS manager pages retain independent ordered tag sets
+PASS omitted tagIds preserve existing collection
+PASS unrelated colleague cannot read log
+PASS old singular tag field is rejected
+PASS duplicate IDs reject whole edit
+PASS cross-company tag rejects whole edit
+PASS manager cannot alter author tags
+PASS remove and append retains selection order
+PASS live catalogue change refreshes log tag
+PASS deleted reference stays visible
+PASS deleted tag cannot be newly attached
+PASS unchanged deleted reference can remain
+PASS stale version leaves body and tags unchanged
+PASS explicit empty collection clears tags
+PASS login form ready
+FAIL authenticated founder
+Error: authenticated founder undefined
+    at check (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-u8b7073v/project/backend/scripts/check_apply_log_tags_browser.js:8:140)
+    at login (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-u8b7073v/project/backend/scripts/check_apply_log_tags_browser.js:14:3)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processTimers (node:internal/timers:540:9)
+    at async main (/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-u8b7073v/project/backend/scripts/check_apply_log_tags_browser.js:20:3)
+Traceback (most recent call last):
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-u8b7073v/project/backend/scripts/check_apply_log_tags.py", line 88, in <module>
+    main()
+    ~~~~^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-u8b7073v/project/backend/scripts/check_apply_log_tags.py", line 83, in main
+    subprocess.run(['node', str(BASE / 'scripts/check_apply_log_tags_browser.js')],
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                   env={**os.environ, 'PANDORA_LOG_TAG_FIXTURE': json.dumps(manifest)}, check=True)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['node', '/private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-u8b7073v/project/backend/scripts/check_apply_log_tags_browser.js']' returned non-zero exit status 1.

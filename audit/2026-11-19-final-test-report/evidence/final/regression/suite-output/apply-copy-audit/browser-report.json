@@ -1,0 +1,271 @@
+{
+  "pages": [
+    {
+      "label": "工作台",
+      "pass": true,
+      "detail": "无开发解释；保留统计范围与操作入口"
+    },
+    {
+      "label": "日程",
+      "pass": true,
+      "detail": "无开发解释；保留日期导航与任务状态"
+    },
+    {
+      "label": "日志",
+      "pass": true,
+      "detail": "无开发解释；保留空态与筛选"
+    },
+    {
+      "label": "统计",
+      "pass": true,
+      "detail": "保留统计范围、生成时间与来源"
+    },
+    {
+      "label": "我的",
+      "pass": true,
+      "detail": "保留资料字段、账号与下属入口"
+    },
+    {
+      "label": "任务详情",
+      "pass": true,
+      "detail": "保留说明、进展、申请状态与评论"
+    },
+    {
+      "label": "任务编辑",
+      "pass": true,
+      "detail": "保留字段标签、变更原因与提交"
+    },
+    {
+      "label": "日志表单",
+      "pass": true,
+      "detail": "保留日期、正文、标签与简短校验"
+    },
+    {
+      "label": "通知列表",
+      "pass": true,
+      "detail": "保留全部/未读与分类筛选"
+    },
+    {
+      "label": "通知详情",
+      "pass": true,
+      "detail": "本次无通知，列表筛选已检查"
+    },
+    {
+      "label": "我的申请",
+      "pass": true,
+      "detail": "保留申请状态与结果"
+    },
+    {
+      "label": "下属资料卡",
+      "pass": true,
+      "detail": "保留授权联系方式与工作入口"
+    },
+    {
+      "label": "下属工作页",
+      "pass": true,
+      "detail": "保留月/日浏览、状态与返回"
+    },
+    {
+      "label": "管理端登录",
+      "pass": true,
+      "detail": "仅说明管理员账号登录"
+    },
+    {
+      "label": "管理端业务维护",
+      "pass": true,
+      "detail": "保留员工、组织、通知与历史操作说明"
+    }
+  ],
+  "checks": [
+    {
+      "name": "login form ready",
+      "pass": true
+    },
+    {
+      "name": "founder signed in",
+      "pass": true
+    },
+    {
+      "name": "工作台 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "日程 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "日志 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "统计 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "我的 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "analysis keeps concise provenance",
+      "pass": true,
+      "evidence": "任务数据统计\n全公司\n1\n任务总数\n0\n进行中\n1\n待开始\n0\n已完成\n0\n待完成审核\n0\n全部待审冻结\n0\n逾期未完成\n紧急程度分布\n0\n紧急\n0\n高\n1\n中\n0\n低\n\n统计方法：当前有效任务 · 更新于 2026年11月19日 01:33\n\n关键词词云\n全公司\n演示\n章节\n原型演示关键词\n本说明保留原型\n接口字段等词\n业务原文\n原型\n业务原\n保留原\n关键词\n务原文\n原型演\n口字段\n型演示\n字段等\n接口字\n明保留\n本说明\n段等词\n演示关\n留原型\n示关键\n说明保\n业务\n\n从授权范围内任务的标题和说明实时提取，不读取工作日志。\n\n规则建议\n全公司\n\n本地规则计算：比例临期、逾期、排期冲突和高紧急程度；不调用外部模型，不修改任务。\n\n刷新并重算\n\n生成于 2026年11月19日 01:33 · 本地规则统计\n\n当前没有触发比例临期、逾期、排期冲突或高紧急规则"
+    },
+    {
+      "name": "profile keeps contact and account labels",
+      "pass": true,
+      "evidence": "f\n\nMY WORKSPACE\n\nfounder\n\nDisplay title\n\n联系电话\n13900000001\n邮箱\n未填写\n入职日期\n入职日期未设置\n已入职时长\n入职日期未设置\n组织信息\n由管理员维护\n⌄\n部门\n公司层\n职位\nDisplay title\n直属上级\n无\n下属资料\n10 人\n⌄\n标签管理\n公司共用\n打开标签管理"
+    },
+    {
+      "name": "task detail opens",
+      "pass": true
+    },
+    {
+      "name": "task business text is preserved verbatim",
+      "pass": true,
+      "evidence": "待开始\n中\n我负责\n任务名称\n业务原文：原型演示关键词\n创建者\nfounder\n创建时间\n2026年11月19日 01:33\n任务排期\n4月1日 09:00 → 4月1日 11:00\n截止\n2031年4月1日 11:00\n负责人\nfounder\n任务说明\n本说明保留原型、演示、章节、接口字段等词。\n当前进展\n暂无\n评论\n共 1 条\nfounder\n2026年11月19日 01:33\n编辑\n\n评论原文保留章节与原型。\n\n发表评论\n发表\n编辑任务\n提交完成\n专用交接\n置顶到我的月视图\n置顶到任务表单"
+    },
+    {
+      "name": "任务详情 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "unified task edit form opens",
+      "pass": true
+    },
+    {
+      "name": "task form keeps field labels and validation reason",
+      "pass": true,
+      "evidence": "任务名称\n任务说明（必填）\n完成标准（历史任务可编辑，最多2000字）\n上级任务（可选）\n未指定上级任务\n选择上级任务\n任务排期\n设为全天\n开始日期\n开始时刻\n00\n01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n:\n00\n01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n42\n43\n44\n45\n46\n47\n48\n49\n50\n51\n52\n53\n54\n55\n56\n57\n58\n59\n截止日期\n截止时刻\n00\n01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n:\n00\n01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n2"
+    },
+    {
+      "name": "任务编辑 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "task edit fits 320",
+      "pass": true
+    },
+    {
+      "name": "task edit fits 390",
+      "pass": true
+    },
+    {
+      "name": "task edit fits 1440",
+      "pass": true
+    },
+    {
+      "name": "log form keeps its fields",
+      "pass": true
+    },
+    {
+      "name": "log form labels stay visible",
+      "pass": true,
+      "evidence": "日志日期\n昨天 · 11月18日\n前天 · 11月17日\n共用标签（可多选）\n暂无共用标签\n日志内容\n填入当日事项与任务\n关联任务（可选）\n未关联任务\n选择关联任务\n保存日志"
+    },
+    {
+      "name": "log validation error stays concise",
+      "pass": true
+    },
+    {
+      "name": "日志表单 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "notification list opens",
+      "pass": true
+    },
+    {
+      "name": "notification filters are visible",
+      "pass": true,
+      "evidence": "全部\n需我审核\n结果告知\n提醒\n评论\n其他\n全部\n未读\n已读\n\n已显示 0 / 0 条 · 全部未读 0 条\n\n暂无通知\n"
+    },
+    {
+      "name": "通知列表 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "calendar drawer opens",
+      "pass": true
+    },
+    {
+      "name": "my applications opens",
+      "pass": true
+    },
+    {
+      "name": "我的申请 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "subordinate entry is reachable",
+      "pass": true
+    },
+    {
+      "name": "person card opens before work",
+      "pass": true
+    },
+    {
+      "name": "person card keeps schedule and log entries",
+      "pass": true,
+      "evidence": "组织职务\nalpha ▸ alpha one ▸ Display title\n直属上级\nalpha-one-head\n联系电话\n13900000004\n邮箱\n未填写\n入职日期\n入职日期未设置\n已入职\n入职日期未设置\n查看日程\n查看日志\n关闭"
+    },
+    {
+      "name": "下属资料卡 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "subordinate work page opens",
+      "pass": true
+    },
+    {
+      "name": "下属工作页 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "subordinate work fits 320",
+      "pass": true
+    },
+    {
+      "name": "subordinate work fits 390",
+      "pass": true
+    },
+    {
+      "name": "subordinate work fits 1440",
+      "pass": true
+    },
+    {
+      "name": "admin login ready",
+      "pass": true
+    },
+    {
+      "name": "管理端登录 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "admin console opens",
+      "pass": true
+    },
+    {
+      "name": "管理端业务维护 copy audit",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

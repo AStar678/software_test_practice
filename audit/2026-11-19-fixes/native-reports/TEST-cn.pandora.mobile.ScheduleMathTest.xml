@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="cn.pandora.mobile.ScheduleMathTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-18T16:03:07.343Z" hostname="aoxiangdeMacBook-Air.local" time="0.006">
+  <properties/>
+  <testcase name="boundaryPointBelongsOnlyToFollowingBand" classname="cn.pandora.mobile.ScheduleMathTest" time="0.001"/>
+  <testcase name="hourResizeKeepsMinutesAndRejectsMovingOutsideTheDay" classname="cn.pandora.mobile.ScheduleMathTest" time="0.001"/>
+  <testcase name="monthMoveUsesCompanyDaysAcrossDaylightSaving" classname="cn.pandora.mobile.ScheduleMathTest" time="0.002"/>
+  <testcase name="fractionClampsOutsideVisibleBand" classname="cn.pandora.mobile.ScheduleMathTest" time="0.0"/>
+  <testcase name="verticalFingerSeparationChangesRowsWithinBounds" classname="cn.pandora.mobile.ScheduleMathTest" time="0.0"/>
+  <testcase name="midnightEndDoesNotOccupyFollowingDay" classname="cn.pandora.mobile.ScheduleMathTest" time="0.001"/>
+  <testcase name="crossDayEventAppearsInAllIntersectingBands" classname="cn.pandora.mobile.ScheduleMathTest" time="0.0"/>
+  <testcase name="clippingPreservesDurationAcrossThreeBands" classname="cn.pandora.mobile.ScheduleMathTest" time="0.0"/>
+  <testcase name="allDayMonthOccupancyUsesWholeDays" classname="cn.pandora.mobile.ScheduleMathTest" time="0.0"/>
+  <testcase name="atLeastFiveSimultaneousEventsGetSeparateLanes" classname="cn.pandora.mobile.ScheduleMathTest" time="0.0"/>
+  <testcase name="monthDropTracksTheTargetCellAcrossWeekRows" classname="cn.pandora.mobile.ScheduleMathTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

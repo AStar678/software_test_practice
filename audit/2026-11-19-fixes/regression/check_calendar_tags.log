@@ -1,0 +1,26 @@
+PASS personal tag creation rejected
+PASS employee cannot maintain company catalogue
+PASS admin has no business catalogue
+PASS catalogue is shared with employee
+PASS other organization has isolated catalogue
+PASS task retains ordered shared tags
+PASS reordered task has a different shared first color
+PASS private task mark route is gone
+PASS old personalTag field absent
+PASS personal pin survives shared tag model
+PASS live first tag rename and recolor
+PASS deleted first tag keeps display snapshot
+PASS deleted tag unavailable for new task
+PASS no personal override table
+PASS login form ready
+PASS authenticated
+PASS employee sees only shared catalogue fields
+PASS first shared tag drives each task color after reordering
+PASS task detail has both ordered tags
+PASS deleted tag visibly retained
+PASS no private tag control
+PASS tag detail fits 320
+PASS tag detail fits 390
+PASS tag detail fits 1440
+PASS no browser exceptions
+PASS shared-tag browser workflow

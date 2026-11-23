@@ -1,0 +1,17 @@
+[
+  {
+    "check": "dedicated device forwarding port is unused",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "check": "real phone employee login: employee",
+    "pass": false,
+    "detail": null
+  },
+  {
+    "check": "original installed Flutter app remains byte-identical",
+    "pass": true,
+    "detail": null
+  }
+]

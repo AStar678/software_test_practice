@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrganizationConstraints.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.admin</a> &gt; <span class="el_source">OrganizationConstraints.java</span></div><h1>OrganizationConstraints.java</h1><pre class="source lang-java linenums">package cn.pandora.admin;
+
+import cn.pandora.auth.CompanyTree;
+import cn.pandora.common.Db;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import java.util.*;
+import static cn.pandora.common.Db.*;
+
+/** Reports fixed-model readiness. Runtime maintenance never executes constraint-changing DDL. */
+@Component
+@Order(OrganizationConstraints.ORDER)
+public class OrganizationConstraints implements ApplicationRunner {
+    public static final int ORDER=100;
+    private final Db db;
+<span class="fc" id="L19">    public OrganizationConstraints(Db db) {this.db=db;}</span>
+    @Override public void run(ApplicationArguments args) {
+<span class="fc" id="L21">        LoggerFactory.getLogger(OrganizationConstraints.class).info(&quot;Fixed organization readiness: {}&quot;,status());</span>
+<span class="fc" id="L22">    }</span>
+    public Map&lt;String,Object&gt; status() {
+<span class="fc" id="L24">        List&lt;Map&lt;String,Object&gt;&gt; companies=new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        for(var company:db.list(&quot;SELECT id FROM organizations ORDER BY id&quot;)) companies.add(status(s(company,&quot;id&quot;)));</span>
+<span class="fc" id="L26">        return Map.of(&quot;companies&quot;,companies,&quot;formalWritesReady&quot;,companies.stream().allMatch(c-&gt;Boolean.TRUE.equals(c.get(&quot;formalWritesReady&quot;))),</span>
+<span class="fc" id="L27">                &quot;runtimeDdlEnabled&quot;,false);</span>
+    }
+    public Map&lt;String,Object&gt; status(String organizationId) {
+<span class="fc" id="L30">        var tree=new CompanyTree(db).of(organizationId);</span>
+<span class="fc" id="L31">        List&lt;String&gt; blockers=new ArrayList&lt;&gt;(tree.blockers());</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        if(n(db.one(&quot;SELECT COUNT(*) AS c FROM admin_accounts a JOIN principals p ON p.organization_id=a.organization_id AND p.id=a.id &quot;</span>
+                + &quot;WHERE a.organization_id=? AND a.active=1 AND p.active=1 AND p.account_type='admin'&quot;,organizationId),&quot;c&quot;)!=1)
+<span class="nc" id="L34">            blockers.add(&quot;INDEPENDENT_ADMIN_REQUIRED&quot;);</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        if(n(db.one(&quot;SELECT COUNT(*) AS c FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id &quot;</span>
+                + &quot;WHERE u.organization_id=? AND p.account_type='admin'&quot;,organizationId),&quot;c&quot;)&gt;0)
+<span class="nc" id="L37">            blockers.add(&quot;ADMIN_BUSINESS_REFERENCE_REPAIR_REQUIRED&quot;);</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if(n(db.one(&quot;SELECT COUNT(*) AS c FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id &quot;</span>
+                + &quot;WHERE u.organization_id=? AND u.active=1 AND p.account_type='employee' AND (u.login_phone IS NULL OR u.login_phone='')&quot;,organizationId),&quot;c&quot;)&gt;0)
+<span class="nc" id="L40">            blockers.add(&quot;EMPLOYEE_LOGIN_PHONE_REQUIRED&quot;);</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if(n(db.one(&quot;SELECT COUNT(*) AS c FROM users u WHERE u.organization_id=? AND u.active=1 AND u.login_phone IS NOT NULL &quot;</span>
+                + &quot;AND EXISTS (SELECT 1 FROM users x JOIN principals p ON p.organization_id=x.organization_id AND p.id=x.id &quot;
+                + &quot;WHERE x.login_phone=u.login_phone AND x.id&lt;&gt;u.id AND x.active=1 AND p.account_type='employee')&quot;,organizationId),&quot;c&quot;)&gt;0)
+<span class="nc" id="L44">            blockers.add(&quot;EMPLOYEE_LOGIN_PHONE_DUPLICATE&quot;);</span>
+<span class="fc" id="L45">        return Map.of(&quot;organizationId&quot;,organizationId,&quot;formalWritesReady&quot;,blockers.isEmpty(),&quot;blockers&quot;,List.copyOf(blockers),</span>
+<span class="fc" id="L46">                &quot;runtimeDdlEnabled&quot;,false);</span>
+    }
+<span class="fc" id="L48">    public boolean formalWritesReady(String organizationId) {return Boolean.TRUE.equals(status(organizationId).get(&quot;formalWritesReady&quot;));}</span>
+<span class="nc" id="L49">    public boolean formalWritesReady() {return Boolean.TRUE.equals(status().get(&quot;formalWritesReady&quot;));}</span>
+    /** Retained during controller cutover. All schema changes belong to forward migrations. */
+<span class="nc" id="L51">    public boolean tryTighten() {return false;}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

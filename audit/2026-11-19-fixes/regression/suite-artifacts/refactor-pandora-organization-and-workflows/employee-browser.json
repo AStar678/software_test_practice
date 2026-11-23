@@ -1,0 +1,3156 @@
+{
+  "updated": "2026-11-18T17:01:34.567Z",
+  "checks": [
+    {
+      "check": "login form ready alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "dashboard preview budget, priority and three modules at 320",
+      "pass": true,
+      "evidence": {
+        "modules": 3,
+        "daily": true,
+        "personal": false,
+        "logs": false,
+        "noInnerScroll": true,
+        "companyRows": 0,
+        "expectedCompany": 0,
+        "boardRows": 3,
+        "expectedBoard": 3,
+        "clamped": true,
+        "hints": "事件纪任务看板",
+        "priorities": [
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          }
+        ],
+        "duplicate": false
+      }
+    },
+    {
+      "check": "dashboard preview budget, priority and three modules at 390",
+      "pass": true,
+      "evidence": {
+        "modules": 3,
+        "daily": true,
+        "personal": false,
+        "logs": false,
+        "noInnerScroll": true,
+        "companyRows": 0,
+        "expectedCompany": 0,
+        "boardRows": 3,
+        "expectedBoard": 3,
+        "clamped": true,
+        "hints": "事件纪任务看板",
+        "priorities": [
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          }
+        ],
+        "duplicate": false
+      }
+    },
+    {
+      "check": "dashboard preview budget, priority and three modules at 1440",
+      "pass": true,
+      "evidence": {
+        "modules": 3,
+        "daily": true,
+        "personal": false,
+        "logs": false,
+        "noInnerScroll": true,
+        "companyRows": 0,
+        "expectedCompany": 0,
+        "boardRows": 3,
+        "expectedBoard": 3,
+        "clamped": true,
+        "hints": "事件纪任务看板",
+        "priorities": [
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          },
+          {
+            "width": 21,
+            "visible": true
+          }
+        ],
+        "duplicate": false
+      }
+    },
+    {
+      "check": "task form opens with a real loading state instead of stale rows",
+      "pass": true,
+      "evidence": {
+        "loading": true,
+        "loaded": false,
+        "error": null,
+        "text": "正在加载本人创建或负责的任务…",
+        "pager": "",
+        "rows": 0
+      }
+    },
+    {
+      "check": "task form completes the full load with total/page controls",
+      "pass": true
+    },
+    {
+      "check": "task form retains more than two pages and removes explanatory statistics",
+      "pass": true
+    },
+    {
+      "check": "failed task load shows the error and an explicit retry without claiming partial completeness",
+      "pass": true,
+      "evidence": {
+        "error": "无法连接后端，请检查网络后重试。",
+        "loaded": false,
+        "pager": "",
+        "rows": 0,
+        "text": "任务加载失败：无法连接后端，请检查网络后重试。重试",
+        "retry": true
+      }
+    },
+    {
+      "check": "retry after a real network failure restores the complete result",
+      "pass": true
+    },
+    {
+      "check": "the server-side task table covers the complete snapshot and counts cross-day work once",
+      "pass": true,
+      "evidence": {
+        "total": 109,
+        "unique": 109,
+        "cross": 1
+      }
+    },
+    {
+      "check": "the default comparison groups task identity status and schedule with collapsed filters",
+      "pass": true,
+      "evidence": {
+        "columns": "overview",
+        "fields": [
+          "title",
+          "summary",
+          "schedule",
+          "assignees",
+          "description"
+        ],
+        "filterHidden": true,
+        "expanded": "false",
+        "metadata": true,
+        "priority": true,
+        "schedule": 100
+      }
+    },
+    {
+      "check": "readable aligned comparison and visible pagination at 320",
+      "pass": true,
+      "evidence": {
+        "viewport": 320,
+        "overflow": false,
+        "tableFont": 14,
+        "titleFont": 15,
+        "dateFont": 14,
+        "badgeFont": 13,
+        "sortFont": 13,
+        "inputFont": 16,
+        "tableHeight": 472,
+        "pagerBottom": 761.5625,
+        "navTop": 768.5625,
+        "headCount": 5,
+        "primaryVisible": true,
+        "aligned": true
+      }
+    },
+    {
+      "check": "readable aligned comparison and visible pagination at 390",
+      "pass": true,
+      "evidence": {
+        "viewport": 390,
+        "overflow": false,
+        "tableFont": 14,
+        "titleFont": 15,
+        "dateFont": 14,
+        "badgeFont": 13,
+        "sortFont": 13,
+        "inputFont": 16,
+        "tableHeight": 468,
+        "pagerBottom": 759.5625,
+        "navTop": 768.5625,
+        "headCount": 5,
+        "primaryVisible": true,
+        "aligned": true
+      }
+    },
+    {
+      "check": "readable aligned comparison and visible pagination at 768",
+      "pass": true,
+      "evidence": {
+        "viewport": 768,
+        "overflow": false,
+        "tableFont": 14,
+        "titleFont": 15,
+        "dateFont": 14,
+        "badgeFont": 13,
+        "sortFont": 13,
+        "inputFont": 16,
+        "tableHeight": 503,
+        "pagerBottom": 802.5625,
+        "navTop": 819.5625,
+        "headCount": 5,
+        "primaryVisible": true,
+        "aligned": true
+      }
+    },
+    {
+      "check": "readable aligned comparison and visible pagination at 1440",
+      "pass": true,
+      "evidence": {
+        "viewport": 1440,
+        "overflow": false,
+        "tableFont": 14,
+        "titleFont": 15,
+        "dateFont": 14,
+        "badgeFont": 13,
+        "sortFont": 13,
+        "inputFont": 16,
+        "tableHeight": 503,
+        "pagerBottom": 802.5625,
+        "navTop": 819.5625,
+        "headCount": 5,
+        "primaryVisible": true,
+        "aligned": true
+      }
+    },
+    {
+      "check": "short landscape keeps a readable table and reachable nonoverlapping controls",
+      "pass": true,
+      "evidence": {
+        "tableHeight": 180,
+        "tableFont": 14,
+        "titleFont": 15,
+        "tableBottom": 264.5625,
+        "pagerTop": 264.5625,
+        "pagerBottom": 304.5625,
+        "navTop": 309.5625,
+        "navVisible": true,
+        "overflow": false,
+        "controlsVisible": true,
+        "overlap": false
+      }
+    },
+    {
+      "check": "landscape filters float within the screen without reducing the reading area",
+      "pass": true,
+      "evidence": {
+        "open": true,
+        "expanded": "true",
+        "tableHeight": 180,
+        "inside": true,
+        "inputFonts": [
+          16,
+          16,
+          16,
+          16
+        ]
+      }
+    },
+    {
+      "check": "Escape closes landscape filters and restores focus to their trigger",
+      "pass": true
+    },
+    {
+      "check": "landscape column switching keeps the same result and available table height",
+      "pass": true
+    },
+    {
+      "check": "cross-year schedule dates wrap as readable units without entering the next column",
+      "pass": true,
+      "evidence": {
+        "date": "2028-01-01",
+        "dates": [
+          {
+            "parts": [
+              "2028-01-01",
+              "09:00"
+            ],
+            "font": 14,
+            "inside": true,
+            "wrapped": true
+          },
+          {
+            "parts": [
+              "2028-01-01",
+              "10:00"
+            ],
+            "font": 14,
+            "inside": true,
+            "wrapped": true
+          }
+        ],
+        "overflow": false
+      }
+    },
+    {
+      "check": "a visible arrow reveals more columns without moving task names",
+      "pass": true,
+      "evidence": {
+        "top": 0,
+        "left": 0,
+        "anchor": "a94dfa2e-0810-4454-a387-3f75ffa130cd",
+        "offset": 0,
+        "page": 0,
+        "filters": "{\"relation\":\"all\",\"completion\":\"all\",\"query\":\"\",\"from\":\"\",\"to\":\"\"}",
+        "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+        "columns": "overview",
+        "ids": [
+          "a94dfa2e-0810-4454-a387-3f75ffa130cd",
+          "0020a133-4ea8-4382-9b5f-68ad0a3baeb0",
+          "06674ecf-2b6d-40ce-be9a-bd99a539936d",
+          "067bbbae-aa05-4431-8e9e-9681f666014e",
+          "06a0b577-df5f-4559-a8ac-13952f947c8c",
+          "0d4f3de7-2115-4b4e-8471-c57aa120af95",
+          "10f686eb-d940-4a4c-a833-7597ff7c719b",
+          "1290f5d0-e0d2-422a-aa33-5c7a376e493c",
+          "13a19c69-0de1-4e7e-b2c0-deec368890be",
+          "14e58b30-2278-4a36-8f2c-5621fc9043d2",
+          "19d0fd61-781a-4831-b9a3-fafd7f6bdd5d",
+          "1ad477a7-6a3f-4c4d-9ab2-878880ffd683",
+          "1b52a7ad-e422-4039-96c1-2299f1b326c4",
+          "1baff525-9c42-42b8-850f-41d0dabe9a07",
+          "1ff0883f-0a57-403e-8f3f-9484a37710ab",
+          "20b5122b-7c46-46fe-a562-3210ba8ba12d",
+          "20bdf29d-4ad0-4907-9dbd-bbc79628515e",
+          "2423395d-4ec7-4ce6-b4e0-dc1c3c85d4c8",
+          "26cfdfa5-274f-427f-a930-ec372f7e64d0",
+          "2c0c13c1-0abc-4d91-9d71-296bb3dc5442",
+          "2d950b56-885b-4539-ab7e-b45e94791fae",
+          "32590cab-f097-48d4-ac4c-356951772e89",
+          "36cfe5e1-bd50-49c9-8f85-5e8fa762869a",
+          "39db6b6c-0236-47cf-8e86-036cd8cfeffc",
+          "3b0ad93f-6dee-499c-a2d7-43bc886f78c5",
+          "3c320998-e1ce-4d51-a40f-c1f01ded8e00",
+          "3cab65ca-1698-4830-b5ee-1b9f17664478",
+          "3ccf1d66-669a-4990-b075-71be24d848cd",
+          "415ea70c-ffc0-4f9d-a719-b6e5ac8cbe5f",
+          "444ff13a-536d-403b-b6c2-b1fe855942f2",
+          "45ea6c5d-e208-45d1-a76b-c9f0bd5881e0",
+          "460154ca-b123-44a1-b2b1-8dc335648548",
+          "4cfd3cdf-8cdd-4782-afa8-00252b89b176",
+          "4ebad5c1-0150-4f0f-a419-5b9337b08527",
+          "4efd7271-8f7d-4a7c-b64f-96af30c7ed90",
+          "5044da30-c49e-4b4c-8d4e-47b9f0135aa7",
+          "51bc85f4-360a-4803-875b-41215742ca81",
+          "57a8a499-037c-4693-a2a0-0fcd410c591f",
+          "57bf8073-7108-49d3-82f5-4c1edb763dc1",
+          "58b092bf-5c3c-4ba7-9028-28445bf21c1e",
+          "59809c3a-3279-4261-9a92-70e6e609b39d",
+          "5cea813c-cfa9-42f4-b3f8-150faba8906d",
+          "5f5b2e00-e038-439f-af8c-b30d2a042d68",
+          "60223cae-2504-4109-adc9-d17366290114",
+          "6402086a-2975-40c0-8832-4ee9f4941064",
+          "648fb107-e9c5-47ae-b034-aa123d70c5bf",
+          "6b37c2eb-5f04-475a-89f4-10b24ae6a2b4",
+          "73f1bb98-1c95-4909-8d65-eea13d302795",
+          "784caa11-893f-4f79-a9c1-793b995bb3d2",
+          "7a82dc5d-f1d6-4147-b23b-4c0031178584"
+        ]
+      }
+    },
+    {
+      "check": "the right edge is explicit and disables only the unavailable direction",
+      "pass": true
+    },
+    {
+      "check": "the left arrow returns from the last columns",
+      "pass": true
+    },
+    {
+      "check": "the filter disclosure exposes readable controls and its expanded state",
+      "pass": true
+    },
+    {
+      "check": "active filters stay visible as a summary after collapsing",
+      "pass": true
+    },
+    {
+      "check": "switching to schedule preserves rows filters page order and the reading anchor",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 440,
+          "left": 132,
+          "anchor": "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+          "offset": -20,
+          "page": 1,
+          "filters": "{\"relation\":\"own\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "overview",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        },
+        "after": {
+          "top": 316,
+          "left": 0,
+          "anchor": "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+          "offset": -20.0625,
+          "page": 1,
+          "filters": "{\"relation\":\"own\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "schedule",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        }
+      }
+    },
+    {
+      "check": "switching to details preserves rows filters page order and the reading anchor",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 316,
+          "left": 0,
+          "anchor": "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+          "offset": -20.0625,
+          "page": 1,
+          "filters": "{\"relation\":\"own\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "schedule",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        },
+        "after": {
+          "top": 316,
+          "left": 0,
+          "anchor": "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+          "offset": -20.0625,
+          "page": 1,
+          "filters": "{\"relation\":\"own\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "details",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        }
+      }
+    },
+    {
+      "check": "switching to all preserves rows filters page order and the reading anchor",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 316,
+          "left": 0,
+          "anchor": "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+          "offset": -20.0625,
+          "page": 1,
+          "filters": "{\"relation\":\"own\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "details",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        },
+        "after": {
+          "top": 316,
+          "left": 0,
+          "anchor": "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+          "offset": -20.0625,
+          "page": 1,
+          "filters": "{\"relation\":\"own\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "all",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        }
+      }
+    },
+    {
+      "check": "switching to overview preserves rows filters page order and the reading anchor",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "top": 316,
+          "left": 0,
+          "anchor": "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+          "offset": -20.0625,
+          "page": 1,
+          "filters": "{\"relation\":\"own\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "all",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        },
+        "after": {
+          "top": 440,
+          "left": 0,
+          "anchor": "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+          "offset": -20,
+          "page": 1,
+          "filters": "{\"relation\":\"own\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "overview",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        }
+      }
+    },
+    {
+      "check": "a completed quick filter change cannot later reset the comparison position",
+      "pass": true,
+      "evidence": {
+        "groupPosition": {
+          "top": 440,
+          "left": 0,
+          "anchor": "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+          "offset": -20,
+          "page": 1,
+          "filters": "{\"relation\":\"own\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "overview",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        },
+        "afterSearchDelay": {
+          "top": 440,
+          "left": 0,
+          "anchor": "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+          "offset": -20,
+          "page": 1,
+          "filters": "{\"relation\":\"own\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "overview",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        }
+      }
+    },
+    {
+      "check": "all columns retain every field and all six sortable headings",
+      "pass": true,
+      "evidence": [
+        "title",
+        "relation",
+        "status",
+        "pending",
+        "due",
+        "urgency",
+        "assignees",
+        "start",
+        "creator",
+        "createdAt",
+        "description",
+        "acceptance",
+        "allDay",
+        "done",
+        "progress",
+        "overdue",
+        "parent"
+      ]
+    },
+    {
+      "check": "the full table keeps readable data and status badge sizes",
+      "pass": true,
+      "evidence": {
+        "cells": [
+          {
+            "field": "title",
+            "font": 14
+          },
+          {
+            "field": "relation",
+            "font": 14
+          },
+          {
+            "field": "status",
+            "font": 14
+          },
+          {
+            "field": "pending",
+            "font": 14
+          },
+          {
+            "field": "due",
+            "font": 14
+          },
+          {
+            "field": "urgency",
+            "font": 14
+          },
+          {
+            "field": "assignees",
+            "font": 14
+          },
+          {
+            "field": "start",
+            "font": 14
+          },
+          {
+            "field": "creator",
+            "font": 14
+          },
+          {
+            "field": "createdAt",
+            "font": 14
+          },
+          {
+            "field": "description",
+            "font": 14
+          },
+          {
+            "field": "acceptance",
+            "font": 14
+          },
+          {
+            "field": "allDay",
+            "font": 14
+          },
+          {
+            "field": "done",
+            "font": 14
+          },
+          {
+            "field": "progress",
+            "font": 14
+          },
+          {
+            "field": "overdue",
+            "font": 14
+          },
+          {
+            "field": "parent",
+            "font": 14
+          }
+        ],
+        "badges": [
+          13,
+          13,
+          13
+        ]
+      }
+    },
+    {
+      "check": "global task form sort title ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "title",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "All day original",
+          "Browser task 000 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Calendar midnight",
+          "Calendar point"
+        ]
+      }
+    },
+    {
+      "check": "sorting keeps focus on the rebuilt title heading",
+      "pass": true
+    },
+    {
+      "check": "pager is ready before paging after sort title",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort title continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort title descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "title",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "Calendar point",
+          "Calendar midnight"
+        ],
+        "tail": [
+          "Browser task 000 very long title  very long title  very long title",
+          "All day original"
+        ]
+      }
+    },
+    {
+      "check": "pager is ready before paging after sort title",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort title paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "global task form sort createdAt ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "createdAt",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "Browser task 000 very long title  very long title  very long title",
+          "Browser task 001 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Calendar point",
+          "All day original"
+        ]
+      }
+    },
+    {
+      "check": "sorting keeps focus on the rebuilt createdAt heading",
+      "pass": true
+    },
+    {
+      "check": "pager is ready before paging after sort createdAt",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort createdAt continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort createdAt descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "createdAt",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "All day original",
+          "Calendar point"
+        ],
+        "tail": [
+          "Browser task 001 very long title  very long title  very long title",
+          "Browser task 000 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "pager is ready before paging after sort createdAt",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort createdAt paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "global task form sort start ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "start",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "All day original",
+          "Browser task 036 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Calendar cross",
+          "Calendar point"
+        ]
+      }
+    },
+    {
+      "check": "sorting keeps focus on the rebuilt start heading",
+      "pass": true
+    },
+    {
+      "check": "pager is ready before paging after sort start",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort start continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort start descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "start",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "Calendar point",
+          "Calendar cross"
+        ],
+        "tail": [
+          "Browser task 100 very long title  very long title  very long title",
+          "All day original"
+        ]
+      }
+    },
+    {
+      "check": "pager is ready before paging after sort start",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort start paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "global task form sort due ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "due",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "Calendar midnight",
+          "Calendar point"
+        ],
+        "tail": [
+          "Browser task 016 very long title  very long title  very long title",
+          "Browser task 100 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "sorting keeps focus on the rebuilt due heading",
+      "pass": true
+    },
+    {
+      "check": "pager is ready before paging after sort due",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort due continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort due descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "due",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "Browser task 036 very long title  very long title  very long title",
+          "Browser task 063 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Calendar midnight",
+          "Calendar point"
+        ]
+      }
+    },
+    {
+      "check": "pager is ready before paging after sort due",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort due paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "global task form sort urgency ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "urgency",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "Browser task 036 very long title  very long title  very long title",
+          "Browser task 063 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Browser task 016 very long title  very long title  very long title",
+          "Browser task 100 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "sorting keeps focus on the rebuilt urgency heading",
+      "pass": true
+    },
+    {
+      "check": "pager is ready before paging after sort urgency",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort urgency continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort urgency descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "urgency",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "Browser task 036 very long title  very long title  very long title",
+          "Browser task 063 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Browser task 016 very long title  very long title  very long title",
+          "Browser task 100 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "pager is ready before paging after sort urgency",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort urgency paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "global task form sort status ascending is stable over the whole result",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "status",
+        "dir": "asc",
+        "total": 109,
+        "head": [
+          "Browser task 036 very long title  very long title  very long title",
+          "Browser task 063 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Browser task 016 very long title  very long title  very long title",
+          "Browser task 100 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "sorting keeps focus on the rebuilt status heading",
+      "pass": true
+    },
+    {
+      "check": "pager is ready before paging after sort status",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort status continues on the third page",
+      "pass": true,
+      "evidence": {
+        "same": true,
+        "shown": 9,
+        "page": 2
+      }
+    },
+    {
+      "check": "global task form sort status descending is stable and resets paging",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "key": "status",
+        "dir": "desc",
+        "total": 109,
+        "head": [
+          "Browser task 036 very long title  very long title  very long title",
+          "Browser task 063 very long title  very long title  very long title"
+        ],
+        "tail": [
+          "Browser task 016 very long title  very long title  very long title",
+          "Browser task 100 very long title  very long title  very long title"
+        ]
+      }
+    },
+    {
+      "check": "pager is ready before paging after sort status",
+      "pass": true,
+      "evidence": {
+        "next": true,
+        "pager": "第 1–50 条，共 109 条 · 第 1/3 页上一页下一页",
+        "page": 0,
+        "loaded": true,
+        "loading": false,
+        "error": null,
+        "total": 109
+      }
+    },
+    {
+      "check": "global task form sort status paging is continuous after direction change",
+      "pass": true
+    },
+    {
+      "check": "task name column stays fixed while the table scrolls sideways",
+      "pass": true,
+      "evidence": {
+        "position": "sticky",
+        "before": 9,
+        "after": 9,
+        "left": 9,
+        "scrolled": 0
+      }
+    },
+    {
+      "check": "combined task form filters recalculate total and page",
+      "pass": true
+    },
+    {
+      "check": "date/relation/name filters keep a cross-day task in its single matching row",
+      "pass": true
+    },
+    {
+      "check": "detail return setup uses the filtered second page",
+      "pass": true
+    },
+    {
+      "check": "task detail opens over the filtered table",
+      "pass": true
+    },
+    {
+      "check": "closing task detail preserves filters page both scroll axes columns and loaded rows",
+      "pass": true,
+      "evidence": {
+        "beforeDetail": {
+          "page": 1,
+          "query": "Browser task 0",
+          "scroll": 420,
+          "left": 460,
+          "columns": "all",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ],
+          "first": "83afb6bd-7700-45c5-8121-5689b7602e3c"
+        },
+        "afterDetail": {
+          "page": 1,
+          "query": "Browser task 0",
+          "queryInput": "Browser task 0",
+          "scroll": 420,
+          "left": 460,
+          "columns": "all",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ],
+          "loaded": true,
+          "error": null,
+          "total": 100
+        }
+      }
+    },
+    {
+      "check": "task table has no manual refresh button",
+      "pass": true
+    },
+    {
+      "check": "returning through the main navigation reloads the full comparison",
+      "pass": true
+    },
+    {
+      "check": "main navigation return preserves columns filters page order and both scroll axes",
+      "pass": true,
+      "evidence": {
+        "beforeNavigation": {
+          "top": 420,
+          "left": 460,
+          "anchor": "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+          "offset": -5.6875,
+          "page": 1,
+          "filters": "{\"relation\":\"all\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "all",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        },
+        "afterNavigation": {
+          "top": 420,
+          "left": 460,
+          "anchor": "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+          "offset": -5.6875,
+          "page": 1,
+          "filters": "{\"relation\":\"all\",\"completion\":\"all\",\"query\":\"Browser task 0\",\"from\":\"\",\"to\":\"\"}",
+          "sort": "{\"key\":\"start\",\"dir\":\"asc\"}",
+          "columns": "all",
+          "ids": [
+            "83afb6bd-7700-45c5-8121-5689b7602e3c",
+            "841e6eaf-0f91-4f3e-a75e-6d97b574e6bc",
+            "84949a18-4b1c-4c11-935e-d6ad1a66b525",
+            "90961019-6c30-44a8-81dc-619f7e73b2d8",
+            "97bbaf51-91f8-4883-9df4-c7c049cae845",
+            "9e10df7e-ff08-4e0a-8605-0810acbce5a7",
+            "9ebe7fc4-2f0a-41cb-aff8-440501ca5847",
+            "a02b270b-69bd-4d2f-a39c-2f7715f5caca",
+            "a129e531-e809-496a-8057-4c9dc5bf8f19",
+            "a3eeb5f2-2dca-453c-bcfc-21b3b4714051",
+            "a4cee3fe-9f4b-4aa1-8309-ba236bc5b7ad",
+            "a7461fef-af01-478c-9d50-c228f3eec1bf",
+            "a92970ea-396e-46c8-8035-4714de97dbd3",
+            "aa64a560-e07a-4155-b37f-39b4039652d5",
+            "af3b89d6-c901-42aa-9b8b-5da694e400c4",
+            "b011cd94-9060-481c-9672-acce52812287",
+            "b1214288-0f98-4f6f-92c7-c8371036d34c",
+            "b1393fb8-00b5-4e02-b638-17f3d7315e65",
+            "b38741e1-4300-49a1-9d1f-4a20ff2ac3de",
+            "b3faff14-51f4-4790-a931-70f0a413bf0e",
+            "b4e3e896-d9bd-42dc-b039-096b809dce47",
+            "bc471d7d-b338-4a74-9c74-51197749668a",
+            "bc655bff-0598-41c8-83f4-9d15b4df5d81",
+            "bd484d7d-5f23-4f8e-ada8-a5da8937c329",
+            "be4d1d26-ed40-4f8f-a9d8-b9ed1d3b6255",
+            "c0116b1b-5d35-4bf2-9d9a-9067a38c377c",
+            "c1996f35-d7d7-45c1-a185-b8fc9fe31949",
+            "c1a42b6b-d9f2-4eb7-a620-81edc485800d",
+            "c1e4890d-76f4-4bf4-8868-4b38293ec52e",
+            "c31dd90a-ca0e-46a9-a08a-1ae8e7830daa",
+            "c3becd91-d439-415a-b353-10d1c293f9a2",
+            "c4edb658-92f0-49a7-89aa-7affbf76c64d",
+            "c53cf739-ba13-43c7-8e14-f41247338658",
+            "c656e5b7-25d3-407c-9c74-428746b54939",
+            "c83d3ae6-1ca9-447f-ae82-c638e471198a",
+            "c8b804dc-cca5-4b9e-a749-5dd6eb120a2e",
+            "c92f5bb4-ba10-41ae-badb-ddcdf20871ed",
+            "d0ea6cfe-04de-48ed-b68a-ae41a93b5844",
+            "d3d520b5-4fa9-49ed-83f9-73810d60de84",
+            "d722da6a-75ef-447e-be51-07dcf97c8801",
+            "de1919ce-49ec-4429-9cfe-f412e1f3cd21",
+            "e3719163-1ff8-435b-9eda-30e28db573d7",
+            "e52f9821-88fd-4d62-927f-211ecff95d24",
+            "e57cfddd-fedb-4c8b-a726-434d108541e8",
+            "e5a6576e-d955-4e63-ae0d-010ce5bd1f32",
+            "e9a0e910-f73d-45f1-aee1-5d9fdaa3228b",
+            "f505ab4c-5674-46fb-9d0a-c04976cf95b1",
+            "f58a0303-cef5-4782-aea4-57aa7c302f95",
+            "f6df917e-2065-4b22-912c-e97b69fa615b",
+            "fbf1cd74-b136-4fec-8156-16db66b2158c"
+          ]
+        }
+      }
+    },
+    {
+      "check": "task form returns to the calendar",
+      "pass": true
+    },
+    {
+      "check": "calendar context opens the task form",
+      "pass": true
+    },
+    {
+      "check": "closing the task form restores the original calendar mode and date",
+      "pass": true,
+      "evidence": {
+        "contextBefore": {
+          "mode": "day",
+          "anchor": 1795363200000
+        },
+        "contextAfter": {
+          "mode": "day",
+          "anchor": 1795363200000,
+          "day": false
+        }
+      }
+    },
+    {
+      "check": "logout clears task rows filters column choice and saved reading position",
+      "pass": true,
+      "evidence": {
+        "active": false,
+        "rows": 0,
+        "columns": "overview",
+        "filtersOpen": false,
+        "query": "",
+        "scroll": null,
+        "result": null
+      }
+    },
+    {
+      "check": "login form ready alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "real log form offers only company today/yesterday/day-before",
+      "pass": true,
+      "evidence": [
+        "2026-11-19",
+        "2026-11-18",
+        "2026-11-17"
+      ]
+    },
+    {
+      "check": "changing the date opens a real backfill form for yesterday",
+      "pass": true,
+      "evidence": {
+        "date": "2026-11-18",
+        "disabled": false,
+        "draft": "2026-11-18",
+        "id": null
+      }
+    },
+    {
+      "check": "backfill creates a real yesterday log",
+      "pass": true,
+      "evidence": {
+        "yesterdaySave": {
+          "overlay": true,
+          "error": "",
+          "errorHidden": true,
+          "notice": "日志已保存。",
+          "draft": null,
+          "page": "log"
+        },
+        "yesterdayLog": {
+          "id": "206cf97b-172a-416f-8652-2bad1ff0a612",
+          "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessDate": "2026-11-18",
+          "body": "Browser log yesterday backfill",
+          "taskId": null,
+          "rowVersion": 1,
+          "createdAt": "2026-11-18T17:01:51.144927Z",
+          "updatedAt": "2026-11-18T17:01:51.144927Z",
+          "deletedAt": null,
+          "recoveredFrom": "log-row",
+          "authorName": "alpha-one-employee",
+          "tagIds": [],
+          "tags": [],
+          "frozen": false,
+          "frozenAt": "2026-11-19T17:01:51.144927Z",
+          "editable": true,
+          "deletable": true
+        },
+        "allSelf": [
+          {
+            "id": "206cf97b-172a-416f-8652-2bad1ff0a612",
+            "date": "2026-11-18",
+            "body": "Browser log yesterday backfill"
+          }
+        ]
+      }
+    },
+    {
+      "check": "backfill creates a real day-before log with a distinct object id",
+      "pass": true,
+      "evidence": {
+        "id": "d3e3f1ba-68f1-47a1-995e-252f4323d59c",
+        "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "businessDate": "2026-11-17",
+        "body": "Browser log day before backfill",
+        "taskId": null,
+        "rowVersion": 1,
+        "createdAt": "2026-11-18T17:01:51.585846Z",
+        "updatedAt": "2026-11-18T17:01:51.585846Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "authorName": "alpha-one-employee",
+        "tagIds": [],
+        "tags": [],
+        "frozen": false,
+        "frozenAt": "2026-11-19T17:01:51.585846Z",
+        "editable": true,
+        "deletable": true
+      }
+    },
+    {
+      "check": "the page rejects a future business date",
+      "pass": true,
+      "evidence": "不能新建未来日期的日志"
+    },
+    {
+      "check": "the page rejects a business date outside the three-day window",
+      "pass": true,
+      "evidence": "只能补写公司今天、昨天和前天的日志"
+    },
+    {
+      "check": "deleting and recreating the day slot restores the same real id and first-creation instant",
+      "pass": true,
+      "evidence": {
+        "restored": {
+          "restored": true,
+          "businessDate": "2026-11-17",
+          "logId": "d3e3f1ba-68f1-47a1-995e-252f4323d59c",
+          "rowVersion": 3
+        },
+        "predayRestored": {
+          "id": "d3e3f1ba-68f1-47a1-995e-252f4323d59c",
+          "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessDate": "2026-11-17",
+          "body": "Browser log day before restored",
+          "taskId": null,
+          "rowVersion": 3,
+          "createdAt": "2026-11-18T17:01:51.585846Z",
+          "updatedAt": "2026-11-18T17:01:52.621629Z",
+          "deletedAt": null,
+          "recoveredFrom": "log-row",
+          "authorName": "alpha-one-employee",
+          "tagIds": [],
+          "tags": [],
+          "frozen": false,
+          "frozenAt": "2026-11-19T17:01:51.585846Z",
+          "editable": true,
+          "deletable": true
+        }
+      }
+    },
+    {
+      "check": "a same-day concurrent creation keeps the creation draft and directs editing to the existing record",
+      "pass": true,
+      "evidence": {
+        "race": {
+          "restored": true,
+          "businessDate": "2026-11-17",
+          "logId": "d3e3f1ba-68f1-47a1-995e-252f4323d59c",
+          "rowVersion": 5
+        },
+        "raceState": {
+          "id": null,
+          "body": "Browser same-day race loser",
+          "error": "该日期已有日志，未覆盖原内容；请从日志详情进入编辑。",
+          "notice": "该日期刚刚已有日志，请关闭创建页，从日志详情进入编辑。",
+          "title": "写日志"
+        }
+      }
+    },
+    {
+      "check": "same-day uniqueness keeps one live row for the company business date",
+      "pass": true,
+      "evidence": {
+        "id": "d3e3f1ba-68f1-47a1-995e-252f4323d59c",
+        "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "businessDate": "2026-11-17",
+        "body": "Browser same-day race winner",
+        "taskId": null,
+        "rowVersion": 5,
+        "createdAt": "2026-11-18T17:01:51.585846Z",
+        "updatedAt": "2026-11-18T17:01:52.957312Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "authorName": "alpha-one-employee",
+        "tagIds": [],
+        "tags": [],
+        "frozen": false,
+        "frozenAt": "2026-11-19T17:01:51.585846Z",
+        "editable": true,
+        "deletable": true
+      }
+    },
+    {
+      "check": "new log for today closes the form and reloads the workspace",
+      "pass": true,
+      "evidence": {
+        "overlay": true,
+        "idle": true,
+        "title": "写日志",
+        "error": "",
+        "errorHidden": true,
+        "notice": "日志已保存。",
+        "page": "log",
+        "draft": null
+      }
+    },
+    {
+      "check": "today log is a real record with the company business date",
+      "pass": true,
+      "evidence": {
+        "id": "64b4cdd2-ee61-4a27-958d-28efc5abb251",
+        "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "businessDate": "2026-11-19",
+        "body": "Browser log today original",
+        "taskId": null,
+        "rowVersion": 1,
+        "createdAt": "2026-11-18T17:01:53.251348Z",
+        "updatedAt": "2026-11-18T17:01:53.251348Z",
+        "deletedAt": null,
+        "recoveredFrom": "log-row",
+        "authorName": "alpha-one-employee",
+        "tagIds": [],
+        "tags": [],
+        "frozen": false,
+        "frozenAt": "2026-11-19T17:01:53.251348Z",
+        "editable": true,
+        "deletable": true
+      }
+    },
+    {
+      "check": "today log appears once on the workspace and uses the same object id",
+      "pass": true
+    },
+    {
+      "check": "log detail edit opens the same record",
+      "pass": true
+    },
+    {
+      "check": "log detail edit saves the same real id and keeps its business date",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "id": "64b4cdd2-ee61-4a27-958d-28efc5abb251",
+          "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessDate": "2026-11-19",
+          "body": "Browser log today original",
+          "taskId": null,
+          "rowVersion": 1,
+          "createdAt": "2026-11-18T17:01:53.251348Z",
+          "updatedAt": "2026-11-18T17:01:53.251348Z",
+          "deletedAt": null,
+          "recoveredFrom": "log-row",
+          "authorName": "alpha-one-employee",
+          "tagIds": [],
+          "tags": [],
+          "frozen": false,
+          "frozenAt": "2026-11-19T17:01:53.251348Z",
+          "editable": true,
+          "deletable": true
+        },
+        "after": {
+          "id": "64b4cdd2-ee61-4a27-958d-28efc5abb251",
+          "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessDate": "2026-11-19",
+          "body": "Browser log today edited",
+          "taskId": null,
+          "rowVersion": 2,
+          "createdAt": "2026-11-18T17:01:53.251348Z",
+          "updatedAt": "2026-11-18T17:01:53.542235Z",
+          "deletedAt": null,
+          "recoveredFrom": "log-row",
+          "authorName": "alpha-one-employee",
+          "tagIds": [],
+          "tags": [],
+          "frozen": false,
+          "frozenAt": "2026-11-19T17:01:53.251348Z",
+          "editable": true,
+          "deletable": true
+        }
+      }
+    },
+    {
+      "check": "log detail closes without rewriting the log date",
+      "pass": true,
+      "evidence": {
+        "detailOpened": true,
+        "detailVisible": {
+          "overlay": true,
+          "title": "日志详情",
+          "idle": true,
+          "cards": 3,
+          "notice": "日志已保存。"
+        },
+        "detailClosed": true
+      }
+    },
+    {
+      "check": "nested task selection returns to the same edit form with the typed draft",
+      "pass": true,
+      "evidence": {
+        "pickedTask": "9819ea03-fb1e-451a-950c-08637ac7517c",
+        "nestedDraft": {
+          "value": "Browser nested task draft",
+          "taskId": "9819ea03-fb1e-451a-950c-08637ac7517c",
+          "summary": "Calendar point",
+          "title": "Calendar point"
+        }
+      }
+    },
+    {
+      "check": "a network failure keeps the edit draft and stays in the edit form",
+      "pass": true,
+      "evidence": {
+        "value": "Browser network failure draft",
+        "error": "模拟网络中断",
+        "title": "编辑日志",
+        "overlay": false,
+        "mode": "edit",
+        "id": "64b4cdd2-ee61-4a27-958d-28efc5abb251",
+        "taskId": "9819ea03-fb1e-451a-950c-08637ac7517c"
+      }
+    },
+    {
+      "check": "a version conflict keeps the edit draft and does not overwrite the concurrent change",
+      "pass": true,
+      "evidence": {
+        "conflictState": {
+          "value": "Browser version conflict draft",
+          "error": "这条记录已被更新。请关闭后重新打开，再提交修改。",
+          "title": "编辑日志",
+          "overlay": false,
+          "mode": "edit",
+          "id": "64b4cdd2-ee61-4a27-958d-28efc5abb251",
+          "taskId": "9819ea03-fb1e-451a-950c-08637ac7517c"
+        },
+        "afterConflict": {
+          "id": "64b4cdd2-ee61-4a27-958d-28efc5abb251",
+          "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessDate": "2026-11-19",
+          "body": "Browser concurrent edit",
+          "taskId": null,
+          "rowVersion": 3,
+          "createdAt": "2026-11-18T17:01:53.251348Z",
+          "updatedAt": "2026-11-18T17:01:53.987549Z",
+          "deletedAt": null,
+          "recoveredFrom": "log-row",
+          "authorName": "alpha-one-employee",
+          "tagIds": [],
+          "tags": [],
+          "frozen": false,
+          "frozenAt": "2026-11-19T17:01:53.251348Z",
+          "editable": true,
+          "deletable": true
+        }
+      }
+    },
+    {
+      "check": "reopening the same business day edits the existing record instead of a new one",
+      "pass": true
+    },
+    {
+      "check": "a stale page cannot write after the real 24-hour freeze and keeps the unsaved draft",
+      "pass": true,
+      "evidence": {
+        "editReady": true,
+        "frozenPage": {
+          "requests": [
+            {
+              "path": "/work-logs/206cf97b-172a-416f-8652-2bad1ff0a612",
+              "method": "PATCH",
+              "status": 409,
+              "code": "WORK_LOG_FROZEN",
+              "message": "该日志自首次创建已满24小时，只能查看"
+            },
+            {
+              "path": "/me",
+              "status": 200
+            },
+            {
+              "path": "/me/reports",
+              "status": 200
+            },
+            {
+              "path": "/work-log-authors",
+              "status": 200
+            },
+            {
+              "path": "/work-logs?scope=self&limit=100&offset=0",
+              "status": 200
+            },
+            {
+              "path": "/users?limit=100&offset=0",
+              "status": 200
+            },
+            {
+              "path": "/approval-requests?mine=all&limit=100&offset=0",
+              "status": 200
+            },
+            {
+              "path": "/notifications?limit=1&offset=0",
+              "status": 200
+            },
+            {
+              "path": "/home",
+              "status": 200
+            },
+            {
+              "path": "/tags",
+              "status": 200
+            },
+            {
+              "path": "/tasks?limit=100&offset=0",
+              "status": 200
+            },
+            {
+              "path": "/analytics/task-summary?scope=visible",
+              "status": 200
+            },
+            {
+              "path": "/tasks?limit=100&offset=100",
+              "status": 200
+            }
+          ],
+          "notice": "该日志已满24小时，只能查看；未保存的内容仍保留在页面上，可复制后关闭。",
+          "error": "该日志已满24小时，只能查看；未保存的内容仍保留在页面上，可复制后关闭。",
+          "errorHidden": false,
+          "sheet": "编辑日志",
+          "overlay": false,
+          "draft": {
+            "mode": "edit",
+            "id": "206cf97b-172a-416f-8652-2bad1ff0a612",
+            "businessDate": "2026-11-18",
+            "content": "Browser stale frozen page write",
+            "tagIds": [
+              "ef5f843c-2523-4822-9110-14a9f0b2b0cd"
+            ],
+            "taskId": null
+          },
+          "tagPressed": "ef5f843c-2523-4822-9110-14a9f0b2b0cd",
+          "visibleContent": "Browser stale frozen page write",
+          "visible": true
+        },
+        "yesterdayFrozen": {
+          "id": "206cf97b-172a-416f-8652-2bad1ff0a612",
+          "authorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessDate": "2026-11-18",
+          "body": "Browser log yesterday backfill",
+          "taskId": null,
+          "rowVersion": 1,
+          "createdAt": "2026-11-17T16:01:54.491877Z",
+          "updatedAt": "2026-11-18T17:01:51.144927Z",
+          "deletedAt": null,
+          "recoveredFrom": "log-row",
+          "authorName": "alpha-one-employee",
+          "tagIds": [],
+          "tags": [],
+          "frozen": true,
+          "frozenAt": "2026-11-18T16:01:54.491877Z",
+          "editable": false,
+          "deletable": false
+        },
+        "createdAtAged": "2026-11-17 16:01:54.491877",
+        "createdAtAfter": "2026-11-17 16:01:54.491877"
+      }
+    },
+    {
+      "check": "the frozen log is visibly read-only in the real page",
+      "pass": true
+    },
+    {
+      "check": "recreating a deleted slot never resets the first-creation freeze window and keeps the recreate draft",
+      "pass": true,
+      "evidence": {
+        "before": "64b4cdd2-ee61-4a27-958d-28efc5abb251\t2026-11-19\t2026-11-18 17:01:54.668766\t2026-11-18 17:01:53.251348",
+        "after": "64b4cdd2-ee61-4a27-958d-28efc5abb251\t2026-11-19\t2026-11-18 17:01:54.668766\t2026-11-17 16:01:54.697792",
+        "liveToday": "0",
+        "recreateDraft": {
+          "error": "该日期此前的日志已满24小时，不能重建；未保存的内容仍保留在页面上，可复制后换个日期。",
+          "notice": "该日期此前的日志已满24小时，不能重建；未保存的内容仍保留在页面上，可复制后换个日期。",
+          "visibleContent": "Browser deleted slot must stay frozen",
+          "visible": true,
+          "mode": "create",
+          "id": null,
+          "date": "2026-11-19",
+          "tagIds": [
+            "ef5f843c-2523-4822-9110-14a9f0b2b0cd"
+          ],
+          "dateField": "2026-11-19",
+          "tagPressed": "ef5f843c-2523-4822-9110-14a9f0b2b0cd"
+        }
+      }
+    },
+    {
+      "check": "home retires the personal/log cards and exposes the independent daily calendar with its header add control",
+      "pass": true,
+      "evidence": {
+        "personal": false,
+        "logs": false,
+        "daily": true,
+        "headerAdd": true,
+        "fab": false,
+        "nav": [
+          "首页",
+          "公司",
+          "日志",
+          "统计",
+          "我的"
+        ]
+      }
+    },
+    {
+      "check": "the retired personal create path is rejected instead of restoring old data",
+      "pass": true,
+      "evidence": {
+        "ok": false,
+        "status": 410,
+        "code": "HOME_ITEMS_PERSONAL_RETIRED",
+        "message": "个人事项已改为每日事项，请使用每日事项接口"
+      }
+    },
+    {
+      "check": "login form ready alpha-one-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-one-head",
+      "pass": true
+    },
+    {
+      "check": "published task with a pending change is still in the task form",
+      "pass": true
+    },
+    {
+      "check": "task form lists the effective state and excludes unpublished/proposed work",
+      "pass": true,
+      "evidence": {
+        "title": "Effective version pending task",
+        "status": "todo",
+        "proposed": false,
+        "unpublished": false,
+        "pending": "complete",
+        "row": true,
+        "rowText": "Effective version pending task创建中待开始审核中完成待审冻结起11/2209:00止11/2518:00beta-one-employeeBrowser acceptance real task"
+      }
+    },
+    {
+      "check": "pending-completion detail shows the effective version, not the proposal",
+      "pass": true
+    },
+    {
+      "check": "login form ready beta-two-employee",
+      "pass": true
+    },
+    {
+      "check": "phone login beta-two-employee",
+      "pass": true
+    },
+    {
+      "check": "takeover recipient sees reopen on original completed work",
+      "pass": true
+    },
+    {
+      "check": "reopen exposes ordered active replacement assignees",
+      "pass": true
+    },
+    {
+      "check": "takeover reopen waits for the applicant direct manager",
+      "pass": true,
+      "evidence": {
+        "notice": "申请已提交，审核通过后生效。 当前审核人：beta-two-head。",
+        "title": "重开任务",
+        "rows": [
+          {
+            "kind": "reopen",
+            "status": "pending"
+          }
+        ]
+      }
+    },
+    {
+      "check": "manager approval saves new round and replacement without adding business owner",
+      "pass": true
+    },
+    {
+      "check": "login form ready founder",
+      "pass": true
+    },
+    {
+      "check": "phone login founder",
+      "pass": true
+    },
+    {
+      "check": "fixed profile organization fields founder",
+      "pass": true,
+      "evidence": [
+        "部门",
+        "职位",
+        "直属上级"
+      ]
+    },
+    {
+      "check": "fixed manager retains subordinate profile and logs founder",
+      "pass": true
+    },
+    {
+      "check": "actual descendant contact and log entry founder",
+      "pass": true,
+      "evidence": {
+        "title": "alpha-one-employee的资料",
+        "oldEntry": false
+      }
+    },
+    {
+      "check": "person work page reads the same target logs for founder",
+      "pass": true,
+      "evidence": {
+        "staffLogs": [
+          "206cf97b-172a-416f-8652-2bad1ff0a612",
+          "d3e3f1ba-68f1-47a1-995e-252f4323d59c"
+        ],
+        "targetExpected": [
+          "206cf97b-172a-416f-8652-2bad1ff0a612",
+          "d3e3f1ba-68f1-47a1-995e-252f4323d59c"
+        ]
+      }
+    },
+    {
+      "check": "founder log page keeps only own logs and no people filters",
+      "pass": true,
+      "evidence": {
+        "founderLogs": {
+          "cards": [
+            "4decb57b-41c9-40f3-b043-2fbc9b1de1fb"
+          ],
+          "selfOnly": true,
+          "peopleFilters": false,
+          "count": "本人日志 · 1 条"
+        },
+        "founderExpected": [
+          "4decb57b-41c9-40f3-b043-2fbc9b1de1fb"
+        ],
+        "founderOwn": {
+          "logId": "4decb57b-41c9-40f3-b043-2fbc9b1de1fb",
+          "rowVersion": 1,
+          "businessDate": "2026-11-19"
+        }
+      }
+    },
+    {
+      "check": "login form ready alpha-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-head",
+      "pass": true
+    },
+    {
+      "check": "fixed profile organization fields alpha-head",
+      "pass": true,
+      "evidence": [
+        "部门",
+        "职位",
+        "直属上级"
+      ]
+    },
+    {
+      "check": "fixed manager retains subordinate profile and logs alpha-head",
+      "pass": true
+    },
+    {
+      "check": "actual descendant contact and log entry alpha-head",
+      "pass": true,
+      "evidence": {
+        "title": "alpha-one-employee的资料",
+        "oldEntry": false
+      }
+    },
+    {
+      "check": "person log target is an indirect descendant, not only a direct report",
+      "pass": true,
+      "evidence": {
+        "manager": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+        "me": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+        "isDirect": false,
+        "canRead": true
+      }
+    },
+    {
+      "check": "person work page lists only the target person logs from current authority",
+      "pass": true,
+      "evidence": {
+        "expected": [
+          "206cf97b-172a-416f-8652-2bad1ff0a612",
+          "d3e3f1ba-68f1-47a1-995e-252f4323d59c"
+        ],
+        "staffLogState": {
+          "panel": true,
+          "tab": "true",
+          "title": "alpha-one-employee的工作",
+          "cards": [
+            "206cf97b-172a-416f-8652-2bad1ff0a612",
+            "d3e3f1ba-68f1-47a1-995e-252f4323d59c"
+          ],
+          "oldEntry": false,
+          "author": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+          "me": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+          "departmentQuery": "beta",
+          "teamQuery": "beta",
+          "authorQuery": "beta"
+        }
+      }
+    },
+    {
+      "check": "reading a person log does not scope the personal log page to that person",
+      "pass": true,
+      "evidence": {
+        "panel": true,
+        "tab": "true",
+        "title": "alpha-one-employee的工作",
+        "cards": [
+          "206cf97b-172a-416f-8652-2bad1ff0a612",
+          "d3e3f1ba-68f1-47a1-995e-252f4323d59c"
+        ],
+        "oldEntry": false,
+        "author": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+        "me": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+        "departmentQuery": "beta",
+        "teamQuery": "beta",
+        "authorQuery": "beta"
+      }
+    },
+    {
+      "check": "personal log page stays self-only without people filters",
+      "pass": true,
+      "evidence": {
+        "personalLogs": {
+          "cards": [
+            "04c5bcdd-ff59-4316-b67f-d18fc1a42a1c"
+          ],
+          "selfOnly": true,
+          "peopleFilters": false,
+          "count": "本人日志 · 1 条"
+        },
+        "ownExpected": [
+          "04c5bcdd-ff59-4316-b67f-d18fc1a42a1c"
+        ],
+        "ownLog": {
+          "logId": "04c5bcdd-ff59-4316-b67f-d18fc1a42a1c",
+          "rowVersion": 1,
+          "businessDate": "2026-11-19"
+        },
+        "expected": [
+          "206cf97b-172a-416f-8652-2bad1ff0a612",
+          "d3e3f1ba-68f1-47a1-995e-252f4323d59c"
+        ]
+      }
+    },
+    {
+      "check": "login form ready alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "fixed profile organization fields alpha-two-head",
+      "pass": true,
+      "evidence": [
+        "部门",
+        "职位",
+        "团队",
+        "直属上级"
+      ]
+    },
+    {
+      "check": "fixed manager retains subordinate profile and logs alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "actual descendant contact and log entry alpha-two-head",
+      "pass": true,
+      "evidence": {
+        "title": "alpha-one-employee的资料",
+        "oldEntry": false
+      }
+    },
+    {
+      "check": "person work page reads the same target logs for alpha-two-head",
+      "pass": true,
+      "evidence": {
+        "staffLogs": [
+          "206cf97b-172a-416f-8652-2bad1ff0a612",
+          "d3e3f1ba-68f1-47a1-995e-252f4323d59c"
+        ],
+        "targetExpected": [
+          "206cf97b-172a-416f-8652-2bad1ff0a612",
+          "d3e3f1ba-68f1-47a1-995e-252f4323d59c"
+        ]
+      }
+    },
+    {
+      "check": "login form ready founder",
+      "pass": true
+    },
+    {
+      "check": "phone login founder",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement founder",
+      "pass": true,
+      "evidence": {
+        "role": "founder",
+        "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "ids": [],
+        "chips": 0,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期设为全天开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天快捷：开始日00:00至截止日次日00:00，可继续修改。共用标签（可多选）✓浏览器共享标签紧急程度紧急高中低负责人（可多选）尚未选择负责人选择负责人至少保留一位负责人。无需审核：固定创始人操作，记录原因后直接生效；提交后直接生效。"
+      }
+    },
+    {
+      "check": "login form ready alpha-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-head",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement alpha-head",
+      "pass": true,
+      "evidence": {
+        "role": "department_head",
+        "id": "7d3fedd7-7397-5412-a536-b4fbb0e29c7c",
+        "ids": [],
+        "chips": 0,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期设为全天开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天快捷：开始日00:00至截止日次日00:00，可继续修改。共用标签（可多选）✓浏览器共享标签紧急程度紧急高中低负责人（可多选）尚未选择负责人选择负责人至少保留一位负责人。创建审核人：founder。"
+      }
+    },
+    {
+      "check": "login form ready alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-two-head",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement alpha-two-head",
+      "pass": true,
+      "evidence": {
+        "role": "team_head",
+        "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+        "ids": [],
+        "chips": 0,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期设为全天开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天快捷：开始日00:00至截止日次日00:00，可继续修改。共用标签（可多选）✓浏览器共享标签紧急程度紧急高中低负责人（可多选）尚未选择负责人选择负责人至少保留一位负责人。创建审核人：alpha-head。"
+      }
+    },
+    {
+      "check": "login form ready alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "phone login alpha-one-employee",
+      "pass": true
+    },
+    {
+      "check": "calendar plus starts a new task from the fixed placement alpha-one-employee",
+      "pass": true,
+      "evidence": {
+        "role": "employee",
+        "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "ids": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "chips": 1,
+        "text": "任务名称任务说明（必填）上级任务（可选）未指定上级任务选择上级任务任务排期设为全天开始日期开始时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859截止日期截止时刻000102030405060708091011121314151617181920212223:000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859全天快捷：开始日00:00至截止日次日00:00，可继续修改。共用标签（可多选）✓浏览器共享标签紧急程度紧急高中低负责人（可多选）alpha-one-employee员工 · alpha选择负责人至少保留一位负责人。创建审核人：alpha-two-head。"
+      }
+    },
+    {
+      "check": "the employee draft is the starting point for owner edits",
+      "pass": true
+    },
+    {
+      "check": "new-task owner picker opens from the employee draft",
+      "pass": true
+    },
+    {
+      "check": "removing the initial self and choosing cross-department owners keeps the chosen order",
+      "pass": true,
+      "evidence": [
+        "c446e82b-711b-5d20-8fdd-b878fd0f0890",
+        "df322039-debc-570e-a1e9-b76f2bd8d66f"
+      ]
+    },
+    {
+      "check": "reordering the same owners is preserved instead of restoring the creator",
+      "pass": true,
+      "evidence": [
+        "df322039-debc-570e-a1e9-b76f2bd8d66f",
+        "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+      ]
+    },
+    {
+      "check": "cancelling the owner picker discards its working copy",
+      "pass": true,
+      "evidence": {
+        "reordered": [
+          "df322039-debc-570e-a1e9-b76f2bd8d66f",
+          "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+        ]
+      }
+    },
+    {
+      "check": "the employee can remove every owner without being added back",
+      "pass": true,
+      "evidence": {
+        "ids": [],
+        "empty": true
+      }
+    },
+    {
+      "check": "an empty owner list is rejected without submitting",
+      "pass": true,
+      "evidence": {
+        "text": "至少选择一位负责人。",
+        "ids": [],
+        "overlay": false
+      }
+    },
+    {
+      "check": "the employee creation preview routes to the direct manager",
+      "pass": true,
+      "evidence": {
+        "preview": {
+          "operation": "create",
+          "mode": "creation",
+          "route": {
+            "reviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+            "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "path": [
+              "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+            ],
+            "reason": "direct-manager",
+            "reasonText": "按本次操作者的直属上级审核",
+            "authzVersion": 4,
+            "reviewerAvailable": true,
+            "blocked": false,
+            "creation": true,
+            "participants": [
+              {
+                "displayName": "alpha-two-head",
+                "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+              },
+              {
+                "displayName": "alpha-one-employee",
+                "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+              }
+            ]
+          },
+          "reviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+          "requiresApproval": true,
+          "blocked": false,
+          "exemptionReason": null,
+          "blockedReason": null,
+          "reviewerBasis": "operator",
+          "previewOnly": true
+        },
+        "meInfo": {
+          "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "managerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+        }
+      }
+    },
+    {
+      "check": "the employee submits a real creation request with the chosen owners",
+      "pass": true
+    },
+    {
+      "check": "the created request is pending for the creator direct manager",
+      "pass": true,
+      "evidence": {
+        "requestId": "b05d93ed-6d2b-427c-a932-281eda83959e",
+        "taskId": "d0cb369f-da6c-49a4-b1b8-23040f2f20ee",
+        "kind": "create",
+        "status": "pending",
+        "comment": null,
+        "applicantId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "currentReviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+        "rowVersion": 1,
+        "previousState": "todo",
+        "exemptionReason": null,
+        "createdAt": "2026-11-18T17:02:04.056001Z",
+        "decidedAt": null,
+        "applicableDeadline": "2026-11-22T10:00:00Z",
+        "expiredAt": null,
+        "title": "Browser creation default owner",
+        "versionNo": 1,
+        "route": {
+          "reviewerId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 4,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": true,
+          "participants": [
+            {
+              "displayName": "alpha-two-head",
+              "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+            },
+            {
+              "displayName": "alpha-one-employee",
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+            }
+          ]
+        },
+        "proposedVersion": {
+          "id": "5dfb4142-5563-4fe5-9fe3-82e499311964",
+          "taskId": "d0cb369f-da6c-49a4-b1b8-23040f2f20ee",
+          "versionNo": 1,
+          "title": "Browser creation default owner",
+          "description": "Browser creation default check",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-11-20T01:00:00Z",
+          "dueAt": "2026-11-22T10:00:00Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "proposed",
+          "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "createdAt": "2026-11-18T17:02:04.057010Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+          ],
+          "tags": [],
+          "tagIds": [],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "participants": [
+          {
+            "displayName": "alpha-two-head",
+            "id": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+          },
+          {
+            "displayName": "alpha-one-employee",
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0"
+          },
+          {
+            "displayName": "beta-one-employee",
+            "id": "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+          }
+        ]
+      }
+    },
+    {
+      "check": "login form ready founder",
+      "pass": true
+    },
+    {
+      "check": "phone login founder",
+      "pass": true
+    },
+    {
+      "check": "the fixed founder starts empty and is exempt from creation review",
+      "pass": true,
+      "evidence": {
+        "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "ids": [],
+        "preview": {
+          "operation": "create",
+          "mode": "creation",
+          "route": {
+            "reviewerId": null,
+            "basisAssigneeId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "path": [],
+            "reason": "founder-exempt",
+            "reasonText": "固定创始人操作，记录原因后直接生效",
+            "authzVersion": 4,
+            "reviewerAvailable": false,
+            "blocked": false,
+            "creation": true,
+            "participants": [
+              {
+                "displayName": "founder",
+                "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+              }
+            ]
+          },
+          "reviewerId": null,
+          "requiresApproval": false,
+          "blocked": false,
+          "exemptionReason": "固定创始人操作，记录原因后直接生效",
+          "blockedReason": null,
+          "reviewerBasis": "operator",
+          "previewOnly": true
+        }
+      }
+    },
+    {
+      "check": "the founder owner picker opens",
+      "pass": true
+    },
+    {
+      "check": "the founder submission applies directly and publishes the task",
+      "pass": true
+    },
+    {
+      "check": "the founder exemption is recorded as direct with a reason, never as a pending self-approval",
+      "pass": true,
+      "evidence": {
+        "requestId": "1953a24a-ce0e-4ae2-baae-eb558725ef08",
+        "taskId": "77f5e389-8b6e-4237-9789-142f1e257bfa",
+        "kind": "create",
+        "status": "direct",
+        "comment": null,
+        "applicantId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+        "currentReviewerId": null,
+        "rowVersion": 1,
+        "previousState": "todo",
+        "exemptionReason": "固定创始人操作，记录原因后直接生效",
+        "createdAt": "2026-11-18T17:02:04.998192Z",
+        "decidedAt": "2026-11-18T17:02:04.998192Z",
+        "applicableDeadline": "2026-11-22T10:00:00Z",
+        "expiredAt": null,
+        "title": "Browser founder direct creation",
+        "versionNo": 1,
+        "route": {
+          "reviewerId": null,
+          "basisAssigneeId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "path": [],
+          "reason": "founder-exempt",
+          "reasonText": "固定创始人操作，记录原因后直接生效",
+          "authzVersion": 4,
+          "reviewerAvailable": false,
+          "blocked": false,
+          "creation": true,
+          "participants": [
+            {
+              "displayName": "founder",
+              "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+            }
+          ]
+        },
+        "proposedVersion": {
+          "id": "e6b8ea1d-dd84-4e5b-ad05-918751409b08",
+          "taskId": "77f5e389-8b6e-4237-9789-142f1e257bfa",
+          "versionNo": 1,
+          "title": "Browser founder direct creation",
+          "description": "Browser founder default check",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2026-11-20T01:00:00Z",
+          "dueAt": "2026-11-22T10:00:00Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "applied",
+          "createdBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "createdAt": "2026-11-18T17:02:05.000141Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+          ],
+          "tags": [],
+          "tagIds": [],
+          "tagId": null,
+          "tag": null,
+          "parentTaskId": null,
+          "parentUnavailable": false
+        },
+        "participants": [
+          {
+            "displayName": "founder",
+            "id": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+          }
+        ]
+      }
+    },
+    {
+      "check": "Escape inside the native time control keeps the form and its draft",
+      "pass": true,
+      "evidence": {
+        "open": true,
+        "draft": true,
+        "title": "Native cancel keeps the draft",
+        "time": "09:00",
+        "target": "tf-start-time-hour"
+      }
+    },
+    {
+      "check": "Escape outside the time control still closes the sheet",
+      "pass": true
+    },
+    {
+      "check": "employee interactions have no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "result": "PASS"
+}

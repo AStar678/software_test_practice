@@ -1,0 +1,17 @@
+{
+  "collapsedSections": 20,
+  "defaultOpen": false,
+  "canExpandAndCollapse": true,
+  "analysisVisible": true,
+  "completeRawRecordsPreserved": 216,
+  "services": [
+    "pandora-web-version",
+    "pandora",
+    "pandora-mysql",
+    "nginx"
+  ],
+  "servicesAllActive": true,
+  "temporaryAgentRemoved": true,
+  "coveragePortClosed": true,
+  "https6644Status": "200 UP"
+}

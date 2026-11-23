@@ -1,0 +1,15 @@
+Flyway completed; log: /private/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-p4yvzupq/project/audit/refactor-pandora-organization-and-workflows/final-migration.log
+PASS empty database completes the full Flyway chain
+PASS backup restores an independent V20 database with identical row fingerprints
+FAIL fresh and upgraded columns, FK, indexes, unique keys and CHECK constraints are identical
+Traceback (most recent call last):
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-p4yvzupq/project/backend/scripts/check_final_migration.py", line 96, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-p4yvzupq/project/backend/scripts/check_final_migration.py", line 65, in main
+    check('fresh and upgraded columns, FK, indexes, unique keys and CHECK constraints are identical',structure(fresh)==structure(upgrade))
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/folders/hw/krn7wxdd4810ybj45t1s22ww0000gn/T/pandora-comprehensive-stage-p4yvzupq/project/backend/scripts/check_final_migration.py", line 36, in check
+    if not condition:raise AssertionError(name)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: fresh and upgraded columns, FK, indexes, unique keys and CHECK constraints are identical

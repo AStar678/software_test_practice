@@ -22,8 +22,10 @@ public class OrganizationService {
     private final OrganizationConstraints constraints;
     private final AuthService auth;
     private final OrganizationPlans plans;
-    public OrganizationService(Db db,Access access,Events events,OrganizationConstraints constraints,AuthService auth,OrganizationPlans plans) {
-        this.db=db;this.access=access;this.events=events;this.constraints=constraints;this.auth=auth;this.plans=plans;
+    private final java.time.Clock clock;
+    public OrganizationService(Db db,Access access,Events events,OrganizationConstraints constraints,AuthService auth,OrganizationPlans plans,
+                               java.time.Clock clock) {
+        this.db=db;this.access=access;this.events=events;this.constraints=constraints;this.auth=auth;this.plans=plans;this.clock=clock;
     }
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
@@ -51,12 +53,16 @@ public class OrganizationService {
         access.requireAdmin(actor);access.requireCurrent(actor);
         String query=filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
         var phones=new HashMap<String,Object>();
-        for (var row:db.list("SELECT id,login_phone FROM users WHERE organization_id=?",actor.organizationId()))
+        var hireDates=new HashMap<String,Object>();
+        for (var row:db.list("SELECT id,login_phone,hire_date FROM users WHERE organization_id=?",actor.organizationId())) {
             phones.put(s(row,"id"),row.get("loginPhone"));
+            hireDates.put(s(row,"id"),row.get("hireDate"));
+        }
         var rows=access.employeeDirectory(actor,true).stream().filter(row->query.isEmpty()
                 || Objects.toString(row.get("displayName"),"").toLowerCase(Locale.ROOT).contains(query)
                 || Objects.toString(row.get("departmentName"),"").toLowerCase(Locale.ROOT).contains(query))
-                .map(row -> {var item=new LinkedHashMap<>(row);item.put("loginPhone",phones.get(s(row,"id")));return item;}).toList();
+                .map(row -> {var item=new LinkedHashMap<>(row);item.put("loginPhone",phones.get(s(row,"id")));
+                    item.put("hireDate",hireDates.get(s(row,"id")));return item;}).toList();
         return Map.of("items",rows,"total",rows.size());
     }
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
@@ -64,9 +70,9 @@ public class OrganizationService {
         access.requireAdmin(actor);access.requireCurrent(actor);
         var person=access.employeeDirectory(actor,true).stream().filter(row->id.equals(s(row,"id"))).findFirst().orElseThrow(ApiException::notFound);
         var item=new LinkedHashMap<>(person);
-        var phone=db.find("SELECT login_phone,employment_start_date FROM users WHERE organization_id=? AND id=?",actor.organizationId(),id);
+        var phone=db.find("SELECT login_phone,hire_date FROM users WHERE organization_id=? AND id=?",actor.organizationId(),id);
         item.put("loginPhone",phone==null?null:phone.get("loginPhone"));
-        item.put("employmentStartDate",phone==null?null:phone.get("employmentStartDate"));
+        item.put("hireDate",phone==null?null:phone.get("hireDate"));
         return item;
     }
     public List<Map<String,Object>> departmentMembers(Actor actor,String departmentId) {
@@ -76,7 +82,7 @@ public class OrganizationService {
 
     @SuppressWarnings("unchecked")
     public Writes.Outcome createEmployee(Actor actor,Map<String,Object> input) {
-        access.requireAdmin(actor);allowed(input,Set.of("displayName","phone","employmentStartDate","placementType","departmentId","teamId","positionId"));
+        access.requireAdmin(actor);allowed(input,Set.of("displayName","phone","placementType","departmentId","teamId","positionId","hireDate"));
         var draft=plans.draft(actor);String id=Db.id();
         var plan=new LinkedHashMap<String,Object>();
         for(String key:List.of("departments","teams","placements","expectedEmployees")) plan.put(key,draft.get(key));
@@ -86,7 +92,7 @@ public class OrganizationService {
         for(String field:List.of("placementType","departmentId","teamId","positionId")) placement.put(field,input.get(field));
         places.add(placement);plan.put("placements",places);plan.put("reason","新增员工");
         var addition=new LinkedHashMap<String,Object>();addition.put("id",id);addition.put("displayName",input.get("displayName"));addition.put("phone",input.get("phone"));
-        addition.put("employmentStartDate",input.get("employmentStartDate"));
+        addition.put("hireDate",input.get("hireDate"));
         plan.put("newEmployees",List.of(addition));
         var outcome=plans.save(actor,"\""+draft.get("rowVersion")+"\"",plan);
         var passwords=(Map<String,String>)outcome.oneTimeOnly().get("initialPasswords");
@@ -138,8 +144,8 @@ public class OrganizationService {
 
     public Map<String,Object> updateEmployee(Actor actor,String id,String ifMatch,Map<String,Object> input) {
         access.requireAdmin(actor);
-        allowed(input,Set.of("displayName","phone","employmentStartDate"));
-        if(input.isEmpty()) throw bad("请至少修改一项员工资料");
+        allowed(input,Set.of("displayName","phone","hireDate"));
+        if(input.isEmpty()) throw bad("请至少修改姓名、手机号或入职日期");
         var row=db.one("SELECT u.* FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id "
                 + "WHERE u.organization_id=? AND u.id=? AND p.account_type='employee' FOR UPDATE",actor.organizationId(),id);
         Writes.checkVersion(ifMatch,n(row,"orgVersion"));
@@ -150,26 +156,23 @@ public class OrganizationService {
             if(phone==null) throw bad("员工登录手机号不能为空");
             requireUniqueExceptLoginKey(actor,id,phone);login=phone;
         }
-        var startDate=employmentStartDate(input.containsKey("employmentStartDate")?input.get("employmentStartDate"):row.get("employmentStartDate"));
+        // Omitted keeps the stored date; an explicit null clears it; a future or malformed date is
+        // rejected before any other field is written.
+        java.time.LocalDate hireDate=row.get("hireDate")==null?null:java.time.LocalDate.parse(Objects.toString(row.get("hireDate")));
+        if(input.containsKey("hireDate")) hireDate=parseHireDate(input.get("hireDate"),companyToday(actor));
         boolean phoneChanged=!Objects.equals(login,s(row,"loginPhone"));
         try {
-            db.update("UPDATE users SET display_name=?,phone=?,login_phone=?,employment_start_date=?,org_version=org_version+1,profile_version=profile_version+1 WHERE organization_id=? AND id=?",
-                    name,phone,login,startDate,actor.organizationId(),id);
+            db.update("UPDATE users SET display_name=?,phone=?,login_phone=?,hire_date=?,org_version=org_version+1,profile_version=profile_version+1 WHERE organization_id=? AND id=?",
+                    name,phone,login,hireDate==null?null:java.sql.Date.valueOf(hireDate),actor.organizationId(),id);
         } catch(org.springframework.dao.DuplicateKeyException error) {throw new ApiException(409,"PHONE_TAKEN","该手机号已被使用");}
         int revoked=phoneChanged?auth.revokeSessions(actor.organizationId(),id):0;
         bumpAuthority(actor,"organization.employee.identity_updated",Map.of("userId",id,"fields",input.keySet(),"sessionsRevoked",revoked));
-        return Map.of("userId",id,"rowVersion",n(row,"orgVersion")+1,"phoneUpdated",input.containsKey("phone"),"sessionsRevoked",revoked);
-    }
-
-    static java.sql.Date employmentStartDate(Object value) {
-        if (value==null) return null;
-        String text=value.toString();
-        if (!text.matches("[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}")) throw bad("入职日期必须为 YYYY-MM-DD");
-        try {
-            return java.sql.Date.valueOf(LocalDate.parse(text));
-        } catch (DateTimeException error) {
-            throw bad("请输入有效入职日期");
-        }
+        var result=new LinkedHashMap<String,Object>();
+        result.put("userId",id);result.put("rowVersion",n(row,"orgVersion")+1);
+        result.put("phoneUpdated",input.containsKey("phone"));
+        result.put("hireDate",hireDate==null?null:hireDate.toString());
+        result.put("sessionsRevoked",revoked);
+        return result;
     }
 
     public Writes.Outcome resetPassword(Actor actor, String id) {
@@ -193,7 +196,7 @@ public class OrganizationService {
     public Map<String, Object> companyItems(Actor actor) {
         access.requireAdmin(actor);
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("items", db.list("SELECT id,title,body,sort_order,row_version,created_at FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id", actor.organizationId()));
+        result.put("items", db.list("SELECT id,body,sort_order,row_version,created_at FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id", actor.organizationId()));
         result.put("limit", COMPANY_ITEM_LIMIT);
         result.put("offWorkTime", s(db.one("SELECT off_work_time FROM organizations WHERE id=?", actor.organizationId()), "offWorkTime"));
         return result;
@@ -201,27 +204,26 @@ public class OrganizationService {
 
     public Map<String, Object> createCompanyItem(Actor actor, Map<String, Object> input) {
         access.requireCapability(actor, "manage_company_info");
-        allowed(input, Set.of("title", "body"));
-        String body = text(input.get("body"), "公司信息内容", 2000);
-        String title = input.containsKey("title") ? text(input.get("title"), "公司信息标题", 200)
-                : body.substring(0, Math.min(body.length(), 200));
+        // Company chronicles are body-only: the retired independent title is rejected with every other
+        // unknown field before any row is written, so a rejected request never partially inserts.
+        allowed(input, Set.of("body"));
+        String body = bodyText(input.get("body"), "公司信息内容", 2000);
         long existing = n(db.one("SELECT COUNT(*) AS c FROM home_items WHERE organization_id=? AND kind='company'", actor.organizationId()), "c");
         if (existing >= COMPANY_ITEM_LIMIT) throw new ApiException(409, "HOME_ITEM_LIMIT", "公司信息最多10条，请先删除后再新增");
         long next = n(db.one("SELECT COALESCE(MAX(sort_order),0)+1 AS c FROM home_items WHERE organization_id=? AND kind='company'", actor.organizationId()), "c");
         String id = Db.id();
-        db.update("INSERT INTO home_items(id,organization_id,owner_id,kind,title,body,sort_order) VALUES(?,?,NULL,'company',?,?,?)", id, actor.organizationId(), title, body, next);
+        db.update("INSERT INTO home_items(id,organization_id,owner_id,kind,body,sort_order) VALUES(?,?,NULL,'company',?,?)", id, actor.organizationId(), body, next);
         events.record(actor, null, "company_item.created", List.of(), Map.of("homeItemId", id));
         return Map.of("id", id, "rowVersion", 1, "sortOrder", next);
     }
 
     public Map<String, Object> updateCompanyItem(Actor actor, String id, String ifMatch, Map<String, Object> input) {
         access.requireCapability(actor, "manage_company_info");
-        allowed(input, Set.of("title", "body"));
+        allowed(input, Set.of("body"));
         Map<String, Object> row = db.one("SELECT * FROM home_items WHERE organization_id=? AND id=? AND kind='company' FOR UPDATE", actor.organizationId(), id);
         Writes.checkVersion(ifMatch, n(row, "rowVersion"));
-        String body = input.containsKey("body") ? text(input.get("body"), "公司信息内容", 2000) : s(row, "body");
-        String title = input.containsKey("title") ? text(input.get("title"), "公司信息标题", 200) : s(row, "title");
-        db.update("UPDATE home_items SET title=?,body=?,row_version=row_version+1 WHERE organization_id=? AND id=?", title, body, actor.organizationId(), id);
+        String body = input.containsKey("body") ? bodyText(input.get("body"), "公司信息内容", 2000) : s(row, "body");
+        db.update("UPDATE home_items SET body=?,row_version=row_version+1 WHERE organization_id=? AND id=?", body, actor.organizationId(), id);
         events.record(actor, null, "company_item.updated", List.of(), Map.of("homeItemId", id));
         return Map.of("id", id, "rowVersion", n(row, "rowVersion") + 1);
     }
@@ -307,11 +309,39 @@ public class OrganizationService {
         return phone;
     }
 
-    static String text(Object value, String label, int max) {
-        if (!(value instanceof String raw)) throw bad(label + "必须为文字");
+    /** Strict ISO date, nullable to clear, never later than the company's today. */
+    static java.time.LocalDate parseHireDate(Object value, java.time.LocalDate today) {
+        if (value == null) return null;
+        if (!(value instanceof String raw)) throw bad("入职日期须为YYYY-MM-DD或null");
+        String text = raw.trim();
+        try {
+            java.time.LocalDate date = java.time.LocalDate.parse(text);
+            if (!date.toString().equals(text)) throw bad("入职日期须为规范的YYYY-MM-DD日期");
+            if (date.isAfter(today)) throw bad("入职日期不得晚于公司今天");
+            return date;
+        } catch (java.time.format.DateTimeParseException error) {
+            throw bad("入职日期须为YYYY-MM-DD有效日期");
+        }
+    }
+
+    private java.time.LocalDate companyToday(Actor actor) {
+        String zone = s(db.one("SELECT time_zone FROM organizations WHERE id=?", actor.organizationId()), "timeZone");
+        return clock.instant().atZone(java.time.ZoneId.of(zone)).toLocalDate();
+    }
+
+    static String text(Object value, String label, int max) {        if (!(value instanceof String raw)) throw bad(label + "必须为文字");
         String text = raw.strip();
         if (text.isEmpty() || text.codePointCount(0, text.length()) > max) throw bad(label + "不能为空且不得超过" + max + "字");
         if (text.codePoints().anyMatch(Character::isISOControl)) throw bad(label + "含无效字符");
+        return text;
+    }
+
+    /** Company chronicle body: the same 1–2000 plain-text rule, but internal line breaks are kept. */
+    static String bodyText(Object value, String label, int max) {
+        if (!(value instanceof String raw)) throw bad(label + "必须为文字");
+        String text = raw.strip();
+        if (text.isEmpty() || text.codePointCount(0, text.length()) > max) throw bad(label + "不能为空且不得超过" + max + "字");
+        if (text.codePoints().anyMatch(cp -> cp != '\n' && Character.isISOControl(cp))) throw bad(label + "含无效字符");
         return text;
     }
 

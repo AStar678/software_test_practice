@@ -1,0 +1,82 @@
+RUN check_fixed_organization_migration.py
+FAIL check_fixed_organization_migration.py assertions=49
+RUN check_legacy_mapping.py
+FAIL check_legacy_mapping.py assertions=5
+RUN check_final_migration.py
+FAIL check_final_migration.py assertions=2
+RUN check_login_identity_collision.py
+PASS check_login_identity_collision.py assertions=74
+RUN check_organization_plans.py
+PASS check_organization_plans.py assertions=30
+RUN check_review_routing.py
+PASS check_review_routing.py assertions=204
+RUN check_auto_apply_authorization.py
+PASS check_auto_apply_authorization.py assertions=18
+RUN check_business_takeover.py
+PASS check_business_takeover.py assertions=87
+RUN check_profile_phone_matrix.py
+FAIL check_profile_phone_matrix.py assertions=0
+RUN check_fixed_workspace_access.py
+FAIL check_fixed_workspace_access.py assertions=20
+RUN check_fixed_notifications.py
+PASS check_fixed_notifications.py assertions=49
+RUN check_visible_schedule_permissions.py
+PASS check_visible_schedule_permissions.py assertions=22
+RUN check_holidays.py
+PASS check_holidays.py assertions=37
+RUN check_employee_contracts_upgrade.py
+PASS check_employee_contracts_upgrade.py assertions=331
+RUN check_task_refinement_upgrade.py
+PASS check_task_refinement_upgrade.py assertions=13
+RUN check_apply_private_migration_guard.py
+PASS check_apply_private_migration_guard.py assertions=2
+RUN check_demo_extremes.py
+PASS check_demo_extremes.py assertions=130
+RUN check_final_demo.py
+PASS check_final_demo.py assertions=94
+RUN check_admin_contract.py
+PASS check_admin_contract.py assertions=42
+RUN check_handover_chain.py
+PASS check_handover_chain.py assertions=24
+RUN check_fixed_web.py
+PASS check_fixed_web.py assertions=195
+RUN check_calendar_drawer.py
+PASS check_calendar_drawer.py assertions=102
+RUN check_fixed_late_response.py
+PASS check_fixed_late_response.py assertions=9
+RUN check_log_backfill_entry.py
+FAIL check_log_backfill_entry.py assertions=0
+RUN check_fixed_communication_web.py
+PASS check_fixed_communication_web.py assertions=34
+RUN check_daily_items.py
+FAIL check_daily_items.py assertions=92
+RUN check_chapter8_web.py
+PASS check_chapter8_web.py assertions=57
+RUN check_apply_notifications.py
+PASS check_apply_notifications.py assertions=113
+RUN check_apply_mixed_edit.py
+PASS check_apply_mixed_edit.py assertions=68
+RUN check_apply_log_tags.py
+PASS check_apply_log_tags.py assertions=45
+RUN check_apply_admin_login_phone.py
+PASS check_apply_admin_login_phone.py assertions=18
+RUN check_apply_profile_pin_history.py
+FAIL check_apply_profile_pin_history.py assertions=35
+RUN check_calendar_tags.py
+PASS check_calendar_tags.py assertions=26
+RUN check_subordinate_workspace.py
+PASS check_subordinate_workspace.py assertions=100
+RUN check_schedule_drag.py
+PASS check_schedule_drag.py assertions=158
+RUN check_request_id_compat.py
+PASS check_request_id_compat.py assertions=16
+RUN check_apply_copy_audit.py
+PASS check_apply_copy_audit.py assertions=42
+RUN check_web_alignment_drag.py
+FAIL check_web_alignment_drag.py assertions=31
+RUN check_task_creation_refinement.py
+FAIL check_task_creation_refinement.py assertions=65
+RUN check_web_verification_repairs.py
+PASS check_web_verification_repairs.py assertions=100
+RUN check_founder_setup.py
+PASS check_founder_setup.py assertions=8

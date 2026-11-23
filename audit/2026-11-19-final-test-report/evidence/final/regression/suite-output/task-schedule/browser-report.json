@@ -1,0 +1,1407 @@
+{
+  "checks": [
+    {
+      "name": "login form",
+      "pass": true
+    },
+    {
+      "name": "authenticated founder",
+      "pass": true
+    },
+    {
+      "name": "day full and legacy have no hour drag entry",
+      "pass": true
+    },
+    {
+      "name": "normal and point tasks retain hour handles",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-resize-task=\"d8638db8-db2d-47f1-a06a-342cc7d1e98d\"][data-resize=end][data-resize-mode=day]",
+      "pass": true,
+      "evidence": {
+        "x": 910,
+        "y": 481.03125,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "escape cancels unchanged",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-resize-task=\"d8638db8-db2d-47f1-a06a-342cc7d1e98d\"][data-resize=end][data-resize-mode=day]",
+      "pass": true,
+      "evidence": {
+        "x": 910,
+        "y": 481.03125,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "pointercancel cancels unchanged",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-resize-task=\"d8638db8-db2d-47f1-a06a-342cc7d1e98d\"][data-resize=end][data-resize-mode=day]",
+      "pass": true,
+      "evidence": {
+        "x": 910,
+        "y": 481.03125,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "drag calls confirmation",
+      "pass": true,
+      "evidence": [
+        [
+          "d8638db8-db2d-47f1-a06a-342cc7d1e98d",
+          "2030-12-31T01:20:00.000Z",
+          "2030-12-31T12:20:00.000Z",
+          2,
+          {
+            "dayKey": "2030-12-31"
+          }
+        ]
+      ]
+    },
+    {
+      "name": "lightweight confirmation opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "full task editor absent",
+      "pass": true
+    },
+    {
+      "name": "confirmation shows old and exact new time",
+      "pass": true
+    },
+    {
+      "name": "preview is uncommitted",
+      "pass": true
+    },
+    {
+      "name": "schedule submitted",
+      "pass": true,
+      "evidence": ""
+    },
+    {
+      "name": "precise hour persisted",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-resize-task=\"d8638db8-db2d-47f1-a06a-342cc7d1e98d\"][data-resize=end][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 478,
+        "y": 445.5,
+        "mode": "month",
+        "unit": 160,
+        "vertical": false
+      }
+    },
+    {
+      "name": "month long press creates no drag preview before the threshold",
+      "pass": true
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "lightweight confirmation opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "full task editor absent",
+      "pass": true
+    },
+    {
+      "name": "month drag crosses year and preserves minute",
+      "pass": true
+    },
+    {
+      "name": "schedule submitted",
+      "pass": true,
+      "evidence": ""
+    },
+    {
+      "name": "cross year persisted",
+      "pass": true
+    },
+    {
+      "name": "cross day continuation has no hour drag",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-schedule-move=\"d8638db8-db2d-47f1-a06a-342cc7d1e98d\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 400,
+        "y": 445.75,
+        "mode": "month",
+        "unit": 160,
+        "vertical": false
+      }
+    },
+    {
+      "name": "month long press creates no drag preview before the threshold",
+      "pass": true
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "lightweight confirmation opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "full task editor absent",
+      "pass": true
+    },
+    {
+      "name": "whole month move preserves duration",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-resize-task=\"cc62922a-5f8b-4f6e-9cc4-3a2d400aea0c\"][data-resize=start][data-resize-mode=day]",
+      "pass": true,
+      "evidence": {
+        "x": 720,
+        "y": 545.03125,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "inverse point range rejected",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-resize-task=\"cc62922a-5f8b-4f6e-9cc4-3a2d400aea0c\"][data-resize=end][data-resize-mode=day]",
+      "pass": true,
+      "evidence": {
+        "x": 720,
+        "y": 545.03125,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "lightweight confirmation opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "full task editor absent",
+      "pass": true
+    },
+    {
+      "name": "point expands by an hour",
+      "pass": true
+    },
+    {
+      "name": "cross-day first segment has no hour drag",
+      "pass": true
+    },
+    {
+      "name": "cross-day covered middle day has no hour drag",
+      "pass": true
+    },
+    {
+      "name": "cross-day tail segment has no hour drag",
+      "pass": true
+    },
+    {
+      "name": "vertical first segment has no move or endpoint handle",
+      "pass": true
+    },
+    {
+      "name": "cross-day segment arrow key opens no time edit",
+      "pass": true
+    },
+    {
+      "name": "cross-day segment ordinary click still opens its detail",
+      "pass": true
+    },
+    {
+      "name": "cross-day full coverage stays in the all-day area without handles",
+      "pass": true
+    },
+    {
+      "name": "all-day ordinary click still opens its detail",
+      "pass": true
+    },
+    {
+      "name": "midnight end renders once on its start day",
+      "pass": true
+    },
+    {
+      "name": "midnight end creates no next-day duplicate",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-resize-task=\"3084be1f-b261-4437-be91-325eb15e0237\"][data-resize=end][data-resize-mode=day]",
+      "pass": true,
+      "evidence": {
+        "x": 1250,
+        "y": 417.03125,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "a day-axis midnight endpoint cannot cross into the next day",
+      "pass": true
+    },
+    {
+      "name": "the rejected midnight endpoint reports the day boundary",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-schedule-move=\"3084be1f-b261-4437-be91-325eb15e0237\"][data-resize-mode=day]",
+      "pass": true,
+      "evidence": {
+        "x": 956,
+        "y": 417.03125,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "lightweight confirmation opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "full task editor absent",
+      "pass": true
+    },
+    {
+      "name": "a legal whole-task move keeps the 24:00 deadline inside one day",
+      "pass": true
+    },
+    {
+      "name": "handle exists [data-resize-task=\"67c80ec0-a290-4cb4-8001-0d0b48db70c0\"][data-resize=end][data-resize-mode=day]",
+      "pass": true,
+      "evidence": {
+        "x": 720,
+        "y": 417.03125,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "endpoint press without movement opens no confirmation or detail",
+      "pass": true,
+      "evidence": {
+        "overlay": true,
+        "preview": false,
+        "calls": 5
+      }
+    },
+    {
+      "name": "short press target exists [data-resize-task=\"67c80ec0-a290-4cb4-8001-0d0b48db70c0\"][data-resize=end][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 958,
+        "y": 445.5,
+        "date": "2031-01-10",
+        "column": 4
+      }
+    },
+    {
+      "name": "real mouse short press on month tail endpoint opens the hit day list without drag or schedule write",
+      "pass": true,
+      "evidence": {
+        "state": {
+          "hidden": true,
+          "date": "2031-01-10",
+          "preview": false,
+          "confirmation": false,
+          "rows": "共 2 项日程短任务同日整日00:00 – 24:00待开始中三小时短任务09:00 – 12:00待开始中",
+          "calls": 5
+        },
+        "p": {
+          "x": 958,
+          "y": 445.5,
+          "date": "2031-01-10",
+          "column": 4
+        }
+      }
+    },
+    {
+      "name": "short press target exists [data-schedule-move=\"67c80ec0-a290-4cb4-8001-0d0b48db70c0\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 880,
+        "y": 445.75,
+        "date": "2031-01-10",
+        "column": 4
+      }
+    },
+    {
+      "name": "real mouse short press on month task bar body opens the hit day list without drag or schedule write",
+      "pass": true,
+      "evidence": {
+        "state": {
+          "hidden": true,
+          "date": "2031-01-10",
+          "preview": false,
+          "confirmation": false,
+          "rows": "共 2 项日程短任务同日整日00:00 – 24:00待开始中三小时短任务09:00 – 12:00待开始中",
+          "calls": 5
+        },
+        "p": {
+          "x": 880,
+          "y": 445.75,
+          "date": "2031-01-10",
+          "column": 4
+        }
+      }
+    },
+    {
+      "name": "short press target exists [data-action=\"schedule-month-date\"][data-date=\"2031-01-10\"]",
+      "pass": true,
+      "evidence": {
+        "x": 880,
+        "y": 445.75,
+        "date": "2031-01-10",
+        "column": 4
+      }
+    },
+    {
+      "name": "real mouse short press on month date digit opens the hit day list without drag or schedule write",
+      "pass": true,
+      "evidence": {
+        "state": {
+          "hidden": true,
+          "date": "2031-01-10",
+          "preview": false,
+          "confirmation": false,
+          "rows": "共 2 项日程短任务同日整日00:00 – 24:00待开始中三小时短任务09:00 – 12:00待开始中",
+          "calls": 5
+        },
+        "p": {
+          "x": 880,
+          "y": 445.75,
+          "date": "2031-01-10",
+          "column": 4
+        }
+      }
+    },
+    {
+      "name": "an empty date cell is available for the blank-area short press",
+      "pass": true,
+      "evidence": "2030-11-01"
+    },
+    {
+      "name": "short press target exists [data-action=\"schedule-month-date\"][data-date=\"2030-11-01\"]",
+      "pass": true,
+      "evidence": {
+        "x": 880,
+        "y": 295.25,
+        "date": "2030-11-01",
+        "column": 4
+      }
+    },
+    {
+      "name": "real mouse short press on month empty date cell opens the hit day list without drag or schedule write",
+      "pass": true,
+      "evidence": {
+        "state": {
+          "hidden": true,
+          "date": "2030-11-01",
+          "preview": false,
+          "confirmation": false,
+          "rows": "这一天还没有任务创建任务",
+          "calls": 5
+        },
+        "p": {
+          "x": 880,
+          "y": 295.25,
+          "date": "2030-11-01",
+          "column": 4
+        }
+      }
+    },
+    {
+      "name": "the cross-day task renders a multi-column segment to press",
+      "pass": true,
+      "evidence": {
+        "index": 1,
+        "span": 2
+      }
+    },
+    {
+      "name": "short press target exists [data-task=\"cbb2ceba-a442-450d-8762-8b05a03d8794\"]",
+      "pass": true,
+      "evidence": {
+        "x": 400,
+        "y": 445.25,
+        "date": "2031-02-11",
+        "column": 1
+      }
+    },
+    {
+      "name": "real mouse short press on month cross-day middle date opens the hit day list without drag or schedule write",
+      "pass": true,
+      "evidence": {
+        "state": {
+          "hidden": true,
+          "date": "2031-02-11",
+          "preview": false,
+          "confirmation": false,
+          "rows": "共 1 项日程跨三日任务前日延续 – 10:00待开始中",
+          "calls": 5
+        },
+        "p": {
+          "x": 400,
+          "y": 445.25,
+          "date": "2031-02-11",
+          "column": 1
+        }
+      }
+    },
+    {
+      "name": "the cross-day bar opens the hit day instead of always using its start date",
+      "pass": true,
+      "evidence": {
+        "hidden": true,
+        "date": "2031-02-11",
+        "preview": false,
+        "confirmation": false,
+        "rows": "共 1 项日程跨三日任务前日延续 – 10:00待开始中",
+        "calls": 5
+      }
+    },
+    {
+      "name": "a real overflow entry appears once the month tracks are collapsed",
+      "pass": true,
+      "evidence": {
+        "date": "2030-12-31",
+        "count": "+3",
+        "column": "2"
+      }
+    },
+    {
+      "name": "the overflow entry opens its own date through a real short press and never starts a drag",
+      "pass": true,
+      "evidence": {
+        "overflowState": {
+          "hidden": true,
+          "date": "2030-12-31",
+          "preview": false,
+          "confirmation": false,
+          "calls": 5
+        },
+        "overflow": {
+          "date": "2030-12-31",
+          "count": "+3",
+          "column": "2"
+        }
+      }
+    },
+    {
+      "name": "a synthetic short touch opens the hit day list without a drag or schedule write",
+      "pass": true,
+      "evidence": {
+        "touchTap": {
+          "date": "2031-01-10",
+          "preview": false,
+          "confirmation": false,
+          "calls": 5
+        },
+        "touchPoint": {
+          "x": 880,
+          "y": 445.75,
+          "mode": "month",
+          "unit": 160,
+          "vertical": false
+        },
+        "touchDate": "2031-01-10"
+      }
+    },
+    {
+      "name": "holding a month bar for about half a second activates the touch drag",
+      "pass": true,
+      "evidence": {
+        "gesture": {
+          "pressing": false,
+          "dragging": true,
+          "haptic": "called",
+          "steps": 1,
+          "lastX": 1040,
+          "lastY": 445.75,
+          "target": "2031-01-11"
+        },
+        "preview": true
+      }
+    },
+    {
+      "name": "an activated touch drag asks for the lightweight confirmation instead of the day list",
+      "pass": true
+    },
+    {
+      "name": "the touch draft wrote nothing before confirmation",
+      "pass": true,
+      "evidence": {
+        "before": 2
+      }
+    },
+    {
+      "name": "drag source exists [data-resize-task=\"67c80ec0-a290-4cb4-8001-0d0b48db70c0\"][data-resize=end][data-resize-mode=day]",
+      "pass": true,
+      "evidence": {
+        "x": 720,
+        "y": 417.03125,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "lost pointer capture cancels unchanged",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-schedule-move=\"1c489580-4a85-430e-b71f-a26b1168ed94\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 400,
+        "y": 445.75,
+        "mode": "month",
+        "unit": 160,
+        "vertical": false
+      }
+    },
+    {
+      "name": "month long press creates no drag preview before the threshold",
+      "pass": true
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "lightweight confirmation opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "full task editor absent",
+      "pass": true
+    },
+    {
+      "name": "all-day confirmation shows complete dates without invented times",
+      "pass": true
+    },
+    {
+      "name": "day axis fits viewport 320",
+      "pass": true
+    },
+    {
+      "name": "day axis fits viewport 390",
+      "pass": true
+    },
+    {
+      "name": "day axis fits viewport 1440",
+      "pass": true
+    },
+    {
+      "name": "month view fits 390x600",
+      "pass": true
+    },
+    {
+      "name": "vertical ordinary handles present",
+      "pass": true
+    },
+    {
+      "name": "vertical full day handles absent",
+      "pass": true
+    },
+    {
+      "name": "login form is ready for the applicant",
+      "pass": true
+    },
+    {
+      "name": "login form",
+      "pass": true
+    },
+    {
+      "name": "authenticated alpha-one-employee",
+      "pass": true
+    },
+    {
+      "name": "retry task exposes an hour handle",
+      "pass": true
+    },
+    {
+      "name": "drag source exists [data-resize-task=\"273f8f15-639d-4f6f-a63d-ced248c99372\"][data-resize=end][data-resize-mode=day]",
+      "pass": true,
+      "evidence": {
+        "x": 720,
+        "y": 353.03125,
+        "mode": "day",
+        "unit": 60,
+        "vertical": false
+      }
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "lightweight confirmation opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "full task editor absent",
+      "pass": true
+    },
+    {
+      "name": "response loss keeps the lightweight draft and reason",
+      "pass": true
+    },
+    {
+      "name": "retry succeeds after the lost response",
+      "pass": true
+    },
+    {
+      "name": "retry reuses one idempotency key",
+      "pass": true,
+      "evidence": [
+        "1f5fa7f7-5ac0-4674-9f14-9f1d13f77bb6",
+        "1f5fa7f7-5ac0-4674-9f14-9f1d13f77bb6"
+      ]
+    },
+    {
+      "name": "one pending schedule is saved without publishing it",
+      "pass": true,
+      "evidence": {
+        "id": "273f8f15-639d-4f6f-a63d-ced248c99372",
+        "taskId": "273f8f15-639d-4f6f-a63d-ced248c99372",
+        "versionNo": 1,
+        "title": "轻量确认重试任务",
+        "description": "横向排期验证",
+        "acceptanceCriteria": "",
+        "priority": "medium",
+        "allDay": false,
+        "startAt": "2031-02-12T01:00:00Z",
+        "dueAt": "2031-02-12T03:00:00Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "todo",
+        "progressNote": "",
+        "status": "applied",
+        "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "createdAt": "2026-11-18T17:31:09.597028Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "tags": [],
+        "tagIds": [],
+        "tagId": null,
+        "tag": null,
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "a3397da4-c9a5-4c2d-a968-b509055c05d0",
+        "currentVersionId": "a3397da4-c9a5-4c2d-a968-b509055c05d0",
+        "originalCreatorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "businessOwnerId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "rowVersion": 3,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-11-18T17:31:35.131908Z",
+        "pending": true,
+        "frozen": true,
+        "pendingKind": "change",
+        "canReschedule": false,
+        "canPin": true,
+        "canTablePin": true,
+        "tablePinned": false,
+        "editableFields": [],
+        "pendingSchedule": {
+          "allDay": false,
+          "startAt": "2031-02-12T01:00:00Z",
+          "dueAt": "2031-02-12T05:00:00Z",
+          "startDate": null,
+          "dueDate": null
+        },
+        "pendingRequestId": "53948236-40a2-40a2-82e9-170eee514933",
+        "route": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+              "displayName": "alpha-one-head"
+            },
+            {
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+              "displayName": "alpha-one-employee"
+            }
+          ]
+        },
+        "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "participants": [
+          {
+            "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "displayName": "alpha-one-head"
+          },
+          {
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "displayName": "alpha-one-employee"
+          }
+        ],
+        "pinned": false,
+        "pendingRoute": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+              "displayName": "alpha-one-head"
+            },
+            {
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+              "displayName": "alpha-one-employee"
+            }
+          ]
+        },
+        "canHandover": false,
+        "handoverSources": [],
+        "handoverPresets": {},
+        "children": []
+      }
+    },
+    {
+      "name": "drag source exists [data-schedule-move=\"ffd3dfd6-409b-47c2-baab-6add72f6be38\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 720,
+        "y": 445.75,
+        "mode": "month",
+        "unit": 160,
+        "vertical": false
+      }
+    },
+    {
+      "name": "month long press creates no drag preview before the threshold",
+      "pass": true
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "lightweight confirmation opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "full task editor absent",
+      "pass": true
+    },
+    {
+      "name": "schedule submitted",
+      "pass": true,
+      "evidence": ""
+    },
+    {
+      "name": "pending proposal is drawn once at the proposed date",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "date": "2031-02-22",
+        "dashed": true,
+        "text": "待审排期投影任务2月22日 09:00 → 2月22日 11:00 · 审核中",
+        "color": "#F6D5D2"
+      }
+    },
+    {
+      "name": "pending proposal keeps the exact proposed times",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "date": "2031-02-22",
+        "dashed": true,
+        "text": "待审排期投影任务2月22日 09:00 → 2月22日 11:00 · 审核中",
+        "color": "#F6D5D2"
+      }
+    },
+    {
+      "name": "pending proposal keeps the shared first-tag colour",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "date": "2031-02-22",
+        "dashed": true,
+        "text": "待审排期投影任务2月22日 09:00 → 2月22日 11:00 · 审核中",
+        "color": "#F6D5D2"
+      }
+    },
+    {
+      "name": "effective task still holds its old schedule",
+      "pass": true,
+      "evidence": {
+        "id": "ffd3dfd6-409b-47c2-baab-6add72f6be38",
+        "taskId": "ffd3dfd6-409b-47c2-baab-6add72f6be38",
+        "versionNo": 1,
+        "title": "待审排期投影任务",
+        "description": "横向排期验证",
+        "acceptanceCriteria": "",
+        "priority": "medium",
+        "allDay": false,
+        "startAt": "2031-02-20T01:00:00Z",
+        "dueAt": "2031-02-20T03:00:00Z",
+        "startDate": null,
+        "dueDate": null,
+        "executionState": "todo",
+        "progressNote": "",
+        "status": "applied",
+        "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "createdAt": "2026-11-18T17:31:09.654726Z",
+        "allDayCutoffTime": null,
+        "assigneeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "tags": [
+          {
+            "id": "67bbe74b-c182-4c31-8c83-eea718cbce98",
+            "name": "排期投影标签",
+            "color": "#F6D5D2",
+            "border": "#C05B52",
+            "deleted": false,
+            "rowVersion": 1
+          }
+        ],
+        "tagIds": [
+          "67bbe74b-c182-4c31-8c83-eea718cbce98"
+        ],
+        "tagId": "67bbe74b-c182-4c31-8c83-eea718cbce98",
+        "tag": {
+          "id": "67bbe74b-c182-4c31-8c83-eea718cbce98",
+          "name": "排期投影标签",
+          "color": "#F6D5D2",
+          "border": "#C05B52",
+          "deleted": false,
+          "rowVersion": 1
+        },
+        "parentTaskId": null,
+        "parentUnavailable": false,
+        "versionId": "e4596d02-a9a8-455c-9448-617d19ee8855",
+        "currentVersionId": "e4596d02-a9a8-455c-9448-617d19ee8855",
+        "originalCreatorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "businessOwnerId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "rowVersion": 3,
+        "executionRound": 1,
+        "scheduleVersion": 1,
+        "dueVersion": 1,
+        "published": true,
+        "updatedAt": "2026-11-18T17:31:36.610128Z",
+        "pending": true,
+        "frozen": true,
+        "pendingKind": "change",
+        "canReschedule": false,
+        "canPin": true,
+        "canTablePin": true,
+        "tablePinned": false,
+        "editableFields": [],
+        "pendingSchedule": {
+          "allDay": false,
+          "startAt": "2031-02-22T01:00:00Z",
+          "dueAt": "2031-02-22T03:00:00Z",
+          "startDate": null,
+          "dueDate": null
+        },
+        "pendingRequestId": "c310f361-19f8-4d76-88ef-b906738030a4",
+        "route": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [
+            "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+          ],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+              "displayName": "alpha-one-head"
+            },
+            {
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+              "displayName": "alpha-one-employee"
+            }
+          ]
+        },
+        "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "participants": [
+          {
+            "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "displayName": "alpha-one-head"
+          },
+          {
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "displayName": "alpha-one-employee"
+          }
+        ],
+        "pinned": false,
+        "pendingRoute": {
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "path": [],
+          "reason": "direct-manager",
+          "reasonText": "按本次操作者的直属上级审核",
+          "authzVersion": 1,
+          "reviewerAvailable": true,
+          "blocked": false,
+          "creation": false,
+          "participants": [
+            {
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+              "displayName": "alpha-one-head"
+            },
+            {
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+              "displayName": "alpha-one-employee"
+            }
+          ]
+        },
+        "canHandover": false,
+        "handoverSources": [],
+        "handoverPresets": {},
+        "children": []
+      }
+    },
+    {
+      "name": "ordinary detail opens on the effective schedule",
+      "pass": true
+    },
+    {
+      "name": "applicant withdraws the pending schedule proposal",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "ffd3dfd6-409b-47c2-baab-6add72f6be38",
+          "requestId": "c310f361-19f8-4d76-88ef-b906738030a4",
+          "outcome": "withdrawn",
+          "rowVersion": 4,
+          "requestRowVersion": 2
+        }
+      }
+    },
+    {
+      "name": "withdrawn proposal restores the effective calendar position",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "date": "2031-02-20",
+        "dashed": false,
+        "text": "待审排期投影任务2月20日 09:00 → 2月20日 11:00",
+        "color": "#F6D5D2"
+      }
+    },
+    {
+      "name": "drag source exists [data-schedule-move=\"ffd3dfd6-409b-47c2-baab-6add72f6be38\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 720,
+        "y": 445.75,
+        "mode": "month",
+        "unit": 160,
+        "vertical": false
+      }
+    },
+    {
+      "name": "month long press creates no drag preview before the threshold",
+      "pass": true
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "lightweight confirmation opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "full task editor absent",
+      "pass": true
+    },
+    {
+      "name": "schedule submitted",
+      "pass": true,
+      "evidence": ""
+    },
+    {
+      "name": "re-reviewed proposal is drawn at the new proposed date",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "date": "2031-02-23",
+        "dashed": true,
+        "text": "待审排期投影任务2月23日 09:00 → 2月23日 11:00 · 审核中",
+        "color": "#F6D5D2"
+      }
+    },
+    {
+      "name": "reviewer rejects the schedule proposal",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "ffd3dfd6-409b-47c2-baab-6add72f6be38",
+          "requestId": "5718dd68-7e1b-4097-a07f-58f549ed9ab0",
+          "outcome": "rejected",
+          "rowVersion": 6,
+          "requestRowVersion": 2
+        }
+      }
+    },
+    {
+      "name": "rejection returns the calendar to the effective date",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "date": "2031-02-20",
+        "dashed": false,
+        "text": "待审排期投影任务2月20日 09:00 → 2月20日 11:00",
+        "color": "#F6D5D2"
+      }
+    },
+    {
+      "name": "drag source exists [data-schedule-move=\"ffd3dfd6-409b-47c2-baab-6add72f6be38\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 720,
+        "y": 445.75,
+        "mode": "month",
+        "unit": 160,
+        "vertical": false
+      }
+    },
+    {
+      "name": "month long press creates no drag preview before the threshold",
+      "pass": true
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "lightweight confirmation opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "full task editor absent",
+      "pass": true
+    },
+    {
+      "name": "schedule submitted",
+      "pass": true,
+      "evidence": ""
+    },
+    {
+      "name": "approved candidate projects as pending before the decision",
+      "pass": true,
+      "evidence": {
+        "approvedBar": {
+          "count": 1,
+          "date": "2031-02-22",
+          "dashed": true,
+          "text": "待审排期投影任务2月22日 09:00 → 2月22日 11:00 · 审核中",
+          "color": "#F6D5D2"
+        },
+        "candidateStart": "2031-02-22"
+      }
+    },
+    {
+      "name": "reviewer approves the schedule proposal",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "taskId": "ffd3dfd6-409b-47c2-baab-6add72f6be38",
+          "requestId": "83960296-6d8a-4ef7-a6d6-34f06ed05b0c",
+          "outcome": "approved",
+          "rowVersion": 8,
+          "requestRowVersion": 2
+        }
+      }
+    },
+    {
+      "name": "approval publishes the proposed date without a dashed frame",
+      "pass": true,
+      "evidence": {
+        "afterApprove": {
+          "count": 1,
+          "date": "2031-02-22",
+          "dashed": false,
+          "text": "待审排期投影任务2月22日 09:00 → 2月22日 11:00",
+          "color": "#F6D5D2"
+        },
+        "candidateStart": "2031-02-22"
+      }
+    },
+    {
+      "name": "approval publishes the exact effective times",
+      "pass": true,
+      "evidence": {
+        "approvedRaw": {
+          "id": "ffd3dfd6-409b-47c2-baab-6add72f6be38",
+          "taskId": "ffd3dfd6-409b-47c2-baab-6add72f6be38",
+          "versionNo": 4,
+          "title": "待审排期投影任务",
+          "description": "横向排期验证",
+          "acceptanceCriteria": "",
+          "priority": "medium",
+          "allDay": false,
+          "startAt": "2031-02-22T01:00:00Z",
+          "dueAt": "2031-02-22T03:00:00Z",
+          "startDate": null,
+          "dueDate": null,
+          "executionState": "todo",
+          "progressNote": "",
+          "status": "applied",
+          "createdBy": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "createdAt": "2026-11-18T17:31:09.654726Z",
+          "allDayCutoffTime": null,
+          "assigneeIds": [
+            "4ce9a359-10d8-524d-8232-c73416f398d0"
+          ],
+          "tags": [
+            {
+              "id": "67bbe74b-c182-4c31-8c83-eea718cbce98",
+              "name": "排期投影标签",
+              "color": "#F6D5D2",
+              "border": "#C05B52",
+              "deleted": false,
+              "rowVersion": 1
+            }
+          ],
+          "tagIds": [
+            "67bbe74b-c182-4c31-8c83-eea718cbce98"
+          ],
+          "tagId": "67bbe74b-c182-4c31-8c83-eea718cbce98",
+          "tag": {
+            "id": "67bbe74b-c182-4c31-8c83-eea718cbce98",
+            "name": "排期投影标签",
+            "color": "#F6D5D2",
+            "border": "#C05B52",
+            "deleted": false,
+            "rowVersion": 1
+          },
+          "parentTaskId": null,
+          "parentUnavailable": false,
+          "versionId": "2bafda99-7c64-4beb-a5ff-86880d965d36",
+          "currentVersionId": "2bafda99-7c64-4beb-a5ff-86880d965d36",
+          "originalCreatorId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "businessOwnerId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+          "rowVersion": 8,
+          "executionRound": 1,
+          "scheduleVersion": 2,
+          "dueVersion": 1,
+          "published": true,
+          "updatedAt": "2026-11-18T17:31:40.046479Z",
+          "pending": false,
+          "frozen": false,
+          "pendingKind": null,
+          "canReschedule": true,
+          "canPin": true,
+          "canTablePin": true,
+          "tablePinned": false,
+          "editableFields": [
+            "allDay",
+            "startAt",
+            "dueAt",
+            "startDate",
+            "dueDate",
+            "title",
+            "description",
+            "acceptanceCriteria",
+            "priority",
+            "tagIds",
+            "parentTaskId",
+            "progressNote",
+            "assigneeIds"
+          ],
+          "route": {
+            "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "basisAssigneeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "path": [
+              "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+            ],
+            "reason": "direct-manager",
+            "reasonText": "按本次操作者的直属上级审核",
+            "authzVersion": 1,
+            "reviewerAvailable": true,
+            "blocked": false,
+            "creation": false,
+            "participants": [
+              {
+                "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+                "displayName": "alpha-one-head"
+              },
+              {
+                "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+                "displayName": "alpha-one-employee"
+              }
+            ]
+          },
+          "reviewerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+          "participants": [
+            {
+              "id": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+              "displayName": "alpha-one-head"
+            },
+            {
+              "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+              "displayName": "alpha-one-employee"
+            }
+          ],
+          "pinned": false,
+          "pendingRoute": {},
+          "canHandover": true,
+          "handoverSources": [
+            "4ce9a359-10d8-524d-8232-c73416f398d0"
+          ],
+          "handoverPresets": {},
+          "children": []
+        },
+        "candidate": {
+          "allDay": false,
+          "startAt": "2031-02-22T01:00:00Z",
+          "dueAt": "2031-02-22T03:00:00Z",
+          "startDate": null,
+          "dueDate": null
+        }
+      }
+    },
+    {
+      "name": "drag source exists [data-schedule-move=\"f0beb492-b294-4724-9221-a249a1aa796d\"][data-resize-mode=month]",
+      "pass": true,
+      "evidence": {
+        "x": 560,
+        "y": 445.75,
+        "mode": "month",
+        "unit": 160,
+        "vertical": false
+      }
+    },
+    {
+      "name": "month long press creates no drag preview before the threshold",
+      "pass": true
+    },
+    {
+      "name": "drag preview",
+      "pass": true
+    },
+    {
+      "name": "lightweight confirmation opens",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "name": "full task editor absent",
+      "pass": true
+    },
+    {
+      "name": "schedule submitted",
+      "pass": true,
+      "evidence": ""
+    },
+    {
+      "name": "expiry fixture is pending at its proposed date",
+      "pass": true,
+      "evidence": {
+        "count": 1,
+        "date": "2031-02-28",
+        "dashed": true,
+        "text": "过期排期投影任务2月28日 09:00 → 2月28日 11:00 · 审核中",
+        "color": "#F6D5D2"
+      }
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReminderService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">cn.pandora.workspace</a> &gt; <span class="el_source">ReminderService.java</span></div><h1>ReminderService.java</h1><pre class="source lang-java linenums">package cn.pandora.workspace;
+
+import cn.pandora.common.Db;
+import cn.pandora.common.Events;
+import org.springframework.stereotype.Service;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+
+import static cn.pandora.common.Db.*;
+
+/**
+ * Proportional schedule reminders (DEV-014).
+ *
+ * The scan fires at the remaining 20%, 10% and 5% of the natural duration, plus one overdue notice.
+ * A late scan backfills only the nearest reached node and records the earlier nodes as skipped, so a
+ * restart or a suspended worker cannot send a burst of stale reminders. The ledger key is
+ * task + recipient + execution round + effective schedule version + node.
+ */
+@Service
+public class ReminderService {
+<span class="fc" id="L26">    private static final int[] NODES = {20, 10, 5};</span>
+    private final Db db;
+    private final Events events;
+
+<span class="fc" id="L30">    public ReminderService(Db db, Events events) {</span>
+<span class="fc" id="L31">        this.db = db;</span>
+<span class="fc" id="L32">        this.events = events;</span>
+<span class="fc" id="L33">    }</span>
+
+    public int createReminders(String organizationId, Instant now) {
+<span class="fc" id="L36">        int created = 0;</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; task : db.list(&quot;SELECT t.*,v.title,v.start_at,v.due_at,v.priority FROM tasks t &quot;</span>
+                + &quot;JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id &quot;
+                + &quot;WHERE t.organization_id=? AND t.current_version_id IS NOT NULL AND t.execution_state&lt;&gt;'done' &quot;
+                + &quot;AND NOT EXISTS (SELECT 1 FROM approval_requests a WHERE a.organization_id=t.organization_id &quot;
+                + &quot;AND a.task_id=t.id AND a.status='pending') ORDER BY v.due_at,t.id&quot;, organizationId)) {
+<span class="fc" id="L42">            created += remindTask(organizationId, task, now, null);</span>
+<span class="fc" id="L43">        }</span>
+<span class="fc" id="L44">        return created;</span>
+    }
+
+    /**
+     * Expiry backfill: a published, still-unfinished task that has passed its effective deadline gets
+     * one overdue notice when the pending request releases the freeze. The caller already holds the
+     * organization lock and has re-read the task state after the expiry write.
+     */
+    public int ensureOverdueAfterExpiry(String organizationId, String taskId, Instant now) {
+<span class="fc" id="L53">        Map&lt;String, Object&gt; task = db.find(&quot;SELECT t.*,v.title,v.start_at,v.due_at FROM tasks t &quot;</span>
+                + &quot;JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id &quot;
+                + &quot;WHERE t.organization_id=? AND t.id=? AND t.current_version_id IS NOT NULL&quot;, organizationId, taskId);
+<span class="pc bpc" id="L56" title="2 of 4 branches missed.">        if (task == null || &quot;done&quot;.equals(s(task, &quot;executionState&quot;))) return 0;</span>
+<span class="fc" id="L57">        Instant due = instant(task.get(&quot;dueAt&quot;));</span>
+<span class="pc bpc" id="L58" title="2 of 4 branches missed.">        if (due == null || !now.isAfter(due)) return 0;</span>
+<span class="nc" id="L59">        return remindTask(organizationId, task, now, &quot;expiry_unfreeze&quot;);</span>
+    }
+
+    private int remindTask(String organizationId, Map&lt;String, Object&gt; task, Instant now, String source) {
+<span class="fc" id="L63">        String taskId = s(task, &quot;id&quot;);</span>
+<span class="fc" id="L64">        Instant start = instant(task.get(&quot;startAt&quot;));</span>
+<span class="fc" id="L65">        Instant due = instant(task.get(&quot;dueAt&quot;));</span>
+<span class="pc bpc" id="L66" title="2 of 4 branches missed.">        if (start == null || due == null) return 0;</span>
+<span class="fc" id="L67">        String title = s(task, &quot;title&quot;);</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        long scheduleVersion = task.get(&quot;scheduleVersion&quot;) == null ? 1 : n(task, &quot;scheduleVersion&quot;);</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        long round = task.get(&quot;executionRound&quot;) == null ? 1 : n(task, &quot;executionRound&quot;);</span>
+
+<span class="fc" id="L71">        LinkedHashSet&lt;String&gt; recipients = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L72">        var responsibility=db.find(&quot;SELECT employee_id FROM task_business_owners WHERE organization_id=? AND task_id=?&quot;,organizationId,s(task,&quot;id&quot;));</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">        recipients.add(responsibility==null?s(task,&quot;originalCreatorId&quot;):s(responsibility,&quot;employeeId&quot;));</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; row : db.list(&quot;SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=? ORDER BY ordinal,user_id&quot;,</span>
+<span class="fc" id="L75">                organizationId, s(task, &quot;currentVersionId&quot;))) {</span>
+<span class="fc" id="L76">            recipients.add(s(row, &quot;userId&quot;));</span>
+<span class="fc" id="L77">        }</span>
+<span class="pc bpc" id="L78" title="2 of 4 branches missed.">        recipients.removeIf(id -&gt; id == null || activeActor(organizationId, id) == null);</span>
+
+<span class="fc" id="L80">        int created = 0;</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        for (String recipient : recipients) {</span>
+<span class="fc" id="L82">            Node chosen = chooseNode(start, due, now);</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (chosen == null) continue;</span>
+<span class="fc" id="L84">            List&lt;Integer&gt; stale = chosen.stale();</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">            for (Integer node : stale) record(organizationId, taskId, recipient, round, scheduleVersion, String.valueOf(node),</span>
+                    &quot;skipped&quot;, null, &quot;晚扫描：该节点已过，记录为跳过&quot;);
+<span class="fc" id="L87">            String node = chosen.node();</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (node == null) continue;</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">            String detail = &quot;expiry_unfreeze&quot;.equals(source) ? source : &quot;scheduled_rule&quot;;</span>
+<span class="fc" id="L90">            String receiptId = record(organizationId, taskId, recipient, round, scheduleVersion, node, &quot;sent&quot;, null, detail);</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            if (receiptId == null) continue;</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            String type = &quot;overdue&quot;.equals(node) ? &quot;task.overdue&quot; : &quot;task.reminder_&quot; + node;</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">            String summary = &quot;overdue&quot;.equals(node)</span>
+<span class="fc" id="L94">                    ? &quot;任务《&quot; + title + &quot;》已超过截止时间，请查看当前安排。&quot;</span>
+<span class="fc" id="L95">                    : &quot;任务《&quot; + title + &quot;》剩余工期 &quot; + node + &quot;%，请查看当前安排。&quot;;</span>
+<span class="fc" id="L96">            String eventId = events.scheduled(organizationId, taskId, type, recipient,</span>
+<span class="fc" id="L97">                    Map.of(&quot;origin&quot;, detail, &quot;node&quot;, node, &quot;scheduleVersion&quot;, scheduleVersion,</span>
+<span class="fc" id="L98">                            &quot;executionRound&quot;, round, &quot;reminderId&quot;, receiptId, &quot;actualScheduledAt&quot;, chosen.at().toString()),</span>
+                    title, summary);
+<span class="fc" id="L100">            db.update(&quot;UPDATE reminder_receipts SET event_id=? WHERE id=?&quot;, eventId, receiptId);</span>
+<span class="fc" id="L101">            created++;</span>
+<span class="fc" id="L102">        }</span>
+<span class="fc" id="L103">        return created;</span>
+    }
+
+    /**
+     * Choose the single node a scan should send. When several nodes were crossed while the worker was
+     * down, only the latest is sent and every earlier reached node becomes a skip record.
+     */
+    static Node chooseNode(Instant start, Instant due, Instant now) {
+<span class="fc" id="L111">        Duration total = Duration.between(start, due);</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (now.isAfter(due)) {</span>
+<span class="fc" id="L113">            return new Node(&quot;overdue&quot;, due, List.of(20, 10, 5));</span>
+        }
+<span class="pc bpc" id="L115" title="1 of 4 branches missed.">        if (total.isNegative() || total.isZero()) return null;</span>
+<span class="fc" id="L116">        long millis = total.toMillis();</span>
+<span class="fc" id="L117">        Instant at20 = due.minusMillis(millis * 20 / 100);</span>
+<span class="fc" id="L118">        Instant at10 = due.minusMillis(millis * 10 / 100);</span>
+<span class="fc" id="L119">        Instant at5 = due.minusMillis(millis * 5 / 100);</span>
+<span class="fc" id="L120">        List&lt;Node&gt; reached = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        if (!now.isBefore(at20)) reached.add(new Node(&quot;20&quot;, at20, List.of()));</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (!now.isBefore(at10)) reached.add(new Node(&quot;10&quot;, at10, List.of(20)));</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (!now.isBefore(at5)) reached.add(new Node(&quot;5&quot;, at5, List.of(20, 10)));</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (reached.isEmpty()) return null;</span>
+        // The last reached node is the only one that may still be sent.
+<span class="fc" id="L126">        return reached.getLast();</span>
+    }
+
+    /**
+     * Insert the ledger row. Returns the receipt id when this call created a 'sent' row, or null when
+     * an earlier scan already decided this exact node.
+     */
+    private String record(String organizationId, String taskId, String recipient, long round,
+                          long scheduleVersion, String node, String state, String eventId, String detail) {
+<span class="fc" id="L135">        String key = hash(organizationId + &quot;:&quot; + taskId + &quot;:&quot; + recipient + &quot;:&quot; + round + &quot;:&quot; + scheduleVersion + &quot;:&quot; + node);</span>
+<span class="fc" id="L136">        String receiptId = id();</span>
+<span class="fc" id="L137">        int inserted = db.update(&quot;INSERT IGNORE INTO reminder_receipts(id,organization_id,task_id,recipient_id,dedupe_key,node,state,schedule_version,execution_round,event_id,detail) &quot;</span>
+                        + &quot;VALUES(?,?,?,?,?,?,?,?,?,?,?)&quot;,
+<span class="fc" id="L139">                receiptId, organizationId, taskId, recipient, key, node, state, scheduleVersion, round, eventId, detail);</span>
+<span class="fc bfc" id="L140" title="All 4 branches covered.">        return inserted == 1 &amp;&amp; &quot;sent&quot;.equals(state) ? receiptId : null;</span>
+    }
+
+    private Map&lt;String, Object&gt; activeActor(String organizationId, String userId) {
+<span class="fc" id="L144">        return db.find(&quot;SELECT u.id FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id AND p.account_type='employee' WHERE u.organization_id=? AND u.id=? AND u.active=1 AND p.active=1&quot;, organizationId, userId);</span>
+    }
+
+    static Instant instant(Object value) {
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">        if (value == null) return null;</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        if (value instanceof Timestamp timestamp) return timestamp.toInstant();</span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        if (value instanceof Instant instant) return instant;</span>
+        try {
+<span class="fc" id="L152">            return Instant.parse(value.toString());</span>
+<span class="nc" id="L153">        } catch (RuntimeException exception) {</span>
+<span class="nc" id="L154">            return null;</span>
+        }
+    }
+
+    private static String hash(String value) {
+        try {
+<span class="fc" id="L160">            return HexFormat.of().formatHex(MessageDigest.getInstance(&quot;SHA-256&quot;).digest(value.getBytes(StandardCharsets.UTF_8)));</span>
+<span class="nc" id="L161">        } catch (Exception exception) {</span>
+<span class="nc" id="L162">            throw new IllegalStateException(exception);</span>
+        }
+    }
+
+    /** A selected reminder node and the reached nodes that must be recorded as skipped. */
+<span class="fc" id="L167">    record Node(String node, Instant at, List&lt;Integer&gt; stale) {</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
