@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/router/navigation_targets.dart';
@@ -255,6 +256,20 @@ class _TaskDetailBody extends ConsumerWidget {
               label: Text(task.tablePinned ? '取消表单置顶' : '置顶到表单'),
             ),
           ],
+          if (me != null &&
+              task.published &&
+              (me.id == task.businessOwnerId ||
+                  me.id == task.originalCreatorId)) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: PandoraColors.overdue,
+              ),
+              onPressed: () => _confirmDeleteTask(context, ref, task),
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('删除任务'),
+            ),
+          ],
         ] else
           const Text(
             '当前为只读浏览，业务操作请回到本人正常入口办理。',
@@ -302,7 +317,62 @@ class _TaskDetailBody extends ConsumerWidget {
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+          .showSnackBar(SnackBar(content: Text(userMessageFor(error))));
+    }
+  }
+
+  Future<void> _confirmDeleteTask(
+    BuildContext context,
+    WidgetRef ref,
+    TaskRecord task,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('删除任务？'),
+        content: const Text('任务会从日历、看板和候选中消失；通知、申请、评论和日志仍会保留。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: PandoraColors.overdue,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final keys = ref.read(operationKeysProvider);
+    final scope = 'task-delete:${task.id}';
+    final key = keys.keyFor(
+      scope: scope,
+      method: 'DELETE',
+      path: '/tasks/${task.id}',
+      body: const {},
+    );
+    try {
+      await ref
+          .read(tasksApiProvider)
+          .delete(
+            id: task.id,
+            rowVersion: task.rowVersion,
+            idempotencyKey: key,
+          );
+      keys.complete(scope);
+      ref.invalidate(taskDetailProvider(task.id));
+      ref.invalidate(homeDataProvider);
+      if (context.mounted) {
+        showSnack(context, '任务已删除');
+        context.pop();
+      }
+    } catch (error) {
+      if (!context.mounted) return;
+      showErrorSnack(context, error);
     }
   }
 

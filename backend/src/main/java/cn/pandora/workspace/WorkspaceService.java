@@ -135,7 +135,7 @@ public class WorkspaceService {
         var taskRows = db.list("SELECT t.id,v.title,v.all_day,v.start_at,v.due_at,v.start_date,v.due_date "
                 + "FROM tasks t JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
                 + "JOIN task_version_assignees a ON a.organization_id=v.organization_id AND a.version_id=v.id "
-                + "WHERE t.organization_id=? AND a.user_id=? AND t.current_version_id IS NOT NULL "
+                + "WHERE t.organization_id=? AND t.deleted_at IS NULL AND a.user_id=? AND t.current_version_id IS NOT NULL "
                 + "ORDER BY v.start_at,t.id", a.organizationId(), a.id());
         Map<String,Map<String,Object>> byTask=new LinkedHashMap<>();
         for (var row : taskRows) {
@@ -224,14 +224,18 @@ public class WorkspaceService {
         var logRows = new HashMap<String,Map<String,Object>>();
         if(!selectedMetadata.isEmpty()) {
             var args=new ArrayList<Object>();args.add(a.organizationId());selectedMetadata.forEach(row->args.add(s(row,"id")));
-            for(var row:db.list("SELECT w.*,u.display_name author_name FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id "
+            for(var row:db.list("SELECT w.*,u.display_name author_name,t.deleted_at AS linked_task_deleted_at FROM work_logs w JOIN users u ON u.id=w.author_id AND u.organization_id=w.organization_id "
+                    +"LEFT JOIN tasks t ON t.organization_id=w.organization_id AND t.id=w.task_id "
                     +"WHERE w.organization_id=? AND w.id IN ("+String.join(",",Collections.nCopies(selectedMetadata.size(),"?"))+")",args.toArray())) logRows.put(s(row,"id"),row);
         }
         var selected=selectedMetadata.stream().map(row->logRows.get(s(row,"id"))).filter(Objects::nonNull).toList();
         var linked = selected.stream().map(row -> s(row,"taskId")).filter(Objects::nonNull).toList();
         Set<String> readable = linked.isEmpty() ? Set.of() : tasks.readableTaskIds(a,linked);
+        Set<String> deletedLinked = selected.stream().filter(row -> row.get("linkedTaskDeletedAt") != null)
+                .map(row -> s(row,"taskId")).filter(Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
         var logTags = logTags(a,selected.stream().map(row -> s(row,"id")).toList());
-        paged.put("items",selected.stream().map(row -> safeLog(a,new LinkedHashMap<>(row),readable,logTags)).toList());
+        paged.put("items",selected.stream().map(row -> safeLog(a,new LinkedHashMap<>(row),readable,logTags,deletedLinked)).toList());
         return paged;
     }
 
@@ -605,6 +609,13 @@ public class WorkspaceService {
         if (!Boolean.TRUE.equals(safeNotification(a,row,now).get("canOpenTask"))) throw ApiException.notFound();
         Map<String,Object> task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?",a.organizationId(),s(row,"taskId"));
         if (task == null || s(task,"currentVersionId")==null) throw conflict("HISTORICAL_TASK_UNAVAILABLE","该任务尚未发布或已不可用");
+        if (task.get("deletedAt") != null) {
+            Map<String,Object> details = new LinkedHashMap<>();
+            details.put("taskId", s(task,"id"));
+            Map<String,Object> version = db.find("SELECT title FROM task_versions WHERE organization_id=? AND id=?", a.organizationId(), s(task,"currentVersionId"));
+            if (version != null && version.get("title") != null) details.put("title", version.get("title"));
+            throw new ApiException(410,"TASK_DELETED","任务已删除",details);
+        }
         Map<String,Object> version = db.find("SELECT * FROM task_versions WHERE organization_id=? AND id=?",a.organizationId(),s(task,"currentVersionId"));
         List<String> owners = db.list("SELECT user_id FROM task_version_assignees WHERE organization_id=? AND version_id=? ORDER BY ordinal,user_id",a.organizationId(),s(version,"id"))
                 .stream().map(r -> s(r,"userId")).toList();
@@ -708,6 +719,8 @@ public class WorkspaceService {
         view.put("rowVersion",notificationVersion(row));
         view.put("canWithdraw",!revoked && withinWithdrawal && (manager || (!automatic && event!=null && a.id().equals(s(event,"initiatorId")))));
         view.put("canOpenTask",objectOpen && s(row,"taskId")!=null);
+        view.put("taskDeleted", objectOpen && "task".equals(objectType)
+                && taskDeleted(a,s(row,"taskId"),batch));
         view.put("canReview",false);
         view.put("canReadRequest",false);
         view.put("canWithdrawRequest",false);
@@ -812,7 +825,7 @@ public class WorkspaceService {
         }
         batch.logs=rowsById(a,"work_logs","id,author_id,business_date,deleted_at",logIds);
         batch.comments=rowsById(a,"task_log_comments","id,deleted_at",commentIds);
-        batch.taskRows=rowsById(a,"tasks","id,current_version_id",taskIds);
+        batch.taskRows=rowsById(a,"tasks","id,current_version_id,deleted_at",taskIds);
         var versionRows=rowsById(a,"task_versions","id,title",batch.taskRows.values().stream().map(row->s(row,"currentVersionId")).toList());
         for(var task:batch.taskRows.values()) {
             var version=versionRows.get(s(task,"currentVersionId"));
@@ -1021,7 +1034,7 @@ public class WorkspaceService {
                 + "FROM task_assignments a JOIN tasks t ON t.organization_id=a.organization_id AND t.id=a.task_id "
                 + "JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
                 + "WHERE a.organization_id=? AND a.user_id=? AND a.active=TRUE "
-                + "AND t.current_version_id IS NOT NULL AND t.execution_state<>'done' "
+                + "AND t.deleted_at IS NULL AND t.current_version_id IS NOT NULL AND t.execution_state<>'done' "
                 + "ORDER BY v.due_at ASC,"
                 + "CASE v.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END,"
                 + "t.id ASC LIMIT 10",a.organizationId(),a.id());
@@ -1194,9 +1207,17 @@ public class WorkspaceService {
     public boolean canReadTaskForComments(Actor a, String taskId) {
         if (taskId == null) return false;
         var task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?", a.organizationId(), taskId);
-        if (task == null) return false;
+        if (task == null || task.get("deletedAt") != null) return false;
         if (s(task,"currentVersionId") == null) return canReadTask(a, taskId, true);
         return canReadTask(a, taskId, false);
+    }
+
+    private boolean taskDeleted(Actor a, String taskId, NotificationBatch batch) {
+        if (taskId == null) return false;
+        Map<String,Object> row = batch == null
+                ? db.find("SELECT deleted_at FROM tasks WHERE organization_id=? AND id=?", a.organizationId(), taskId)
+                : batch.taskRows.get(taskId);
+        return row != null && row.get("deletedAt") != null;
     }
 
     public boolean canReadTask(Actor a,String taskId,boolean includeApproval) {
@@ -1430,12 +1451,29 @@ public class WorkspaceService {
     }
 
     private Map<String,Object> safeLog(Actor a,Map<String,Object> row) {
-        return safeLog(a,row,null,logTags(a,List.of(s(row,"id"))));
+        String taskId=s(row,"taskId");
+        return safeLog(a,row,null,logTags(a,List.of(s(row,"id"))),
+                taskId==null?Set.of():deletedTaskIds(a,List.of(taskId)));
     }
+
+    private Set<String> deletedTaskIds(Actor a,Collection<String> ids) {
+        if (ids == null || ids.isEmpty()) return Set.of();
+        var args=new ArrayList<Object>();args.add(a.organizationId());args.addAll(ids);
+        return db.list("SELECT id FROM tasks WHERE organization_id=? AND deleted_at IS NOT NULL AND id IN ("
+                        +String.join(",",Collections.nCopies(ids.size(),"?"))+")",args.toArray())
+                .stream().map(row -> s(row,"id")).collect(java.util.stream.Collectors.toSet());
+    }
+
     private Map<String,Object> safeLog(Actor a,Map<String,Object> row,Set<String> readable,Map<String,List<Map<String,Object>>> tagRows) {
+        return safeLog(a,row,readable,tagRows,Set.of());
+    }
+
+    private Map<String,Object> safeLog(Actor a,Map<String,Object> row,Set<String> readable,Map<String,List<Map<String,Object>>> tagRows,Set<String> deletedTasks) {
         row.remove("organizationId");
         String taskId=s(row,"taskId");
-        if (taskId!=null && !(readable == null ? canReadTask(a,taskId,false) : readable.contains(taskId))) row.remove("taskId");
+        boolean readableTask = taskId!=null && (readable == null ? canReadTask(a,taskId,false) : readable.contains(taskId));
+        if (!readableTask) row.remove("taskId");
+        row.put("taskDeleted", readableTask && deletedTasks.contains(taskId));
         var values = tagRows.getOrDefault(s(row,"id"),List.of());
         row.put("tagIds",values.stream().map(tag -> s(tag,"id")).toList());
         row.put("tags",values);

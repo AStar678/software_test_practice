@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/company/company_date.dart';
+import '../../../core/errors/app_error.dart';
 import '../../../core/preferences/app_preferences.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
@@ -413,7 +414,7 @@ class DailyItemsCalendarState extends ConsumerState<DailyItemsCalendar>
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
                       child: Text(
-                        '$error',
+                        userMessageFor(error!),
                         style: const TextStyle(color: PandoraColors.overdue),
                       ),
                     ),

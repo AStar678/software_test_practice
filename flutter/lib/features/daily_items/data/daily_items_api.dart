@@ -97,11 +97,20 @@ class DailyItemsApi {
     required CompanyDate end,
     required String body,
     required String idempotencyKey,
+    bool allDay = true,
+    String? startTime,
+    String? endTime,
   }) async {
     final result = await _client.write<DailyItem>(
       method: 'POST',
       path: '/daily-items',
-      body: {'startDate': start.iso, 'endDate': end.iso, 'body': body},
+      body: {
+        'startDate': start.iso,
+        'endDate': end.iso,
+        'allDay': allDay,
+        if (!allDay) ...{'startTime': startTime, 'endTime': endTime},
+        'body': body,
+      },
       idempotencyKey: idempotencyKey,
       decode: (json) => DailyItem.fromJson(asJsonMap(json)),
     );
@@ -114,6 +123,9 @@ class DailyItemsApi {
     String? body,
     CompanyDate? start,
     CompanyDate? end,
+    bool? allDay,
+    String? startTime,
+    String? endTime,
     bool? completed,
     String? ifMatch,
   }) async {
@@ -124,6 +136,8 @@ class DailyItemsApi {
       'body': ?body,
       if (start != null && end != null) 'startDate': start.iso,
       if (start != null && end != null) 'endDate': end.iso,
+      'allDay': ?allDay,
+      if (allDay == false) ...{'startTime': startTime, 'endTime': endTime},
       'completed': ?completed,
     };
     // 版本以服务端返回的 rowVersion 为准；与读取的 ETag 同源。

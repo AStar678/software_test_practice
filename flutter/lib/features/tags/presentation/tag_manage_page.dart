@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/app_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
 import '../../../core/widgets/common.dart';
@@ -161,7 +162,7 @@ class _TagManagePageState extends ConsumerState<TagManagePage> {
       await _load();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${error.toString()}；目录已刷新，请重新编辑')),
+        SnackBar(content: Text('${userMessageFor(error)}；目录已刷新，请重新编辑')),
       );
     }
   }
@@ -201,7 +202,7 @@ class _TagManagePageState extends ConsumerState<TagManagePage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+          .showSnackBar(SnackBar(content: Text(userMessageFor(error))));
     }
   }
 

@@ -199,8 +199,28 @@ class TasksApi {
     return result.data;
   }
 
-  Future<ReviewerPreview> preview(Map<String, Object?> payload, OperationKeys keys) async {
-    final key = keys.keyFor(scope: 'reviewer-preview', method: 'POST', path: '/tasks/reviewer-preview', body: payload);
+  /// 软删除：保留通知、申请、评论、日志与历史；成功返回新版 rowVersion。
+  Future<void> delete({
+    required String id,
+    required int rowVersion,
+    required String idempotencyKey,
+    String? reason,
+  }) async {
+    await _client.write<void>(
+      method: 'DELETE',
+      path: '/tasks/$id',
+      body: {
+        if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+      },
+      idempotencyKey: idempotencyKey,
+      versionKey: VersionRegistry.task(id),
+      requireVersion: true,
+      ifMatch: '"$rowVersion"',
+      decode: (_) {},
+    );
+  }
+
+  Future<ReviewerPreview> preview(Map<String, Object?> payload, OperationKeys keys) async {    final key = keys.keyFor(scope: 'reviewer-preview', method: 'POST', path: '/tasks/reviewer-preview', body: payload);
     final result = await _client.write<ReviewerPreview>(
       method: 'POST',
       path: '/tasks/reviewer-preview',

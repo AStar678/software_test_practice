@@ -10,6 +10,9 @@ class DailyItem {
     required this.completed,
     required this.status,
     required this.rowVersion,
+    this.allDay = true,
+    this.startTime,
+    this.endTime,
     this.createdAt,
     this.updatedAt,
   });
@@ -19,8 +22,13 @@ class DailyItem {
   final CompanyDate startDate;
   final CompanyDate endDate;
   final bool completed;
+  final bool allDay;
 
-  /// `completed | open | overdue`，由服务端按公司今天裁决。
+  /// 公司时区下的 `HH:mm`；全天事项为 null。
+  final String? startTime;
+  final String? endTime;
+
+  /// `completed | open | overdue`，由服务端按公司今天/当前时刻裁决。
   final String status;
   final int rowVersion;
   final DateTime? createdAt;
@@ -43,6 +51,9 @@ class DailyItem {
     completed: completed,
     status: status,
     rowVersion: rowVersion,
+    allDay: allDay,
+    startTime: startTime,
+    endTime: endTime,
     createdAt: createdAt,
     updatedAt: updatedAt,
   );
@@ -50,6 +61,10 @@ class DailyItem {
   bool get isOverdue => status == 'overdue';
 
   bool get isCompleted => status == 'completed' || completed;
+
+  /// 全天/定时的可读摘要；时刻始终按公司时区解释。
+  String get modeLabel =>
+      allDay ? '全天' : '${startTime ?? '--'} 至 ${endTime ?? '--'}';
 
   /// 三态：完成优先，过期次之，其余未完成。
   String get stateLabel => isCompleted ? '已完成' : (isOverdue ? '已逾期' : '未完成');
@@ -65,12 +80,16 @@ class DailyItem {
       throw const FormatException('每日事项缺少有效的公司日期');
     }
     final completed = json['completed'] == true;
+    final allDay = json['allDay'] != false;
     return DailyItem(
       id: _string(json['id']) ?? '',
       body: _string(json['body']) ?? '',
       startDate: start,
       endDate: end,
       completed: completed,
+      allDay: allDay,
+      startTime: allDay ? null : _string(json['startTime']),
+      endTime: allDay ? null : _string(json['endTime']),
       status: _string(json['status']) ?? (completed ? 'completed' : 'open'),
       rowVersion: _int(json['rowVersion']) ?? 1,
       createdAt: _instant(json['createdAt']),

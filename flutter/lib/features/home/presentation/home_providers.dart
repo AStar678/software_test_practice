@@ -22,7 +22,15 @@ class HomeDataNotifier extends AsyncNotifier<HomeData> {
   }
 
   Future<void> refresh() async {
-    state = const AsyncLoading<HomeData>();
-    state = await AsyncValue.guard(() => ref.read(homeApiProvider).load());
+    final previous = state.asData?.value;
+    try {
+      final data = await ref.read(homeApiProvider).load();
+      state = AsyncData(data);
+    } catch (error, stack) {
+      // 刷新失败保留已显示的内容；首次加载失败才进入错误态。
+      state = previous == null
+          ? AsyncError(error, stack)
+          : AsyncData(previous);
+    }
   }
 }

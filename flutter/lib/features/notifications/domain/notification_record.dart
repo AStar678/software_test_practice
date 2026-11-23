@@ -119,6 +119,7 @@ class NotificationDetail extends NotificationRecord {
     this.canReadRequest = false,
     this.canWithdrawRequest = false,
     this.canOpenTask = false,
+    this.taskDeleted = false,
     this.canWithdraw = false,
     this.withdrawn = false,
     this.readonly = false,
@@ -136,6 +137,7 @@ class NotificationDetail extends NotificationRecord {
   final bool canReadRequest;
   final bool canWithdrawRequest;
   final bool canOpenTask;
+  final bool taskDeleted;
   final bool canWithdraw;
   final bool withdrawn;
   final bool readonly;
@@ -169,6 +171,7 @@ class NotificationDetail extends NotificationRecord {
       canReadRequest: json['canReadRequest'] == true,
       canWithdrawRequest: json['canWithdrawRequest'] == true,
       canOpenTask: json['canOpenTask'] == true,
+      taskDeleted: json['taskDeleted'] == true,
       canWithdraw: json['canWithdraw'] == true,
       withdrawn: json['withdrawn'] == true || json['revoked'] == true,
       readonly: json['readonly'] == true,

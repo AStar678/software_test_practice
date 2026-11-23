@@ -168,6 +168,16 @@ public class TaskController {
         return ResponseEntity.ok().eTag("\"" + result.get("rowVersion") + "\"").body(result);
     }
 
+    /** Soft delete: keeps every version, request, comment, log and notification reference. */
+    @DeleteMapping("/tasks/{id}")
+    public Map<String, Object> delete(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
+            @RequestBody(required = false) Map<String, Object> input) {
+        Map<String, Object> body = input == null ? Map.of() : input;
+        return writes.run(actor, key, "DELETE /tasks/" + id, body, ifMatch, () -> tasks.delete(actor, id, ifMatch, body));
+    }
+
     @GetMapping("/approval-requests")
     public Map<String, Object> approvals(@RequestAttribute("actor") Actor actor, @RequestParam(required = false) String mine,
             @RequestParam(required = false) String limit, @RequestParam(required = false) String offset) {

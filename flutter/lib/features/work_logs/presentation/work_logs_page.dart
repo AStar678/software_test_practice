@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/company/company_date.dart';
 import '../../../core/company/company_time.dart';
 import '../../../core/company/date_picker_bounds.dart';
+import '../../../core/navigation/tab_refresh.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/navigation_targets.dart';
 import '../../../core/router/read_context.dart';
@@ -209,6 +210,9 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listenTabRefresh(AppTab.logs, () {
+      unawaited(_load(reset: true));
+    });
     return PandoraPage(
       title: '${widget.personName ?? '日志'} · $_total 条',
       titleWidget: widget.personName == null
@@ -1177,7 +1181,14 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
                       ),
                     ),
                   ),
-                if (log.taskId != null)
+                if (log.taskDeleted)
+                  const ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.delete_outline),
+                    title: Text('任务已删除'),
+                    subtitle: Text('关联任务已删除，日志内容仍保留'),
+                  )
+                else if (log.taskId != null)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.link),

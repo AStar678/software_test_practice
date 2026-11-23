@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/company/date_picker_bounds.dart';
+import '../../../core/errors/app_error.dart';
 import '../../../core/preferences/app_preferences.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/pandora_theme.dart';
@@ -561,7 +562,7 @@ class _TaskTablePageState extends ConsumerState<TaskTablePage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+          .showSnackBar(SnackBar(content: Text(userMessageFor(error))));
     }
   }
 

@@ -240,18 +240,31 @@ class DailyItemsController extends Notifier<DailyItemsState> {
     required CompanyDate start,
     required CompanyDate end,
     required String body,
+    bool allDay = true,
+    String? startTime,
+    String? endTime,
   }) async {
     final keys = ref.read(operationKeysProvider);
+    final payload = <String, Object?>{
+      'startDate': start.iso,
+      'endDate': end.iso,
+      'allDay': allDay,
+      if (!allDay) ...{'startTime': startTime, 'endTime': endTime},
+      'body': body,
+    };
     final key = keys.keyFor(
       scope: 'daily-item:create',
       method: 'POST',
       path: '/daily-items',
-      body: {'startDate': start.iso, 'endDate': end.iso, 'body': body},
+      body: payload,
     );
     final item = await _api.create(
       start: start,
       end: end,
       body: body,
+      allDay: allDay,
+      startTime: startTime,
+      endTime: endTime,
       idempotencyKey: key,
     );
     keys.complete('daily-item:create');
@@ -264,9 +277,22 @@ class DailyItemsController extends Notifier<DailyItemsState> {
     required String body,
     required CompanyDate start,
     required CompanyDate end,
+    bool? allDay,
+    String? startTime,
+    String? endTime,
   }) async {
     final keys = ref.read(operationKeysProvider);
-    final payload = {'body': body, 'startDate': start.iso, 'endDate': end.iso};
+    final mode = allDay ?? original.allDay;
+    final payload = <String, Object?>{
+      'body': body,
+      'startDate': start.iso,
+      'endDate': end.iso,
+      'allDay': mode,
+      if (!mode) ...{
+        'startTime': startTime ?? original.startTime,
+        'endTime': endTime ?? original.endTime,
+      },
+    };
     final key = keys.keyFor(
       scope: 'daily-item:edit:${original.id}',
       method: 'PATCH',
@@ -278,6 +304,9 @@ class DailyItemsController extends Notifier<DailyItemsState> {
       body: body,
       start: start,
       end: end,
+      allDay: mode,
+      startTime: startTime ?? original.startTime,
+      endTime: endTime ?? original.endTime,
       idempotencyKey: key,
     );
     keys.complete('daily-item:edit:${original.id}');

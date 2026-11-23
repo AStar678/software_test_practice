@@ -490,7 +490,15 @@ class _ApprovalDetailPageState extends ConsumerState<ApprovalDetailPage> {
                             padding: EdgeInsets.only(bottom: 8),
                             child: Text('当前为只读浏览，业务操作请回到本人正常入口办理。', style: TextStyle(color: PandoraColors.muted)),
                           ),
-                        if (widget.readContext.businessWritesAllowed && request.isPending && request.isReviewer(me?.id) && request.canApproveBy(me?.id))
+                        if (request.taskDeleted)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8, bottom: 8),
+                            child: Text(
+                              '任务已删除，申请仅可查看，无法继续处理。',
+                              style: TextStyle(color: PandoraColors.overdue),
+                            ),
+                          ),
+                        if (widget.readContext.businessWritesAllowed && request.isPending && !request.taskDeleted && request.isReviewer(me?.id) && request.canApproveBy(me?.id))
                           Row(
                             children: [
                               Expanded(
@@ -509,13 +517,14 @@ class _ApprovalDetailPageState extends ConsumerState<ApprovalDetailPage> {
                               ),
                             ],
                           ),
-                        if (widget.showWithdrawAction && widget.readContext.businessWritesAllowed && request.isPending && request.applicantId == me?.id)
+                        if (widget.showWithdrawAction && widget.readContext.businessWritesAllowed && request.isPending && !request.taskDeleted && request.applicantId == me?.id)
                           OutlinedButton(
                             onPressed: _deciding ? null : () => _decide('withdraw'),
                             child: const Text('撤销申请'),
                           ),
                         if (widget.readContext.businessWritesAllowed &&
                             !request.isPending &&
+                            !request.taskDeleted &&
                             request.kind == 'create' &&
                             request.applicantId == me?.id &&
                             const {'rejected', 'withdrawn', 'expired'}.contains(request.status) &&
@@ -805,7 +814,7 @@ class _CreationResubmitPageState extends ConsumerState<_CreationResubmitPage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已重新提交创建申请')));
     } catch (error) {
       if (!mounted) return;
-      setState(() { _saving = false; _error = error.toString(); });
+      setState(() { _saving = false; _error = userMessageFor(error); });
     }
   }
 

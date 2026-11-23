@@ -33,9 +33,51 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
   late CompanyDate _start =
       widget.initialDate ?? ref.read(workspaceClockProvider).businessDate;
   late CompanyDate _end = _start;
+  bool _allDay = true;
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
   bool _saving = false;
   bool _dirty = false;
   String? _error;
+
+  String? get _startClock =>
+      _startTime == null ? null : _hm(_startTime!);
+
+  String? get _endClock => _endTime == null ? null : _hm(_endTime!);
+
+  static String _hm(TimeOfDay time) =>
+      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+
+  Future<void> _pickTime({required bool isStart}) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: (isStart ? _startTime : _endTime) ?? const TimeOfDay(hour: 9, minute: 0),
+      helpText: isStart ? '选择开始时刻' : '选择截止时刻',
+      cancelText: '取消',
+      confirmText: '确定',
+    );
+    if (picked == null) return;
+    setState(() {
+      if (isStart) {
+        _startTime = picked;
+      } else {
+        _endTime = picked;
+      }
+      _dirty = true;
+      _error = null;
+    });
+  }
+
+  bool get _timedRangeValid {
+    if (_allDay) return true;
+    final start = _startTime;
+    final end = _endTime;
+    if (start == null || end == null) return false;
+    final startMinutes = start.hour * 60 + start.minute;
+    final endMinutes = end.hour * 60 + end.minute;
+    if (_start == _end) return endMinutes >= startMinutes;
+    return true;
+  }
 
   @override
   void dispose() {
@@ -45,6 +87,14 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!_allDay && (_startTime == null || _endTime == null)) {
+      setState(() => _error = '请选择开始和截止时刻');
+      return;
+    }
+    if (!_timedRangeValid) {
+      setState(() => _error = '截止时间不能早于开始时间');
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -56,6 +106,9 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
             start: _start,
             end: _end,
             body: _bodyController.text.trim(),
+            allDay: _allDay,
+            startTime: _startClock,
+            endTime: _endClock,
           );
       unawaited(ref.read(homeDataProvider.notifier).refresh());
       if (!mounted) return;
@@ -108,6 +161,47 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
                   _error = null;
                 }),
               ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('全天'),
+                subtitle: Text(_allDay ? '按日期范围展示，不记录具体时刻' : '按公司时区的开始/截止时刻判断逾期'),
+                value: _allDay,
+                onChanged: (value) => setState(() {
+                  _allDay = value;
+                  if (value) {
+                    _startTime = null;
+                    _endTime = null;
+                  } else {
+                    _startTime ??= const TimeOfDay(hour: 9, minute: 0);
+                    _endTime ??= const TimeOfDay(hour: 18, minute: 0);
+                  }
+                  _dirty = true;
+                  _error = null;
+                }),
+              ),
+              if (!_allDay)
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _pickTime(isStart: true),
+                        child: Text(
+                          _startTime == null ? '开始时刻' : '开始 ${_hm(_startTime!)}',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _pickTime(isStart: false),
+                        child: Text(
+                          _endTime == null ? '截止时刻' : '截止 ${_hm(_endTime!)}',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               const SizedBox(height: 12),
               if (_error != null) ...[
                 const SizedBox(height: 12),
@@ -214,6 +308,44 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
   final _bodyController = TextEditingController();
   CompanyDate? _start;
   CompanyDate? _end;
+  bool _allDay = true;
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
+
+  static TimeOfDay? _parseTime(String? value) {
+    if (value == null) return null;
+    final parts = value.split(':');
+    if (parts.length < 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return null;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  static String? _clock(TimeOfDay? time) => time == null
+      ? null
+      : '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+
+  Future<void> _pickTime({required bool isStart}) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime:
+          (isStart ? _startTime : _endTime) ?? const TimeOfDay(hour: 9, minute: 0),
+      helpText: isStart ? '选择开始时刻' : '选择截止时刻',
+      cancelText: '取消',
+      confirmText: '确定',
+    );
+    if (picked == null) return;
+    setState(() {
+      if (isStart) {
+        _startTime = picked;
+      } else {
+        _endTime = picked;
+      }
+      _dirty = true;
+      _error = null;
+    });
+  }
 
   @override
   void initState() {
@@ -240,6 +372,9 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
         _bodyController.text = item.body;
         _start = item.startDate;
         _end = item.endDate;
+        _allDay = item.allDay;
+        _startTime = _parseTime(item.startTime);
+        _endTime = _parseTime(item.endTime);
         _loading = false;
       });
     } catch (error) {
@@ -260,6 +395,18 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
       setState(() => _error = '请输入事项内容');
       return;
     }
+    if (!_allDay && (_startTime == null || _endTime == null)) {
+      setState(() => _error = '请选择开始和截止时刻');
+      return;
+    }
+    if (!_allDay && start == end) {
+      final startMinutes = _startTime!.hour * 60 + _startTime!.minute;
+      final endMinutes = _endTime!.hour * 60 + _endTime!.minute;
+      if (endMinutes < startMinutes) {
+        setState(() => _error = '截止时间不能早于开始时间');
+        return;
+      }
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -272,6 +419,9 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
             body: _bodyController.text.trim(),
             start: start,
             end: end,
+            allDay: _allDay,
+            startTime: _clock(_startTime),
+            endTime: _clock(_endTime),
           );
       unawaited(ref.read(homeDataProvider.notifier).refresh());
       if (!mounted) return;
@@ -385,6 +535,12 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
                 style: Theme.of(context).textTheme.bodySmall
                     ?.copyWith(color: color),
               ),
+              const SizedBox(height: 4),
+              Text(
+                item.modeLabel,
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(color: PandoraColors.muted),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -442,6 +598,51 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
             _dirty = true;
           }),
         ),
+        const SizedBox(height: 8),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('全天'),
+          subtitle: Text(
+            _allDay ? '按日期范围展示，不记录具体时刻' : '按公司时区的开始/截止时刻判断逾期',
+          ),
+          value: _allDay,
+          onChanged: (value) => setState(() {
+            _allDay = value;
+            if (value) {
+              _startTime = null;
+              _endTime = null;
+            } else {
+              _startTime ??= const TimeOfDay(hour: 9, minute: 0);
+              _endTime ??= const TimeOfDay(hour: 18, minute: 0);
+            }
+            _dirty = true;
+            _error = null;
+          }),
+        ),
+        if (!_allDay)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _pickTime(isStart: true),
+                  child: Text(
+                    _startTime == null
+                        ? '开始时刻'
+                        : '开始 ${_clock(_startTime)}',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _pickTime(isStart: false),
+                  child: Text(
+                    _endTime == null ? '截止时刻' : '截止 ${_clock(_endTime)}',
+                  ),
+                ),
+              ),
+            ],
+          ),
         if (_error != null) ...[
           const SizedBox(height: 10),
           Text(_error!, style: TextStyle(color: PandoraColors.overdue)),
@@ -468,6 +669,9 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
                   _bodyController.text = item.body;
                   _start = item.startDate;
                   _end = item.endDate;
+                  _allDay = item.allDay;
+                  _startTime = _parseTime(item.startTime);
+                  _endTime = _parseTime(item.endTime);
                 }),
           child: const Text('取消编辑'),
         ),

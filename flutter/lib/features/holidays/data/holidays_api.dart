@@ -1,3 +1,4 @@
+import '../../../core/errors/app_error.dart';
 import '../../../core/net/api_client.dart';
 import '../domain/holiday_calendar.dart';
 
@@ -30,7 +31,7 @@ class HolidayRepository {
     } catch (error) {
       final previous = _cache[year];
       if (previous != null && previous.days.isNotEmpty) {
-        final stale = previous.asStale(error.toString());
+        final stale = previous.asStale(userMessageFor(error));
         _cache[year] = stale;
         return stale;
       }

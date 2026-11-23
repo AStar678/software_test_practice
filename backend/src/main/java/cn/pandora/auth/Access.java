@@ -169,7 +169,19 @@ public class Access {
                 .filter(row->like.isEmpty() || s(row,"displayName").toLowerCase(Locale.ROOT).contains(like)
                         || Objects.toString(s(row,"departmentName"),"").toLowerCase(Locale.ROOT).contains(like))
                 .map(row->{var result=new LinkedHashMap<String,Object>(row);result.put("managerId",s(snapshot.nodes().get(s(row,"id")),"managerId"));
-                    result.put("accountType","employee");result.put("role",s(row,"placementType"));return (Map<String,Object>)result;}).toList();
+                    result.put("accountType","employee");result.put("role",s(row,"placementType"));return (Map<String,Object>)result;})
+                .sorted(Comparator.comparingInt((Map<String,Object> row) -> candidateRank(snapshot.nodes().get(s(row,"id"))))
+                        .thenComparing(row -> Objects.toString(row.get("displayName"),""))
+                        .thenComparing(row -> s(row,"id")))
+                .toList();
+    }
+
+    /** Same fixed roles as the organization tree: founder, department head, team head, employee. */
+    static int candidateRank(Map<String,Object> node) {
+        if (node == null) return 5;
+        Object rank = node.get("rankLevel");
+        if (rank instanceof Number number) return number.intValue();
+        return Integer.MAX_VALUE;
     }
     public boolean isCreationCandidate(Actor a,String id) {return canDispatchTo(a,activeUser(a,id));}
     public void requireCreationCandidate(Actor a,String id) {

@@ -87,14 +87,17 @@ class ErrorView extends StatelessWidget {
     final api = error is ApiException ? error as ApiException : null;
     final isForbidden = api?.isForbidden ?? false;
     final isOffline = api?.isNetwork ?? false;
+    final isDeleted = api?.isDeleted ?? false;
     final heading =
         title ??
-        (isForbidden
+        (isDeleted
+            ? '任务已删除'
+            : isForbidden
             ? '无权访问'
             : isOffline
             ? '网络不可用'
             : '加载失败');
-    final message = api?.message ?? '请稍后重试';
+    final message = userMessageFor(error);
     return Semantics(
       label: '$heading：$message',
       liveRegion: true,

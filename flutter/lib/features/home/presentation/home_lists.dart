@@ -40,6 +40,7 @@ class _HomeEventsPageState extends ConsumerState<HomeEventsPage> {
                 itemBuilder: (context, index) {
                   final item = data.companyItems[index];
                   return _EventCard(
+                    ordinal: index + 1,
                     item: item,
                     expanded: _expanded.contains(item.id),
                     onToggle: () => setState(() {
@@ -63,11 +64,13 @@ class _HomeEventsPageState extends ConsumerState<HomeEventsPage> {
 /// 紧凑事件条目：仅正文确实超出两行时在正文旁显示箭头；整条切换展开。
 class _EventCard extends StatelessWidget {
   const _EventCard({
+    required this.ordinal,
     required this.item,
     required this.expanded,
     required this.onToggle,
   });
 
+  final int ordinal;
   final CompanyItem item;
   final bool expanded;
   final VoidCallback onToggle;
@@ -102,6 +105,7 @@ class _EventCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    ListOrdinal(ordinal, width: 24),
                     Expanded(
                       child: Text(
                         item.body,
@@ -213,6 +217,7 @@ class HomeBoardPage extends ConsumerWidget {
                     child: Semantics(
                       label: overdue ? '已逾期' : null,
                       child: ListTile(
+                        leading: ListOrdinal(index + 1, width: 24),
                         title: FadingNameText(
                           task.title,
                           maxLines: 2,
