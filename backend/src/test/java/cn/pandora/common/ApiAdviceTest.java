@@ -27,4 +27,25 @@ class ApiAdviceTest {
         var response = new ApiAdvice().missing(new RuntimeException("no handler"));
         assertEquals(404, response.getStatusCode().value());
     }
+
+    @Test
+    void adminFacingConstraintAndLockFailuresUseStableChineseMessages() {
+        var advice = new ApiAdvice();
+
+        var constraint = advice.constraint(new org.springframework.dao.DataIntegrityViolationException(
+                "Duplicate entry 'org-1-11010519491231002X' for key 'uq_id_card_company'"));
+        assertEquals(409, constraint.getStatusCode().value());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) constraint.getBody();
+        assertEquals("DATA_CONFLICT", body.get("code"));
+        assertFalse(String.valueOf(body.get("message")).contains("uq_id_card_company"));
+
+        var busy = advice.busy(new org.springframework.dao.CannotAcquireLockException("lock wait timeout"));
+        assertEquals(409, busy.getStatusCode().value());
+        assertTrue(String.valueOf(((Map<?, ?>) busy.getBody()).get("message")).contains("稍后重试"));
+
+        var invalid = advice.invalid(new IllegalArgumentException("idCardNo must be..."));
+        assertEquals(400, invalid.getStatusCode().value());
+        assertFalse(String.valueOf(((Map<?, ?>) invalid.getBody()).get("message")).contains("idCardNo"));
+    }
 }

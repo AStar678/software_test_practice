@@ -159,6 +159,18 @@ public class AdminController {
         return ResponseEntity.ok().eTag("\"" + result.get("rowVersion") + "\"").body(result);
     }
 
+    /** Independent offboarding wizard: a restricted plan via the complete-plan contract (Admin change). */
+    @PostMapping("/employees/{id}/offboard")
+    public ResponseEntity<Map<String, Object>> offboardEmployee(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
+            @RequestBody Map<String, Object> input) {
+        Map<String, Object> result = writes.runOutcome(actor, key, "POST /admin/employees/" + id + "/offboard", input, ifMatch,
+                () -> organization.offboard(actor, id, input));
+        tightenOrganizationConstraints();
+        return ResponseEntity.ok().eTag("\"" + result.get("rowVersion") + "\"").body(result);
+    }
+
     @PostMapping("/employees/{id}/roles")
     public ResponseEntity<Map<String, Object>> grantRoles(@RequestAttribute("actor") Actor actor, @PathVariable String id,
             @RequestHeader(value = "Idempotency-Key", required = false) String key,

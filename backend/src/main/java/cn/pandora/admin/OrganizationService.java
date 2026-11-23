@@ -48,21 +48,43 @@ public class OrganizationService {
     public Map<String,Object> transferEmployee(Actor actor,String id,String match,Map<String,Object> input) {throw planRequired(actor);}
     public Map<String,Object> teamManagement(Actor actor) {throw new ApiException(403,"FORBIDDEN","组织由独立管理员通过完整计划维护");}
 
+    private static final Set<String> PLACEMENT_TYPES=Set.of("founder","department_head","team_head","employee");
+
+    /** Combinable employee-page filters; list and total are computed from the same condition set. */
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> employees(Actor actor,Map<String,String> filters) {
         access.requireAdmin(actor);access.requireCurrent(actor);
         String query=filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
+        String departmentId=optionalUuid(filters.get("departmentId"),"departmentId");
+        String teamId=optionalUuid(filters.get("teamId"),"teamId");
+        String positionId=optionalUuid(filters.get("positionId"),"positionId");
+        String placementType=filters.getOrDefault("placementType","").strip();
+        if(!placementType.isEmpty() && !PLACEMENT_TYPES.contains(placementType)) throw bad("无效的组织身份筛选");
+        Boolean active=optionalBoolean(filters.get("active"),"active");
         var phones=new HashMap<String,Object>();
         var hireDates=new HashMap<String,Object>();
         for (var row:db.list("SELECT id,login_phone,hire_date FROM users WHERE organization_id=?",actor.organizationId())) {
             phones.put(s(row,"id"),row.get("loginPhone"));
             hireDates.put(s(row,"id"),row.get("hireDate"));
         }
-        var rows=access.employeeDirectory(actor,true).stream().filter(row->query.isEmpty()
-                || Objects.toString(row.get("displayName"),"").toLowerCase(Locale.ROOT).contains(query)
-                || Objects.toString(row.get("departmentName"),"").toLowerCase(Locale.ROOT).contains(query))
+        // The identity table is read only here (administrator list): values leave masked, and the
+        // employee-facing directory, candidates, tasks, logs and analytics never query this table.
+        var maskedIds=new HashMap<String,String>();
+        for (var row:db.list("SELECT employee_id,id_card_no FROM employee_identity_documents WHERE organization_id=?",actor.organizationId()))
+            maskedIds.put(s(row,"employeeId"),IdCardNumbers.mask(s(row,"idCardNo")));
+        var rows=access.employeeDirectory(actor,true).stream()
+                .filter(row->query.isEmpty()
+                        || Objects.toString(row.get("displayName"),"").toLowerCase(Locale.ROOT).contains(query)
+                        || Objects.toString(row.get("departmentName"),"").toLowerCase(Locale.ROOT).contains(query)
+                        || Objects.toString(phones.get(s(row,"id")),"").toLowerCase(Locale.ROOT).contains(query))
+                .filter(row->departmentId==null || departmentId.equals(s(row,"departmentId")))
+                .filter(row->teamId==null || teamId.equals(s(row,"teamId")))
+                .filter(row->positionId==null || positionId.equals(s(row,"positionId")))
+                .filter(row->placementType.isEmpty() || placementType.equals(s(row,"placementType")))
+                .filter(row->active==null || active==Access.enabled(row))
                 .map(row -> {var item=new LinkedHashMap<>(row);item.put("loginPhone",phones.get(s(row,"id")));
-                    item.put("hireDate",hireDates.get(s(row,"id")));return item;}).toList();
+                    item.put("hireDate",hireDates.get(s(row,"id")));
+                    item.put("idCardNoMasked",maskedIds.get(s(row,"id")));return item;}).toList();
         return Map.of("items",rows,"total",rows.size());
     }
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
@@ -73,6 +95,10 @@ public class OrganizationService {
         var phone=db.find("SELECT login_phone,hire_date FROM users WHERE organization_id=? AND id=?",actor.organizationId(),id);
         item.put("loginPhone",phone==null?null:phone.get("loginPhone"));
         item.put("hireDate",phone==null?null:phone.get("hireDate"));
+        // The full number is readable only in this administrator detail; old employees with no
+        // document row stay an explicit null and the administrator may record it later.
+        var document=db.find("SELECT id_card_no FROM employee_identity_documents WHERE organization_id=? AND employee_id=?",actor.organizationId(),id);
+        item.put("idCardNo",document==null?null:s(document,"idCardNo"));
         return item;
     }
     public List<Map<String,Object>> departmentMembers(Actor actor,String departmentId) {
@@ -82,7 +108,11 @@ public class OrganizationService {
 
     @SuppressWarnings("unchecked")
     public Writes.Outcome createEmployee(Actor actor,Map<String,Object> input) {
-        access.requireAdmin(actor);allowed(input,Set.of("displayName","phone","placementType","departmentId","teamId","positionId","hireDate"));
+        access.requireAdmin(actor);
+        allowed(input,Set.of("displayName","phone","idCardNo","placementType","departmentId","teamId","positionId","hireDate"));
+        // The independent onboarding wizard always supplies the identity document; it is written to
+        // the dedicated table in the same transaction that creates the account.
+        String idCardNo=IdCardNumbers.normalize(input.get("idCardNo"),"身份证号",companyToday(actor));
         var draft=plans.draft(actor);String id=Db.id();
         var plan=new LinkedHashMap<String,Object>();
         for(String key:List.of("departments","teams","placements","expectedEmployees")) plan.put(key,draft.get(key));
@@ -94,10 +124,102 @@ public class OrganizationService {
         var addition=new LinkedHashMap<String,Object>();addition.put("id",id);addition.put("displayName",input.get("displayName"));addition.put("phone",input.get("phone"));
         addition.put("hireDate",input.get("hireDate"));
         plan.put("newEmployees",List.of(addition));
-        var outcome=plans.save(actor,"\""+draft.get("rowVersion")+"\"",plan);
+        Writes.Outcome outcome;
+        try {
+            outcome=plans.save(actor,"\""+draft.get("rowVersion")+"\"",plan);
+        } catch(ApiException conflict) {
+            // A minimal single-person plan can only fail because the requested slot collides with an
+            // existing person or unit (second founder, occupied head slot, broken structure); such
+            // changes belong to the organization-adjustment page, never a silent partial write.
+            if("INVALID_ORGANIZATION_PLAN".equals(conflict.code))
+                throw new ApiException(409,"ORGANIZATION_PLAN_REQUIRED","该入职位置与既有组织冲突，请到组织调整提交完整计划",conflict.details);
+            throw conflict;
+        }
+        try {
+            db.update("INSERT INTO employee_identity_documents(organization_id,employee_id,id_card_no) VALUES(?,?,?)",
+                    actor.organizationId(),id,idCardNo);
+        } catch(org.springframework.dao.DuplicateKeyException error) {
+            throw new ApiException(409,"ID_CARD_TAKEN","该身份证号已被本公司员工使用");
+        }
         var passwords=(Map<String,String>)outcome.oneTimeOnly().get("initialPasswords");
         return new Writes.Outcome(Map.of("userId",id,"rowVersion",2,"mustChangePassword",true),Map.of("initialPassword",passwords.get(id)));
     }
+
+    /**
+     * Independent offboarding: the request only names the employee, the reason, an optional unit-head
+     * successor, business takeovers and unpublished-request handling. A restricted minimal plan is
+     * assembled server-side and validated by the complete-plan contract, so handover, takeover,
+     * session revocation and approval refresh cannot be bypassed; any failure rolls back the whole
+     * offboarding.
+     */
+    @SuppressWarnings("unchecked")
+    public Writes.Outcome offboard(Actor actor,String id,Map<String,Object> input) {
+        access.requireAdmin(actor);access.requireCurrent(actor);
+        allowed(input,Set.of("reason","successor","businessTransfers","cancelUnpublishedRequests"));
+        String reason=text(input.get("reason"),"离职原因",500);
+        var person=db.one("SELECT u.id,u.org_version,(u.active AND p.active) AS active FROM users u "
+                + "JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id AND p.account_type='employee' "
+                + "WHERE u.organization_id=? AND u.id=? FOR UPDATE",actor.organizationId(),id);
+        if(person==null) throw ApiException.notFound();
+        if(!Access.enabled(person)) throw bad("员工已停用");
+        var company=db.one("SELECT founder_employee_id,authz_version FROM organizations WHERE id=?",actor.organizationId());
+        if(id.equals(s(company,"founderEmployeeId")))
+            throw new ApiException(409,"FOUNDER_CANNOT_OFFBOARD","固定创始人不能离职");
+        var placement=db.one("SELECT * FROM employee_placements WHERE organization_id=? AND employee_id=? FOR UPDATE",actor.organizationId(),id);
+        String headType=s(placement,"placementType");
+        Map<String,Object> successor=successor(input.get("successor"));
+        String successorId=successor==null?null:requiredUuid(successor.get("employeeId"),"successor.employeeId");
+        boolean head=List.of("department_head","team_head").contains(headType);
+        if(head && successorId==null)
+            throw new ApiException(409,"SUCCESSOR_REQUIRED","单位负责人离职须指定继任人，请补齐继任安排");
+        if(successorId!=null) {
+            if(successorId.equals(id)) throw bad("继任人不能是离职员工本人");
+            if(access.activeUser(actor,successorId)==null) throw bad("继任人须为本公司有效在职员工");
+        }
+        var draft=plans.draft(actor);
+        var plan=new LinkedHashMap<String,Object>();
+        for(String key:List.of("departments","teams","placements","expectedEmployees")) plan.put(key,draft.get(key));
+        plan.put("reason",reason);
+        plan.put("deactivateEmployees",List.of(new LinkedHashMap<>(Map.of("employeeId",id,"rowVersion",n(person,"orgVersion"),"reason",reason))));
+        if(input.containsKey("cancelUnpublishedRequests")) plan.put("cancelUnpublishedRequests",input.get("cancelUnpublishedRequests"));
+        if(input.containsKey("businessTransfers")) plan.put("businessTransfers",input.get("businessTransfers"));
+        if(successorId!=null) {
+            var places=new ArrayList<>((List<Map<String,Object>>)draft.get("placements"));
+            boolean replaced=false;
+            for(var row:places) {
+                if(successorId.equals(s(row,"employeeId"))) {
+                    row.put("placementType",headType);
+                    row.put("departmentId",placement.get("departmentId"));
+                    row.put("teamId",placement.get("teamId"));
+                    replaced=true;
+                }
+            }
+            if(!replaced) throw bad("继任人须为本公司已定岗员工");
+            plan.put("placements",places);
+        }
+        Writes.Outcome outcome;
+        try {
+            outcome=plans.save(actor,"\""+n(company,"authzVersion")+"\"",plan);
+        } catch(ApiException conflict) {
+            if("INVALID_ORGANIZATION_PLAN".equals(conflict.code))
+                throw new ApiException(409,"ORGANIZATION_PLAN_REQUIRED","该离职或继任安排与既有组织冲突，请到组织调整提交完整计划",conflict.details);
+            throw conflict;
+        }
+        var merged=new LinkedHashMap<>(outcome.replayable());
+        merged.put("employeeId",id);
+        return new Writes.Outcome(merged,outcome.oneTimeOnly());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String,Object> successor(Object value) {
+        if(value==null) return null;
+        if(!(value instanceof Map<?,?> raw)) throw bad("successor须为继任安排对象");
+        Map<String,Object> result=new LinkedHashMap<>();
+        raw.forEach((key,entry)->{if(!(key instanceof String))throw bad("successor格式无效");result.put((String)key,entry);});
+        allowed(result,Set.of("employeeId"));
+        return result;
+    }
+
 
     public Map<String,Object> administrator(Actor actor) {
         access.requireAdmin(actor);
@@ -144,8 +266,8 @@ public class OrganizationService {
 
     public Map<String,Object> updateEmployee(Actor actor,String id,String ifMatch,Map<String,Object> input) {
         access.requireAdmin(actor);
-        allowed(input,Set.of("displayName","phone","hireDate"));
-        if(input.isEmpty()) throw bad("请至少修改姓名、手机号或入职日期");
+        allowed(input,Set.of("displayName","phone","hireDate","idCardNo"));
+        if(input.isEmpty()) throw bad("请至少修改姓名、手机号、入职日期或身份证号");
         var row=db.one("SELECT u.* FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id "
                 + "WHERE u.organization_id=? AND u.id=? AND p.account_type='employee' FOR UPDATE",actor.organizationId(),id);
         Writes.checkVersion(ifMatch,n(row,"orgVersion"));
@@ -160,16 +282,30 @@ public class OrganizationService {
         // rejected before any other field is written.
         java.time.LocalDate hireDate=row.get("hireDate")==null?null:java.time.LocalDate.parse(Objects.toString(row.get("hireDate")));
         if(input.containsKey("hireDate")) hireDate=parseHireDate(input.get("hireDate"),companyToday(actor));
+        // Omitted keeps the stored document; when present it must be a full valid number — an
+        // explicit null is rejected because identity documents are never cleared once recorded.
+        String idCardNo=input.containsKey("idCardNo")?IdCardNumbers.normalize(input.get("idCardNo"),"身份证号",companyToday(actor)):null;
         boolean phoneChanged=!Objects.equals(login,s(row,"loginPhone"));
         try {
             db.update("UPDATE users SET display_name=?,phone=?,login_phone=?,hire_date=?,org_version=org_version+1,profile_version=profile_version+1 WHERE organization_id=? AND id=?",
                     name,phone,login,hireDate==null?null:java.sql.Date.valueOf(hireDate),actor.organizationId(),id);
         } catch(org.springframework.dao.DuplicateKeyException error) {throw new ApiException(409,"PHONE_TAKEN","该手机号已被使用");}
+        if(idCardNo!=null) {
+            try {
+                if(db.find("SELECT 1 FROM employee_identity_documents WHERE organization_id=? AND employee_id=?",actor.organizationId(),id)==null)
+                    db.update("INSERT INTO employee_identity_documents(organization_id,employee_id,id_card_no) VALUES(?,?,?)",actor.organizationId(),id,idCardNo);
+                else
+                    db.update("UPDATE employee_identity_documents SET id_card_no=?,row_version=row_version+1,updated_at=UTC_TIMESTAMP(6) WHERE organization_id=? AND employee_id=?",
+                            idCardNo,actor.organizationId(),id);
+            } catch(org.springframework.dao.DuplicateKeyException error) {throw new ApiException(409,"ID_CARD_TAKEN","该身份证号已被本公司员工使用");}
+        }
         int revoked=phoneChanged?auth.revokeSessions(actor.organizationId(),id):0;
+        // The audit carries field names only; a full identity number never enters history or events.
         bumpAuthority(actor,"organization.employee.identity_updated",Map.of("userId",id,"fields",input.keySet(),"sessionsRevoked",revoked));
         var result=new LinkedHashMap<String,Object>();
         result.put("userId",id);result.put("rowVersion",n(row,"orgVersion")+1);
         result.put("phoneUpdated",input.containsKey("phone"));
+        result.put("idCardUpdated",idCardNo!=null);
         result.put("hireDate",hireDate==null?null:hireDate.toString());
         result.put("sessionsRevoked",revoked);
         return result;
@@ -369,6 +505,19 @@ public class OrganizationService {
 
     static void allowed(Map<String, Object> input, Set<String> keys) {
         if (!keys.containsAll(input.keySet())) throw bad("请求含不支持的字段");
+    }
+
+    /** Blank query parameters mean "no filter"; a value must be a well-formed company UUID. */
+    static String optionalUuid(String value,String key) {
+        if(value==null || value.isBlank()) return null;
+        return TaskIds.requireUuid(value,key);
+    }
+
+    static Boolean optionalBoolean(String value,String key) {
+        if(value==null || value.isBlank()) return null;
+        if("true".equalsIgnoreCase(value)) return Boolean.TRUE;
+        if("false".equalsIgnoreCase(value)) return Boolean.FALSE;
+        throw bad(key+"须为true或false");
     }
 
     static ApiException bad(String message) { return new ApiException(400, "INVALID_INPUT", message); }
