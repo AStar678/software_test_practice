@@ -2621,15 +2621,14 @@ public class TaskService {
 
     /** A stable, client-identifiable deleted state; carries only the minimal title and time. */
     private ApiException deleted(Actor actor, Map<String, Object> task) {
+        String current = s(task, "currentVersionId");
+        if (current == null) return ApiException.notFound();
+        Map<String, Object> snapshot = version(actor, current);
+        if (!access.canSeeTask(actor, task, snapshot, assignees(actor, current))) return ApiException.notFound();
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("taskId", s(task, "id"));
         if (task.get("deletedAt") != null) details.put("deletedAt", task.get("deletedAt"));
-        String current = s(task, "currentVersionId");
-        if (current != null) {
-            Map<String, Object> row = db.find("SELECT title FROM task_versions WHERE organization_id=? AND id=?",
-                    actor.organizationId(), current);
-            if (row != null && row.get("title") != null) details.put("title", row.get("title"));
-        }
+        if (snapshot.get("title") != null) details.put("title", snapshot.get("title"));
         return new ApiException(410, "TASK_DELETED", "任务已删除", details);
     }
 

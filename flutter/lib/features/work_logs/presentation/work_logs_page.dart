@@ -1195,9 +1195,12 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
                     title: const Text('关联任务'),
                     subtitle: const Text('按当前来源上下文读取'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push(
-                      NavigationTargets.task(widget.readContext, log.taskId!),
-                    ),
+                    onTap: () async {
+                      await context.push(
+                        NavigationTargets.task(widget.readContext, log.taskId!),
+                      );
+                      if (mounted) await _revalidateSaved(_loadGeneration);
+                    },
                   ),
                 const Divider(height: 28),
                 if (widget.readContext.commentsAllowed)

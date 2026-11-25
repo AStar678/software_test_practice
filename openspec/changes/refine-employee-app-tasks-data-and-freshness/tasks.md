@@ -25,12 +25,12 @@
 
 ## 3. 兼容与回归
 
-- [ ] 3.1 验证员工 Web 不新增删除入口但能读取已删除任务的可识别错误/提示，且现有通知、申请和日志链接不再崩溃；用后端接口测试和必要的 Web 静态检查覆盖。
-- [ ] 3.2 运行 Flutter 聚焦测试及完整 `flutter test`，覆盖任务、日历、每日事项、首页、日志、通知、负责人、渐隐和刷新；记录通过数量与关键命令。
-- [ ] 3.3 运行 `flutter analyze`、`git diff --check` 和相关后端测试，确认无新增诊断、无越权变更、迁移可重复执行且本 change 未修改管理端页面。
-- [ ] 3.4 构建可安装 debug APK 并在模拟器做一次冒烟：创始人内联建标签、任务删除及已删除提示、定时每日事项逾期边界、首页序号、导航刷新、渐隐无重影、错误文案不泄露技术信息。
+- [x] 3.1 验证员工 Web 不新增删除入口但能读取已删除任务的可识别错误/提示，且现有通知、申请和日志链接不再崩溃；用后端接口测试和必要的 Web 静态检查覆盖。
+- [x] 3.2 运行 Flutter 聚焦测试及完整 `flutter test`，覆盖任务、日历、每日事项、首页、日志、通知、负责人、渐隐和刷新；记录通过数量与关键命令。
+- [x] 3.3 运行 `flutter analyze`、`git diff --check` 和相关后端测试，确认无新增诊断、无越权变更、迁移可重复执行且本 change 未修改管理端页面。
+- [x] 3.4 按 `flutter/ios-simulator.md` 构建 iOS 模拟器 Debug `.app`，安装、启动并在 iOS 模拟器做一次冒烟：创始人内联建标签、任务删除及已删除提示、定时每日事项逾期边界、首页序号、导航刷新、渐隐无重影、错误文案不泄露技术信息。
 
 ## 4. 规格与验证交接
 
-- [ ] 4.1 运行 `openspec validate "refine-employee-app-tasks-data-and-freshness" --type change --strict --json --no-interactive`，确认 delta spec 无结构或覆盖遗漏。
-- [ ] 4.2 汇总实现映射、实际运行命令、失败/跳过项和残留风险，写入 `implementation-notes.md` 供独立验证使用。
+- [x] 4.1 运行 `openspec validate "refine-employee-app-tasks-data-and-freshness" --type change --strict --json --no-interactive`，确认 delta spec 无结构或覆盖遗漏。
+- [x] 4.2 汇总实现映射、实际运行命令、失败/跳过项和残留风险，写入 `implementation-notes.md` 供独立验证使用。

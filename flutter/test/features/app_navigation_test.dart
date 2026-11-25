@@ -21,6 +21,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     final backend = FakeBackend();
+    var taskDeleted = false;
     backend.on('GET', '/home', (request) async => FakeResponse({
           'companyItems': [
             for (var index = 1; index <= 4; index++)
@@ -76,7 +77,9 @@ void main() {
           'businessDate': '2026-11-10',
           'organizationTimeZone': 'Asia/Shanghai',
         }));
-    backend.on('GET', '/tasks/t1', (request) async => FakeResponse({
+    backend.on('GET', '/tasks/t1', (request) async => taskDeleted
+        ? FakeResponse({'code': 'TASK_DELETED', 'message': '任务已删除'}, status: 410)
+        : FakeResponse({
           'id': 't1',
           'taskId': 't1',
           'title': '个人任务 1',
@@ -102,6 +105,10 @@ void main() {
           'createdAt': '2026-11-09T02:00:00Z',
           'route': {'reasonText': '按直属上级审核', 'reviewerAvailable': true},
         }, etag: '"3"'));
+    backend.on('DELETE', '/tasks/t1', (request) {
+      taskDeleted = true;
+      return FakeResponse({'taskId': 't1', 'deleted': true, 'rowVersion': 4});
+    });
 
     final clock = WorkspaceClock(now: () => DateTime.utc(2026, 11, 10, 4));
     final session = SessionManager(
@@ -145,6 +152,7 @@ void main() {
     expect(find.text('事件内容 1'), findsOneWidget);
     expect(find.text('事件内容 4'), findsNothing, reason: '卡片只保留约三条预览，其余进入完整清单');
     expect(find.text('个人任务 4'), findsNothing);
+    expect(find.byType(ListOrdinal), findsWidgets);
 
     await tester.tap(find.byTooltip('通知'));
     await tester.pumpAndSettle();
@@ -206,6 +214,37 @@ void main() {
     await tester.tap(find.text('首页'));
     await tester.pumpAndSettle();
     expect(find.text('事件纪'), findsOneWidget);
+    final homeReads = backend.requestsFor('GET', '/home').length;
+    await tester.tap(find.text('首页'));
+    await tester.pumpAndSettle();
+    expect(backend.requestsFor('GET', '/home').length, greaterThan(homeReads));
+
+    await tester.tap(find.text('任务看板'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('个人任务 1'));
+    await tester.pumpAndSettle();
+    final deleteButton = find.text('删除任务');
+    await tester.scrollUntilVisible(
+      deleteButton,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(deleteButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+    expect(backend.requestsFor('DELETE', '/tasks/t1'), isEmpty);
+    await tester.tap(deleteButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('删除'));
+    await tester.pumpAndSettle();
+    expect(backend.requestsFor('DELETE', '/tasks/t1').single.headers['If-Match'], '"3"');
+
+    await tester.tap(find.text('个人任务 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('任务已删除'), findsWidgets);
+    expect(deleteButton, findsNothing);
   });
 }
 
