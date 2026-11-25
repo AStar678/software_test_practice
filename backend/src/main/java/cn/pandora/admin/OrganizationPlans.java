@@ -21,11 +21,13 @@ public class OrganizationPlans {
     private final OrganizationConstraints constraints;
     private final BusinessTakeovers takeovers;
     private final EmployeeDeactivations deactivations;
+    private final EmployeeIdentityDocuments identity;
     private final java.time.Clock clock;
     public OrganizationPlans(Db db,Access access,AuthService auth,Events events,TaskService tasks,OrganizationConstraints constraints,
-                             BusinessTakeovers takeovers,EmployeeDeactivations deactivations,java.time.Clock clock) {
+                             BusinessTakeovers takeovers,EmployeeDeactivations deactivations,EmployeeIdentityDocuments identity,
+                             java.time.Clock clock) {
         this.db=db;this.access=access;this.auth=auth;this.events=events;this.tasks=tasks;this.constraints=constraints;
-        this.takeovers=takeovers;this.deactivations=deactivations;this.clock=clock;
+        this.takeovers=takeovers;this.deactivations=deactivations;this.identity=identity;this.clock=clock;
     }
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
@@ -50,38 +52,42 @@ public class OrganizationPlans {
         String reason=text(input.get("reason"),"调整原因",500),org=actor.organizationId();
         var company=db.one("SELECT founder_employee_id,authz_version FROM organizations WHERE id=?",org);
         Writes.checkVersion(ifMatch,n(company,"authzVersion"));
-        String founder=input.containsKey("founderEmployeeId")?identifier(input.get("founderEmployeeId"),"founderEmployeeId"):s(company,"founderEmployeeId");
+        String founder=input.containsKey("founderEmployeeId")?identifier(input.get("founderEmployeeId"),"创始人"):s(company,"founderEmployeeId");
         if(s(company,"founderEmployeeId")!=null && !Objects.equals(founder,s(company,"founderEmployeeId")))
             throw bad("固定创始人不能交接或调任");
         var previousDepartments=db.list("SELECT * FROM departments WHERE organization_id=? ORDER BY id",org);
         var previousTeams=db.list("SELECT * FROM teams WHERE organization_id=? ORDER BY id",org);
         var previousPlacements=db.list("SELECT * FROM employee_placements WHERE organization_id=? ORDER BY employee_id",org);
         var employees=new ArrayList<>(db.list("SELECT u.id,u.organization_id,(u.active AND p.active) AS active,u.org_version AS row_version FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id AND p.account_type='employee' WHERE u.organization_id=? ORDER BY u.id",org));
-        versions(rows(input,"expectedEmployees",Set.of("id","rowVersion")),employees,"id",true);
-        var disabled=input.containsKey("deactivateEmployees")?rows(input,"deactivateEmployees",Set.of("employeeId","rowVersion","reason")):List.<Map<String,Object>>of();
+        versions(rows(input,"expectedEmployees",Set.of("id","rowVersion"),"人员清单"),employees,"id",true);
+        var disabled=input.containsKey("deactivateEmployees")?rows(input,"deactivateEmployees",Set.of("employeeId","rowVersion","reason"),"停用安排"):List.<Map<String,Object>>of();
         var disabledIds=deactivations.prepare(actor,disabled,employees,founder);
-        var cancellations=input.containsKey("cancelUnpublishedRequests")?rows(input,"cancelUnpublishedRequests",Set.of("requestId","rowVersion","reason")):List.<Map<String,Object>>of();
+        var cancellations=input.containsKey("cancelUnpublishedRequests")?rows(input,"cancelUnpublishedRequests",Set.of("requestId","rowVersion","reason"),"撤销安排"):List.<Map<String,Object>>of();
         if(!cancellations.isEmpty() && disabled.isEmpty()) throw bad("管理撤销只能随完整停用计划提交");
-        var departments=units(rows(input,"departments",Set.of("id","name","rowVersion")),org,false);
-        var teams=units(rows(input,"teams",Set.of("id","name","departmentId","rowVersion")),org,true);
-        var placements=rows(input,"placements",Set.of("employeeId","placementType","departmentId","teamId","positionId","rowVersion"));
+        var departments=units(rows(input,"departments",Set.of("id","name","rowVersion"),"部门列表"),org,false);
+        var teams=units(rows(input,"teams",Set.of("id","name","departmentId","rowVersion"),"团队列表"),org,true);
+        var placements=rows(input,"placements",Set.of("employeeId","placementType","departmentId","teamId","positionId","rowVersion"),"人员位置");
         for(var placement:placements) {
             placement.put("organizationId",org);
-            for(String field:List.of("employeeId","positionId")) placement.put(field,identifier(placement.get(field),field));
+            for(String field:List.of("employeeId","positionId")) placement.put(field,identifier(placement.get(field),field.equals("employeeId")?"员工标识":"展示职位"));
             for(String field:List.of("departmentId","teamId"))
-                if(placement.get(field)!=null) placement.put(field,identifier(placement.get(field),field));
+                if(placement.get(field)!=null) placement.put(field,identifier(placement.get(field),field.equals("departmentId")?"所属部门":"所属团队"));
         }
         versions(departments,previousDepartments,"id",false);versions(teams,previousTeams,"id",false);
         versions(placements,previousPlacements,"employeeId",false);
-        List<Map<String,Object>> additions=input.containsKey("newEmployees")?rows(input,"newEmployees",Set.of("id","displayName","phone","hireDate")):List.of();
+        List<Map<String,Object>> additions=input.containsKey("newEmployees")?rows(input,"newEmployees",Set.of("id","displayName","phone","hireDate","idCardNo"),"新员工"):List.of();
         Set<String> employeeIds=new HashSet<>();employees.forEach(person->employeeIds.add(s(person,"id")));
         Set<String> phones=new HashSet<>();
         String zone=s(db.one("SELECT time_zone FROM organizations WHERE id=?",org),"timeZone");
         java.time.LocalDate today=clock.instant().atZone(java.time.ZoneId.of(zone)).toLocalDate();
         for(var person:additions) {
-            String id=identifier(person.get("id"),"id");
-            if(!employeeIds.add(id) || db.find("SELECT id FROM principals WHERE id=?",id)!=null) throw bad("新员工ID已被使用");
+            String id=identifier(person.get("id"),"新员工标识");
+            if(!employeeIds.add(id) || db.find("SELECT id FROM principals WHERE id=?",id)!=null) throw bad("新员工标识已被使用");
             person.put("id",id);person.put("displayName",text(person.get("displayName"),"姓名",100));
+            // Onboarding always records a validated identity document in the same transaction.
+            String idCard=IdCardNumbers.normalize(person.get("idCardNo"),today);
+            identity.requireAvailable(actor,idCard,id);
+            person.put("idCardNo",idCard);
             String phone=person.get("phone") instanceof String raw?PhoneNumbers.normalize(raw):null;
             if(phone==null) throw bad("新员工手机号为必填且须有效");
             if(!phones.add(phone) || db.find("SELECT id FROM users WHERE login_phone=?",phone)!=null)
@@ -109,6 +115,7 @@ public class OrganizationPlans {
                     employeeId,org,AuthService.PASSWORDS.encode(password),s(person,"displayName"),s(person,"phone"),s(person,"phone"),
                     person.get("hireDate")==null?null:java.sql.Date.valueOf((java.time.LocalDate)person.get("hireDate")));
             passwords.put(employeeId,password);
+            if(person.get("idCardNo")!=null) identity.put(actor,employeeId,s(person,"idCardNo"));
         }
         Map<String,Map<String,Object>> oldPlaces=index(previousPlacements,"employeeId");
         for(var placement:placements) {
@@ -123,7 +130,7 @@ public class OrganizationPlans {
         Actor current=access.actor(auth.account(actor));
         List<Map<String,Object>> transfers=List.of();
         if(input.containsKey("businessTransfers")) {
-            if(!(input.get("businessTransfers") instanceof List<?> raw)) throw bad("businessTransfers须为接管安排数组");
+            if(!(input.get("businessTransfers") instanceof List<?> raw)) throw bad("接管安排格式不正确");
             transfers=takeovers.apply(current,raw);
         }
         int refreshed=tasks.refreshPendingRoutes(current);
@@ -145,11 +152,11 @@ public class OrganizationPlans {
         return new Writes.Outcome(result,passwords.isEmpty()?Map.of():Map.of("initialPasswords",passwords));
     }
 
-    private static List<Map<String,Object>> rows(Map<String,Object> input,String field,Set<String> fields) {
-        if(!(input.get(field) instanceof List<?> list) || list.size()>10000) throw bad(field+"须为完整数组");
+    private static List<Map<String,Object>> rows(Map<String,Object> input,String field,Set<String> fields,String label) {
+        if(!(input.get(field) instanceof List<?> list) || list.size()>10000) throw bad(label+"须为完整数组");
         var result=new ArrayList<Map<String,Object>>();
         for(Object raw:list) {
-            if(!(raw instanceof Map<?,?> map) || map.keySet().stream().anyMatch(key->!(key instanceof String))) throw bad(field+"格式不正确");
+            if(!(raw instanceof Map<?,?> map) || map.keySet().stream().anyMatch(key->!(key instanceof String))) throw bad(label+"格式不正确");
             Map<String,Object> row=new LinkedHashMap<>();map.forEach((key,value)->row.put((String)key,value));allowed(row,fields);result.add(row);
         }
         return result;
@@ -157,10 +164,10 @@ public class OrganizationPlans {
     private static List<Map<String,Object>> units(List<Map<String,Object>> rows,String org,boolean team) {
         Set<String> names=new HashSet<>();
         for(var row:rows) {
-            row.put("id",identifier(row.get("id"),"id"));row.put("organizationId",org);
+            row.put("id",identifier(row.get("id"),"单位标识"));row.put("organizationId",org);
             String name=text(row.get("name"),"单位名称",100);row.put("name",name);
             if(!names.add(name.toLowerCase(Locale.ROOT))) throw bad("单位名称重复");
-            if(team) row.put("departmentId",identifier(row.get("departmentId"),"departmentId"));
+            if(team) row.put("departmentId",identifier(row.get("departmentId"),"所属部门"));
         }
         return rows;
     }

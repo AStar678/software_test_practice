@@ -77,8 +77,8 @@ def main():
             new_ids=[str(uuid.uuid4()),str(uuid.uuid4())]
             plan['departments'].append({'id':dep,'name':'New staffed department'})
             plan['teams'].append({'id':team,'name':'New staffed team','departmentId':dep})
-            plan['newEmployees']=[{'id':new_ids[0],'displayName':'New department head','phone':'13977770001'},
-                                  {'id':new_ids[1],'displayName':'New team head','phone':'13977770002'}]
+            plan['newEmployees']=[{'id':new_ids[0],'displayName':'New department head','phone':'13977770001','idCardNo':'440301198405050059'},
+                                  {'id':new_ids[1],'displayName':'New team head','phone':'13977770002','idCardNo':'32010219850606006X'}]
             for employee_id,kind,group in ((new_ids[0],'department_head',None),(new_ids[1],'team_head',team)):
                 plan['placements'].append({'employeeId':employee_id,'placementType':kind,'departmentId':dep,'teamId':group,'positionId':'fixture-company-title'})
             key='new-heads-'+uuid.uuid4().hex

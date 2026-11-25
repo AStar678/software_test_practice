@@ -49,17 +49,27 @@ const fixture = JSON.parse(process.env.PANDORA_ADMIN_HIRE_FIXTURE || "{}");
       await waitFor(browser, "!document.getElementById('employeeDialog').open") && (await read()).hireDate === null, await read());
     check("clearing restores the absent-date row state",
       await waitFor(browser, "document.querySelector('#employeeRows').textContent.includes('未设置')"), "cleared");
-    // Organization-draft path: the new-employee dialog must carry the real date into the draft.
+    // The employee page now onboards directly: no organization-adjustment draft is created.
     await browser.evaluate(`document.getElementById('employeeNew').click()`);
-    await waitFor(browser, "document.getElementById('employeeDialog').open");
-    await browser.evaluate(`document.getElementById('fDisplayName').value='草稿入职员工';
-      document.getElementById('fPhone').value='13977770077';
-      document.getElementById('fHireDate').value='2022-02-02';
-      document.getElementById('employeeSave').click();`);
-    check("the organization draft carries the entered hire date",
-      await waitFor(browser, "!document.getElementById('employeeDialog').open && state.planDraft.newEmployees.some(e=>e.displayName==='草稿入职员工' && e.hireDate==='2022-02-02')"), "draft");
-    check("the draft form did not create an account before the plan is saved",
-      await browser.evaluate("fetch('/api/v1/admin/employees?q=草稿入职员工',{headers:{Authorization:'Bearer '+state.token}}).then(r=>r.json()).then(j=>j.total===0)"), "no account");
+    await waitFor(browser, "document.getElementById('onboardingDialog').open");
+    await browser.evaluate(`document.getElementById('oDisplayName').value='独立入职员工';
+      document.getElementById('oPhone').value='13977770077';
+      document.getElementById('oIdCard').value='440301198708080087';
+      document.getElementById('oHireDate').value='2022-02-02';
+      document.getElementById('oPlacement').value='employee';
+      document.getElementById('oDepartment').value='fixture-company-alpha';
+      document.getElementById('oDepartment').onchange();
+      document.getElementById('oTeam').value='fixture-company-alpha-one';
+      document.getElementById('oPosition').value='fixture-company-title';
+      document.getElementById('onboardingSave').click();`);
+    check("independent onboarding creates the account, location and hire date immediately",
+      await waitFor(browser, "!document.getElementById('onboardingDialog').open && state.employees.some(e=>e.displayName==='独立入职员工' && e.hireDate==='2022-02-02')"), "onboarded");
+    check("independent onboarding shows the one-time initial password",
+      await waitFor(browser, "document.getElementById('employeeSecret').textContent.includes('初始密码仅显示一次')"), "password");
+    check("independent onboarding writes no organization-adjustment draft",
+      await browser.evaluate("state.planDraft && state.planDraft.newEmployees.length===0"), "no draft");
+    check("the new account is readable through the administrator detail",
+      await browser.evaluate("fetch('/api/v1/admin/employees?q=独立入职员工',{headers:{Authorization:'Bearer '+state.token}}).then(r=>r.json()).then(j=>j.total===1 && j.items[0].idCardNoMasked && j.items[0].idCardNo===undefined)"), "listed");
     check("no uncaught browser errors occurred", browser.errors.length === 0, browser.errors);
   } finally {
     browser.kill();

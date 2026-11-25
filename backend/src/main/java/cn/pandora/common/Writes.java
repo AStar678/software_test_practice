@@ -38,7 +38,7 @@ public class Writes {
      * network call. Returns {@code null} when this key has not committed yet.
      */
     public Map<String,Object> replayIfPresent(Actor actor,String key,String scope,Object body,String ifMatch) {
-        if(key==null || !key.matches("[A-Za-z0-9._:-]{8,80}")) throw new ApiException(400,"IDEMPOTENCY_KEY_REQUIRED","请提供8至80位 Idempotency-Key");
+        if(key==null || !key.matches("[A-Za-z0-9._:-]{8,80}")) throw new ApiException(400,"IDEMPOTENCY_KEY_REQUIRED","请提供有效的操作凭证后再提交");
         String digest=AuthService.hash(scope+"\n"+canonical(mapper.valueToTree(body))+"\n"+Objects.toString(ifMatch,""));
         var previous=db.find("SELECT * FROM idempotency_keys WHERE organization_id=? AND user_id=? AND scope=? AND key_value=?",actor.organizationId(),actor.id(),scope,key);
         if(previous==null) return null;
@@ -56,7 +56,7 @@ public class Writes {
      * separately because Java cannot overload on a generic type argument.
      */
     public Map<String,Object> runOutcome(Actor actor,String key,String scope,Object body,String ifMatch,Supplier<Outcome> work) {
-        if(key==null || !key.matches("[A-Za-z0-9._:-]{8,80}")) throw new ApiException(400,"IDEMPOTENCY_KEY_REQUIRED","请提供8至80位 Idempotency-Key");
+        if(key==null || !key.matches("[A-Za-z0-9._:-]{8,80}")) throw new ApiException(400,"IDEMPOTENCY_KEY_REQUIRED","请提供有效的操作凭证后再提交");
         String digest=AuthService.hash(scope+"\n"+canonical(mapper.valueToTree(body))+"\n"+Objects.toString(ifMatch,""));
         return tx.execute(status->{
             // Local single-company commands deliberately serialize here; this also fixes parent-cycle races.
@@ -97,7 +97,7 @@ public class Writes {
         return node;
     }
     public static void checkVersion(String ifMatch,long version) {
-        if(ifMatch==null || ifMatch.isBlank()) throw new ApiException(428,"PRECONDITION_REQUIRED","请先读取详情并提交 If-Match");
+        if(ifMatch==null || ifMatch.isBlank()) throw new ApiException(428,"PRECONDITION_REQUIRED","请先读取最新内容后再提交");
         if(!ifMatch.equals("\""+version+"\"")) throw new ApiException(412,"VERSION_CONFLICT","内容已更新，请刷新后重试");
     }
 }

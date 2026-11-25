@@ -609,7 +609,8 @@ def hire_date(f, ids, business_day=None):
     create_key = "hire-create-" + uuid.uuid4().hex
     create_body = {"displayName": "入职新员工", "phone": "13977770011",
                    "placementType": "employee", "departmentId": "fixture-company-alpha",
-                   "teamId": "fixture-company-alpha-one", "positionId": "fixture-company-title", "hireDate": "2025-01-31"}
+                   "teamId": "fixture-company-alpha-one", "positionId": "fixture-company-title",
+                   "hireDate": "2025-01-31", "idCardNo": "110101198001010010"}
     created = ok(f, "POST", "/admin/employees", create_body, admin, create_key)
     read_back = call(f, "GET", "/admin/employees/" + created["userId"], token=admin)[1]
     check("direct creation persists the submitted hire date and returns the one-time password",
@@ -619,7 +620,8 @@ def hire_date(f, ids, business_day=None):
           replay.get("userId") == created["userId"] and "initialPassword" not in replay, replay)
     status, result = call(f, "POST", "/admin/employees", {"displayName": "未来入职", "phone": "13977770012",
                           "placementType": "employee", "departmentId": "fixture-company-alpha", "teamId": "fixture-company-alpha-one",
-                          "positionId": "fixture-company-title", "hireDate": "2999-01-01"}, admin, "hire-create-bad-" + uuid.uuid4().hex)
+                          "positionId": "fixture-company-title", "hireDate": "2999-01-01",
+                          "idCardNo": "440301198102020020"}, admin, "hire-create-bad-" + uuid.uuid4().hex)
     expect(status, result, "INVALID_INPUT", "a future hire date on direct creation rejects the whole account")
     check("the rejected direct creation wrote no account",
           f.db.scalar("SELECT COUNT(*) FROM users WHERE login_phone='13977770012'") == 0, "no half-created account")
@@ -627,7 +629,8 @@ def hire_date(f, ids, business_day=None):
     draft = call(f, "GET", "/admin/organization-plans", token=admin)[1]
     plan = {key: draft[key] for key in ("departments", "teams", "placements", "expectedEmployees")}
     plan["reason"] = "入职日期计划验证"
-    plan["newEmployees"] = [{"id": str(uuid.uuid4()), "displayName": "计划新员工", "phone": "13977770013", "hireDate": "2023-12-31"}]
+    plan["newEmployees"] = [{"id": str(uuid.uuid4()), "displayName": "计划新员工", "phone": "13977770013",
+                            "hireDate": "2023-12-31", "idCardNo": "320102198203030031"}]
     plan["placements"] = plan["placements"] + [{"employeeId": plan["newEmployees"][0]["id"], "placementType": "employee",
                     "departmentId": "fixture-company-beta", "teamId": "fixture-company-beta-one", "positionId": "fixture-company-title"}]
     planned = ok(f, "POST", "/admin/organization-plans", plan, admin, "hire-plan-" + uuid.uuid4().hex, draft["rowVersion"])
@@ -635,7 +638,7 @@ def hire_date(f, ids, business_day=None):
     bad_plan = {key: bad_draft[key] for key in ("departments", "teams", "placements", "expectedEmployees")}
     bad_plan["reason"] = "计划非法入职日期"
     bad_plan["newEmployees"] = [{"id": str(uuid.uuid4()), "displayName": "计划未来员工", "phone": "13977770014",
-                                 "hireDate": "2999-01-01"}]
+                                 "hireDate": "2999-01-01", "idCardNo": "110101198304040049"}]
     bad_plan["placements"] = bad_plan["placements"] + [{"employeeId": bad_plan["newEmployees"][0]["id"],
                                "placementType": "employee", "departmentId": "fixture-company-beta",
                                "teamId": "fixture-company-beta-one", "positionId": "fixture-company-title"}]

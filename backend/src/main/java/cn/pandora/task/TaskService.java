@@ -1355,6 +1355,11 @@ public class TaskService {
         }
         List<Map<String, Object>> reassignments = db.list("SELECT * FROM request_reassignments WHERE organization_id=? AND task_id=? ORDER BY created_at,id", actor.organizationId(), taskId);
         List<Map<String, Object>> handovers = db.list("SELECT * FROM handover_requests WHERE organization_id=? AND task_id=? ORDER BY created_at,id", actor.organizationId(), taskId);
+        // Comments stay readable as part of the complete history, including after a soft delete. A
+        // logically removed comment keeps its row and is labelled instead of disappearing.
+        List<Map<String, Object>> comments = db.list("SELECT id,author_id,body,created_at,edited_at,deleted_at "
+                + "FROM task_log_comments WHERE organization_id=? AND object_type='task' AND task_id=? ORDER BY created_at,id",
+                actor.organizationId(), taskId);
         // The console shows ordered assignee names, not raw ids. Resolve every referenced person once;
         // only id and display name are returned, never a phone, e-mail or credential.
         Set<String> people = new LinkedHashSet<>();
@@ -1373,6 +1378,7 @@ public class TaskService {
             addIfPresent(people, s(row, "targetUserId"));
             addIfPresent(people, s(row, "setByUserId"));
         }
+        for (Map<String, Object> comment : comments) addIfPresent(people, s(comment, "authorId"));
         for (Map<String, Object> entry : entries) {
             addIfPresent(people, s(entry, "actorId"));
             if (Set.of("assignee_order", "reviewer_reassigned", "handover").contains(s(entry, "entryType"))) {
@@ -1411,6 +1417,12 @@ public class TaskService {
         result.put("versions", versions);
         result.put("reassignments", reassignments);
         result.put("handovers", handovers);
+        for (Map<String, Object> comment : comments) {
+            comment.put("authorName", resolved.getOrDefault(s(comment, "authorId"), s(comment, "authorId")));
+            comment.put("deleted", comment.get("deletedAt") != null);
+            comment.put("edited", comment.get("editedAt") != null);
+        }
+        result.put("comments", comments);
         result.put("people", resolved);
         return result;
     }

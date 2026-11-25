@@ -1,0 +1,215 @@
+{
+  "updated": "2026-11-25T11:13:04.629726+00:00",
+  "checks": [
+    {
+      "check": "administrator console loads the complete employee directory",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "employee page exposes search, department, team, identity, active, position filters and clearing",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "department filter narrows rows and total together",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "team filter combines with the department filter",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "identity filter combines with department and team",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "display position filter keeps the matching employee",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "search combines with the remaining filters",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "clearing all conditions restores the complete directory",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "no-match state is an explicit empty result",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a failed filter keeps the previous list and shows a retryable hint",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a failed filter surfaces one safe Chinese error dialog",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "network failure copy contains no raw browser exception",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the directory recovers after the failure",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "employee list shows the masked identity number",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "employee list does not include the full identity number",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "administrator edit detail reads the full identity number",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "employee-page onboarding creates the account and shows one initial password",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "independent onboarding writes no organization-adjustment draft",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "an occupied head position is refused with a route to organization adjustment",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the refused onboarding keeps the entered employee data",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "offboarding dialog reads the existing responsibility inventory",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "plain employee offboarding completes and refreshes the directory",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "offboarded employee row shows the inactive state",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "fixed founder offboarding is refused inside the dialog",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "unit head offboarding asks for a successor",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "missing successor keeps the dialog open with a Chinese explanation",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "head offboarding with a successor promotes the successor",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "deleted filter lists the deleted task with its state",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "deleted history opens read-only with deletion time, actor and reason",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "deleted history exposes no normal business write control",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "normal-task filter hides the deleted task",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "safe error mapping hides technical detail and keeps actionable Chinese",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "login copy no longer carries a defensive boundary explanation",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "organization adjustment no longer offers employee creation",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "organization adjustment keeps unit, founder and final-placement structure",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "organization copy keeps the business note without defensive persistence text",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "admin console copy contains no prototype or development explanation",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "required administrator labels remain visible",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "employee directory fits 1440",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "employee directory fits 390",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "employee directory fits 320",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "no uncaught browser exception occurred",
+      "pass": true,
+      "evidence": "real Chrome"
+    }
+  ]
+}

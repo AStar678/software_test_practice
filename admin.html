@@ -116,7 +116,6 @@
       <button class="primary" id="loginButton">登录</button>
     </div>
     <div class="error" id="loginError"></div>
-    <p class="muted">仅管理员账号可登录。</p>
   </div>
 
   <div id="console" hidden>
@@ -126,19 +125,30 @@
     <section id="tab-employees">
       <h2>员工</h2>
       <div class="row">
-        <input id="employeeQuery" placeholder="搜索姓名/部门">
+        <input id="employeeQuery" placeholder="搜索姓名/部门/手机号" aria-label="搜索姓名、部门或登录手机号">
+        <select id="employeeDepartment" aria-label="按部门筛选"><option value="">全部部门</option></select>
+        <select id="employeeTeam" aria-label="按团队筛选"><option value="">全部团队</option></select>
+        <select id="employeePlacement" aria-label="按组织身份筛选">
+          <option value="">全部身份</option>
+          <option value="employee">员工</option><option value="team_head">团队负责人</option>
+          <option value="department_head">部门负责人</option><option value="founder">创始人</option>
+        </select>
+        <select id="employeeActive" aria-label="按在职状态筛选"><option value="">全部状态</option><option value="true">在任</option><option value="false">已停用</option></select>
+        <select id="employeePosition" aria-label="按展示职位筛选"><option value="">全部职位</option></select>
+        <button class="ghost" id="employeeClear">清空筛选</button>
         <button class="ghost" id="employeeRefresh">刷新</button>
-        <button class="primary" id="employeeNew">新增员工</button>
+        <button class="primary" id="employeeNew">办理入职</button>
       </div>
-      <table><thead><tr><th>姓名</th><th>登录手机号</th><th>入职日期</th><th>部门/职位</th><th>团队</th><th>直属上级</th><th>组织身份</th><th>状态</th><th></th></tr></thead>
+      <p class="muted" id="employeeHint">筛选与搜索组合生效；清空条件恢复完整员工目录。</p>
+      <table><thead><tr><th>姓名</th><th>登录手机号</th><th>身份证号</th><th>入职日期</th><th>部门/职位</th><th>团队</th><th>直属上级</th><th>组织身份</th><th>状态</th><th></th></tr></thead>
         <tbody id="employeeRows"></tbody></table>
     </section>
 
     <section id="tab-organization">
       <h2>组织调整</h2>
       <div class="card"><strong>当前组织状态</strong><div id="health" role="status"></div></div>
-      <p class="muted">未保存的调整仅保留在当前页面，刷新、关闭页面或退出登录后会丢失。</p>
-      <div class="row"><button class="ghost" id="planReload">放弃未保存调整</button><button class="primary" id="planNewEmployee">添加新员工</button></div>
+      <p class="muted">调整保存后生效。</p>
+      <div class="row"><button class="ghost" id="planReload">放弃未保存调整</button></div>
       <p id="planHint" class="ok" role="status"></p>
       <div class="card" id="planRemovals" hidden></div>
       <div class="card" id="planFounder" aria-label="公司创始人"></div>
@@ -179,11 +189,14 @@
         <select id="historyRequest" aria-label="申请状态">
           <option value="">全部申请</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option><option value="withdrawn">已撤回</option><option value="direct">无需审核</option>
         </select>
+        <select id="historyDeleted" aria-label="删除状态">
+          <option value="">全部任务</option><option value="false">仅正常任务</option><option value="true">仅已删除</option>
+        </select>
         <button class="ghost" id="historySearch">查询</button>
         <button class="ghost" id="historyReset">清空条件</button>
       </div>
       <p class="muted" id="historyHint">按任务分页查找；打开任务查看完整变更记录。</p>
-      <table><thead><tr><th>任务</th><th>状态</th><th>负责人（按顺序）</th><th>创建人</th><th>创建时间</th><th>申请</th><th></th></tr></thead><tbody id="historyRows"></tbody></table>
+      <table><thead><tr><th>任务</th><th>状态</th><th>负责人（按顺序）</th><th>创建人</th><th>创建时间</th><th>申请</th><th>删除状态</th><th></th></tr></thead><tbody id="historyRows"></tbody></table>
       <div class="row" id="historyPager"></div>
       <div id="historyDetail" hidden></div>
     </section>
@@ -224,12 +237,38 @@
 </main>
 
 <dialog id="employeeDialog">
-  <h2 id="employeeDialogTitle">员工身份资料</h2><input type="hidden" id="employeeId">
+  <h2 id="employeeDialogTitle">员工资料</h2><input type="hidden" id="employeeId">
   <label for="fDisplayName">姓名</label><input id="fDisplayName">
   <label for="fPhone">登录手机号</label><input id="fPhone" inputmode="tel" autocomplete="off">
+  <label for="fIdCard">身份证号</label><input id="fIdCard" maxlength="18" autocomplete="off" placeholder="18位身份证号">
+  <p class="muted" id="fIdCardHint"></p>
   <label for="fHireDate">入职日期</label><input id="fHireDate" type="date">
   <div class="row"><button class="primary" id="employeeSave">保存</button><button class="ghost" id="employeeCancel">取消</button></div>
   <div class="error" id="employeeError" role="alert"></div>
+</dialog>
+
+<dialog id="onboardingDialog">
+  <h2>办理入职</h2>
+  <label for="oDisplayName">姓名</label><input id="oDisplayName">
+  <label for="oPhone">登录手机号</label><input id="oPhone" inputmode="tel" autocomplete="off">
+  <label for="oIdCard">身份证号</label><input id="oIdCard" maxlength="18" autocomplete="off" placeholder="18位身份证号">
+  <label for="oHireDate">真实入职日期</label><input id="oHireDate" type="date">
+  <label for="oPlacement">组织身份</label>
+  <select id="oPlacement"><option value="employee">员工</option><option value="team_head">团队负责人</option><option value="department_head">部门负责人</option></select>
+  <label for="oDepartment">部门</label><select id="oDepartment"><option value="">请选择部门</option></select>
+  <label for="oTeam">团队</label><select id="oTeam"><option value="">请选择团队</option></select>
+  <label for="oPosition">展示职位</label><select id="oPosition"><option value="">请选择展示职位</option></select>
+  <p class="muted">负责人位置已被占用、创始人交接或需要同时调整其他人员时，请到组织调整办理。</p>
+  <div class="row"><button class="primary" id="onboardingSave">创建账号</button><button class="ghost" id="onboardingCancel">取消</button></div>
+  <div class="error" id="onboardingError" role="alert"></div>
+</dialog>
+
+<dialog id="offboardingDialog">
+  <h2 id="offboardingTitle">办理离职</h2><input type="hidden" id="offboardingId">
+  <div id="offboardingBody"></div>
+  <label for="offboardingReason">离职原因</label><input id="offboardingReason" maxlength="500" placeholder="填写实际离职原因">
+  <div class="row"><button class="primary" id="offboardingSave">确认离职</button><button class="ghost" id="offboardingCancel">取消</button></div>
+  <div class="error" id="offboardingError" role="alert"></div>
 </dialog>
 
 <dialog id="messageDialog" aria-labelledby="messageTitle" aria-describedby="messageText">
@@ -250,7 +289,7 @@
 </dialog>
 
 <script>
-const state = { token: null, user: null, structure: null, employees: [], editing: null, transferring: null, history: { offset: 0, total: 0 }, notifications: { offset: 0, total: 0 }, tabs: [
+const state = { token: null, user: null, structure: null, employees: [], employeeTotal: 0, editing: null, transferring: null, history: { offset: 0, total: 0 }, notifications: { offset: 0, total: 0 }, tabs: [
   ['employees','员工'], ['organization','组织调整'], ['positions','展示职位'],
   ['takeover','停用与接管'], ['account','管理员账号'], ['company','公司信息'],
   ['history','任务历史'], ['notifications','通知管理']
@@ -270,7 +309,7 @@ async function api(method, path, body, options = {}) {
     const text = await response.text();
     const payload = text ? JSON.parse(text) : {};
     if(epoch!==(state.epoch||0))throw new Error('账号已切换，请重新读取');
-    if (!response.ok) { const error = new Error(payload.message || ('请求失败 ' + response.status)); error.status = response.status; error.code = payload.code;error.details=payload; throw error; }
+    if (!response.ok) { const error = new Error(payload.message || ('请求失败 ' + response.status)); error.status = response.status; error.code = payload.code;error.details=payload;error.technical=!payload.message; throw error; }
     return { body: payload, headers: response.headers };
   } catch(error) {error.epoch=epoch;error.originTab=originTab;throw error;}
 }
@@ -321,10 +360,46 @@ $('messageCancel').onclick=()=>finishMessage(null);
 $('messageDialog').addEventListener('cancel',event=>{event.preventDefault();finishMessage(null);});
 const askConfirmation=(message,options={})=>showMessageDialog({title:'确认操作',message,mode:'confirm',...options});
 const askText=(title,value='',options={})=>showMessageDialog({title,value,mode:'input',...options});
+// Administrator-facing error text: curated Chinese messages stay actionable, while raw exceptions,
+// HTTP status text, database/framework detail, internal codes and English request fields never render.
+const SAFE_ERRORS = {
+  INVALID_INPUT:'提交内容不符合要求，请修改后重试。',
+  VERSION_CONFLICT:'内容已更新，请刷新后重试。',
+  PRECONDITION_REQUIRED:'请先读取最新内容再操作。',
+  AUTHORIZATION_CHANGED:'权限已变化，请重新登录后再操作。',
+  IDEMPOTENCY_KEY_REQUIRED:'操作凭证缺失，请返回后重新提交。',
+  FORBIDDEN:'当前账号没有此操作权限。',
+  NOT_FOUND:'内容不存在或无权查看。',
+  ORGANIZATION_PLAN_REQUIRED:'该操作需要同时调整组织，请到组织调整办理。',
+  ID_CARD_TAKEN:'该身份证号已被其他员工使用。',
+  PHONE_TAKEN:'该手机号已被使用。',
+  OFFBOARDING_SUCCESSOR_REQUIRED:'该员工是单位负责人，请选择继任人。',
+  FOUNDER_OFFBOARDING_NOT_ALLOWED:'固定创始人不能办理普通离职。',
+  UNFINISHED_HANDOVER_REQUIRED:'仍有未完成任务负责人交接，请先由业务方完成交接和审批。',
+  PENDING_SETTLEMENT_REQUIRED:'仍有待审申请或包含离职负责人的审核，请先办结或撤销。',
+  BUSINESS_TAKEOVER_REQUIRED:'已发布任务需要先安排业务接管人。'
+};
+function safeAdminMessage(error){
+  if(!error)return '操作未完成，请稍后重试。';
+  if(typeof error==='string')return error;
+  const raw=typeof error.message==='string'?error.message.trim():'';
+  const technical=error.technical===true||/[A-Za-z]/.test(raw)||/(?:Exception|SQL|jdbc|https?:|stack|undefined|null)/i.test(raw);
+  if(raw&&!technical&&raw.length<=200)return raw;
+  if(error.code&&SAFE_ERRORS[error.code])return SAFE_ERRORS[error.code];
+  if(error.status===401)return '登录已失效，请重新登录。';
+  if(error.status===403)return '当前账号没有此操作权限。';
+  if(error.status===404)return '内容不存在或无权查看。';
+  if(error.status===409)return '数据已变化或存在冲突，请刷新后重试。';
+  if(error.status===412)return '内容已更新，请刷新后重试。';
+  if(error.status===428)return '请先读取最新内容再操作。';
+  if(error.status>=500)return '服务暂时不可用，请稍后重试。';
+  if(!error.status)return '网络连接异常，请检查网络后重试。';
+  return '操作未完成，请稍后重试。';
+}
 const fail = (error) => {
   if(!error)return;
   if(typeof error==='object'&&((error.epoch!==undefined&&error.epoch!==(state.epoch||0))||(error.originTab&&error.originTab!==state.activeTab)))return;
-  return showMessageDialog({title:'操作未完成',message:error.message||String(error),confirmText:'知道了',tone:'error'});
+  return showMessageDialog({title:'操作未完成',message:safeAdminMessage(error),confirmText:'知道了',tone:'error'});
 };
 const ok = (message) => { clearTimeout(state.okTimer);$('consoleOk').textContent = message || '';if(message)state.okTimer=setTimeout(()=>ok(''),4000); };
 
@@ -335,7 +410,7 @@ function login() {
     body: JSON.stringify({ accountName: $('accountName').value.trim(), password: $('password').value, accountType: 'admin' })
   }).then(async (response) => {
     const payload = await response.json();
-    if (!response.ok) { $('loginError').textContent = payload.message || '登录失败'; return; }
+    if (!response.ok) { $('loginError').textContent = safeAdminMessage({status:response.status,code:payload.code,message:payload.message,technical:!payload.message}); return; }
     state.epoch=(state.epoch||0)+1;state.planDraft=null;state.token = payload.token;
     state.user = payload.user;
     localStorage.setItem('pandora.admin.token', payload.token);
@@ -378,15 +453,64 @@ function selectTab(id, button) {
 async function reloadAll() {
   try {
     state.structure = (await api('GET', '/api/v1/admin/organization')).body;
-    state.employees = (await api('GET', '/api/v1/admin/employees')).body.items || [];
+    state.allEmployees = (await api('GET', '/api/v1/admin/employees')).body.items || [];
     renderStructure();
-    renderEmployees();
+    await loadEmployees();
     if (!state.planDraft) resetPlan();
     await renderCompany();
   } catch (error) {
-    if (error.status === 403 || error.status === 401) { logout();$('loginError').textContent=error.message; }
+    if (error.status === 403 || error.status === 401) { logout();$('loginError').textContent=safeAdminMessage(error); }
     else fail(error);
   }
+}
+
+let employeeLoadTimer=null;
+function employeeFilterParams() {
+  const params=new URLSearchParams();
+  const query=$('employeeQuery').value.trim();
+  if(query)params.set('q',query);
+  for(const [id,key] of [['employeeDepartment','departmentId'],['employeeTeam','teamId'],
+    ['employeePlacement','placementType'],['employeeActive','active'],['employeePosition','positionId']]) {
+    const value=$(id).value;
+    if(value)params.set(key,value);
+  }
+  return params;
+}
+async function loadEmployees() {
+  try {
+    const body=(await api('GET','/api/v1/admin/employees?'+employeeFilterParams().toString())).body;
+    state.employees=body.items||[];
+    state.employeeTotal=body.total||0;
+    $('employeeHint').className='muted';
+    renderEmployees();
+  } catch(error) {
+    if(error.status===403||error.status===401){logout();$('loginError').textContent=safeAdminMessage(error);return;}
+    // A failed filter keeps the previous list and offers a retry instead of faking an empty directory.
+    $('employeeHint').className='error';
+    $('employeeHint').textContent='筛选加载失败，已保留上一次结果。请重试。';
+    fail(error);
+  }
+}
+function scheduleEmployeeLoad() {
+  clearTimeout(employeeLoadTimer);
+  employeeLoadTimer=setTimeout(loadEmployees,250);
+}
+function syncSelect(select,items,empty,label='name') {
+  const current=select.value;
+  options(select,items,{label,empty});
+  if(current&&items.some(item=>item.id===current))select.value=current;
+}
+function renderEmployeeFilters() {
+  if(!state.structure)return;
+  syncSelect($('employeeDepartment'),state.structure.departments,'全部部门');
+  const department=$('employeeDepartment').value;
+  syncSelect($('employeeTeam'),state.structure.teams.filter(team=>!department||team.departmentId===department),'全部团队');
+  syncSelect($('employeePosition'),state.structure.positions,'全部职位');
+}
+function clearEmployeeFilters() {
+  $('employeeQuery').value='';$('employeeDepartment').value='';$('employeeTeam').value='';
+  $('employeePlacement').value='';$('employeeActive').value='';$('employeePosition').value='';
+  renderEmployeeFilters();
 }
 
 function options(select, items, { value = 'id', label = 'name', empty = null } = {}) {
@@ -405,7 +529,8 @@ function renderStructure() {
     try {await api('PATCH','/api/v1/admin/positions/'+p.id,{name},{key:newKey(),ifMatch:'"'+p.rowVersion+'"'});await reloadAll();}catch(error){fail(error);}
   });
   renderOrganizationHealth(constraints);
-  options($('inventoryEmployee'),state.employees,{label:'displayName'});
+  options($('inventoryEmployee'),state.allEmployees||[],{label:'displayName'});
+  renderEmployeeFilters();
 }
 function renderOrganizationHealth(constraints) {
   const health=$('health');health.replaceChildren();
@@ -448,14 +573,19 @@ function showEmployeePasswords(entries) {
   notice.scrollIntoView({block:'nearest'});
 }
 function renderEmployees() {
-  const query=$('employeeQuery').value.trim().toLowerCase();
-  $('employeeRows').innerHTML=state.employees.filter(e=>!query||[e.displayName,e.departmentName].some(v=>(v||'').toLowerCase().includes(query))).map(e=>`<tr>
-    <td>${esc(e.displayName)}</td><td>${esc(e.loginPhone||'未设置')}</td><td>${esc(e.hireDate||'未设置')}</td><td>${esc(e.departmentName||'公司')} / ${esc(e.positionName||'—')}</td><td>${esc(e.teamName||'—')}</td>
+  const rows=state.employees.map(e=>`<tr>
+    <td>${esc(e.displayName)}</td><td>${esc(e.loginPhone||'未设置')}</td>
+    <td>${esc(e.idCardNoMasked||'未设置')}</td>
+    <td>${esc(e.hireDate||'未设置')}</td><td>${esc(e.departmentName||'公司')} / ${esc(e.positionName||'—')}</td><td>${esc(e.teamName||'—')}</td>
     <td>${esc(e.managerName||'—')}</td><td>${esc(PLACEMENT_LABELS[e.placementType]||'—')}</td><td>${e.active?'在任':'已停用'}</td>
-    <td><button class="ghost" data-edit="${esc(e.id)}">姓名/手机号/入职</button>${e.active?`<button class="ghost" data-reset="${esc(e.id)}">重置密码</button>`:''}</td></tr>`).join('');
+    <td><button class="ghost" data-edit="${esc(e.id)}">编辑资料</button>${e.active?`<button class="ghost" data-offboard="${esc(e.id)}">办理离职</button><button class="ghost" data-reset="${esc(e.id)}">重置密码</button>`:''}</td></tr>`).join('');
+  $('employeeRows').innerHTML=rows||'<tr><td colspan="10">没有符合条件的员工。</td></tr>';
+  $('employeeHint').textContent=`共 ${state.employeeTotal} 名员工；筛选与搜索组合生效，清空条件恢复完整目录。`;
   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEmployee(b.dataset.edit).catch(error=>fail(error)));
+  document.querySelectorAll('[data-offboard]').forEach(b=>b.onclick=()=>openOffboarding(b.dataset.offboard).catch(error=>fail(error)));
   document.querySelectorAll('[data-reset]').forEach(b=>b.onclick=async()=>{
-    const employee=state.employees.find(e=>e.id===b.dataset.reset);
+    const employee=state.employees.find(e=>e.id===b.dataset.reset)||(state.allEmployees||[]).find(e=>e.id===b.dataset.reset);
+    if(!employee)return;
     if(!await askConfirmation('确认重置“'+employee.displayName+'”的密码？\n原密码将失效，所有设备上的登录会话将被撤销。\n系统会显示一次新的临时密码，请自行交给员工；员工下次登录必须先改密。',{title:'重置密码',confirmText:'重置密码'}))return;
     b.disabled=true;
     try {const r=(await api('POST','/api/v1/admin/employees/'+b.dataset.reset+'/password-reset',undefined,{key:newKey()})).body;
@@ -524,6 +654,7 @@ function historySearchParams(offset) {
   if (query) params.set('q', query);
   if ($('historyState').value) params.set('state', $('historyState').value);
   if ($('historyRequest').value) params.set('requestStatus', $('historyRequest').value);
+  if ($('historyDeleted').value) params.set('deleted', $('historyDeleted').value);
   return params.toString();
 }
 
@@ -540,8 +671,9 @@ async function loadHistory(offset) {
       <td>${esc(task.creatorName || task.creatorId || '—')}</td>
       <td>${esc(formatTime(task.createdAt))}</td>
       <td>${esc(REQUEST_LABELS[task.latestRequestStatus] || task.latestRequestStatus || '—')}${task.pendingKind ? '<div class="muted">' + esc(KIND_LABELS[task.pendingKind] || task.pendingKind) + '待审</div>' : ''}</td>
+      <td>${task.deleted ? '<strong>已删除</strong><div class="muted">' + esc(formatTime(task.deletedAt)) + ' · ' + esc(task.deletedByName || task.deletedBy || '—') + '</div>' : '正常'}</td>
       <td><button class="ghost" data-history-task="${esc(task.taskId)}">查看历史</button></td></tr>`).join('')
-      || '<tr><td colspan="7">没有符合条件的任务。</td></tr>';
+      || '<tr><td colspan="8">没有符合条件的任务。</td></tr>';
     document.querySelectorAll('[data-history-task]').forEach((button) => button.onclick = () => openTaskHistory(button.dataset.historyTask));
     const pages = Math.ceil((result.total || 0) / 20) || 1;
     const page = Math.floor(offset / 20) + 1;
@@ -624,6 +756,7 @@ async function openTaskHistory(taskId) {
     const reassignments = (history.reassignments || []).map((row) => `<tr>
       <td>${esc(formatTime(row.createdAt))}</td><td>${esc(personName(people, row.previousReviewerId))}</td>
       <td>${esc(personName(people, row.newReviewerId))}</td><td>${esc(row.reason || '—')}</td><td>${esc(row.source || '—')}</td></tr>`).join('');
+    const comments=(history.comments||[]).map((row)=>`<tr><td>${esc(formatTime(row.createdAt))}</td><td>${esc(row.authorName||personName(people,row.authorId))}</td><td>${esc(row.body)}</td><td>${row.deleted?'已删除':(row.edited?'已编辑':'正常')}</td></tr>`).join('');
     const transfers=(history.businessTransfers||[]).map(row=>`<tr><td>${esc(formatTime(row.occurredAt))}</td><td>${esc(personName(people,row.previousEmployeeId))}</td><td>${esc(personName(people,row.nextEmployeeId))}</td><td>${esc(row.administratorName||personName(people,row.administratorId))}</td><td>${esc(row.reason)}</td></tr>`).join('');
     const handovers = (history.handovers || []).map((row) => `<tr>
       <td>${esc(formatTime(row.createdAt))}</td><td>${esc(personName(people, row.sourceUserId))}</td>
@@ -633,11 +766,14 @@ async function openTaskHistory(taskId) {
         <h3 style="margin:0">任务 ${esc(taskId)}</h3>
         <span class="muted">创建人：${esc(history.originalCreatorName || history.originalCreatorId || '—')} · 状态：${esc(STATE_LABELS[history.executionState] || history.executionState || '—')} · 创建于 ${esc(formatTime(history.createdAt))}</span>
         <button class="ghost" id="historyClose">关闭</button></div>
+      ${history.deleted ? '<div class="card"><b>该任务已删除</b><div class="muted">删除时间：' + esc(formatTime(history.deletedAt)) + ' · 删除人：' + esc(history.deletedByName || history.deletedBy || '—') + (history.deleteReason ? ' · 原因：' + esc(history.deleteReason) : '') + '</div><p class="muted">版本、申请、审核、交接与接管记录保留为只读历史；任务详情、评论及其他业务操作不可用。</p></div>' : ''}
       ${exemptions.length ? '<div class="card"><b>无需审核原因</b><div class="muted">' + exemptions.map(esc).join('<br>') + '</div></div>' : ''}
       <h3>版本与负责人顺序</h3>
       <table><thead><tr><th>版本</th><th>状态</th><th>标题</th><th>负责人（有序）</th><th>排期</th><th>执行状态</th><th>创建时间</th></tr></thead><tbody>${versions || '<tr><td colspan="7">暂无版本。</td></tr>'}</tbody></table>
       <h3 style="margin-top:18px">操作记录</h3>
       <table><thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>前值</th><th>后值</th><th>说明</th></tr></thead><tbody>${entries || '<tr><td colspan="6">暂无操作记录。</td></tr>'}</tbody></table>
+      <h3 style="margin-top:18px">评论</h3>
+      <table><thead><tr><th>时间</th><th>作者</th><th>评论</th><th>状态</th></tr></thead><tbody>${comments || '<tr><td colspan="4">无评论记录。</td></tr>'}</tbody></table>
       <h3 style="margin-top:18px">改派（审核人变化）</h3>
       <table><thead><tr><th>时间</th><th>原审核人</th><th>新审核人</th><th>原因</th><th>来源</th></tr></thead><tbody>${reassignments || '<tr><td colspan="5">无改派记录。</td></tr>'}</tbody></table>
       <h3 style="margin-top:18px">正式业务接管</h3><table><thead><tr><th>时间</th><th>原责任方</th><th>接管人</th><th>管理员办理人</th><th>原因</th></tr></thead><tbody>${transfers||'<tr><td colspan="5">无接管记录。</td></tr>'}</tbody></table>
@@ -702,37 +838,170 @@ async function withdrawEvent(eventId) {
 function plannedFounderId() {
   return state.structure?.organization.founderEmployeeId||state.planDraft?.founderEmployeeId||null;
 }
-async function openEmployee(id,placementType='employee') {
-  if(!id&&placementType==='founder'&&plannedFounderId()){fail('公司已有创始人安排，请查看组织调整。');return;}
-  const employee=id?(await api('GET','/api/v1/admin/employees/'+id)).body:null;state.editing=employee;
-  state.newEmployeePlacement=!id&&placementType==='founder'?'founder':'employee';
-  $('employeeId').value=id||'';$('fDisplayName').value=employee?.displayName||'';$('fPhone').value=employee?.loginPhone||'';$('fHireDate').value=employee?.hireDate||'';
-  $('employeeDialogTitle').textContent=employee?'编辑姓名/登录手机号/入职日期':state.newEmployeePlacement==='founder'?'新增创始人：填写资料':'新增员工：填写资料';
-  $('employeeSave').textContent=employee?'保存':'下一步：安排组织位置';
-  $('employeeError').textContent='';$('employeeDialog').showModal();
+
+async function openEmployee(id) {
+  try {
+    const employee=(await api('GET','/api/v1/admin/employees/'+id)).body;
+    state.editing=employee;
+    $('employeeId').value=id;$('employeeDialogTitle').textContent='编辑员工资料';
+    $('fDisplayName').value=employee.displayName||'';$('fPhone').value=employee.loginPhone||'';
+    $('fIdCard').value=employee.idCardNo||'';
+    $('fIdCardHint').textContent=employee.idCardNo?'仅管理员可见，员工列表脱敏显示。':'尚未录入。请补录18位身份证号。';
+    $('fHireDate').value=employee.hireDate||'';
+    $('employeeError').textContent='';$('employeeSave').textContent='保存';$('employeeDialog').showModal();
+  } catch(error) { fail(error); }
 }
 async function saveEmployee() {
-  const id=$('employeeId').value,displayName=$('fDisplayName').value.trim(),phone=$('fPhone').value.trim(),hireDate=$('fHireDate').value;
+  const id=$('employeeId').value;
+  if(!id){$('employeeError').textContent='请从员工列表选择要编辑的员工';return;}
+  $('employeeSave').disabled=true;
   try {
+    const detail=(await api('GET','/api/v1/admin/employees/'+id)).body;
+    const displayName=$('fDisplayName').value.trim();
     if(!displayName)throw new Error('请填写姓名');
-    if(id){const detail=(await api('GET','/api/v1/admin/employees/'+id)).body;
-      const currentHire=detail.hireDate||'';
-      await api('PATCH','/api/v1/admin/employees/'+id,{displayName,...(phone&&phone!==detail.loginPhone?{phone}:{}),...(hireDate!==currentHire?{hireDate:hireDate||null}:{})},{key:newKey(),ifMatch:'"'+detail.rowVersion+'"'});
-      await reloadAll();
-    }else{
-      if(!phone)throw new Error('新员工须填写有效手机号');
-      if(!state.planDraft)resetPlan();
-      const placementType=state.newEmployeePlacement==='founder'?'founder':'employee';
-      if(placementType==='founder'&&plannedFounderId())throw new Error('公司已有创始人安排，不能重复新增。');
-      const employeeId=crypto.randomUUID();
-      state.planDraft.newEmployees.push({id:employeeId,displayName,phone,...(hireDate?{hireDate}:{})});
-      state.planDraft.placements.push({employeeId,placementType,departmentId:null,teamId:null,positionId:null});
-      if(placementType==='founder')state.planDraft.founderEmployeeId=employeeId;
-      renderPlan();selectTab('organization',document.querySelector('[data-tab="organization"]'));
-      $('planHint').textContent=displayName+'的账号尚未创建。请在“人员最终位置”中完成安排，填写调整原因后点击“保存并生效”。';
+    const body={displayName},phone=$('fPhone').value.trim();
+    if(phone&&phone!==detail.loginPhone)body.phone=phone;
+    const hireDate=$('fHireDate').value;
+    if(hireDate!==(detail.hireDate||''))body.hireDate=hireDate||null;
+    const idCard=$('fIdCard').value.trim();
+    if(idCard!==(detail.idCardNo||'')){
+      if(!idCard)throw new Error('请填写18位身份证号');
+      body.idCardNo=idCard;
     }
-    $('employeeDialog').close();
-  }catch(error){$('employeeError').textContent=error.message;}
+    await api('PATCH','/api/v1/admin/employees/'+id,body,{key:newKey(),ifMatch:'"'+detail.rowVersion+'"'});
+    $('employeeDialog').close();state.editing=null;
+    await reloadAll();ok('员工资料已保存');
+  } catch(error) { $('employeeError').textContent=safeAdminMessage(error); }
+  finally { $('employeeSave').disabled=false; }
+}
+
+function onboardingTeamOptions() {
+  if(!state.structure)return;
+  const department=$('oDepartment').value;
+  syncSelect($('oTeam'),state.structure.teams.filter(team=>!department||team.departmentId===department),'请选择团队');
+}
+function toggleOnboardingPlacement() {
+  const placement=$('oPlacement').value,founder=placement==='founder',departmentHead=placement==='department_head';
+  $('oDepartment').disabled=founder;$('oTeam').disabled=founder||departmentHead;
+  if(founder)$('oDepartment').value='';
+  if(founder||departmentHead)$('oTeam').value='';
+}
+function renderOnboardingOptions() {
+  if(!state.structure)return;
+  syncSelect($('oDepartment'),state.structure.departments,'请选择部门');
+  syncSelect($('oPosition'),state.structure.positions,'请选择展示职位');
+  const choice=$('oPlacement');
+  choice.querySelector('option[value="founder"]')?.remove();
+  if(!state.structure.organization.founderEmployeeId){
+    const option=document.createElement('option');option.value='founder';option.textContent='创始人（公司尚未设置）';choice.appendChild(option);
+  }
+  onboardingTeamOptions();toggleOnboardingPlacement();
+}
+function openOnboarding() {
+  if(!state.structure)return;
+  $('oDisplayName').value='';$('oPhone').value='';$('oIdCard').value='';$('oHireDate').value='';
+  $('oPlacement').value='employee';$('oDepartment').value='';$('oTeam').value='';$('oPosition').value='';
+  renderOnboardingOptions();$('onboardingError').textContent='';$('onboardingSave').disabled=false;
+  $('onboardingDialog').showModal();$('oDisplayName').focus();
+}
+async function submitOnboarding() {
+  const placementType=$('oPlacement').value;
+  const payload={displayName:$('oDisplayName').value.trim(),phone:$('oPhone').value.trim(),idCardNo:$('oIdCard').value.trim(),
+    hireDate:$('oHireDate').value||null,placementType,
+    departmentId:placementType==='founder'?null:($('oDepartment').value||null),
+    teamId:(placementType==='founder'||placementType==='department_head')?null:($('oTeam').value||null),
+    positionId:$('oPosition').value||null};
+  if(!payload.displayName)return $('onboardingError').textContent='请填写姓名';
+  if(!payload.phone)return $('onboardingError').textContent='请填写登录手机号';
+  if(!payload.idCardNo)return $('onboardingError').textContent='请填写身份证号';
+  if(!payload.positionId)return $('onboardingError').textContent='请选择展示职位';
+  if(placementType!=='founder'){
+    if(!payload.departmentId)return $('onboardingError').textContent='请选择部门';
+    if(placementType!=='department_head'&&!payload.teamId)return $('onboardingError').textContent='请选择团队';
+  }
+  $('onboardingSave').disabled=true;
+  try {
+    const result=(await api('POST','/api/v1/admin/employees',payload,{key:newKey()})).body;
+    $('onboardingDialog').close();clearEmployeeFilters();
+    await reloadAll();
+    if(result.initialPassword)showEmployeePasswords([{name:payload.displayName,password:result.initialPassword}]);
+    ok('入职完成，员工账号与组织位置已生效');
+  } catch(error) {
+    $('onboardingError').textContent=safeAdminMessage(error)+(error.code==='ORGANIZATION_PLAN_REQUIRED'?' 已填写的员工资料保留，可修改后重试。':'');
+  } finally { $('onboardingSave').disabled=false; }
+}
+
+function offboardingCandidates(employee) {
+  const all=(state.allEmployees||[]).filter(person=>person.active&&person.id!==employee.id&&person.placementType==='employee');
+  if(employee.placementType==='team_head')return all.filter(person=>person.teamId===employee.teamId);
+  if(employee.placementType==='department_head')return all.filter(person=>person.departmentId===employee.departmentId);
+  return [];
+}
+async function openOffboarding(id) {
+  try {
+    const [detail,inventory]=await Promise.all([
+      api('GET','/api/v1/admin/employees/'+id),
+      api('GET','/api/v1/admin/employees/'+id+'/responsibilities')]);
+    state.offboarding={employee:detail.body,inventory:inventory.body};
+    renderOffboarding();$('offboardingReason').value='';$('offboardingError').textContent='';
+    $('offboardingDialog').showModal();
+  } catch(error) { fail(error); }
+}
+function renderOffboarding() {
+  const {employee,inventory}=state.offboarding;
+  const isHead=['team_head','department_head'].includes(employee.placementType);
+  const founder=employee.id===(state.structure?.organization?.founderEmployeeId||null);
+  const successors=offboardingCandidates(employee);
+  const people=(state.allEmployees||[]).filter(person=>person.active&&person.id!==employee.id);
+  const takeoverRows=(inventory.businessTasks||[]).map(task=>`<tr><td>${esc(task.title)}</td><td>${esc(STATE_LABELS[task.executionState]||task.executionState)}</td>
+    <td>${planSelect(people,null,'displayName',`data-offboard-task="${esc(task.id)}"`,'暂不接管')}</td></tr>`).join('');
+  const pending=(inventory.pendingRequests||[]).map(request=>{
+    const cancellable=request.kind==='create'&&request.applicantId===employee.id;
+    return `<p>${esc(KIND_LABELS[request.kind]||request.kind)} · ${esc(request.id)}${cancellable?` <label><input type="checkbox" data-cancel-request="${esc(request.id)}">撤销该未发布创建申请</label>`:' 须由业务方办结或由新负责人承接'}</p>`;
+  }).join('')||'<p class="muted">没有待审申请。</p>';
+  const unfinished=inventory.unfinishedAssignments||[];
+  $('offboardingTitle').textContent='办理离职：'+employee.displayName;
+  $('offboardingId').value=employee.id;
+  $('offboardingBody').innerHTML=`
+    <p class="muted">${esc(PLACEMENT_LABELS[employee.placementType]||'员工')} · ${esc(employee.departmentName||'公司')} / ${esc(employee.teamName||'—')} · ${esc(employee.positionName||'—')}</p>
+    ${founder?'<div class="error">固定创始人不能办理普通离职。</div>':''}
+    ${isHead?`<label for="offboardingSuccessor">继任人</label><select id="offboardingSuccessor"><option value="">请选择继任人</option>${successors.map(person=>`<option value="${esc(person.id)}">${esc(person.displayName)}</option>`).join('')}</select>
+      <p class="muted">${successors.length?'继任人将接任当前单位负责人。':'当前单位没有可接任负责人的员工，请到组织调整办理。'}</p>`:''}
+    <h3>未完成任务负责人交接</h3>
+    ${unfinished.length?`<div class="error">仍有 ${unfinished.length} 项未完成任务：${unfinished.map(task=>esc(task.title)).join('、')}。须先由员工或直属上级从员工端完成交接并通过审批。</div>`:'<p class="muted">没有未完成任务负责人交接。</p>'}
+    <h3>已发布任务后续业务责任</h3>
+    <table><thead><tr><th>任务</th><th>状态</th><th>业务接管人</th></tr></thead><tbody>${takeoverRows||'<tr><td colspan="3">没有需要接管的已发布任务。</td></tr>'}</tbody></table>
+    <h3>待审申请</h3>${pending}`;
+  $('offboardingSave').disabled=founder||(isHead&&!successors.length);
+}
+async function submitOffboarding() {
+  const {employee,inventory}=state.offboarding;
+  const reason=$('offboardingReason').value.trim();
+  if(!reason){$('offboardingError').textContent='请填写离职原因';return;}
+  const body={reason},successor=$('offboardingSuccessor');
+  if(successor){if(!successor.value){$('offboardingError').textContent='请选择继任人';return;}body.successorEmployeeId=successor.value;}
+  const transfers=[];
+  document.querySelectorAll('[data-offboard-task]').forEach(select=>{
+    if(!select.value)return;
+    const task=(inventory.businessTasks||[]).find(row=>row.id===select.dataset.offboardTask);
+    if(task)transfers.push({taskId:task.id,taskVersion:task.rowVersion,ownerVersion:task.ownerVersion,previousEmployeeId:employee.id,nextEmployeeId:select.value,reason});
+  });
+  if(transfers.length)body.businessTransfers=transfers;
+  const cancellations=[];
+  document.querySelectorAll('[data-cancel-request]:checked').forEach(input=>{
+    const request=(inventory.pendingRequests||[]).find(row=>row.id===input.dataset.cancelRequest);
+    if(request)cancellations.push({requestId:request.id,rowVersion:request.rowVersion,reason});
+  });
+  if(cancellations.length)body.cancelUnpublishedRequests=cancellations;
+  $('offboardingSave').disabled=true;
+  try {
+    const result=(await api('POST','/api/v1/admin/employees/'+employee.id+'/offboard',body,{key:newKey(),ifMatch:'"'+inventory.rowVersion+'"'})).body;
+    $('offboardingDialog').close();clearEmployeeFilters();
+    await reloadAll();
+    ok(`已办理离职：撤销 ${result.sessionsRevoked||0} 个登录会话，刷新 ${result.refreshedRequests||0} 条待审路线`);
+  } catch(error) {
+    $('offboardingError').textContent=safeAdminMessage(error);
+  } finally { $('offboardingSave').disabled=false; }
 }
 
 function resetPlan() {
@@ -763,21 +1032,16 @@ function renderPlan() {
     draft[kind].push(structuredClone(unit));renderPlan();
   });
   const fixedFounderId=state.structure.organization.founderEmployeeId,founderId=plannedFounderId();
-  const founder=[...state.employees,...draft.newEmployees].find(e=>e.id===founderId);
+  const allPeople=[...(state.allEmployees||[]),...draft.newEmployees];
+  const founder=allPeople.find(e=>e.id===founderId);
   $('planFounder').innerHTML='<h3>公司创始人</h3>'+(founderId?
-    `<p><strong>${esc(founder?.displayName||'姓名待确认')}</strong> · ${fixedFounderId?'固定创始人':'待保存'}</p>${fixedFounderId?'':'<p class="muted">尚未创建账号。请在人员最终位置中选择展示职位，再点击“保存并生效”。</p><button class="ghost" id="planCancelFounder">取消新增创始人</button>'}`:
-    '<p class="muted">尚未设置创始人。先填写创始人资料并选择展示职位，再保存组织调整。</p><button class="primary" id="planNewFounder">新增创始人</button>');
-  if($('planNewFounder'))$('planNewFounder').onclick=()=>openEmployee(null,'founder');
-  if($('planCancelFounder'))$('planCancelFounder').onclick=()=>{
-    draft.newEmployees=draft.newEmployees.filter(e=>e.id!==founderId);
-    draft.placements=draft.placements.filter(p=>p.employeeId!==founderId);
-    delete draft.founderEmployeeId;renderPlan();
-  };
+    `<p><strong>${esc(founder?.displayName||'姓名待确认')}</strong> · 固定创始人</p>`:
+    '<p class="muted">公司尚未设置创始人。请到员工页办理入职并选择创始人身份。</p>');
   $('planUnits').innerHTML=['departments','teams'].map(kind=>`<h3>${kind==='teams'?'团队':'部门'}</h3>
     <button class="ghost" data-add-unit="${kind}">添加${kind==='teams'?'团队':'部门'}</button>
     <table><thead><tr><th>名称</th>${kind==='teams'?'<th>所属部门</th>':''}<th>负责人</th><th></th></tr></thead><tbody>${draft[kind].map(unit=>{
       const head=draft.placements.find(p=>p.placementType===(kind==='teams'?'team_head':'department_head')&&p[kind==='teams'?'teamId':'departmentId']===unit.id);
-      const person=head&&[...state.employees,...draft.newEmployees].find(e=>e.id===head.employeeId);
+      const person=head&&allPeople.find(e=>e.id===head.employeeId);
       return `<tr><td><input data-unit="${unit.id}" data-kind="${kind}" value="${esc(unit.name)}" aria-label="单位名称"></td>
       ${kind==='teams'?`<td>${planSelect(draft.departments,unit.departmentId,'name',`data-team-department="${unit.id}"`)}</td>`:''}
       <td>${esc(person?.displayName||'请在下方安排负责人')}</td><td><button class="ghost" data-remove-unit="${unit.id}" data-kind="${kind}">${state.structure[kind].some(u=>u.id===unit.id)?'标记删除':'取消新增'}</button></td></tr>`;
@@ -793,7 +1057,7 @@ function renderPlan() {
   document.querySelectorAll('[data-unit]').forEach(input=>input.oninput=()=>{draft[input.dataset.kind].find(u=>u.id===input.dataset.unit).name=input.value;});
   document.querySelectorAll('[data-team-department]').forEach(select=>select.onchange=()=>{draft.teams.find(u=>u.id===select.dataset.teamDepartment).departmentId=select.value||null;renderPlan();});
   $('planPeople').innerHTML=`<table><thead><tr><th>员工</th><th>组织身份</th><th>部门</th><th>团队</th><th>展示职位（必填）</th></tr></thead><tbody>${draft.placements.map(p=>{
-    const person=[...state.employees,...draft.newEmployees].find(e=>e.id===p.employeeId);
+    const person=allPeople.find(e=>e.id===p.employeeId);
     const isFounder=p.employeeId===founderId;
     return `<tr><td>${esc(person?.displayName||p.employeeId)}${draft.newEmployees.some(e=>e.id===p.employeeId)?'（待创建）':''}</td>
       <td>${isFounder?(fixedFounderId?'创始人（固定）':'创始人（待保存）'):planSelect(Object.entries(PLACEMENT_LABELS).filter(([id])=>id!=='founder').map(([id,name])=>({id,name})),p.placementType,'name',`data-place="${p.employeeId}" data-field="placementType"`)}</td>
@@ -810,7 +1074,7 @@ function renderPlan() {
     renderPlan();
   });
   $('planDepartures').textContent=`待停用 ${draft.deactivateEmployees.length} 人，业务责任接管 ${draft.businessTransfers.length} 项，管理撤销未发布创建 ${draft.cancelUnpublishedRequests.length} 项。`;
-  for(const item of draft.deactivateEmployees){const line=document.createElement('p');line.textContent=(state.employees.find(e=>e.id===item.employeeId)?.displayName||item.employeeId)+'：'+item.reason;$('planDepartures').appendChild(line);}
+  for(const item of draft.deactivateEmployees){const line=document.createElement('p');line.textContent=(allPeople.find(e=>e.id===item.employeeId)?.displayName||item.employeeId)+'：'+item.reason;$('planDepartures').appendChild(line);}
 }
 async function savePlan() {
   const draft=state.planDraft;if(!draft)return;
@@ -819,7 +1083,7 @@ async function savePlan() {
     const result=(await api('POST','/api/v1/admin/organization-plans',draft,{key:newKey(),ifMatch:'"'+state.planVersion+'"'})).body;
     if(result.initialPasswords&&Object.keys(result.initialPasswords).length)showEmployeePasswords(Object.entries(result.initialPasswords).map(([id,password])=>({name:draft.newEmployees.find(e=>e.id===id)?.displayName||id,password})));
     state.planDraft=null;await reloadAll();ok('完整组织结果已保存');
-  }catch(error){$('planError').textContent=error.message+(error.details?.blockers?'：'+error.details.blockers.map(organizationIssueMessage).join('；'):'');}
+  }catch(error){$('planError').textContent=safeAdminMessage(error)+(error.details?.blockers?'：'+error.details.blockers.map(organizationIssueMessage).join('；'):'');}
   finally{$('planSave').disabled=false;}
 }
 async function loadInventory() {
@@ -828,7 +1092,7 @@ async function loadInventory() {
     const employeeId=$('inventoryEmployee').value;
     const inv=(await api('GET','/api/v1/admin/employees/'+employeeId+'/responsibilities')).body;
     state.inventory=inv;
-    const people=state.employees.filter(e=>e.active&&e.id!==employeeId);
+    const people=(state.allEmployees||[]).filter(e=>e.active&&e.id!==employeeId);
     $('inventoryResult').innerHTML=`<p>未完成任务负责人交接 ${inv.unfinishedAssignments.length} 项：${inv.unfinishedAssignments.map(t=>esc(t.title)).join('、')||'无'}。请员工或其直属上级从员工端办理，所需审批须先通过。</p>
       <h3>已发布任务后续业务责任（含已完成）</h3>
       <table><thead><tr><th>任务</th><th>状态</th><th>业务接管人</th></tr></thead><tbody>${inv.businessTasks.map(t=>`<tr><td>${esc(t.title)}</td><td>${esc(STATE_LABELS[t.executionState]||t.executionState)}</td><td>${planSelect(people,null,'displayName',`data-takeover-task="${t.id}"`,'暂不接管')}</td></tr>`).join('')}</tbody></table>
@@ -859,38 +1123,51 @@ async function loadInventory() {
       renderPlan();selectTab('organization',document.querySelector('[data-tab="organization"]'));$('planHint').textContent='接管或停用安排尚未生效。请安排全部人员去向，填写调整原因后点击“保存并生效”。';
     }
     $('stageTakeover').onclick=()=>stage(false);if($('stageDeactivate'))$('stageDeactivate').onclick=()=>stage(true);
-  }catch(error){$('inventoryError').textContent=error.message;}
+  }catch(error){$('inventoryError').textContent=safeAdminMessage(error);}
 }
 async function loadAdminAccount() {
   if(state.user?.mustChangePassword)return;
   try{const account=(await api('GET','/api/v1/admin/account')).body;state.adminAccount=account;$('adminAccountName').value=account.accountName;$('adminDisplayName').value=account.displayName;}
-  catch(error){$('adminAccountError').textContent=error.message;}
+  catch(error){$('adminAccountError').textContent=safeAdminMessage(error);}
 }
 $('planReload').onclick=async()=>{if(await askConfirmation('放弃全部未保存调整？',{title:'放弃调整',confirmText:'放弃调整'})){state.planDraft=null;await reloadAll();}};
-$('planSave').onclick=savePlan;$('planNewEmployee').onclick=()=>openEmployee(null);$('inventoryLoad').onclick=loadInventory;
+$('planSave').onclick=savePlan;$('inventoryLoad').onclick=loadInventory;
+$('employeeNew').onclick=openOnboarding;
+$('onboardingSave').onclick=submitOnboarding;
+$('onboardingCancel').onclick=()=>$('onboardingDialog').close();
+$('oDepartment').onchange=()=>{onboardingTeamOptions();};
+$('oPlacement').onchange=toggleOnboardingPlacement;
+$('offboardingSave').onclick=submitOffboarding;
+$('offboardingCancel').onclick=()=>$('offboardingDialog').close();
 $('adminAccountSave').onclick=async()=>{
   try{await api('PATCH','/api/v1/admin/account',{accountName:$('adminAccountName').value.trim(),displayName:$('adminDisplayName').value.trim()},{key:newKey(),ifMatch:'"'+state.adminAccount.rowVersion+'"'});logout();$('loginError').textContent='管理员账号已更新，请使用新账号重新登录';}
-  catch(error){$('adminAccountError').textContent=error.message;}
+  catch(error){$('adminAccountError').textContent=safeAdminMessage(error);}
 };
 $('adminPasswordSave').onclick=async()=>{
   try{await api('POST','/api/v1/auth/password',{currentPassword:$('adminCurrentPassword').value,newPassword:$('adminNewPassword').value},{key:newKey()});$('adminCurrentPassword').value='';$('adminNewPassword').value='';logout();$('loginError').textContent='密码已更新，请重新登录';}
-  catch(error){$('adminAccountError').textContent=error.message;}
+  catch(error){$('adminAccountError').textContent=safeAdminMessage(error);}
 };
 
 $('loginButton').onclick = login;
 $('password').addEventListener('keydown', (event) => { if (event.key === 'Enter') login(); });
 $('logout').onclick = logout;
-$('employeeQuery').oninput = renderEmployees;
+$('employeeQuery').oninput = scheduleEmployeeLoad;
+$('employeeDepartment').onchange = () => {renderEmployeeFilters();loadEmployees();};
+$('employeeTeam').onchange = () => loadEmployees();
+$('employeePlacement').onchange = () => loadEmployees();
+$('employeeActive').onchange = () => loadEmployees();
+$('employeePosition').onchange = () => loadEmployees();
+$('employeeClear').onclick = () => {clearEmployeeFilters();loadEmployees();};
 $('employeeRefresh').onclick = reloadAll;
 $('historySearch').onclick = () => loadHistory(0);
 $('historyQuery').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadHistory(0); });
 $('historyState').onchange = () => loadHistory(0);
 $('historyRequest').onchange = () => loadHistory(0);
-$('historyReset').onclick = () => { $('historyQuery').value = ''; $('historyState').value = ''; $('historyRequest').value = ''; loadHistory(0); };
+$('historyDeleted').onchange = () => loadHistory(0);
+$('historyReset').onclick = () => { $('historyQuery').value = ''; $('historyState').value = ''; $('historyRequest').value = ''; $('historyDeleted').value = ''; loadHistory(0); };
 $('notificationRefresh').onclick = () => loadNotifications(0);
 $('notificationQuery').oninput = () => loadNotifications(0);
 $('notificationState').onchange = () => loadNotifications(0);
-$('employeeNew').onclick = () => openEmployee(null);
 $('employeeSave').onclick = saveEmployee;
 $('employeeCancel').onclick = () => $('employeeDialog').close();
 $('positionCreate').onclick = async () => {
@@ -926,7 +1203,7 @@ $('holidayRefreshForm').onsubmit = async (event) => {
   } catch (error) {
     if (epoch === (state.epoch || 0)) {
       result.className = 'error';
-      result.textContent = error.message;
+      result.textContent = safeAdminMessage(error);
     }
   } finally {
     button.disabled = false;
@@ -937,7 +1214,7 @@ $('holidayRefreshForm').onsubmit = async (event) => {
 function logout() {
   dismissMessages();ok('');
   if(state.token)fetch('/api/v1/auth/sessions/current',{method:'DELETE',headers:{Authorization:'Bearer '+state.token}}).catch(()=>{});
-  state.epoch=(state.epoch||0)+1;state.token = null; state.user = null;state.planDraft=null;state.structure=null;state.employees=[];
+  state.epoch=(state.epoch||0)+1;state.token = null; state.user = null;state.planDraft=null;state.structure=null;state.employees=[];state.allEmployees=[];state.offboarding=null;
   document.querySelectorAll('dialog[open]').forEach(d=>d.close());$('employeeSecret').textContent='';$('employeeSecret').hidden=true;$('scope').textContent='';$('inventoryResult').textContent='';$('historyDetail').textContent='';
   localStorage.removeItem('pandora.admin.token');
   $('console').hidden = true; $('login').hidden = false;

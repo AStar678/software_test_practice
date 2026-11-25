@@ -1,0 +1,42 @@
+PASS  administrator console loads the complete employee directory
+PASS  employee page exposes search, department, team, identity, active, position filters and clearing
+PASS  department filter narrows rows and total together
+PASS  team filter combines with the department filter
+PASS  identity filter combines with department and team
+PASS  display position filter keeps the matching employee
+PASS  search combines with the remaining filters
+PASS  clearing all conditions restores the complete directory
+PASS  no-match state is an explicit empty result
+PASS  a failed filter keeps the previous list and shows a retryable hint
+PASS  a failed filter surfaces one safe Chinese error dialog
+PASS  network failure copy contains no raw browser exception
+PASS  the directory recovers after the failure
+PASS  employee list shows the masked identity number
+PASS  employee list does not include the full identity number
+PASS  administrator edit detail reads the full identity number
+PASS  employee-page onboarding creates the account and shows one initial password
+PASS  independent onboarding writes no organization-adjustment draft
+PASS  an occupied head position is refused with a route to organization adjustment
+PASS  the refused onboarding keeps the entered employee data
+PASS  offboarding dialog reads the existing responsibility inventory
+PASS  plain employee offboarding completes and refreshes the directory
+PASS  offboarded employee row shows the inactive state
+PASS  fixed founder offboarding is refused inside the dialog
+PASS  unit head offboarding asks for a successor
+PASS  missing successor keeps the dialog open with a Chinese explanation
+PASS  head offboarding with a successor promotes the successor
+PASS  deleted filter lists the deleted task with its state
+PASS  deleted history opens read-only with deletion time, actor and reason
+PASS  deleted history exposes no normal business write control
+PASS  normal-task filter hides the deleted task
+PASS  safe error mapping hides technical detail and keeps actionable Chinese
+PASS  login copy no longer carries a defensive boundary explanation
+PASS  organization adjustment no longer offers employee creation
+PASS  organization adjustment keeps unit, founder and final-placement structure
+PASS  organization copy keeps the business note without defensive persistence text
+PASS  admin console copy contains no prototype or development explanation
+PASS  required administrator labels remain visible
+PASS  employee directory fits 1440
+PASS  employee directory fits 390
+PASS  employee directory fits 320
+PASS  no uncaught browser exception occurred
