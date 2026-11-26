@@ -2,11 +2,14 @@ package cn.pandora.task;
 
 import cn.pandora.auth.Access;
 import cn.pandora.auth.Actor;
+import cn.pandora.common.ApiAdvice;
 import cn.pandora.common.ApiException;
 import cn.pandora.common.Db;
 import cn.pandora.common.Events;
+import cn.pandora.common.Writes;
 import cn.pandora.workspace.ExpiryService;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -18,6 +21,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class TaskSoftDeleteTest {
     private static final String ORG = "org";
@@ -97,24 +103,32 @@ class TaskSoftDeleteTest {
     }
 
     @Test
-    void deletedDetailIsAnIdentifiableGoneStateWithOnlyTitle() {
+    void deletedDetailIsGoneForAuthorizedReadersAndHiddenFromOtherEmployees() throws Exception {
         Db db = mock(Db.class);
         Access access = mock(Access.class);
         Map<String, Object> task = taskRow();
         task.put("deletedAt", "2026-11-23T02:00:00Z");
         when(db.one("SELECT * FROM tasks WHERE organization_id=? AND id=?", ORG, TASK)).thenReturn(task);
-        when(db.find("SELECT title FROM task_versions WHERE organization_id=? AND id=?", ORG, VERSION))
-                .thenReturn(Map.of("title", "迁移任务"));
+        when(db.one("SELECT * FROM task_versions WHERE organization_id=? AND id=?", ORG, VERSION))
+                .thenReturn(Map.of("id", VERSION, "title", "迁移任务", "description", "不可出现在删除响应中"));
+        when(access.canSeeTask(eq(ACTOR), eq(task), anyMap(), anyList())).thenReturn(true);
         TaskService service = new TaskService(db, access, mock(Events.class),
                 Clock.systemUTC(), mock(ExpiryService.class));
+        var mvc = MockMvcBuilders.standaloneSetup(new TaskController(service, mock(Tags.class), mock(Writes.class)))
+                .setControllerAdvice(new ApiAdvice()).build();
 
-        ApiException error = assertThrows(ApiException.class, () -> service.detail(ACTOR, TASK));
-
-        assertEquals(410, error.status);
-        assertEquals("TASK_DELETED", error.code);
-        assertEquals(TASK, error.details.get("taskId"));
-        assertEquals("迁移任务", error.details.get("title"));
-        assertEquals("2026-11-23T02:00:00Z", error.details.get("deletedAt"));
+        mvc.perform(get("/api/v1/tasks/{id}", TASK).requestAttr("actor", ACTOR))
+                .andExpect(status().isGone())
+                .andExpect(jsonPath("$.code").value("TASK_DELETED"))
+                .andExpect(jsonPath("$.message").value("任务已删除"))
+                .andExpect(jsonPath("$.taskId").value(TASK))
+                .andExpect(jsonPath("$.title").value("迁移任务"))
+                .andExpect(jsonPath("$.deletedAt").value("2026-11-23T02:00:00Z"))
+                .andExpect(jsonPath("$.description").doesNotExist());
+        Actor outsider = new Actor("reader-1", ORG, "employee", "team", null, 1);
+        mvc.perform(get("/api/v1/tasks/{id}", TASK).requestAttr("actor", outsider))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").doesNotExist());
     }
 
     private static Map<String, Object> taskRow() {

@@ -32,7 +32,7 @@ public class EmployeeDeactivations {
             if(!(item.get("rowVersion") instanceof Number version) || version.longValue()!=n(person,"rowVersion"))
                 throw new ApiException(412,"VERSION_CONFLICT","停用员工版本已变化");
             if(db.find("SELECT t.id FROM tasks t JOIN task_version_assignees a ON a.organization_id=t.organization_id AND a.version_id=t.current_version_id "
-                    + "WHERE t.organization_id=? AND t.execution_state<>'done' AND a.user_id=? LIMIT 1",actor.organizationId(),employee)!=null)
+                    + "WHERE t.organization_id=? AND t.deleted_at IS NULL AND t.execution_state<>'done' AND a.user_id=? LIMIT 1",actor.organizationId(),employee)!=null)
                 throw new ApiException(409,"UNFINISHED_HANDOVER_REQUIRED","未完成任务须先由业务方完成负责人交接并办结所需审批");
             person.put("active",false);
         }
@@ -77,18 +77,33 @@ public class EmployeeDeactivations {
         return revoked;
     }
 
-    /** Run after final placements, ownership transfers and route refresh; failure rolls back all of it. */
+    /**
+     * Run after final placements, ownership transfers and route refresh; failure rolls back all of it.
+     * Only requests that still bind the departing employee may block settlement, and each blocker names
+     * the concrete application so the console can explain what the business side has to finish.
+     */
     void requireSettled(Actor actor,Set<String> targets) {
         for(String employee:targets) {
             if(db.find("SELECT t.id FROM tasks t LEFT JOIN task_business_owners b ON b.organization_id=t.organization_id AND b.task_id=t.id "
-                    + "WHERE t.organization_id=? AND t.current_version_id IS NOT NULL AND COALESCE(b.employee_id,t.original_creator_id)=? LIMIT 1",actor.organizationId(),employee)!=null)
+                    + "WHERE t.organization_id=? AND t.deleted_at IS NULL AND t.current_version_id IS NOT NULL AND COALESCE(b.employee_id,t.original_creator_id)=? LIMIT 1",actor.organizationId(),employee)!=null)
                 throw new ApiException(409,"BUSINESS_TAKEOVER_REQUIRED","已发布任务的全部后续业务责任须安排有效接管人，包括已完成任务");
-            if(db.find("SELECT r.id FROM approval_requests r LEFT JOIN task_version_assignees a ON a.organization_id=r.organization_id AND a.version_id=r.proposed_version_id "
-                    + "WHERE r.organization_id=? AND r.status='pending' AND (r.applicant_id=? OR r.current_reviewer_id=? OR a.user_id=?) LIMIT 1",
-                    actor.organizationId(),employee,employee,employee)!=null)
-                throw new ApiException(409,"PENDING_SETTLEMENT_REQUIRED","仍有本员工申请或包含停用负责人的待审，请先由业务方办结或撤销");
+            List<Map<String,Object>> blockers=new ArrayList<>();
+            for(var request:db.list("SELECT r.id,r.kind,r.applicant_id,r.current_reviewer_id,v.title,"
+                    + "(SELECT COUNT(*) FROM task_version_assignees a WHERE a.organization_id=r.organization_id AND a.version_id=r.proposed_version_id AND a.user_id=?) AS proposed "
+                    + "FROM approval_requests r JOIN tasks t ON t.organization_id=r.organization_id AND t.id=r.task_id "
+                    + "LEFT JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
+                    + "WHERE r.organization_id=? AND r.status='pending' AND (r.applicant_id=? OR r.current_reviewer_id=?) ORDER BY r.created_at,r.id",
+                    employee,actor.organizationId(),employee,employee)) {
+                String blocker=employee.equals(s(request,"applicantId"))?"SELF_SUBMITTED"
+                        :employee.equals(s(request,"currentReviewerId"))?"REVIEWER_UNAVAILABLE":"PROPOSED_ASSIGNEE";
+                blockers.add(Map.of("requestId",s(request,"id"),"kind",Objects.toString(s(request,"kind"),""),
+                        "title",Objects.toString(s(request,"title"),""),"blocker",blocker));
+            }
+            if(blockers.isEmpty()) continue;
+            String summaries=blockers.stream().map(row->"《"+(s(row,"title")==null||s(row,"title").isBlank()?"未命名任务":s(row,"title"))+"》")
+                    .limit(5).collect(java.util.stream.Collectors.joining("、"));
+            throw new ApiException(409,"PENDING_SETTLEMENT_REQUIRED",
+                    "仍有与该员工绑定的待审申请（"+summaries+"），请先完成交接或由业务方办结",Map.of("blockers",blockers));
         }
-        if(!targets.isEmpty() && db.find("SELECT id FROM approval_requests WHERE organization_id=? AND status='pending' AND current_reviewer_id IS NULL LIMIT 1",actor.organizationId())!=null)
-            throw new ApiException(409,"PENDING_SETTLEMENT_REQUIRED","存在无法合法承接的待审，请先修复或办结");
     }
 }

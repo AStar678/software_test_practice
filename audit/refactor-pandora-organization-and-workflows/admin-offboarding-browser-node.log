@@ -1,0 +1,62 @@
+PASS  administrator console loads the complete employee directory
+PASS  an abnormal organization names the affected team and how to fix it
+PASS  a structure-only save repairs the organization from the browser
+PASS  employee search occupies its own row and names the identity lookup
+PASS  the search field fits a narrow window without truncation
+PASS  a complete identity number finds exactly one masked employee row
+PASS  the directory still masks the identity number
+PASS  the page never contains the complete identity number
+PASS  the match count is expressed without filter instructions
+PASS  the identity match is excluded by a different department
+PASS  exact identity search combines with the directory filters
+PASS  clearing the search restores the complete directory
+PASS  a no-match search shows the explicit empty state
+PASS  a failed search keeps the previous rows and shows a retryable hint
+PASS  a failed search surfaces one safe Chinese message
+PASS  an employee without responsibilities reaches the direct confirmation
+PASS  cancelling the direct confirmation stays in the directory
+PASS  cancelling leaves the employee active
+PASS  the retired responsibility takeover navigation no longer exists
+PASS  a third-party proposed assignee blocks offboarding with the task and next step
+PASS  leaving the handover page keeps the organization draft structure-only
+PASS  the unit-head offboarding page opens with the bound inventory
+PASS  the page separates execution handover, management takeover and succession
+PASS  the two handover kinds use independent candidate selectors
+PASS  a unique live owner cannot choose removal and blocks submit until replaced
+PASS  same-named candidates are distinguishable by department and team
+PASS  candidate selectors exclude the departing employee
+PASS  the task selectors exclude admin and cross-company accounts
+PASS  the offboarding surface exposes no identity document data
+PASS  self-submitted requests are grouped with an explicit withdraw result
+PASS  a third-party request reviewed by the departing employee is shown as a reassignment
+PASS  the page shows no request id or English application kind code
+PASS  the final confirmation is gated on the own-request confirmation
+PASS  filtering candidates refuses to drop an existing selection
+PASS  a complete arrangement enables the final confirmation
+PASS  the organization version can advance before submission
+PASS  the first confirmation opens before the stale-version submission
+PASS  a stale version shows a refresh instruction without clearing choices
+PASS  the conflict keeps the entered handover choices
+PASS  the explicit re-read binds a newer organization version
+PASS  the refreshed page can be completed again
+PASS  the final confirmation lists exactly the own requests to withdraw
+PASS  the confirmed offboarding succeeds and returns to the directory
+PASS  the departed head is deactivated
+PASS  completed work still shows the task and its management takeover in history
+PASS  the organization page shows no normal-state card
+PASS  the retired deactivation/takeover summary is gone
+PASS  company information keeps the limit without restating the sorting control
+PASS  existing company content is unchanged
+PASS  company information reordering still saves and re-renders
+PASS  the new order is persisted
+PASS  a dangerous company-information action still asks for confirmation
+PASS  cancelling the danger confirmation keeps the company information
+PASS  independent onboarding still creates an account after organization repair and offboarding
+PASS  the console produced no browser exceptions or error logs
+PASS  the employee login form is ready
+PASS  an active employee can log into the employee app after offboarding
+PASS  the employee task still exposes the ordinary handover entry
+PASS  employee handover offers an eligible same-department assignee
+PASS  the employee can submit after the reviewer preview settles
+PASS  the employee handover submit control can be clicked
+PASS  employee handover submits and closes its form

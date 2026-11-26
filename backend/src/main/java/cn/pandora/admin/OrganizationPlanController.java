@@ -21,7 +21,8 @@ public class OrganizationPlanController {
             @RequestHeader(value="Idempotency-Key",required=false) String key,
             @RequestHeader(value="If-Match",required=false) String ifMatch,
             @RequestBody Map<String,Object> input) {
-        var result=writes.runOutcome(actor,key,"POST /admin/organization-plans",input,ifMatch,()->plans.save(actor,ifMatch,input));
+        // The public command accepts structure only; lifecycle writes have dedicated employee commands.
+        var result=writes.runOutcome(actor,key,"POST /admin/organization-plans",input,ifMatch,()->plans.saveStructure(actor,ifMatch,input));
         return ResponseEntity.ok().eTag("\""+result.get("rowVersion")+"\"").body(result);
     }
 }

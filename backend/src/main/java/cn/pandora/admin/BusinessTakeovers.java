@@ -35,18 +35,22 @@ public class BusinessTakeovers {
         return result;
     }
 
+    /**
+     * Demo preparation only: seed one historical takeover record. It has no HTTP route, so an
+     * administrator cannot use it as a second write entry.
+     */
     public Map<String,Object> transfer(Actor actor,String ifMatch,Map<String,Object> input) {
         access.requireAdmin(actor);allowed(input,Set.of("transfers"));
         var company=db.one("SELECT authz_version FROM organizations WHERE id=?",actor.organizationId());
         Writes.checkVersion(ifMatch,n(company,"authzVersion"));
-        if(!(input.get("transfers") instanceof List<?> raw) || raw.isEmpty()) throw bad("transfers须为非空接管安排");
+        if(!(input.get("transfers") instanceof List<?> raw) || raw.isEmpty()) throw bad("接管安排须为非空数组");
         var prepared=apply(actor,raw);
         db.update("UPDATE organizations SET authz_version=authz_version+1 WHERE id=?",actor.organizationId());
         int refreshed=tasks.refreshPendingRoutes(access.actor(auth.account(actor)));
         return Map.of("rowVersion",n(company,"authzVersion")+1,"transfers",prepared,"refreshedRequests",refreshed);
     }
 
-    /** Shared by final deactivation plans; the caller owns company lock, versions and route refresh. */
+    /** Shared by the dedicated offboarding command; the caller owns company lock, versions and route refresh. */
     List<Map<String,Object>> apply(Actor actor,List<?> raw) {
         access.requireAdmin(actor);
         if(raw.size()>1000) throw bad("接管安排最多1000项");
@@ -56,7 +60,7 @@ public class BusinessTakeovers {
             Map<String,Object> item=new LinkedHashMap<>();
             map.forEach((key,entry)->{if(!(key instanceof String))throw bad("接管字段无效");item.put((String)key,entry);});
             allowed(item,Set.of("taskId","taskVersion","ownerVersion","previousEmployeeId","nextEmployeeId","reason"));
-            String taskId=requiredUuid(item.get("taskId"),"taskId"),target=requiredUuid(item.get("nextEmployeeId"),"nextEmployeeId");
+            String taskId=requiredUuid(item.get("taskId"),"任务标识"),target=requiredUuid(item.get("nextEmployeeId"),"接管人");
             if(!seen.add(taskId)) throw bad("同一任务只能安排一次接管");
             String reason=text(item.get("reason"),"接管原因",500);
             var task=db.one("SELECT * FROM tasks WHERE organization_id=? AND id=? FOR UPDATE",actor.organizationId(),taskId);

@@ -315,20 +315,21 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
 
   Future<void> _createInlineTag() async {
     if (ref.read(currentUserProvider)?.isFounder != true) return;
-    final name = TextEditingController();
+    var name = '';
     var selectedColor = _inlineTagPalette.first.color;
     var validation = '';
-    final accepted = await showDialog<bool>(
+    final value = await showDialog<String>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
           title: const Text('新建公司标签'),
+          scrollable: true,
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextField(
-                controller: name,
+                onChanged: (value) => name = value,
                 maxLength: 40,
                 decoration: const InputDecoration(labelText: '名称'),
               ),
@@ -365,12 +366,12 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('取消'),
             ),
             FilledButton(
               onPressed: () {
-                final value = name.text.trim();
+                final value = name.trim();
                 if (value.isEmpty) {
                   setDialogState(() => validation = '名称不能为空');
                   return;
@@ -383,7 +384,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                   setDialogState(() => validation = '同名标签已存在');
                   return;
                 }
-                Navigator.of(dialogContext).pop(true);
+                Navigator.of(dialogContext).pop(value);
               },
               child: const Text('创建并选中'),
             ),
@@ -391,9 +392,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
         ),
       ),
     );
-    final value = name.text.trim();
-    Future<void>.delayed(const Duration(milliseconds: 300), name.dispose);
-    if (accepted != true || !mounted) return;
+    if (value == null || !mounted) return;
     final keys = ref.read(operationKeysProvider);
     final body = {'name': value, 'color': selectedColor};
     final key = keys.keyFor(

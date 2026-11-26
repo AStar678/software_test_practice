@@ -21,16 +21,21 @@ public class AdminController {
     private final OrganizationService organization;
     private final Writes writes;
     private final TaskService tasks;
+    private final EmployeeOffboardings offboardings;
+    private final OffboardingInventory offboardingInventory;
     private final Access access;
     private final java.time.Clock clock;
     private final ObjectProvider<EventsWorker> worker;
     private final LoginKeyConstraints loginKeys;
 
-    public AdminController(OrganizationService organization, Writes writes, TaskService tasks, Access access,
+    public AdminController(OrganizationService organization, Writes writes, TaskService tasks, EmployeeOffboardings offboardings,
+                           OffboardingInventory offboardingInventory, Access access,
                            java.time.Clock clock, ObjectProvider<EventsWorker> worker, LoginKeyConstraints loginKeys) {
         this.organization = organization;
         this.writes = writes;
         this.tasks = tasks;
+        this.offboardings = offboardings;
+        this.offboardingInventory = offboardingInventory;
         this.access = access;
         this.clock = clock;
         this.worker = worker;
@@ -61,7 +66,7 @@ public class AdminController {
             exactSeconds = new java.math.BigDecimal(seconds.toString()).longValueExact();
             if (exactSeconds < 0 || exactSeconds > 86400L * 400) throw new ArithmeticException();
         } catch (ArithmeticException | NumberFormatException invalid) {
-            throw new ApiException(400, "INVALID_INPUT", "seconds 须为 0 至 34560000 的整数");
+            throw new ApiException(400, "INVALID_INPUT", "秒数须为 0 至 34560000 的整数");
         }
         controllable.advance(java.time.Duration.ofSeconds(exactSeconds));
         return Map.of("now", clock.instant().toString(), "offsetSeconds", controllable.offset().toSeconds());
@@ -120,6 +125,15 @@ public class AdminController {
         return organization.employees(actor, filters);
     }
 
+    /**
+     * Administrator-only directory search. The body may carry a full identity number so the sensitive value
+     * never reaches a URL, access log or audit record; ordinary GET search still never matches a document.
+     */
+    @PostMapping("/employees/search")
+    public Map<String, Object> searchEmployees(@RequestAttribute("actor") Actor actor, @RequestBody Map<String, Object> input) {
+        return organization.searchEmployees(actor, input);
+    }
+
     @GetMapping("/employees/{id}")
     public ResponseEntity<Map<String, Object>> employee(@RequestAttribute("actor") Actor actor, @PathVariable String id) {
         Map<String, Object> result = organization.employee(actor, id);
@@ -135,6 +149,22 @@ public class AdminController {
         tightenOrganizationConstraints();
         return ResponseEntity.created(URI.create("/api/v1/admin/employees/" + result.get("userId")))
                 .eTag("\"" + result.get("rowVersion") + "\"").body(result);
+    }
+
+    /** Read-only responsibility inventory for the single-employee offboarding page. */
+    @GetMapping("/employees/{id}/offboarding")
+    public Map<String, Object> offboardingInventory(@RequestAttribute("actor") Actor actor, @PathVariable String id) {
+        return offboardingInventory.read(actor, id);
+    }
+
+    /** Independent offboarding: one employee, a restricted arrangement, the existing atomic settlement. */
+    @PostMapping("/employees/{id}/offboard")
+    public Map<String, Object> offboardEmployee(@RequestAttribute("actor") Actor actor, @PathVariable String id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
+            @RequestBody Map<String, Object> input) {
+        return writes.run(actor, key, "POST /admin/employees/" + id + "/offboard", input, ifMatch,
+                () -> offboardings.offboard(actor, id, ifMatch, input));
     }
 
     @PatchMapping("/employees/{id}")

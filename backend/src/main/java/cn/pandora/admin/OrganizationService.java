@@ -15,6 +15,7 @@ import static cn.pandora.common.Db.*;
 public class OrganizationService {
     private static final Pattern TIME=Pattern.compile("^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$");
     private static final Set<String> LEVELS=Set.of("urgent","high","medium","low");
+    private static final Set<String> PLACEMENT_TYPES=Set.of("founder","department_head","team_head","employee");
     private static final int COMPANY_ITEM_LIMIT=10;
     private final Db db;
     private final Access access;
@@ -22,10 +23,12 @@ public class OrganizationService {
     private final OrganizationConstraints constraints;
     private final AuthService auth;
     private final OrganizationPlans plans;
+    private final EmployeeIdentityDocuments identity;
     private final java.time.Clock clock;
     public OrganizationService(Db db,Access access,Events events,OrganizationConstraints constraints,AuthService auth,OrganizationPlans plans,
-                               java.time.Clock clock) {
-        this.db=db;this.access=access;this.events=events;this.constraints=constraints;this.auth=auth;this.plans=plans;this.clock=clock;
+                               EmployeeIdentityDocuments identity,java.time.Clock clock) {
+        this.db=db;this.access=access;this.events=events;this.constraints=constraints;this.auth=auth;this.plans=plans;
+        this.identity=identity;this.clock=clock;
     }
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
@@ -48,23 +51,127 @@ public class OrganizationService {
     public Map<String,Object> transferEmployee(Actor actor,String id,String match,Map<String,Object> input) {throw planRequired(actor);}
     public Map<String,Object> teamManagement(Actor actor) {throw new ApiException(403,"FORBIDDEN","组织由独立管理员通过完整计划维护");}
 
+    /**
+     * Administrator employee directory with combinable filters. The same predicate builds the rows and
+     * the total, so a filtered page can never disagree with its count. Options come from the current
+     * organization and positions; no synthetic unit or person is returned.
+     */
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> employees(Actor actor,Map<String,String> filters) {
         access.requireAdmin(actor);access.requireCurrent(actor);
-        String query=filters.getOrDefault("q","").strip().toLowerCase(Locale.ROOT);
+        String query=filterText(filters,"q","搜索内容");
+        if(query==null) query="";
+        if (query.length()>200) throw bad("搜索内容最多200字");
+        String department=filterId(filters,"departmentId","部门");
+        String team=filterId(filters,"teamId","团队");
+        String position=filterId(filters,"positionId","展示职位");
+        String placementType=filterText(filters,"placementType","组织身份");
+        if (placementType!=null && !PLACEMENT_TYPES.contains(placementType)) throw bad("组织身份筛选无效");
+        Boolean active=filterBoolean(filters,"active");
+        return directory(actor,query,null,false,department,team,position,placementType,active);
+    }
+
+    /**
+     * Administrator-only directory search that may carry a full identity number in the request body. The
+     * value is never placed in a URL, audit record, log or error: the server normalizes it, matches it
+     * exactly inside the current company and returns the ordinary masked directory. A fragment is not an
+     * identity lookup; only the unchanged name/department/login-phone text search applies to it.
+     */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map<String,Object> searchEmployees(Actor actor,Map<String,Object> input) {
+        access.requireAdmin(actor);access.requireCurrent(actor);
+        allowed(input,Set.of("q","idCardNo","departmentId","teamId","placementType","active","positionId"));
+        var filters=new HashMap<String,String>();
+        for(String key:List.of("q","departmentId","teamId","placementType","active","positionId")) {
+            Object value=input.get(key);
+            if(value==null) continue;
+            if(value instanceof Boolean flag) {filters.put(key,flag.toString());continue;}
+            if(!(value instanceof String text)) throw bad("搜索条件格式不正确");
+            if(!text.isBlank()) filters.put(key,text);
+        }
+        String query=filterText(filters,"q","搜索内容");
+        if(query==null) query="";
+        if (query.length()>200) throw bad("搜索内容最多200字");
+        String department=filterId(filters,"departmentId","部门");
+        String team=filterId(filters,"teamId","团队");
+        String position=filterId(filters,"positionId","展示职位");
+        String placementType=filterText(filters,"placementType","组织身份");
+        if (placementType!=null && !PLACEMENT_TYPES.contains(placementType)) throw bad("组织身份筛选无效");
+        Boolean active=filterBoolean(filters,"active");
+        if(input.get("idCardNo")!=null) {
+            if(!(input.get("idCardNo") instanceof String raw)) throw bad("身份证号须为文字");
+            String normalized=normalizedIdentity(actor,raw);
+            return directory(actor,"",normalized,normalized==null,department,team,position,placementType,active);
+        }
+        String text=query.strip();
+        if(looksLikeFullIdentity(text)) {
+            String normalized=normalizedIdentity(actor,text);
+            return directory(actor,"",normalized,normalized==null,department,team,position,placementType,active);
+        }
+        return directory(actor,query,null,false,department,team,position,placementType,active);
+    }
+
+    private String normalizedIdentity(Actor actor,String raw) {
+        try {
+            return IdCardNumbers.normalize(raw,companyToday(actor));
+        } catch (RuntimeException invalid) {
+            // A malformed or fragment value maps to "no such employee", never to a validation echo.
+            return null;
+        }
+    }
+
+    private java.time.LocalDate companyToday(Actor actor) {
+        String zone=s(db.one("SELECT time_zone FROM organizations WHERE id=?",actor.organizationId()),"timeZone");
+        return clock.instant().atZone(java.time.ZoneId.of(zone)).toLocalDate();
+    }
+
+    private static boolean looksLikeFullIdentity(String value) {
+        return value!=null && value.length()==18 && value.matches("[0-9]{17}[0-9Xx]");
+    }
+
+    private Map<String,Object> directory(Actor actor,String query,String identityNumber,boolean identityUnmatched,
+                                         String department,String team,String position,String placementType,Boolean active) {
+        String needle=Objects.toString(query,"").toLowerCase(Locale.ROOT);
+        String identityEmployee=null;
+        if(identityNumber!=null) {
+            var row=db.find("SELECT employee_id FROM employee_identity_documents WHERE organization_id=? AND id_card_no=?",
+                    actor.organizationId(),identityNumber);
+            identityEmployee=row==null?null:s(row,"employeeId");
+        }
+        if(identityUnmatched || identityNumber!=null && identityEmployee==null)
+            return Map.of("items",List.of(),"total",0);
         var phones=new HashMap<String,Object>();
         var hireDates=new HashMap<String,Object>();
         for (var row:db.list("SELECT id,login_phone,hire_date FROM users WHERE organization_id=?",actor.organizationId())) {
             phones.put(s(row,"id"),row.get("loginPhone"));
             hireDates.put(s(row,"id"),row.get("hireDate"));
         }
-        var rows=access.employeeDirectory(actor,true).stream().filter(row->query.isEmpty()
-                || Objects.toString(row.get("displayName"),"").toLowerCase(Locale.ROOT).contains(query)
-                || Objects.toString(row.get("departmentName"),"").toLowerCase(Locale.ROOT).contains(query))
-                .map(row -> {var item=new LinkedHashMap<>(row);item.put("loginPhone",phones.get(s(row,"id")));
-                    item.put("hireDate",hireDates.get(s(row,"id")));return item;}).toList();
+        var masked=identity.maskedByEmployee(actor);
+        String identityMatch=identityEmployee;
+        var rows=access.employeeDirectory(actor,true).stream().filter(row -> {
+                    if(department!=null && !department.equals(s(row,"departmentId"))) return false;
+                    if(team!=null && !team.equals(s(row,"teamId"))) return false;
+                    if(position!=null && !position.equals(s(row,"positionId"))) return false;
+                    if(placementType!=null && !placementType.equals(s(row,"placementType"))) return false;
+                    if(active!=null && active!=Access.enabled(row)) return false;
+                    if(identityMatch!=null) return identityMatch.equals(s(row,"id"));
+                    if(needle.isEmpty()) return true;
+                    String phone=Objects.toString(phones.get(s(row,"id")),"");
+                    return Objects.toString(row.get("displayName"),"").toLowerCase(Locale.ROOT).contains(needle)
+                            || Objects.toString(row.get("departmentName"),"").toLowerCase(Locale.ROOT).contains(needle)
+                            || phone.toLowerCase(Locale.ROOT).contains(needle);
+                })
+                .map(row -> {
+                    var item=new LinkedHashMap<>(row);
+                    item.put("loginPhone",phones.get(s(row,"id")));
+                    item.put("hireDate",hireDates.get(s(row,"id")));
+                    item.put("idCardNoMasked",masked.get(s(row,"id")));
+                    item.put("idCardRecorded",masked.containsKey(s(row,"id")));
+                    return item;
+                }).toList();
         return Map.of("items",rows,"total",rows.size());
     }
+    /** Detail keeps the full document value for the administrator; it never enters a directory projection. */
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Map<String,Object> employee(Actor actor,String id) {
         access.requireAdmin(actor);access.requireCurrent(actor);
@@ -73,6 +180,9 @@ public class OrganizationService {
         var phone=db.find("SELECT login_phone,hire_date FROM users WHERE organization_id=? AND id=?",actor.organizationId(),id);
         item.put("loginPhone",phone==null?null:phone.get("loginPhone"));
         item.put("hireDate",phone==null?null:phone.get("hireDate"));
+        String full=identity.full(actor,id);
+        item.put("idCardNo",full);
+        item.put("idCardNoMasked",full==null?null:IdCardNumbers.mask(full));
         return item;
     }
     public List<Map<String,Object>> departmentMembers(Actor actor,String departmentId) {
@@ -80,10 +190,54 @@ public class OrganizationService {
         return access.employeeDirectory(actor,false).stream().filter(row->departmentId.equals(s(row,"departmentId"))).toList();
     }
 
+    /**
+     * Independent onboarding: one employee, one complete location, one identity document. It still
+     * delegates to the full organization plan so the company lock, version checks, uniqueness, initial
+     * password and approval-route refresh are the same as any other structural write. Anything that
+     * would change another person or unit is refused instead of being patched in.
+     */
     @SuppressWarnings("unchecked")
     public Writes.Outcome createEmployee(Actor actor,Map<String,Object> input) {
-        access.requireAdmin(actor);allowed(input,Set.of("displayName","phone","placementType","departmentId","teamId","positionId","hireDate"));
-        var draft=plans.draft(actor);String id=Db.id();
+        access.requireAdmin(actor);
+        allowed(input,Set.of("displayName","phone","placementType","departmentId","teamId","positionId","hireDate","idCardNo"));
+        LocalDate today=companyToday(actor);
+        String idCard=IdCardNumbers.normalize(input.get("idCardNo"),today);
+        identity.requireAvailable(actor,idCard,null);
+        var draft=plans.draft(actor);
+        String id=Db.id();
+        String placementType=text(input.get("placementType"),"组织身份",32);
+        if(!PLACEMENT_TYPES.contains(placementType)) throw bad("组织身份无效");
+        boolean creatingFounder="founder".equals(placementType);
+        String founder=s((Map<String,Object>)draft.get("organization"),"founderEmployeeId");
+        if(creatingFounder && founder!=null)
+            throw new ApiException(409,"ORGANIZATION_PLAN_REQUIRED","公司已有固定创始人，请到组织调整办理负责人变更");
+        String departmentId=stableId(input.get("departmentId"),"部门");
+        String teamId=input.get("teamId")==null?null:stableId(input.get("teamId"),"团队");
+        String positionId=stableId(input.get("positionId"),"展示职位");
+        if(positionId==null) throw bad("请选择展示职位");
+        if(creatingFounder) {
+            if(departmentId!=null || teamId!=null) throw bad("创始人应处于公司层，不归属部门或团队");
+        } else {
+            if(departmentId==null) throw bad("请选择部门");
+            if("department_head".equals(placementType)) {
+                if(teamId!=null) throw bad("部门负责人不应归属团队");
+            } else if(teamId==null) throw bad("请选择团队");
+            requireDepartment(actor,departmentId);
+            if(teamId!=null) {
+                var team=db.find("SELECT id,department_id FROM teams WHERE organization_id=? AND id=?",actor.organizationId(),teamId);
+                if(team==null) throw bad("请选择本公司已创建的团队");
+                if(!departmentId.equals(s(team,"departmentId")))
+                    throw new ApiException(409,"ORGANIZATION_PLAN_REQUIRED","所选团队不属于该部门，请到组织调整办理");
+            }
+        }
+        requirePosition(actor,positionId);
+        if(!"employee".equals(placementType) && !creatingFounder) {
+            String unitColumn="department_head".equals(placementType)?"department_id":"team_id";
+            String unitId="department_head".equals(placementType)?departmentId:teamId;
+            if(db.find("SELECT employee_id FROM employee_placements WHERE organization_id=? AND placement_type=? AND "+unitColumn+"=?",
+                    actor.organizationId(),placementType,unitId)!=null)
+                throw new ApiException(409,"ORGANIZATION_PLAN_REQUIRED","该负责人位置已被占用，请到组织调整办理负责人变更");
+        }
         var plan=new LinkedHashMap<String,Object>();
         for(String key:List.of("departments","teams","placements","expectedEmployees")) plan.put(key,draft.get(key));
         // Draft lists are local copies; cancellation or failed final validation leaves the DB untouched.
@@ -91,12 +245,24 @@ public class OrganizationService {
         var placement=new LinkedHashMap<String,Object>();placement.put("employeeId",id);
         for(String field:List.of("placementType","departmentId","teamId","positionId")) placement.put(field,input.get(field));
         places.add(placement);plan.put("placements",places);plan.put("reason","新增员工");
-        var addition=new LinkedHashMap<String,Object>();addition.put("id",id);addition.put("displayName",input.get("displayName"));addition.put("phone",input.get("phone"));
-        addition.put("hireDate",input.get("hireDate"));
+        if(creatingFounder) plan.put("founderEmployeeId",id);
+        var addition=new LinkedHashMap<String,Object>();addition.put("id",id);addition.put("displayName",input.get("displayName"));
+        addition.put("phone",input.get("phone"));addition.put("hireDate",input.get("hireDate"));addition.put("idCardNo",idCard);
         plan.put("newEmployees",List.of(addition));
-        var outcome=plans.save(actor,"\""+draft.get("rowVersion")+"\"",plan);
+        Writes.Outcome outcome;
+        try {
+            outcome=plans.save(actor,"\""+draft.get("rowVersion")+"\"",plan);
+        } catch(ApiException error) {
+            if("INVALID_ORGANIZATION_PLAN".equals(error.code) || "VERSION_CONFLICT".equals(error.code))
+                throw new ApiException(409,"ORGANIZATION_PLAN_REQUIRED",
+                        "该位置需要同时修改其他人员或单位，请到组织调整办理",error.details);
+            throw error;
+        }
         var passwords=(Map<String,String>)outcome.oneTimeOnly().get("initialPasswords");
-        return new Writes.Outcome(Map.of("userId",id,"rowVersion",2,"mustChangePassword",true),Map.of("initialPassword",passwords.get(id)));
+        // A new employee starts at org_version 1 and the placement write increments it once, so the
+        // employee's own version is 2 and is what the created response's ETag represents.
+        return new Writes.Outcome(Map.of("userId",id,"rowVersion",2,"mustChangePassword",true),
+                Map.of("initialPassword",passwords.get(id)));
     }
 
     public Map<String,Object> administrator(Actor actor) {
@@ -122,7 +288,7 @@ public class OrganizationService {
         allowed(input, Set.of("name", "sortOrder"));
         String name = text(input.get("name"), "职位名称", 100);
         requireUnique("SELECT 1 FROM positions WHERE organization_id=? AND name=?", "职位名称已存在", actor.organizationId(), name);
-        int sortOrder = integer(input.get("sortOrder"), "sortOrder", 0, 10000, 0);
+        int sortOrder = integer(input.get("sortOrder"), "排序", 0, 10000, 0);
         String id = Db.id();
         db.update("INSERT INTO positions(id,organization_id,name,sort_order) VALUES(?,?,?,?)", id, actor.organizationId(), name, sortOrder);
         bumpAuthority(actor, "organization.position.created", Map.of("positionId", id, "name", name));
@@ -136,7 +302,7 @@ public class OrganizationService {
         Writes.checkVersion(ifMatch, n(row, "rowVersion"));
         String name = input.containsKey("name") ? text(input.get("name"), "职位名称", 100) : s(row, "name");
         requireUniqueExcept("SELECT 1 FROM positions WHERE organization_id=? AND name=? AND id<>?", actor.organizationId(), name, id);
-        int sortOrder = input.containsKey("sortOrder") ? integer(input.get("sortOrder"), "sortOrder", 0, 10000, 0) : Math.toIntExact(n(row, "sortOrder"));
+        int sortOrder = input.containsKey("sortOrder") ? integer(input.get("sortOrder"), "排序", 0, 10000, 0) : Math.toIntExact(n(row, "sortOrder"));
         db.update("UPDATE positions SET name=?,sort_order=?,row_version=row_version+1 WHERE organization_id=? AND id=?", name, sortOrder, actor.organizationId(), id);
         bumpAuthority(actor, "organization.position.updated", Map.of("positionId", id, "name", name));
         return Map.of("positionId", id, "rowVersion", n(row, "rowVersion") + 1);
@@ -144,8 +310,8 @@ public class OrganizationService {
 
     public Map<String,Object> updateEmployee(Actor actor,String id,String ifMatch,Map<String,Object> input) {
         access.requireAdmin(actor);
-        allowed(input,Set.of("displayName","phone","hireDate"));
-        if(input.isEmpty()) throw bad("请至少修改姓名、手机号或入职日期");
+        allowed(input,Set.of("displayName","phone","hireDate","idCardNo"));
+        if(input.isEmpty()) throw bad("请至少修改姓名、手机号、入职日期或身份证号");
         var row=db.one("SELECT u.* FROM users u JOIN principals p ON p.organization_id=u.organization_id AND p.id=u.id "
                 + "WHERE u.organization_id=? AND u.id=? AND p.account_type='employee' FOR UPDATE",actor.organizationId(),id);
         Writes.checkVersion(ifMatch,n(row,"orgVersion"));
@@ -160,17 +326,29 @@ public class OrganizationService {
         // rejected before any other field is written.
         java.time.LocalDate hireDate=row.get("hireDate")==null?null:java.time.LocalDate.parse(Objects.toString(row.get("hireDate")));
         if(input.containsKey("hireDate")) hireDate=parseHireDate(input.get("hireDate"),companyToday(actor));
+        String normalizedIdCard=null;
+        if(input.containsKey("idCardNo")) {
+            normalizedIdCard=IdCardNumbers.normalize(input.get("idCardNo"),companyToday(actor));
+            identity.requireAvailable(actor,normalizedIdCard,id);
+        }
         boolean phoneChanged=!Objects.equals(login,s(row,"loginPhone"));
         try {
             db.update("UPDATE users SET display_name=?,phone=?,login_phone=?,hire_date=?,org_version=org_version+1,profile_version=profile_version+1 WHERE organization_id=? AND id=?",
                     name,phone,login,hireDate==null?null:java.sql.Date.valueOf(hireDate),actor.organizationId(),id);
         } catch(org.springframework.dao.DuplicateKeyException error) {throw new ApiException(409,"PHONE_TAKEN","该手机号已被使用");}
+        if(normalizedIdCard!=null) identity.put(actor,id,normalizedIdCard);
         int revoked=phoneChanged?auth.revokeSessions(actor.organizationId(),id):0;
-        bumpAuthority(actor,"organization.employee.identity_updated",Map.of("userId",id,"fields",input.keySet(),"sessionsRevoked",revoked));
+        var details=new LinkedHashMap<String,Object>();
+        details.put("userId",id);details.put("fields",input.keySet());details.put("sessionsRevoked",revoked);
+        // Audit states which fields changed plus a masked value, never the full document number.
+        if(normalizedIdCard!=null) details.put("idCardMasked",IdCardNumbers.mask(normalizedIdCard));
+        bumpAuthority(actor,"organization.employee.identity_updated",details);
         var result=new LinkedHashMap<String,Object>();
         result.put("userId",id);result.put("rowVersion",n(row,"orgVersion")+1);
         result.put("phoneUpdated",input.containsKey("phone"));
         result.put("hireDate",hireDate==null?null:hireDate.toString());
+        result.put("idCardUpdated",normalizedIdCard!=null);
+        if(normalizedIdCard!=null) result.put("idCardNoMasked",IdCardNumbers.mask(normalizedIdCard));
         result.put("sessionsRevoked",revoked);
         return result;
     }
@@ -241,9 +419,9 @@ public class OrganizationService {
         access.requireCapability(actor, "manage_company_info");
         allowed(input, Set.of("orderedIds"));
         Object raw = input.get("orderedIds");
-        if (!(raw instanceof List<?> list) || list.isEmpty()) throw bad("orderedIds须为1至10个公司信息ID");
+        if (!(raw instanceof List<?> list) || list.isEmpty()) throw bad("顺序须包含1至10个公司信息ID");
         List<String> ordered = new ArrayList<>();
-        for (Object value : list) ordered.add(requiredUuid(value, "orderedIds"));
+        for (Object value : list) ordered.add(requiredUuid(value, "公司信息"));
         if (new HashSet<>(ordered).size() != ordered.size()) throw bad("公司信息顺序不能重复");
         List<String> existing = db.list("SELECT id FROM home_items WHERE organization_id=? AND kind='company' ORDER BY sort_order,created_at,id", actor.organizationId()).stream().map(r -> s(r, "id")).toList();
         if (!new HashSet<>(existing).equals(new HashSet<>(ordered))) throw bad("调序必须包含且仅包含全部现有公司信息");
@@ -324,10 +502,6 @@ public class OrganizationService {
         }
     }
 
-    private java.time.LocalDate companyToday(Actor actor) {
-        String zone = s(db.one("SELECT time_zone FROM organizations WHERE id=?", actor.organizationId()), "timeZone");
-        return clock.instant().atZone(java.time.ZoneId.of(zone)).toLocalDate();
-    }
 
     static String text(Object value, String label, int max) {        if (!(value instanceof String raw)) throw bad(label + "必须为文字");
         String text = raw.strip();
@@ -351,6 +525,32 @@ public class OrganizationService {
 
     static String optionalId(Object value, String key) {
         return value == null ? null : TaskIds.requireUuid(value, key);
+    }
+
+    /** Stable organization ids are not UUIDs (fixtures and seeded units use readable ids). */
+    static String stableId(Object value,String label) {
+        if(value==null) return null;
+        if(!(value instanceof String text) || !text.matches("[A-Za-z0-9_-]{1,36}")) throw bad("请选择有效的"+label);
+        return text;
+    }
+
+    private static String filterText(Map<String,String> filters,String key,String label) {
+        String value=filters.get(key);
+        if(value==null || value.isBlank()) return null;
+        if(value.length()>100) throw bad(label+"筛选无效");
+        return value;
+    }
+
+    private static String filterId(Map<String,String> filters,String key,String label) {
+        String value=filterText(filters,key,label);
+        return value==null?null:stableId(value,label);
+    }
+
+    private static Boolean filterBoolean(Map<String,String> filters,String key) {
+        String value=filters.get(key);
+        if(value==null || value.isBlank()) return null;
+        if(!"true".equals(value) && !"false".equals(value)) throw bad("在职状态筛选无效");
+        return Boolean.parseBoolean(value);
     }
 
     static boolean bool(Object value, String key) {

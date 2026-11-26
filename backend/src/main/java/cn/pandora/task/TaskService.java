@@ -1307,6 +1307,186 @@ public class TaskService {
         return outcome;
     }
 
+    /**
+     * Dedicated offboarding execution handover. Every live assignment of the departing employee must be
+     * decided in this one command: keep the task by removing only that employee (allowed only while another
+     * valid owner remains) or replace that position with an eligible same-company employee. The ordered
+     * final list is validated as a whole and written as a new effective version with the ordinary task
+     * history, dispatch rows and notifications; no task content or approval right can travel with it.
+     * Completed tasks keep their historical assignment and are never part of this command.
+     */
+    public List<Map<String,Object>> applyOffboardingAssignments(Actor admin,String employeeId,List<?> raw,String reason) {
+        access.requireAdmin(admin);
+        String org=admin.organizationId();
+        Map<String,Map<String,Object>> requested=new LinkedHashMap<>();
+        if(raw!=null) {
+            if(raw.size()>5000) throw bad("执行交接最多5000项");
+            for(Object value:raw) {
+                if(!(value instanceof Map<?,?> map)) throw bad("执行交接格式不正确");
+                Map<String,Object> item=new LinkedHashMap<>();
+                map.forEach((key,entry)->{if(!(key instanceof String))throw bad("执行交接格式不正确");item.put((String)key,entry);});
+                allowed(item,Set.of("taskId","taskVersion","action","replacementEmployeeId"));
+                String taskId=requiredId(item.get("taskId"),"taskId");
+                if(requested.putIfAbsent(taskId,item)!=null) throw bad("同一任务只能安排一次执行交接");
+            }
+        }
+        List<Map<String,Object>> live=db.list("SELECT t.id,t.row_version,t.execution_state,t.current_version_id,v.title FROM tasks t "
+                + "JOIN task_versions v ON v.organization_id=t.organization_id AND v.id=t.current_version_id "
+                + "JOIN task_version_assignees a ON a.organization_id=t.organization_id AND a.version_id=v.id "
+                + "WHERE t.organization_id=? AND t.deleted_at IS NULL AND t.execution_state<>'done' AND a.user_id=? ORDER BY t.id",org,employeeId);
+        Set<String> expected=new LinkedHashSet<>();
+        for(var row:live) expected.add(s(row,"id"));
+        if(!expected.equals(requested.keySet())) {
+            List<Map<String,Object>> missing=live.stream().filter(row->!requested.containsKey(s(row,"id")))
+                    .map(row->Map.<String,Object>of("taskId",s(row,"id"),"title",s(row,"title"))).toList();
+            List<String> extra=requested.keySet().stream().filter(id->!expected.contains(id)).toList();
+            throw new ApiException(409,"OFFBOARDING_ASSIGNMENT_REQUIRED",
+                    "请为该员工负责的每一项未完成任务选择执行交接方式，已完成任务保留历史指派",
+                    Map.of("missing",missing,"unexpected",extra));
+        }
+        List<Map<String,Object>> prepared=new ArrayList<>();
+        for(var row:live) {
+            String taskId=s(row,"id");
+            var item=requested.get(taskId);
+            Map<String,Object> task=db.one("SELECT * FROM tasks WHERE organization_id=? AND id=? FOR UPDATE",org,taskId);
+            if(task.get("deletedAt")!=null) throw bad("已删除任务不能安排执行交接");
+            if(!"done".equals(s(task,"executionState"))&&!"todo".equals(s(task,"executionState"))&&!"doing".equals(s(task,"executionState")))
+                throw bad("任务状态不允许执行交接");
+            if(!Objects.equals(s(task,"currentVersionId"),s(row,"currentVersionId"))
+                    || !(item.get("taskVersion") instanceof Number taskVersion) || taskVersion.longValue()!=n(task,"rowVersion"))
+                throw new ApiException(412,"VERSION_CONFLICT","任务版本已变化，请刷新离职交接后重试");
+            List<String> owners=assignees(admin,s(task,"currentVersionId"));
+            if(!owners.contains(employeeId)) throw new ApiException(412,"VERSION_CONFLICT","任务负责人已变化，请刷新离职交接后重试");
+            if(db.find("SELECT id FROM approval_requests WHERE organization_id=? AND task_id=? AND status='pending' LIMIT 1",org,taskId)!=null)
+                throw new ApiException(409,"TASK_FROZEN","任务仍有待审申请，不能执行离职交接");
+            String action=requiredText(item,"action",16);
+            if(!Set.of("remove","replace").contains(action)) throw bad("执行交接方式无效");
+            String replacement=item.get("replacementEmployeeId")==null?null:requiredId(item.get("replacementEmployeeId"),"replacementEmployeeId");
+            if("remove".equals(action)&&replacement!=null) throw bad("仅移除时不能同时指定接手人");
+            if("replace".equals(action)&&replacement==null) throw bad("请选择接手人或选择仅移除该员工");
+            if(replacement!=null) {
+                if(replacement.equals(employeeId)) throw bad("接手人不能是离职员工本人");
+                Map<String,Object> candidate=access.activeUser(admin,replacement);
+                if(candidate==null||!org.equals(s(candidate,"organizationId"))||s(candidate,"placementType")==null
+                        ||"admin".equals(s(candidate,"accountType")))
+                    throw bad("接手人须为本公司有效业务员工");
+            }
+            List<String> next=new ArrayList<>(owners);
+            int index=next.indexOf(employeeId);
+            if(replacement==null||next.contains(replacement)) next.remove(index);
+            else next.set(index,replacement);
+            if(next.isEmpty()) throw new ApiException(409,"OFFBOARDING_ASSIGNMENT_REQUIRED","任务至少需要保留一位有效负责人，请指定接手人");
+            for(String owner:next) {
+                Map<String,Object> person=access.activeUser(admin,owner);
+                if(person==null||s(person,"placementType")==null)
+                    throw new ApiException(409,"OFFBOARDING_ASSIGNMENT_REQUIRED","任务的最终负责人中包含不可用员工，请先安排有效负责人");
+            }
+            prepared.add(Map.of("task",task,"taskId",taskId,"owners",owners,"next",next,"action",action,
+                    "replacement",Objects.toString(replacement,"")));
+        }
+        List<Map<String,Object>> applied=new ArrayList<>();
+        for(var plan:prepared) {
+            @SuppressWarnings("unchecked") Map<String,Object> task=(Map<String,Object>)plan.get("task");
+            String taskId=s(plan,"taskId");
+            @SuppressWarnings("unchecked") List<String> owners=(List<String>)plan.get("owners");
+            @SuppressWarnings("unchecked") List<String> next=(List<String>)plan.get("next");
+            String currentId=s(task,"currentVersionId");
+            Map<String,Object> current=version(admin,currentId);
+            Map<String,Object> proposed=new LinkedHashMap<>(current);
+            proposed.put("assigneeIds",next);
+            String versionId=insertVersion(admin,taskId,proposed,next,"applied");
+            proposed.put("id",versionId);
+            applyVersion(admin,task,current,proposed,"change","approval");
+            recordFieldChanges(admin,taskId,null,current,proposed,next);
+            Map<String,Object> detail=new LinkedHashMap<>();
+            detail.put("reason",reason);detail.put("source","employee_offboarding");
+            detail.put("departingEmployeeId",employeeId);
+            detail.put("replacedEmployeeIds",owners.stream().filter(owner->!next.contains(owner)).toList());
+            detail.put("addedEmployeeIds",next.stream().filter(owner->!owners.contains(owner)).toList());
+            recordHistory(admin,taskId,null,"offboarding_handover","assigneeIds",
+                    String.join(",",owners),String.join(",",next),detail);
+            Set<String> recipients=new LinkedHashSet<>(next);
+            recipients.add(employeeId);
+            events.record(admin,taskId,"task.offboarding.assignee_changed",recipients,
+                    Map.of("reason",reason,"departingEmployeeId",employeeId,
+                            "beforeOrder",owners,"afterOrder",next),
+                    null,versionId,s(current,"title"),
+                    "任务《"+s(current,"title")+"》的执行负责人已因员工离职交接调整。原因："+reason);
+            Map<String,Object> entry=new LinkedHashMap<>();
+            entry.put("taskId",taskId);entry.put("title",s(current,"title"));entry.put("action",s(plan,"action"));
+            entry.put("assignees",next);entry.put("versionId",versionId);
+            applied.add(entry);
+        }
+        return applied;
+    }
+
+    /**
+     * Withdraw the departing employee's own still-valid pending requests as part of offboarding. The caller
+     * has already bound the exact request ids and row versions the administrator confirmed; the server never
+     * widens that set. Each withdrawal keeps the applicant, request row, administrator, time and reason, and
+     * releases the task freeze through the ordinary terminal status.
+     */
+    public Map<String,Object> withdrawOffboardingRequests(Actor admin,String employeeId,List<?> confirmations,String reason) {
+        access.requireAdmin(admin);
+        String org=admin.organizationId();
+        Set<String> seen=new HashSet<>(),touchedTasks=new LinkedHashSet<>();
+        int withdrawn=0,expired=0;
+        if(confirmations==null) return Map.of("withdrawn",0,"expired",0,"taskIds",List.of());
+        if(confirmations.size()>5000) throw bad("撤销确认最多5000项");
+        for(Object value:confirmations) {
+            if(!(value instanceof Map<?,?> map)) throw bad("撤销确认格式不正确");
+            Map<String,Object> item=new LinkedHashMap<>();
+            map.forEach((key,entry)->{if(!(key instanceof String))throw bad("撤销确认格式不正确");item.put((String)key,entry);});
+            allowed(item,Set.of("requestId","rowVersion"));
+            String requestId=requiredId(item.get("requestId"),"requestId");
+            if(!seen.add(requestId)) throw bad("撤销确认包含重复申请");
+            Map<String,Object> request=request(admin,requestId,true);
+            Map<String,Object> task=task(admin,s(request,"taskId"),true);
+            if(!employeeId.equals(s(request,"applicantId")))
+                throw new ApiException(409,"OFFBOARDING_WITHDRAWAL_NOT_ALLOWED","只能撤销离职员工本人提交的待审申请");
+            if(!"pending".equals(s(request,"status")))
+                throw new ApiException(409,"OFFBOARDING_PENDING_STALE","待撤销申请已处理，请刷新离职交接后重新确认");
+            if(!(item.get("rowVersion") instanceof Number version)||version.longValue()!=n(request,"rowVersion"))
+                throw new ApiException(409,"OFFBOARDING_PENDING_STALE","待撤销申请已变化，请刷新离职交接后重新确认");
+            Instant deadline=applicableDeadline(admin,request);
+            String kind=s(request,"kind");
+            if(deadline==null||!clock.instant().isBefore(deadline)) {
+                // An already reached deadline is a terminal expiry, never an attributed withdrawal.
+                expiry.expire(org,request,clock.instant(),"employee_offboarding_after_deadline");
+                touchedTasks.add(s(request,"taskId"));expired++;continue;
+            }
+            Timestamp now=now();
+            int changed=db.update("UPDATE approval_requests SET status='withdrawn',comment=?,decided_by=?,decided_at=?,"
+                            + "row_version=row_version+1 WHERE organization_id=? AND id=? AND status='pending' AND row_version=?",
+                    reason,admin.id(),now,org,requestId,n(request,"rowVersion"));
+            if(changed!=1) throw new ApiException(409,"OFFBOARDING_PENDING_STALE","待撤销申请已变化，请刷新离职交接后重新确认");
+            db.update("UPDATE task_versions SET status='withdrawn' WHERE organization_id=? AND id=? AND status='proposed'",
+                    org,s(request,"proposedVersionId"));
+            db.update("UPDATE tasks SET row_version=row_version+1,updated_at=? WHERE organization_id=? AND id=?",now,org,s(request,"taskId"));
+            touchedTasks.add(s(request,"taskId"));
+            Map<String,Object> detail=new LinkedHashMap<>();
+            detail.put("decision","withdraw");detail.put("kind",kind);detail.put("reason",reason);
+            detail.put("source","employee_offboarding");detail.put("originalApplicantId",employeeId);
+            recordHistory(admin,s(request,"taskId"),requestId,"request_decided","status","pending","withdrawn",detail);
+            String title=null;
+            if(s(task,"currentVersionId")!=null)
+                title=s(db.find("SELECT title FROM task_versions WHERE organization_id=? AND id=?",org,s(task,"currentVersionId")),"title");
+            if(title==null)
+                title=s(db.find("SELECT title FROM task_versions WHERE organization_id=? AND id=?",org,s(request,"proposedVersionId")),"title");
+            if(title==null) title="未命名任务";
+            Set<String> recipients=new LinkedHashSet<>();
+            recipients.add(employeeId);
+            recipients.add(reviewerOfRecord(request));
+            recipients.remove(null);
+            events.record(admin,s(request,"taskId"),"task."+kind+".withdrawn",recipients,
+                    Map.of("requestId",requestId,"kind",kind,"reason",reason,"source","employee_offboarding"),
+                    requestId,s(request,"proposedVersionId"),title,
+                    "任务《"+title+"》的"+ExpiryService.kindLabel(kind)+"申请已因员工离职撤销。原因："+reason);
+            withdrawn++;
+        }
+        return Map.of("withdrawn",withdrawn,"expired",expired,"taskIds",List.copyOf(touchedTasks));
+    }
+
     private void validateHandoverAtApproval(Actor reviewer, String taskId, String requestId, Map<String, Object> base) {
         Map<String, Object> handover = db.find("SELECT * FROM handover_requests WHERE organization_id=? AND request_id=?", reviewer.organizationId(), requestId);
         if (handover == null) throw conflict("HANDOVER_MISSING", "交接记录缺失，无法批准");
@@ -1355,6 +1535,11 @@ public class TaskService {
         }
         List<Map<String, Object>> reassignments = db.list("SELECT * FROM request_reassignments WHERE organization_id=? AND task_id=? ORDER BY created_at,id", actor.organizationId(), taskId);
         List<Map<String, Object>> handovers = db.list("SELECT * FROM handover_requests WHERE organization_id=? AND task_id=? ORDER BY created_at,id", actor.organizationId(), taskId);
+        // Comments stay readable as part of the complete history, including after a soft delete. A
+        // logically removed comment keeps its row and is labelled instead of disappearing.
+        List<Map<String, Object>> comments = db.list("SELECT id,author_id,body,created_at,edited_at,deleted_at "
+                + "FROM task_log_comments WHERE organization_id=? AND object_type='task' AND task_id=? ORDER BY created_at,id",
+                actor.organizationId(), taskId);
         // The console shows ordered assignee names, not raw ids. Resolve every referenced person once;
         // only id and display name are returned, never a phone, e-mail or credential.
         Set<String> people = new LinkedHashSet<>();
@@ -1373,6 +1558,7 @@ public class TaskService {
             addIfPresent(people, s(row, "targetUserId"));
             addIfPresent(people, s(row, "setByUserId"));
         }
+        for (Map<String, Object> comment : comments) addIfPresent(people, s(comment, "authorId"));
         for (Map<String, Object> entry : entries) {
             addIfPresent(people, s(entry, "actorId"));
             if (Set.of("assignee_order", "reviewer_reassigned", "handover").contains(s(entry, "entryType"))) {
@@ -1411,6 +1597,12 @@ public class TaskService {
         result.put("versions", versions);
         result.put("reassignments", reassignments);
         result.put("handovers", handovers);
+        for (Map<String, Object> comment : comments) {
+            comment.put("authorName", resolved.getOrDefault(s(comment, "authorId"), s(comment, "authorId")));
+            comment.put("deleted", comment.get("deletedAt") != null);
+            comment.put("edited", comment.get("editedAt") != null);
+        }
+        result.put("comments", comments);
         result.put("people", resolved);
         return result;
     }
@@ -2621,15 +2813,14 @@ public class TaskService {
 
     /** A stable, client-identifiable deleted state; carries only the minimal title and time. */
     private ApiException deleted(Actor actor, Map<String, Object> task) {
+        String current = s(task, "currentVersionId");
+        if (current == null) return ApiException.notFound();
+        Map<String, Object> snapshot = version(actor, current);
+        if (!access.canSeeTask(actor, task, snapshot, assignees(actor, current))) return ApiException.notFound();
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("taskId", s(task, "id"));
         if (task.get("deletedAt") != null) details.put("deletedAt", task.get("deletedAt"));
-        String current = s(task, "currentVersionId");
-        if (current != null) {
-            Map<String, Object> row = db.find("SELECT title FROM task_versions WHERE organization_id=? AND id=?",
-                    actor.organizationId(), current);
-            if (row != null && row.get("title") != null) details.put("title", row.get("title"));
-        }
+        if (snapshot.get("title") != null) details.put("title", snapshot.get("title"));
         return new ApiException(410, "TASK_DELETED", "任务已删除", details);
     }
 

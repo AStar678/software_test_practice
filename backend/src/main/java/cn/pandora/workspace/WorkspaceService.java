@@ -1532,7 +1532,9 @@ public class WorkspaceService {
     static boolean enabled(Map<String,Object> row) {Object v=row.get("active");return Boolean.TRUE.equals(v)||"1".equals(String.valueOf(v));}
     private void business(Actor a) {if(a.administrator())throw new ApiException(403,"BUSINESS_ROLE_REQUIRED","管理员请使用管理端接口");access.requireCurrent(a);}
     static String nullable(Map<String,Object> body,String key) {String value=s(body,key);return value==null||value.isBlank()?null:value.trim();}
-    static String required(Map<String,Object> body,String key,int max) {if(!(body.get(key) instanceof String))throw bad(key+" 必须为文字");String value=nullable(body,key);if(value==null||value.length()>max)throw bad(key+" 不能为空且不得超过 "+max+" 字");return value;}
+    static String required(Map<String,Object> body,String key,int max) {String label=fieldLabel(key);if(!(body.get(key) instanceof String))throw bad(label+"必须为文字");String value=nullable(body,key);if(value==null||value.length()>max)throw bad(label+"不能为空且不得超过"+max+"字");return value;}
+    /** Administrative and historical payload field labels stay Chinese; raw request keys are never shown. */
+    static String fieldLabel(String key) {return switch (key) {case "reason"->"原因";case "body"->"内容";case "kind"->"类型";case "action"->"操作";case "limit"->"每页条数";case "offset"->"翻页位置";default->"内容";};}
     static void allowed(Map<String,Object> body,Set<String> keys) {if(!keys.containsAll(body.keySet()))throw bad("请求含不支持的字段");}
     static ApiException bad(String message) {return new ApiException(400,"INVALID_INPUT",message);}
     static ApiException forbidden(String message) {return new ApiException(403,"FORBIDDEN",message);}
@@ -1542,5 +1544,5 @@ public class WorkspaceService {
         int start=Math.min(offset,rows.size()),end=(int)Math.min((long)start+limit,rows.size());
         var result=new LinkedHashMap<String,Object>();result.put("items",rows.subList(start,end));result.put("total",rows.size());result.put("nextOffset",end<rows.size()?end:null);return result;
     }
-    static int number(Map<String,String> filters,String key,int fallback,int min,int max) {try{int value=Integer.parseInt(filters.getOrDefault(key,Integer.toString(fallback)));if(value<min||value>max)throw new NumberFormatException();return value;}catch(Exception e){throw bad(key+" 超出允许范围");}}
+    static int number(Map<String,String> filters,String key,int fallback,int min,int max) {try{int value=Integer.parseInt(filters.getOrDefault(key,Integer.toString(fallback)));if(value<min||value>max)throw new NumberFormatException();return value;}catch(Exception e){throw bad(fieldLabel(key)+"超出允许范围");}}
 }

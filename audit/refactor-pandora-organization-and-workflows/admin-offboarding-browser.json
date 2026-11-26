@@ -1,0 +1,360 @@
+{
+  "updated": "2026-11-26T03:12:28.773117+00:00",
+  "checks": [
+    {
+      "check": "administrator console loads the complete employee directory",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "an abnormal organization names the affected team and how to fix it",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a structure-only save repairs the organization from the browser",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "employee search occupies its own row and names the identity lookup",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the search field fits a narrow window without truncation",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a complete identity number finds exactly one masked employee row",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the directory still masks the identity number",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the page never contains the complete identity number",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the match count is expressed without filter instructions",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the identity match is excluded by a different department",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "exact identity search combines with the directory filters",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "clearing the search restores the complete directory",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a no-match search shows the explicit empty state",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a failed search keeps the previous rows and shows a retryable hint",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a failed search surfaces one safe Chinese message",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "an employee without responsibilities reaches the direct confirmation",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "cancelling the direct confirmation stays in the directory",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "cancelling leaves the employee active",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the retired responsibility takeover navigation no longer exists",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a third-party proposed assignee blocks offboarding with the task and next step",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "leaving the handover page keeps the organization draft structure-only",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the unit-head offboarding page opens with the bound inventory",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the page separates execution handover, management takeover and succession",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the two handover kinds use independent candidate selectors",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a unique live owner cannot choose removal and blocks submit until replaced",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "same-named candidates are distinguishable by department and team",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "candidate selectors exclude the departing employee",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the task selectors exclude admin and cross-company accounts",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the offboarding surface exposes no identity document data",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "self-submitted requests are grouped with an explicit withdraw result",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a third-party request reviewed by the departing employee is shown as a reassignment",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the page shows no request id or English application kind code",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the final confirmation is gated on the own-request confirmation",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "filtering candidates refuses to drop an existing selection",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a complete arrangement enables the final confirmation",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the organization version can advance before submission",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the first confirmation opens before the stale-version submission",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a stale version shows a refresh instruction without clearing choices",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the conflict keeps the entered handover choices",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the explicit re-read binds a newer organization version",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the refreshed page can be completed again",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the final confirmation lists exactly the own requests to withdraw",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the confirmed offboarding succeeds and returns to the directory",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the departed head is deactivated",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "completed work still shows the task and its management takeover in history",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the organization page shows no normal-state card",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the retired deactivation/takeover summary is gone",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "company information keeps the limit without restating the sorting control",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "existing company content is unchanged",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "company information reordering still saves and re-renders",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the new order is persisted",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "a dangerous company-information action still asks for confirmation",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "cancelling the danger confirmation keeps the company information",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "independent onboarding still creates an account after organization repair and offboarding",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the console produced no browser exceptions or error logs",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the employee login form is ready",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "an active employee can log into the employee app after offboarding",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the employee task still exposes the ordinary handover entry",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "employee handover offers an eligible same-department assignee",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the employee can submit after the reviewer preview settles",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the employee handover submit control can be clicked",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "employee handover submits and closes its form",
+      "pass": true,
+      "evidence": "real Chrome"
+    },
+    {
+      "check": "the departed reviewer session loses access",
+      "pass": true,
+      "evidence": "same disposable fixture, service API and database"
+    },
+    {
+      "check": "the new reviewer sees the original applicant and proposal",
+      "pass": true,
+      "evidence": "same disposable fixture, service API and database"
+    },
+    {
+      "check": "the new reviewer can act on reassigned work",
+      "pass": true,
+      "evidence": "same disposable fixture, service API and database"
+    },
+    {
+      "check": "own request history distinguishes administrator withdrawal from natural expiry",
+      "pass": true,
+      "evidence": "same disposable fixture, service API and database"
+    },
+    {
+      "check": "completed task keeps its creator while management alone transfers",
+      "pass": true,
+      "evidence": "same disposable fixture, service API and database"
+    },
+    {
+      "check": "ordinary employee handover submitted in Chrome still requires the direct manager",
+      "pass": true,
+      "evidence": "same disposable fixture, service API and database"
+    },
+    {
+      "check": "ordinary approval records employee handover, not administrator takeover",
+      "pass": true,
+      "evidence": "same disposable fixture, service API and database"
+    },
+    {
+      "check": "the retired administrator takeover route cannot write",
+      "pass": true,
+      "evidence": "same disposable fixture, service API and database"
+    },
+    {
+      "check": "the service log does not expose the complete identity query",
+      "pass": true,
+      "evidence": "same disposable fixture, service API and database"
+    }
+  ]
+}

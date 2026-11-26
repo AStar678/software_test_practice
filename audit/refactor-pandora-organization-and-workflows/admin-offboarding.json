@@ -1,0 +1,1012 @@
+{
+  "updated": "2026-11-26T03:03:24.055968+00:00",
+  "checks": [
+    {
+      "check": "administrator reads the organization draft",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "organization adjustment rejects legacy lifecycle field deactivateEmployees",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "rejected lifecycle plan writes nothing for deactivateEmployees",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "organization adjustment rejects legacy lifecycle field newEmployees",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "rejected lifecycle plan writes nothing for newEmployees",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "organization adjustment rejects legacy lifecycle field businessTransfers",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "rejected lifecycle plan writes nothing for businessTransfers",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "organization adjustment rejects legacy lifecycle field cancelUnpublishedRequests",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "rejected lifecycle plan writes nothing for cancelUnpublishedRequests",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a legal structure-only organization plan still saves",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "saved structure is visible",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "independent onboarding still works beside the narrowed organization command",
+      "pass": true,
+      "evidence": {
+        "status": 201,
+        "code": null
+      }
+    },
+    {
+      "check": "standalone administrator takeover write endpoint is retired",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "read-only responsibility history remains available",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "a business account cannot read the offboarding inventory",
+      "pass": true,
+      "evidence": 403
+    },
+    {
+      "check": "a business account cannot invoke offboarding",
+      "pass": true,
+      "evidence": 403
+    },
+    {
+      "check": "a published task can be soft-deleted before the inventory",
+      "pass": true,
+      "evidence": {
+        "taskId": "cb0b196c-b64e-4672-904d-f439a85f2dc9",
+        "deleted": true,
+        "rowVersion": 3,
+        "deletedAt": "2026-11-26T03:02:57.312781Z",
+        "message": "任务已删除"
+      }
+    },
+    {
+      "check": "a departing employee can have different own pending request kinds",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a third-party proposal can name the departing employee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "inventory binds the current company version",
+      "pass": true,
+      "evidence": 3
+    },
+    {
+      "check": "inventory lists live unfinished assignments",
+      "pass": true,
+      "evidence": [
+        "8b802a9f-3045-466e-9975-b2016cc3c000",
+        "db1cae81-9be6-47e7-b7d5-582b808e4f33",
+        "ee6549f9-73fc-4b03-a6f3-9ef20e5ec604"
+      ]
+    },
+    {
+      "check": "soft-deleted work is excluded from the active handover",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a multi-owner task may be removed and a unique owner must be replaced",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "management inventory includes completed and live tasks",
+      "pass": true,
+      "evidence": [
+        "abd7431a-db1c-4f68-8d69-526e15f3f3c3",
+        "ee6549f9-73fc-4b03-a6f3-9ef20e5ec604"
+      ]
+    },
+    {
+      "check": "soft-deleted management history needs no takeover",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "inventory distinguishes self-submitted pending requests",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "inventory marks a third-party proposed-assignee conflict as blocked",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "blocked inventory disables offboarding",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "candidate projections carry department/team but no identity data",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a third-party proposed-assignee request blocks offboarding",
+      "pass": true,
+      "evidence": {
+        "code": "OFFBOARDING_PENDING_BLOCKED",
+        "message": "仍有他人待审申请涉及离职员工或本次执行交接，请先由业务方办结后再办理离职",
+        "blockers": [
+          {
+            "requestId": "2c7e816e-bcff-4747-a4b5-1b14ea0a35fe",
+            "title": "他人提案指向离职人",
+            "reason": "PROPOSED_ASSIGNEE"
+          }
+        ]
+      }
+    },
+    {
+      "check": "a blocked command keeps requests, versions and organization unchanged",
+      "pass": true,
+      "evidence": {
+        "versions": 9,
+        "pending": 3,
+        "org": 3
+      }
+    },
+    {
+      "check": "the inventory clears the blocker after the proposal is withdrawn",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "offboarding requires a decision for every live assignment",
+      "pass": true,
+      "evidence": {
+        "code": "OFFBOARDING_ASSIGNMENT_REQUIRED",
+        "message": "请为该员工负责的每一项未完成任务选择执行交接方式，已完成任务保留历史指派",
+        "unexpected": [],
+        "missing": [
+          {
+            "taskId": "db1cae81-9be6-47e7-b7d5-582b808e4f33",
+            "title": "唯一负责人任务"
+          },
+          {
+            "taskId": "ee6549f9-73fc-4b03-a6f3-9ef20e5ec604",
+            "title": "在建且带管理权"
+          }
+        ]
+      }
+    },
+    {
+      "check": "a unique live owner cannot be removed without a replacement",
+      "pass": true,
+      "evidence": {
+        "code": "OFFBOARDING_ASSIGNMENT_REQUIRED",
+        "message": "任务至少需要保留一位有效负责人，请指定接手人"
+      }
+    },
+    {
+      "check": "offboarding requires management takeover for completed tasks too",
+      "pass": true,
+      "evidence": {
+        "code": "BUSINESS_TAKEOVER_REQUIRED",
+        "message": "已发布任务的全部后续业务责任须逐项安排接管人，包括已完成任务",
+        "missing": [
+          {
+            "taskId": "ee6549f9-73fc-4b03-a6f3-9ef20e5ec604",
+            "title": "在建且带管理权"
+          }
+        ]
+      }
+    },
+    {
+      "check": "offboarding refuses an incomplete own-pending confirmation set",
+      "pass": true,
+      "evidence": {
+        "code": "OFFBOARDING_PENDING_CONFIRMATION",
+        "message": "该员工的本人待审申请已变化，请刷新离职交接并重新确认将撤销的申请",
+        "pending": [
+          {
+            "requestId": "a0657079-6324-43e1-afdc-7b8958571fcb",
+            "title": "唯一负责人任务",
+            "kind": "progress",
+            "rowVersion": 1
+          },
+          {
+            "requestId": "b3cba243-c9f7-4f2e-b0ff-1a7da22cd75d",
+            "title": "本人未发布创建",
+            "kind": "create",
+            "rowVersion": 1
+          }
+        ]
+      }
+    },
+    {
+      "check": "a late takeover validation failure rejects the whole offboarding",
+      "pass": true,
+      "evidence": {
+        "code": "VERSION_CONFLICT",
+        "message": "任务或业务责任版本已变化"
+      }
+    },
+    {
+      "check": "no partial withdrawal, version or deactivation survives a late failure",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "versions": 9,
+          "pending": 2,
+          "org": 3
+        },
+        "after": {
+          "versions": 9,
+          "pending": 2,
+          "active": 1,
+          "sessions": 1
+        }
+      }
+    },
+    {
+      "check": "a stale company version is refused before any final write",
+      "pass": true,
+      "evidence": {
+        "code": "VERSION_CONFLICT",
+        "message": "内容已更新，请刷新后重试"
+      }
+    },
+    {
+      "check": "a business account cannot submit the offboarding command",
+      "pass": true,
+      "evidence": 403
+    },
+    {
+      "check": "a complete offboarding succeeds",
+      "pass": true,
+      "evidence": {
+        "employeeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "offboarded": true,
+        "withdrawnOwnRequests": 2,
+        "expiredOwnRequests": 0,
+        "executionHandovers": [
+          {
+            "taskId": "8b802a9f-3045-466e-9975-b2016cc3c000",
+            "title": "共享进行中任务",
+            "action": "remove",
+            "assignees": [
+              "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a"
+            ],
+            "versionId": "965efaf2-bb85-4891-937c-ce71071bc874"
+          },
+          {
+            "taskId": "db1cae81-9be6-47e7-b7d5-582b808e4f33",
+            "title": "唯一负责人任务",
+            "action": "replace",
+            "assignees": [
+              "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+            ],
+            "versionId": "2258f0f8-021f-45a1-b040-936cb0973fc2"
+          },
+          {
+            "taskId": "ee6549f9-73fc-4b03-a6f3-9ef20e5ec604",
+            "title": "在建且带管理权",
+            "action": "replace",
+            "assignees": [
+              "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+            ],
+            "versionId": "d0aaa5ad-08b5-40cd-b187-8565f1138e7f"
+          }
+        ],
+        "rowVersion": 4,
+        "createdEmployeeIds": [],
+        "refreshedRequests": 0,
+        "constraints": {
+          "formalWritesReady": true,
+          "blockers": [],
+          "runtimeDdlEnabled": false,
+          "organizationId": "fixture-company"
+        },
+        "deactivatedEmployeeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "sessionsRevoked": 1
+      }
+    },
+    {
+      "check": "offboarding reports own withdrawals and expired requests",
+      "pass": true,
+      "evidence": {
+        "employeeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "offboarded": true,
+        "withdrawnOwnRequests": 2,
+        "expiredOwnRequests": 0,
+        "executionHandovers": [
+          {
+            "taskId": "8b802a9f-3045-466e-9975-b2016cc3c000",
+            "title": "共享进行中任务",
+            "action": "remove",
+            "assignees": [
+              "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a"
+            ],
+            "versionId": "965efaf2-bb85-4891-937c-ce71071bc874"
+          },
+          {
+            "taskId": "db1cae81-9be6-47e7-b7d5-582b808e4f33",
+            "title": "唯一负责人任务",
+            "action": "replace",
+            "assignees": [
+              "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+            ],
+            "versionId": "2258f0f8-021f-45a1-b040-936cb0973fc2"
+          },
+          {
+            "taskId": "ee6549f9-73fc-4b03-a6f3-9ef20e5ec604",
+            "title": "在建且带管理权",
+            "action": "replace",
+            "assignees": [
+              "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+            ],
+            "versionId": "d0aaa5ad-08b5-40cd-b187-8565f1138e7f"
+          }
+        ],
+        "rowVersion": 4,
+        "createdEmployeeIds": [],
+        "refreshedRequests": 0,
+        "constraints": {
+          "formalWritesReady": true,
+          "blockers": [],
+          "runtimeDdlEnabled": false,
+          "organizationId": "fixture-company"
+        },
+        "deactivatedEmployeeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ],
+        "sessionsRevoked": 1
+      }
+    },
+    {
+      "check": "the employee is deactivated and every session is revoked",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the former employee token loses access immediately",
+      "pass": true,
+      "evidence": 401
+    },
+    {
+      "check": "a live task with another owner keeps that owner after removal",
+      "pass": true,
+      "evidence": [
+        [
+          "alpha-two-employee"
+        ]
+      ]
+    },
+    {
+      "check": "a unique owner is replaced in the same position",
+      "pass": true,
+      "evidence": [
+        [
+          "beta-one-employee"
+        ]
+      ]
+    },
+    {
+      "check": "the replacement of a multi-owner task is inserted in place",
+      "pass": true,
+      "evidence": [
+        [
+          "beta-one-employee"
+        ]
+      ]
+    },
+    {
+      "check": "a completed task keeps its historical assignee",
+      "pass": true,
+      "evidence": [
+        [
+          "alpha-one-employee"
+        ]
+      ]
+    },
+    {
+      "check": "completed-task management moves to the chosen administrator-selected owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the takeover receiver is not added as an execution owner",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "own pending requests are withdrawn with the offboarding source",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "unrelated decided requests are untouched",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the execution handover writes an ordered history entry and a version authored by the administrator",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the takeover history keeps the original creator and records the administrator",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "an idempotent replay returns the committed result",
+      "pass": true,
+      "evidence": {
+        "employeeId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "offboarded": true,
+        "rowVersion": 4,
+        "constraints": {
+          "blockers": [],
+          "organizationId": "fixture-company",
+          "formalWritesReady": true,
+          "runtimeDdlEnabled": false
+        },
+        "sessionsRevoked": 1,
+        "refreshedRequests": 0,
+        "createdEmployeeIds": [],
+        "executionHandovers": [
+          {
+            "title": "共享进行中任务",
+            "action": "remove",
+            "taskId": "8b802a9f-3045-466e-9975-b2016cc3c000",
+            "assignees": [
+              "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a"
+            ],
+            "versionId": "965efaf2-bb85-4891-937c-ce71071bc874"
+          },
+          {
+            "title": "唯一负责人任务",
+            "action": "replace",
+            "taskId": "db1cae81-9be6-47e7-b7d5-582b808e4f33",
+            "assignees": [
+              "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+            ],
+            "versionId": "2258f0f8-021f-45a1-b040-936cb0973fc2"
+          },
+          {
+            "title": "在建且带管理权",
+            "action": "replace",
+            "taskId": "ee6549f9-73fc-4b03-a6f3-9ef20e5ec604",
+            "assignees": [
+              "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+            ],
+            "versionId": "d0aaa5ad-08b5-40cd-b187-8565f1138e7f"
+          }
+        ],
+        "expiredOwnRequests": 0,
+        "withdrawnOwnRequests": 2,
+        "deactivatedEmployeeIds": [
+          "4ce9a359-10d8-524d-8232-c73416f398d0"
+        ]
+      }
+    },
+    {
+      "check": "an idempotent replay writes no extra version",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a second offboarding of the same employee is refused",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "the fixed founder refuses offboarding",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "responsibility history remains readable after offboarding",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "a third-party pending request exists on a task needing execution handover",
+      "pass": true,
+      "evidence": {
+        "taskId": "c47d719f-40a7-4175-aeba-ea8099c98840",
+        "requestId": "98bad1bf-96e2-4e33-ad78-ec0a3fb89848",
+        "outcome": "pending",
+        "rowVersion": 3
+      }
+    },
+    {
+      "check": "inventory marks an own request past its deadline as expiring",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "inventory shows the successor candidate for a team head",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+          "displayName": "alpha-two-employee",
+          "placementType": "employee",
+          "departmentName": "alpha",
+          "teamName": "alpha two"
+        }
+      ]
+    },
+    {
+      "check": "a third-party pending request on a handover task is a blocker",
+      "pass": true,
+      "evidence": [
+        {
+          "requestId": "98bad1bf-96e2-4e33-ad78-ec0a3fb89848",
+          "title": "pending on handover task",
+          "message": "以该员工为拟任负责人的申请不能由离职流程代处理，请先由业务方撤回或办结",
+          "code": "PENDING_REQUEST"
+        },
+        {
+          "title": "pending on handover task",
+          "taskId": "c47d719f-40a7-4175-aeba-ea8099c98840",
+          "message": "该任务仍有他人待审申请，执行交接会使申请失效，请先由业务方办结",
+          "code": "PENDING_ON_TASK"
+        }
+      ]
+    },
+    {
+      "check": "the departing reviewer can settle the blocking request first",
+      "pass": true,
+      "evidence": {
+        "taskId": "c47d719f-40a7-4175-aeba-ea8099c98840",
+        "requestId": "98bad1bf-96e2-4e33-ad78-ec0a3fb89848",
+        "outcome": "approved",
+        "rowVersion": 4,
+        "requestRowVersion": 2
+      }
+    },
+    {
+      "check": "settling the request clears the handover blocker",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "a unit head departure requires a successor",
+      "pass": true,
+      "evidence": {
+        "code": "OFFBOARDING_SUCCESSOR_REQUIRED",
+        "message": "该员工是团队负责人，请选择继任人"
+      }
+    },
+    {
+      "check": "a missing successor leaves deactivation, versions and pending requests untouched",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "versions": 9,
+          "pending": 2,
+          "active": 1
+        },
+        "after": {
+          "versions": 9,
+          "pending": 2,
+          "active": 1
+        }
+      }
+    },
+    {
+      "check": "a head offboarding with succession, handover, takeover and expiry succeeds",
+      "pass": true,
+      "evidence": {
+        "employeeId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+        "offboarded": true,
+        "withdrawnOwnRequests": 0,
+        "expiredOwnRequests": 1,
+        "executionHandovers": [
+          {
+            "taskId": "57120c4c-9d2f-468e-8d54-a568ee4a9107",
+            "title": "dedupe replacement",
+            "action": "replace",
+            "assignees": [
+              "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a"
+            ],
+            "versionId": "5124f833-3df2-40b1-8350-8173d1a9a03d"
+          },
+          {
+            "taskId": "80fae4ed-81b2-4ce1-a1a1-0af1fab6fcdc",
+            "title": "head live owned",
+            "action": "replace",
+            "assignees": [
+              "df322039-debc-570e-a1e9-b76f2bd8d66f"
+            ],
+            "versionId": "b861529c-8834-49d5-9981-8d6c8cbc4bac"
+          },
+          {
+            "taskId": "c0b47f1e-7092-46e7-8af6-2127a9b45433",
+            "title": "head shared live",
+            "action": "remove",
+            "assignees": [
+              "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+            ],
+            "versionId": "ea6955ae-b4f8-4dad-92fe-9088bb64db85"
+          },
+          {
+            "taskId": "c47d719f-40a7-4175-aeba-ea8099c98840",
+            "title": "pending on handover task",
+            "action": "remove",
+            "assignees": [
+              "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a"
+            ],
+            "versionId": "76414e3c-521a-4c44-8ba7-f8b25cc5b097"
+          }
+        ],
+        "rowVersion": 2,
+        "createdEmployeeIds": [],
+        "refreshedRequests": 1,
+        "constraints": {
+          "blockers": [],
+          "formalWritesReady": true,
+          "organizationId": "fixture-company",
+          "runtimeDdlEnabled": false
+        },
+        "deactivatedEmployeeIds": [
+          "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+        ],
+        "sessionsRevoked": 1
+      }
+    },
+    {
+      "check": "an expired own request is expired rather than attributed as withdrawn",
+      "pass": true,
+      "evidence": {
+        "employeeId": "02b2a2d7-edde-5bd2-9a1f-c76201249bb5",
+        "offboarded": true,
+        "withdrawnOwnRequests": 0,
+        "expiredOwnRequests": 1,
+        "executionHandovers": [
+          {
+            "taskId": "57120c4c-9d2f-468e-8d54-a568ee4a9107",
+            "title": "dedupe replacement",
+            "action": "replace",
+            "assignees": [
+              "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a"
+            ],
+            "versionId": "5124f833-3df2-40b1-8350-8173d1a9a03d"
+          },
+          {
+            "taskId": "80fae4ed-81b2-4ce1-a1a1-0af1fab6fcdc",
+            "title": "head live owned",
+            "action": "replace",
+            "assignees": [
+              "df322039-debc-570e-a1e9-b76f2bd8d66f"
+            ],
+            "versionId": "b861529c-8834-49d5-9981-8d6c8cbc4bac"
+          },
+          {
+            "taskId": "c0b47f1e-7092-46e7-8af6-2127a9b45433",
+            "title": "head shared live",
+            "action": "remove",
+            "assignees": [
+              "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+            ],
+            "versionId": "ea6955ae-b4f8-4dad-92fe-9088bb64db85"
+          },
+          {
+            "taskId": "c47d719f-40a7-4175-aeba-ea8099c98840",
+            "title": "pending on handover task",
+            "action": "remove",
+            "assignees": [
+              "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a"
+            ],
+            "versionId": "76414e3c-521a-4c44-8ba7-f8b25cc5b097"
+          }
+        ],
+        "rowVersion": 2,
+        "createdEmployeeIds": [],
+        "refreshedRequests": 1,
+        "constraints": {
+          "blockers": [],
+          "formalWritesReady": true,
+          "organizationId": "fixture-company",
+          "runtimeDdlEnabled": false
+        },
+        "deactivatedEmployeeIds": [
+          "02b2a2d7-edde-5bd2-9a1f-c76201249bb5"
+        ],
+        "sessionsRevoked": 1
+      }
+    },
+    {
+      "check": "the expired request keeps the terminal expired status",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the successor becomes the team head and keeps the department",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the reassigned pending request now routes to the department head",
+      "pass": true,
+      "evidence": [
+        [
+          "pending",
+          "7d3fedd7-7397-5412-a536-b4fbb0e29c7c"
+        ]
+      ]
+    },
+    {
+      "check": "the reassignment is recorded with its organization-refresh source",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a shared task keeps its other owner after the head leaves",
+      "pass": true,
+      "evidence": [
+        "beta-one-employee"
+      ]
+    },
+    {
+      "check": "a head-only live task is replaced by the chosen employee",
+      "pass": true,
+      "evidence": [
+        "beta-two-employee"
+      ]
+    },
+    {
+      "check": "a replacement that is already an owner is deduplicated",
+      "pass": true,
+      "evidence": [
+        "alpha-two-employee"
+      ]
+    },
+    {
+      "check": "completed management transfers without touching the historical assignee",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the departed head loses API access immediately",
+      "pass": true,
+      "evidence": 401
+    },
+    {
+      "check": "the departed head can no longer read the pending request",
+      "pass": true,
+      "evidence": 401
+    },
+    {
+      "check": "the new reviewer can read the reassigned request",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "a team head initially sees a task belonging to the same team",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a different team head does not see that task initially",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a standalone organization adjustment saves",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "check": "the pending request follows the applicant new direct manager",
+      "pass": true,
+      "evidence": [
+        [
+          "pending",
+          "be5ad191-3c18-5b60-a420-dc24f216c7b8"
+        ]
+      ]
+    },
+    {
+      "check": "the reassignment is recorded as an organization route refresh",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "organization adjustment does not rewrite task execution owners",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "organization adjustment does not rewrite task management",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "organization adjustment does not rewrite decided approvals",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the old team head loses visibility after the transfer",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the new team head gains visibility after the transfer",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the narrowed organization command still rejects lifecycle fields after a transfer",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "请求含不支持的字段"
+      }
+    },
+    {
+      "check": "an administrator can record a validated identity number",
+      "pass": true,
+      "evidence": {
+        "userId": "df322039-debc-570e-a1e9-b76f2bd8d66f",
+        "rowVersion": 3,
+        "phoneUpdated": false,
+        "hireDate": null,
+        "idCardUpdated": true,
+        "idCardNoMasked": "110105********002X",
+        "sessionsRevoked": 0
+      }
+    },
+    {
+      "check": "a complete lower-case identity number finds the employee inside the filter",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "total": 1,
+        "code": null
+      }
+    },
+    {
+      "check": "the list projection stays masked",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "an explicit idCardNo body field also performs an exact lookup",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a complete identity number combined with a non-matching filter returns nothing",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "an identity fragment never matches the identity document",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a complete-shaped but invalid identity number returns no match",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the ordinary GET search never matches an identity number",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "another company administrator cannot find the employee by identity document",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "total": 0
+      }
+    },
+    {
+      "check": "a business account cannot use the identity search",
+      "pass": true,
+      "evidence": 403
+    },
+    {
+      "check": "ordinary name search still works in the body endpoint",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "identity search responses never echo the full number",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the service log never receives the full identity number",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "domain events and audit rows never receive the full identity number",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the recorded detail shows only a masked value",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "concurrent identical offboarding commits exactly one legal result",
+      "pass": true,
+      "evidence": {
+        "outcomes": [
+          409,
+          200
+        ],
+        "failure": "AUTHORIZATION_CHANGED"
+      }
+    },
+    {
+      "check": "the concurrent loser writes no second deactivation or takeover",
+      "pass": true,
+      "evidence": null
+    }
+  ]
+}

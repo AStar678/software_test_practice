@@ -88,7 +88,7 @@ public class DemoSeed implements ApplicationRunner {
         remember(key,table,value);return value;
     }
     private void prepareOrganization() {
-        String founderTitle=unit("positions","title-founder","总导演",null);
+        String founderTitle=unit("positions","title-founder","创始人",null);
         String departmentTitle=unit("positions","title-department","部门总监",null);
         String headTitle=unit("positions","title-team","组长",null);
         String employeeTitle=unit("positions","title-employee","动画师",null);
@@ -122,11 +122,28 @@ public class DemoSeed implements ApplicationRunner {
         remember("admin","admin",adminId);
         refreshActors();
     }
+    /**
+     * Synthetic, unique and format/check-digit valid demo identity numbers. The region prefix is a reserved
+     * non-real segment so no sample can be mistaken for a person; the fixed birth date and sequence keep
+     * the same demo database reproducible. These rows are written only while explicitly preparing a fresh
+     * demonstration database, never on a normal start, a preserved demo or a business database.
+     */
+    private static final Map<String,String> DEMO_IDENTITY=Map.ofEntries(
+            Map.entry("upper","990000198503040019"),Map.entry("middle","990001198807160024"),
+            Map.entry("market","990002198809210036"),Map.entry("product-head-1","99000319901102004X"),
+            Map.entry("product-head-2","990004199201100055"),Map.entry("market-head-1","990005199106140063"),
+            Map.entry("market-head-2","990006199204250078"),Map.entry("employee","990007199505180081"),
+            Map.entry("colleague","990008199608070092"),Map.entry("marketing","990009199312120106"),
+            Map.entry("product-employee-1","990010199502200110"),Map.entry("product-employee-2","990011199703110126"),
+            Map.entry("market-employee-1","99001219941009013X"),Map.entry("market-employee-2","990013199506030146"));
     private void employee(String key,String name,String phone,String kind,String dep,String team,String title,String hash,String hireDate) {
         String employeeId=stable(key);
         db.update("INSERT INTO principals(id,organization_id,account_type) VALUES(?,?,'employee')",employeeId,ORG);
         db.update("INSERT INTO users(id,organization_id,password_hash,display_name,phone,login_phone,email,hire_date) VALUES(?,?,?,?,?,?,?,?)",employeeId,ORG,hash,name,phone,phone,key+"@demo.example.test",hireDate);
         db.update("INSERT INTO employee_placements(organization_id,employee_id,placement_type,department_id,team_id,position_id) VALUES(?,?,?,?,?,?)",ORG,employeeId,kind,dep,team,title);
+        String idCard=DEMO_IDENTITY.get(key);
+        if(idCard!=null)
+            db.update("INSERT INTO employee_identity_documents(organization_id,employee_id,id_card_no) VALUES(?,?,?)",ORG,employeeId,idCard);
         remember(key,"employee",employeeId);
     }
     private void refreshActors() {

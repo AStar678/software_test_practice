@@ -167,6 +167,7 @@ void main() {
       500,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.pumpAndSettle();
     expect(find.text('事项104').hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

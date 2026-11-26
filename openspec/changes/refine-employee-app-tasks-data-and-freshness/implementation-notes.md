@@ -3,10 +3,10 @@
 - Change: `refine-employee-app-tasks-data-and-freshness`
 - Schema: `spec-driven`
 - Store: local repository
-- Implementation roots: `C:\Users\20943\Desktop\software_test_practice` (`backend/`, `flutter/`)
-- Updated: 2026-11-23T19:40:00+08:00
-- Implementation revision: `1a792a4f` + dirty worktree (no commit created)
-- Progress: 19/25 tasks complete (sections 1 and 2); sections 3–4 intentionally left for compatibility/verification handoff
+- Implementation roots: `/Users/watuji/MyGitDev/software_test_practice` (`backend/`, `flutter/`); historical run from `C:\Users\20943\Desktop\software_test_practice`
+- Updated: 2026-11-25 (Asia/Shanghai)
+- Implementation revision: `dfc0504` plus uncommitted apply fixes (initial implementation committed as `14ab88d`)
+- Progress: 25/25 tasks complete (`all_done`). Task 3.4 now requires the iOS simulator Debug build, install, launch and smoke checks in place of the Android APK. All original smoke scenarios were retained. Independent verification is pending.
 
 ## Implementation Map
 
@@ -31,8 +31,27 @@
 | 2.9 tab refresh coordinator | `core/navigation/tab_refresh.dart`, `pandora_shell.dart`, listeners in home/calendar/logs/analytics/me; `employee_refinements_test.dart` | Every tap (including current) bumps the target generation; `goBranch(initialLocation:false)` keeps branch state; refresh re-reads data. |
 | 2.10 refresh entries and write visibility | Existing `RefreshIndicator` on notifications/people; existing write invalidations reused; `home_providers.dart` preserves previous data on failed refresh | No new refresh gaps were introduced; person work browsing continues to use the work-log page refresh. |
 | 2.11 unified user-facing errors | `core/errors/app_error.dart` (`userMessageFor`, `errorAllowsRetry`, technical-text guard), `state_views.dart`, `common.dart#showErrorSnack`, replaced raw `error.toString()` uses; `employee_refinements_test.dart` | Chinese actionable messages; network/timeout/validation/auth/not-found/conflict/server remain distinguishable; technical text is filtered. |
+| 3.1–3.3 API/Web compatibility and regression | `TaskService#deleted`, `TaskSoftDeleteTest`, unchanged employee Web `潘多拉-api.js` / `潘多拉-任务接入.js` / `潘多拉-工作区接入.js`; `work_logs_page.dart` | The task `410` uses the existing task visibility gate; unauthorized employees receive `404` and no title. Flutter refreshes a log when returning from its linked task, preserving the original log on failed revalidation. Web consumes the shared error response via its existing generic handler; neither employee Web nor admin UI was changed. |
+| 3.4 iOS device smoke | `flutter/integration_test/employee_refinements_smoke_test.dart`; `app_navigation_test.dart`, `daily_items_ui_test.dart`, `employee_refinements_test.dart`, `fading_name_test.dart`; `task_form_page.dart#_createInlineTag`; `DailyItemTimedStatusTest` | iOS discovered the inline tag dialog could dispose its controller while the exit animation still used it. Dialog now returns its validated value and lets Flutter manage input lifetime. Device tests exercise the resulting UI with fixture responses; real HTTP and fixed-clock backend checks supply the deleted-reference and exact timed-boundary evidence. |
 
-## Checks Run
+## Checks Run This Session (2026-11-25)
+
+| Command | Working directory / setup | Result / evidence |
+| --- | --- | --- |
+| `openspec validate refine-employee-app-tasks-data-and-freshness --type change --strict --json --no-interactive` | Repository root | Valid, zero issues; supersedes the prior strict-validation warning. |
+| `node --check 潘多拉-任务接入.js` and `node --check 潘多拉-工作区接入.js`; `git diff --check`; `git diff --name-status -- ':(top,glob)*.html' ':(top,glob)*.js' ':(top,glob)*.css'` | Repository root | Syntax and whitespace pass; no root Web or admin UI changes. Static review confirmed the existing request handler surfaces API messages and no task deletion action was added. |
+| `mvn -o -B -ntp -Dmaven.repo.local=.runtime/m2 test package` | `backend/`; unrestricted localhost for test HTTP fixture | 238 passed, zero failures/errors/skips; `/tmp/e13-employee-maven-final.log`. Initial sandbox run could not bind its HTTP fixture; intermediate MockMvc assertion was corrected to match the existing flat error JSON. |
+| `PANDORA_DEMO_DB=pandora_e13_employee_261125 PANDORA_DEMO_MARKER=e13-employee-261125 PANDORA_PORT=18086 ./scripts/start-demo.sh` | `backend/`; disposable seed, local MySQL, no ordinary database | Fresh schema applied all 38 migrations. `python3 scripts/flyway_migrate.py --database pandora_e13_employee_261125 --log /tmp/e13-employee-flyway-repeat.log` validated 38 and applied zero on repeat. V1–V36 files unchanged. This session did not repeat the historical V36 upgrade. |
+| `python3 -` (urllib sequence in apply console) | Repository root; local demo at `127.0.0.1:18086`; selected founder-owned task `30f6e0ba-42cd-4599-9c82-ae2c62759893`, with an existing notification and approval | Created a linked log; deleted task, repeated same key/version, checked task and historical task endpoints return `410 TASK_DELETED`, notification/approval/log endpoints remain `200` with `taskDeleted: true`, and the log list preserves the relation. Two timed items round-tripped as `open` and `overdue`; exact equality tested with a fixed clock by Maven. `/tmp/e13-employee-api-smoke-final.log`. Initial request timed out after the live JAR was rebuilt; `PANDORA_SKIP_BUILD=1 PANDORA_DEMO_DB=pandora_e13_employee_261125 PANDORA_DEMO_MARKER=e13-employee-261125 PANDORA_PORT=18086 ./scripts/start-demo.sh --keep` resolved it. |
+| `flutter pub get --offline --enforce-lockfile`; `flutter analyze --no-pub` | `flutter/`; SDK 3.47.9/Dart 3.13.7 | Locked dependencies restored, no diagnostics; `/tmp/e13-employee-flutter-analyze-final.log`. |
+| `flutter test --no-pub --reporter expanded --concurrency=1 test/features/{employee_refinements,app_navigation,approvals_ui,assignee_picker,daily_items_ui,fading_name,home_web_parity,notification_list,task_calendar_ui,task_form,work_log_freshness,work_logs_ui}_test.dart` and `flutter test --no-pub --reporter expanded --concurrency=1` | `flutter/` | Focused 62 passed; full 272 passed, 32 skipped, zero failures. Skipped suite requires the demo specifically on port 8080; targeted real API checks used port 18086. `/tmp/e13-employee-flutter-focused-final.log`, `/tmp/e13-employee-flutter-full-final.log`. |
+| `flutter build ios --simulator --debug --no-pub --dart-define=API_BASE_URL=http://127.0.0.1:18086/api/v1`; `xcrun simctl install B5E317FA-892D-4B43-AAAB-2935922B638D build/ios/iphonesimulator/Runner.app`; `xcrun simctl launch B5E317FA-892D-4B43-AAAB-2935922B638D cn.pandora.pandoraEmployee` | `flutter/`; iPhone 17, iOS 27.2, following `flutter/ios-simulator.md` | Debug `.app` rebuilt after the fixes, installed and launched. Final build: `/tmp/e13-employee-ios-build-final.log`; initial build and login screenshot: `/tmp/e13-employee-ios-build.log` and `/tmp/e13-employee-ios-login.png`. CoreSimulator and Flutter cache initially needed sandbox escalation. |
+| `flutter test --no-pub --reporter expanded -d B5E317FA-892D-4B43-AAAB-2935922B638D integration_test/employee_refinements_smoke_test.dart` | `flutter/`; same iPhone 17, fixture-backed integration suite | Final build ran 19 tests, all passed; initial device run exposed the dialog-disposal bug and an unsettled scroll fixture. `/tmp/e13-employee-ios-integration.log` and `/tmp/e13-employee-ios-integration-final.log`. No Android emulator was used. |
+| `node -` (Chrome CDP smoke via `backend/scripts/browser_fixture.js`) | Repository root; rebuilt backend from the unchanged Web checkout, same demo on port 18086 | Served JS and `admin.html` matched checkout byte-for-byte. The notification task link shows “任务已删除”; retained approval and log content opens, with no task-delete button or uncaught JavaScript exceptions. The first replay used a fixed log body even though the fixture reused a log; the final replay compares against the actual API body. `/tmp/e13-employee-web-browser-verified.log`. |
+| `flutter build apk --debug --no-pub --dart-define=API_BASE_URL=http://10.0.2.2:18086/api/v1` | `flutter/`; local Android SDK, no Android emulator | Attempted under the original task and stopped during the Gradle 9.3.1 download; no APK was produced. `/tmp/e13-employee-apk.log`. Android is outside revised 3.4; only this attempt's partial wrapper download and lock were removed. |
+| `openspec validate refine-employee-app-tasks-data-and-freshness --type change --strict --json --no-interactive`; `openspec instructions apply --change refine-employee-app-tasks-data-and-freshness --json` | Repository root; after revising 3.4 | Strict validation passed with zero issues; Apply reported `all_done` (25/25). |
+
+## Historical Checks (2026-11-23)
 
 | Command | Working directory / setup | Result / evidence | Run time or revision |
 | --- | --- | --- | --- |
@@ -49,10 +68,11 @@
 
 ## Verification Reminders
 
-- Section 3 tasks are untouched: employee-Web compatibility smoke, full Flutter suite is green but APK build/emulator smoke, `openspec validate`, and `git diff --check` still belong to the compatibility/verification handoff.
+- Employee Web was checked at the API, static-code, and browser levels without frontend changes. The old UI renders the `410` message on an actual task request but does not consume `taskDeleted` as a dedicated banner in approval and log views; a log card with no cached target may still use its existing unlinked fallback.
+- Device tests used fixture data; the app launch, real HTTP reference checks and deadline equality check are separate evidence. No real-backend end-to-end Flutter suite ran on port 8080 in this session.
 - Deleted-task UI coverage is focused on the detail/form/calendar, notification, approval and log entry points. Widget tests for every deleted-reference permutation (history-read-only, relation lost, parent unavailable) were not written; the DTO/flag plumbing and 410 mapping are tested.
 - 2.9/2.10 preserve page state by not resetting `StatefulShellRoute` branches and by retaining previous home data on failed refresh. There is no dedicated widget test for scroll/filter/page preservation across all five tabs yet.
 - 2.7 frontend behavior relies on the existing picker preserving candidate order; a strong widget assertion for leadership-first ordering and manual reorder was not added.
 - Migration checksums of V1–V36 were not explicitly re-read; those files were not modified, and Flyway reports success on both empty and upgrade databases.
-- The backend was manually exercised on `pandora_v36_upgrade`; that database and `pandora_v38_empty` are disposable test databases created in this session.
-- Work-log linked-task deletion is displayed as “任务已删除”; the work-log editor itself does not expose a separate delete-task action beyond the task detail/form/calendar entries.
+- Historical disposable databases `pandora_v36_upgrade` and `pandora_v38_empty` were created on the earlier implementation machine. Current HTTP checks wrote only to disposable `pandora_e13_employee_261125`.
+- Flutter work-log detail opens its linked task, where the deletion action is available to an authorized user; returning revalidates to show “任务已删除”. The work-log editor does not expose a separate inline task-delete button.

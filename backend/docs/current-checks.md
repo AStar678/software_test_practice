@@ -1,5 +1,21 @@
 # Current fixed-organization checks
 
+## 2026-11-25 Admin employee lifecycle and directory (change under implementation)
+
+| Current suite | Coverage |
+| --- | --- |
+| `check_apply_admin_employee_lifecycle.py` | Empty and V38→V39 migrations of `employee_identity_documents`; combined employee filters; identity validation/masking/privacy; independent onboarding failures and idempotency; independent offboarding for plain staff, heads, founder, pending requests, business takeover and stale versions; deleted task history/comments; safe API errors; end-state organization invariants |
+| `check_apply_admin_lifecycle_browser.py` | Real Chrome: combined filters/clearing/empty/failure retention, masked list and full administrator identity, onboarding and structural-conflict retention, offboarding with founder refusal and head succession, deleted-task history, safe error copy, static copy audit, 1440/390/320 layouts |
+
+Both own disposable MySQL databases and a packaged-JAR service; neither uses the normal business database. Run after `mvn ... package`:
+
+```sh
+python3 backend/scripts/check_apply_admin_employee_lifecycle.py
+python3 backend/scripts/check_apply_admin_lifecycle_browser.py
+```
+
+`check_admin_contract.py`, `check_employee_contracts_upgrade.py --skip-witness --only hire`, `check_organization_plans.py`, `check_business_takeover.py`, `check_handover_chain.py` and `check_apply_copy_audit.py` were rerun for this change and still pass. `check_web_resources.py` keeps one pre-existing cache-busting mismatch for `潘多拉-每日事项.js` (see the change's `implementation-notes.md`).
+
 ## 2026-11-09 A contract (employee-client contracts and business upgrade)
 
 | Current suite | Coverage added or changed by A |

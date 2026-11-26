@@ -1,0 +1,1056 @@
+{
+  "updated": "2026-11-26T02:50:42.553701+00:00",
+  "checks": [
+    {
+      "check": "empty schema applies the packaged migration chain including V39",
+      "pass": true,
+      "evidence": ""
+    },
+    {
+      "check": "empty schema records V39 as a successful migration",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "empty schema creates the administrator-only identity table",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "identity table has the company-wide unique identity index",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "identity table references the employee row",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "pre-upgrade schema is V38 and has no identity table",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upgrade applies V39 on the seeded V38 database",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upgrade changes no existing employee row",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "upgrade changes no existing placement row",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "legacy employees have no identity record rather than a guessed one",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "full employee directory returns every employee with a truthful total",
+      "pass": true,
+      "evidence": 11
+    },
+    {
+      "check": "legacy list rows expose only a missing masked identity, never a fabricated value",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "combined department/team/identity/active/position filters agree with their total",
+      "pass": true,
+      "evidence": {
+        "items": [
+          {
+            "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+            "organizationId": "fixture-company",
+            "displayName": "alpha-one-employee",
+            "active": 1,
+            "avatar": null,
+            "rowVersion": 1,
+            "placementType": "employee",
+            "departmentId": "fixture-company-alpha",
+            "teamId": "fixture-company-alpha-one",
+            "positionId": "fixture-company-title",
+            "departmentName": "alpha",
+            "teamName": "alpha one",
+            "positionName": "Display title",
+            "organizationName": "fixture-company",
+            "organizationTimeZone": "Asia/Shanghai",
+            "role": "employee",
+            "rankLevel": 4,
+            "managerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+            "managerName": "alpha-one-head",
+            "accountType": "employee",
+            "loginPhone": "13900000004",
+            "hireDate": null,
+            "idCardNoMasked": null,
+            "idCardRecorded": false
+          }
+        ],
+        "total": 1
+      }
+    },
+    {
+      "check": "search matches the login phone and keeps the same total",
+      "pass": true,
+      "evidence": 1
+    },
+    {
+      "check": "search matches the department name",
+      "pass": true,
+      "evidence": 5
+    },
+    {
+      "check": "no-match directory is a real empty result with total zero",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "inactive filter initially returns nobody",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "invalid active filter is a Chinese validation failure, not an empty directory",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "在职状态筛选无效"
+      }
+    },
+    {
+      "check": "invalid identity filter is rejected",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "组织身份筛选无效"
+      }
+    },
+    {
+      "check": "malformed department filter is rejected",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "请选择有效的部门"
+      }
+    },
+    {
+      "check": "legacy employee detail reports an unset identity",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "invalid check digit rejects the whole correction",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "身份证号校验位不正确"
+      }
+    },
+    {
+      "check": "rejected identity correction writes nothing",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "valid identity number is normalized and saved",
+      "pass": true,
+      "evidence": {
+        "userId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "rowVersion": 2,
+        "phoneUpdated": false,
+        "hireDate": null,
+        "idCardUpdated": true,
+        "idCardNoMasked": "110105********002X",
+        "sessionsRevoked": 0
+      }
+    },
+    {
+      "check": "administrator detail reads the full normalized value",
+      "pass": true,
+      "evidence": "11010519491231002X"
+    },
+    {
+      "check": "administrator detail also exposes the masked projection",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee list masks the identity and never carries the full number",
+      "pass": true,
+      "evidence": {
+        "id": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "organizationId": "fixture-company",
+        "displayName": "alpha-one-employee",
+        "active": 1,
+        "avatar": null,
+        "rowVersion": 2,
+        "placementType": "employee",
+        "departmentId": "fixture-company-alpha",
+        "teamId": "fixture-company-alpha-one",
+        "positionId": "fixture-company-title",
+        "departmentName": "alpha",
+        "teamName": "alpha one",
+        "positionName": "Display title",
+        "organizationName": "fixture-company",
+        "organizationTimeZone": "Asia/Shanghai",
+        "role": "employee",
+        "rankLevel": 4,
+        "managerId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "managerName": "alpha-one-head",
+        "accountType": "employee",
+        "loginPhone": "13900000004",
+        "hireDate": null,
+        "idCardNoMasked": "110105********002X",
+        "idCardRecorded": true
+      }
+    },
+    {
+      "check": "same-company duplicate identity number is refused",
+      "pass": true,
+      "evidence": {
+        "code": "ID_CARD_TAKEN",
+        "message": "该身份证号已被其他员工使用"
+      }
+    },
+    {
+      "check": "stale identity correction is refused",
+      "pass": true,
+      "evidence": {
+        "code": "VERSION_CONFLICT",
+        "message": "内容已更新，请刷新后重试"
+      }
+    },
+    {
+      "check": "re-saving the same identity number is not a duplicate conflict",
+      "pass": true,
+      "evidence": {
+        "userId": "4ce9a359-10d8-524d-8232-c73416f398d0",
+        "rowVersion": 3,
+        "phoneUpdated": false,
+        "hireDate": null,
+        "idCardUpdated": true,
+        "idCardNoMasked": "110105********002X",
+        "sessionsRevoked": 0
+      }
+    },
+    {
+      "check": "identity audit keeps only the masked fact",
+      "pass": true,
+      "evidence": {
+        "masked": [
+          [
+            "2"
+          ]
+        ],
+        "audit": 0,
+        "events": 0
+      }
+    },
+    {
+      "check": "another company administrator cannot read the employee or identity",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "an employee cannot use the administrator employee detail",
+      "pass": true,
+      "evidence": 403
+    },
+    {
+      "check": "independent onboarding creates the account and returns one initial password",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 2,
+        "userId": "c1636f08-07bd-4f51-9a4c-b8e4a8f8dfec",
+        "mustChangePassword": true,
+        "initialPassword": "V7EaT7_hS*erDkfS"
+      }
+    },
+    {
+      "check": "onboarding returns the employee version that the new row reads back",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "onboarding saves the full identity and hire date in the same transaction",
+      "pass": true,
+      "evidence": {
+        "id": "c1636f08-07bd-4f51-9a4c-b8e4a8f8dfec",
+        "organizationId": "fixture-company",
+        "displayName": "独立入职员工",
+        "active": 1,
+        "avatar": null,
+        "rowVersion": 2,
+        "placementType": "employee",
+        "departmentId": "fixture-company-beta",
+        "teamId": "fixture-company-beta-one",
+        "positionId": "fixture-company-title",
+        "departmentName": "beta",
+        "teamName": "beta one",
+        "positionName": "Display title",
+        "organizationName": "fixture-company",
+        "organizationTimeZone": "Asia/Shanghai",
+        "role": "employee",
+        "rankLevel": 4,
+        "managerId": "be5ad191-3c18-5b60-a420-dc24f216c7b8",
+        "managerName": "beta-one-head",
+        "accountType": "employee",
+        "loginPhone": "13977770011",
+        "hireDate": "2025-01-31",
+        "idCardNo": "110101198001010010",
+        "idCardNoMasked": "110101********0010"
+      }
+    },
+    {
+      "check": "idempotent onboarding replay returns the same account without a second password",
+      "pass": true,
+      "evidence": {
+        "userId": "c1636f08-07bd-4f51-9a4c-b8e4a8f8dfec",
+        "rowVersion": 2,
+        "mustChangePassword": true
+      }
+    },
+    {
+      "check": "idempotent onboarding replay creates no duplicate row",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the onboarded account can sign in and must change its password",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "the onboarded employee completes the forced password change",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "the onboarded employee signs in with the new password",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "a second founder is refused and routed to organization adjustment",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "ORGANIZATION_PLAN_REQUIRED",
+          "message": "公司已有固定创始人，请到组织调整办理负责人变更"
+        }
+      }
+    },
+    {
+      "check": "an occupied head position is refused and routed to organization adjustment",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "ORGANIZATION_PLAN_REQUIRED",
+          "message": "所选团队不属于该部门，请到组织调整办理"
+        }
+      }
+    },
+    {
+      "check": "a cross-department team is refused and routed to organization adjustment",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "ORGANIZATION_PLAN_REQUIRED",
+          "message": "所选团队不属于该部门，请到组织调整办理"
+        }
+      }
+    },
+    {
+      "check": "a duplicate login phone is refused",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "PHONE_TAKEN",
+          "message": "员工手机号已被使用"
+        }
+      }
+    },
+    {
+      "check": "a duplicate identity number is refused",
+      "pass": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "code": "ID_CARD_TAKEN",
+          "message": "该身份证号已被其他员工使用"
+        }
+      }
+    },
+    {
+      "check": "onboarding without an identity number is refused",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "身份证号必须为文字"
+        }
+      }
+    },
+    {
+      "check": "onboarding with an invalid identity number is refused",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "身份证号校验位不正确"
+        }
+      }
+    },
+    {
+      "check": "a future hire date rejects the account atomically",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "入职日期不得晚于公司今天"
+        }
+      }
+    },
+    {
+      "check": "an unknown position rejects the account atomically",
+      "pass": true,
+      "evidence": {
+        "status": 400,
+        "body": {
+          "code": "INVALID_INPUT",
+          "message": "职位不存在，请选择本公司已创建的职位"
+        }
+      }
+    },
+    {
+      "check": "every failed onboarding left no account and no identity row",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a task exists for the deleted-history check",
+      "pass": true,
+      "evidence": {
+        "taskId": "35029c26-b5f6-4966-809c-068f5a22e021",
+        "requestId": "1b3c2a66-57bf-4edf-b0fd-96b28c885896",
+        "outcome": "direct",
+        "rowVersion": 2
+      }
+    },
+    {
+      "check": "a real comment exists before the task is deleted",
+      "pass": true,
+      "evidence": {
+        "objectType": "task",
+        "rowVersion": 1,
+        "objectId": "35029c26-b5f6-4966-809c-068f5a22e021",
+        "commentId": "c6ed7461-585e-4e82-ad38-348fd22ea017"
+      }
+    },
+    {
+      "check": "the founder deletes the task softly",
+      "pass": true,
+      "evidence": {
+        "taskId": "35029c26-b5f6-4966-809c-068f5a22e021",
+        "deleted": true,
+        "rowVersion": 3,
+        "deletedAt": "2026-11-26T02:50:41.547586Z",
+        "message": "任务已删除"
+      }
+    },
+    {
+      "check": "administrator deleted filter returns the deleted task",
+      "pass": true,
+      "evidence": {
+        "items": [
+          {
+            "taskId": "35029c26-b5f6-4966-809c-068f5a22e021",
+            "id": "35029c26-b5f6-4966-809c-068f5a22e021",
+            "title": "删除历史检查任务",
+            "published": true,
+            "currentVersionId": "f23ca050-cd29-402a-b1c2-94a9a5fe585f",
+            "executionState": "todo",
+            "priority": "medium",
+            "allDay": false,
+            "startAt": "2026-11-26T01:50:41.513053Z",
+            "dueAt": "2026-11-28T02:50:41.513053Z",
+            "startDate": null,
+            "dueDate": null,
+            "ownerIds": [
+              "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a"
+            ],
+            "ownerNames": [
+              "founder"
+            ],
+            "creatorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "creatorName": "founder",
+            "createdAt": "2026-11-26T02:50:41.521542Z",
+            "updatedAt": "2026-11-26T02:50:41.547586Z",
+            "rowVersion": 3,
+            "latestRequestId": "1b3c2a66-57bf-4edf-b0fd-96b28c885896",
+            "latestRequestStatus": "direct",
+            "deleted": true,
+            "deletedAt": "2026-11-26T02:50:41.547586Z",
+            "deletedBy": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+            "deletedByName": "founder",
+            "deleteReason": "重复创建",
+            "pendingRequestId": null,
+            "pendingKind": null
+          }
+        ],
+        "total": 1,
+        "nextOffset": null
+      }
+    },
+    {
+      "check": "administrator normal filter excludes the deleted task",
+      "pass": true,
+      "evidence": 0
+    },
+    {
+      "check": "administrator mixed list keeps normal and deleted rows distinguishable",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "deleted task history returns deletion time, actor, reason and prior records",
+      "pass": true,
+      "evidence": true
+    },
+    {
+      "check": "deleted task history still returns its comments",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "c6ed7461-585e-4e82-ad38-348fd22ea017",
+          "authorId": "e34a566d-d868-5a3f-9ef6-426a6bfd3a0a",
+          "body": "删除前保留的真实评论",
+          "createdAt": "2026-11-26T02:50:41.534675Z",
+          "editedAt": null,
+          "deletedAt": null,
+          "authorName": "founder",
+          "deleted": false,
+          "edited": false
+        }
+      ]
+    },
+    {
+      "check": "the deleted task detail stays unavailable for normal business use",
+      "pass": true,
+      "evidence": {
+        "code": "TASK_DELETED",
+        "message": "任务已删除",
+        "deletedAt": "2026-11-26T02:50:41.547586Z",
+        "taskId": "35029c26-b5f6-4966-809c-068f5a22e021",
+        "title": "删除历史检查任务"
+      }
+    },
+    {
+      "check": "an employee token cannot read administrator task history",
+      "pass": true,
+      "evidence": 403
+    },
+    {
+      "check": "the fixed founder cannot be offboarded through the ordinary route",
+      "pass": true,
+      "evidence": {
+        "code": "FOUNDER_OFFBOARDING_NOT_ALLOWED",
+        "message": "固定创始人不能办理普通离职"
+      }
+    },
+    {
+      "check": "a plain employee is offboarded atomically with a fresh company version",
+      "pass": true,
+      "evidence": {
+        "employeeId": "c446e82b-711b-5d20-8fdd-b878fd0f0890",
+        "offboarded": true,
+        "withdrawnOwnRequests": 0,
+        "expiredOwnRequests": 0,
+        "executionHandovers": [],
+        "rowVersion": 6,
+        "createdEmployeeIds": [],
+        "refreshedRequests": 0,
+        "constraints": {
+          "blockers": [],
+          "formalWritesReady": true,
+          "organizationId": "fixture-company",
+          "runtimeDdlEnabled": false
+        },
+        "deactivatedEmployeeIds": [
+          "c446e82b-711b-5d20-8fdd-b878fd0f0890"
+        ],
+        "sessionsRevoked": 1
+      }
+    },
+    {
+      "check": "the offboarded employee is inactive and keeps its identity document and history",
+      "pass": true,
+      "evidence": 0
+    },
+    {
+      "check": "offboarding removed only that employee placement",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "offboarding revoked the employee session",
+      "pass": true,
+      "evidence": 401
+    },
+    {
+      "check": "a duplicate offboarding changes nothing and is refused in Chinese",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "该员工已停用，不能再次办理离职"
+      }
+    },
+    {
+      "check": "head has no successor yet and stays active before offboarding",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a unit head without a successor is refused",
+      "pass": true,
+      "evidence": {
+        "code": "OFFBOARDING_SUCCESSOR_REQUIRED",
+        "message": "该员工是团队负责人，请选择继任人"
+      }
+    },
+    {
+      "check": "a successor outside the unit is refused",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "继任人必须是本公司有效员工"
+      }
+    },
+    {
+      "check": "a unit head is offboarded together with a legal successor",
+      "pass": true,
+      "evidence": {
+        "employeeId": "41e37310-9a49-5e6e-a05c-27e11029c2fc",
+        "offboarded": true,
+        "withdrawnOwnRequests": 0,
+        "expiredOwnRequests": 0,
+        "executionHandovers": [],
+        "rowVersion": 7,
+        "createdEmployeeIds": [],
+        "refreshedRequests": 0,
+        "constraints": {
+          "blockers": [],
+          "formalWritesReady": true,
+          "organizationId": "fixture-company",
+          "runtimeDdlEnabled": false
+        },
+        "deactivatedEmployeeIds": [
+          "41e37310-9a49-5e6e-a05c-27e11029c2fc"
+        ],
+        "sessionsRevoked": 1
+      }
+    },
+    {
+      "check": "the successor becomes the unit head in the same transaction",
+      "pass": true,
+      "evidence": [
+        [
+          "team_head"
+        ]
+      ]
+    },
+    {
+      "check": "the offboarded head is inactive",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "organization invariants remain valid after head succession",
+      "pass": true,
+      "evidence": {
+        "blockers": [],
+        "formalWritesReady": true,
+        "organizationId": "fixture-company",
+        "runtimeDdlEnabled": false
+      }
+    },
+    {
+      "check": "the onboarded employee submits a pending creation request",
+      "pass": true,
+      "evidence": {
+        "taskId": "0e4d06ba-1463-469d-8057-4ae8b3cf1f39",
+        "requestId": "449de444-e08b-4e86-afee-51ed4fc15e6a",
+        "outcome": "pending",
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "administrator reads the responsibility inventory for c1636f08-07bd-4f51-9a4c-b8e4a8f8dfec",
+      "pass": true,
+      "evidence": {
+        "employeeId": "c1636f08-07bd-4f51-9a4c-b8e4a8f8dfec",
+        "rowVersion": 7,
+        "placement": {
+          "organizationId": "fixture-company",
+          "employeeId": "c1636f08-07bd-4f51-9a4c-b8e4a8f8dfec",
+          "placementType": "employee",
+          "departmentId": "fixture-company-beta",
+          "teamId": "fixture-company-beta-one",
+          "positionId": "fixture-company-title",
+          "rowVersion": 3,
+          "founderSlot": null,
+          "departmentHeadSlot": null,
+          "teamHeadSlot": null
+        },
+        "businessTasks": [],
+        "unfinishedAssignments": [],
+        "pendingRequests": [
+          {
+            "id": "449de444-e08b-4e86-afee-51ed4fc15e6a",
+            "taskId": "0e4d06ba-1463-469d-8057-4ae8b3cf1f39",
+            "kind": "create",
+            "applicantId": "c1636f08-07bd-4f51-9a4c-b8e4a8f8dfec",
+            "currentReviewerId": "be5ad191-3c18-5b60-a420-dc24f216c7b8",
+            "rowVersion": 1,
+            "applicableDeadline": "2026-11-28T02:50:41.513053Z"
+          }
+        ]
+      }
+    },
+    {
+      "check": "inventory lists the pending unpublished creation",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "449de444-e08b-4e86-afee-51ed4fc15e6a",
+          "taskId": "0e4d06ba-1463-469d-8057-4ae8b3cf1f39",
+          "kind": "create",
+          "applicantId": "c1636f08-07bd-4f51-9a4c-b8e4a8f8dfec",
+          "currentReviewerId": "be5ad191-3c18-5b60-a420-dc24f216c7b8",
+          "rowVersion": 1,
+          "applicableDeadline": "2026-11-28T02:50:41.513053Z"
+        }
+      ]
+    },
+    {
+      "check": "offboarding refuses while a pending request remains unconfirmed",
+      "pass": true,
+      "evidence": {
+        "code": "OFFBOARDING_PENDING_CONFIRMATION",
+        "message": "该员工的本人待审申请已变化，请刷新离职交接并重新确认将撤销的申请",
+        "pending": [
+          {
+            "requestId": "449de444-e08b-4e86-afee-51ed4fc15e6a",
+            "title": "待审创建离职测试",
+            "kind": "create",
+            "rowVersion": 1
+          }
+        ]
+      }
+    },
+    {
+      "check": "the blocked offboarding leaves the employee active and the request pending",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "confirming the own pending withdrawal settles and completes the offboarding",
+      "pass": true,
+      "evidence": {
+        "employeeId": "c1636f08-07bd-4f51-9a4c-b8e4a8f8dfec",
+        "offboarded": true,
+        "withdrawnOwnRequests": 1,
+        "expiredOwnRequests": 0,
+        "executionHandovers": [],
+        "rowVersion": 8,
+        "createdEmployeeIds": [],
+        "refreshedRequests": 0,
+        "constraints": {
+          "blockers": [],
+          "formalWritesReady": true,
+          "organizationId": "fixture-company",
+          "runtimeDdlEnabled": false
+        },
+        "deactivatedEmployeeIds": [
+          "c1636f08-07bd-4f51-9a4c-b8e4a8f8dfec"
+        ],
+        "sessionsRevoked": 1
+      }
+    },
+    {
+      "check": "the cancelled creation request is withdrawn and the account revoked",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the cancelled unpublished task never became business content",
+      "pass": true,
+      "evidence": 404
+    },
+    {
+      "check": "a published task is created for the business owner",
+      "pass": true,
+      "evidence": {
+        "taskId": "d99dea10-2d38-494c-8c4b-52fed9606b1f",
+        "requestId": "d6063b3d-2f93-4023-88ef-a253aa675315",
+        "outcome": "pending",
+        "rowVersion": 1
+      }
+    },
+    {
+      "check": "the team head reads the creation request",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "the creation request is approved and the task published",
+      "pass": true,
+      "evidence": 200
+    },
+    {
+      "check": "the published task keeps a current version",
+      "pass": true,
+      "evidence": [
+        [
+          "4589a427-85b3-4339-89b7-0c84858d428c"
+        ]
+      ]
+    },
+    {
+      "check": "administrator reads the responsibility inventory for e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+      "pass": true,
+      "evidence": {
+        "employeeId": "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+        "rowVersion": 8,
+        "placement": {
+          "organizationId": "fixture-company",
+          "employeeId": "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+          "placementType": "employee",
+          "departmentId": "fixture-company-alpha",
+          "teamId": "fixture-company-alpha-two",
+          "positionId": "fixture-company-title",
+          "rowVersion": 5,
+          "founderSlot": null,
+          "departmentHeadSlot": null,
+          "teamHeadSlot": null
+        },
+        "businessTasks": [
+          {
+            "id": "d99dea10-2d38-494c-8c4b-52fed9606b1f",
+            "originalCreatorId": "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+            "executionState": "done",
+            "rowVersion": 2,
+            "title": "业务接管离职测试",
+            "businessOwnerId": "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+            "ownerVersion": 1
+          }
+        ],
+        "unfinishedAssignments": [],
+        "pendingRequests": []
+      }
+    },
+    {
+      "check": "the responsibility inventory includes the published business task",
+      "pass": true,
+      "evidence": [
+        {
+          "id": "d99dea10-2d38-494c-8c4b-52fed9606b1f",
+          "originalCreatorId": "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+          "executionState": "done",
+          "rowVersion": 2,
+          "title": "业务接管离职测试",
+          "businessOwnerId": "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+          "ownerVersion": 1
+        }
+      ]
+    },
+    {
+      "check": "offboarding a business owner without a takeover is refused",
+      "pass": true,
+      "evidence": {
+        "code": "BUSINESS_TAKEOVER_REQUIRED",
+        "message": "已发布任务的全部后续业务责任须逐项安排接管人，包括已完成任务",
+        "missing": [
+          {
+            "taskId": "d99dea10-2d38-494c-8c4b-52fed9606b1f",
+            "title": "业务接管离职测试"
+          }
+        ]
+      }
+    },
+    {
+      "check": "offboarding with a valid takeover commits both changes atomically",
+      "pass": true,
+      "evidence": {
+        "employeeId": "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a",
+        "offboarded": true,
+        "withdrawnOwnRequests": 0,
+        "expiredOwnRequests": 0,
+        "executionHandovers": [],
+        "rowVersion": 9,
+        "createdEmployeeIds": [],
+        "refreshedRequests": 0,
+        "constraints": {
+          "blockers": [],
+          "formalWritesReady": true,
+          "organizationId": "fixture-company",
+          "runtimeDdlEnabled": false
+        },
+        "deactivatedEmployeeIds": [
+          "e1125eb3-0d06-54d5-bf4a-4e3d03fc8b2a"
+        ],
+        "sessionsRevoked": 1
+      }
+    },
+    {
+      "check": "the nominated employee holds the task business responsibility afterwards",
+      "pass": true,
+      "evidence": [
+        [
+          "df322039-debc-570e-a1e9-b76f2bd8d66f"
+        ]
+      ]
+    },
+    {
+      "check": "the offboarded business owner is inactive",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a fresh employee is prepared for the stale offboarding check",
+      "pass": true,
+      "evidence": {
+        "rowVersion": 2,
+        "userId": "c886e40e-87df-482b-87df-67945827801e",
+        "mustChangePassword": true,
+        "initialPassword": "%2HtUwg*L&x2Y5EJ"
+      }
+    },
+    {
+      "check": "an offboarding request with an old company version is refused",
+      "pass": true,
+      "evidence": {
+        "code": "VERSION_CONFLICT",
+        "message": "内容已更新，请刷新后重试"
+      }
+    },
+    {
+      "check": "the stale request leaves the employee active",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "an invalid paging value returns a Chinese explanation",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "每页条数须为整数"
+      }
+    },
+    {
+      "check": "an unknown administrator route returns the safe Chinese not-found body",
+      "pass": true,
+      "evidence": {
+        "message": "请求的接口不存在",
+        "code": "NOT_FOUND"
+      }
+    },
+    {
+      "check": "a missing If-Match keeps its Chinese precondition message",
+      "pass": true,
+      "evidence": {
+        "code": "PRECONDITION_REQUIRED",
+        "message": "请先读取最新内容后再提交"
+      }
+    },
+    {
+      "check": "an employee token is refused by the administrator directory",
+      "pass": true,
+      "evidence": {
+        "message": "需要独立管理员身份",
+        "code": "FORBIDDEN"
+      }
+    },
+    {
+      "check": "malformed JSON returns the safe Chinese validation body",
+      "pass": true,
+      "evidence": {
+        "message": "请求格式或参数不正确",
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "check": "an unsupported request field is rejected in Chinese without echoing the field name",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "请求含不支持的字段"
+      }
+    },
+    {
+      "check": "the final organization is still formally writable",
+      "pass": true,
+      "evidence": {
+        "blockers": [],
+        "formalWritesReady": true,
+        "organizationId": "fixture-company",
+        "runtimeDdlEnabled": false
+      }
+    },
+    {
+      "check": "the founder is unchanged and there is exactly one",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "no login phone is duplicated after the lifecycle writes",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "no pending request is left without a possible reviewer",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "every department and team still has exactly one head",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "employee projections never contain the identity number or its masked form",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "the administrator directory never contains a full identity number",
+      "pass": true,
+      "evidence": "list leakage"
+    },
+    {
+      "check": "the responsibility inventory has no identity field",
+      "pass": true,
+      "evidence": "inventory leakage"
+    },
+    {
+      "check": "the service log never prints the full identity number",
+      "pass": true,
+      "evidence": "log leakage"
+    }
+  ],
+  "database": "pandora_precheck_model_c6dd53875aea4c1b"
+}

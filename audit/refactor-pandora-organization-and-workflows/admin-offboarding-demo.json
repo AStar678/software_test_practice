@@ -1,0 +1,138 @@
+{
+  "updated": "2026-11-26T03:03:09.499970+00:00",
+  "checks": [
+    {
+      "check": "a fresh explicit demo preparation records one identity document per demo employee",
+      "pass": true,
+      "evidence": {
+        "employees": 14,
+        "documents": 14
+      }
+    },
+    {
+      "check": "every demo identity number is unique",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "every demo identity number passes the hire format and check digit",
+      "pass": true,
+      "evidence": []
+    },
+    {
+      "check": "demo identity numbers use the reserved non-real region segment",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the independent administrator receives no employee identity document",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the demo founder display title is 创始人",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the retired demo title 总导演 is not seeded",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the prepared demo administrator can log in",
+      "pass": true,
+      "evidence": {
+        "token": "nLIODYpImdtla7dDvQc4eC77dnkefvctJkSvb-hiaTQ",
+        "tokenType": "Bearer",
+        "expiresAt": "2026-11-26T11:03:03.233323Z",
+        "user": {
+          "id": "f4548ebe-442e-3dbb-b013-e673708d90ed",
+          "organizationId": "10000000-0000-0000-0000-000000000001",
+          "displayName": "系统管理员",
+          "active": true,
+          "accountType": "admin",
+          "departmentId": null,
+          "positionId": null,
+          "teamId": null,
+          "managerId": null,
+          "role": "admin",
+          "capabilities": [
+            "view_task_history",
+            "manage_accounts",
+            "manage_company_info",
+            "manage_notifications",
+            "manage_organization"
+          ],
+          "scopes": {},
+          "authzVersion": 2,
+          "mustChangePassword": false
+        },
+        "passwordChangeRequired": false
+      }
+    },
+    {
+      "check": "a demo full identity number is exactly searchable",
+      "pass": true,
+      "evidence": {
+        "status": 200,
+        "total": 1,
+        "code": null
+      }
+    },
+    {
+      "check": "the demo directory response stays masked and omits the full number",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "the full demo directory never returns a complete identity number",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "formal onboarding still rejects a missing identity number",
+      "pass": true,
+      "evidence": {
+        "code": "INVALID_INPUT",
+        "message": "身份证号必须为文字"
+      }
+    },
+    {
+      "check": "the demo founder position can be edited",
+      "pass": true,
+      "evidence": {
+        "positionId": "d7009935-f865-30da-9221-f6986199f0d5",
+        "rowVersion": 2
+      }
+    },
+    {
+      "check": "a demo identity document can be corrected by the administrator",
+      "pass": true,
+      "evidence": {
+        "userId": "8753895b-2df0-3b5e-a588-ff82986d4a2b",
+        "rowVersion": 2,
+        "phoneUpdated": false,
+        "hireDate": "2023-05-18",
+        "idCardUpdated": true,
+        "idCardNoMasked": "990099********0019",
+        "sessionsRevoked": 0
+      }
+    },
+    {
+      "check": "a repeated preparation preserves edited identity documents and the edited position",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a repeated preparation does not prepare the demo database again",
+      "pass": true,
+      "evidence": null
+    },
+    {
+      "check": "a normal seeded startup writes neither identity documents nor positions",
+      "pass": true,
+      "evidence": null
+    }
+  ]
+}

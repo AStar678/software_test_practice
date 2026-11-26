@@ -1,0 +1,300 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-11-26T10:45:11.241+08:00  INFO 9536 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 9536 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-11-26T10:45:11.242+08:00  INFO 9536 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-11-26T10:45:11.616+08:00  INFO 9536 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18202 (http)
+2026-11-26T10:45:11.621+08:00  INFO 9536 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-26T10:45:11.621+08:00  INFO 9536 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-11-26T10:45:11.629+08:00  INFO 9536 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-26T10:45:11.629+08:00  INFO 9536 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 372 ms
+2026-11-26T10:45:11.694+08:00  INFO 9536 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-26T10:45:11.757+08:00  INFO 9536 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@59018eed
+2026-11-26T10:45:11.758+08:00  INFO 9536 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-26T10:45:11.776+08:00  INFO 9536 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_e13_offboard_demo_6158056bab30?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 26.10)
+2026-11-26T10:45:11.979+08:00  WARN 9536 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 26.10 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-11-26T10:45:12.000+08:00  INFO 9536 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 40 migrations (execution time 00:00.016s)
+2026-11-26T10:45:12.005+08:00  INFO 9536 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_e13_offboard_demo_6158056bab30`: 40
+2026-11-26T10:45:12.006+08:00  INFO 9536 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_e13_offboard_demo_6158056bab30` is up to date. No migration necessary.
+2026-11-26T10:45:12.383+08:00  INFO 9536 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-26T10:45:12.460+08:00  INFO 9536 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18202 (http) with context path '/'
+2026-11-26T10:45:12.469+08:00  INFO 9536 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.366 seconds (process running for 1.511)
+2026-11-26T10:45:12.483+08:00  INFO 9536 --- [pandora-backend] [           main] c.pandora.admin.OrganizationConstraints  : Fixed organization readiness: {runtimeDdlEnabled=false, companies=[{runtimeDdlEnabled=false, organizationId=10000000-0000-0000-0000-000000000001, formalWritesReady=true, blockers=[]}], formalWritesReady=true}
+2026-11-26T10:45:12.485+08:00  INFO 9536 --- [pandora-backend] [           main] cn.pandora.admin.LoginKeyConstraints     : Employee login-key uniqueness is established; duplicate V19 blockers resolved
+2026-11-26T10:45:12.486+08:00  INFO 9536 --- [pandora-backend] [.1-18202-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-26T10:45:12.487+08:00  INFO 9536 --- [pandora-backend] [.1-18202-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-26T10:45:12.487+08:00  INFO 9536 --- [pandora-backend] [.1-18202-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-11-26T10:45:12.844+08:00  INFO 9536 --- [pandora-backend] [ionShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-26T10:45:12.845+08:00  INFO 9536 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-11-26T10:45:12.847+08:00  INFO 9536 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-26T10:45:12.848+08:00  INFO 9536 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-11-26T10:45:22.970+08:00  INFO 9623 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 9623 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-11-26T10:45:22.971+08:00  INFO 9623 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-11-26T10:45:23.317+08:00  INFO 9623 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18202 (http)
+2026-11-26T10:45:23.322+08:00  INFO 9623 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-26T10:45:23.322+08:00  INFO 9623 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-11-26T10:45:23.330+08:00  INFO 9623 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-26T10:45:23.330+08:00  INFO 9623 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 344 ms
+2026-11-26T10:45:23.389+08:00  INFO 9623 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-26T10:45:23.450+08:00  INFO 9623 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5a1dddba
+2026-11-26T10:45:23.450+08:00  INFO 9623 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-26T10:45:23.464+08:00  INFO 9623 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_e13_offboard_demo_9804a24f2f78?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 26.10)
+2026-11-26T10:45:23.637+08:00  WARN 9623 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 26.10 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-11-26T10:45:23.656+08:00  INFO 9623 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 40 migrations (execution time 00:00.015s)
+2026-11-26T10:45:23.661+08:00  INFO 9623 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_e13_offboard_demo_9804a24f2f78`: 40
+2026-11-26T10:45:23.663+08:00  INFO 9623 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_e13_offboard_demo_9804a24f2f78` is up to date. No migration necessary.
+2026-11-26T10:45:24.040+08:00  INFO 9623 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-26T10:45:24.119+08:00  INFO 9623 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18202 (http) with context path '/'
+2026-11-26T10:45:24.126+08:00  INFO 9623 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.29 seconds (process running for 1.426)
+2026-11-26T10:45:24.136+08:00  INFO 9623 --- [pandora-backend] [           main] c.pandora.admin.OrganizationConstraints  : Fixed organization readiness: {companies=[{organizationId=10000000-0000-0000-0000-000000000001, formalWritesReady=true, blockers=[], runtimeDdlEnabled=false}], formalWritesReady=true, runtimeDdlEnabled=false}
+2026-11-26T10:45:24.137+08:00  INFO 9623 --- [pandora-backend] [           main] cn.pandora.admin.LoginKeyConstraints     : Employee login-key uniqueness is established; duplicate V19 blockers resolved
+2026-11-26T10:45:24.229+08:00  INFO 9623 --- [pandora-backend] [.1-18202-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-26T10:45:24.229+08:00  INFO 9623 --- [pandora-backend] [.1-18202-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-26T10:45:24.229+08:00  INFO 9623 --- [pandora-backend] [.1-18202-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-11-26T10:45:24.661+08:00  INFO 9623 --- [pandora-backend] [ionShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-26T10:45:24.661+08:00  INFO 9623 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-11-26T10:45:24.663+08:00  INFO 9623 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-26T10:45:24.665+08:00  INFO 9623 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-11-26T10:45:33.352+08:00  INFO 9718 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 9718 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-11-26T10:45:33.353+08:00  INFO 9718 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-11-26T10:45:33.700+08:00  INFO 9718 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18202 (http)
+2026-11-26T10:45:33.705+08:00  INFO 9718 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-26T10:45:33.705+08:00  INFO 9718 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-11-26T10:45:33.713+08:00  INFO 9718 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-26T10:45:33.713+08:00  INFO 9718 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 346 ms
+2026-11-26T10:45:33.778+08:00  INFO 9718 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-26T10:45:33.839+08:00  INFO 9718 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5a1dddba
+2026-11-26T10:45:33.840+08:00  INFO 9718 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-26T10:45:33.854+08:00  INFO 9718 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_e13_offboard_demo_213b470d5cac?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 26.10)
+2026-11-26T10:45:34.018+08:00  WARN 9718 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 26.10 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-11-26T10:45:34.038+08:00  INFO 9718 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 40 migrations (execution time 00:00.015s)
+2026-11-26T10:45:34.042+08:00  INFO 9718 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_e13_offboard_demo_213b470d5cac`: 40
+2026-11-26T10:45:34.043+08:00  INFO 9718 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_e13_offboard_demo_213b470d5cac` is up to date. No migration necessary.
+2026-11-26T10:45:34.422+08:00  INFO 9718 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-26T10:45:34.502+08:00  INFO 9718 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18202 (http) with context path '/'
+2026-11-26T10:45:34.509+08:00  INFO 9718 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.288 seconds (process running for 1.425)
+2026-11-26T10:45:34.519+08:00  INFO 9718 --- [pandora-backend] [           main] c.pandora.admin.OrganizationConstraints  : Fixed organization readiness: {companies=[{organizationId=10000000-0000-0000-0000-000000000001, formalWritesReady=true, blockers=[], runtimeDdlEnabled=false}], formalWritesReady=true, runtimeDdlEnabled=false}
+2026-11-26T10:45:34.520+08:00  INFO 9718 --- [pandora-backend] [           main] cn.pandora.admin.LoginKeyConstraints     : Employee login-key uniqueness is established; duplicate V19 blockers resolved
+2026-11-26T10:45:34.607+08:00  INFO 9718 --- [pandora-backend] [.1-18202-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-26T10:45:34.607+08:00  INFO 9718 --- [pandora-backend] [.1-18202-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-26T10:45:34.607+08:00  INFO 9718 --- [pandora-backend] [.1-18202-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-11-26T10:45:35.062+08:00  INFO 9718 --- [pandora-backend] [ionShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-26T10:45:35.062+08:00  INFO 9718 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-11-26T10:45:35.064+08:00  INFO 9718 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-26T10:45:35.066+08:00  INFO 9718 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-11-26T10:45:38.320+08:00  INFO 9772 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 9772 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-11-26T10:45:38.321+08:00  INFO 9772 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-11-26T10:45:38.668+08:00  INFO 9772 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18204 (http)
+2026-11-26T10:45:38.673+08:00  INFO 9772 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-26T10:45:38.673+08:00  INFO 9772 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-11-26T10:45:38.681+08:00  INFO 9772 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-26T10:45:38.682+08:00  INFO 9772 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 346 ms
+2026-11-26T10:45:38.742+08:00  INFO 9772 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-26T10:45:38.802+08:00  INFO 9772 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5a1dddba
+2026-11-26T10:45:38.803+08:00  INFO 9772 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-26T10:45:38.820+08:00  INFO 9772 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_e13_offboard_demo_213b470d5cac?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 26.10)
+2026-11-26T10:45:38.986+08:00  WARN 9772 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 26.10 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-11-26T10:45:39.006+08:00  INFO 9772 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 40 migrations (execution time 00:00.015s)
+2026-11-26T10:45:39.010+08:00  INFO 9772 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_e13_offboard_demo_213b470d5cac`: 40
+2026-11-26T10:45:39.011+08:00  INFO 9772 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_e13_offboard_demo_213b470d5cac` is up to date. No migration necessary.
+2026-11-26T10:45:39.387+08:00  INFO 9772 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-26T10:45:39.465+08:00  INFO 9772 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18204 (http) with context path '/'
+2026-11-26T10:45:39.473+08:00  INFO 9772 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.288 seconds (process running for 1.426)
+2026-11-26T10:45:39.484+08:00  INFO 9772 --- [pandora-backend] [           main] c.pandora.admin.OrganizationConstraints  : Fixed organization readiness: {runtimeDdlEnabled=false, companies=[{blockers=[], runtimeDdlEnabled=false, organizationId=10000000-0000-0000-0000-000000000001, formalWritesReady=true}], formalWritesReady=true}
+2026-11-26T10:45:39.485+08:00  INFO 9772 --- [pandora-backend] [           main] cn.pandora.admin.LoginKeyConstraints     : Employee login-key uniqueness is established; duplicate V19 blockers resolved
+2026-11-26T10:45:39.574+08:00  INFO 9772 --- [pandora-backend] [.1-18204-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-26T10:45:39.574+08:00  INFO 9772 --- [pandora-backend] [.1-18204-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-26T10:45:39.575+08:00  INFO 9772 --- [pandora-backend] [.1-18204-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-11-26T10:45:39.592+08:00  INFO 9772 --- [pandora-backend] [ionShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-26T10:45:39.592+08:00  INFO 9772 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-11-26T10:45:39.594+08:00  INFO 9772 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-26T10:45:39.596+08:00  INFO 9772 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-11-26T10:53:52.580+08:00  INFO 12121 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 12121 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-11-26T10:53:52.580+08:00  INFO 12121 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-11-26T10:53:52.964+08:00  INFO 12121 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18202 (http)
+2026-11-26T10:53:52.969+08:00  INFO 12121 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-26T10:53:52.969+08:00  INFO 12121 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-11-26T10:53:52.977+08:00  INFO 12121 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-26T10:53:52.977+08:00  INFO 12121 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 382 ms
+2026-11-26T10:53:53.041+08:00  INFO 12121 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-26T10:53:53.112+08:00  INFO 12121 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5a1dddba
+2026-11-26T10:53:53.113+08:00  INFO 12121 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-26T10:53:53.129+08:00  INFO 12121 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_e13_offboard_demo_af3704a23aa7?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 26.10)
+2026-11-26T10:53:53.309+08:00  WARN 12121 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 26.10 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-11-26T10:53:53.328+08:00  INFO 12121 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 40 migrations (execution time 00:00.015s)
+2026-11-26T10:53:53.332+08:00  INFO 12121 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_e13_offboard_demo_af3704a23aa7`: 40
+2026-11-26T10:53:53.334+08:00  INFO 12121 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_e13_offboard_demo_af3704a23aa7` is up to date. No migration necessary.
+2026-11-26T10:53:53.734+08:00  INFO 12121 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-26T10:53:53.822+08:00  INFO 12121 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18202 (http) with context path '/'
+2026-11-26T10:53:53.829+08:00  INFO 12121 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.39 seconds (process running for 1.537)
+2026-11-26T10:53:53.841+08:00  INFO 12121 --- [pandora-backend] [           main] c.pandora.admin.OrganizationConstraints  : Fixed organization readiness: {formalWritesReady=true, runtimeDdlEnabled=false, companies=[{formalWritesReady=true, blockers=[], runtimeDdlEnabled=false, organizationId=10000000-0000-0000-0000-000000000001}]}
+2026-11-26T10:53:53.842+08:00  INFO 12121 --- [pandora-backend] [           main] cn.pandora.admin.LoginKeyConstraints     : Employee login-key uniqueness is established; duplicate V19 blockers resolved
+2026-11-26T10:53:54.334+08:00  INFO 12121 --- [pandora-backend] [.1-18202-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-26T10:53:54.334+08:00  INFO 12121 --- [pandora-backend] [.1-18202-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-26T10:53:54.335+08:00  INFO 12121 --- [pandora-backend] [.1-18202-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-11-26T10:53:54.795+08:00  INFO 12121 --- [pandora-backend] [ionShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-26T10:53:54.796+08:00  INFO 12121 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-11-26T10:53:54.798+08:00  INFO 12121 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-26T10:53:54.799+08:00  INFO 12121 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-11-26T10:53:58.070+08:00  INFO 12175 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 12175 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-11-26T10:53:58.071+08:00  INFO 12175 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-11-26T10:53:58.456+08:00  INFO 12175 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18204 (http)
+2026-11-26T10:53:58.462+08:00  INFO 12175 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-26T10:53:58.462+08:00  INFO 12175 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-11-26T10:53:58.471+08:00  INFO 12175 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-26T10:53:58.471+08:00  INFO 12175 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 386 ms
+2026-11-26T10:53:58.550+08:00  INFO 12175 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-26T10:53:58.617+08:00  INFO 12175 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5a1dddba
+2026-11-26T10:53:58.617+08:00  INFO 12175 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-26T10:53:58.632+08:00  INFO 12175 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_e13_offboard_demo_af3704a23aa7?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 26.10)
+2026-11-26T10:53:58.808+08:00  WARN 12175 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 26.10 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-11-26T10:53:58.828+08:00  INFO 12175 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 40 migrations (execution time 00:00.016s)
+2026-11-26T10:53:58.832+08:00  INFO 12175 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_e13_offboard_demo_af3704a23aa7`: 40
+2026-11-26T10:53:58.833+08:00  INFO 12175 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_e13_offboard_demo_af3704a23aa7` is up to date. No migration necessary.
+2026-11-26T10:53:59.226+08:00  INFO 12175 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-26T10:53:59.317+08:00  INFO 12175 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18204 (http) with context path '/'
+2026-11-26T10:53:59.325+08:00  INFO 12175 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.393 seconds (process running for 1.537)
+2026-11-26T10:53:59.336+08:00  INFO 12175 --- [pandora-backend] [           main] c.pandora.admin.OrganizationConstraints  : Fixed organization readiness: {runtimeDdlEnabled=false, formalWritesReady=true, companies=[{blockers=[], formalWritesReady=true, organizationId=10000000-0000-0000-0000-000000000001, runtimeDdlEnabled=false}]}
+2026-11-26T10:53:59.338+08:00  INFO 12175 --- [pandora-backend] [           main] cn.pandora.admin.LoginKeyConstraints     : Employee login-key uniqueness is established; duplicate V19 blockers resolved
+2026-11-26T10:53:59.832+08:00  INFO 12175 --- [pandora-backend] [.1-18204-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-26T10:53:59.832+08:00  INFO 12175 --- [pandora-backend] [.1-18204-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-26T10:53:59.833+08:00  INFO 12175 --- [pandora-backend] [.1-18204-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-11-26T10:53:59.854+08:00  INFO 12175 --- [pandora-backend] [ionShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-26T10:53:59.854+08:00  INFO 12175 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-11-26T10:53:59.856+08:00  INFO 12175 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-26T10:53:59.858+08:00  INFO 12175 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-11-26T11:03:01.315+08:00  INFO 14258 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 14258 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-11-26T11:03:01.316+08:00  INFO 14258 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-11-26T11:03:01.779+08:00  INFO 14258 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18202 (http)
+2026-11-26T11:03:01.785+08:00  INFO 14258 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-26T11:03:01.785+08:00  INFO 14258 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-11-26T11:03:01.794+08:00  INFO 14258 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-26T11:03:01.795+08:00  INFO 14258 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 458 ms
+2026-11-26T11:03:01.868+08:00  INFO 14258 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-26T11:03:01.945+08:00  INFO 14258 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5a1dddba
+2026-11-26T11:03:01.946+08:00  INFO 14258 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-26T11:03:01.968+08:00  INFO 14258 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_e13_offboard_demo_35a71b7b876b?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 26.10)
+2026-11-26T11:03:02.169+08:00  WARN 14258 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 26.10 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-11-26T11:03:02.204+08:00  INFO 14258 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 40 migrations (execution time 00:00.026s)
+2026-11-26T11:03:02.211+08:00  INFO 14258 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_e13_offboard_demo_35a71b7b876b`: 40
+2026-11-26T11:03:02.213+08:00  INFO 14258 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_e13_offboard_demo_35a71b7b876b` is up to date. No migration necessary.
+2026-11-26T11:03:02.657+08:00  INFO 14258 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-26T11:03:02.760+08:00  INFO 14258 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18202 (http) with context path '/'
+2026-11-26T11:03:02.770+08:00  INFO 14258 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.632 seconds (process running for 1.809)
+2026-11-26T11:03:02.784+08:00  INFO 14258 --- [pandora-backend] [           main] c.pandora.admin.OrganizationConstraints  : Fixed organization readiness: {companies=[{organizationId=10000000-0000-0000-0000-000000000001, formalWritesReady=true, blockers=[], runtimeDdlEnabled=false}], formalWritesReady=true, runtimeDdlEnabled=false}
+2026-11-26T11:03:02.786+08:00  INFO 14258 --- [pandora-backend] [           main] cn.pandora.admin.LoginKeyConstraints     : Employee login-key uniqueness is established; duplicate V19 blockers resolved
+2026-11-26T11:03:02.985+08:00  INFO 14258 --- [pandora-backend] [.1-18202-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-26T11:03:02.985+08:00  INFO 14258 --- [pandora-backend] [.1-18202-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-26T11:03:02.986+08:00  INFO 14258 --- [pandora-backend] [.1-18202-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-11-26T11:03:03.449+08:00  INFO 14258 --- [pandora-backend] [ionShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-26T11:03:03.450+08:00  INFO 14258 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-11-26T11:03:03.452+08:00  WARN 14258 --- [pandora-backend] [liday-refresh-2] c.p.calendar.HolidayCalendarService      : Holiday refresh for 2027 failed: code=HOLIDAY_SOURCE_IO, causeTypes=cn.pandora.calendar.HolidaySourceException -> java.lang.InterruptedException
+2026-11-26T11:03:03.452+08:00  WARN 14258 --- [pandora-backend] [liday-refresh-1] c.p.calendar.HolidayCalendarService      : Holiday refresh for 2026 failed: code=HOLIDAY_SOURCE_IO, causeTypes=cn.pandora.calendar.HolidaySourceException -> java.lang.InterruptedException
+2026-11-26T11:03:03.452+08:00  INFO 14258 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-26T11:03:03.452+08:00  WARN 14258 --- [pandora-backend] [liday-refresh-2] c.p.calendar.HolidayCalendarService      : Holiday refresh for 2027 failed: CannotCreateTransactionException
+2026-11-26T11:03:03.452+08:00  WARN 14258 --- [pandora-backend] [liday-refresh-1] c.p.calendar.HolidayCalendarService      : Holiday refresh for 2026 failed: CannotCreateTransactionException
+2026-11-26T11:03:03.453+08:00  INFO 14258 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-11-26T11:03:07.209+08:00  INFO 14372 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Starting PandoraApplication v0.1.0 using Java 21.0.7 with PID 14372 (/Users/watuji/MyGitDev/software_test_practice/backend/target/pandora-backend-0.1.0.jar started by watuji in /Users/watuji/MyGitDev/software_test_practice)
+2026-11-26T11:03:07.211+08:00  INFO 14372 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-11-26T11:03:07.638+08:00  INFO 14372 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18204 (http)
+2026-11-26T11:03:07.643+08:00  INFO 14372 --- [pandora-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-26T11:03:07.643+08:00  INFO 14372 --- [pandora-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-11-26T11:03:07.651+08:00  INFO 14372 --- [pandora-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-26T11:03:07.651+08:00  INFO 14372 --- [pandora-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 421 ms
+2026-11-26T11:03:07.717+08:00  INFO 14372 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-26T11:03:07.784+08:00  INFO 14372 --- [pandora-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5a1dddba
+2026-11-26T11:03:07.785+08:00  INFO 14372 --- [pandora-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-26T11:03:07.800+08:00  INFO 14372 --- [pandora-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:13306/pandora_e13_offboard_demo_35a71b7b876b?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&sslMode=DISABLED (MySQL 26.10)
+2026-11-26T11:03:07.990+08:00  WARN 14372 --- [pandora-backend] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: MySQL 26.10 is newer than this version of Flyway and support has not been tested. The latest supported version of MySQL is 8.1.
+2026-11-26T11:03:08.015+08:00  INFO 14372 --- [pandora-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 40 migrations (execution time 00:00.019s)
+2026-11-26T11:03:08.019+08:00  INFO 14372 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `pandora_e13_offboard_demo_35a71b7b876b`: 40
+2026-11-26T11:03:08.021+08:00  INFO 14372 --- [pandora-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema `pandora_e13_offboard_demo_35a71b7b876b` is up to date. No migration necessary.
+2026-11-26T11:03:08.496+08:00  INFO 14372 --- [pandora-backend] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-26T11:03:08.637+08:00  INFO 14372 --- [pandora-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18204 (http) with context path '/'
+2026-11-26T11:03:08.647+08:00  INFO 14372 --- [pandora-backend] [           main] cn.pandora.PandoraApplication            : Started PandoraApplication in 1.605 seconds (process running for 1.774)
+2026-11-26T11:03:08.667+08:00  INFO 14372 --- [pandora-backend] [           main] c.pandora.admin.OrganizationConstraints  : Fixed organization readiness: {formalWritesReady=true, companies=[{blockers=[], formalWritesReady=true, organizationId=10000000-0000-0000-0000-000000000001, runtimeDdlEnabled=false}], runtimeDdlEnabled=false}
+2026-11-26T11:03:08.670+08:00  INFO 14372 --- [pandora-backend] [           main] cn.pandora.admin.LoginKeyConstraints     : Employee login-key uniqueness is established; duplicate V19 blockers resolved
+2026-11-26T11:03:08.905+08:00  INFO 14372 --- [pandora-backend] [.1-18204-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-26T11:03:08.906+08:00  INFO 14372 --- [pandora-backend] [.1-18204-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-26T11:03:08.906+08:00  INFO 14372 --- [pandora-backend] [.1-18204-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-11-26T11:03:08.930+08:00  INFO 14372 --- [pandora-backend] [ionShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-26T11:03:08.931+08:00  INFO 14372 --- [pandora-backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-11-26T11:03:08.935+08:00  INFO 14372 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-26T11:03:08.937+08:00  INFO 14372 --- [pandora-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
