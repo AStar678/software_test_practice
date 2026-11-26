@@ -45,6 +45,22 @@ public class OrganizationPlans {
         result.put("constraints",constraints.status(actor.organizationId()));return result;
     }
 
+    /** Fields the public organization-adjustment command accepts: structure only, never a lifecycle command. */
+    static final Set<String> STRUCTURE_FIELDS=Set.of("reason","founderEmployeeId","departments","teams","placements","expectedEmployees");
+
+    /**
+     * Public organization-adjustment contract. Lifecycle commands (onboarding, deactivation, task execution
+     * handover, management takeover and request cancellation) are not part of this surface: an old page that
+     * still sends one is rejected as a whole before any structure is written. Independent onboarding,
+     * offboarding and the read-only responsibility history keep using the shared internal final-state writer.
+     */
+    public Writes.Outcome saveStructure(Actor actor,String ifMatch,Map<String,Object> input) {
+        access.requireAdmin(actor);
+        allowed(input,STRUCTURE_FIELDS);
+        return save(actor,ifMatch,input);
+    }
+
+    /** Shared internal final-state writer. Callers own the dedicated command contract around it. */
     public Writes.Outcome save(Actor actor,String ifMatch,Map<String,Object> input) {
         access.requireAdmin(actor);
         allowed(input,Set.of("reason","founderEmployeeId","departments","teams","placements","expectedEmployees","newEmployees",

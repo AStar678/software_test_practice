@@ -56,7 +56,7 @@ const ids = fixture.ids || {};
     const previousTotal = await evaluate("state.employeeTotal");
     await evaluate("window.__pandoraFetch=window.fetch;window.fetch=()=>Promise.reject(new TypeError('Failed to fetch'));loadEmployees();");
     check("a failed filter keeps the previous list and shows a retryable hint",
-      await waitFor(browser, "state.employeeTotal===11 && document.getElementById('employeeHint').textContent.includes('筛选加载失败') && document.querySelectorAll('#employeeRows tr').length===11"),
+      await waitFor(browser, "state.employeeTotal===11 && document.getElementById('employeeHint').textContent.includes('搜索加载失败') && document.querySelectorAll('#employeeRows tr').length===11"),
       await evaluate("document.getElementById('employeeHint').textContent"));
     check("a failed filter surfaces one safe Chinese error dialog",
       await waitFor(browser, "document.getElementById('messageDialog').open && document.getElementById('messageText').textContent.length>0"), await evaluate("document.getElementById('messageText').textContent"));
@@ -93,7 +93,7 @@ const ids = fixture.ids || {};
       await waitFor(browser, "!document.getElementById('onboardingDialog').open && state.employees.some(e=>e.displayName==='浏览器入职员工') && document.getElementById('employeeSecret').textContent.includes('初始密码仅显示一次')", 20000),
       await evaluate("document.getElementById('onboardingError').textContent"));
     check("independent onboarding writes no organization-adjustment draft",
-      await evaluate("state.planDraft && state.planDraft.newEmployees.length===0"));
+      await evaluate("state.planDraft && !('newEmployees' in state.planDraft)"));
 
     // ---- A structural conflict is refused and keeps every entered value.
     await evaluate("openOnboarding()");
@@ -116,33 +116,32 @@ const ids = fixture.ids || {};
 
     // ---- Independent offboarding: plain employee, fixed founder and unit head with successor.
     await evaluate(`document.querySelector('[data-offboard="${ids['beta-one-employee']}"]').click()`);
-    check("offboarding dialog reads the existing responsibility inventory",
-      await waitFor(browser, "document.getElementById('offboardingDialog').open && document.getElementById('offboardingBody').textContent.includes('未完成任务负责人交接')"),
-      await evaluate("document.getElementById('offboardingBody').textContent.slice(0,200)"));
-    await evaluate("document.getElementById('offboardingReason').value='浏览器普通离职';document.getElementById('offboardingSave').click();");
+    check("the single-employee responsibility inventory leads directly to confirmation when empty",
+      await waitFor(browser, "$('messageDialog').open && $('messageTitle').textContent==='确认离职' && !$('messageField').hidden"),
+      await evaluate("$('messageText').textContent"));
+    await evaluate("$('messageInput').value='浏览器普通离职';$('messageAccept').click()");
     check("plain employee offboarding completes and refreshes the directory",
-      await waitFor(browser, `!document.getElementById('offboardingDialog').open && !state.allEmployees.find(e=>e.id===${JSON.stringify(ids['beta-one-employee'])}).active && state.employeeTotal===12`, 20000),
+      await waitFor(browser, `state.offboarding===null && !state.allEmployees.find(e=>e.id===${JSON.stringify(ids['beta-one-employee'])}).active && state.employeeTotal===12`, 20000),
       await evaluate("state.employeeTotal"));
     check("offboarded employee row shows the inactive state",
       await waitFor(browser, `(()=>{const row=Array.from(document.querySelectorAll('#employeeRows tr')).find(r=>r.textContent.includes('beta-one-employee'));return row&&row.textContent.includes('已停用')})()`));
 
     await evaluate(`document.querySelector('[data-offboard="${ids['founder']}"]').click()`);
-    check("fixed founder offboarding is refused inside the dialog",
-      await waitFor(browser, "document.getElementById('offboardingDialog').open && document.getElementById('offboardingBody').textContent.includes('固定创始人不能办理普通离职') && document.getElementById('offboardingSave').disabled"),
+    check("fixed founder offboarding is refused on the dedicated page",
+      await waitFor(browser, "state.offboarding && document.getElementById('offboardingBody').textContent.includes('固定创始人不能办理普通离职') && document.getElementById('offboardingSave').disabled"),
       await evaluate("document.getElementById('offboardingBody').textContent.slice(0,200)"));
     await evaluate("document.getElementById('offboardingCancel').click()");
 
     await evaluate(`document.querySelector('[data-offboard="${ids['alpha-one-head']}"]').click()`);
-    check("unit head offboarding asks for a successor",
-      await waitFor(browser, "document.getElementById('offboardingDialog').open && !!document.getElementById('offboardingSuccessor')"));
-    await evaluate("document.getElementById('offboardingReason').value='浏览器负责人离职';document.getElementById('offboardingSave').click();");
-    check("missing successor keeps the dialog open with a Chinese explanation",
-      await waitFor(browser, "document.getElementById('offboardingDialog').open && document.getElementById('offboardingError').textContent.includes('请选择继任人')"),
-      await evaluate("document.getElementById('offboardingError').textContent"));
+    check("unit head offboarding asks for a successor and holds the final confirmation",
+      await waitFor(browser, "state.offboarding && !!document.getElementById('offboardingSuccessor') && document.getElementById('offboardingSave').disabled"));
     await evaluate(`document.getElementById('offboardingSuccessor').value=${JSON.stringify(ids['alpha-one-employee'])};
-      document.getElementById('offboardingSave').click();`);
+      document.getElementById('offboardingSuccessor').onchange();document.getElementById('offboardingReason').value='浏览器负责人离职';
+      void document.getElementById('offboardingSave').onclick();`);
+    await waitFor(browser, "$('messageDialog').open && $('messageTitle').textContent==='确认离职'");
+    await evaluate("$('messageAccept').click()");
     check("head offboarding with a successor promotes the successor",
-      await waitFor(browser, `!document.getElementById('offboardingDialog').open && state.allEmployees.find(e=>e.id===${JSON.stringify(ids['alpha-one-employee'])}).placementType==='team_head'`, 20000),
+      await waitFor(browser, `state.offboarding===null && state.allEmployees.find(e=>e.id===${JSON.stringify(ids['alpha-one-employee'])}).placementType==='team_head'`, 20000),
       await evaluate("state.allEmployees.find(e=>e.id===" + JSON.stringify(ids['alpha-one-employee']) + ").placementType"));
 
     // ---- Deleted-task history: filter, read-only detail and provenance.

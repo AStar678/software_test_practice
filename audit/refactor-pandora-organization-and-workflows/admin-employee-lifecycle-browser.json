@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-25T11:13:04.629726+00:00",
+  "updated": "2026-11-26T03:03:21.603728+00:00",
   "checks": [
     {
       "check": "administrator console loads the complete employee directory",
@@ -102,7 +102,7 @@
       "evidence": "real Chrome"
     },
     {
-      "check": "offboarding dialog reads the existing responsibility inventory",
+      "check": "the single-employee responsibility inventory leads directly to confirmation when empty",
       "pass": true,
       "evidence": "real Chrome"
     },
@@ -117,17 +117,12 @@
       "evidence": "real Chrome"
     },
     {
-      "check": "fixed founder offboarding is refused inside the dialog",
+      "check": "fixed founder offboarding is refused on the dedicated page",
       "pass": true,
       "evidence": "real Chrome"
     },
     {
-      "check": "unit head offboarding asks for a successor",
-      "pass": true,
-      "evidence": "real Chrome"
-    },
-    {
-      "check": "missing successor keeps the dialog open with a Chinese explanation",
+      "check": "unit head offboarding asks for a successor and holds the final confirmation",
       "pass": true,
       "evidence": "real Chrome"
     },

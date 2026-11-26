@@ -35,6 +35,10 @@ public class BusinessTakeovers {
         return result;
     }
 
+    /**
+     * Demo preparation only: seed one historical takeover record. It has no HTTP route, so an
+     * administrator cannot use it as a second write entry.
+     */
     public Map<String,Object> transfer(Actor actor,String ifMatch,Map<String,Object> input) {
         access.requireAdmin(actor);allowed(input,Set.of("transfers"));
         var company=db.one("SELECT authz_version FROM organizations WHERE id=?",actor.organizationId());
@@ -46,7 +50,7 @@ public class BusinessTakeovers {
         return Map.of("rowVersion",n(company,"authzVersion")+1,"transfers",prepared,"refreshedRequests",refreshed);
     }
 
-    /** Shared by final deactivation plans; the caller owns company lock, versions and route refresh. */
+    /** Shared by the dedicated offboarding command; the caller owns company lock, versions and route refresh. */
     List<Map<String,Object>> apply(Actor actor,List<?> raw) {
         access.requireAdmin(actor);
         if(raw.size()>1000) throw bad("接管安排最多1000项");

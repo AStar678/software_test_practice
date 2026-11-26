@@ -68,7 +68,78 @@ public class OrganizationService {
         String placementType=filterText(filters,"placementType","组织身份");
         if (placementType!=null && !PLACEMENT_TYPES.contains(placementType)) throw bad("组织身份筛选无效");
         Boolean active=filterBoolean(filters,"active");
-        String needle=query.toLowerCase(Locale.ROOT);
+        return directory(actor,query,null,false,department,team,position,placementType,active);
+    }
+
+    /**
+     * Administrator-only directory search that may carry a full identity number in the request body. The
+     * value is never placed in a URL, audit record, log or error: the server normalizes it, matches it
+     * exactly inside the current company and returns the ordinary masked directory. A fragment is not an
+     * identity lookup; only the unchanged name/department/login-phone text search applies to it.
+     */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Map<String,Object> searchEmployees(Actor actor,Map<String,Object> input) {
+        access.requireAdmin(actor);access.requireCurrent(actor);
+        allowed(input,Set.of("q","idCardNo","departmentId","teamId","placementType","active","positionId"));
+        var filters=new HashMap<String,String>();
+        for(String key:List.of("q","departmentId","teamId","placementType","active","positionId")) {
+            Object value=input.get(key);
+            if(value==null) continue;
+            if(value instanceof Boolean flag) {filters.put(key,flag.toString());continue;}
+            if(!(value instanceof String text)) throw bad("搜索条件格式不正确");
+            if(!text.isBlank()) filters.put(key,text);
+        }
+        String query=filterText(filters,"q","搜索内容");
+        if(query==null) query="";
+        if (query.length()>200) throw bad("搜索内容最多200字");
+        String department=filterId(filters,"departmentId","部门");
+        String team=filterId(filters,"teamId","团队");
+        String position=filterId(filters,"positionId","展示职位");
+        String placementType=filterText(filters,"placementType","组织身份");
+        if (placementType!=null && !PLACEMENT_TYPES.contains(placementType)) throw bad("组织身份筛选无效");
+        Boolean active=filterBoolean(filters,"active");
+        if(input.get("idCardNo")!=null) {
+            if(!(input.get("idCardNo") instanceof String raw)) throw bad("身份证号须为文字");
+            String normalized=normalizedIdentity(actor,raw);
+            return directory(actor,"",normalized,normalized==null,department,team,position,placementType,active);
+        }
+        String text=query.strip();
+        if(looksLikeFullIdentity(text)) {
+            String normalized=normalizedIdentity(actor,text);
+            return directory(actor,"",normalized,normalized==null,department,team,position,placementType,active);
+        }
+        return directory(actor,query,null,false,department,team,position,placementType,active);
+    }
+
+    private String normalizedIdentity(Actor actor,String raw) {
+        try {
+            return IdCardNumbers.normalize(raw,companyToday(actor));
+        } catch (RuntimeException invalid) {
+            // A malformed or fragment value maps to "no such employee", never to a validation echo.
+            return null;
+        }
+    }
+
+    private java.time.LocalDate companyToday(Actor actor) {
+        String zone=s(db.one("SELECT time_zone FROM organizations WHERE id=?",actor.organizationId()),"timeZone");
+        return clock.instant().atZone(java.time.ZoneId.of(zone)).toLocalDate();
+    }
+
+    private static boolean looksLikeFullIdentity(String value) {
+        return value!=null && value.length()==18 && value.matches("[0-9]{17}[0-9Xx]");
+    }
+
+    private Map<String,Object> directory(Actor actor,String query,String identityNumber,boolean identityUnmatched,
+                                         String department,String team,String position,String placementType,Boolean active) {
+        String needle=Objects.toString(query,"").toLowerCase(Locale.ROOT);
+        String identityEmployee=null;
+        if(identityNumber!=null) {
+            var row=db.find("SELECT employee_id FROM employee_identity_documents WHERE organization_id=? AND id_card_no=?",
+                    actor.organizationId(),identityNumber);
+            identityEmployee=row==null?null:s(row,"employeeId");
+        }
+        if(identityUnmatched || identityNumber!=null && identityEmployee==null)
+            return Map.of("items",List.of(),"total",0);
         var phones=new HashMap<String,Object>();
         var hireDates=new HashMap<String,Object>();
         for (var row:db.list("SELECT id,login_phone,hire_date FROM users WHERE organization_id=?",actor.organizationId())) {
@@ -76,12 +147,14 @@ public class OrganizationService {
             hireDates.put(s(row,"id"),row.get("hireDate"));
         }
         var masked=identity.maskedByEmployee(actor);
+        String identityMatch=identityEmployee;
         var rows=access.employeeDirectory(actor,true).stream().filter(row -> {
                     if(department!=null && !department.equals(s(row,"departmentId"))) return false;
                     if(team!=null && !team.equals(s(row,"teamId"))) return false;
                     if(position!=null && !position.equals(s(row,"positionId"))) return false;
                     if(placementType!=null && !placementType.equals(s(row,"placementType"))) return false;
                     if(active!=null && active!=Access.enabled(row)) return false;
+                    if(identityMatch!=null) return identityMatch.equals(s(row,"id"));
                     if(needle.isEmpty()) return true;
                     String phone=Objects.toString(phones.get(s(row,"id")),"");
                     return Objects.toString(row.get("displayName"),"").toLowerCase(Locale.ROOT).contains(needle)
@@ -429,10 +502,6 @@ public class OrganizationService {
         }
     }
 
-    private java.time.LocalDate companyToday(Actor actor) {
-        String zone = s(db.one("SELECT time_zone FROM organizations WHERE id=?", actor.organizationId()), "timeZone");
-        return clock.instant().atZone(java.time.ZoneId.of(zone)).toLocalDate();
-    }
 
     static String text(Object value, String label, int max) {        if (!(value instanceof String raw)) throw bad(label + "必须为文字");
         String text = raw.strip();

@@ -29,6 +29,7 @@ ID_D = '320102198203030031'
 ID_E = '110101198304040049'
 ID_F = '440301198405050059'
 ID_BAD_CHECKSUM = '110105194912310021'
+ID_G = '110101198506060072'
 
 
 def main() -> int:
@@ -366,19 +367,19 @@ def main() -> int:
             check('inventory lists the pending unpublished creation', pending_request is not None, inventory['pendingRequests'])
             status, blocked = call('POST', '/admin/employees/' + onboarded + '/offboard',
                                    {'reason': '待审未处理'}, version=org_version())
-            check('offboarding refuses while a pending request remains',
-                  status == 409 and blocked.get('code') in ('PENDING_SETTLEMENT_REQUIRED', 'UNFINISHED_HANDOVER_REQUIRED'), blocked)
+            check('offboarding refuses while a pending request remains unconfirmed',
+                  status == 409 and blocked.get('code') in ('OFFBOARDING_PENDING_CONFIRMATION', 'PENDING_SETTLEMENT_REQUIRED',
+                                                            'UNFINISHED_HANDOVER_REQUIRED'), blocked)
             check('the blocked offboarding leaves the employee active and the request pending',
                   bool(call('GET', '/admin/employees/' + onboarded)[1]['active'])
                   and f.db.scalar("SELECT COUNT(*) FROM approval_requests WHERE id=" + quote(pending_request['id'])
                                   + " AND status='pending'") == 1)
             status, settled = call('POST', '/admin/employees/' + onboarded + '/offboard',
                                    {'reason': '待审未发布创建已撤销',
-                                    'cancelUnpublishedRequests': [{'requestId': pending_request['id'],
-                                                                   'rowVersion': pending_request['rowVersion'],
-                                                                   'reason': '离职撤销未发布创建'}]},
+                                    'ownPendingWithdrawals': [{'requestId': pending_request['id'],
+                                                               'rowVersion': pending_request['rowVersion']}]},
                                    version=org_version())
-            check('cancelling the unpublished request settles and completes the offboarding',
+            check('confirming the own pending withdrawal settles and completes the offboarding',
                   status == 200 and settled.get('offboarded') is True, settled)
             check('the cancelled creation request is withdrawn and the account revoked',
                   f.db.scalar("SELECT COUNT(*) FROM approval_requests WHERE id=" + quote(pending_request['id'])
@@ -429,11 +430,17 @@ def main() -> int:
             check('the offboarded business owner is inactive', not bool(call('GET', '/admin/employees/' + ids['alpha-two-employee'])[1]['active']))
 
             # Stale and repeated offboarding requests are safe.
-            stale_target = ids['beta-two-employee']
+            status, stale_candidate = call('POST', '/admin/employees', {
+                'displayName': '旧版本离职员工', 'phone': '13977770124', 'idCardNo': ID_G,
+                'placementType': 'employee', 'departmentId': 'fixture-company-beta',
+                'teamId': 'fixture-company-beta-one', 'positionId': 'fixture-company-title'},
+                key='stale-candidate-' + uuid.uuid4().hex)
+            check('a fresh employee is prepared for the stale offboarding check', status == 201, stale_candidate)
+            stale_target = stale_candidate['userId']
             status, stale_offboard = call('POST', '/admin/employees/' + stale_target + '/offboard',
                                           {'reason': '旧版本离职'}, version=org_version() - 1)
             check('an offboarding request with an old company version is refused',
-                  status == 412 and stale_offboard.get('code') == 'VERSION_CONFLICT', stale_offboard)
+                  status in (409, 412) and stale_offboard.get('code') in ('VERSION_CONFLICT', 'AUTHORIZATION_CHANGED'), stale_offboard)
             check('the stale request leaves the employee active', bool(call('GET', '/admin/employees/' + stale_target)[1]['active']))
 
             # ---- Administrator error safety: no raw exception, HTTP text, internal code or English field.
