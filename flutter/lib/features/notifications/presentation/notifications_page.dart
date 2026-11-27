@@ -149,7 +149,12 @@ class _NotificationsListState extends ConsumerState<_NotificationsList> {
                 ),
               ),
             ),
-            Expanded(child: SizedBox.expand(key: const ValueKey('notification-results'), child: _body())),
+            Expanded(
+              child: SizedBox.expand(
+                key: const ValueKey('notification-results'),
+                child: _body(),
+              ),
+            ),
           ],
         ),
       ),
@@ -168,7 +173,7 @@ class _NotificationsListState extends ConsumerState<_NotificationsList> {
       return EmptyView(message: filtered ? '当前筛选条件下没有通知' : '暂无通知');
     }
     return RefreshIndicator(
-      onRefresh: () => _load(reset: true),
+      onRefresh: _refreshPreserving,
       child: ListView.separated(
         key: PageStorageKey(
           'notifications:${_read.apiValue}:${_category.apiValue}:$_compact',
@@ -273,6 +278,63 @@ class _NotificationsListState extends ConsumerState<_NotificationsList> {
           _total = 0;
           _unreadCount = 0;
         }
+        _error = error;
+        _loading = false;
+      });
+    }
+  }
+
+  /// Refresh in place: keep the visible rows and offset until the new pages
+  /// arrive, then restore the previous scroll position.
+  Future<void> _refreshPreserving() async {
+    final target = _items.length;
+    final offset = _scroll.hasClients ? _scroll.offset : 0.0;
+    if (target == 0) {
+      await _load(reset: true);
+      return;
+    }
+    final generation = ++_generation;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final merged = <String, NotificationRecord>{};
+      var nextOffset = 0;
+      var total = _total;
+      var unread = _unreadCount;
+      int? next;
+      while (merged.length < target) {
+        final page = await ref
+            .read(notificationsApiProvider)
+            .list(read: _read, category: _category, offset: nextOffset);
+        if (!mounted || generation != _generation) return;
+        for (final item in page.items) {
+          merged[item.id] = item;
+        }
+        total = page.total;
+        unread = page.unreadCount;
+        next = page.nextOffset;
+        if (page.items.isEmpty || next == null || next <= nextOffset) break;
+        nextOffset = next;
+      }
+      setState(() {
+        _items
+          ..clear()
+          ..addAll(merged.values);
+        _total = total;
+        _unreadCount = unread;
+        _nextOffset = next;
+        _loading = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scroll.hasClients) {
+          _scroll.jumpTo(offset.clamp(0, _scroll.position.maxScrollExtent));
+        }
+      });
+    } catch (error) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
         _error = error;
         _loading = false;
       });

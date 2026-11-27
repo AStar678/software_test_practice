@@ -37,7 +37,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       _error = null;
     });
     try {
-      await ref.read(sessionManagerProvider).login(
+      await ref
+          .read(sessionManagerProvider)
+          .login(
             phone: _phoneController.text,
             password: _passwordController.text,
           );
@@ -46,10 +48,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       setState(() {
         _error = switch (error.statusCode) {
           401 => '手机号或密码不正确',
-          400 => error.message,
+          400 => userMessageFor(error),
           409 => '该手机号存在登录冲突，请联系管理员处理',
           403 => '该账号当前不可登录，请联系管理员',
-          _ => error.message,
+          _ => userMessageFor(error),
         };
       });
     } finally {
@@ -79,7 +81,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     Text(
                       '潘多拉',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 24),
                     if (notice != null) ...[
@@ -91,11 +94,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       keyboardType: TextInputType.phone,
                       autofillHints: const [AutofillHints.telephoneNumber],
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(labelText: '手机号', hintText: '请输入本人登录手机号'),
+                      decoration: const InputDecoration(
+                        labelText: '手机号',
+                        hintText: '请输入本人登录手机号',
+                      ),
                       validator: (value) {
                         final text = (value ?? '').trim();
                         if (text.isEmpty) return '请输入手机号';
-                        if (PhoneNumbers.normalize(value ?? '') == null) return '手机号格式不正确';
+                        if (PhoneNumbers.normalize(value ?? '') == null) {
+                          return '手机号格式不正确';
+                        }
                         return null;
                       },
                     ),
@@ -109,11 +117,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         labelText: '密码',
                         suffixIcon: IconButton(
                           tooltip: _obscure ? '显示密码' : '隐藏密码',
-                          icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                          icon: Icon(
+                            _obscure
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
                           onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                       ),
-                      validator: (value) => (value ?? '').isEmpty ? '请输入密码' : null,
+                      validator: (value) =>
+                          (value ?? '').isEmpty ? '请输入密码' : null,
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 12),
@@ -123,14 +136,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     FilledButton(
                       onPressed: _submitting ? null : _submit,
                       child: _submitting
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Text('登录'),
                     ),
                     const SizedBox(height: 12),
                     Text(
                       '账号由管理员创建；如忘记密码，请联系管理员重置。',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: PandoraColors.muted),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: PandoraColors.muted),
                     ),
                   ],
                 ),
@@ -163,9 +181,15 @@ class _NoticeBanner extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(isError ? Icons.error_outline : Icons.info_outline, size: 18, color: color),
+            Icon(
+              isError ? Icons.error_outline : Icons.info_outline,
+              size: 18,
+              color: color,
+            ),
             const SizedBox(width: 8),
-            Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
+            Expanded(
+              child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+            ),
           ],
         ),
       ),

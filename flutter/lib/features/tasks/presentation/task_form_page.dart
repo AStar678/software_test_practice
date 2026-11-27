@@ -41,7 +41,8 @@ const List<({String color, String label})> _inlineTagPalette = [
   (color: '#E4E7EC', label: '石灰'),
 ];
 
-Color _tagColor(String hex) => Color(int.parse('FF${hex.substring(1)}', radix: 16));
+Color _tagColor(String hex) =>
+    Color(int.parse('FF${hex.substring(1)}', radix: 16));
 
 class TaskCreatePage extends StatelessWidget {
   const TaskCreatePage({super.key, this.parentId});
@@ -243,7 +244,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       if (!mounted || !_current) return;
       setState(() {
         _loadingMeta = false;
-        _error = error is ApiException ? error.message : '员工与标签加载失败';
+        _error = error is ApiException ? userMessageFor(error) : '员工与标签加载失败';
       });
     }
   }
@@ -348,9 +349,8 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                         radius: 7,
                       ),
                       selected: selectedColor == entry.color,
-                      onSelected: (_) => setDialogState(
-                        () => selectedColor = entry.color,
-                      ),
+                      onSelected: (_) =>
+                          setDialogState(() => selectedColor = entry.color),
                     ),
                 ],
               ),
@@ -404,11 +404,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     try {
       final tag = await ref
           .read(tagsApiProvider)
-          .create(
-            name: value,
-            color: selectedColor,
-            idempotencyKey: key,
-          );
+          .create(name: value, color: selectedColor, idempotencyKey: key);
       keys.complete('tag:new');
       if (!mounted) return;
       setState(() {
@@ -567,7 +563,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       if (!mounted || !_current) return;
       setState(() {
         _saving = false;
-        _error = error is ApiException ? error.message : '保存失败，请重试';
+        _error = error is ApiException ? userMessageFor(error) : '保存失败，请重试';
       });
       if (error is ApiException &&
           (error.isConflict || error.statusCode == 412)) {
@@ -704,16 +700,25 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
         ? DateTime(businessDate.year, businessDate.month, businessDate.day)
         : DateTime(2020, 1, 1);
     final startDate = _startAt == null ? null : _zone.dateOf(_startAt!);
-    final startDay = startDate == null ? null : DateTime(startDate.year, startDate.month, startDate.day);
+    final startDay = startDate == null
+        ? null
+        : DateTime(startDate.year, startDate.month, startDate.day);
     final candidate = current ?? DateTime.now();
-    final minimumForPick = !isStart && startDay != null && startDay.isAfter(minimum) ? startDay : minimum;
-    final initial = candidate.isBefore(minimumForPick) ? minimumForPick : candidate;
+    final minimumForPick =
+        !isStart && startDay != null && startDay.isAfter(minimum)
+        ? startDay
+        : minimum;
+    final initial = candidate.isBefore(minimumForPick)
+        ? minimumForPick
+        : candidate;
     final date = await showDatePicker(
       context: context,
       initialDate: initial,
       firstDate: minimum,
       lastDate: DateTime(2040, 12, 31),
-      selectableDayPredicate: isStart ? null : (day) => DatePickerBounds.endOnOrAfter(day, startDay),
+      selectableDayPredicate: isStart
+          ? null
+          : (day) => DatePickerBounds.endOnOrAfter(day, startDay),
       cancelText: '取消',
       confirmText: '确定',
     );
@@ -732,7 +737,8 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
       minute: time.minute,
     );
     if (!isStart && _startAt != null && value.isBefore(_startAt!)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('结束时间不能早于开始时间')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('结束时间不能早于开始时间')));
       return;
     }
     setState(() {
@@ -756,15 +762,22 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
     final startDay = isStart || _allDayStart == null
         ? null
         : DateTime(_allDayStart!.year, _allDayStart!.month, _allDayStart!.day);
-    final minimumForPick = !isStart && startDay != null && startDay.isAfter(minimum) ? startDay : minimum;
+    final minimumForPick =
+        !isStart && startDay != null && startDay.isAfter(minimum)
+        ? startDay
+        : minimum;
     final initialDate = DateTime(initial.year, initial.month, initial.day);
-    final selectedInitial = initialDate.isBefore(minimumForPick) ? minimumForPick : initialDate;
+    final selectedInitial = initialDate.isBefore(minimumForPick)
+        ? minimumForPick
+        : initialDate;
     final picked = await showDatePicker(
       context: context,
       initialDate: selectedInitial,
       firstDate: minimum,
       lastDate: DateTime(2040, 12, 31),
-      selectableDayPredicate: isStart ? null : (day) => DatePickerBounds.endOnOrAfter(day, startDay),
+      selectableDayPredicate: isStart
+          ? null
+          : (day) => DatePickerBounds.endOnOrAfter(day, startDay),
       cancelText: '取消',
       confirmText: '确定',
     );
@@ -1093,10 +1106,7 @@ class _TaskFormPageState extends ConsumerState<TaskFormPage> {
                     ],
                     if (_can('tagIds')) ...[
                       const SizedBox(height: 16),
-                      Text(
-                        '标签',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
+                      Text('标签', style: Theme.of(context).textTheme.labelLarge),
                       const SizedBox(height: 6),
                       TagSelector(
                         selected: _selectedTags,

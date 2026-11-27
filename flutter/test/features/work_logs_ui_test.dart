@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pandora_employee/core/navigation/tab_refresh.dart';
 import 'package:pandora_employee/core/router/read_context.dart';
 import 'package:pandora_employee/core/widgets/common.dart';
 import 'package:pandora_employee/features/work_logs/presentation/work_logs_page.dart';
@@ -95,6 +96,51 @@ void main() {
     final request = backend.requestsFor('GET', '/work-logs').last;
     expect(request.query['scope'], 'self');
     expect(request.query.containsKey('authorId'), isFalse);
+  });
+
+  testWidgets('日志页刷新保留已加载内容和滚动位置', (tester) async {
+    final backend = FakeBackend();
+    final items = [for (var i = 0; i < 30; i++) logJson('log$i', '2026-11-10')];
+    backend.on(
+      'GET',
+      '/work-logs',
+      (request) async => FakeResponse({
+        'items': items,
+        'total': items.length,
+        'nextOffset': null,
+      }),
+    );
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final container = buildTestContainer(
+      backend: backend,
+      user: employeeUser(),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(wrapWithScope(container, const WorkLogsPage()));
+    await tester.pumpAndSettle();
+
+    final list = find.byType(ListView);
+    await tester.drag(list, const Offset(0, -500));
+    await tester.pumpAndSettle();
+    final scrollable = tester.state<ScrollableState>(
+      find.descendant(of: list, matching: find.byType(Scrollable)),
+    );
+    final before = scrollable.position.pixels;
+    expect(before, greaterThan(0));
+
+    container.read(tabRefreshProvider.notifier).bump(AppTab.logs);
+    await tester.pumpAndSettle();
+
+    final after = tester
+        .state<ScrollableState>(
+          find.descendant(of: list, matching: find.byType(Scrollable)),
+        )
+        .position
+        .pixels;
+    expect(after, closeTo(before, 1));
   });
 
   testWidgets('新建日志只显示近三日缺失日期', (tester) async {
@@ -260,11 +306,15 @@ void main() {
 
   testWidgets('已冻结日志显示已不能编辑且不提供编辑删除入口', (tester) async {
     final backend = FakeBackend();
-    backend.on('GET', '/work-logs', (request) async => FakeResponse({
-          'items': [logJson('log1', '2026-11-10', editable: false, frozen: true)],
-          'total': 1,
-          'nextOffset': null,
-        }));
+    backend.on(
+      'GET',
+      '/work-logs',
+      (request) async => FakeResponse({
+        'items': [logJson('log1', '2026-11-10', editable: false, frozen: true)],
+        'total': 1,
+        'nextOffset': null,
+      }),
+    );
     backend.on(
       'GET',
       '/work-logs/log1',
@@ -293,9 +343,7 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    await tester.pumpWidget(
-      wrapWithScope(container, const WorkLogsPage()),
-    );
+    await tester.pumpWidget(wrapWithScope(container, const WorkLogsPage()));
     await tester.pumpAndSettle();
     expect(find.text('已不能编辑'), findsOneWidget);
     expect(find.textContaining('已冻结'), findsNothing);
@@ -312,16 +360,20 @@ void main() {
 
   testWidgets('本人与下属日志共用一个筛选入口，应用/取消/清除控制查询', (tester) async {
     final backend = FakeBackend();
-    backend.on('GET', '/work-logs', (request) async => FakeResponse({
-          'items': [],
-          'total': 0,
-          'nextOffset': null,
-        }));
+    backend.on(
+      'GET',
+      '/work-logs',
+      (request) async =>
+          FakeResponse({'items': [], 'total': 0, 'nextOffset': null}),
+    );
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    final container = buildTestContainer(backend: backend, user: employeeUser());
+    final container = buildTestContainer(
+      backend: backend,
+      user: employeeUser(),
+    );
     addTearDown(container.dispose);
 
     Future<void> pickDay(String day) async {
@@ -333,7 +385,10 @@ void main() {
 
     await tester.pumpWidget(wrapWithScope(container, const WorkLogsPage()));
     await tester.pumpAndSettle();
-    expect(backend.requestsFor('GET', '/work-logs').single.query['from'], isNull);
+    expect(
+      backend.requestsFor('GET', '/work-logs').single.query['from'],
+      isNull,
+    );
 
     await tester.tap(find.text('筛选'));
     await tester.pumpAndSettle();
@@ -407,15 +462,19 @@ void main() {
 
   testWidgets('仅实际冻结日志显示冻结标记，非冻结下属只读不冒充冻结', (tester) async {
     final backend = FakeBackend();
-    backend.on('GET', '/work-logs', (request) async => FakeResponse({
-          'items': [
-            logJson('frozen', '2026-11-10', editable: false, frozen: true),
-            logJson('readonly', '2026-11-09', editable: false),
-            logJson('mine', '2026-11-08'),
-          ],
-          'total': 3,
-          'nextOffset': null,
-        }));
+    backend.on(
+      'GET',
+      '/work-logs',
+      (request) async => FakeResponse({
+        'items': [
+          logJson('frozen', '2026-11-10', editable: false, frozen: true),
+          logJson('readonly', '2026-11-09', editable: false),
+          logJson('mine', '2026-11-08'),
+        ],
+        'total': 3,
+        'nextOffset': null,
+      }),
+    );
     for (final id in ['frozen', 'readonly', 'mine']) {
       backend.on(
         'GET',
@@ -441,12 +500,19 @@ void main() {
         }),
       );
     }
-    backend.on('POST', '/work-logs/frozen/comments', (_) => FakeResponse(commentJson(1)));
+    backend.on(
+      'POST',
+      '/work-logs/frozen/comments',
+      (_) => FakeResponse(commentJson(1)),
+    );
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    final container = buildTestContainer(backend: backend, user: employeeUser());
+    final container = buildTestContainer(
+      backend: backend,
+      user: employeeUser(),
+    );
     addTearDown(container.dispose);
     const subordinate = SubordinateReadContext(
       personId: 'u1',
@@ -457,7 +523,11 @@ void main() {
     await tester.pumpWidget(
       wrapWithScope(
         container,
-        const WorkLogsPage(authorId: 'u1', personName: '下属一', readContext: subordinate),
+        const WorkLogsPage(
+          authorId: 'u1',
+          personName: '下属一',
+          readContext: subordinate,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -498,27 +568,37 @@ void main() {
     await tester.ensureVisible(find.byTooltip('发送评论'));
     await tester.tap(find.byTooltip('发送评论'));
     await tester.pumpAndSettle();
-    expect(backend.requestsFor('POST', '/work-logs/frozen/comments').single.jsonBody['body'], '冻结下属日志仍可评论');
+    expect(
+      backend
+          .requestsFor('POST', '/work-logs/frozen/comments')
+          .single
+          .jsonBody['body'],
+      '冻结下属日志仍可评论',
+    );
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('列表预览三行省略而详情仍显示完整正文', (tester) async {
     final longBody = '第一行\n第二行\n第三行\n第四行\n第五行';
     final backend = FakeBackend();
-    backend.on('GET', '/work-logs', (request) async => FakeResponse({
-          'items': [
-            {...logJson('long', '2026-11-10'), 'body': longBody},
-          ],
-          'total': 1,
-          'nextOffset': null,
-        }));
+    backend.on(
+      'GET',
+      '/work-logs',
+      (request) async => FakeResponse({
+        'items': [
+          {...logJson('long', '2026-11-10'), 'body': longBody},
+        ],
+        'total': 1,
+        'nextOffset': null,
+      }),
+    );
     backend.on(
       'GET',
       '/work-logs/long',
-      (request) async => FakeResponse(
-        {...logJson('long', '2026-11-10'), 'body': longBody},
-        etag: '"1"',
-      ),
+      (request) async => FakeResponse({
+        ...logJson('long', '2026-11-10'),
+        'body': longBody,
+      }, etag: '"1"'),
     );
     backend.on(
       'GET',
@@ -534,7 +614,10 @@ void main() {
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    final container = buildTestContainer(backend: backend, user: employeeUser());
+    final container = buildTestContainer(
+      backend: backend,
+      user: employeeUser(),
+    );
     addTearDown(container.dispose);
     await tester.pumpWidget(wrapWithScope(container, const WorkLogsPage()));
     await tester.pumpAndSettle();
@@ -543,7 +626,10 @@ void main() {
     expect(preview.data, endsWith('…'));
 
     await tester.pumpWidget(
-      wrapWithScope(container, const WorkLogDetailPage(key: ValueKey('long'), logId: 'long')),
+      wrapWithScope(
+        container,
+        const WorkLogDetailPage(key: ValueKey('long'), logId: 'long'),
+      ),
     );
     await tester.pumpAndSettle();
     expect(find.text(longBody), findsOneWidget, reason: '详情显示完整原文');

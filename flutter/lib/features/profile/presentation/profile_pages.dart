@@ -377,7 +377,7 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
         _needsReload =
             error is ApiException &&
             (error.statusCode == 412 || error.statusCode == 428);
-        _error = error is ApiException ? error.message : '保存失败，请重试';
+        _error = error is ApiException ? userMessageFor(error) : '保存失败，请重试';
       });
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -408,7 +408,7 @@ class _ProfileEditDialogState extends ConsumerState<_ProfileEditDialog> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = error is ApiException ? error.message : '读取失败，请重试';
+        _error = error is ApiException ? userMessageFor(error) : '读取失败，请重试';
       });
     } finally {
       if (mounted) setState(() => _saving = false);

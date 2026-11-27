@@ -117,6 +117,70 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
     }
   }
 
+  /// Refresh the loaded window without clearing the visible list. The previous
+  /// number of rows is re-read in pages, then the scroll offset is restored.
+  Future<void> _refreshPreserving() async {
+    final target = _items.length;
+    final offset = _scroll.hasClients ? _scroll.offset : 0.0;
+    if (target == 0) {
+      await _load(reset: true);
+      return;
+    }
+    final generation = ++_queryGeneration;
+    final authorId = widget.authorId;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final merged = <String, WorkLog>{};
+      var pageOffset = 0;
+      var total = _total;
+      int? next;
+      while (merged.length < target) {
+        final page = await ref
+            .read(workLogsApiProvider)
+            .list(
+              scope: widget.authorId == null ? 'self' : 'visible',
+              authorId: authorId,
+              from: _dateIso(_from),
+              to: _dateIso(_to),
+              limit: 50,
+              offset: pageOffset,
+            );
+        if (!mounted ||
+            generation != _queryGeneration ||
+            authorId != widget.authorId) {
+          return;
+        }
+        for (final log in page.items) {
+          merged[log.id] = log;
+        }
+        total = page.total;
+        next = page.nextOffset;
+        if (page.items.isEmpty || next == null || next <= pageOffset) break;
+        pageOffset = next;
+      }
+      setState(() {
+        _items = merged.values.toList();
+        _total = total;
+        _next = next;
+        _loading = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scroll.hasClients) {
+          _scroll.jumpTo(offset.clamp(0, _scroll.position.maxScrollExtent));
+        }
+      });
+    } catch (error) {
+      if (!mounted || generation != _queryGeneration) return;
+      setState(() {
+        _error = error;
+        _loading = false;
+      });
+    }
+  }
+
   String? _dateIso(DateTime? value) => value == null
       ? null
       : '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
@@ -129,7 +193,9 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
       '/logs/$id',
       extra: widget.readContext,
     );
-    if (!mounted || generation != _queryGeneration || author != widget.authorId) {
+    if (!mounted ||
+        generation != _queryGeneration ||
+        author != widget.authorId) {
       return;
     }
     if (saved != null) _applySavedLog(saved);
@@ -203,15 +269,10 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
     }
   }
 
-  Future<void> _refreshToTop() async {
-    await _load(reset: true);
-    if (mounted && _scroll.hasClients) _scroll.jumpTo(0);
-  }
-
   @override
   Widget build(BuildContext context) {
     ref.listenTabRefresh(AppTab.logs, () {
-      unawaited(_load(reset: true));
+      unawaited(_refreshPreserving());
     });
     return PandoraPage(
       title: '${widget.personName ?? '日志'} · $_total 条',
@@ -223,9 +284,8 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
                 const SizedBox(width: 8),
                 Text(
                   '$_total 条',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: PandoraColors.muted,
-                  ),
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(color: PandoraColors.muted),
                 ),
               ],
             )
@@ -288,7 +348,10 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
     Future<DateTime?> pick(DateTime? current, {DateTime? start}) {
       return showDatePicker(
         context: context,
-        initialDate: DatePickerBounds.clampInitial(current ?? DateTime.now(), start),
+        initialDate: DatePickerBounds.clampInitial(
+          current ?? DateTime.now(),
+          start,
+        ),
         firstDate: DateTime(DateTime.now().year - 5),
         lastDate: DateTime(DateTime.now().year + 5),
         selectableDayPredicate: start == null
@@ -336,17 +399,15 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
                     if (picked == null) return;
                     setSheetState(() => to = picked);
                   },
-                  child: Text(
-                    to == null ? '结束日期：不限' : '结束日期：${_dateIso(to)}',
-                  ),
+                  child: Text(to == null ? '结束日期：不限' : '结束日期：${_dateIso(to)}'),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
                     TextButton(
-                      onPressed: () => Navigator.of(context).pop(
-                        const _LogFilterResult.clear(),
-                      ),
+                      onPressed: () =>
+                          Navigator.of(context)
+                              .pop(const _LogFilterResult.clear()),
                       child: const Text('清除'),
                     ),
                     const Spacer(),
@@ -356,9 +417,9 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
-                      onPressed: () => Navigator.of(context).pop(
-                        _LogFilterResult.range(from: from, to: to),
-                      ),
+                      onPressed: () =>
+                          Navigator.of(context)
+                              .pop(_LogFilterResult.range(from: from, to: to)),
                       child: const Text('应用'),
                     ),
                   ],
@@ -385,7 +446,7 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
       return _loading ? const LoadingView() : const EmptyView(message: '还没有日志');
     }
     return RefreshIndicator(
-      onRefresh: _refreshToTop,
+      onRefresh: _refreshPreserving,
       child: ListView.separated(
         controller: _scroll,
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -448,8 +509,7 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
                         child: Wrap(
                           spacing: 6,
                           children: [
-                            for (final tag in log.tags)
-                              TagBadge(tag: tag),
+                            for (final tag in log.tags) TagBadge(tag: tag),
                           ],
                         ),
                       ),
@@ -475,10 +535,7 @@ class _WorkLogsPageState extends ConsumerState<WorkLogsPage> {
 class _LogFilterResult {
   const _LogFilterResult.range({this.from, this.to}) : clear = false;
 
-  const _LogFilterResult.clear()
-    : from = null,
-      to = null,
-      clear = true;
+  const _LogFilterResult.clear() : from = null, to = null, clear = true;
 
   final DateTime? from;
   final DateTime? to;
@@ -1094,119 +1151,121 @@ class _WorkLogDetailPageState extends ConsumerState<WorkLogDetailPage> {
         Navigator.of(context).pop(_log);
       },
       child: PandoraPage(
-      title: '日志详情',
-      showBack: true,
-      actions: [
-        if (widget.readContext.businessWritesAllowed &&
-            log != null &&
-            log.editable &&
-            !log.frozen) ...[
-          IconButton(
-            tooltip: '编辑日志',
-            onPressed: () async {
-              final saved = await context.push<WorkLog>(
-                '/logs/${log.id}/edit',
-              );
-              if (!mounted) return;
-              if (saved != null && saved.id == log.id) {
-                _applySaved(saved);
-                unawaited(_revalidateSaved(_loadGeneration));
-              } else {
-                unawaited(_load());
-              }
-            },
-            icon: const Icon(Icons.edit_outlined),
-          ),
+        title: '日志详情',
+        showBack: true,
+        actions: [
+          if (widget.readContext.businessWritesAllowed &&
+              log != null &&
+              log.editable &&
+              !log.frozen) ...[
+            IconButton(
+              tooltip: '编辑日志',
+              onPressed: () async {
+                final saved = await context.push<WorkLog>(
+                  '/logs/${log.id}/edit',
+                );
+                if (!mounted) return;
+                if (saved != null && saved.id == log.id) {
+                  _applySaved(saved);
+                  unawaited(_revalidateSaved(_loadGeneration));
+                } else {
+                  unawaited(_load());
+                }
+              },
+              icon: const Icon(Icons.edit_outlined),
+            ),
+          ],
         ],
-      ],
-      child: _error != null
-          ? ErrorView(error: _error!, onRetry: _load)
-          : log == null
-          ? const LoadingView()
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (widget.readContext is! NormalReadContext)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: PandoraColors.petal,
-                      borderRadius: BorderRadius.circular(12),
+        child: _error != null
+            ? ErrorView(error: _error!, onRetry: _load)
+            : log == null
+            ? const LoadingView()
+            : ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  if (widget.readContext is! NormalReadContext)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: PandoraColors.petal,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '通过${widget.readContext.label}浏览，仅可阅读和评论。',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                     ),
-                    child: Text(
-                      '通过${widget.readContext.label}浏览，仅可阅读和评论。',
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                  Text(
+                    log.businessDate.iso,
+                    style: Theme.of(context).textTheme.labelLarge
+                        ?.copyWith(color: PandoraColors.brand),
                   ),
-                Text(
-                  log.businessDate.iso,
-                  style: Theme.of(context).textTheme.labelLarge
-                      ?.copyWith(color: PandoraColors.brand),
-                ),
-                if (log.frozen) ...[
-                  const SizedBox(height: 8),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: StatusBadge(
-                      label: '已不能编辑',
-                      color: PandoraColors.muted,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Text(
-                  log.body,
-                  style: const TextStyle(fontSize: 15, height: 1.55),
-                ),
-                if (log.tags.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Wrap(
-                      spacing: 6,
-                      children: [
-                        for (final tag in log.tags)
-                          TagBadge(tag: tag),
-                      ],
-                    ),
-                  ),
-                if (log.createdAt != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text(
-                      '创建时间 ${CompanyTimeZone.fallback.formatDateTime(log.createdAt!)}',
-                      style: const TextStyle(
-                        fontSize: 12,
+                  if (log.frozen) ...[
+                    const SizedBox(height: 8),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: StatusBadge(
+                        label: '已不能编辑',
                         color: PandoraColors.muted,
                       ),
                     ),
+                  ],
+                  const SizedBox(height: 8),
+                  Text(
+                    log.body,
+                    style: const TextStyle(fontSize: 15, height: 1.55),
                   ),
-                if (log.taskDeleted)
-                  const ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.delete_outline),
-                    title: Text('任务已删除'),
-                    subtitle: Text('关联任务已删除，日志内容仍保留'),
-                  )
-                else if (log.taskId != null)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.link),
-                    title: const Text('关联任务'),
-                    subtitle: const Text('按当前来源上下文读取'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      await context.push(
-                        NavigationTargets.task(widget.readContext, log.taskId!),
-                      );
-                      if (mounted) await _revalidateSaved(_loadGeneration);
-                    },
-                  ),
-                const Divider(height: 28),
-                if (widget.readContext.commentsAllowed)
-                  CommentsSection(objectType: 'log', objectId: log.id),
-              ],
-            ),
+                  if (log.tags.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Wrap(
+                        spacing: 6,
+                        children: [
+                          for (final tag in log.tags) TagBadge(tag: tag),
+                        ],
+                      ),
+                    ),
+                  if (log.createdAt != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(
+                        '创建时间 ${CompanyTimeZone.fallback.formatDateTime(log.createdAt!)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: PandoraColors.muted,
+                        ),
+                      ),
+                    ),
+                  if (log.taskDeleted)
+                    const ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.delete_outline),
+                      title: Text('任务已删除'),
+                      subtitle: Text('关联任务已删除，日志内容仍保留'),
+                    )
+                  else if (log.taskId != null)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.link),
+                      title: const Text('关联任务'),
+                      subtitle: const Text('按当前来源上下文读取'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        await context.push(
+                          NavigationTargets.task(
+                            widget.readContext,
+                            log.taskId!,
+                          ),
+                        );
+                        if (mounted) await _revalidateSaved(_loadGeneration);
+                      },
+                    ),
+                  const Divider(height: 28),
+                  if (widget.readContext.commentsAllowed)
+                    CommentsSection(objectType: 'log', objectId: log.id),
+                ],
+              ),
       ),
     );
   }
