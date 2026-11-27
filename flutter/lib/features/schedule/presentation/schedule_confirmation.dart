@@ -13,16 +13,22 @@ import '../domain/calendar_drag.dart';
 
 /// 日历改期独立保留原版本与绝对目标；回读新版本不能授权覆盖旧拖动。
 class ScheduleConfirmation extends ConsumerStatefulWidget {
-  const ScheduleConfirmation({super.key, required this.task, required this.preview});
+  const ScheduleConfirmation({
+    super.key,
+    required this.task,
+    required this.preview,
+  });
 
   final TaskRecord task;
   final CalendarDragPreview preview;
 
   @override
-  ConsumerState<ScheduleConfirmation> createState() => _ScheduleConfirmationState();
+  ConsumerState<ScheduleConfirmation> createState() =>
+      _ScheduleConfirmationState();
 }
 
-class _ScheduleConfirmationState extends ConsumerState<ScheduleConfirmation> with WidgetsBindingObserver {
+class _ScheduleConfirmationState extends ConsumerState<ScheduleConfirmation>
+    with WidgetsBindingObserver {
   final _reason = TextEditingController();
   late final int _epoch;
   bool _loading = true;
@@ -59,7 +65,10 @@ class _ScheduleConfirmationState extends ConsumerState<ScheduleConfirmation> wit
   }
 
   bool _changed(TaskRecord latest) =>
-      latest.rowVersion != widget.task.rowVersion || !latest.canReschedule || latest.frozen || latest.done;
+      latest.rowVersion != widget.task.rowVersion ||
+      !latest.canReschedule ||
+      latest.frozen ||
+      latest.done;
 
   Future<void> _check() async {
     try {
@@ -74,7 +83,7 @@ class _ScheduleConfirmationState extends ConsumerState<ScheduleConfirmation> wit
       if (!_current) return;
       setState(() {
         _loading = false;
-        _error = error is ApiException ? error.message : '任务读取失败，请重试';
+        _error = error is ApiException ? userMessageFor(error) : '任务读取失败，请重试';
       });
     }
   }
@@ -131,8 +140,11 @@ class _ScheduleConfirmationState extends ConsumerState<ScheduleConfirmation> wit
       setState(() {
         _saving = false;
         _stale =
-            error is ApiException && (error.statusCode == 412 || error.statusCode == 403 || error.statusCode == 404);
-        _error = error is ApiException ? error.message : '调整失败，请重试';
+            error is ApiException &&
+            (error.statusCode == 412 ||
+                error.statusCode == 403 ||
+                error.statusCode == 404);
+        _error = error is ApiException ? userMessageFor(error) : '调整失败，请重试';
       });
     }
   }
@@ -152,8 +164,16 @@ class _ScheduleConfirmationState extends ConsumerState<ScheduleConfirmation> wit
               Text('任务：${widget.task.title}'),
               Text('原排期：${widget.task.scheduleText(zone)}'),
               Text('新排期：${widget.preview.label(zone)}'),
-              if (_loading) const Padding(padding: EdgeInsets.all(8), child: LinearProgressIndicator()),
-              if (_stale) const Text('任务版本或资格已变化，或调整已中断，请取消后重新调整。', style: TextStyle(color: PandoraColors.overdue)),
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: LinearProgressIndicator(),
+                ),
+              if (_stale)
+                const Text(
+                  '任务版本或资格已变化，或调整已中断，请取消后重新调整。',
+                  style: TextStyle(color: PandoraColors.overdue),
+                ),
               TextField(
                 controller: _reason,
                 maxLength: 500,
@@ -161,14 +181,25 @@ class _ScheduleConfirmationState extends ConsumerState<ScheduleConfirmation> wit
                 enabled: !_saving,
                 decoration: const InputDecoration(labelText: '原因（必填）'),
               ),
-              if (_error != null) Text(_error!, style: const TextStyle(color: PandoraColors.overdue)),
-              if (_error != null && !_attempted && !_stale) TextButton(onPressed: _check, child: const Text('重新读取任务')),
+              if (_error != null)
+                Text(
+                  _error!,
+                  style: const TextStyle(color: PandoraColors.overdue),
+                ),
+              if (_error != null && !_attempted && !_stale)
+                TextButton(onPressed: _check, child: const Text('重新读取任务')),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: const Text('取消')),
-          FilledButton(onPressed: _saving || _loading || _stale ? null : _save, child: Text(_saving ? '正在提交…' : '提交')),
+          TextButton(
+            onPressed: _saving ? null : () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: _saving || _loading || _stale ? null : _save,
+            child: Text(_saving ? '正在提交…' : '提交'),
+          ),
         ],
       ),
     );

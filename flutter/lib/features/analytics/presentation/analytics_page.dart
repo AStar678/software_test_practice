@@ -37,7 +37,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
   @override
   Widget build(BuildContext context) {
     ref.listenTabRefresh(AppTab.stats, () {
-      _load();
+      _load(preserve: true);
     });
     ref.listen(
       currentUserProvider.select((user) => (user?.id, user?.authzVersion)),
@@ -47,7 +47,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
       appBar: AppBar(title: const PandoraPageMark(pageName: '统计')),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _load,
+          onRefresh: () => _load(preserve: true),
           child: ListView(
             padding: const EdgeInsets.all(12),
             children: [
@@ -257,12 +257,14 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool preserve = false}) async {
     final generation = ++_summaryGeneration;
     _reportGeneration++;
     setState(() {
-      _summary = null;
-      _report = null;
+      if (!preserve) {
+        _summary = null;
+        _report = null;
+      }
       _reportError = null;
       _generating = false;
       _loading = true;
@@ -284,18 +286,18 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
       }
     }
     if (mounted && generation == _summaryGeneration && _summaryError == null) {
-      await _generate();
+      await _generate(preserve: preserve);
     }
   }
 
-  Future<void> _generate() async {
+  Future<void> _generate({bool preserve = false}) async {
     if (_generating) return;
     const scope = 'auto';
     final generation = ++_reportGeneration;
     final accountEpoch = ref.read(accountEpochProvider);
     setState(() {
       _generating = true;
-      _report = null;
+      if (!preserve) _report = null;
       _reportError = null;
     });
     final keys = ref.read(operationKeysProvider);

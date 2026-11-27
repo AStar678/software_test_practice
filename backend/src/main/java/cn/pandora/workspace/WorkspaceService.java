@@ -123,9 +123,9 @@ public class WorkspaceService {
 
     private Map<String,Object> fillSourceRead(Actor a, Map<String,String> filters) {
         business(a);
-        if (!Set.of("businessDate").containsAll(filters.keySet())) throw bad("填充源仅支持 businessDate");
+        if (!Set.of("businessDate").containsAll(filters.keySet())) throw bad("填充源仅支持业务日期");
         LocalDate date = optionalDate(filters.get("businessDate"));
-        if (date == null) throw bad("businessDate 必须为 YYYY-MM-DD 有效日期");
+        if (date == null) throw bad("业务日期必须为有效日期");
         ZoneId zone = zone(a);
         var items = db.list("SELECT id,body,created_at FROM daily_items WHERE organization_id=? AND owner_id=? "
                         + "AND start_date<=? AND end_date>=? ORDER BY created_at,id",
@@ -204,7 +204,7 @@ public class WorkspaceService {
     private Map<String,Object> logsRead(Actor a, Map<String,String> filters) {
         business(a);
         String scope = filters.getOrDefault("scope", "self");
-        if (!Set.of("self","visible","log").contains(scope)) throw bad("scope 只能为 self 或 visible");
+        if (!Set.of("self","visible","log").contains(scope)) throw bad("日志范围无效");
         // The log range is its own authority: company for the executive, direct reports for a
         // manager, self below that. Being a teammate or sharing a task grants nothing here.
         var allowedIds = new HashSet<>(access.logAuthorIds(a));
@@ -453,7 +453,7 @@ public class WorkspaceService {
 
     private Map<String,Object> notificationsRead(Actor a, Map<String,String> filters) {
         String legacy=filters.get("unread");
-        if(legacy!=null && !Set.of("true","false").contains(legacy)) throw new ApiException(400,"INVALID_NOTIFICATION_FILTER","unread须为true或false");
+        if(legacy!=null && !Set.of("true","false").contains(legacy)) throw new ApiException(400,"INVALID_NOTIFICATION_FILTER","通知已读筛选值无效");
         String read=filters.getOrDefault("readStatus","true".equals(legacy)?"unread":"all");
         String category=filters.getOrDefault("category","all");
         if(!Set.of("all","unread","read").contains(read) || !Set.of("all","review","result","reminder","comment","other").contains(category))
@@ -528,7 +528,7 @@ public class WorkspaceService {
         } else if (action.equals("hide") || action.equals("delete")) {
             db.update("UPDATE notifications SET hidden_at=COALESCE(hidden_at,?) WHERE organization_id=? AND id=?",Timestamp.from(now),a.organizationId(),notificationId);
             if (row.get("hiddenAt")==null) version+=2;
-        } else throw bad("action 只能为 read、hide 或 delete");
+        } else throw bad("通知操作无效");
         return Map.of("notificationId",notificationId,"rowVersion",version,"action",action,"unreadCount",unreadCount(a,now));
     }
 
@@ -1117,7 +1117,7 @@ public class WorkspaceService {
     }
 
     private Map<String,Object> statisticsRead(Actor a, Map<String,String> filters) {
-        if(!Set.of("scope").containsAll(filters.keySet())) throw bad("统计接口当前仅支持 scope，不支持日期筛选");
+        if(!Set.of("scope").containsAll(filters.keySet())) throw bad("统计接口不支持日期筛选");
         String requested=filters.getOrDefault("scope","auto");
         AnalysisScope scope=analysisScope(a,requested);
         var rows=visibleTasks(a,scope.statisticsQuery());
@@ -1277,7 +1277,7 @@ public class WorkspaceService {
     private AnalysisScope analysisScope(Actor a,String requested) {
         business(a);
         String normalized="visible".equals(requested)?"auto":requested;
-        if (!Set.of("auto","self").contains(normalized)) throw bad("scope 只能为 auto、visible 或 self");
+        if (!Set.of("auto","self").contains(normalized)) throw bad("统计范围无效");
         if ("self".equals(normalized)) return new AnalysisScope("self","self","self","self","self");
         String statisticsScope=switch(a.scope("task_view")) {
             case "company" -> "company";
@@ -1429,12 +1429,12 @@ public class WorkspaceService {
     }
 
     private List<Map<String,Object>> requestedLogTags(Actor a,Object raw,Set<String> currentIds) {
-        if (!(raw instanceof List<?> ids)) throw bad("tagIds 必须为标签 ID 数组");
+        if (!(raw instanceof List<?> ids)) throw bad("标签列表格式不正确");
         var seen = new HashSet<String>();
         var resolved = new ArrayList<Map<String,Object>>();
         for (Object value : ids) {
             if (!(value instanceof String tagId) || tagId.isBlank() || !seen.add(tagId))
-                throw bad("tagIds 必须是不重复的标签 ID 数组");
+                throw bad("标签列表不能重复");
             var tag = tags.resolveForWrite(a,tagId,currentIds.contains(tagId) ? tagId : null);
             resolved.add(tag);
         }

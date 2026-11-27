@@ -41,7 +41,9 @@ class _PasswordChangePageState extends ConsumerState<PasswordChangePage> {
       _error = null;
     });
     try {
-      await ref.read(sessionManagerProvider).changePassword(
+      await ref
+          .read(sessionManagerProvider)
+          .changePassword(
             currentPassword: _currentController.text,
             newPassword: _newController.text,
           );
@@ -51,7 +53,7 @@ class _PasswordChangePageState extends ConsumerState<PasswordChangePage> {
       setState(() {
         _error = error.statusCode == 401 || error.statusCode == 403
             ? '原密码不正确或当前密码不符合要求'
-            : error.message;
+            : userMessageFor(error);
       });
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -72,9 +74,7 @@ class _PasswordChangePageState extends ConsumerState<PasswordChangePage> {
         appBar: AppBar(
           title: const Text('修改密码'),
           automaticallyImplyLeading: !restricted,
-          actions: [
-            TextButton(onPressed: _logout, child: const Text('退出登录')),
-          ],
+          actions: [TextButton(onPressed: _logout, child: const Text('退出登录'))],
         ),
         body: SafeArea(
           child: Center(
@@ -103,7 +103,8 @@ class _PasswordChangePageState extends ConsumerState<PasswordChangePage> {
                         obscureText: true,
                         autofillHints: const [AutofillHints.password],
                         decoration: const InputDecoration(labelText: '原密码'),
-                        validator: (value) => PasswordPolicy.validateCurrentPassword(value ?? ''),
+                        validator: (value) =>
+                            PasswordPolicy.validateCurrentPassword(value ?? ''),
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -111,7 +112,8 @@ class _PasswordChangePageState extends ConsumerState<PasswordChangePage> {
                         obscureText: true,
                         autofillHints: const [AutofillHints.newPassword],
                         decoration: const InputDecoration(labelText: '新密码'),
-                        validator: (value) => PasswordPolicy.validateNewPassword(value ?? ''),
+                        validator: (value) =>
+                            PasswordPolicy.validateNewPassword(value ?? ''),
                       ),
                       const SizedBox(height: 6),
                       const FormHint('至少 10 个字符，需含字母和数字。'),
@@ -120,7 +122,11 @@ class _PasswordChangePageState extends ConsumerState<PasswordChangePage> {
                         controller: _confirmController,
                         obscureText: true,
                         decoration: const InputDecoration(labelText: '再次输入新密码'),
-                        validator: (value) => PasswordPolicy.validateConfirmation(_newController.text, value ?? ''),
+                        validator: (value) =>
+                            PasswordPolicy.validateConfirmation(
+                              _newController.text,
+                              value ?? '',
+                            ),
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 12),
@@ -128,7 +134,8 @@ class _PasswordChangePageState extends ConsumerState<PasswordChangePage> {
                           liveRegion: true,
                           child: Text(
                             _error!,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: PandoraColors.overdue),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: PandoraColors.overdue),
                           ),
                         ),
                       ],
@@ -136,14 +143,23 @@ class _PasswordChangePageState extends ConsumerState<PasswordChangePage> {
                       FilledButton(
                         onPressed: _submitting ? null : _submit,
                         child: _submitting
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
                             : const Text('保存并重新登录'),
                       ),
                       const SizedBox(height: 10),
                       const Text(
                         '修改成功后当前账号的所有登录会话都会退出，需要使用新密码重新登录。',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: PandoraColors.muted),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: PandoraColors.muted,
+                        ),
                       ),
                     ],
                   ),
@@ -185,12 +201,17 @@ class SessionCheckPage extends ConsumerWidget {
                   const SizedBox(height: 12),
                   const Text('正在读取登录状态'),
                 ] else if (error != null) ...[
-                  const Icon(Icons.wifi_off_outlined, size: 32, color: PandoraColors.overdue),
+                  const Icon(
+                    Icons.wifi_off_outlined,
+                    size: 32,
+                    color: PandoraColors.overdue,
+                  ),
                   const SizedBox(height: 10),
                   Text(error.message, textAlign: TextAlign.center),
                   const SizedBox(height: 16),
                   OutlinedButton(
-                    onPressed: () => ref.read(sessionManagerProvider).retryVerification(),
+                    onPressed: () =>
+                        ref.read(sessionManagerProvider).retryVerification(),
                     child: const Text('重试'),
                   ),
                   TextButton(

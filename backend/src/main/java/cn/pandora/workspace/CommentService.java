@@ -167,7 +167,7 @@ public class CommentService {
 
     private CommentedObject requireObject(Actor a, String objectType, String objectId) {
         String type = objectType == null ? "" : objectType;
-        if (!OBJECT_TYPES.contains(type)) throw bad("objectType 只能为 task 或 log");
+        if (!OBJECT_TYPES.contains(type)) throw bad("评论对象类型无效");
         if (objectId == null || objectId.isBlank()) throw bad("缺少对象标识");
         if ("task".equals(type)) {
             var task = db.find("SELECT * FROM tasks WHERE organization_id=? AND id=?", a.organizationId(), objectId);

@@ -12,14 +12,20 @@ import '../domain/task_record.dart';
 import 'task_providers.dart';
 
 /// 预览只作提示；实际审核人必须来自已保存的申请，不能用预览兜底。
-Future<String> taskMutationMessage(TaskMutationResult result, ApprovalsApi approvals) async {
+Future<String> taskMutationMessage(
+  TaskMutationResult result,
+  ApprovalsApi approvals,
+) async {
   if (result.appliedDirectly) return '已直接生效';
   if (!result.pendingReview) return result.feedback;
   if (result.requestId != null) {
     try {
       final request = await approvals.detail(result.requestId!);
       final id = request.currentReviewerId ?? request.route?.reviewerId;
-      for (final person in [...request.participants, ...?request.route?.participants]) {
+      for (final person in [
+        ...request.participants,
+        ...?request.route?.participants,
+      ]) {
         if (person.id == id) return '已提交审核，审核人：${person.displayName}';
       }
     } catch (_) {
@@ -35,7 +41,8 @@ class ReviewerPreviewPanel extends ConsumerStatefulWidget {
   final Map<String, Object?> payload;
 
   @override
-  ConsumerState<ReviewerPreviewPanel> createState() => _ReviewerPreviewPanelState();
+  ConsumerState<ReviewerPreviewPanel> createState() =>
+      _ReviewerPreviewPanelState();
 }
 
 class _ReviewerPreviewPanelState extends ConsumerState<ReviewerPreviewPanel> {
@@ -59,7 +66,10 @@ class _ReviewerPreviewPanelState extends ConsumerState<ReviewerPreviewPanel> {
     }
   }
 
-  bool _current(int generation) => mounted && generation == _generation && _epoch == ref.read(accountEpochProvider);
+  bool _current(int generation) =>
+      mounted &&
+      generation == _generation &&
+      _epoch == ref.read(accountEpochProvider);
 
   Future<void> _load() async {
     if (_epoch != ref.read(accountEpochProvider)) return;
@@ -69,11 +79,17 @@ class _ReviewerPreviewPanelState extends ConsumerState<ReviewerPreviewPanel> {
       _error = null;
     });
     try {
-      final preview = await ref.read(tasksApiProvider).preview(widget.payload, ref.read(operationKeysProvider));
+      final preview = await ref
+          .read(tasksApiProvider)
+          .preview(widget.payload, ref.read(operationKeysProvider));
       if (_current(generation)) setState(() => _preview = preview);
     } catch (error) {
       if (_current(generation)) {
-        setState(() => _error = error is ApiException ? error.message : '审核路线读取失败');
+        setState(
+          () => _error = error is ApiException
+              ? userMessageFor(error)
+              : '审核路线读取失败',
+        );
       }
     }
   }
@@ -95,10 +111,13 @@ class _ReviewerPreviewPanelState extends ConsumerState<ReviewerPreviewPanel> {
     } else if (preview.requiresApproval) {
       final id = preview.reviewerId ?? preview.route?.reviewerId;
       final people = preview.route?.participants ?? const <TaskParticipant>[];
-      final names = {for (final person in people) person.id: person.displayName};
+      final names = {
+        for (final person in people) person.id: person.displayName,
+      };
       text = names[id] == null ? '提交时按实际申请人确定审核人' : '审核人：${names[id]}';
     } else {
-      text = '无需审核人：${preview.exemptionReason ?? preview.route?.reasonText ?? '按规则免审'}；提交后直接生效。';
+      text =
+          '无需审核人：${preview.exemptionReason ?? preview.route?.reasonText ?? '按规则免审'}；提交后直接生效。';
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -108,7 +127,8 @@ class _ReviewerPreviewPanelState extends ConsumerState<ReviewerPreviewPanel> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(text, style: const TextStyle(color: PandoraColors.muted)),
-            if (_error != null) TextButton(onPressed: _load, child: const Text('重试审核人预览')),
+            if (_error != null)
+              TextButton(onPressed: _load, child: const Text('重试审核人预览')),
           ],
         ),
       ),
@@ -118,7 +138,12 @@ class _ReviewerPreviewPanelState extends ConsumerState<ReviewerPreviewPanel> {
 
 /// 在对话框内提交：失败保留正文，未知结果可沿用相同操作键重试。
 class TaskNoteDialog extends ConsumerStatefulWidget {
-  const TaskNoteDialog({super.key, required this.taskId, required this.rowVersion, required this.command});
+  const TaskNoteDialog({
+    super.key,
+    required this.taskId,
+    required this.rowVersion,
+    required this.command,
+  });
 
   final String taskId;
   final int rowVersion;
@@ -157,7 +182,9 @@ class _TaskNoteDialogState extends ConsumerState<TaskNoteDialog> {
     }
     final command = widget.command;
     final version = '"${widget.rowVersion}"';
-    final payload = {command == 'progress' ? 'progressNote' : 'completionNote': note};
+    final payload = {
+      command == 'progress' ? 'progressNote' : 'completionNote': note,
+    };
     final scope = 'task:$command:${widget.taskId}';
     final keys = ref.read(operationKeysProvider);
     final api = ref.read(tasksApiProvider);
@@ -190,7 +217,7 @@ class _TaskNoteDialogState extends ConsumerState<TaskNoteDialog> {
       if (!mounted || !_current) return;
       setState(() {
         _saving = false;
-        _error = error is ApiException ? error.message : '提交失败，请重试';
+        _error = error is ApiException ? userMessageFor(error) : '提交失败，请重试';
       });
     }
   }
@@ -206,7 +233,9 @@ class _TaskNoteDialogState extends ConsumerState<TaskNoteDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ReviewerPreviewPanel(payload: {'taskId': widget.taskId, 'operation': widget.command}),
+              ReviewerPreviewPanel(
+                payload: {'taskId': widget.taskId, 'operation': widget.command},
+              ),
               TextField(
                 controller: _controller,
                 enabled: !_saving,
@@ -214,15 +243,28 @@ class _TaskNoteDialogState extends ConsumerState<TaskNoteDialog> {
                 maxLines: 6,
                 maxLength: 2000,
                 autofocus: true,
-                decoration: InputDecoration(labelText: progress ? '进展说明（必填）' : '完成说明（必填）', alignLabelWithHint: true),
+                decoration: InputDecoration(
+                  labelText: progress ? '进展说明（必填）' : '完成说明（必填）',
+                  alignLabelWithHint: true,
+                ),
               ),
-              if (_error != null) Text(_error!, style: const TextStyle(color: PandoraColors.overdue)),
+              if (_error != null)
+                Text(
+                  _error!,
+                  style: const TextStyle(color: PandoraColors.overdue),
+                ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: const Text('取消')),
-          FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? '正在提交…' : '提交')),
+          TextButton(
+            onPressed: _saving ? null : () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: _saving ? null : _save,
+            child: Text(_saving ? '正在提交…' : '提交'),
+          ),
         ],
       ),
     );

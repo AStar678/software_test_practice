@@ -40,8 +40,7 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
   bool _dirty = false;
   String? _error;
 
-  String? get _startClock =>
-      _startTime == null ? null : _hm(_startTime!);
+  String? get _startClock => _startTime == null ? null : _hm(_startTime!);
 
   String? get _endClock => _endTime == null ? null : _hm(_endTime!);
 
@@ -51,7 +50,9 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
   Future<void> _pickTime({required bool isStart}) async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: (isStart ? _startTime : _endTime) ?? const TimeOfDay(hour: 9, minute: 0),
+      initialTime:
+          (isStart ? _startTime : _endTime) ??
+          const TimeOfDay(hour: 9, minute: 0),
       helpText: isStart ? '选择开始时刻' : '选择截止时刻',
       cancelText: '取消',
       confirmText: '确定',
@@ -115,7 +116,7 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
       Navigator.of(context).pop(true);
     } on ApiException catch (error) {
       if (!mounted) return;
-      setState(() => _error = error.message);
+      setState(() => _error = userMessageFor(error));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -165,7 +166,9 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('全天'),
-                subtitle: Text(_allDay ? '按日期范围展示，不记录具体时刻' : '按公司时区的开始/截止时刻判断逾期'),
+                subtitle: Text(
+                  _allDay ? '按日期范围展示，不记录具体时刻' : '按公司时区的开始/截止时刻判断逾期',
+                ),
                 value: _allDay,
                 onChanged: (value) => setState(() {
                   _allDay = value;
@@ -187,7 +190,9 @@ class _DailyItemCreatePageState extends ConsumerState<DailyItemCreatePage> {
                       child: OutlinedButton(
                         onPressed: () => _pickTime(isStart: true),
                         child: Text(
-                          _startTime == null ? '开始时刻' : '开始 ${_hm(_startTime!)}',
+                          _startTime == null
+                              ? '开始时刻'
+                              : '开始 ${_hm(_startTime!)}',
                         ),
                       ),
                     ),
@@ -250,7 +255,9 @@ class _DateRangeFields extends StatelessWidget {
       )!,
       firstDate: DateTime(2020, 1, 1),
       lastDate: DateTime(2040, 12, 31),
-      selectableDayPredicate: isStart ? null : (day) => DatePickerBounds.endOnOrAfter(day, startDay),
+      selectableDayPredicate: isStart
+          ? null
+          : (day) => DatePickerBounds.endOnOrAfter(day, startDay),
       helpText: isStart ? '选择开始日期' : '选择结束日期',
       cancelText: '取消',
       confirmText: '确定',
@@ -330,7 +337,8 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
     final picked = await showTimePicker(
       context: context,
       initialTime:
-          (isStart ? _startTime : _endTime) ?? const TimeOfDay(hour: 9, minute: 0),
+          (isStart ? _startTime : _endTime) ??
+          const TimeOfDay(hour: 9, minute: 0),
       helpText: isStart ? '选择开始时刻' : '选择截止时刻',
       cancelText: '取消',
       confirmText: '确定',
@@ -436,7 +444,7 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = error is ApiException ? error.message : '保存失败，请重试';
+        _error = error is ApiException ? userMessageFor(error) : '保存失败，请重试';
       });
     }
   }
@@ -453,7 +461,10 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
       setState(() => _item = updated);
     } catch (error) {
       if (!mounted) return;
-      showSnack(context, error is ApiException ? error.message : '操作失败，请重试');
+      showSnack(
+        context,
+        error is ApiException ? userMessageFor(error) : '操作失败，请重试',
+      );
     }
   }
 
@@ -488,7 +499,10 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
       Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;
-      showSnack(context, error is ApiException ? error.message : '删除失败，请重试');
+      showSnack(
+        context,
+        error is ApiException ? userMessageFor(error) : '删除失败，请重试',
+      );
     }
   }
 
@@ -602,9 +616,7 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('全天'),
-          subtitle: Text(
-            _allDay ? '按日期范围展示，不记录具体时刻' : '按公司时区的开始/截止时刻判断逾期',
-          ),
+          subtitle: Text(_allDay ? '按日期范围展示，不记录具体时刻' : '按公司时区的开始/截止时刻判断逾期'),
           value: _allDay,
           onChanged: (value) => setState(() {
             _allDay = value;
@@ -626,9 +638,7 @@ class _DailyItemDetailPageState extends ConsumerState<DailyItemDetailPage> {
                 child: OutlinedButton(
                   onPressed: () => _pickTime(isStart: true),
                   child: Text(
-                    _startTime == null
-                        ? '开始时刻'
-                        : '开始 ${_clock(_startTime)}',
+                    _startTime == null ? '开始时刻' : '开始 ${_clock(_startTime)}',
                   ),
                 ),
               ),
