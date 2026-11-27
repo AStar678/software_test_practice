@@ -2590,7 +2590,7 @@ public class TaskService {
         List<String> wanted = oldIds;
         if(input.containsKey("tagIds")) {
             Object raw=input.get("tagIds");
-            if(!(raw instanceof List<?> list)) throw bad("tagIds 必须为数组");
+            if(!(raw instanceof List<?> list)) throw bad("标签列表格式不正确");
             wanted=new ArrayList<>();
             for(Object item:list) {
                 String id=requiredId(item,"tagIds");
@@ -2598,7 +2598,7 @@ public class TaskService {
                 wanted.add(id);
             }
             if(input.containsKey("tagId") && !Objects.equals(optionalId(input.get("tagId"),"tagId"),wanted.isEmpty()?null:wanted.get(0)))
-                throw bad("tagId 与 tagIds 不一致");
+                throw bad("标签参数不一致");
         } else if(input.containsKey("tagId")) {
             if(oldIds.size()>1) throw conflict("MULTI_TAG_CLIENT_REQUIRED","此任务含多个标签，请使用支持多选的页面修改");
             String id=optionalId(input.get("tagId"),"tagId");wanted=id==null?List.of():List.of(id);
